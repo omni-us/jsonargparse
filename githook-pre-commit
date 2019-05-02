@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+### Create pre-commit symlink if unset ###
+GITDIR="";
+if [ -d .git ]; then
+  GITDIR=".git";
+elif [ -f .git ]; then
+  GITDIR=$(sed -n '/^gitdir:/{ s|.*: ||; p; }' .git);
+fi
+if [ ! -d "$GITDIR" ]; then
+  echo "${0##*/}: error: unable to find git directory" 1>&2;
+  exit 1;
+fi
+if [ ! -h "$GITDIR/hooks/pre-commit" ]; then
+  if [ $(realpath --help 2>&1 | grep -c relative) != 0 ]; then
+    HOOK=$(realpath --relative-to="$GITDIR/hooks" ./githook-pre-commit);
+  else
+    HOOK=$(readlink -f ./githook-pre-commit);
+  fi
+  ln -fs "$HOOK" "$GITDIR/hooks/pre-commit";
+  echo "${0##*/}: creating git pre-commit hook symlink" 1>&2;
+  exit 1;
+fi
+
+
+### Update versions on files ###
+FILES=( $(git status --porcelain | sed -r 's|^ |_|; s|^(.) |\1_|;' | grep -E '^([MRA]|.M)') );
+V=$(date -u +%Y.%m.%d);
+
+check_change_after_staged () {
+  [ "${2:1:1}" = "M" ] &&
+    echo "${0##*/}: error: changed after staged: $1" 1>&2 &&
+    exit 1;
+}
+
+n=1;
+while [ "$n" -lt "${#FILES[@]}" ]; do
+  check_change_after_staged "${FILES[$n]}" "${FILES[$((n-1))]}";
+  case "${FILES[$n]}" in
+    *.py )
+      echo "${0##*/}: pylint --errors-only ${FILES[$n]}" 1>&2;
+      pylint --errors-only "${FILES[$n]}";
+      ;;
+  esac
+  [ "$?" != "0" ] && exit 1;
+  n=$((n+2));
+done
+
+### Run unit tests ###
+python setup.py test;
+[ "$?" != "0" ] && exit 1;
+
+### Update documentation ###
+python setup.py build_sphinx --quiet --builder html &&
+  rm -r docs/html &&
+  mv docs/_build/html docs &&
+  git add docs/html;
+[ "$?" != "0" ] && exit 1;
+
+exit 0;

@@ -1,0 +1,502 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>yamlargparse python module &mdash; yamlargparse 0.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> yamlargparse
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">yamlargparse python module</a><ul>
+<li><a class="reference internal" href="#contact">Contact</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-yamlargparse">yamlargparse API</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">yamlargparse</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>yamlargparse python module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="yamlargparse-python-module">
+<h1>yamlargparse python module<a class="headerlink" href="#yamlargparse-python-module" title="Permalink to this headline">¶</a></h1>
+<p>This module is an extension to python’s argparse which simplifies parsing of
+configuration options from command line arguments, yaml configuration files,
+environment variables and hard-coded defaults.</p>
+<p>The aim is similar to other projects such as <a class="reference external" href="https://pypi.org/project/ConfigArgParse/">configargparse</a>, <a class="reference external" href="https://pypi.org/project/yconf/">yconf</a> and <a class="reference external" href="https://pypi.org/project/confuse/">confuse</a>. The obvious question is, why yet another
+module similar to many already existing ones? The answer is simply that none of
+the existing projects had the exact features we wanted and after analyzing the
+alternatives it seemed simpler to create a new module.</p>
+<div class="section" id="contact">
+<h2>Contact<a class="headerlink" href="#contact" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Mauricio Villegas &lt;<a class="reference external" href="mailto:mauricio&#37;&#52;&#48;omnius&#46;com">mauricio<span>&#64;</span>omnius<span>&#46;</span>com</a>&gt;</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="module-yamlargparse">
+<span id="yamlargparse-api"></span><h1>yamlargparse API<a class="headerlink" href="#module-yamlargparse" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="yamlargparse.ActionYesNo">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionYesNo</code><span class="sig-paren">(</span><em>opt_name</em>, <em>dest=None</em>, <em>default=True</em>, <em>required=False</em>, <em>help=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
+<p>Paired –opt, –no_opt action.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="yamlargparse.ArgumentParser">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ArgumentParser</code><span class="sig-paren">(</span><em>prog=None</em>, <em>usage=None</em>, <em>description=None</em>, <em>epilog=None</em>, <em>parents=[]</em>, <em>formatter_class=&lt;class 'argparse.HelpFormatter'&gt;</em>, <em>prefix_chars='-'</em>, <em>fromfile_prefix_chars=None</em>, <em>argument_default=None</em>, <em>conflict_handler='error'</em>, <em>add_help=True</em>, <em>allow_abbrev=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a></p>
+<p>Extension to python’s argparse which simplifies parsing of configuration
+options from command line arguments, yaml configuration files, environment
+variables and hard-coded defaults.</p>
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.add_argument">
+<code class="descname">add_argument</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.add_argument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.add_argument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define how a single configuration argument should be parsed.</p>
+<p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument">argparse.ArgumentParser.add_argument</a>
+are supported.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.add_argument_group">
+<code class="descname">add_argument_group</code><span class="sig-paren">(</span><em>*args</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.add_argument_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.add_argument_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a group to the parser.</p>
+<p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group">argparse.ArgumentParser.add_argument_group</a>
+are supported.  Additionally it accepts:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the group. If set the group object will be included in the parser.groups dict.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The group object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.args_to_dict">
+<em class="property">static </em><code class="descname">args_to_dict</code><span class="sig-paren">(</span><em>cfg_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.args_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.args_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a flat parsed namespace into a nested dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg_args</strong> (<em>SimpleNamespace</em>) – The configuration to process.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The nested configuration dictionary.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.check_config">
+<code class="descname">check_config</code><span class="sig-paren">(</span><em>cfg</em>, <em>skip_none=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the content of a given configuration object conforms with the parser.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfg</strong> (<em>SimpleNamespace | dict</em>) – The configuration object to check.</p></li>
+<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip checking of values that are None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><strong>Exception</strong></a> – For any part of the configuration object that does not conform.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.dict_to_namespace">
+<em class="property">static </em><code class="descname">dict_to_namespace</code><span class="sig-paren">(</span><em>cfg_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dict_to_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dict_to_namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a nested dictionary into a nested namespace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The nested configuration namespace.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.dump_yaml">
+<code class="descname">dump_yaml</code><span class="sig-paren">(</span><em>cfg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dump_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dump_yaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a yaml string for a configuration object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg</strong> (<em>SimpleNamespace | dict</em>) – The configuration object to dump.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The configuration in yaml format.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yamlargparse.ArgumentParser.groups">
+<code class="descname">groups</code><em class="property"> = {}</em><a class="headerlink" href="#yamlargparse.ArgumentParser.groups" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.merge_config">
+<em class="property">static </em><code class="descname">merge_config</code><span class="sig-paren">(</span><em>cfg_from</em>, <em>cfg_to</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merges the first configuration into the second configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfg_from</strong> (<em>SimpleNamespace | dict</em>) – The configuration from which to merge.</p></li>
+<li><p><strong>cfg_to</strong> (<em>SimpleNamespace | dict</em>) – The configuration into which to merge.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The merged configuration with same type as cfg_from.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace | dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.namespace_to_dict">
+<em class="property">static </em><code class="descname">namespace_to_dict</code><span class="sig-paren">(</span><em>cfg_ns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.namespace_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a nested namespace into a nested dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg_args</strong> (<em>SimpleNamespace</em>) – The configuration to process.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The nested configuration dictionary.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.parse_args">
+<code class="descname">parse_args</code><span class="sig-paren">(</span><em>*args</em>, <em>merge_env=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses command line argument strings.</p>
+<p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args">argparse.ArgumentParser.parse_args</a>
+are supported. Additionally it accepts:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>merge_env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether environment variables should be parsed and merged.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object with all parsed values as nested attributes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.parse_env">
+<code class="descname">parse_env</code><span class="sig-paren">(</span><em>env=None</em>, <em>merge_defaults=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses environment variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a>) – The environment object to use, if None <cite>os.environ</cite> is used.</p></li>
+<li><p><strong>merge_defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object with all parsed values as nested attributes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.parse_value">
+<em class="property">static </em><code class="descname">parse_value</code><span class="sig-paren">(</span><em>value</em>, <em>action</em>, <em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a value for a given action.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a>) – The value to parse.</p></li>
+<li><p><strong>action</strong> (<em>Action</em>) – The action used for parsing.</p></li>
+<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The configuration key.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><strong>Exception</strong></a> – If parsing of value fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.parse_yaml">
+<code class="descname">parse_yaml</code><span class="sig-paren">(</span><em>file_path</em>, <em>merge_defaults=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a yaml file given its path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path to the yaml file to parse.</p></li>
+<li><p><strong>merge_defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object with all parsed values as nested attributes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.parse_yaml_from_string">
+<code class="descname">parse_yaml_from_string</code><span class="sig-paren">(</span><em>yaml_str</em>, <em>merge_defaults=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_from_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_from_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses yaml given as a string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>yaml_str</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The yaml content.</p></li>
+<li><p><strong>merge_defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object with all parsed values as nested attributes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="yamlargparse.raise_">
+<code class="descclassname">yamlargparse.</code><code class="descname">raise_</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#raise_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.raise_" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raise that works within lambda functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ex</strong> (<a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><em>Exception</em></a>) – The exception object to raise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="license">
+<h1>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h1>
+<p>The MIT License (MIT)</p>
+<p>Copyright (c) 2019-present, Mauricio Villegas &lt;<a class="reference external" href="mailto:mauricio&#37;&#52;&#48;omnius&#46;com">mauricio<span>&#64;</span>omnius<span>&#46;</span>com</a>&gt;</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.</p>
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</p>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019-present, Mauricio Villegas
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
