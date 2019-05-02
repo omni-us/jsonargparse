@@ -57,4 +57,11 @@ python setup.py build_sphinx --quiet --builder html &&
   git add docs/html;
 [ "$?" != "0" ] && exit 1;
 
+### Validate circleci config ###
+circleci config validate -c .circleci/config.yml;
+if [ "$?" != 0 ]; then
+  echo "${0##*/}: error: validation of circleci config failed" 1>&2 &&
+  exit 1;
+fi
+
 exit 0;

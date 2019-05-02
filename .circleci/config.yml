@@ -25,6 +25,7 @@ jobs:
             pip install -r requirements.txt
             ./setup.py test
   publish-pypi:
+    context: yamlargparse-context
     docker:
       - image: mauvilsa/docker-twine:1.11.0
     steps:
