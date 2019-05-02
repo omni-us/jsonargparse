@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import yaml
 
 
-__version__ = '0.0.0'
+__version__ = '1.0.0'
 
 
 def raise_(ex):
