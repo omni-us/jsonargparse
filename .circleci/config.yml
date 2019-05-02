@@ -1,0 +1,57 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - checkout
+      - run:
+          name: "Build wheel package"
+          command: |
+            pip install -r requirements.txt
+            ./setup.py bdist_wheel
+      - persist_to_workspace:
+          root: .
+          paths: ./dist/*.whl
+  test:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - checkout
+      - run:
+          name: "Run unit tests"
+          command: |
+            pip install -r requirements.txt
+            ./setup.py test
+  publish-pypi:
+    docker:
+      - image: mauvilsa/docker-twine:1.11.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Publish Release on PyPI"
+          command: |
+            twine upload --username "${PYPI_USER}" --password "${PYPI_PASS}" ./dist/*.whl
+
+tagfilter: &tagfilter
+  filters:
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^\d+\.\d+\.\d+$/
+
+workflows:
+  version: 2
+  main:
+    jobs:
+      - build:
+          <<: *tagfilter
+      - test:
+          <<: *tagfilter
+      - publish-pypi:
+          <<: *tagfilter
+          requires:
+            - build
+            - test
