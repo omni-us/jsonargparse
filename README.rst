@@ -13,6 +13,21 @@ module similar to many already existing ones? The answer is simply that none of
 the existing projects had the exact features we wanted and after analyzing the
 alternatives it seemed simpler to create a new module.
 
+Features
+--------
+
+- Parsers are configured just like with python's argparse, thus it has a gentile learning curve.
+
+- Not exclusively intended for parsing command line arguments. The module has functions to parse environment variables and yaml config files.
+
+- Configuration settings are overridden based on the following precedence.
+
+  - **Parsing command line:** command line arguments (might include config file) > environment variables > defaults.
+  - **Parsing yaml:** config file values > environment variables > defaults.
+  - **Parsing environment:** environment variables > defaults.
+
+- Support of nested namespaces to make it possible to parse yaml with non-flat hierarchies.
+
 
 Contact
 -------
