@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 
 jobs:
   build:
@@ -25,7 +25,6 @@ jobs:
             pip install -r requirements.txt
             ./setup.py test
   publish-pypi:
-    context: yamlargparse-context
     docker:
       - image: mauvilsa/docker-twine:1.11.0
     steps:
@@ -53,6 +52,7 @@ workflows:
           <<: *tagfilter
       - publish-pypi:
           <<: *tagfilter
+          context: yamlargparse-context
           requires:
             - build
             - test

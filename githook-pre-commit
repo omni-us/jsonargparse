@@ -41,6 +41,9 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
       echo "${0##*/}: pylint --errors-only ${FILES[$n]}" 1>&2;
       pylint --errors-only "${FILES[$n]}";
       ;;
+    .circleci/config.yml )
+      echo "${0##*/}: circleci config validate -c .circleci/config.yml" 1>&2;
+      circleci config validate -c .circleci/config.yml;
   esac
   [ "$?" != "0" ] && exit 1;
   n=$((n+2));
@@ -56,12 +59,5 @@ python setup.py build_sphinx --quiet --builder html &&
   mv docs/_build/html docs &&
   git add docs/html;
 [ "$?" != "0" ] && exit 1;
-
-### Validate circleci config ###
-circleci config validate -c .circleci/config.yml;
-if [ "$?" != 0 ]; then
-  echo "${0##*/}: error: validation of circleci config failed" 1>&2 &&
-  exit 1;
-fi
 
 exit 0;

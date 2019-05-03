@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Unit tests for the yamlargparse module."""
 
+import sys
 import unittest
 from yamlargparse import ArgumentParser, ActionYesNo
 
@@ -93,3 +94,9 @@ class YamlargparseTests(unittest.TestCase):
         cfg = parser.parse_env(env=example_env, defaults=False)
         self.assertFalse(hasattr(cfg, 'bools'))
         self.assertTrue(hasattr(cfg, 'nums'))
+
+
+if __name__ == '__main__':
+    tests = unittest.defaultTestLoader.discover(__name__, pattern='*_tests.py')
+    run_tests = unittest.TextTestRunner(verbosity=2).run(tests)
+    sys.exit(not run_tests.wasSuccessful())
