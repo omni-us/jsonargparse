@@ -25,9 +25,9 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
     variables and hard-coded defaults.
     """
 
-    groups = dict()
+    groups = {}
 
-    def parse_args(self, *args, merge_env=True, **kwargs):
+    def parse_args(self, *args, env=True, nested=True, **kwargs):
         """Parses command line argument strings.
 
         All the arguments from `argparse.ArgumentParser.parse_args
@@ -35,47 +35,64 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         are supported. Additionally it accepts:
 
         Args:
-            merge_env (bool): Whether environment variables should be parsed and merged.
+            env (bool): Whether to merge with the parsed environment.
+            nested (bool): Whether the namespace should be nested.
 
         Returns:
             SimpleNamespace: An object with all parsed values as nested attributes.
         """
+
+        if 'namespace' not in kwargs:
+            kwargs['namespace'] = self.parse_env(nested=False) if env else None
+
         cfg = super().parse_args(*args, **kwargs)
-        cfg = self.args_to_dict(cfg)
-        if merge_env:
-            cfg_env = self.parse_env(merge_defaults=False)
-            cfg = self.merge_config(self.namespace_to_dict(cfg_env), cfg)
-        return self.dict_to_namespace(cfg)
+
+        if not nested:
+            return cfg
+
+        return self.dict_to_namespace(self.flat_namespace_to_dict(cfg))
 
 
-    def parse_yaml(self, file_path, merge_defaults=True):
+    def parse_yaml(self, file_path, env=True, defaults=True, nested=True):
         """Parses a yaml file given its path.
 
         Args:
             file_path (str): Path to the yaml file to parse.
-            merge_defaults (bool): Whether to merge with the parser's defaults.
+            env (bool): Whether to merge with the parsed environment.
+            defaults (bool): Whether to merge with the parser's defaults.
+            nested (bool): Whether the namespace should be nested.
 
         Returns:
             SimpleNamespace: An object with all parsed values as nested attributes.
         """
         with open(file_path, 'r') as f:
-            return self.parse_yaml_from_string(f.read(), merge_defaults)
+            return self.parse_yaml_from_string(f.read(), env, defaults, nested)
 
 
-    def parse_yaml_from_string(self, yaml_str, merge_defaults=True):
+    def parse_yaml_from_string(self, yaml_str, env=True, defaults=True, nested=True):
         """Parses yaml given as a string.
 
         Args:
             yaml_str (str): The yaml content.
-            merge_defaults (bool): Whether to merge with the parser's defaults.
+            env (bool): Whether to merge with the parsed environment.
+            defaults (bool): Whether to merge with the parser's defaults.
+            nested (bool): Whether the namespace should be nested.
 
         Returns:
-            SimpleNamespace: An object with all parsed values as nested attributes.
+            SimpleNamespace: An object with all parsed values as attributes.
         """
         cfg = yaml.safe_load(yaml_str)
         self.check_config(cfg)
-        if merge_defaults:
-            cfg = self.merge_config(cfg, self.parse_args([], merge_env=False))
+
+        if not nested:
+            cfg = self.namespace_to_dict(self.dict_to_flat_namespace(cfg))
+
+        if env:
+            cfg = self.merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
+
+        elif defaults:
+            cfg = self.merge_config(cfg, self.get_defaults(nested=nested))
+
         return self.dict_to_namespace(cfg)
 
 
@@ -94,15 +111,16 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return yaml.dump(cfg, default_flow_style=False)
 
 
-    def parse_env(self, env=None, merge_defaults=True):
+    def parse_env(self, env=None, defaults=True, nested=True):
         """Parses environment variables.
 
         Args:
             env (object): The environment object to use, if None `os.environ` is used.
-            merge_defaults (bool): Whether to merge with the parser's defaults.
+            defaults (bool): Whether to merge with the parser's defaults.
+            nested (bool): Whether the namespace should be nested.
 
         Returns:
-            SimpleNamespace: An object with all parsed values as nested attributes.
+            SimpleNamespace: An object with all parsed values as attributes.
         """
         if env is None:
             env = os.environ
@@ -113,21 +131,33 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             if env_var in env:
                 cfg[action.dest] = self.parse_value(env[env_var], action, env_var)
 
-        cfg = self.args_to_dict(SimpleNamespace(**cfg))
-        if merge_defaults:
-            cfg = self.merge_config(cfg, self.parse_args([], merge_env=False))
+        if nested:
+            cfg = self.flat_namespace_to_dict(SimpleNamespace(**cfg))
+
+        if defaults:
+            cfg = self.merge_config(cfg, self.get_defaults(nested=nested))
 
         return self.dict_to_namespace(cfg)
 
 
-    def add_argument(self, *args, **kwargs):
-        """Define how a single configuration argument should be parsed.
+    def get_defaults(self, nested=True):
+        """Returns a namespace with all default values.
 
-        All the arguments from `argparse.ArgumentParser.add_argument
-        <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument>`_
-        are supported.
+        Args:
+            nested (bool): Whether the namespace should be nested.
+
+        Returns:
+            SimpleNamespace: An object with all default values as attributes.
         """
-        ArgumentParser._add_argument(super(), self, args, kwargs)
+        cfg = {}
+        for action in self.__dict__['_actions']:
+            if len(action.option_strings) > 0 and action.default != '==SUPPRESS==':
+                cfg[action.dest] = action.default
+
+        if nested:
+            cfg = self.flat_namespace_to_dict(SimpleNamespace(**cfg))
+
+        return self.dict_to_namespace(cfg)
 
 
     def add_argument_group(self, *args, name=None, **kwargs):
@@ -143,7 +173,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         Returns:
             The group object.
         """
-        group = _ArgumentGroup(self, *args, **kwargs)
+        group = argparse._ArgumentGroup(self, *args, **kwargs)
         self._action_groups.append(group)
         if name is not None:
             self.groups[name] = group
@@ -239,29 +269,17 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def _add_argument(_super, self, args, kwargs):
-        """Auxiliary function to allow add_argument to support the ActionYesNo actions."""
-        if 'action' in kwargs and kwargs['action'] == ActionYesNo:
-            action_class = kwargs.pop('action')
-            _super._add_action(action_class(*args, **kwargs))
-        else:
-            if 'metavar' not in kwargs and '.' in args[0]:
-                kwargs['metavar'] = args[0].split('.')[-1].upper()
-            _super.add_argument(*args, **kwargs)
-
-
-    @staticmethod
-    def args_to_dict(cfg_args):
-        """Converts a flat parsed namespace into a nested dictionary.
+    def flat_namespace_to_dict(cfg_ns):
+        """Converts a flat namespace into a nested dictionary.
 
         Args:
-            cfg_args (SimpleNamespace): The configuration to process.
+            cfg_ns (SimpleNamespace): The configuration to process.
 
         Returns:
             dict: The nested configuration dictionary.
         """
-        cfg_dict = dict()
-        for k, v in vars(cfg_args).items():
+        cfg_dict = {}
+        for k, v in vars(cfg_ns).items():
             ksplit = k.split('.')
             if len(ksplit) == 1:
                 cfg_dict[k] = v
@@ -277,6 +295,31 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
                     raise Exception('Conflicting namespace base: '+k)
                 kdict[ksplit[-1]] = v
         return cfg_dict
+
+
+    @staticmethod
+    def dict_to_flat_namespace(cfg_dict):
+        """Converts a nested dictionary into a flat namespace.
+
+        Args:
+            cfg_dict (dict): The configuration to process.
+
+        Returns:
+            SimpleNamespace: The configuration namespace.
+        """
+        cfg_ns = {}
+
+        def flatten_dict(cfg, base=None):
+            for key, val in cfg.items():
+                kbase = key if base is None else base+'.'+key
+                if isinstance(val, dict):
+                    flatten_dict(val, kbase)
+                else:
+                    cfg_ns[kbase] = val
+
+        flatten_dict(cfg_dict)
+
+        return SimpleNamespace(**cfg_ns)
 
 
     @staticmethod
@@ -316,21 +359,33 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return expand_namespace(cfg_ns)
 
 
-class _ArgumentGroup(argparse._ArgumentGroup):
-    def add_argument(self, *args, **kwargs):
-        ArgumentParser._add_argument(super(), self, args, kwargs)
+class ActionConfigFile(argparse._StoreAction):
+    """Action to indicate that an argument is a configuration file."""
+
+    def __init__(self, **kwargs):
+        opt_name = kwargs['option_strings']
+        opt_name = opt_name[0] if len(opt_name) == 1 else [x for x in opt_name if x[0:2] == '--'][0]
+        if '.' in opt_name:
+            raise Exception('Config file must be a top level option.')
+        super().__init__(**kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        cfg_file = parser.parse_yaml(values, env=False, defaults=False, nested=False)
+        for key, val in vars(cfg_file).items():
+            setattr(namespace, key, val)
 
 
 class ActionYesNo(Action): 
-    """Paired --opt, --no_opt action."""
-    # Based on https://stackoverflow.com/questions/9234258/in-python-argparse-is-it-possible-to-have-paired-no-something-something-arg
+    """Paired action --opt, --no_opt to set True or False respectively."""
 
-    def __init__(self, opt_name, dest=None, default=True, required=False, help=None):
-        opt_name = re.sub('^--', '', opt_name)
-        if dest is None:
-            dest = opt_name.replace('-', '_')
-        bool_type = lambda x: x if isinstance(x, bool) else raise_(ValueError)
-        super().__init__(['--' + opt_name, '--no_' + opt_name], dest, nargs=0, const=None, default=default, required=required, help=help, type=bool_type)
+    def __init__(self, **kwargs):
+        opt_name = kwargs['option_strings'][0]
+        if 'dest' not in kwargs:
+            kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
+        kwargs['option_strings'] += [re.sub('^--', '--no_', opt_name)]
+        kwargs['nargs'] = 0
+        kwargs['type'] = lambda x: x if isinstance(x, bool) else raise_(ValueError)
+        super().__init__(**kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
         if option_string.startswith('--no_'):
