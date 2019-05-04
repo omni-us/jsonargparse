@@ -41,6 +41,11 @@ extensions = [
     #'sphinxarg.ext',
 ]
 
+autodoc_default_options = {
+    'exclude-members': 'groups',
+    'member-order': 'bysource'
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

@@ -9,7 +9,7 @@ jobs:
       - run:
           name: "Build wheel package"
           command: |
-            pip install -r requirements.txt
+            pip install --user -r requirements.txt
             ./setup.py bdist_wheel
       - persist_to_workspace:
           root: .
@@ -22,7 +22,7 @@ jobs:
       - run:
           name: "Run unit tests"
           command: |
-            pip install -r requirements.txt
+            pip install --user -r requirements.txt
             ./setup.py test
   publish-pypi:
     docker:

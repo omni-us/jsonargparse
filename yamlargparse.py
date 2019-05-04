@@ -10,15 +10,6 @@ import yaml
 __version__ = '1.2.0'
 
 
-def raise_(ex):
-    """Raise that works within lambda functions.
-    
-    Args:
-        ex (Exception): The exception object to raise.    
-    """
-    raise ex
-
-
 class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefined
     """Extension to python's argparse which simplifies parsing of configuration
     options from command line arguments, yaml configuration files, environment
@@ -392,3 +383,12 @@ class ActionYesNo(Action):
             setattr(namespace, self.dest, False)
         else:
             setattr(namespace, self.dest, True)
+
+
+def raise_(ex):
+    """Raise that works within lambda functions.
+
+    Args:
+        ex (Exception): The exception object to raise.
+    """
+    raise ex

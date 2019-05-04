@@ -296,186 +296,12 @@ to only parse a yaml file or yaml contained in a string.</p>
 <div class="section" id="module-yamlargparse">
 <span id="yamlargparse-api"></span><h1>yamlargparse API<a class="headerlink" href="#module-yamlargparse" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
-<dt id="yamlargparse.ActionConfigFile">
-<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionConfigFile</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">argparse._StoreAction</span></code></p>
-<p>Action to indicate that an argument is a configuration file.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="yamlargparse.ActionYesNo">
-<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionYesNo</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
-<p>Paired action –opt, –no_opt to set True or False respectively.</p>
-</dd></dl>
-
-<dl class="class">
 <dt id="yamlargparse.ArgumentParser">
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ArgumentParser</code><span class="sig-paren">(</span><em>prog=None</em>, <em>usage=None</em>, <em>description=None</em>, <em>epilog=None</em>, <em>parents=[]</em>, <em>formatter_class=&lt;class 'argparse.HelpFormatter'&gt;</em>, <em>prefix_chars='-'</em>, <em>fromfile_prefix_chars=None</em>, <em>argument_default=None</em>, <em>conflict_handler='error'</em>, <em>add_help=True</em>, <em>allow_abbrev=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a></p>
 <p>Extension to python’s argparse which simplifies parsing of configuration
 options from command line arguments, yaml configuration files, environment
 variables and hard-coded defaults.</p>
-<dl class="method">
-<dt id="yamlargparse.ArgumentParser.add_argument_group">
-<code class="descname">add_argument_group</code><span class="sig-paren">(</span><em>*args</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.add_argument_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.add_argument_group" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds a group to the parser.</p>
-<p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group">argparse.ArgumentParser.add_argument_group</a>
-are supported.  Additionally it accepts:</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the group. If set the group object will be included in the parser.groups dict.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The group object.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="yamlargparse.ArgumentParser.check_config">
-<code class="descname">check_config</code><span class="sig-paren">(</span><em>cfg</em>, <em>skip_none=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
-<dd><p>Checks that the content of a given configuration object conforms with the parser.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cfg</strong> (<em>SimpleNamespace | dict</em>) – The configuration object to check.</p></li>
-<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip checking of values that are None.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><strong>Exception</strong></a> – For any part of the configuration object that does not conform.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.dict_to_flat_namespace">
-<em class="property">static </em><code class="descname">dict_to_flat_namespace</code><span class="sig-paren">(</span><em>cfg_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dict_to_flat_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dict_to_flat_namespace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts a nested dictionary into a flat namespace.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The configuration namespace.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.dict_to_namespace">
-<em class="property">static </em><code class="descname">dict_to_namespace</code><span class="sig-paren">(</span><em>cfg_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dict_to_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dict_to_namespace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts a nested dictionary into a nested namespace.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The nested configuration namespace.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="yamlargparse.ArgumentParser.dump_yaml">
-<code class="descname">dump_yaml</code><span class="sig-paren">(</span><em>cfg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dump_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dump_yaml" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a yaml string for a configuration object.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg</strong> (<em>SimpleNamespace | dict</em>) – The configuration object to dump.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The configuration in yaml format.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.flat_namespace_to_dict">
-<em class="property">static </em><code class="descname">flat_namespace_to_dict</code><span class="sig-paren">(</span><em>cfg_ns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.flat_namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.flat_namespace_to_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts a flat namespace into a nested dictionary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_ns</strong> (<em>SimpleNamespace</em>) – The configuration to process.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The nested configuration dictionary.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="yamlargparse.ArgumentParser.get_defaults">
-<code class="descname">get_defaults</code><span class="sig-paren">(</span><em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.get_defaults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.get_defaults" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a namespace with all default values.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>An object with all default values as attributes.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="yamlargparse.ArgumentParser.groups">
-<code class="descname">groups</code><em class="property"> = {}</em><a class="headerlink" href="#yamlargparse.ArgumentParser.groups" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.merge_config">
-<em class="property">static </em><code class="descname">merge_config</code><span class="sig-paren">(</span><em>cfg_from</em>, <em>cfg_to</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
-<dd><p>Merges the first configuration into the second configuration.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cfg_from</strong> (<em>SimpleNamespace | dict</em>) – The configuration from which to merge.</p></li>
-<li><p><strong>cfg_to</strong> (<em>SimpleNamespace | dict</em>) – The configuration into which to merge.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The merged configuration with same type as cfg_from.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace | dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.namespace_to_dict">
-<em class="property">static </em><code class="descname">namespace_to_dict</code><span class="sig-paren">(</span><em>cfg_ns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.namespace_to_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts a nested namespace into a nested dictionary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_args</strong> (<em>SimpleNamespace</em>) – The configuration to process.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The nested configuration dictionary.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_args">
 <code class="descname">parse_args</code><span class="sig-paren">(</span><em>*args</em>, <em>env=True</em>, <em>nested=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
@@ -494,45 +320,6 @@ are supported. Additionally it accepts:</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>SimpleNamespace</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="yamlargparse.ArgumentParser.parse_env">
-<code class="descname">parse_env</code><span class="sig-paren">(</span><em>env=None</em>, <em>defaults=True</em>, <em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parses environment variables.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a>) – The environment object to use, if None <cite>os.environ</cite> is used.</p></li>
-<li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
-<li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>An object with all parsed values as attributes.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.parse_value">
-<em class="property">static </em><code class="descname">parse_value</code><span class="sig-paren">(</span><em>value</em>, <em>action</em>, <em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_value" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parses a value for a given action.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a>) – The value to parse.</p></li>
-<li><p><strong>action</strong> (<em>Action</em>) – The action used for parsing.</p></li>
-<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The configuration key.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><strong>Exception</strong></a> – If parsing of value fails.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -581,6 +368,214 @@ are supported. Additionally it accepts:</p>
 </dl>
 </dd></dl>
 
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.dump_yaml">
+<code class="descname">dump_yaml</code><span class="sig-paren">(</span><em>cfg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dump_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dump_yaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a yaml string for a configuration object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg</strong> (<em>SimpleNamespace | dict</em>) – The configuration object to dump.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The configuration in yaml format.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.parse_env">
+<code class="descname">parse_env</code><span class="sig-paren">(</span><em>env=None</em>, <em>defaults=True</em>, <em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses environment variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a>) – The environment object to use, if None <cite>os.environ</cite> is used.</p></li>
+<li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
+<li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object with all parsed values as attributes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.get_defaults">
+<code class="descname">get_defaults</code><span class="sig-paren">(</span><em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.get_defaults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.get_defaults" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a namespace with all default values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object with all default values as attributes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.add_argument_group">
+<code class="descname">add_argument_group</code><span class="sig-paren">(</span><em>*args</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.add_argument_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.add_argument_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a group to the parser.</p>
+<p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group">argparse.ArgumentParser.add_argument_group</a>
+are supported.  Additionally it accepts:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the group. If set the group object will be included in the parser.groups dict.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The group object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.check_config">
+<code class="descname">check_config</code><span class="sig-paren">(</span><em>cfg</em>, <em>skip_none=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the content of a given configuration object conforms with the parser.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfg</strong> (<em>SimpleNamespace | dict</em>) – The configuration object to check.</p></li>
+<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip checking of values that are None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><strong>Exception</strong></a> – For any part of the configuration object that does not conform.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.parse_value">
+<em class="property">static </em><code class="descname">parse_value</code><span class="sig-paren">(</span><em>value</em>, <em>action</em>, <em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a value for a given action.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a>) – The value to parse.</p></li>
+<li><p><strong>action</strong> (<em>Action</em>) – The action used for parsing.</p></li>
+<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The configuration key.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><strong>Exception</strong></a> – If parsing of value fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.merge_config">
+<em class="property">static </em><code class="descname">merge_config</code><span class="sig-paren">(</span><em>cfg_from</em>, <em>cfg_to</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merges the first configuration into the second configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfg_from</strong> (<em>SimpleNamespace | dict</em>) – The configuration from which to merge.</p></li>
+<li><p><strong>cfg_to</strong> (<em>SimpleNamespace | dict</em>) – The configuration into which to merge.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The merged configuration with same type as cfg_from.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace | dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.flat_namespace_to_dict">
+<em class="property">static </em><code class="descname">flat_namespace_to_dict</code><span class="sig-paren">(</span><em>cfg_ns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.flat_namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.flat_namespace_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a flat namespace into a nested dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg_ns</strong> (<em>SimpleNamespace</em>) – The configuration to process.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The nested configuration dictionary.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.dict_to_flat_namespace">
+<em class="property">static </em><code class="descname">dict_to_flat_namespace</code><span class="sig-paren">(</span><em>cfg_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dict_to_flat_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dict_to_flat_namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a nested dictionary into a flat namespace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The configuration namespace.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.dict_to_namespace">
+<em class="property">static </em><code class="descname">dict_to_namespace</code><span class="sig-paren">(</span><em>cfg_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dict_to_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dict_to_namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a nested dictionary into a nested namespace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The nested configuration namespace.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>SimpleNamespace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.namespace_to_dict">
+<em class="property">static </em><code class="descname">namespace_to_dict</code><span class="sig-paren">(</span><em>cfg_ns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.namespace_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a nested namespace into a nested dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg_args</strong> (<em>SimpleNamespace</em>) – The configuration to process.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The nested configuration dictionary.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="yamlargparse.ActionConfigFile">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionConfigFile</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">argparse._StoreAction</span></code></p>
+<p>Action to indicate that an argument is a configuration file.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="yamlargparse.ActionYesNo">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionYesNo</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
+<p>Paired action –opt, –no_opt to set True or False respectively.</p>
 </dd></dl>
 
 <dl class="function">
