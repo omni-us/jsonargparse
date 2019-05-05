@@ -23,6 +23,8 @@ Features
 
 - Support for nested namespaces which makes it possible to parse yaml with non-flat hierarchies.
 
+- Parsing of relative paths within yaml files.
+
 - Configuration settings are overridden based on the following precedence.
 
   - **Parsing command line:** command line arguments (might include config file) > environment variables > defaults.
@@ -55,10 +57,11 @@ create a parser object and then add arguments to it. A simple example would be:
 
 
 After creating the parser, you can use it to parse command line arguments with
-the :code:`parse_args` function, after which you get an object with the parsed
-values or defaults available as attributes. For illustrative purposes giving to
-:code:`parse_args` a list of arguments (instead of automatically getting them
-from the command line arguments), with the parser from above you would observe:
+the :func:`yamlargparse.ArgumentParser.parse_args` function, after which you get
+an object with the parsed values or defaults available as attributes. For
+illustrative purposes giving to :func:`parse_args` a list of arguments (instead
+of automatically getting them from the command line arguments), with the parser
+from above you would observe:
 
 .. code-block:: python
 
@@ -120,9 +123,9 @@ command line arguments, that is:
     >>> cfg.lev1.opt2
     'from env 2'
 
-There is also the :code:`parse_env` function to only parse environment
-variables, which might be useful for some use cases in which there is no command
-line call involved.
+There is also the :func:`yamlargparse.ArgumentParser.parse_env` function to only
+parse environment variables, which might be useful for some use cases in which
+there is no command line call involved.
 
 
 YAML configuration files
@@ -161,5 +164,46 @@ the following would be observed:
     >>> cfg.lev1.opt2
     'from arg 2'
 
-There are also functions :code:`parse_yaml` and :code:`parse_yaml_from_string`
-to only parse a yaml file or yaml contained in a string.
+There are also functions :func:`yamlargparse.ArgumentParser.parse_yaml` and
+:func:`yamlargparse.ArgumentParser.parse_yaml_from_string` to only parse a yaml
+file or yaml contained in a string respectively.
+
+
+Parsing file paths
+==================
+
+For some use cases it is necessary to parse file paths, checking its existence
+and access permissions, but not necessarily opening the file. Moreover, a file
+path could be included in a yaml file as relative with respect to the yaml
+file's location. After parsing it should be easy to access the parsed file path
+without having to consider the location of the yaml file. To help in these
+situations yamlargparse includes the :class:`.ActionFilePath` class.
+
+For example suppose you have a directory with a configuration file
+:code:`app/config.yaml` and some data :code:`app/data/info.db`. The contents of
+the yaml file is the following:
+
+.. code-block:: yaml
+
+    # File: config.yaml
+    databases:
+      info: data/info.db
+
+To create a parser that checks that the value of :code:`databases.info` exists
+and is readable, the following could be done:
+
+.. code-block:: python
+
+    >>> parser = yamlargparse.ArgumentParser(prog='app')
+    >>> parser.add_argument('--databases.info', action=yamlargparse.ActionFilePath(mode='r'))
+    >>> cfg = parser.parse_yaml('app/config.yaml')
+
+After parsing it is possible to get both the original relative path as included
+in the yaml file, or the corresponding absolute path:
+
+.. code-block:: python
+
+    >>> cfg.databases.info(absolute=False)
+    'data/info.db'
+    >>> cfg.databases.info()
+    'YOUR_CWD/app/data/info.db'

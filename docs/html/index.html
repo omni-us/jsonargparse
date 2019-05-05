@@ -90,6 +90,7 @@
 <li><a class="reference internal" href="#nested-namespaces">Nested namespaces</a></li>
 <li><a class="reference internal" href="#environment-variables">Environment variables</a></li>
 <li><a class="reference internal" href="#yaml-configuration-files">YAML configuration files</a></li>
+<li><a class="reference internal" href="#parsing-file-paths">Parsing file paths</a></li>
 <li><a class="reference internal" href="#module-yamlargparse">yamlargparse API</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
@@ -173,6 +174,7 @@ alternatives it seemed simpler to create a new module.</p>
 <li><p>Parsers are configured just like with python’s argparse, thus it has a gentile learning curve.</p></li>
 <li><p>Not exclusively intended for parsing command line arguments. The module has functions to parse environment variables and yaml config files.</p></li>
 <li><p>Support for nested namespaces which makes it possible to parse yaml with non-flat hierarchies.</p></li>
+<li><p>Parsing of relative paths within yaml files.</p></li>
 <li><p>Configuration settings are overridden based on the following precedence.</p>
 <ul>
 <li><p><strong>Parsing command line:</strong> command line arguments (might include config file) &gt; environment variables &gt; defaults.</p></li>
@@ -203,10 +205,11 @@ create a parser object and then add arguments to it. A simple example would be:<
 </pre></div>
 </div>
 <p>After creating the parser, you can use it to parse command line arguments with
-the <code class="code docutils literal notranslate"><span class="pre">parse_args</span></code> function, after which you get an object with the parsed
-values or defaults available as attributes. For illustrative purposes giving to
-<code class="code docutils literal notranslate"><span class="pre">parse_args</span></code> a list of arguments (instead of automatically getting them
-from the command line arguments), with the parser from above you would observe:</p>
+the <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_args" title="yamlargparse.ArgumentParser.parse_args"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_args()</span></code></a> function, after which you get
+an object with the parsed values or defaults available as attributes. For
+illustrative purposes giving to <code class="xref py py-func docutils literal notranslate"><span class="pre">parse_args()</span></code> a list of arguments (instead
+of automatically getting them from the command line arguments), with the parser
+from above you would observe:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--opt2&#39;</span><span class="p">,</span> <span class="s1">&#39;2.3&#39;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">opt1</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">opt1</span><span class="p">)</span>
 <span class="go">(0, &lt;class &#39;int&#39;&gt;)</span>
@@ -256,9 +259,9 @@ command line arguments, that is:</p>
 <span class="go">&#39;from env 2&#39;</span>
 </pre></div>
 </div>
-<p>There is also the <code class="code docutils literal notranslate"><span class="pre">parse_env</span></code> function to only parse environment
-variables, which might be useful for some use cases in which there is no command
-line call involved.</p>
+<p>There is also the <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_env" title="yamlargparse.ArgumentParser.parse_env"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_env()</span></code></a> function to only
+parse environment variables, which might be useful for some use cases in which
+there is no command line call involved.</p>
 </div>
 <div class="section" id="yaml-configuration-files">
 <h1>YAML configuration files<a class="headerlink" href="#yaml-configuration-files" title="Permalink to this headline">¶</a></h1>
@@ -290,8 +293,41 @@ the following would be observed:</p>
 <span class="go">&#39;from arg 2&#39;</span>
 </pre></div>
 </div>
-<p>There are also functions <code class="code docutils literal notranslate"><span class="pre">parse_yaml</span></code> and <code class="code docutils literal notranslate"><span class="pre">parse_yaml_from_string</span></code>
-to only parse a yaml file or yaml contained in a string.</p>
+<p>There are also functions <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_yaml" title="yamlargparse.ArgumentParser.parse_yaml"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_yaml()</span></code></a> and
+<a class="reference internal" href="#yamlargparse.ArgumentParser.parse_yaml_from_string" title="yamlargparse.ArgumentParser.parse_yaml_from_string"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_yaml_from_string()</span></code></a> to only parse a yaml
+file or yaml contained in a string respectively.</p>
+</div>
+<div class="section" id="parsing-file-paths">
+<h1>Parsing file paths<a class="headerlink" href="#parsing-file-paths" title="Permalink to this headline">¶</a></h1>
+<p>For some use cases it is necessary to parse file paths, checking its existence
+and access permissions, but not necessarily opening the file. Moreover, a file
+path could be included in a yaml file as relative with respect to the yaml
+file’s location. After parsing it should be easy to access the parsed file path
+without having to consider the location of the yaml file. To help in these
+situations yamlargparse includes the <a class="reference internal" href="#yamlargparse.ActionFilePath" title="yamlargparse.ActionFilePath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionFilePath</span></code></a> class.</p>
+<p>For example suppose you have a directory with a configuration file
+<code class="code docutils literal notranslate"><span class="pre">app/config.yaml</span></code> and some data <code class="code docutils literal notranslate"><span class="pre">app/data/info.db</span></code>. The contents of
+the yaml file is the following:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># File: config.yaml</span>
+<span class="nt">databases</span><span class="p">:</span>
+  <span class="nt">info</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/info.db</span>
+</pre></div>
+</div>
+<p>To create a parser that checks that the value of <code class="code docutils literal notranslate"><span class="pre">databases.info</span></code> exists
+and is readable, the following could be done:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--databases.info&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionFilePath</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_yaml</span><span class="p">(</span><span class="s1">&#39;app/config.yaml&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After parsing it is possible to get both the original relative path as included
+in the yaml file, or the corresponding absolute path:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">databases</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">absolute</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">&#39;data/info.db&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">databases</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+<span class="go">&#39;YOUR_CWD/app/data/info.db&#39;</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="module-yamlargparse">
 <span id="yamlargparse-api"></span><h1>yamlargparse API<a class="headerlink" href="#module-yamlargparse" title="Permalink to this headline">¶</a></h1>
@@ -457,24 +493,6 @@ are supported.  Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.parse_value">
-<em class="property">static </em><code class="descname">parse_value</code><span class="sig-paren">(</span><em>value</em>, <em>action</em>, <em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_value" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parses a value for a given action.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a>) – The value to parse.</p></li>
-<li><p><strong>action</strong> (<em>Action</em>) – The action used for parsing.</p></li>
-<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The configuration key.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><strong>Exception</strong></a> – If parsing of value fails.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
 <dt id="yamlargparse.ArgumentParser.merge_config">
 <em class="property">static </em><code class="descname">merge_config</code><span class="sig-paren">(</span><em>cfg_from</em>, <em>cfg_to</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merges the first configuration into the second configuration.</p>
@@ -494,80 +512,12 @@ are supported.  Additionally it accepts:</p>
 </dl>
 </dd></dl>
 
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.flat_namespace_to_dict">
-<em class="property">static </em><code class="descname">flat_namespace_to_dict</code><span class="sig-paren">(</span><em>cfg_ns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.flat_namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.flat_namespace_to_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts a flat namespace into a nested dictionary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_ns</strong> (<em>SimpleNamespace</em>) – The configuration to process.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The nested configuration dictionary.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.dict_to_flat_namespace">
-<em class="property">static </em><code class="descname">dict_to_flat_namespace</code><span class="sig-paren">(</span><em>cfg_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dict_to_flat_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dict_to_flat_namespace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts a nested dictionary into a flat namespace.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The configuration namespace.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.dict_to_namespace">
-<em class="property">static </em><code class="descname">dict_to_namespace</code><span class="sig-paren">(</span><em>cfg_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dict_to_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dict_to_namespace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts a nested dictionary into a nested namespace.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The nested configuration namespace.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="yamlargparse.ArgumentParser.namespace_to_dict">
-<em class="property">static </em><code class="descname">namespace_to_dict</code><span class="sig-paren">(</span><em>cfg_ns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.namespace_to_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts a nested namespace into a nested dictionary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_args</strong> (<em>SimpleNamespace</em>) – The configuration to process.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The nested configuration dictionary.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="class">
 <dt id="yamlargparse.ActionConfigFile">
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionConfigFile</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">argparse._StoreAction</span></code></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to indicate that an argument is a configuration file.</p>
 </dd></dl>
 
@@ -576,6 +526,42 @@ are supported.  Additionally it accepts:</p>
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionYesNo</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Paired action –opt, –no_opt to set True or False respectively.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="yamlargparse.ActionFilePath">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionFilePath</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionFilePath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionFilePath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
+<p>Action to check and store a file path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required file access permissions as a keyword argument, e.g. ActionFilePath(mode=’r’).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="yamlargparse.FilePath">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">FilePath</code><span class="sig-paren">(</span><em>file_path</em>, <em>mode=None</em>, <em>cwd=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#FilePath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.FilePath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Stores a (possibly relative) file path and the corresponding absolute path.</p>
+<p>When an object is created, it is checked that the file path exists and has
+the required access permissions. The absolute path of the file can be
+obtained without having to remember the working directory from when the
+object wascreated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The file path to check and store.</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required file access permissions.</p></li>
+<li><p><strong>cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Working directory for relative paths. If None, then os.getcwd() is used.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Args called:</dt><dd><p>absolute (bool): If false returns the original file path given, otherwise the corresponding absolute path.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">

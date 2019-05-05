@@ -9,6 +9,7 @@ jobs:
       - run:
           name: "Build wheel package"
           command: |
+            sed -i -r '/^(sphinx|coverage)/Id' requirements.txt
             pip install --user -r requirements.txt
             ./setup.py bdist_wheel
       - persist_to_workspace:
@@ -18,12 +19,13 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      - checkout
+      - attach_workspace:
+          at: .
       - run:
           name: "Run unit tests"
           command: |
-            pip install --user -r requirements.txt
-            ./setup.py test
+            pip install --user ./dist/*.whl
+            python -m yamlargparse_tests
   publish-pypi:
     docker:
       - image: mauvilsa/docker-twine:1.11.0
@@ -50,9 +52,10 @@ workflows:
           <<: *tagfilter
       - test:
           <<: *tagfilter
+          requires:
+            - build
       - publish-pypi:
           <<: *tagfilter
           context: yamlargparse-context
           requires:
-            - build
             - test

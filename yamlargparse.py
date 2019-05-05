@@ -1,10 +1,10 @@
 
 import os
 import re
+import yaml
 import argparse
 from argparse import *
 from types import SimpleNamespace
-import yaml
 
 
 __version__ = '1.3.0'
@@ -41,7 +41,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         if not nested:
             return cfg
 
-        return self.dict_to_namespace(self.flat_namespace_to_dict(cfg))
+        return self._dict_to_namespace(self._flat_namespace_to_dict(cfg))
 
 
     def parse_yaml(self, file_path, env=True, defaults=True, nested=True):
@@ -56,8 +56,14 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         Returns:
             SimpleNamespace: An object with all parsed values as nested attributes.
         """
-        with open(file_path, 'r') as f:
-            return self.parse_yaml_from_string(f.read(), env, defaults, nested)
+        cwd = os.getcwd()
+        os.chdir(os.path.abspath(os.path.join(file_path, os.pardir)))
+        try:
+            with open(os.path.basename(file_path), 'r') as f:
+                parsed_yaml = self.parse_yaml_from_string(f.read(), env, defaults, nested)
+        finally:
+            os.chdir(cwd)
+        return parsed_yaml
 
 
     def parse_yaml_from_string(self, yaml_str, env=True, defaults=True, nested=True):
@@ -75,8 +81,19 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         cfg = yaml.safe_load(yaml_str)
         self.check_config(cfg)
 
+        def map_value_nested(cfg, keys, func):
+            if len(keys) > 1:
+                map_value_nested(cfg[keys[0]], keys[1:], func)
+            else:
+                cfg[keys[0]] = func(cfg[keys[0]])
+
+        cfg_flat = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
+        for action in self.__dict__['_actions']:
+            if isinstance(action, ActionFilePath) and action.dest in cfg_flat:
+                map_value_nested(cfg, action.dest.split('.'), action.type)
+
         if not nested:
-            cfg = self.namespace_to_dict(self.dict_to_flat_namespace(cfg))
+            cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
 
         if env:
             cfg = self.merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
@@ -84,7 +101,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         elif defaults:
             cfg = self.merge_config(cfg, self.get_defaults(nested=nested))
 
-        return self.dict_to_namespace(cfg)
+        return self._dict_to_namespace(cfg)
 
 
     def dump_yaml(self, cfg):
@@ -97,8 +114,18 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             str: The configuration in yaml format.
         """
         if not isinstance(cfg, dict):
-            cfg = self.namespace_to_dict(cfg)
+            cfg = self._namespace_to_dict(cfg)
+
         self.check_config(cfg, skip_none=True)
+
+        cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
+        for action in self.__dict__['_actions']:
+            if isinstance(action, ActionFilePath):
+                cfg[action.dest] = cfg[action.dest](absolute=False)
+            elif isinstance(action, ActionConfigFile):
+                del cfg[action.dest]
+        cfg = self._namespace_to_dict(self._dict_to_namespace(cfg))
+
         return yaml.dump(cfg, default_flow_style=False)
 
 
@@ -120,15 +147,15 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             env_var = (self.prog+'_' if self.prog else '') + action.dest
             env_var = env_var.replace('.', '__').upper()
             if env_var in env:
-                cfg[action.dest] = self.parse_value(env[env_var], action, env_var)
+                cfg[action.dest] = self._parse_value(env[env_var], action, env_var)
 
         if nested:
-            cfg = self.flat_namespace_to_dict(SimpleNamespace(**cfg))
+            cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
 
         if defaults:
             cfg = self.merge_config(cfg, self.get_defaults(nested=nested))
 
-        return self.dict_to_namespace(cfg)
+        return self._dict_to_namespace(cfg)
 
 
     def get_defaults(self, nested=True):
@@ -146,9 +173,9 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
                 cfg[action.dest] = action.default
 
         if nested:
-            cfg = self.flat_namespace_to_dict(SimpleNamespace(**cfg))
+            cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
 
-        return self.dict_to_namespace(cfg)
+        return self._dict_to_namespace(cfg)
 
 
     def add_argument_group(self, *args, name=None, **kwargs):
@@ -182,7 +209,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             Exception: For any part of the configuration object that does not conform.
         """
         if not isinstance(cfg, dict):
-            cfg = self.namespace_to_dict(cfg)
+            cfg = self._namespace_to_dict(cfg)
 
         def find_action(dest):
             for action in self.__dict__['_actions']:
@@ -198,13 +225,41 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
                 if isinstance(val, dict):
                     check_values(val, kbase)
                 else:
-                    self.parse_value(val, find_action(kbase), kbase)
+                    self._parse_value(val, find_action(kbase), kbase)
 
         check_values(cfg)
 
 
     @staticmethod
-    def parse_value(value, action, key):
+    def merge_config(cfg_from, cfg_to):
+        """Merges the first configuration into the second configuration.
+
+        Args:
+            cfg_from (SimpleNamespace | dict): The configuration from which to merge.
+            cfg_to (SimpleNamespace | dict): The configuration into which to merge.
+
+        Returns:
+            SimpleNamespace | dict: The merged configuration with same type as cfg_from.
+        """
+        def merge_values(cfg_from, cfg_to):
+            for k, v in cfg_from.items():
+                if v is None:
+                    continue
+                if k not in cfg_to or not isinstance(v, dict):
+                    cfg_to[k] = v
+                else:
+                    cfg_to[k] = merge_values(cfg_from[k], cfg_to[k])
+            return cfg_to
+
+        out_dict = isinstance(cfg_from, dict)
+        cfg_from = cfg_from if isinstance(cfg_from, dict) else ArgumentParser._namespace_to_dict(cfg_from)
+        cfg_to = cfg_to if isinstance(cfg_to, dict) else ArgumentParser._namespace_to_dict(cfg_to)
+        cfg = merge_values(cfg_from, cfg_to.copy())
+        return cfg if out_dict else ArgumentParser._dict_to_namespace(cfg)
+
+
+    @staticmethod
+    def _parse_value(value, action, key):
         """Parses a value for a given action.
 
         Args:
@@ -232,35 +287,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def merge_config(cfg_from, cfg_to):
-        """Merges the first configuration into the second configuration.
-
-        Args:
-            cfg_from (SimpleNamespace | dict): The configuration from which to merge.
-            cfg_to (SimpleNamespace | dict): The configuration into which to merge.
-
-        Returns:
-            SimpleNamespace | dict: The merged configuration with same type as cfg_from.
-        """
-        def merge_values(cfg_from, cfg_to):
-            for k, v in cfg_from.items():
-                if v is None:
-                    continue
-                if k not in cfg_to or not isinstance(v, dict):
-                    cfg_to[k] = v
-                else:
-                    cfg_to[k] = merge_values(cfg_from[k], cfg_to[k])
-            return cfg_to
-
-        out_dict = isinstance(cfg_from, dict)
-        cfg_from = cfg_from if isinstance(cfg_from, dict) else ArgumentParser.namespace_to_dict(cfg_from)
-        cfg_to = cfg_to if isinstance(cfg_to, dict) else ArgumentParser.namespace_to_dict(cfg_to)
-        cfg = merge_values(cfg_from, cfg_to.copy())
-        return cfg if out_dict else ArgumentParser.dict_to_namespace(cfg)
-
-
-    @staticmethod
-    def flat_namespace_to_dict(cfg_ns):
+    def _flat_namespace_to_dict(cfg_ns):
         """Converts a flat namespace into a nested dictionary.
 
         Args:
@@ -289,7 +316,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def dict_to_flat_namespace(cfg_dict):
+    def _dict_to_flat_namespace(cfg_dict):
         """Converts a nested dictionary into a flat namespace.
 
         Args:
@@ -314,7 +341,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def dict_to_namespace(cfg_dict):
+    def _dict_to_namespace(cfg_dict):
         """Converts a nested dictionary into a nested namespace.
 
         Args:
@@ -332,7 +359,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def namespace_to_dict(cfg_ns):
+    def _namespace_to_dict(cfg_ns):
         """Converts a nested namespace into a nested dictionary.
 
         Args:
@@ -350,7 +377,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return expand_namespace(cfg_ns)
 
 
-class ActionConfigFile(argparse._StoreAction):
+class ActionConfigFile(Action):
     """Action to indicate that an argument is a configuration file."""
 
     def __init__(self, **kwargs):
@@ -358,9 +385,13 @@ class ActionConfigFile(argparse._StoreAction):
         opt_name = opt_name[0] if len(opt_name) == 1 else [x for x in opt_name if x[0:2] == '--'][0]
         if '.' in opt_name:
             raise Exception('Config file must be a top level option.')
+        kwargs['type'] = str
         super().__init__(**kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
+        if not isinstance(getattr(namespace, self.dest), list):
+            setattr(namespace, self.dest, [])
+        getattr(namespace, self.dest).append(FilePath(values, mode='r'))
         cfg_file = parser.parse_yaml(values, env=False, defaults=False, nested=False)
         for key, val in vars(cfg_file).items():
             setattr(namespace, key, val)
@@ -383,6 +414,72 @@ class ActionYesNo(Action):
             setattr(namespace, self.dest, False)
         else:
             setattr(namespace, self.dest, True)
+
+
+class ActionFilePath(Action):
+    """Action to check and store a file path.
+
+    Args:
+        mode (str): The required file access permissions as a keyword argument, e.g. ActionFilePath(mode='r').
+    """
+    def __init__(self, **kwargs):
+        if 'mode' in kwargs:
+            self._mode = kwargs['mode']
+        elif not '_mode' in kwargs:
+            raise Exception('Expected mode keyword argument.')
+        else:
+            self._mode = kwargs.pop('_mode')
+            kwargs['type'] = lambda x: x if isinstance(x, FilePath) else FilePath(x, mode=self._mode) if isinstance(x, str) else raise_(ValueError)
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        if len(args) == 0:
+            kwargs['_mode'] = self._mode
+            return ActionFilePath(**kwargs)
+        setattr(args[1], self.dest, FilePath(args[2], mode=self._mode))
+
+
+class FilePath(object):
+    """Stores a (possibly relative) file path and the corresponding absolute path.
+
+    When an object is created, it is checked that the file path exists and has
+    the required access permissions. The absolute path of the file can be
+    obtained without having to remember the working directory from when the
+    object wascreated.
+
+    Args:
+        file_path (str): The file path to check and store.
+        mode (str): The required file access permissions.
+        cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
+
+    Args called:
+        absolute (bool): If false returns the original file path given, otherwise the corresponding absolute path.
+    """
+    def __init__(self, file_path, mode=None, cwd=None):
+        if cwd is None:
+            cwd = os.getcwd()
+
+        abs_file_path = file_path if os.path.isabs(file_path) else os.path.join(cwd, file_path)
+
+        if not os.access(abs_file_path, os.F_OK):
+            raise ArgumentTypeError('File does not exist: '+abs_file_path)
+
+        if isinstance(mode, str):
+            if 'r' in mode and not os.access(abs_file_path, os.R_OK):
+                raise ArgumentTypeError('File is not readable: '+abs_file_path)
+            if 'w' in mode and not os.access(abs_file_path, os.W_OK):
+                raise ArgumentTypeError('File is not writeable: '+abs_file_path)
+            if 'x' in mode and not os.access(abs_file_path, os.X_OK):
+                raise ArgumentTypeError('File is not executable: '+abs_file_path)
+
+        self.file_path = file_path
+        self.abs_file_path = abs_file_path
+
+    def __str__(self):
+        return self.abs_file_path
+
+    def __call__(self, absolute=True):
+        return self.abs_file_path if absolute else self.file_path
 
 
 def raise_(ex):

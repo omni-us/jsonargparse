@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 """Unit tests for the yamlargparse module."""
 
+import os
 import sys
+import shutil
+import tempfile
 import unittest
-from yamlargparse import ArgumentParser, ActionYesNo
+from yamlargparse import ArgumentParser, ActionYesNo, ActionConfigFile, ActionFilePath
 
 
 def example_parser():
@@ -31,6 +34,11 @@ def example_parser():
     group_three.add_argument('--nums.val2',
         type=float,
         default=2.0)
+
+    parser.add_argument('--cfg',
+        action=ActionConfigFile)
+    parser.add_argument('--file',
+        action=ActionFilePath(mode='r'))
 
     return parser
 
@@ -95,8 +103,24 @@ class YamlargparseTests(unittest.TestCase):
         self.assertFalse(hasattr(cfg, 'bools'))
         self.assertTrue(hasattr(cfg, 'nums'))
 
+    def test_configfile_filepath(self):
+        """Test the use of ActionConfigFile and ActionFilePath."""
+        tmpdir = tempfile.mkdtemp(prefix='_yamlargparse_tests_')
+        os.mkdir(os.path.join(tmpdir, 'example'))
+        rel_yaml_file = os.path.join('..', 'example', 'example.yaml')
+        abs_yaml_file = os.path.join(tmpdir, 'example', rel_yaml_file)
+        with open(abs_yaml_file, 'w') as output_file:
+            output_file.write(example_yaml + '\nfile: '+rel_yaml_file+'\n')
+        parser = example_parser()
+        cfg = parser.parse_args(['--cfg', abs_yaml_file])
+        self.assertEqual(abs_yaml_file, cfg.cfg[0](absolute=False))
+        self.assertEqual(abs_yaml_file, cfg.cfg[0](absolute=True))
+        self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
+        self.assertEqual(abs_yaml_file, cfg.file(absolute=True))
+        shutil.rmtree(tmpdir)
+
 
 if __name__ == '__main__':
-    tests = unittest.defaultTestLoader.discover(__name__, pattern='*_tests.py')
+    tests = unittest.defaultTestLoader.discover(__name__, pattern='yamlargparse_tests.py')
     run_tests = unittest.TextTestRunner(verbosity=2).run(tests)
     sys.exit(not run_tests.wasSuccessful())

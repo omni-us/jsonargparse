@@ -54,10 +54,12 @@ python setup.py test;
 [ "$?" != "0" ] && exit 1;
 
 ### Update documentation ###
-python setup.py build_sphinx --quiet --builder html &&
+python setup.py build_sphinx --quiet --builder html,text &&
   rm -r docs/html &&
   mv docs/_build/html docs &&
-  git add docs/html;
+  mv docs/_build/text/index.txt docs/LONG_DESCRIPTION.md &&
+  sed -i '/^Indices and tables$/,$d' docs/LONG_DESCRIPTION.md &&
+  git add docs/html docs/LONG_DESCRIPTION.md;
 [ "$?" != "0" ] && exit 1;
 
 exit 0;

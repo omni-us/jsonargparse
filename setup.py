@@ -16,7 +16,7 @@ from yamlargparse import __version__
 
 NAME = 'yamlargparse'
 DESCRIPTION = 'Parsing of command line options, yaml config files and/or environment variables based on argparse.'
-LONG_DESCRIPTION = open('README.rst').read()
+LONG_DESCRIPTION = open('docs/LONG_DESCRIPTION.md').read()
 
 
 class CoverageCommand(Command):
