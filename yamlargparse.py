@@ -121,12 +121,13 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
         for action in self.__dict__['_actions']:
             if isinstance(action, ActionFilePath):
-                cfg[action.dest] = cfg[action.dest](absolute=False)
+                if cfg[action.dest] is not None:
+                    cfg[action.dest] = cfg[action.dest](absolute=False)
             elif isinstance(action, ActionConfigFile):
                 del cfg[action.dest]
-        cfg = self._namespace_to_dict(self._dict_to_namespace(cfg))
+        cfg = self._flat_namespace_to_dict(self._dict_to_namespace(cfg))
 
-        return yaml.dump(cfg, default_flow_style=False)
+        return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
 
 
     def parse_env(self, env=None, defaults=True, nested=True):
@@ -183,7 +184,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
         All the arguments from `argparse.ArgumentParser.add_argument_group
         <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group>`_
-        are supported.  Additionally it accepts:
+        are supported. Additionally it accepts:
 
         Args:
             name (str): Name of the group. If set the group object will be included in the parser.groups dict.
@@ -305,7 +306,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
                 kdict = cfg_dict
                 for num, kk in enumerate(ksplit[:len(ksplit)-1]):
                     if kk not in kdict:
-                        kdict[kk] = dict()
+                        kdict[kk] = {}
                     elif not isinstance(kdict[kk], dict):
                         raise Exception('Conflicting namespace base: '+'.'.join(ksplit[:num]))
                     kdict = kdict[kk]
@@ -369,7 +370,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             dict: The nested configuration dictionary.
         """
         def expand_namespace(cfg):
-            cfg = vars(cfg)
+            cfg = dict(vars(cfg))
             for k, v in cfg.items():
                 if isinstance(v, SimpleNamespace):
                     cfg[k] = expand_namespace(v)

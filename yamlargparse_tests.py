@@ -66,7 +66,7 @@ class YamlargparseTests(unittest.TestCase):
     def test_groups(self):
         """Test storage of named groups."""
         parser = example_parser()
-        self.assertEqual(['group1', 'group2'], list(parser.groups.keys()))
+        self.assertEqual(['group1', 'group2'], list(sorted(parser.groups.keys())))
 
     def test_yes_no_action(self):
         """Test the correct functioning of ActionYesNo."""
@@ -105,22 +105,20 @@ class YamlargparseTests(unittest.TestCase):
 
     def test_configfile_filepath(self):
         """Test the use of ActionConfigFile and ActionFilePath."""
-        tmpdir = tempfile.mkdtemp(prefix='_yamlargparse_tests_')
+        tmpdir = tempfile.mkdtemp(prefix='_parser_tests_')
         os.mkdir(os.path.join(tmpdir, 'example'))
         rel_yaml_file = os.path.join('..', 'example', 'example.yaml')
-        abs_yaml_file = os.path.join(tmpdir, 'example', rel_yaml_file)
+        abs_yaml_file = os.path.realpath(os.path.join(tmpdir, 'example', rel_yaml_file))
         with open(abs_yaml_file, 'w') as output_file:
             output_file.write(example_yaml + '\nfile: '+rel_yaml_file+'\n')
         parser = example_parser()
         cfg = parser.parse_args(['--cfg', abs_yaml_file])
-        self.assertEqual(abs_yaml_file, cfg.cfg[0](absolute=False))
-        self.assertEqual(abs_yaml_file, cfg.cfg[0](absolute=True))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=False)))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=True)))
         self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
-        self.assertEqual(abs_yaml_file, cfg.file(absolute=True))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
         shutil.rmtree(tmpdir)
 
 
 if __name__ == '__main__':
-    tests = unittest.defaultTestLoader.discover(__name__, pattern='yamlargparse_tests.py')
-    run_tests = unittest.TextTestRunner(verbosity=2).run(tests)
-    sys.exit(not run_tests.wasSuccessful())
+    unittest.main(verbosity=2)

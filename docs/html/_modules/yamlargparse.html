@@ -268,12 +268,13 @@
         <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;_actions&#39;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionFilePath</span><span class="p">):</span>
-                <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">](</span><span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">](</span><span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionConfigFile</span><span class="p">):</span>
                 <span class="k">del</span> <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span>
-        <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">allow_unicode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ArgumentParser.parse_env"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_env">[docs]</a>    <span class="k">def</span> <span class="nf">parse_env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -330,7 +331,7 @@
 
 <span class="sd">        All the arguments from `argparse.ArgumentParser.add_argument_group</span>
 <span class="sd">        &lt;https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group&gt;`_</span>
-<span class="sd">        are supported.  Additionally it accepts:</span>
+<span class="sd">        are supported. Additionally it accepts:</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): Name of the group. If set the group object will be included in the parser.groups dict.</span>
@@ -452,7 +453,7 @@
                 <span class="n">kdict</span> <span class="o">=</span> <span class="n">cfg_dict</span>
                 <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">kk</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ksplit</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">ksplit</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
                     <span class="k">if</span> <span class="n">kk</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kdict</span><span class="p">:</span>
-                        <span class="n">kdict</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                        <span class="n">kdict</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
                     <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kdict</span><span class="p">[</span><span class="n">kk</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
                         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Conflicting namespace base: &#39;</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ksplit</span><span class="p">[:</span><span class="n">num</span><span class="p">]))</span>
                     <span class="n">kdict</span> <span class="o">=</span> <span class="n">kdict</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span>
@@ -516,7 +517,7 @@
 <span class="sd">            dict: The nested configuration dictionary.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">expand_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">):</span>
-            <span class="n">cfg</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">SimpleNamespace</span><span class="p">):</span>
                     <span class="n">cfg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">expand_namespace</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
