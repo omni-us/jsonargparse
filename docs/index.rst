@@ -1,8 +1,8 @@
 .. include:: ../README.rst
 
 
-yamlargparse API
-================
+API Reference
+=============
 
 .. automodule:: yamlargparse
     :members:

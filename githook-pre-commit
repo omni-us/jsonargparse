@@ -23,9 +23,8 @@ if [ ! -h "$GITDIR/hooks/pre-commit" ]; then
 fi
 
 
-### Update versions on files ###
+### Check files that changed ###
 FILES=( $(git status --porcelain | sed -r 's|^ |_|; s|^(.) |\1_|;' | grep -E '^([MRA]|.M)') );
-V=$(date -u +%Y.%m.%d);
 
 check_change_after_staged () {
   [ "${2:1:1}" = "M" ] &&

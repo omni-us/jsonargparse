@@ -196,8 +196,8 @@ included in the yaml file, or the corresponding absolute path:
    'YOUR_CWD/app/data/info.db'
 
 
-yamlargparse API
-****************
+API Reference
+*************
 
 class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilog=None, parents=[], formatter_class=<class 'argparse.HelpFormatter'>, prefix_chars='-', fromfile_prefix_chars=None, argument_default=None, conflict_handler='error', add_help=True, allow_abbrev=True)
 
