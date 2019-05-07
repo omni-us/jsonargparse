@@ -161,8 +161,8 @@ and "yamlargparse.ArgumentParser.parse_yaml_from_string()" to only
 parse a yaml file or yaml contained in a string respectively.
 
 
-Parsing file paths
-******************
+Parsing paths
+*************
 
 For some use cases it is necessary to parse file paths, checking its
 existence and access permissions, but not necessarily opening the
@@ -170,7 +170,7 @@ file. Moreover, a file path could be included in a yaml file as
 relative with respect to the yaml file’s location. After parsing it
 should be easy to access the parsed file path without having to
 consider the location of the yaml file. To help in these situations
-yamlargparse includes the "ActionFilePath" class.
+yamlargparse includes the "ActionPath" class.
 
 For example suppose you have a directory with a configuration file
 "app/config.yaml" and some data "app/data/info.db". The contents of
@@ -184,7 +184,7 @@ To create a parser that checks that the value of "databases.info"
 exists and is readable, the following could be done:
 
    >>> parser = yamlargparse.ArgumentParser(prog='app')
-   >>> parser.add_argument('--databases.info', action=yamlargparse.ActionFilePath(mode='r'))
+   >>> parser.add_argument('--databases.info', action=yamlargparse.ActionPath(mode='r'))
    >>> cfg = parser.parse_yaml('app/config.yaml')
 
 After parsing it is possible to get both the original relative path as
@@ -194,6 +194,9 @@ included in the yaml file, or the corresponding absolute path:
    'data/info.db'
    >>> cfg.databases.info()
    'YOUR_CWD/app/data/info.db'
+
+Likewise directory can also be parse by including in the mode the ‘d’
+flat, e.g. "ActionPath(mode='drw')".
 
 
 API Reference
@@ -378,38 +381,39 @@ class yamlargparse.ActionYesNo(**kwargs)
 
    Paired action –opt, –no_opt to set True or False respectively.
 
-class yamlargparse.ActionFilePath(**kwargs)
+class yamlargparse.ActionPath(**kwargs)
 
    Bases: "argparse.Action"
 
    Action to check and store a file path.
 
    Parameters:
-      **mode** (*str*) – The required file access permissions as a
-      keyword argument, e.g. ActionFilePath(mode=’r’).
+      **mode** (*str*) – The required type and access permissions
+      among [drwx] as a keyword argument, e.g. ActionPath(mode=’drw’).
 
-class yamlargparse.FilePath(file_path, mode=None, cwd=None)
+class yamlargparse.Path(path, mode='r', cwd=None)
 
    Bases: "object"
 
-   Stores a (possibly relative) file path and the corresponding
-   absolute path.
+   Stores a (possibly relative) path and the corresponding absolute
+   path.
 
-   When an object is created, it is checked that the file path exists
-   and has the required access permissions. The absolute path of the
-   file can be obtained without having to remember the working
-   directory from when the object wascreated.
+   When an object is created it is checked that: the path exists,
+   whether it is a file or directory and has the required access
+   permissions. The absolute path of can be obtained without having to
+   remember the working directory from when the object was created.
 
    Parameters:
-      * **file_path** (*str*) – The file path to check and store.
+      * **path** (*str*) – The path to check and store.
 
-      * **mode** (*str*) – The required file access permissions.
+      * **mode** (*str*) – The required type and access permissions
+        among [drwx].
 
       * **cwd** (*str*) – Working directory for relative paths. If
         None, then os.getcwd() is used.
 
    Args called:
-      absolute (bool): If false returns the original file path given,
+      absolute (bool): If false returns the original path given,
       otherwise the corresponding absolute path.
 
 yamlargparse.raise_(ex)

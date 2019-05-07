@@ -90,7 +90,7 @@
 <li><a class="reference internal" href="#nested-namespaces">Nested namespaces</a></li>
 <li><a class="reference internal" href="#environment-variables">Environment variables</a></li>
 <li><a class="reference internal" href="#yaml-configuration-files">YAML configuration files</a></li>
-<li><a class="reference internal" href="#parsing-file-paths">Parsing file paths</a></li>
+<li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
 <li><a class="reference internal" href="#module-yamlargparse">API Reference</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
@@ -297,14 +297,14 @@ the following would be observed:</p>
 <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_yaml_from_string" title="yamlargparse.ArgumentParser.parse_yaml_from_string"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_yaml_from_string()</span></code></a> to only parse a yaml
 file or yaml contained in a string respectively.</p>
 </div>
-<div class="section" id="parsing-file-paths">
-<h1>Parsing file paths<a class="headerlink" href="#parsing-file-paths" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="parsing-paths">
+<h1>Parsing paths<a class="headerlink" href="#parsing-paths" title="Permalink to this headline">¶</a></h1>
 <p>For some use cases it is necessary to parse file paths, checking its existence
 and access permissions, but not necessarily opening the file. Moreover, a file
 path could be included in a yaml file as relative with respect to the yaml
 file’s location. After parsing it should be easy to access the parsed file path
 without having to consider the location of the yaml file. To help in these
-situations yamlargparse includes the <a class="reference internal" href="#yamlargparse.ActionFilePath" title="yamlargparse.ActionFilePath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionFilePath</span></code></a> class.</p>
+situations yamlargparse includes the <a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> class.</p>
 <p>For example suppose you have a directory with a configuration file
 <code class="code docutils literal notranslate"><span class="pre">app/config.yaml</span></code> and some data <code class="code docutils literal notranslate"><span class="pre">app/data/info.db</span></code>. The contents of
 the yaml file is the following:</p>
@@ -316,7 +316,7 @@ the yaml file is the following:</p>
 <p>To create a parser that checks that the value of <code class="code docutils literal notranslate"><span class="pre">databases.info</span></code> exists
 and is readable, the following could be done:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--databases.info&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionFilePath</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--databases.info&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionPath</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_yaml</span><span class="p">(</span><span class="s1">&#39;app/config.yaml&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -328,6 +328,8 @@ in the yaml file, or the corresponding absolute path:</p>
 <span class="go">&#39;YOUR_CWD/app/data/info.db&#39;</span>
 </pre></div>
 </div>
+<p>Likewise directory can also be parse by including in the mode the ‘d’ flat, e.g.
+<code class="code docutils literal notranslate"><span class="pre">ActionPath(mode='drw')</span></code>.</p>
 </div>
 <div class="section" id="module-yamlargparse">
 <span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-yamlargparse" title="Permalink to this headline">¶</a></h1>
@@ -529,37 +531,37 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ActionFilePath">
-<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionFilePath</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionFilePath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionFilePath" title="Permalink to this definition">¶</a></dt>
+<dt id="yamlargparse.ActionPath">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionPath</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to check and store a file path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required file access permissions as a keyword argument, e.g. ActionFilePath(mode=’r’).</p>
+<dd class="field-odd"><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPath(mode=’drw’).</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.FilePath">
-<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">FilePath</code><span class="sig-paren">(</span><em>file_path</em>, <em>mode=None</em>, <em>cwd=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#FilePath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.FilePath" title="Permalink to this definition">¶</a></dt>
+<dt id="yamlargparse.Path">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">Path</code><span class="sig-paren">(</span><em>path</em>, <em>mode='r'</em>, <em>cwd=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>Stores a (possibly relative) file path and the corresponding absolute path.</p>
-<p>When an object is created, it is checked that the file path exists and has
-the required access permissions. The absolute path of the file can be
-obtained without having to remember the working directory from when the
-object wascreated.</p>
+<p>Stores a (possibly relative) path and the corresponding absolute path.</p>
+<p>When an object is created it is checked that: the path exists, whether it is
+a file or directory and has the required access permissions. The absolute
+path of can be obtained without having to remember the working directory
+from when the object was created.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The file path to check and store.</p></li>
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required file access permissions.</p></li>
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The path to check and store.</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [drwx].</p></li>
 <li><p><strong>cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Working directory for relative paths. If None, then os.getcwd() is used.</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="simple">
-<dt>Args called:</dt><dd><p>absolute (bool): If false returns the original file path given, otherwise the corresponding absolute path.</p>
+<dt>Args called:</dt><dd><p>absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.</p>
 </dd>
 </dl>
 </dd></dl>

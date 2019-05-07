@@ -169,15 +169,15 @@ There are also functions :func:`yamlargparse.ArgumentParser.parse_yaml` and
 file or yaml contained in a string respectively.
 
 
-Parsing file paths
-==================
+Parsing paths
+=============
 
 For some use cases it is necessary to parse file paths, checking its existence
 and access permissions, but not necessarily opening the file. Moreover, a file
 path could be included in a yaml file as relative with respect to the yaml
 file's location. After parsing it should be easy to access the parsed file path
 without having to consider the location of the yaml file. To help in these
-situations yamlargparse includes the :class:`.ActionFilePath` class.
+situations yamlargparse includes the :class:`.ActionPath` class.
 
 For example suppose you have a directory with a configuration file
 :code:`app/config.yaml` and some data :code:`app/data/info.db`. The contents of
@@ -195,7 +195,7 @@ and is readable, the following could be done:
 .. code-block:: python
 
     >>> parser = yamlargparse.ArgumentParser(prog='app')
-    >>> parser.add_argument('--databases.info', action=yamlargparse.ActionFilePath(mode='r'))
+    >>> parser.add_argument('--databases.info', action=yamlargparse.ActionPath(mode='r'))
     >>> cfg = parser.parse_yaml('app/config.yaml')
 
 After parsing it is possible to get both the original relative path as included
@@ -207,3 +207,6 @@ in the yaml file, or the corresponding absolute path:
     'data/info.db'
     >>> cfg.databases.info()
     'YOUR_CWD/app/data/info.db'
+
+Likewise directory can also be parse by including in the mode the 'd' flat, e.g.
+:code:`ActionPath(mode='drw')`.

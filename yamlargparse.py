@@ -89,7 +89,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
         cfg_flat = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
         for action in self.__dict__['_actions']:
-            if isinstance(action, ActionFilePath) and action.dest in cfg_flat:
+            if isinstance(action, ActionPath) and action.dest in cfg_flat:
                 map_value_nested(cfg, action.dest.split('.'), action.type)
 
         if not nested:
@@ -120,7 +120,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
         cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
         for action in self.__dict__['_actions']:
-            if isinstance(action, ActionFilePath):
+            if isinstance(action, ActionPath):
                 if cfg[action.dest] is not None:
                     cfg[action.dest] = cfg[action.dest](absolute=False)
             elif isinstance(action, ActionConfigFile):
@@ -392,7 +392,7 @@ class ActionConfigFile(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if not isinstance(getattr(namespace, self.dest), list):
             setattr(namespace, self.dest, [])
-        getattr(namespace, self.dest).append(FilePath(values, mode='r'))
+        getattr(namespace, self.dest).append(Path(values, mode='r'))
         cfg_file = parser.parse_yaml(values, env=False, defaults=False, nested=False)
         for key, val in vars(cfg_file).items():
             setattr(namespace, key, val)
@@ -417,11 +417,11 @@ class ActionYesNo(Action):
             setattr(namespace, self.dest, True)
 
 
-class ActionFilePath(Action):
+class ActionPath(Action):
     """Action to check and store a file path.
 
     Args:
-        mode (str): The required file access permissions as a keyword argument, e.g. ActionFilePath(mode='r').
+        mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPath(mode='drw').
     """
     def __init__(self, **kwargs):
         if 'mode' in kwargs:
@@ -430,57 +430,71 @@ class ActionFilePath(Action):
             raise Exception('Expected mode keyword argument.')
         else:
             self._mode = kwargs.pop('_mode')
-            kwargs['type'] = lambda x: x if isinstance(x, FilePath) else FilePath(x, mode=self._mode) if isinstance(x, str) else raise_(ValueError)
+            kwargs['type'] = lambda x: x if isinstance(x, Path) else Path(x, mode=self._mode) if isinstance(x, str) else raise_(ValueError)
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
         if len(args) == 0:
             kwargs['_mode'] = self._mode
-            return ActionFilePath(**kwargs)
-        setattr(args[1], self.dest, FilePath(args[2], mode=self._mode))
+            return ActionPath(**kwargs)
+        setattr(args[1], self.dest, Path(args[2], mode=self._mode))
 
 
-class FilePath(object):
-    """Stores a (possibly relative) file path and the corresponding absolute path.
+class Path(object):
+    """Stores a (possibly relative) path and the corresponding absolute path.
 
-    When an object is created, it is checked that the file path exists and has
-    the required access permissions. The absolute path of the file can be
-    obtained without having to remember the working directory from when the
-    object wascreated.
+    When an object is created it is checked that: the path exists, whether it is
+    a file or directory and has the required access permissions. The absolute
+    path of can be obtained without having to remember the working directory
+    from when the object was created.
 
     Args:
-        file_path (str): The file path to check and store.
-        mode (str): The required file access permissions.
+        path (str): The path to check and store.
+        mode (str): The required type and access permissions among [drwx].
         cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
 
     Args called:
-        absolute (bool): If false returns the original file path given, otherwise the corresponding absolute path.
+        absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.
     """
-    def __init__(self, file_path, mode=None, cwd=None):
+    def __init__(self, path, mode='r', cwd=None):
+        if not isinstance(mode, str):
+            raise Exception('Expected mode to be a string.')
+        if len(set(mode)-set('drwx')) > 0:
+            raise Exception('Expected mode to only include [drwx] flags.')
+
         if cwd is None:
             cwd = os.getcwd()
 
-        abs_file_path = file_path if os.path.isabs(file_path) else os.path.join(cwd, file_path)
+        if isinstance(path, Path):
+            abs_path = path(absolute=True)
+            path = path()
+        elif not isinstance(path, str):
+            raise Exception('Expected path to be a string or a Path.')
+        else:
+            abs_path = path if os.path.isabs(path) else os.path.join(cwd, path)
 
-        if not os.access(abs_file_path, os.F_OK):
-            raise ArgumentTypeError('File does not exist: '+abs_file_path)
+        ptype = 'Directory' if 'd' in mode else 'File'
+        if not os.access(abs_path, os.F_OK):
+            raise ArgumentTypeError(ptype+' does not exist: '+abs_path)
+        if 'd' in mode and not os.path.isdir(abs_path):
+            raise ArgumentTypeError('Path is not a directory: '+abs_path)
+        if 'd' not in mode and not os.path.isfile(abs_path):
+            raise ArgumentTypeError('Path is not a file: '+abs_path)
+        if 'r' in mode and not os.access(abs_path, os.R_OK):
+            raise ArgumentTypeError(ptype+' is not readable: '+abs_path)
+        if 'w' in mode and not os.access(abs_path, os.W_OK):
+            raise ArgumentTypeError(ptype+' is not writeable: '+abs_path)
+        if 'x' in mode and not os.access(abs_path, os.X_OK):
+            raise ArgumentTypeError(ptype+' is not executable: '+abs_path)
 
-        if isinstance(mode, str):
-            if 'r' in mode and not os.access(abs_file_path, os.R_OK):
-                raise ArgumentTypeError('File is not readable: '+abs_file_path)
-            if 'w' in mode and not os.access(abs_file_path, os.W_OK):
-                raise ArgumentTypeError('File is not writeable: '+abs_file_path)
-            if 'x' in mode and not os.access(abs_file_path, os.X_OK):
-                raise ArgumentTypeError('File is not executable: '+abs_file_path)
-
-        self.file_path = file_path
-        self.abs_file_path = abs_file_path
+        self.path = path
+        self.abs_path = abs_path
 
     def __str__(self):
-        return self.abs_file_path
+        return self.abs_path
 
     def __call__(self, absolute=True):
-        return self.abs_file_path if absolute else self.file_path
+        return self.abs_path if absolute else self.path
 
 
 def raise_(ex):

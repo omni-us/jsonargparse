@@ -6,7 +6,7 @@ import sys
 import shutil
 import tempfile
 import unittest
-from yamlargparse import ArgumentParser, ActionYesNo, ActionConfigFile, ActionFilePath
+from yamlargparse import ArgumentParser, ActionYesNo, ActionConfigFile, ActionPath
 
 
 def example_parser():
@@ -38,7 +38,9 @@ def example_parser():
     parser.add_argument('--cfg',
         action=ActionConfigFile)
     parser.add_argument('--file',
-        action=ActionFilePath(mode='r'))
+        action=ActionPath(mode='r'))
+    parser.add_argument('--dir',
+        action=ActionPath(mode='drw'))
 
     return parser
 
@@ -104,18 +106,22 @@ class YamlargparseTests(unittest.TestCase):
         self.assertTrue(hasattr(cfg, 'nums'))
 
     def test_configfile_filepath(self):
-        """Test the use of ActionConfigFile and ActionFilePath."""
-        tmpdir = tempfile.mkdtemp(prefix='_parser_tests_')
+        """Test the use of ActionConfigFile and ActionPath."""
+        tmpdir = tempfile.mkdtemp(prefix='_yamlargparse_tests_')
         os.mkdir(os.path.join(tmpdir, 'example'))
         rel_yaml_file = os.path.join('..', 'example', 'example.yaml')
         abs_yaml_file = os.path.realpath(os.path.join(tmpdir, 'example', rel_yaml_file))
         with open(abs_yaml_file, 'w') as output_file:
-            output_file.write(example_yaml + '\nfile: '+rel_yaml_file+'\n')
+            output_file.write(example_yaml + '\nfile: '+rel_yaml_file+'\ndir: '+tmpdir+'\n')
         parser = example_parser()
         cfg = parser.parse_args(['--cfg', abs_yaml_file])
+        self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=False)))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=True)))
         self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
+        cfg = parser.parse_args(['--file', abs_yaml_file, '--dir', tmpdir])
+        self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
         shutil.rmtree(tmpdir)
 
