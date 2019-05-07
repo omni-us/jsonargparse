@@ -7,7 +7,7 @@ from argparse import *
 from types import SimpleNamespace
 
 
-__version__ = '1.4.0'
+__version__ = '1.5.0'
 
 
 class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefined
