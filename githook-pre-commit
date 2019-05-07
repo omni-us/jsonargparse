@@ -54,11 +54,11 @@ python setup.py test;
 
 ### Update documentation ###
 python setup.py build_sphinx --quiet --builder html,text &&
-  rm -r docs/html &&
-  mv docs/_build/html docs &&
-  mv docs/_build/text/index.txt docs/LONG_DESCRIPTION.md &&
+  rm -r docs &&
+  mv sphinx/_build/html docs &&
+  mv sphinx/_build/text/index.txt docs/LONG_DESCRIPTION.md &&
   sed -i '/^Indices and tables$/,$d' docs/LONG_DESCRIPTION.md &&
-  git add docs/html docs/LONG_DESCRIPTION.md;
+  git add docs;
 [ "$?" != "0" ] && exit 1;
 
 exit 0;
