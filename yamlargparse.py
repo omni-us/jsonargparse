@@ -2,6 +2,7 @@
 import os
 import re
 import yaml
+import operator
 import argparse
 from argparse import *
 from types import SimpleNamespace
@@ -44,11 +45,11 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return self._dict_to_namespace(self._flat_namespace_to_dict(cfg))
 
 
-    def parse_yaml(self, file_path, env=True, defaults=True, nested=True):
+    def parse_yaml_path(self, yaml_path, env=True, defaults=True, nested=True):
         """Parses a yaml file given its path.
 
         Args:
-            file_path (str): Path to the yaml file to parse.
+            yaml_path (str): Path to the yaml file to parse.
             env (bool): Whether to merge with the parsed environment.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
@@ -57,16 +58,16 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             SimpleNamespace: An object with all parsed values as nested attributes.
         """
         cwd = os.getcwd()
-        os.chdir(os.path.abspath(os.path.join(file_path, os.pardir)))
+        os.chdir(os.path.abspath(os.path.join(yaml_path, os.pardir)))
         try:
-            with open(os.path.basename(file_path), 'r') as f:
-                parsed_yaml = self.parse_yaml_from_string(f.read(), env, defaults, nested)
+            with open(os.path.basename(yaml_path), 'r') as f:
+                parsed_yaml = self.parse_yaml_string(f.read(), env, defaults, nested)
         finally:
             os.chdir(cwd)
         return parsed_yaml
 
 
-    def parse_yaml_from_string(self, yaml_str, env=True, defaults=True, nested=True):
+    def parse_yaml_string(self, yaml_str, env=True, defaults=True, nested=True):
         """Parses yaml given as a string.
 
         Args:
@@ -79,26 +80,19 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             SimpleNamespace: An object with all parsed values as attributes.
         """
         cfg = yaml.safe_load(yaml_str)
-        self.check_config(cfg)
 
-        def map_value_nested(cfg, keys, func):
-            if len(keys) > 1:
-                map_value_nested(cfg[keys[0]], keys[1:], func)
-            else:
-                cfg[keys[0]] = func(cfg[keys[0]])
-
-        cfg_flat = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
+        cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
         for action in self.__dict__['_actions']:
-            if isinstance(action, ActionPath) and action.dest in cfg_flat:
-                map_value_nested(cfg, action.dest.split('.'), action.type)
+            if action.dest in cfg:
+                cfg[action.dest] = self._check_value_key(action, cfg[action.dest], action.dest)
 
-        if not nested:
-            cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
+        if nested:
+            cfg = self._flat_namespace_to_dict(self._dict_to_namespace(cfg))
 
         if env:
             cfg = self.merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
 
-        elif defaults:
+        if defaults:
             cfg = self.merge_config(cfg, self.get_defaults(nested=nested))
 
         return self._dict_to_namespace(cfg)
@@ -140,15 +134,17 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
         Returns:
             SimpleNamespace: An object with all parsed values as attributes.
-        """
+        """        
         if env is None:
             env = os.environ
         cfg = {}
         for action in self.__dict__['_actions']:
+            if action.default == '==SUPPRESS==':
+                continue
             env_var = (self.prog+'_' if self.prog else '') + action.dest
             env_var = env_var.replace('.', '__').upper()
             if env_var in env:
-                cfg[action.dest] = self._parse_value(env[env_var], action, env_var)
+                cfg[action.dest] = self._check_value_key(action, env[env_var], env_var)
 
         if nested:
             cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
@@ -205,9 +201,6 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         Args:
             cfg (SimpleNamespace | dict): The configuration object to check.
             skip_none (bool): Whether to skip checking of values that are None.
-
-        Raises:
-            Exception: For any part of the configuration object that does not conform.
         """
         if not isinstance(cfg, dict):
             cfg = self._namespace_to_dict(cfg)
@@ -226,7 +219,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
                 if isinstance(val, dict):
                     check_values(val, kbase)
                 else:
-                    self._parse_value(val, find_action(kbase), kbase)
+                    self._check_value_key(find_action(kbase), val, kbase)
 
         check_values(cfg)
 
@@ -260,30 +253,30 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def _parse_value(value, action, key):
-        """Parses a value for a given action.
+    def _check_value_key(action, value, key):
+        """Checks the value for a given action.
 
         Args:
-            value (object): The value to parse.
             action (Action): The action used for parsing.
+            value (object): The value to parse.
             key (str): The configuration key.
-
-        Raises:
-            Exception: If parsing of value fails.
         """
         if action is None:
-            raise Exception('Unexpected configuration key: '+key)
-        if action.type is None:
-            if action.choices is not None:
-                if value not in set(action.choices):
-                    raise Exception('Unexpected configuration value for key: '+key)
-            elif not isinstance(value, str):
-                raise Exception('Unexpected configuration value for key: '+key)
-        else:
-            try:
-                value = action.type(value)
-            except:
-                raise Exception('Unexpected configuration value for key: '+key)
+            raise Exception('parser key "'+key+'": received action==None')
+        if action.choices is not None:
+            if value not in action.choices:
+                args = {'value': value,
+                        'choices': ', '.join(map(repr, action.choices))}
+                msg = 'invalid choice: %(value)r (choose from %(choices)s)'
+                raise ArgumentTypeError('parser key "'+key+'": '+(msg % args))
+        elif action.type is not None:
+            if hasattr(action, '_check_type'):
+                value = action._check_type(value)
+            else:
+                try:
+                    value = action.type(value)
+                except TypeError as ex:
+                    raise ArgumentTypeError('parser key "'+key+'": '+str(ex))
         return value
 
 
@@ -380,7 +373,6 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 class ActionConfigFile(Action):
     """Action to indicate that an argument is a configuration file."""
-
     def __init__(self, **kwargs):
         opt_name = kwargs['option_strings']
         opt_name = opt_name[0] if len(opt_name) == 1 else [x for x in opt_name if x[0:2] == '--'][0]
@@ -392,15 +384,17 @@ class ActionConfigFile(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if not isinstance(getattr(namespace, self.dest), list):
             setattr(namespace, self.dest, [])
-        getattr(namespace, self.dest).append(Path(values, mode='r'))
-        cfg_file = parser.parse_yaml(values, env=False, defaults=False, nested=False)
+        try:
+            getattr(namespace, self.dest).append(Path(values, mode='r'))
+        except ArgumentTypeError as ex:
+            raise ArgumentTypeError('parser key "'+self.dest+'": '+str(ex))
+        cfg_file = parser.parse_yaml_path(values, env=False, defaults=False, nested=False)
         for key, val in vars(cfg_file).items():
             setattr(namespace, key, val)
 
 
 class ActionYesNo(Action): 
     """Paired action --opt, --no_opt to set True or False respectively."""
-
     def __init__(self, **kwargs):
         opt_name = kwargs['option_strings'][0]
         if 'dest' not in kwargs:
@@ -417,6 +411,57 @@ class ActionYesNo(Action):
             setattr(namespace, self.dest, True)
 
 
+class ActionOperators(Action):
+    """Action to restrict a number range with comparison operators.
+
+    Args:
+        expr (tuple or list of tuples): Pairs of operators (> >= < <= == !=) and reference values, e.g. [('>=', 1),...].
+        join (str): How to combine multiple comparisons, must be 'or' or 'and' (default='and').
+        numtype (type): The value type, either int or float (default=int).
+    """
+    _operators = {operator.gt: '>', operator.ge: '>=', operator.lt: '<', operator.le: '<=', operator.eq: '==', operator.ne: '!='}
+
+    def __init__(self, **kwargs):
+        if 'expr' in kwargs:
+            self._numtype = kwargs['numtype'] if 'numtype' in kwargs else int
+            if self._numtype not in {int, float}:
+                raise Exception('Expected numtype to be either int or float.')
+            self._join = kwargs['join'] if 'join' in kwargs else 'and'
+            if self._join not in {'or', 'and'}:
+                raise Exception("Expected join to be either 'or' or 'and'.")
+            _operators = {v: k for k, v in self._operators.items()}
+            expr = [kwargs['expr']] if isinstance(kwargs['expr'], tuple) else kwargs['expr']
+            if not isinstance(expr, list) or not all([all([len(x)==2, x[0] in _operators, isinstance(x[1], self._numtype)]) for x in expr]):
+                raise Exception('Expected expr to be a list of tuples each with a comparison operator (> >= < <= == !=) and a reference value of type '+self._numtype.__name__+'.')
+            self._expr = [(_operators[x[0]], x[1]) for x in expr]
+        elif not '_expr' in kwargs:
+            raise Exception('Expected expr keyword argument.')
+        else:
+            self._expr = kwargs.pop('_expr')
+            self._join = kwargs.pop('_join')
+            kwargs['type'] = kwargs.pop('_numtype')
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        if len(args) == 0:
+            kwargs['_expr'] = self._expr
+            kwargs['_join'] = self._join
+            kwargs['_numtype'] = self._numtype
+            return ActionOperators(**kwargs)
+        setattr(args[1], self.dest, self._check_type(args[2]))
+
+    def _check_type(self, value):
+        try:
+            value = self.type(value)
+        except:
+            raise ArgumentTypeError('parser key "'+self.dest+'": invalid value, expected type to be '+self._numtype.__name__+' but got as value '+str(value)+'.')
+        check = [op(value, ref) for op, ref in self._expr]
+        if (self._join == 'and' and not all(check)) or (self._join == 'or' and not any(check)):
+            expr = (' '+self._join+' ').join(['v'+self._operators[op]+str(ref) for op, ref in self._expr])
+            raise ArgumentTypeError('parser key "'+self.dest+'": invalid value, for v='+str(value)+' it is false that '+expr+'.')
+        return value
+
+
 class ActionPath(Action):
     """Action to check and store a file path.
 
@@ -425,19 +470,32 @@ class ActionPath(Action):
     """
     def __init__(self, **kwargs):
         if 'mode' in kwargs:
+            Path._check_mode(kwargs['mode'])
             self._mode = kwargs['mode']
         elif not '_mode' in kwargs:
             raise Exception('Expected mode keyword argument.')
         else:
             self._mode = kwargs.pop('_mode')
-            kwargs['type'] = lambda x: x if isinstance(x, Path) else Path(x, mode=self._mode) if isinstance(x, str) else raise_(ValueError)
+            kwargs['type'] = str
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
         if len(args) == 0:
             kwargs['_mode'] = self._mode
             return ActionPath(**kwargs)
-        setattr(args[1], self.dest, Path(args[2], mode=self._mode))
+        setattr(args[1], self.dest, self._check_type(args[2]))
+
+    def _check_type(self, value):
+        try:
+            if isinstance(value, str):
+                value = Path(value, mode=self._mode)
+            elif isinstance(value, Path):
+                value = Path(value(absolute=False), mode=self._mode)
+            else:
+                raise ArgumentTypeError('expected either a string or a Path object, received: value='+str(value)+' type='+str(type(value))+'.')
+        except ArgumentTypeError as ex:
+            raise ArgumentTypeError('parser key "'+self.dest+'": '+str(ex))
+        return value
 
 
 class Path(object):
@@ -457,11 +515,7 @@ class Path(object):
         absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.
     """
     def __init__(self, path, mode='r', cwd=None):
-        if not isinstance(mode, str):
-            raise Exception('Expected mode to be a string.')
-        if len(set(mode)-set('drwx')) > 0:
-            raise Exception('Expected mode to only include [drwx] flags.')
-
+        self._check_mode(mode)
         if cwd is None:
             cwd = os.getcwd()
 
@@ -473,13 +527,13 @@ class Path(object):
         else:
             abs_path = path if os.path.isabs(path) else os.path.join(cwd, path)
 
-        ptype = 'Directory' if 'd' in mode else 'File'
+        ptype = 'directory' if 'd' in mode else 'file'
         if not os.access(abs_path, os.F_OK):
             raise ArgumentTypeError(ptype+' does not exist: '+abs_path)
         if 'd' in mode and not os.path.isdir(abs_path):
-            raise ArgumentTypeError('Path is not a directory: '+abs_path)
+            raise ArgumentTypeError('path is not a directory: '+abs_path)
         if 'd' not in mode and not os.path.isfile(abs_path):
-            raise ArgumentTypeError('Path is not a file: '+abs_path)
+            raise ArgumentTypeError('path is not a file: '+abs_path)
         if 'r' in mode and not os.access(abs_path, os.R_OK):
             raise ArgumentTypeError(ptype+' is not readable: '+abs_path)
         if 'w' in mode and not os.access(abs_path, os.W_OK):
@@ -495,6 +549,13 @@ class Path(object):
 
     def __call__(self, absolute=True):
         return self.abs_path if absolute else self.path
+
+    @staticmethod
+    def _check_mode(mode):
+        if not isinstance(mode, str):
+            raise Exception('Expected mode to be a string.')
+        if len(set(mode)-set('drwx')) > 0:
+            raise Exception('Expected mode to only include [drwx] flags.')
 
 
 def raise_(ex):

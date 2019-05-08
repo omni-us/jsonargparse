@@ -164,9 +164,9 @@ the following would be observed:
     >>> cfg.lev1.opt2
     'from arg 2'
 
-There are also functions :func:`yamlargparse.ArgumentParser.parse_yaml` and
-:func:`yamlargparse.ArgumentParser.parse_yaml_from_string` to only parse a yaml
-file or yaml contained in a string respectively.
+There are also functions :func:`yamlargparse.ArgumentParser.parse_yaml_path` and
+:func:`yamlargparse.ArgumentParser.parse_yaml_string` to only parse a yaml file
+or yaml contained in a string respectively.
 
 
 Parsing paths
@@ -208,5 +208,20 @@ in the yaml file, or the corresponding absolute path:
     >>> cfg.databases.info()
     'YOUR_CWD/app/data/info.db'
 
-Likewise directory can also be parse by including in the mode the 'd' flat, e.g.
-:code:`ActionPath(mode='drw')`.
+Likewise directories can also be parsed by including in the mode the :code:`'d'`
+flag, e.g. :code:`ActionPath(mode='drw')`.
+
+
+Comparison operators
+====================
+
+It is quite common that when parsing a number, its range should be limited. To
+ease these cases the module includes the :class:`.ActionOperators`. Some
+examples of arguments that can be added using this action are the following:
+
+.. code-block:: python
+
+    # Larger than zero
+    parser.add_argument('--op1', action=yamlargparse.ActionOperators(expr=('>', 0)))
+    # Between 0 and 10
+    parser.add_argument('--op2', action=yamlargparse.ActionOperators(expr=[('>=', 0), ('<=', 10)]))

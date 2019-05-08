@@ -156,9 +156,10 @@ arguments, the following would be observed:
    >>> cfg.lev1.opt2
    'from arg 2'
 
-There are also functions "yamlargparse.ArgumentParser.parse_yaml()"
-and "yamlargparse.ArgumentParser.parse_yaml_from_string()" to only
-parse a yaml file or yaml contained in a string respectively.
+There are also functions
+"yamlargparse.ArgumentParser.parse_yaml_path()" and
+"yamlargparse.ArgumentParser.parse_yaml_string()" to only parse a yaml
+file or yaml contained in a string respectively.
 
 
 Parsing paths
@@ -195,8 +196,22 @@ included in the yaml file, or the corresponding absolute path:
    >>> cfg.databases.info()
    'YOUR_CWD/app/data/info.db'
 
-Likewise directory can also be parse by including in the mode the ‘d’
-flat, e.g. "ActionPath(mode='drw')".
+Likewise directories can also be parsed by including in the mode the
+"'d'" flag, e.g. "ActionPath(mode='drw')".
+
+
+Comparison operators
+********************
+
+It is quite common that when parsing a number, its range should be
+limited. To ease these cases the module includes the
+"ActionOperators". Some examples of arguments that can be added using
+this action are the following:
+
+   # Larger than zero
+   parser.add_argument('--op1', action=yamlargparse.ActionOperators(expr=('>', 0)))
+   # Between 0 and 10
+   parser.add_argument('--op2', action=yamlargparse.ActionOperators(expr=[('>=', 0), ('<=', 10)]))
 
 
 API Reference
@@ -230,12 +245,12 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
       Return type:
          SimpleNamespace
 
-   parse_yaml(file_path, env=True, defaults=True, nested=True)
+   parse_yaml_path(yaml_path, env=True, defaults=True, nested=True)
 
       Parses a yaml file given its path.
 
       Parameters:
-         * **file_path** (*str*) – Path to the yaml file to parse.
+         * **yaml_path** (*str*) – Path to the yaml file to parse.
 
          * **env** (*bool*) – Whether to merge with the parsed
            environment.
@@ -252,7 +267,7 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
       Return type:
          SimpleNamespace
 
-   parse_yaml_from_string(yaml_str, env=True, defaults=True, nested=True)
+   parse_yaml_string(yaml_str, env=True, defaults=True, nested=True)
 
       Parses yaml given as a string.
 
@@ -348,10 +363,6 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
          * **skip_none** (*bool*) – Whether to skip checking of
            values that are None.
 
-      Raises:
-         **Exception** – For any part of the configuration object that
-         does not conform.
-
    static merge_config(cfg_from, cfg_to)
 
       Merges the first configuration into the second configuration.
@@ -380,6 +391,23 @@ class yamlargparse.ActionYesNo(**kwargs)
    Bases: "argparse.Action"
 
    Paired action –opt, –no_opt to set True or False respectively.
+
+class yamlargparse.ActionOperators(**kwargs)
+
+   Bases: "argparse.Action"
+
+   Action to restrict a number range with comparison operators.
+
+   Parameters:
+      * **expr** (*tuple** or **list of tuples*) – Pairs of
+        operators (> >= < <= == !=) and reference values, e.g. [(‘>=’,
+        1),…].
+
+      * **join** (*str*) – How to combine multiple comparisons, must
+        be ‘or’ or ‘and’ (default=’and’).
+
+      * **numtype** (*type*) – The value type, either int or float
+        (default=int).
 
 class yamlargparse.ActionPath(**kwargs)
 

@@ -91,6 +91,7 @@
 <li><a class="reference internal" href="#environment-variables">Environment variables</a></li>
 <li><a class="reference internal" href="#yaml-configuration-files">YAML configuration files</a></li>
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
+<li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
 <li><a class="reference internal" href="#module-yamlargparse">API Reference</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
@@ -293,9 +294,9 @@ the following would be observed:</p>
 <span class="go">&#39;from arg 2&#39;</span>
 </pre></div>
 </div>
-<p>There are also functions <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_yaml" title="yamlargparse.ArgumentParser.parse_yaml"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_yaml()</span></code></a> and
-<a class="reference internal" href="#yamlargparse.ArgumentParser.parse_yaml_from_string" title="yamlargparse.ArgumentParser.parse_yaml_from_string"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_yaml_from_string()</span></code></a> to only parse a yaml
-file or yaml contained in a string respectively.</p>
+<p>There are also functions <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_yaml_path" title="yamlargparse.ArgumentParser.parse_yaml_path"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_yaml_path()</span></code></a> and
+<a class="reference internal" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="yamlargparse.ArgumentParser.parse_yaml_string"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_yaml_string()</span></code></a> to only parse a yaml file
+or yaml contained in a string respectively.</p>
 </div>
 <div class="section" id="parsing-paths">
 <h1>Parsing paths<a class="headerlink" href="#parsing-paths" title="Permalink to this headline">¶</a></h1>
@@ -328,8 +329,20 @@ in the yaml file, or the corresponding absolute path:</p>
 <span class="go">&#39;YOUR_CWD/app/data/info.db&#39;</span>
 </pre></div>
 </div>
-<p>Likewise directory can also be parse by including in the mode the ‘d’ flat, e.g.
-<code class="code docutils literal notranslate"><span class="pre">ActionPath(mode='drw')</span></code>.</p>
+<p>Likewise directories can also be parsed by including in the mode the <code class="code docutils literal notranslate"><span class="pre">'d'</span></code>
+flag, e.g. <code class="code docutils literal notranslate"><span class="pre">ActionPath(mode='drw')</span></code>.</p>
+</div>
+<div class="section" id="comparison-operators">
+<h1>Comparison operators<a class="headerlink" href="#comparison-operators" title="Permalink to this headline">¶</a></h1>
+<p>It is quite common that when parsing a number, its range should be limited. To
+ease these cases the module includes the <a class="reference internal" href="#yamlargparse.ActionOperators" title="yamlargparse.ActionOperators"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>. Some
+examples of arguments that can be added using this action are the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Larger than zero</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
+<span class="c1"># Between 0 and 10</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]))</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="module-yamlargparse">
 <span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-yamlargparse" title="Permalink to this headline">¶</a></h1>
@@ -363,13 +376,13 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.parse_yaml">
-<code class="descname">parse_yaml</code><span class="sig-paren">(</span><em>file_path</em>, <em>env=True</em>, <em>defaults=True</em>, <em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml" title="Permalink to this definition">¶</a></dt>
+<dt id="yamlargparse.ArgumentParser.parse_yaml_path">
+<code class="descname">parse_yaml_path</code><span class="sig-paren">(</span><em>yaml_path</em>, <em>env=True</em>, <em>defaults=True</em>, <em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a yaml file given its path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path to the yaml file to parse.</p></li>
+<li><p><strong>yaml_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path to the yaml file to parse.</p></li>
 <li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parsed environment.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
@@ -385,8 +398,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.parse_yaml_from_string">
-<code class="descname">parse_yaml_from_string</code><span class="sig-paren">(</span><em>yaml_str</em>, <em>env=True</em>, <em>defaults=True</em>, <em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_from_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_from_string" title="Permalink to this definition">¶</a></dt>
+<dt id="yamlargparse.ArgumentParser.parse_yaml_string">
+<code class="descname">parse_yaml_string</code><span class="sig-paren">(</span><em>yaml_str</em>, <em>env=True</em>, <em>defaults=True</em>, <em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses yaml given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -488,9 +501,6 @@ are supported. Additionally it accepts:</p>
 <li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip checking of values that are None.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><strong>Exception</strong></a> – For any part of the configuration object that does not conform.</p>
-</dd>
 </dl>
 </dd></dl>
 
@@ -528,6 +538,22 @@ are supported. Additionally it accepts:</p>
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionYesNo</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Paired action –opt, –no_opt to set True or False respectively.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="yamlargparse.ActionOperators">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionOperators</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionOperators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionOperators" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
+<p>Action to restrict a number range with comparison operators.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>expr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)"><em>tuple</em></a><em> or </em><em>list of tuples</em>) – Pairs of operators (&gt; &gt;= &lt; &lt;= == !=) and reference values, e.g. [(‘&gt;=’, 1),…].</p></li>
+<li><p><strong>join</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – How to combine multiple comparisons, must be ‘or’ or ‘and’ (default=’and’).</p></li>
+<li><p><strong>numtype</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.7)"><em>type</em></a>) – The value type, either int or float (default=int).</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="class">
