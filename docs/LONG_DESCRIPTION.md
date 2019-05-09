@@ -200,6 +200,17 @@ Likewise directories can also be parsed by including in the mode the
 "'d'" flag, e.g. "ActionPath(mode='drw')".
 
 
+Parsing with another parser
+***************************
+
+Sometimes an element in a yaml file could be a path to another yaml
+file with a complex structure which should also be parsed. To handle
+these cases there is the "ActionParser" which receives as argument a
+yamlargparse parser object. For example:
+
+   parser.add_argument('--complex.node', action=yamlargparse.ActionParser(parser=node_parser))
+
+
 Comparison operators
 ********************
 
@@ -391,6 +402,17 @@ class yamlargparse.ActionYesNo(**kwargs)
    Bases: "argparse.Action"
 
    Paired action –opt, –no_opt to set True or False respectively.
+
+class yamlargparse.ActionParser(**kwargs)
+
+   Bases: "argparse.Action"
+
+   Action to parse option with a given yamlargparse parser optionally
+   loading from yaml file if string value.
+
+   Parameters:
+      **parser** (*ArgumentParser*) – A yamlargparse parser to parse
+      the option with.
 
 class yamlargparse.ActionOperators(**kwargs)
 

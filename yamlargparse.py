@@ -241,6 +241,8 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
                     continue
                 if k not in cfg_to or not isinstance(v, dict):
                     cfg_to[k] = v
+                elif k in cfg_to and cfg_to[k] is None:
+                    cfg_to[k] = cfg_from[k]
                 else:
                     cfg_to[k] = merge_values(cfg_from[k], cfg_to[k])
             return cfg_to
@@ -409,6 +411,42 @@ class ActionYesNo(Action):
             setattr(namespace, self.dest, False)
         else:
             setattr(namespace, self.dest, True)
+
+
+class ActionParser(Action):
+    """Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value.
+
+    Args:
+        parser (ArgumentParser): A yamlargparse parser to parse the option with.
+    """
+    def __init__(self, **kwargs):
+        if 'parser' in kwargs:
+            self._parser = kwargs['parser']
+            if not isinstance(self._parser, ArgumentParser):
+                raise Exception('Expected parser keyword argument to be a yamlargparse parser.')
+        elif not '_parser' in kwargs:
+            raise Exception('Expected parser keyword argument.')
+        else:
+            self._parser = kwargs.pop('_parser')
+            kwargs['type'] = str
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        if len(args) == 0:
+            kwargs['_parser'] = self._parser
+            return ActionParser(**kwargs)
+        setattr(args[1], self.dest, self._check_type(args[2]))
+
+    def _check_type(self, value):
+        try:
+            if isinstance(value, str):
+                yaml_path = Path(value, mode='r')
+                value = self._parser.parse_yaml_path(yaml_path())
+            else:
+                self._parser.check_config(value, skip_none=True)
+        except ArgumentTypeError as ex:
+            raise ArgumentTypeError(re.sub('^parser key ([^:]+):', 'parser key '+self.dest+'.\\1: ', str(ex)))
+        return value
 
 
 class ActionOperators(Action):

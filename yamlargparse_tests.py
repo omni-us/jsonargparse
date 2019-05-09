@@ -6,7 +6,7 @@ import sys
 import shutil
 import tempfile
 import unittest
-from yamlargparse import ArgumentParser, ActionYesNo, ActionConfigFile, ActionPath, ActionOperators, ArgumentTypeError, ArgumentError
+from yamlargparse import ArgumentParser, ActionYesNo, ActionConfigFile, ActionPath, ActionParser, ActionOperators, ArgumentTypeError, ArgumentError
 
 
 def example_parser():
@@ -157,6 +157,36 @@ class YamlargparseTests(unittest.TestCase):
         self.assertRaises(Exception, lambda: parser.add_argument('--op1', action=ActionPath))
         self.assertRaises(Exception, lambda: parser.add_argument('--op2', action=ActionPath()))
         self.assertRaises(Exception, lambda: parser.add_argument('--op3', action=ActionPath(mode='+')))
+
+        shutil.rmtree(tmpdir)
+
+
+    def test_actionparser(self):
+        """Test the use of ActionParser."""
+        yaml1_str = 'root:\n  child: from single\n'
+        yaml2_str = 'root:\n  example3.yaml\n'
+        yaml3_str = 'child: from example3\n'
+
+        parser2 = ArgumentParser()
+        parser2.add_argument('--child')
+        parser1 = ArgumentParser(prog='app')
+        parser1.add_argument('--root',
+            action=ActionParser(parser=parser2))
+
+        tmpdir = tempfile.mkdtemp(prefix='_yamlargparse_tests_')
+        os.mkdir(os.path.join(tmpdir, 'example'))
+        yaml2_file = os.path.join(tmpdir, 'example2.yaml')
+        yaml3_file = os.path.join(tmpdir, 'example3.yaml')
+        with open(yaml2_file, 'w') as output_file:
+            output_file.write(yaml2_str)
+        with open(yaml3_file, 'w') as output_file:
+            output_file.write(yaml3_str)
+
+        self.assertEqual('from single', parser1.parse_yaml_string(yaml1_str).root.child)
+        self.assertEqual('from example3', parser1.parse_yaml_path(yaml2_file).root.child)
+
+        self.assertRaises(Exception, lambda: parser1.add_argument('--op1', action=ActionParser))
+        self.assertRaises(Exception, lambda: parser1.add_argument('--op2', action=ActionParser()))
 
         shutil.rmtree(tmpdir)
 

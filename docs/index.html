@@ -91,6 +91,7 @@
 <li><a class="reference internal" href="#environment-variables">Environment variables</a></li>
 <li><a class="reference internal" href="#yaml-configuration-files">YAML configuration files</a></li>
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
+<li><a class="reference internal" href="#parsing-with-another-parser">Parsing with another parser</a></li>
 <li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
 <li><a class="reference internal" href="#module-yamlargparse">API Reference</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
@@ -332,6 +333,16 @@ in the yaml file, or the corresponding absolute path:</p>
 <p>Likewise directories can also be parsed by including in the mode the <code class="code docutils literal notranslate"><span class="pre">'d'</span></code>
 flag, e.g. <code class="code docutils literal notranslate"><span class="pre">ActionPath(mode='drw')</span></code>.</p>
 </div>
+<div class="section" id="parsing-with-another-parser">
+<h1>Parsing with another parser<a class="headerlink" href="#parsing-with-another-parser" title="Permalink to this headline">¶</a></h1>
+<p>Sometimes an element in a yaml file could be a path to another yaml file with a
+complex structure which should also be parsed. To handle these cases there is
+the <a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> which receives as argument a yamlargparse parser
+object. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--complex.node&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionParser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">node_parser</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="comparison-operators">
 <h1>Comparison operators<a class="headerlink" href="#comparison-operators" title="Permalink to this headline">¶</a></h1>
 <p>It is quite common that when parsing a number, its range should be limited. To
@@ -538,6 +549,18 @@ are supported. Additionally it accepts:</p>
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionYesNo</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Paired action –opt, –no_opt to set True or False respectively.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="yamlargparse.ActionParser">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionParser</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
+<p>Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>parser</strong> (<a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><em>ArgumentParser</em></a>) – A yamlargparse parser to parse the option with.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="class">

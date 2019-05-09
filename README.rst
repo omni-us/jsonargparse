@@ -212,6 +212,19 @@ Likewise directories can also be parsed by including in the mode the :code:`'d'`
 flag, e.g. :code:`ActionPath(mode='drw')`.
 
 
+Parsing with another parser
+===========================
+
+Sometimes an element in a yaml file could be a path to another yaml file with a
+complex structure which should also be parsed. To handle these cases there is
+the :class:`.ActionParser` which receives as argument a yamlargparse parser
+object. For example:
+
+.. code-block:: python
+
+    parser.add_argument('--complex.node', action=yamlargparse.ActionParser(parser=node_parser))
+
+
 Comparison operators
 ====================
 
