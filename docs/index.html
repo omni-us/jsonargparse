@@ -352,6 +352,9 @@ examples of arguments that can be added using this action are the following:</p>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
 <span class="c1"># Between 0 and 10</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]))</span>
+<span class="c1"># Either larger than zero or &#39;off&#39; string</span>
+<span class="k">def</span> <span class="nf">int_or_off</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;off&#39;</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op3&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="s1">&#39;off&#39;</span><span class="p">)],</span> <span class="n">join</span><span class="o">=</span><span class="s1">&#39;or&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">int_or_off</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -573,7 +576,7 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>expr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)"><em>tuple</em></a><em> or </em><em>list of tuples</em>) – Pairs of operators (&gt; &gt;= &lt; &lt;= == !=) and reference values, e.g. [(‘&gt;=’, 1),…].</p></li>
 <li><p><strong>join</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – How to combine multiple comparisons, must be ‘or’ or ‘and’ (default=’and’).</p></li>
-<li><p><strong>numtype</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.7)"><em>type</em></a>) – The value type, either int or float (default=int).</p></li>
+<li><p><strong>type</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.7)"><em>type</em></a>) – The value type (default=int).</p></li>
 </ul>
 </dd>
 </dl>
@@ -611,17 +614,6 @@ from when the object was created.</p>
 </dl>
 <dl class="simple">
 <dt>Args called:</dt><dd><p>absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="yamlargparse.raise_">
-<code class="descclassname">yamlargparse.</code><code class="descname">raise_</code><span class="sig-paren">(</span><em>ex</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#raise_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.raise_" title="Permalink to this definition">¶</a></dt>
-<dd><p>Raise that works within lambda functions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ex</strong> (<a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><em>Exception</em></a>) – The exception object to raise.</p>
 </dd>
 </dl>
 </dd></dl>

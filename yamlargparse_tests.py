@@ -197,9 +197,12 @@ class YamlargparseTests(unittest.TestCase):
         parser.add_argument('--le0',
             action=ActionOperators(expr=('<', 0)))
         parser.add_argument('--gt1.a.le4',
-            action=ActionOperators(expr=[('>', 1.0), ('<=', 4.0)], join='and', numtype=float))
+            action=ActionOperators(expr=[('>', 1.0), ('<=', 4.0)], join='and', type=float))
         parser.add_argument('--lt5.o.ge10.o.eq7',
-            action=ActionOperators(expr=[('<', 5), ('>=', 10), ('==', 7)], join='or', numtype=int))
+            action=ActionOperators(expr=[('<', 5), ('>=', 10), ('==', 7)], join='or', type=int))
+        def int_or_off(x): return x if x == 'off' else int(x)
+        parser.add_argument('--gt0.o.off',
+            action=ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
 
         self.assertEqual(1.5, parser.parse_args(['--gt1.a.le4', '1.5']).gt1.a.le4)
         self.assertEqual(4.0, parser.parse_args(['--gt1.a.le4', '4.0']).gt1.a.le4)
@@ -221,6 +224,10 @@ class YamlargparseTests(unittest.TestCase):
         self.assertEqual(10, parser.parse_args(['--lt5.o.ge10.o.eq7', '10']).lt5.o.ge10.o.eq7)
         self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '5']))
         self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '8']))
+
+        self.assertEqual(9, parser.parse_args(['--gt0.o.off', '9']).gt0.o.off)
+        self.assertEqual('off', parser.parse_args(['--gt0.o.off', 'off']).gt0.o.off)
+        self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--gt0.o.off', 'on']))
 
         self.assertRaises(Exception, lambda: parser.add_argument('--op1', action=ActionOperators))
         self.assertRaises(Exception, lambda: parser.add_argument('--op2', action=ActionOperators()))

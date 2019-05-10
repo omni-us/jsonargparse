@@ -223,6 +223,9 @@ this action are the following:
    parser.add_argument('--op1', action=yamlargparse.ActionOperators(expr=('>', 0)))
    # Between 0 and 10
    parser.add_argument('--op2', action=yamlargparse.ActionOperators(expr=[('>=', 0), ('<=', 10)]))
+   # Either larger than zero or 'off' string
+   def int_or_off(x): return x if x == 'off' else int(x)
+   parser.add_argument('--op3', action=yamlargparse.ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
 
 
 API Reference
@@ -428,8 +431,7 @@ class yamlargparse.ActionOperators(**kwargs)
       * **join** (*str*) – How to combine multiple comparisons, must
         be ‘or’ or ‘and’ (default=’and’).
 
-      * **numtype** (*type*) – The value type, either int or float
-        (default=int).
+      * **type** (*type*) – The value type (default=int).
 
 class yamlargparse.ActionPath(**kwargs)
 
@@ -465,13 +467,6 @@ class yamlargparse.Path(path, mode='r', cwd=None)
    Args called:
       absolute (bool): If false returns the original path given,
       otherwise the corresponding absolute path.
-
-yamlargparse.raise_(ex)
-
-   Raise that works within lambda functions.
-
-   Parameters:
-      **ex** (*Exception*) – The exception object to raise.
 
 
 License

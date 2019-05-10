@@ -219,7 +219,11 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
                 if isinstance(val, dict):
                     check_values(val, kbase)
                 else:
-                    self._check_value_key(find_action(kbase), val, kbase)
+                    action = find_action(kbase)
+                    if action is not None:
+                        self._check_value_key(action, val, kbase)
+                    elif not skip_none:
+                        raise Exception('no action for key '+key+' to check its value')
 
         check_values(cfg)
 
@@ -271,14 +275,13 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
                         'choices': ', '.join(map(repr, action.choices))}
                 msg = 'invalid choice: %(value)r (choose from %(choices)s)'
                 raise ArgumentTypeError('parser key "'+key+'": '+(msg % args))
+        elif hasattr(action, '_check_type'):
+            value = action._check_type(value)
         elif action.type is not None:
-            if hasattr(action, '_check_type'):
-                value = action._check_type(value)
-            else:
-                try:
-                    value = action.type(value)
-                except TypeError as ex:
-                    raise ArgumentTypeError('parser key "'+key+'": '+str(ex))
+            try:
+                value = action.type(value)
+            except TypeError as ex:
+                raise ArgumentTypeError('parser key "'+key+'": '+str(ex))
         return value
 
 
@@ -303,7 +306,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
                     if kk not in kdict:
                         kdict[kk] = {}
                     elif not isinstance(kdict[kk], dict):
-                        raise Exception('Conflicting namespace base: '+'.'.join(ksplit[:num]))
+                        raise Exception('Conflicting namespace base: '+'.'.join(ksplit[:num+1]))
                     kdict = kdict[kk]
                 if ksplit[-1] in kdict:
                     raise Exception('Conflicting namespace base: '+k)
@@ -395,7 +398,7 @@ class ActionConfigFile(Action):
             setattr(namespace, key, val)
 
 
-class ActionYesNo(Action): 
+class ActionYesNo(Action):
     """Paired action --opt, --no_opt to set True or False respectively."""
     def __init__(self, **kwargs):
         opt_name = kwargs['option_strings'][0]
@@ -403,7 +406,11 @@ class ActionYesNo(Action):
             kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
         kwargs['option_strings'] += [re.sub('^--', '--no_', opt_name)]
         kwargs['nargs'] = 0
-        kwargs['type'] = lambda x: x if isinstance(x, bool) else raise_(ValueError)
+        def boolean(x):
+            if not isinstance(x, bool):
+                raise ValueError('value not boolean: '+str(x))
+            return x
+        kwargs['type'] = boolean
         super().__init__(**kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -421,6 +428,7 @@ class ActionParser(Action):
     """
     def __init__(self, **kwargs):
         if 'parser' in kwargs:
+            _check_unknown_kwargs(kwargs, {'parser'})
             self._parser = kwargs['parser']
             if not isinstance(self._parser, ArgumentParser):
                 raise Exception('Expected parser keyword argument to be a yamlargparse parser.')
@@ -455,45 +463,51 @@ class ActionOperators(Action):
     Args:
         expr (tuple or list of tuples): Pairs of operators (> >= < <= == !=) and reference values, e.g. [('>=', 1),...].
         join (str): How to combine multiple comparisons, must be 'or' or 'and' (default='and').
-        numtype (type): The value type, either int or float (default=int).
+        type (type): The value type (default=int).
     """
     _operators = {operator.gt: '>', operator.ge: '>=', operator.lt: '<', operator.le: '<=', operator.eq: '==', operator.ne: '!='}
 
     def __init__(self, **kwargs):
         if 'expr' in kwargs:
-            self._numtype = kwargs['numtype'] if 'numtype' in kwargs else int
-            if self._numtype not in {int, float}:
-                raise Exception('Expected numtype to be either int or float.')
+            _check_unknown_kwargs(kwargs, {'expr', 'join', 'type'})
+            self._type = kwargs['type'] if 'type' in kwargs else int
             self._join = kwargs['join'] if 'join' in kwargs else 'and'
             if self._join not in {'or', 'and'}:
                 raise Exception("Expected join to be either 'or' or 'and'.")
             _operators = {v: k for k, v in self._operators.items()}
             expr = [kwargs['expr']] if isinstance(kwargs['expr'], tuple) else kwargs['expr']
-            if not isinstance(expr, list) or not all([all([len(x)==2, x[0] in _operators, isinstance(x[1], self._numtype)]) for x in expr]):
-                raise Exception('Expected expr to be a list of tuples each with a comparison operator (> >= < <= == !=) and a reference value of type '+self._numtype.__name__+'.')
+            if not isinstance(expr, list) or not all([all([len(x)==2, x[0] in _operators, x[1] == self._type(x[1])]) for x in expr]):
+                raise Exception('Expected expr to be a list of tuples each with a comparison operator (> >= < <= == !=) and a reference value of type '+self._type.__name__+'.')
             self._expr = [(_operators[x[0]], x[1]) for x in expr]
         elif not '_expr' in kwargs:
             raise Exception('Expected expr keyword argument.')
         else:
             self._expr = kwargs.pop('_expr')
             self._join = kwargs.pop('_join')
-            kwargs['type'] = kwargs.pop('_numtype')
+            self._type = kwargs.pop('_type')
+            if 'type' in kwargs:
+                del kwargs['type']
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
         if len(args) == 0:
             kwargs['_expr'] = self._expr
             kwargs['_join'] = self._join
-            kwargs['_numtype'] = self._numtype
+            kwargs['_type'] = self._type
             return ActionOperators(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
     def _check_type(self, value):
         try:
-            value = self.type(value)
+            value = self._type(value)
         except:
-            raise ArgumentTypeError('parser key "'+self.dest+'": invalid value, expected type to be '+self._numtype.__name__+' but got as value '+str(value)+'.')
-        check = [op(value, ref) for op, ref in self._expr]
+            raise ArgumentTypeError('parser key "'+self.dest+'": invalid value, expected type to be '+self._type.__name__+' but got as value '+str(value)+'.')
+        def test_op(op, value, ref):
+            try:
+                return op(value, ref)
+            except TypeError:
+                return False
+        check = [test_op(op, value, ref) for op, ref in self._expr]
         if (self._join == 'and' and not all(check)) or (self._join == 'or' and not any(check)):
             expr = (' '+self._join+' ').join(['v'+self._operators[op]+str(ref) for op, ref in self._expr])
             raise ArgumentTypeError('parser key "'+self.dest+'": invalid value, for v='+str(value)+' it is false that '+expr+'.')
@@ -508,6 +522,7 @@ class ActionPath(Action):
     """
     def __init__(self, **kwargs):
         if 'mode' in kwargs:
+            _check_unknown_kwargs(kwargs, {'mode'})
             Path._check_mode(kwargs['mode'])
             self._mode = kwargs['mode']
         elif not '_mode' in kwargs:
@@ -596,10 +611,12 @@ class Path(object):
             raise Exception('Expected mode to only include [drwx] flags.')
 
 
-def raise_(ex):
-    """Raise that works within lambda functions.
+def _check_unknown_kwargs(kwargs, keys):
+    """Raises exception if a kwargs has unexpected keys.
 
     Args:
-        ex (Exception): The exception object to raise.
+        kwargs (dict): The keyword arguments to check.
+        keys (set): The expected keys.
     """
-    raise ex
+    if len(set(kwargs.keys())-keys) > 0:
+        raise Exception('Unknown keyword arguments: '+', '.join(set(kwargs.keys())-keys))
