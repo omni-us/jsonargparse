@@ -172,16 +172,23 @@ class YamlargparseTests(unittest.TestCase):
         parser1 = ArgumentParser(prog='app')
         parser1.add_argument('--root',
             action=ActionParser(parser=parser2))
+        parser1.add_argument('--cfg',
+            action=ActionConfigFile)
 
         tmpdir = tempfile.mkdtemp(prefix='_yamlargparse_tests_')
         os.mkdir(os.path.join(tmpdir, 'example'))
+        yaml1_file = os.path.join(tmpdir, 'example1.yaml')
         yaml2_file = os.path.join(tmpdir, 'example2.yaml')
         yaml3_file = os.path.join(tmpdir, 'example3.yaml')
+        with open(yaml1_file, 'w') as output_file:
+            output_file.write(yaml1_str)
         with open(yaml2_file, 'w') as output_file:
             output_file.write(yaml2_str)
         with open(yaml3_file, 'w') as output_file:
             output_file.write(yaml3_str)
 
+        self.assertEqual('from single', parser1.parse_args(['--cfg', yaml1_file]).root.child)
+        self.assertEqual('from example3', parser1.parse_args(['--cfg', yaml2_file]).root.child)
         self.assertEqual('from single', parser1.parse_yaml_string(yaml1_str).root.child)
         self.assertEqual('from example3', parser1.parse_yaml_path(yaml2_file).root.child)
 

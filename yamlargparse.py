@@ -39,6 +39,8 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
         cfg = super().parse_args(*args, **kwargs)
 
+        ActionParser._fix_conflicts(self, cfg)
+
         if not nested:
             return cfg
 
@@ -455,6 +457,15 @@ class ActionParser(Action):
         except ArgumentTypeError as ex:
             raise ArgumentTypeError(re.sub('^parser key ([^:]+):', 'parser key '+self.dest+'.\\1: ', str(ex)))
         return value
+
+    @staticmethod
+    def _fix_conflicts(parser, cfg):
+        cfg_dict = parser._namespace_to_dict(cfg)
+        for action in parser.__dict__['_actions']:
+            if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
+                children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]
+                if len(children) > 0:
+                    delattr(cfg, action.dest)
 
 
 class ActionOperators(Action):
