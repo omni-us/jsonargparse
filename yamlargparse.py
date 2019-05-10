@@ -554,7 +554,7 @@ class ActionPath(Action):
             if isinstance(value, str):
                 value = Path(value, mode=self._mode)
             elif isinstance(value, Path):
-                value = Path(value(absolute=False), mode=self._mode)
+                value = Path(value(absolute=False), mode=self._mode, cwd=value.cwd)
             else:
                 raise ArgumentTypeError('expected either a string or a Path object, received: value='+str(value)+' type='+str(type(value))+'.')
         except ArgumentTypeError as ex:
@@ -607,6 +607,7 @@ class Path(object):
 
         self.path = path
         self.abs_path = abs_path
+        self.cwd = cwd
 
     def __str__(self):
         return self.abs_path
