@@ -194,7 +194,7 @@ included in the yaml file, or the corresponding absolute path:
    >>> cfg.databases.info(absolute=False)
    'data/info.db'
    >>> cfg.databases.info()
-   'YOUR_CWD/app/data/info.db'
+   '/YOUR_CWD/app/data/info.db'
 
 Likewise directories can also be parsed by including in the mode the
 "'d'" flag, e.g. "ActionPath(mode='drw')".
@@ -239,7 +239,7 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
    configuration options from command line arguments, yaml
    configuration files, environment variables and hard-coded defaults.
 
-   parse_args(*args, env=True, nested=True, **kwargs)
+   parse_args(args=None, namespace=None, env: bool = True, nested: bool = True)
 
       Parses command line argument strings.
 
@@ -259,7 +259,7 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
       Return type:
          SimpleNamespace
 
-   parse_yaml_path(yaml_path, env=True, defaults=True, nested=True)
+   parse_yaml_path(yaml_path: str, env: bool = True, defaults: bool = True, nested: bool = True) -> types.SimpleNamespace
 
       Parses a yaml file given its path.
 
@@ -281,7 +281,7 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
       Return type:
          SimpleNamespace
 
-   parse_yaml_string(yaml_str, env=True, defaults=True, nested=True)
+   parse_yaml_string(yaml_str: str, env: bool = True, defaults: bool = True, nested: bool = True) -> types.SimpleNamespace
 
       Parses yaml given as a string.
 
@@ -303,7 +303,7 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
       Return type:
          SimpleNamespace
 
-   dump_yaml(cfg)
+   dump_yaml(cfg: Union[types.SimpleNamespace, dict]) -> str
 
       Generates a yaml string for a configuration object.
 
@@ -317,13 +317,13 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
       Return type:
          str
 
-   parse_env(env=None, defaults=True, nested=True)
+   parse_env(env: Dict[str, str] = None, defaults: bool = True, nested: bool = True) -> types.SimpleNamespace
 
       Parses environment variables.
 
       Parameters:
-         * **env** (*object*) – The environment object to use, if
-           None *os.environ* is used.
+         * **env** (*Dict**[**str**, **str**]*) – The environment
+           object to use, if None *os.environ* is used.
 
          * **defaults** (*bool*) – Whether to merge with the
            parser’s defaults.
@@ -337,7 +337,7 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
       Return type:
          SimpleNamespace
 
-   get_defaults(nested=True)
+   get_defaults(nested: bool = True) -> types.SimpleNamespace
 
       Returns a namespace with all default values.
 
@@ -350,7 +350,7 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
       Return type:
          SimpleNamespace
 
-   add_argument_group(*args, name=None, **kwargs)
+   add_argument_group(*args, name: str = None, **kwargs)
 
       Adds a group to the parser.
 
@@ -365,7 +365,7 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
       Returns:
          The group object.
 
-   check_config(cfg, skip_none=False)
+   check_config(cfg: Union[types.SimpleNamespace, dict], skip_none: bool = False)
 
       Checks that the content of a given configuration object conforms
       with the parser.
@@ -377,7 +377,7 @@ class yamlargparse.ArgumentParser(prog=None, usage=None, description=None, epilo
          * **skip_none** (*bool*) – Whether to skip checking of
            values that are None.
 
-   static merge_config(cfg_from, cfg_to)
+   static merge_config(cfg_from: Union[types.SimpleNamespace, Dict[str, Any]], cfg_to: Union[types.SimpleNamespace, Dict[str, Any]]) -> Union[types.SimpleNamespace, Dict[str, Any]]
 
       Merges the first configuration into the second configuration.
 
@@ -443,17 +443,18 @@ class yamlargparse.ActionPath(**kwargs)
       **mode** (*str*) – The required type and access permissions
       among [drwx] as a keyword argument, e.g. ActionPath(mode=’drw’).
 
-class yamlargparse.Path(path, mode='r', cwd=None)
+class yamlargparse.Path(path, mode: str = 'r', cwd: str = None)
 
    Bases: "object"
 
    Stores a (possibly relative) path and the corresponding absolute
    path.
 
-   When an object is created it is checked that: the path exists,
-   whether it is a file or directory and has the required access
-   permissions. The absolute path of can be obtained without having to
-   remember the working directory from when the object was created.
+   When a Path instance is created it is checked that: the path
+   exists, whether it is a file or directory and whether has the
+   required access permissions. The absolute path can be obtained
+   without having to remember the working directory from when the
+   object was created.
 
    Parameters:
       * **path** (*str*) – The path to check and store.

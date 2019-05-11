@@ -25,6 +25,7 @@ fi
 
 ### Check files that changed ###
 FILES=( $(git status --porcelain | sed -r 's|^ |_|; s|^(.) |\1_|;' | grep -E '^([MRA]|.M)') );
+PYLINT=$(which pylint pylint3 | head -n 1);
 
 check_change_after_staged () {
   [ "${2:1:1}" = "M" ] &&
@@ -37,8 +38,11 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
   check_change_after_staged "${FILES[$n]}" "${FILES[$((n-1))]}";
   case "${FILES[$n]}" in
     *.py )
-      echo "${0##*/}: pylint --errors-only ${FILES[$n]}" 1>&2;
-      pylint --errors-only "${FILES[$n]}";
+      echo "${0##*/}: mypy ${FILES[$n]}" 1>&2;
+      mypy "${FILES[$n]}";
+      [ "$?" != "0" ] && exit 1;
+      echo "${0##*/}: $PYLINT --errors-only ${FILES[$n]}" 1>&2;
+      $PYLINT --errors-only "${FILES[$n]}";
       ;;
     .circleci/config.yml )
       echo "${0##*/}: circleci config validate -c .circleci/config.yml" 1>&2;

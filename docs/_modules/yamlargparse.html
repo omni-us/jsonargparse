@@ -151,22 +151,23 @@
 <span class="kn">import</span> <span class="nn">yaml</span>
 <span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">Action</span><span class="p">,</span> <span class="n">ArgumentError</span><span class="p">,</span> <span class="n">ArgumentTypeError</span><span class="p">,</span> <span class="n">OPTIONAL</span><span class="p">,</span> <span class="n">REMAINDER</span><span class="p">,</span> <span class="n">SUPPRESS</span><span class="p">,</span> <span class="n">PARSER</span><span class="p">,</span> <span class="n">ONE_OR_MORE</span><span class="p">,</span> <span class="n">ZERO_OR_MORE</span>
 <span class="kn">from</span> <span class="nn">types</span> <span class="k">import</span> <span class="n">SimpleNamespace</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Union</span>
 
 
 <span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;1.9.0&#39;</span>
 
 
-<div class="viewcode-block" id="ArgumentParser"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser">[docs]</a><span class="k">class</span> <span class="nc">ArgumentParser</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">):</span> <span class="c1">#pylint: disable=function-redefined</span>
+<div class="viewcode-block" id="ArgumentParser"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser">[docs]</a><span class="k">class</span> <span class="nc">ArgumentParser</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Extension to python&#39;s argparse which simplifies parsing of configuration</span>
 <span class="sd">    options from command line arguments, yaml configuration files, environment</span>
 <span class="sd">    variables and hard-coded defaults.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">groups</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># type: Dict[str, argparse._ArgumentGroup]</span>
 
-<div class="viewcode-block" id="ArgumentParser.parse_args"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_args">[docs]</a>    <span class="k">def</span> <span class="nf">parse_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.parse_args"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_args">[docs]</a>    <span class="k">def</span> <span class="nf">parse_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parses command line argument strings.</span>
 
 <span class="sd">        All the arguments from `argparse.ArgumentParser.parse_args</span>
@@ -181,10 +182,10 @@
 <span class="sd">            SimpleNamespace: An object with all parsed values as nested attributes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="s1">&#39;namespace&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;namespace&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">env</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">namespace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">env</span> <span class="k">else</span> <span class="kc">None</span>
 
-        <span class="n">cfg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">)</span>
 
         <span class="n">ActionParser</span><span class="o">.</span><span class="n">_fix_conflicts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
 
@@ -194,7 +195,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.parse_yaml_path"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_yaml_path">[docs]</a>    <span class="k">def</span> <span class="nf">parse_yaml_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yaml_path</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.parse_yaml_path"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_yaml_path">[docs]</a>    <span class="k">def</span> <span class="nf">parse_yaml_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yaml_path</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Parses a yaml file given its path.</span>
 
 <span class="sd">        Args:</span>
@@ -216,7 +217,7 @@
         <span class="k">return</span> <span class="n">parsed_yaml</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.parse_yaml_string"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_yaml_string">[docs]</a>    <span class="k">def</span> <span class="nf">parse_yaml_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yaml_str</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.parse_yaml_string"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_yaml_string">[docs]</a>    <span class="k">def</span> <span class="nf">parse_yaml_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yaml_str</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Parses yaml given as a string.</span>
 
 <span class="sd">        Args:</span>
@@ -247,7 +248,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.dump_yaml"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.dump_yaml">[docs]</a>    <span class="k">def</span> <span class="nf">dump_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.dump_yaml"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.dump_yaml">[docs]</a>    <span class="k">def</span> <span class="nf">dump_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Generates a yaml string for a configuration object.</span>
 
 <span class="sd">        Args:</span>
@@ -273,11 +274,11 @@
         <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">allow_unicode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.parse_env"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_env">[docs]</a>    <span class="k">def</span> <span class="nf">parse_env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.parse_env"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_env">[docs]</a>    <span class="k">def</span> <span class="nf">parse_env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Parses environment variables.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            env (object): The environment object to use, if None `os.environ` is used.</span>
+<span class="sd">            env (Dict[str, str]): The environment object to use, if None `os.environ` is used.</span>
 <span class="sd">            defaults (bool): Whether to merge with the parser&#39;s defaults.</span>
 <span class="sd">            nested (bool): Whether the namespace should be nested.</span>
 
@@ -285,8 +286,8 @@
 <span class="sd">            SimpleNamespace: An object with all parsed values as attributes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>        
         <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
-        <span class="n">cfg</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># type: Dict[str, Any]</span>
         <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;_actions&#39;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">==</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
                 <span class="k">continue</span>
@@ -299,12 +300,12 @@
             <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">SimpleNamespace</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">defaults</span><span class="p">:</span>
-            <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span> <span class="c1"># type: ignore</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.get_defaults"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.get_defaults">[docs]</a>    <span class="k">def</span> <span class="nf">get_defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.get_defaults"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.get_defaults">[docs]</a>    <span class="k">def</span> <span class="nf">get_defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Returns a namespace with all default values.</span>
 
 <span class="sd">        Args:</span>
@@ -324,7 +325,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.add_argument_group"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.add_argument_group">[docs]</a>    <span class="k">def</span> <span class="nf">add_argument_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.add_argument_group"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.add_argument_group">[docs]</a>    <span class="k">def</span> <span class="nf">add_argument_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds a group to the parser.</span>
 
 <span class="sd">        All the arguments from `argparse.ArgumentParser.add_argument_group</span>
@@ -344,7 +345,7 @@
         <span class="k">return</span> <span class="n">group</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.check_config"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.check_config">[docs]</a>    <span class="k">def</span> <span class="nf">check_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.check_config"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.check_config">[docs]</a>    <span class="k">def</span> <span class="nf">check_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="n">skip_none</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks that the content of a given configuration object conforms with the parser.</span>
 
 <span class="sd">        Args:</span>
@@ -378,7 +379,7 @@
 
 
 <div class="viewcode-block" id="ArgumentParser.merge_config"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.merge_config">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">merge_config</span><span class="p">(</span><span class="n">cfg_from</span><span class="p">,</span> <span class="n">cfg_to</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">merge_config</span><span class="p">(</span><span class="n">cfg_from</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">cfg_to</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;Merges the first configuration into the second configuration.</span>
 
 <span class="sd">        Args:</span>
@@ -408,34 +409,34 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_check_value_key</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_check_value_key</span><span class="p">(</span><span class="n">action</span><span class="p">:</span><span class="n">Action</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span><span class="n">Any</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Checks the value for a given action.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            action (Action): The action used for parsing.</span>
-<span class="sd">            value (object): The value to parse.</span>
+<span class="sd">            value (Any): The value to parse.</span>
 <span class="sd">            key (str): The configuration key.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">action</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;&quot;: received action==None&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&quot;: received action==None&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">choices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">action</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
                 <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
                         <span class="s1">&#39;choices&#39;</span><span class="p">:</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span> <span class="n">action</span><span class="o">.</span><span class="n">choices</span><span class="p">))}</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;invalid choice: </span><span class="si">%(value)r</span><span class="s1"> (choose from </span><span class="si">%(choices)s</span><span class="s1">)&#39;</span>
-                <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="p">(</span><span class="n">msg</span> <span class="o">%</span> <span class="n">args</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="p">(</span><span class="n">msg</span> <span class="o">%</span> <span class="n">args</span><span class="p">))</span>
         <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="s1">&#39;_check_type&#39;</span><span class="p">):</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="c1"># type: ignore</span>
         <span class="k">elif</span> <span class="n">action</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">ArgumentTypeError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">value</span>
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">:</span><span class="n">SimpleNamespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Converts a flat namespace into a nested dictionary.</span>
 
 <span class="sd">        Args:</span>
@@ -464,7 +465,7 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">:</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Converts a nested dictionary into a flat namespace.</span>
 
 <span class="sd">        Args:</span>
@@ -489,7 +490,7 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">:</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Converts a nested dictionary into a nested namespace.</span>
 
 <span class="sd">        Args:</span>
@@ -507,7 +508,7 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_namespace_to_dict</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_namespace_to_dict</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">:</span><span class="n">SimpleNamespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Converts a nested namespace into a nested dictionary.</span>
 
 <span class="sd">        Args:</span>
@@ -712,10 +713,10 @@
 <div class="viewcode-block" id="Path"><a class="viewcode-back" href="../index.html#yamlargparse.Path">[docs]</a><span class="k">class</span> <span class="nc">Path</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Stores a (possibly relative) path and the corresponding absolute path.</span>
 
-<span class="sd">    When an object is created it is checked that: the path exists, whether it is</span>
-<span class="sd">    a file or directory and has the required access permissions. The absolute</span>
-<span class="sd">    path of can be obtained without having to remember the working directory</span>
-<span class="sd">    from when the object was created.</span>
+<span class="sd">    When a Path instance is created it is checked that: the path exists, whether</span>
+<span class="sd">    it is a file or directory and whether has the required access permissions.</span>
+<span class="sd">    The absolute path can be obtained without having to remember the working</span>
+<span class="sd">    directory from when the object was created.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        path (str): The path to check and store.</span>
@@ -725,7 +726,7 @@
 <span class="sd">    Args called:</span>
 <span class="sd">        absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cwd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
@@ -763,14 +764,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span> <span class="k">if</span> <span class="n">absolute</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_check_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_check_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Expected mode to be a string.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span><span class="o">-</span><span class="nb">set</span><span class="p">(</span><span class="s1">&#39;drwx&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Expected mode to only include [drwx] flags.&#39;</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">:</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">keys</span><span class="p">:</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
     <span class="sd">&quot;&quot;&quot;Raises exception if a kwargs has unexpected keys.</span>
 
 <span class="sd">    Args:</span>

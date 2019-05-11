@@ -206,7 +206,7 @@ in the yaml file, or the corresponding absolute path:
     >>> cfg.databases.info(absolute=False)
     'data/info.db'
     >>> cfg.databases.info()
-    'YOUR_CWD/app/data/info.db'
+    '/YOUR_CWD/app/data/info.db'
 
 Likewise directories can also be parsed by including in the mode the :code:`'d'`
 flag, e.g. :code:`ActionPath(mode='drw')`.

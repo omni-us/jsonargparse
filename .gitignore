@@ -2,6 +2,7 @@ __pycache__
 *.pyc
 *.egg-info
 .coverage
+.mypy_cache
 sphinx/_build
 build
 dist

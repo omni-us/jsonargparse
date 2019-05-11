@@ -327,7 +327,7 @@ in the yaml file, or the corresponding absolute path:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">databases</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">absolute</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 <span class="go">&#39;data/info.db&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">databases</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
-<span class="go">&#39;YOUR_CWD/app/data/info.db&#39;</span>
+<span class="go">&#39;/YOUR_CWD/app/data/info.db&#39;</span>
 </pre></div>
 </div>
 <p>Likewise directories can also be parsed by including in the mode the <code class="code docutils literal notranslate"><span class="pre">'d'</span></code>
@@ -369,7 +369,7 @@ options from command line arguments, yaml configuration files, environment
 variables and hard-coded defaults.</p>
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_args">
-<code class="descname">parse_args</code><span class="sig-paren">(</span><em>*args</em>, <em>env=True</em>, <em>nested=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
+<code class="descname">parse_args</code><span class="sig-paren">(</span><em>args=None</em>, <em>namespace=None</em>, <em>env: bool = True</em>, <em>nested: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses command line argument strings.</p>
 <p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args">argparse.ArgumentParser.parse_args</a>
 are supported. Additionally it accepts:</p>
@@ -391,7 +391,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_yaml_path">
-<code class="descname">parse_yaml_path</code><span class="sig-paren">(</span><em>yaml_path</em>, <em>env=True</em>, <em>defaults=True</em>, <em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_path" title="Permalink to this definition">¶</a></dt>
+<code class="descname">parse_yaml_path</code><span class="sig-paren">(</span><em>yaml_path: str</em>, <em>env: bool = True</em>, <em>defaults: bool = True</em>, <em>nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a yaml file given its path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -413,7 +413,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_yaml_string">
-<code class="descname">parse_yaml_string</code><span class="sig-paren">(</span><em>yaml_str</em>, <em>env=True</em>, <em>defaults=True</em>, <em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="Permalink to this definition">¶</a></dt>
+<code class="descname">parse_yaml_string</code><span class="sig-paren">(</span><em>yaml_str: str</em>, <em>env: bool = True</em>, <em>defaults: bool = True</em>, <em>nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses yaml given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -435,7 +435,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.dump_yaml">
-<code class="descname">dump_yaml</code><span class="sig-paren">(</span><em>cfg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dump_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dump_yaml" title="Permalink to this definition">¶</a></dt>
+<code class="descname">dump_yaml</code><span class="sig-paren">(</span><em>cfg: Union[types.SimpleNamespace, dict]</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dump_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dump_yaml" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a yaml string for a configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -452,12 +452,12 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_env">
-<code class="descname">parse_env</code><span class="sig-paren">(</span><em>env=None</em>, <em>defaults=True</em>, <em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
+<code class="descname">parse_env</code><span class="sig-paren">(</span><em>env: Dict[str</em>, <em>str] = None</em>, <em>defaults: bool = True</em>, <em>nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses environment variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a>) – The environment object to use, if None <cite>os.environ</cite> is used.</p></li>
+<li><p><strong>env</strong> (<em>Dict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>]</em>) – The environment object to use, if None <cite>os.environ</cite> is used.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
 </ul>
@@ -473,7 +473,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.get_defaults">
-<code class="descname">get_defaults</code><span class="sig-paren">(</span><em>nested=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.get_defaults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.get_defaults" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_defaults</code><span class="sig-paren">(</span><em>nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.get_defaults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.get_defaults" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a namespace with all default values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -490,7 +490,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.add_argument_group">
-<code class="descname">add_argument_group</code><span class="sig-paren">(</span><em>*args</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.add_argument_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.add_argument_group" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_argument_group</code><span class="sig-paren">(</span><em>*args</em>, <em>name: str = None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.add_argument_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.add_argument_group" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a group to the parser.</p>
 <p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group">argparse.ArgumentParser.add_argument_group</a>
 are supported. Additionally it accepts:</p>
@@ -506,7 +506,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.check_config">
-<code class="descname">check_config</code><span class="sig-paren">(</span><em>cfg</em>, <em>skip_none=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
+<code class="descname">check_config</code><span class="sig-paren">(</span><em>cfg: Union[types.SimpleNamespace, dict], skip_none: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks that the content of a given configuration object conforms with the parser.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -520,7 +520,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="staticmethod">
 <dt id="yamlargparse.ArgumentParser.merge_config">
-<em class="property">static </em><code class="descname">merge_config</code><span class="sig-paren">(</span><em>cfg_from</em>, <em>cfg_to</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">merge_config</code><span class="sig-paren">(</span><em>cfg_from: Union[types.SimpleNamespace, Dict[str, Any]], cfg_to: Union[types.SimpleNamespace, Dict[str, Any]]</em><span class="sig-paren">)</span> &#x2192; Union[types.SimpleNamespace, Dict[str, Any]]<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merges the first configuration into the second configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -596,13 +596,13 @@ are supported. Additionally it accepts:</p>
 
 <dl class="class">
 <dt id="yamlargparse.Path">
-<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">Path</code><span class="sig-paren">(</span><em>path</em>, <em>mode='r'</em>, <em>cwd=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">Path</code><span class="sig-paren">(</span><em>path</em>, <em>mode: str = 'r'</em>, <em>cwd: str = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Stores a (possibly relative) path and the corresponding absolute path.</p>
-<p>When an object is created it is checked that: the path exists, whether it is
-a file or directory and has the required access permissions. The absolute
-path of can be obtained without having to remember the working directory
-from when the object was created.</p>
+<p>When a Path instance is created it is checked that: the path exists, whether
+it is a file or directory and whether has the required access permissions.
+The absolute path can be obtained without having to remember the working
+directory from when the object was created.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">

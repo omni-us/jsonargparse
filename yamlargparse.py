@@ -4,22 +4,23 @@ import re
 import yaml
 import operator
 import argparse
-from argparse import *
+from argparse import Action, ArgumentError, ArgumentTypeError, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE
 from types import SimpleNamespace
+from typing import Any, Dict, Set, Union
 
 
 __version__ = '1.9.0'
 
 
-class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefined
+class ArgumentParser(argparse.ArgumentParser):
     """Extension to python's argparse which simplifies parsing of configuration
     options from command line arguments, yaml configuration files, environment
     variables and hard-coded defaults.
     """
 
-    groups = {}
+    groups = {} # type: Dict[str, argparse._ArgumentGroup]
 
-    def parse_args(self, *args, env=True, nested=True, **kwargs):
+    def parse_args(self, args=None, namespace=None, env:bool=True, nested:bool=True):
         """Parses command line argument strings.
 
         All the arguments from `argparse.ArgumentParser.parse_args
@@ -34,10 +35,10 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             SimpleNamespace: An object with all parsed values as nested attributes.
         """
 
-        if 'namespace' not in kwargs:
-            kwargs['namespace'] = self.parse_env(nested=False) if env else None
+        if namespace is not None:
+            namespace = self.parse_env(nested=False) if env else None
 
-        cfg = super().parse_args(*args, **kwargs)
+        cfg = super().parse_args(args=args, namespace=namespace)
 
         ActionParser._fix_conflicts(self, cfg)
 
@@ -47,7 +48,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return self._dict_to_namespace(self._flat_namespace_to_dict(cfg))
 
 
-    def parse_yaml_path(self, yaml_path, env=True, defaults=True, nested=True):
+    def parse_yaml_path(self, yaml_path:str, env:bool=True, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
         """Parses a yaml file given its path.
 
         Args:
@@ -69,7 +70,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return parsed_yaml
 
 
-    def parse_yaml_string(self, yaml_str, env=True, defaults=True, nested=True):
+    def parse_yaml_string(self, yaml_str:str, env:bool=True, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
         """Parses yaml given as a string.
 
         Args:
@@ -100,7 +101,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return self._dict_to_namespace(cfg)
 
 
-    def dump_yaml(self, cfg):
+    def dump_yaml(self, cfg:Union[SimpleNamespace, dict]) -> str:
         """Generates a yaml string for a configuration object.
 
         Args:
@@ -126,11 +127,11 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
 
 
-    def parse_env(self, env=None, defaults=True, nested=True):
+    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
         """Parses environment variables.
 
         Args:
-            env (object): The environment object to use, if None `os.environ` is used.
+            env (Dict[str, str]): The environment object to use, if None `os.environ` is used.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
 
@@ -138,8 +139,8 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             SimpleNamespace: An object with all parsed values as attributes.
         """        
         if env is None:
-            env = os.environ
-        cfg = {}
+            env = dict(os.environ)
+        cfg = {} # type: Dict[str, Any]
         for action in self.__dict__['_actions']:
             if action.default == '==SUPPRESS==':
                 continue
@@ -152,12 +153,12 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
             cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
 
         if defaults:
-            cfg = self.merge_config(cfg, self.get_defaults(nested=nested))
+            cfg = self.merge_config(cfg, self.get_defaults(nested=nested)) # type: ignore
 
         return self._dict_to_namespace(cfg)
 
 
-    def get_defaults(self, nested=True):
+    def get_defaults(self, nested:bool=True) -> SimpleNamespace:
         """Returns a namespace with all default values.
 
         Args:
@@ -177,7 +178,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return self._dict_to_namespace(cfg)
 
 
-    def add_argument_group(self, *args, name=None, **kwargs):
+    def add_argument_group(self, *args, name:str=None, **kwargs):
         """Adds a group to the parser.
 
         All the arguments from `argparse.ArgumentParser.add_argument_group
@@ -197,7 +198,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
         return group
 
 
-    def check_config(self, cfg, skip_none=False):
+    def check_config(self, cfg:Union[SimpleNamespace, dict], skip_none:bool=False):
         """Checks that the content of a given configuration object conforms with the parser.
 
         Args:
@@ -231,7 +232,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def merge_config(cfg_from, cfg_to):
+    def merge_config(cfg_from:Union[SimpleNamespace, Dict[str, Any]], cfg_to:Union[SimpleNamespace, Dict[str, Any]]) -> Union[SimpleNamespace, Dict[str, Any]]:
         """Merges the first configuration into the second configuration.
 
         Args:
@@ -261,34 +262,34 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def _check_value_key(action, value, key):
+    def _check_value_key(action:Action, value:Any, key:str) -> Any:
         """Checks the value for a given action.
 
         Args:
             action (Action): The action used for parsing.
-            value (object): The value to parse.
+            value (Any): The value to parse.
             key (str): The configuration key.
         """
         if action is None:
-            raise Exception('parser key "'+key+'": received action==None')
+            raise Exception('parser key "'+str(key)+'": received action==None')
         if action.choices is not None:
             if value not in action.choices:
                 args = {'value': value,
                         'choices': ', '.join(map(repr, action.choices))}
                 msg = 'invalid choice: %(value)r (choose from %(choices)s)'
-                raise ArgumentTypeError('parser key "'+key+'": '+(msg % args))
+                raise ArgumentTypeError('parser key "'+str(key)+'": '+(msg % args))
         elif hasattr(action, '_check_type'):
-            value = action._check_type(value)
+            value = action._check_type(value) # type: ignore
         elif action.type is not None:
             try:
                 value = action.type(value)
             except TypeError as ex:
-                raise ArgumentTypeError('parser key "'+key+'": '+str(ex))
+                raise ArgumentTypeError('parser key "'+str(key)+'": '+str(ex))
         return value
 
 
     @staticmethod
-    def _flat_namespace_to_dict(cfg_ns):
+    def _flat_namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
         """Converts a flat namespace into a nested dictionary.
 
         Args:
@@ -317,7 +318,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def _dict_to_flat_namespace(cfg_dict):
+    def _dict_to_flat_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
         """Converts a nested dictionary into a flat namespace.
 
         Args:
@@ -342,7 +343,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def _dict_to_namespace(cfg_dict):
+    def _dict_to_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
         """Converts a nested dictionary into a nested namespace.
 
         Args:
@@ -360,7 +361,7 @@ class ArgumentParser(argparse.ArgumentParser): #pylint: disable=function-redefin
 
 
     @staticmethod
-    def _namespace_to_dict(cfg_ns):
+    def _namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
         """Converts a nested namespace into a nested dictionary.
 
         Args:
@@ -565,10 +566,10 @@ class ActionPath(Action):
 class Path(object):
     """Stores a (possibly relative) path and the corresponding absolute path.
 
-    When an object is created it is checked that: the path exists, whether it is
-    a file or directory and has the required access permissions. The absolute
-    path of can be obtained without having to remember the working directory
-    from when the object was created.
+    When a Path instance is created it is checked that: the path exists, whether
+    it is a file or directory and whether has the required access permissions.
+    The absolute path can be obtained without having to remember the working
+    directory from when the object was created.
 
     Args:
         path (str): The path to check and store.
@@ -578,7 +579,7 @@ class Path(object):
     Args called:
         absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.
     """
-    def __init__(self, path, mode='r', cwd=None):
+    def __init__(self, path, mode:str='r', cwd:str=None):
         self._check_mode(mode)
         if cwd is None:
             cwd = os.getcwd()
@@ -616,14 +617,14 @@ class Path(object):
         return self.abs_path if absolute else self.path
 
     @staticmethod
-    def _check_mode(mode):
+    def _check_mode(mode:str):
         if not isinstance(mode, str):
             raise Exception('Expected mode to be a string.')
         if len(set(mode)-set('drwx')) > 0:
             raise Exception('Expected mode to only include [drwx] flags.')
 
 
-def _check_unknown_kwargs(kwargs, keys):
+def _check_unknown_kwargs(kwargs:Dict[str, Any], keys:Set[str]):
     """Raises exception if a kwargs has unexpected keys.
 
     Args:

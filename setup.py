@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """Setup file for yamlargparse package."""
 
-from setuptools import setup, find_packages, Command
+from setuptools import setup, find_packages, Command # type: ignore
 import subprocess
 from glob import glob
 import re
 
 try:
-    from sphinx.setup_command import BuildDoc
+    from sphinx.setup_command import BuildDoc # type: ignore
 except ImportError:
     BuildDoc = False
     print('warning: sphinx not found, build_sphinx target will not be available.')
@@ -22,7 +22,6 @@ LONG_DESCRIPTION = open('docs/LONG_DESCRIPTION.md').read()
 class CoverageCommand(Command):
     """Custom command to print test coverage report."""
     description = 'print test coverage report'
-    user_options = []
 
     def initialize_options(self):
         """init options"""
@@ -46,9 +45,8 @@ if BuildDoc:
 def get_runtime_requirements():
     """Returns a list of required packages filtered to include only the ones necessary at runtime."""
     with open('requirements.txt') as f:
-        requirements = f.readlines()
-    requirements = [x.strip() for x in requirements]
-    regex = re.compile(r'^coverage|^Sphinx', re.IGNORECASE)
+        requirements = [x.strip() for x in f.readlines()]
+    regex = re.compile(r'^coverage|^pylint|^mypy|^Sphinx', re.IGNORECASE)
     return [x for x in requirements if not regex.match(x)]
 
 

@@ -125,7 +125,7 @@ class YamlargparseTests(unittest.TestCase):
 
     def test_configfile_filepath(self):
         """Test the use of ActionConfigFile and ActionPath."""
-        tmpdir = tempfile.mkdtemp(prefix='_yamlargparse_tests_')
+        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_yamlargparse_tests_'))
         os.mkdir(os.path.join(tmpdir, 'example'))
         rel_yaml_file = os.path.join('..', 'example', 'example.yaml')
         abs_yaml_file = os.path.realpath(os.path.join(tmpdir, 'example', rel_yaml_file))
