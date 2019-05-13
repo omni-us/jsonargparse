@@ -34,7 +34,6 @@ class ArgumentParser(argparse.ArgumentParser):
         Returns:
             SimpleNamespace: An object with all parsed values as nested attributes.
         """
-
         if namespace is not None:
             namespace = self.parse_env(nested=False) if env else None
 
@@ -85,7 +84,7 @@ class ArgumentParser(argparse.ArgumentParser):
         cfg = yaml.safe_load(yaml_str)
 
         cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
-        for action in self.__dict__['_actions']:
+        for action in self._actions:
             if action.dest in cfg:
                 cfg[action.dest] = self._check_value_key(action, cfg[action.dest], action.dest)
 
@@ -116,7 +115,7 @@ class ArgumentParser(argparse.ArgumentParser):
         self.check_config(cfg, skip_none=True)
 
         cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
-        for action in self.__dict__['_actions']:
+        for action in self._actions:
             if isinstance(action, ActionPath):
                 if cfg[action.dest] is not None:
                     cfg[action.dest] = cfg[action.dest](absolute=False)
@@ -141,7 +140,7 @@ class ArgumentParser(argparse.ArgumentParser):
         if env is None:
             env = dict(os.environ)
         cfg = {} # type: Dict[str, Any]
-        for action in self.__dict__['_actions']:
+        for action in self._actions:
             if action.default == '==SUPPRESS==':
                 continue
             env_var = (self.prog+'_' if self.prog else '') + action.dest
@@ -168,7 +167,7 @@ class ArgumentParser(argparse.ArgumentParser):
             SimpleNamespace: An object with all default values as attributes.
         """
         cfg = {}
-        for action in self.__dict__['_actions']:
+        for action in self._actions:
             if len(action.option_strings) > 0 and action.default != '==SUPPRESS==':
                 cfg[action.dest] = action.default
 
@@ -209,7 +208,7 @@ class ArgumentParser(argparse.ArgumentParser):
             cfg = self._namespace_to_dict(cfg)
 
         def find_action(dest):
-            for action in self.__dict__['_actions']:
+            for action in self._actions:
                 if action.dest == dest:
                     return action
             return None
@@ -462,7 +461,7 @@ class ActionParser(Action):
     @staticmethod
     def _fix_conflicts(parser, cfg):
         cfg_dict = parser._namespace_to_dict(cfg)
-        for action in parser.__dict__['_actions']:
+        for action in parser._actions:
             if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
                 children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]
                 if len(children) > 0:
@@ -541,7 +540,6 @@ class ActionPath(Action):
             raise Exception('Expected mode keyword argument.')
         else:
             self._mode = kwargs.pop('_mode')
-            kwargs['type'] = str
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -551,16 +549,21 @@ class ActionPath(Action):
         setattr(args[1], self.dest, self._check_type(args[2]))
 
     def _check_type(self, value):
+        islist = True if isinstance(value, list) else False
+        if not islist:
+            value = [value]
         try:
-            if isinstance(value, str):
-                value = Path(value, mode=self._mode)
-            elif isinstance(value, Path):
-                value = Path(value(absolute=False), mode=self._mode, cwd=value.cwd)
-            else:
-                raise ArgumentTypeError('expected either a string or a Path object, received: value='+str(value)+' type='+str(type(value))+'.')
+            for num, val in enumerate(value):
+                if isinstance(val, str):
+                    val = Path(val, mode=self._mode)
+                elif isinstance(val, Path):
+                    val = Path(val(absolute=False), mode=self._mode, cwd=val.cwd)
+                else:
+                    raise ArgumentTypeError('expected either a string or a Path object, received: value='+str(val)+' type='+str(type(val))+'.')
+                value[num] = val
         except ArgumentTypeError as ex:
             raise ArgumentTypeError('parser key "'+self.dest+'": '+str(ex))
-        return value
+        return value if islist else value[0]
 
 
 class Path(object):

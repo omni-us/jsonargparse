@@ -22,6 +22,7 @@ LONG_DESCRIPTION = open('docs/LONG_DESCRIPTION.md').read()
 class CoverageCommand(Command):
     """Custom command to print test coverage report."""
     description = 'print test coverage report'
+    user_options = [] # type: ignore
 
     def initialize_options(self):
         """init options"""

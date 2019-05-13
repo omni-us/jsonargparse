@@ -139,6 +139,9 @@ class YamlargparseTests(unittest.TestCase):
             action=ActionPath(mode='r'))
         parser.add_argument('--dir',
             action=ActionPath(mode='drw'))
+        parser.add_argument('--files',
+            nargs='+',
+            action=ActionPath(mode='r'))
 
         cfg = parser.parse_args(['--cfg', abs_yaml_file])
         self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))
@@ -153,6 +156,11 @@ class YamlargparseTests(unittest.TestCase):
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
         self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--dir', abs_yaml_file]))
         self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--file', tmpdir]))
+
+        cfg = parser.parse_args(['--files', abs_yaml_file, abs_yaml_file])
+        self.assertTrue(isinstance(cfg.files, list))
+        self.assertEqual(2, len(cfg.files))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.files[-1](absolute=True)))
 
         self.assertRaises(Exception, lambda: parser.add_argument('--op1', action=ActionPath))
         self.assertRaises(Exception, lambda: parser.add_argument('--op2', action=ActionPath()))
