@@ -46,10 +46,18 @@ tagfilter: &tagfilter
 
 workflows:
   version: 2
-  main:
+  build-test:
     jobs:
       - build
       - test:
+          requires:
+            - build
+  build-test-publish:
+    jobs:
+      - build:
+          <<: *tagfilter
+      - test:
+          <<: *tagfilter
           requires:
             - build
       - publish-pypi:
