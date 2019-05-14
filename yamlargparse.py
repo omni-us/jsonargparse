@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, Set, Union
 
 
-__version__ = '1.10.0'
+__version__ = '1.11.0'
 
 
 class ArgumentParser(argparse.ArgumentParser):
