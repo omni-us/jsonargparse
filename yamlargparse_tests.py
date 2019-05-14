@@ -218,6 +218,9 @@ class YamlargparseTests(unittest.TestCase):
         def int_or_off(x): return x if x == 'off' else int(x)
         parser.add_argument('--gt0.o.off',
             action=ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
+        parser.add_argument('--ge0',
+            nargs=3,
+            action=ActionOperators(expr=('>=', 0)))
 
         self.assertEqual(1.5, parser.parse_args(['--gt1.a.le4', '1.5']).gt1.a.le4)
         self.assertEqual(4.0, parser.parse_args(['--gt1.a.le4', '4.0']).gt1.a.le4)
@@ -243,6 +246,8 @@ class YamlargparseTests(unittest.TestCase):
         self.assertEqual(9, parser.parse_args(['--gt0.o.off', '9']).gt0.o.off)
         self.assertEqual('off', parser.parse_args(['--gt0.o.off', 'off']).gt0.o.off)
         self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--gt0.o.off', 'on']))
+
+        self.assertEqual([0, 1, 2], parser.parse_args(['--ge0', '0', '1', '2']).ge0)
 
         self.assertRaises(Exception, lambda: parser.add_argument('--op1', action=ActionOperators))
         self.assertRaises(Exception, lambda: parser.add_argument('--op2', action=ActionOperators()))

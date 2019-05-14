@@ -12,9 +12,12 @@ except ImportError:
     BuildDoc = False
     print('warning: sphinx not found, build_sphinx target will not be available.')
 
-from yamlargparse import __version__
 
 NAME = 'yamlargparse'
+URL = 'https://omni-us.github.io/yamlargparse/'
+LICENSE = 'MIT'
+AUTHOR = 'Mauricio Villegas'
+AUTHOR_EMAIL = 'mauricio@omnius.com'
 DESCRIPTION = 'Parsing of command line options, yaml config files and/or environment variables based on argparse.'
 LONG_DESCRIPTION = open('docs/LONG_DESCRIPTION.md').read()
 
@@ -47,18 +50,21 @@ def get_runtime_requirements():
     """Returns a list of required packages filtered to include only the ones necessary at runtime."""
     with open('requirements.txt') as f:
         requirements = [x.strip() for x in f.readlines()]
-    regex = re.compile(r'^coverage|^pylint|^mypy|^Sphinx', re.IGNORECASE)
+    regex = re.compile('^(coverage|pylint|mypy|sphinx)', re.IGNORECASE)
     return [x for x in requirements if not regex.match(x)]
+
+
+__version__ = __import__(NAME).__version__
 
 
 setup(name=NAME,
       version=__version__,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
-      author='Mauricio Villegas',
-      author_email='mauricio@omnius.com',
-      url='https://omni-us.github.io/yamlargparse/index.html',
-      license='MIT',
+      author=AUTHOR,
+      author_email=AUTHOR_EMAIL,
+      url=URL,
+      license=LICENSE,
       py_modules=[NAME, NAME+'_tests'],
       install_requires=get_runtime_requirements(),
       test_suite=NAME+'_tests',

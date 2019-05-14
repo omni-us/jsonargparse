@@ -502,6 +502,8 @@ class ActionOperators(Action):
 
     def __call__(self, *args, **kwargs):
         if len(args) == 0:
+            if 'nargs' in kwargs and kwargs['nargs'] == 0:
+                raise Exception('invalid nargs='+str(kwargs['nargs'])+' for ActionOperators.')
             kwargs['_expr'] = self._expr
             kwargs['_join'] = self._join
             kwargs['_type'] = self._type
@@ -509,20 +511,27 @@ class ActionOperators(Action):
         setattr(args[1], self.dest, self._check_type(args[2]))
 
     def _check_type(self, value):
-        try:
-            value = self._type(value)
-        except:
-            raise ArgumentTypeError('parser key "'+self.dest+'": invalid value, expected type to be '+self._type.__name__+' but got as value '+str(value)+'.')
-        def test_op(op, value, ref):
+        islist = _is_action_value_list(self)
+        if not islist:
+            value = [value]
+        elif not isinstance(value, list):
+            raise Exception('for ActionOperators with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
+        def test_op(op, val, ref):
             try:
-                return op(value, ref)
+                return op(val, ref)
             except TypeError:
                 return False
-        check = [test_op(op, value, ref) for op, ref in self._expr]
-        if (self._join == 'and' and not all(check)) or (self._join == 'or' and not any(check)):
-            expr = (' '+self._join+' ').join(['v'+self._operators[op]+str(ref) for op, ref in self._expr])
-            raise ArgumentTypeError('parser key "'+self.dest+'": invalid value, for v='+str(value)+' it is false that '+expr+'.')
-        return value
+        for num, val in enumerate(value):
+            try:
+                val = self._type(val)
+            except:
+                raise ArgumentTypeError('parser key "'+self.dest+'": invalid value, expected type to be '+self._type.__name__+' but got as value '+str(val)+'.')
+            check = [test_op(op, val, ref) for op, ref in self._expr]
+            if (self._join == 'and' and not all(check)) or (self._join == 'or' and not any(check)):
+                expr = (' '+self._join+' ').join(['v'+self._operators[op]+str(ref) for op, ref in self._expr])
+                raise ArgumentTypeError('parser key "'+self.dest+'": invalid value, for v='+str(val)+' it is false that '+expr+'.')
+            value[num] = val
+        return value if islist else value[0]
 
 
 class ActionPath(Action):
@@ -544,14 +553,18 @@ class ActionPath(Action):
 
     def __call__(self, *args, **kwargs):
         if len(args) == 0:
+            if 'nargs' in kwargs and kwargs['nargs'] == 0:
+                raise Exception('invalid nargs='+str(kwargs['nargs'])+' for ActionPath.')
             kwargs['_mode'] = self._mode
             return ActionPath(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
     def _check_type(self, value):
-        islist = True if isinstance(value, list) else False
+        islist = _is_action_value_list(self)
         if not islist:
             value = [value]
+        elif not isinstance(value, list):
+            raise Exception('for ActionPath with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
         try:
             for num, val in enumerate(value):
                 if isinstance(val, str):
@@ -570,9 +583,10 @@ class Path(object):
     """Stores a (possibly relative) path and the corresponding absolute path.
 
     When a Path instance is created it is checked that: the path exists, whether
-    it is a file or directory and whether has the required access permissions.
-    The absolute path can be obtained without having to remember the working
-    directory from when the object was created.
+    it is a file or directory and whether has the required access permissions
+    (d=directory, r=readable, w=writeable, x=executable). The absolute path can
+    be obtained without having to remember the working directory from when the
+    object was created.
 
     Args:
         path (str): The path to check and store.
@@ -625,6 +639,12 @@ class Path(object):
             raise Exception('Expected mode to be a string.')
         if len(set(mode)-set('drwx')) > 0:
             raise Exception('Expected mode to only include [drwx] flags.')
+
+
+def _is_action_value_list(action:Action):
+    if action.nargs in {'*', '+'} or isinstance(action.nargs, int):
+      return True
+    return False
 
 
 def _check_unknown_kwargs(kwargs:Dict[str, Any], keys:Set[str]):

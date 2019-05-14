@@ -84,8 +84,8 @@ dot notation in the argument names, you can define a hierarchy of
 nested namespaces. So for example you could do the following:
 
    >>> parser = yamlargparse.ArgumentParser(prog='app')
-   >>> parser.add_argument('--lev1.opt1', type=str, default='from default 1')
-   >>> parser.add_argument('--lev1.opt2', type=str, default='from default 2')
+   >>> parser.add_argument('--lev1.opt1', default='from default 1')
+   >>> parser.add_argument('--lev1.opt2', default='from default 2')
    >>> cfg = parser.get_defaults()
    >>> cfg.lev1.opt1
    'from default 2'
@@ -111,8 +111,8 @@ Then in python the parser would use these variables, unless overridden
 by the command line arguments, that is:
 
    >>> parser = yamlargparse.ArgumentParser(prog='app')
-   >>> parser.add_argument('--lev1.opt1', type=str, default='from default 1')
-   >>> parser.add_argument('--lev1.opt2', type=str, default='from default 2')
+   >>> parser.add_argument('--lev1.opt1', default='from default 1')
+   >>> parser.add_argument('--lev1.opt2', default='from default 2')
    >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1'])
    >>> cfg.lev1.opt1
    'from arg 1'
@@ -147,8 +147,8 @@ Then in python adding a yaml file argument and parsing some example
 arguments, the following would be observed:
 
    >>> parser = yamlargparse.ArgumentParser(prog='app')
-   >>> parser.add_argument('--lev1.opt1', type=str, default='from default 1')
-   >>> parser.add_argument('--lev1.opt2', type=str, default='from default 2')
+   >>> parser.add_argument('--lev1.opt1', default='from default 1')
+   >>> parser.add_argument('--lev1.opt2', default='from default 2')
    >>> parser.add_argument('--cfg', action=yamlargparse.ActionConfigFile)
    >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1', '--cfg', 'example.yaml', '--lev1.opt2', 'from arg 2'])
    >>> cfg.lev1.opt1
@@ -452,9 +452,9 @@ class yamlargparse.Path(path, mode: str = 'r', cwd: str = None)
 
    When a Path instance is created it is checked that: the path
    exists, whether it is a file or directory and whether has the
-   required access permissions. The absolute path can be obtained
-   without having to remember the working directory from when the
-   object was created.
+   required access permissions (d=directory, r=readable, w=writeable,
+   x=executable). The absolute path can be obtained without having to
+   remember the working directory from when the object was created.
 
    Parameters:
       * **path** (*str*) – The path to check and store.

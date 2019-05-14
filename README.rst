@@ -84,8 +84,8 @@ example you could do the following:
 .. code-block:: python
 
     >>> parser = yamlargparse.ArgumentParser(prog='app')
-    >>> parser.add_argument('--lev1.opt1', type=str, default='from default 1')
-    >>> parser.add_argument('--lev1.opt2', type=str, default='from default 2')
+    >>> parser.add_argument('--lev1.opt1', default='from default 1')
+    >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> cfg = parser.get_defaults()
     >>> cfg.lev1.opt1
     'from default 2'
@@ -115,8 +115,8 @@ command line arguments, that is:
 .. code-block:: python
 
     >>> parser = yamlargparse.ArgumentParser(prog='app')
-    >>> parser.add_argument('--lev1.opt1', type=str, default='from default 1')
-    >>> parser.add_argument('--lev1.opt2', type=str, default='from default 2')
+    >>> parser.add_argument('--lev1.opt1', default='from default 1')
+    >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1'])
     >>> cfg.lev1.opt1
     'from arg 1'
@@ -155,8 +155,8 @@ the following would be observed:
 .. code-block:: python
 
     >>> parser = yamlargparse.ArgumentParser(prog='app')
-    >>> parser.add_argument('--lev1.opt1', type=str, default='from default 1')
-    >>> parser.add_argument('--lev1.opt2', type=str, default='from default 2')
+    >>> parser.add_argument('--lev1.opt1', default='from default 1')
+    >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> parser.add_argument('--cfg', action=yamlargparse.ActionConfigFile)
     >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1', '--cfg', 'example.yaml', '--lev1.opt2', 'from arg 2'])
     >>> cfg.lev1.opt1

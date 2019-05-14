@@ -9,7 +9,7 @@ jobs:
       - run:
           name: "Build wheel package"
           command: |
-            sed -i -r '/^(sphinx|coverage)/Id' requirements.txt
+            sed -i -r '/^(coverage|pylint|mypy|Sphinx)/Id' requirements.txt
             pip install --user -r requirements.txt
             ./setup.py bdist_wheel
       - persist_to_workspace:
@@ -48,10 +48,8 @@ workflows:
   version: 2
   main:
     jobs:
-      - build:
-          <<: *tagfilter
+      - build
       - test:
-          <<: *tagfilter
           requires:
             - build
       - publish-pypi:
