@@ -57,7 +57,13 @@ python setup.py test;
 [ "$?" != "0" ] && exit 1;
 
 ### Update documentation ###
-python setup.py build_sphinx --quiet --builder html,text &&
+if [ -z ${BUMPVERSION_NEW_VERSION+x} ]; then
+  TAG=$(git describe --tags | sed 's|^v||; /-/!s|$|+|;');
+  VERSION="$(git rev-parse --abbrev-ref HEAD)/$TAG/$(date -u +%Y.%m.%d)";
+else
+  VERSION="$BUMPVERSION_NEW_VERSION";
+fi
+python setup.py build_sphinx --quiet --builder html,text --version $VERSION --release $VERSION &&
   rm -r docs &&
   mv sphinx/_build/html docs &&
   mv sphinx/_build/text/index.txt docs/LONG_DESCRIPTION.md &&
