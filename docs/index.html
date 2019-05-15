@@ -160,7 +160,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="yamlargparse-python-module">
+  <a class="reference external image-reference" href="https://circleci.com/gh/omni-us/yamlargparse"><img alt="https://circleci.com/gh/omni-us/yamlargparse.svg?style=svg" src="https://circleci.com/gh/omni-us/yamlargparse.svg?style=svg" /></a>
+<a class="reference external image-reference" href="https://badge.fury.io/py/yamlargparse"><img alt="https://badge.fury.io/py/yamlargparse.svg" src="https://badge.fury.io/py/yamlargparse.svg" /></a>
+<div class="section" id="yamlargparse-python-module">
 <h1>yamlargparse python module<a class="headerlink" href="#yamlargparse-python-module" title="Permalink to this headline">¶</a></h1>
 <p>This module is an extension to python’s argparse which simplifies parsing of
 configuration options from command line arguments, yaml configuration files,
@@ -306,7 +308,8 @@ and access permissions, but not necessarily opening the file. Moreover, a file
 path could be included in a yaml file as relative with respect to the yaml
 file’s location. After parsing it should be easy to access the parsed file path
 without having to consider the location of the yaml file. To help in these
-situations yamlargparse includes the <a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> class.</p>
+situations yamlargparse includes the <a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> and the
+<a class="reference internal" href="#yamlargparse.ActionPathList" title="yamlargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> classes.</p>
 <p>For example suppose you have a directory with a configuration file
 <code class="code docutils literal notranslate"><span class="pre">app/config.yaml</span></code> and some data <code class="code docutils literal notranslate"><span class="pre">app/data/info.db</span></code>. The contents of
 the yaml file is the following:</p>
@@ -332,6 +335,17 @@ in the yaml file, or the corresponding absolute path:</p>
 </div>
 <p>Likewise directories can also be parsed by including in the mode the <code class="code docutils literal notranslate"><span class="pre">'d'</span></code>
 flag, e.g. <code class="code docutils literal notranslate"><span class="pre">ActionPath(mode='drw')</span></code>.</p>
+<p>An argument with <a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> can be given for instance
+<code class="code docutils literal notranslate"><span class="pre">nargs='+'</span></code> to parse multiple paths. But it might also be wanted to parse
+a list of paths found in a plain text file or through stdin. For this the
+<a class="reference internal" href="#yamlargparse.ActionPathList" title="yamlargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> is used and as argument either the path to a list is
+given or the special <code class="code docutils literal notranslate"><span class="pre">'-'</span></code> string for reading the list from stdin. For for
+example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionPathList</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="s1">&#39;paths.lst&#39;</span><span class="p">)</span>  <span class="c1"># List with paths</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>          <span class="c1"># List from stdin</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="parsing-with-another-parser">
 <h1>Parsing with another parser<a class="headerlink" href="#parsing-with-another-parser" title="Permalink to this headline">¶</a></h1>
@@ -590,6 +604,26 @@ are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPath(mode=’drw’).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="yamlargparse.ActionPathList">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionPathList</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPathList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPathList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
+<p>Action to check and store a list of file paths read from a plain text file or stream.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The paths in the list if relative should be with respect to the current
+working directory, not with respect to the directory where the list is.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPathList(mode=’r’).</p></li>
+<li><p><strong>rel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Whether relative paths are with respect to current working directory ‘cwd’ or the list’s parent directory ‘list’ (default=’cwd’).</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

@@ -1,3 +1,8 @@
+.. image:: https://circleci.com/gh/omni-us/yamlargparse.svg?style=svg
+    :target: https://circleci.com/gh/omni-us/yamlargparse
+.. image:: https://badge.fury.io/py/yamlargparse.svg
+    :target: https://badge.fury.io/py/yamlargparse
+
 yamlargparse python module
 ==========================
 
@@ -177,7 +182,8 @@ and access permissions, but not necessarily opening the file. Moreover, a file
 path could be included in a yaml file as relative with respect to the yaml
 file's location. After parsing it should be easy to access the parsed file path
 without having to consider the location of the yaml file. To help in these
-situations yamlargparse includes the :class:`.ActionPath` class.
+situations yamlargparse includes the :class:`.ActionPath` and the
+:class:`.ActionPathList` classes.
 
 For example suppose you have a directory with a configuration file
 :code:`app/config.yaml` and some data :code:`app/data/info.db`. The contents of
@@ -210,6 +216,19 @@ in the yaml file, or the corresponding absolute path:
 
 Likewise directories can also be parsed by including in the mode the :code:`'d'`
 flag, e.g. :code:`ActionPath(mode='drw')`.
+
+An argument with :class:`.ActionPath` can be given for instance
+:code:`nargs='+'` to parse multiple paths. But it might also be wanted to parse
+a list of paths found in a plain text file or through stdin. For this the
+:class:`.ActionPathList` is used and as argument either the path to a list is
+given or the special :code:`'-'` string for reading the list from stdin. For for
+example:
+
+.. code-block:: python
+
+    >>> parser.add_argument('--list', action=yamlargparse.ActionPathList(mode='r'))
+    >>> cfg = parser.parse_args(['--list', 'paths.lst')  # List with paths
+    >>> cfg = parser.parse_args(['--list', '-')          # List from stdin
 
 
 Parsing with another parser

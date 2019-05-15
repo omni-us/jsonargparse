@@ -1,3 +1,4 @@
+
 yamlargparse python module
 **************************
 
@@ -171,7 +172,8 @@ file. Moreover, a file path could be included in a yaml file as
 relative with respect to the yaml file’s location. After parsing it
 should be easy to access the parsed file path without having to
 consider the location of the yaml file. To help in these situations
-yamlargparse includes the "ActionPath" class.
+yamlargparse includes the "ActionPath" and the "ActionPathList"
+classes.
 
 For example suppose you have a directory with a configuration file
 "app/config.yaml" and some data "app/data/info.db". The contents of
@@ -198,6 +200,17 @@ included in the yaml file, or the corresponding absolute path:
 
 Likewise directories can also be parsed by including in the mode the
 "'d'" flag, e.g. "ActionPath(mode='drw')".
+
+An argument with "ActionPath" can be given for instance "nargs='+'" to
+parse multiple paths. But it might also be wanted to parse a list of
+paths found in a plain text file or through stdin. For this the
+"ActionPathList" is used and as argument either the path to a list is
+given or the special "'-'" string for reading the list from stdin. For
+for example:
+
+   >>> parser.add_argument('--list', action=yamlargparse.ActionPathList(mode='r'))
+   >>> cfg = parser.parse_args(['--list', 'paths.lst')  # List with paths
+   >>> cfg = parser.parse_args(['--list', '-')          # List from stdin
 
 
 Parsing with another parser
@@ -442,6 +455,26 @@ class yamlargparse.ActionPath(**kwargs)
    Parameters:
       **mode** (*str*) – The required type and access permissions
       among [drwx] as a keyword argument, e.g. ActionPath(mode=’drw’).
+
+class yamlargparse.ActionPathList(**kwargs)
+
+   Bases: "argparse.Action"
+
+   Action to check and store a list of file paths read from a plain
+   text file or stream.
+
+   Note: The paths in the list if relative should be with respect to
+     the current working directory, not with respect to the directory
+     where the list is.
+
+   Parameters:
+      * **mode** (*str*) – The required type and access permissions
+        among [drwx] as a keyword argument, e.g.
+        ActionPathList(mode=’r’).
+
+      * **rel** (*str*) – Whether relative paths are with respect to
+        current working directory ‘cwd’ or the list’s parent directory
+        ‘list’ (default=’cwd’).
 
 class yamlargparse.Path(path, mode: str = 'r', cwd: str = None)
 

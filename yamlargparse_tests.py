@@ -5,8 +5,9 @@ import os
 import sys
 import shutil
 import tempfile
+import pathlib
 import unittest
-from yamlargparse import ArgumentParser, ActionYesNo, ActionConfigFile, ActionPath, ActionParser, ActionOperators, ArgumentTypeError, ArgumentError
+from yamlargparse import *
 
 
 def example_parser():
@@ -165,6 +166,41 @@ class YamlargparseTests(unittest.TestCase):
         self.assertRaises(Exception, lambda: parser.add_argument('--op1', action=ActionPath))
         self.assertRaises(Exception, lambda: parser.add_argument('--op2', action=ActionPath()))
         self.assertRaises(Exception, lambda: parser.add_argument('--op3', action=ActionPath(mode='+')))
+
+        shutil.rmtree(tmpdir)
+
+
+    def test_filepathlist(self):
+        """Test the use of ActionPathList."""
+        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_yamlargparse_tests_'))
+        pathlib.Path(os.path.join(tmpdir, 'file1')).touch()
+        pathlib.Path(os.path.join(tmpdir, 'file2')).touch()
+        pathlib.Path(os.path.join(tmpdir, 'file3')).touch()
+        pathlib.Path(os.path.join(tmpdir, 'file4')).touch()
+        list_file = os.path.join(tmpdir, 'files.lst')
+        with open(list_file, 'w') as output_file:
+            output_file.write('file1\nfile2\nfile3\nfile4\n')
+
+        parser = ArgumentParser(prog='app')
+        parser.add_argument('--list',
+            action=ActionPathList(mode='r', rel='list'))
+        parser.add_argument('--list_cwd',
+            action=ActionPathList(mode='r', rel='cwd'))
+
+        cfg = parser.parse_args(['--list', list_file])
+        self.assertEqual(4, len(cfg.list))
+        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [x(absolute=False) for x in cfg.list])
+
+        cwd = os.getcwd()
+        os.chdir(tmpdir)
+        cfg = parser.parse_args(['--list_cwd', list_file])
+        self.assertEqual(4, len(cfg.list_cwd))
+        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [x(absolute=False) for x in cfg.list_cwd])
+        os.chdir(cwd)
+
+        self.assertRaises(Exception, lambda: parser.add_argument('--op1', action=ActionPathList))
+        self.assertRaises(Exception, lambda: parser.add_argument('--op2', action=ActionPathList(mode='r'), nargs='+'))
+        self.assertRaises(Exception, lambda: parser.add_argument('--op3', action=ActionPathList(mode='r', rel='.')))
 
         shutil.rmtree(tmpdir)
 

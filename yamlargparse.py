@@ -1,6 +1,7 @@
 
 import os
 import re
+import sys
 import yaml
 import operator
 import argparse
@@ -549,6 +550,7 @@ class ActionPath(Action):
             raise Exception('Expected mode keyword argument.')
         else:
             self._mode = kwargs.pop('_mode')
+            kwargs['type'] = str
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -559,8 +561,8 @@ class ActionPath(Action):
             return ActionPath(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
-    def _check_type(self, value):
-        islist = _is_action_value_list(self)
+    def _check_type(self, value, islist=None):
+        islist = _is_action_value_list(self) if islist is None else islist
         if not islist:
             value = [value]
         elif not isinstance(value, list):
@@ -577,6 +579,66 @@ class ActionPath(Action):
         except ArgumentTypeError as ex:
             raise ArgumentTypeError('parser key "'+self.dest+'": '+str(ex))
         return value if islist else value[0]
+
+
+class ActionPathList(Action):
+    """Action to check and store a list of file paths read from a plain text file or stream.
+
+    Note:
+        The paths in the list if relative should be with respect to the current
+        working directory, not with respect to the directory where the list is.
+
+    Args:
+        mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPathList(mode='r').
+        rel (str): Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list' (default='cwd').
+    """
+    def __init__(self, **kwargs):
+        if 'mode' in kwargs:
+            _check_unknown_kwargs(kwargs, {'mode', 'rel'})
+            Path._check_mode(kwargs['mode'])
+            self._mode = kwargs['mode']
+            self._rel = kwargs['rel'] if 'rel' in kwargs else 'cwd'
+            if self._rel not in {'cwd', 'list'}:
+                raise Exception('rel must be either "cwd" or "list", got '+str(self._rel)+'.')
+        elif not '_mode' in kwargs:
+            raise Exception('Expected mode keyword argument.')
+        else:
+            self._mode = kwargs.pop('_mode')
+            self._rel = kwargs.pop('_rel')
+            kwargs['type'] = str
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        if len(args) == 0:
+            if 'nargs' in kwargs:
+                raise Exception('nargs not allowed for ActionPathList.')
+            kwargs['_mode'] = self._mode
+            kwargs['_rel'] = self._rel
+            return ActionPathList(**kwargs)
+        setattr(args[1], self.dest, self._check_type(args[2]))
+
+    def _check_type(self, value):
+        if isinstance(value, str):
+            path_list = value
+            try:
+                with sys.stdin if path_list == '-' else open(path_list, 'r') as f:
+                    value = [x.strip() for x in f.readlines()]
+            except:
+                raise ArgumentTypeError('problems reading path list: '+path_list)
+            cwd = os.getcwd()
+            if self._rel == 'list' and path_list != '-':
+                os.chdir(os.path.abspath(os.path.join(path_list, os.pardir)))
+            try:
+                for num, val in enumerate(value):
+                    try:
+                        value[num] = Path(val, mode=self._mode)
+                    except ArgumentTypeError as ex:
+                        raise ArgumentTypeError('path number '+str(num+1)+' in list '+path_list+', '+str(ex))
+            finally:
+                os.chdir(cwd)
+            return value
+        else:
+            return ActionPath._check_type(self, value, islist=True)
 
 
 class Path(object):
