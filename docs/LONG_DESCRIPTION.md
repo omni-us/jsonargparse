@@ -201,15 +201,15 @@ included in the yaml file, or the corresponding absolute path:
 Likewise directories can also be parsed by including in the mode the
 "'d'" flag, e.g. "ActionPath(mode='drw')".
 
-An argument with "ActionPath" can be given for instance "nargs='+'" to
-parse multiple paths. But it might also be wanted to parse a list of
-paths found in a plain text file or through stdin. For this the
-"ActionPathList" is used and as argument either the path to a list is
-given or the special "'-'" string for reading the list from stdin. For
-for example:
+An argument with "ActionPath" can be given "nargs='+'" to parse
+multiple paths. But it might also be wanted to parse a list of paths
+found in a plain text file or from stdin. For this the
+"ActionPathList" is used and as argument either the path to a file
+listing the paths is given or the special "'-'" string for reading the
+list from stdin. For for example:
 
    >>> parser.add_argument('--list', action=yamlargparse.ActionPathList(mode='r'))
-   >>> cfg = parser.parse_args(['--list', 'paths.lst')  # List with paths
+   >>> cfg = parser.parse_args(['--list', 'paths.lst')  # Text file with paths
    >>> cfg = parser.parse_args(['--list', '-')          # List from stdin
 
 

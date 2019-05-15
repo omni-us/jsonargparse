@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Build wheel package"
+          name: Build wheel package
           command: |
             sed -i -r '/^(coverage|pylint|mypy|Sphinx)/Id' requirements.txt
             pip install --user -r requirements.txt
@@ -22,7 +22,7 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: "Run unit tests"
+          name: Run unit tests
           command: |
             pip install --user ./dist/*.whl
             python -m yamlargparse_tests
@@ -41,27 +41,30 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: "Publish Release on PyPI"
-          command: |
-            twine upload --username "${PYPI_USER}" --password "${PYPI_PASS}" ./dist/*.whl
+          name: Publish Release on PyPI
+          command: twine upload --username "${PYPI_USER}" --password "${PYPI_PASS}" ./dist/*.whl
 
 workflows:
   version: 2
   build-test-publish:
     jobs:
-      - build
-      - test-35:
-          requires: [build]
+      - build: &buildreq
+          filters: &tagfilter
+            tags:
+              only: /^v\d+\.\d+\.\d+$/
+      - test-35: &testreq
+          <<: *buildreq
+          requires:
+            - build
       - test-36:
-          requires: [build]
+          <<: *testreq
       - test-37:
-          requires: [build]
+          <<: *testreq
       - publish-pypi:
           filters:
             branches:
               ignore: /.*/
-            tags:
-              only: /^v\d+\.\d+\.\d+$/
+            <<: *tagfilter
           context: yamlargparse-context
           requires:
             - test-35
