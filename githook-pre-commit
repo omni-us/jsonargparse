@@ -58,8 +58,9 @@ python setup.py test;
 
 ### Update documentation ###
 if [ -z ${BUMPVERSION_NEW_VERSION+x} ]; then
-  TAG=$(git describe --tags | sed 's|^v||; /-/!s|$|+|;');
-  VERSION="$(git rev-parse --abbrev-ref HEAD)/$TAG/$(date -u +%Y.%m.%d)";
+  TAG=$(git describe --tags --abbrev=0);
+  NUM=$(( 1 + $(git rev-list --count $TAG..HEAD) ))"commits";
+  VERSION="$(git rev-parse --abbrev-ref HEAD)/$TAG+$NUM/$(date -u +%Y.%m.%d)";
 else
   VERSION="$BUMPVERSION_NEW_VERSION";
 fi

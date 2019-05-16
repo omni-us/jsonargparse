@@ -2,6 +2,9 @@
     :target: https://circleci.com/gh/omni-us/yamlargparse
 .. image:: https://badge.fury.io/py/yamlargparse.svg
     :target: https://badge.fury.io/py/yamlargparse
+.. image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg
+    :target: https://github.com/omni-us/yamlargparse
+
 
 yamlargparse python module
 ==========================
