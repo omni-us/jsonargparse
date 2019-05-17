@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.13.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.13.0+1commits/2019.05.17 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.13.0
+                master/v1.13.0+1commits/2019.05.17
               </div>
             
           
@@ -165,6 +165,7 @@
 <a class="reference external image-reference" href="https://github.com/omni-us/yamlargparse"><img alt="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
 <div class="section" id="yamlargparse-python-module">
 <h1>yamlargparse python module<a class="headerlink" href="#yamlargparse-python-module" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="https://omni-us.github.io/yamlargparse/">https://omni-us.github.io/yamlargparse/</a></p>
 <p>This module is an extension to python’s argparse which simplifies parsing of
 configuration options from command line arguments, yaml configuration files,
 environment variables and hard-coded defaults.</p>
@@ -182,9 +183,9 @@ alternatives it seemed simpler to create a new module.</p>
 <li><p>Parsing of relative paths within yaml files.</p></li>
 <li><p>Configuration settings are overridden based on the following precedence.</p>
 <ul>
-<li><p><strong>Parsing command line:</strong> command line arguments (might include config file) &gt; environment variables &gt; defaults.</p></li>
-<li><p><strong>Parsing yaml:</strong> config file values &gt; environment variables &gt; defaults.</p></li>
-<li><p><strong>Parsing environment:</strong> environment variables &gt; defaults.</p></li>
+<li><p><strong>Parsing command line:</strong> command line arguments (might include config file) &gt; environment variables &gt; default config file &gt; defaults.</p></li>
+<li><p><strong>Parsing yaml:</strong> config file &gt; environment variables &gt; default config file &gt; defaults.</p></li>
+<li><p><strong>Parsing environment:</strong> environment variables &gt; default config file &gt; defaults.</p></li>
 </ul>
 </li>
 </ul>
@@ -376,11 +377,31 @@ examples of arguments that can be added using this action are the following:</p>
 <span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-yamlargparse" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="yamlargparse.ArgumentParser">
-<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ArgumentParser</code><span class="sig-paren">(</span><em>prog=None</em>, <em>usage=None</em>, <em>description=None</em>, <em>epilog=None</em>, <em>parents=[]</em>, <em>formatter_class=&lt;class 'argparse.HelpFormatter'&gt;</em>, <em>prefix_chars='-'</em>, <em>fromfile_prefix_chars=None</em>, <em>argument_default=None</em>, <em>conflict_handler='error'</em>, <em>add_help=True</em>, <em>allow_abbrev=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ArgumentParser</code><span class="sig-paren">(</span><em>*args</em>, <em>default_config_files: List[str] = []</em>, <em>logger=None</em>, <em>error_handler=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a></p>
 <p>Extension to python’s argparse which simplifies parsing of configuration
 options from command line arguments, yaml configuration files, environment
 variables and hard-coded defaults.</p>
+<p>All the arguments from the constructor of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser">argparse.ArgumentParser</a>
+are supported. Additionally it accepts:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>default_config_files</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>]</em>) – List of strings defining default config file locations. For example: <code class="code docutils literal notranslate"><span class="pre">['~/.config/myapp/*.yaml']</span></code>.</p></li>
+<li><p><strong>logger</strong> (<em>Logger</em>) – Object for logging events.</p></li>
+<li><p><strong>error_handler</strong> (<em>Callable</em>) – Handler for parsing errors (default=None). For same behavior of argparse use <a class="reference internal" href="#yamlargparse.usage_and_exit_error_handler" title="yamlargparse.usage_and_exit_error_handler"><code class="xref py py-func docutils literal notranslate"><span class="pre">usage_and_exit_error_handler()</span></code></a>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.error">
+<code class="descname">error</code><span class="sig-paren">(</span><em>message: string</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a usage message incorporating the message to stderr and
+exits.</p>
+<p>If you override this in a subclass, it should not return – it
+should either exit or raise an exception.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_args">
 <code class="descname">parse_args</code><span class="sig-paren">(</span><em>args=None</em>, <em>namespace=None</em>, <em>env: bool = True</em>, <em>nested: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
@@ -427,7 +448,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_yaml_string">
-<code class="descname">parse_yaml_string</code><span class="sig-paren">(</span><em>yaml_str: str</em>, <em>env: bool = True</em>, <em>defaults: bool = True</em>, <em>nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="Permalink to this definition">¶</a></dt>
+<code class="descname">parse_yaml_string</code><span class="sig-paren">(</span><em>yaml_str: str</em>, <em>env: bool = True</em>, <em>defaults: bool = True</em>, <em>nested: bool = True</em>, <em>log=True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses yaml given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -534,20 +555,20 @@ are supported. Additionally it accepts:</p>
 
 <dl class="staticmethod">
 <dt id="yamlargparse.ArgumentParser.merge_config">
-<em class="property">static </em><code class="descname">merge_config</code><span class="sig-paren">(</span><em>cfg_from: Union[types.SimpleNamespace, Dict[str, Any]], cfg_to: Union[types.SimpleNamespace, Dict[str, Any]]</em><span class="sig-paren">)</span> &#x2192; Union[types.SimpleNamespace, Dict[str, Any]]<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">merge_config</code><span class="sig-paren">(</span><em>cfg_from: types.SimpleNamespace</em>, <em>cfg_to: types.SimpleNamespace</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merges the first configuration into the second configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cfg_from</strong> (<em>SimpleNamespace | dict</em>) – The configuration from which to merge.</p></li>
-<li><p><strong>cfg_to</strong> (<em>SimpleNamespace | dict</em>) – The configuration into which to merge.</p></li>
+<li><p><strong>cfg_from</strong> (<em>SimpleNamespace</em>) – The configuration from which to merge.</p></li>
+<li><p><strong>cfg_to</strong> (<em>SimpleNamespace</em>) – The configuration into which to merge.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The merged configuration with same type as cfg_from.</p>
+<dd class="field-even"><p>The merged configuration.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace | dict</p>
+<dd class="field-odd"><p>SimpleNamespace</p>
 </dd>
 </dl>
 </dd></dl>
@@ -651,6 +672,19 @@ object was created.</p>
 <dt>Args called:</dt><dd><p>absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="exception">
+<dt id="yamlargparse.ParserError">
+<em class="property">exception </em><code class="descclassname">yamlargparse.</code><code class="descname">ParserError</code><a class="reference internal" href="_modules/yamlargparse.html#ParserError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ParserError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Error raised when parsing a value fails.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="yamlargparse.usage_and_exit_error_handler">
+<code class="descclassname">yamlargparse.</code><code class="descname">usage_and_exit_error_handler</code><span class="sig-paren">(</span><em>self</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#usage_and_exit_error_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.usage_and_exit_error_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Error handler with the same behavior as in argparse.</p>
 </dd></dl>
 
 </div>

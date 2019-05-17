@@ -19,24 +19,15 @@ LICENSE = 'MIT'
 AUTHOR = 'Mauricio Villegas'
 AUTHOR_EMAIL = 'mauricio@omnius.com'
 DESCRIPTION = 'Parsing of command line options, yaml config files and/or environment variables based on argparse.'
-LONG_DESCRIPTION = open('docs/LONG_DESCRIPTION.md').read()
+LONG_DESCRIPTION = open('README.rst').read()
 
 
 class CoverageCommand(Command):
-    """Custom command to print test coverage report."""
     description = 'print test coverage report'
     user_options = [] # type: ignore
-
-    def initialize_options(self):
-        """init options"""
-        pass
-
-    def finalize_options(self):
-        """finalize options"""
-        pass
-
+    def initialize_options(self): pass
+    def finalize_options(self): pass
     def run(self):
-        """run commands"""
         subprocess.check_call(['python', '-m', 'coverage', 'run', '--source', NAME, 'setup.py', 'test'])
         subprocess.check_call(['python', '-m', 'coverage', 'report', '-m'])
 
@@ -54,14 +45,11 @@ def get_runtime_requirements():
     return [x for x in requirements if not regex.match(x)]
 
 
-__version__ = __import__(NAME).__version__
-
-
 setup(name=NAME,
-      version=__version__,
+      version=__import__(NAME).__version__,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
-      long_description_content_type='text/markdown',
+      long_description_content_type='text/x-rst',
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
       url=URL,
@@ -73,7 +61,7 @@ setup(name=NAME,
       command_options={
           'build_sphinx': {
               'project': ('setup.py', NAME),
-              'version': ('setup.py', __version__),
-              'release': ('setup.py', __version__),
+              #'version': ('setup.py', 'local'),
+              #'release': ('setup.py', 'local'),
               'build_dir': ('setup.py', 'sphinx/_build'),
               'source_dir': ('setup.py', 'sphinx')}})

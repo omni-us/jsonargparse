@@ -9,6 +9,8 @@
 yamlargparse python module
 ==========================
 
+https://omni-us.github.io/yamlargparse/
+
 This module is an extension to python's argparse which simplifies parsing of
 configuration options from command line arguments, yaml configuration files,
 environment variables and hard-coded defaults.
@@ -35,9 +37,9 @@ Features
 
 - Configuration settings are overridden based on the following precedence.
 
-  - **Parsing command line:** command line arguments (might include config file) > environment variables > defaults.
-  - **Parsing yaml:** config file values > environment variables > defaults.
-  - **Parsing environment:** environment variables > defaults.
+  - **Parsing command line:** command line arguments (might include config file) > environment variables > default config file > defaults.
+  - **Parsing yaml:** config file > environment variables > default config file > defaults.
+  - **Parsing environment:** environment variables > default config file > defaults.
 
 
 Using the module

@@ -70,8 +70,8 @@ class YamlargparseTests(unittest.TestCase):
         self.assertEqual('opt1_arg', parser.parse_args(['--lev1.lev2.opt1', 'opt1_arg']).lev1.lev2.opt1)
         self.assertEqual(9, parser.parse_args(['--nums.val1', '9']).nums.val1)
         self.assertEqual(6.4, parser.parse_args(['--nums.val2', '6.4']).nums.val2)
-        #self.assertRaises(ArgumentError, lambda: parser.parse_args(['--nums.val1', '7.5']))
-        #self.assertRaises(ArgumentError, lambda: parser.parse_args(['--nums.val2', 'str']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val1', '7.5']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val2', 'eight']))
 
 
     def test_yes_no_action(self):
@@ -124,6 +124,24 @@ class YamlargparseTests(unittest.TestCase):
         self.assertTrue(hasattr(cfg, 'nums'))
 
 
+    def test_default_config_files(self):
+        """Test the use of default_config_files."""
+        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_yamlargparse_tests_'))
+        default_config_file = os.path.realpath(os.path.join(tmpdir, 'example.yaml'))
+        with open(default_config_file, 'w') as output_file:
+            output_file.write('op1: from default config file\n')
+
+        parser = ArgumentParser(prog='app', default_config_files=[default_config_file])
+        parser.add_argument('--op1', default='from parser default')
+        parser.add_argument('--op2', default='from parser default')
+
+        cfg = parser.get_defaults()
+        self.assertEqual('from default config file', cfg.op1)
+        self.assertEqual('from parser default', cfg.op2)
+
+        shutil.rmtree(tmpdir)
+
+
     def test_configfile_filepath(self):
         """Test the use of ActionConfigFile and ActionPath."""
         tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_yamlargparse_tests_'))
@@ -150,22 +168,22 @@ class YamlargparseTests(unittest.TestCase):
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=True)))
         self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--cfg', abs_yaml_file+'~']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', abs_yaml_file+'~']))
 
         cfg = parser.parse_args(['--file', abs_yaml_file, '--dir', tmpdir])
         self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--dir', abs_yaml_file]))
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--file', tmpdir]))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--dir', abs_yaml_file]))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--file', tmpdir]))
 
         cfg = parser.parse_args(['--files', abs_yaml_file, abs_yaml_file])
         self.assertTrue(isinstance(cfg.files, list))
         self.assertEqual(2, len(cfg.files))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.files[-1](absolute=True)))
 
-        self.assertRaises(Exception, lambda: parser.add_argument('--op1', action=ActionPath))
-        self.assertRaises(Exception, lambda: parser.add_argument('--op2', action=ActionPath()))
-        self.assertRaises(Exception, lambda: parser.add_argument('--op3', action=ActionPath(mode='+')))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPath))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPath()))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPath(mode='+')))
 
         shutil.rmtree(tmpdir)
 
@@ -198,9 +216,9 @@ class YamlargparseTests(unittest.TestCase):
         self.assertEqual(['file1', 'file2', 'file3', 'file4'], [x(absolute=False) for x in cfg.list_cwd])
         os.chdir(cwd)
 
-        self.assertRaises(Exception, lambda: parser.add_argument('--op1', action=ActionPathList))
-        self.assertRaises(Exception, lambda: parser.add_argument('--op2', action=ActionPathList(mode='r'), nargs='+'))
-        self.assertRaises(Exception, lambda: parser.add_argument('--op3', action=ActionPathList(mode='r', rel='.')))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPathList))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPathList(mode='r'), nargs='+'))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPathList(mode='r', rel='.')))
 
         shutil.rmtree(tmpdir)
 
@@ -236,8 +254,8 @@ class YamlargparseTests(unittest.TestCase):
         self.assertEqual('from single', parser1.parse_yaml_string(yaml1_str).root.child)
         self.assertEqual('from example3', parser1.parse_yaml_path(yaml2_file).root.child)
 
-        self.assertRaises(Exception, lambda: parser1.add_argument('--op1', action=ActionParser))
-        self.assertRaises(Exception, lambda: parser1.add_argument('--op2', action=ActionParser()))
+        self.assertRaises(ValueError, lambda: parser1.add_argument('--op1', action=ActionParser))
+        self.assertRaises(ValueError, lambda: parser1.add_argument('--op2', action=ActionParser()))
 
         shutil.rmtree(tmpdir)
 
@@ -260,34 +278,34 @@ class YamlargparseTests(unittest.TestCase):
 
         self.assertEqual(1.5, parser.parse_args(['--gt1.a.le4', '1.5']).gt1.a.le4)
         self.assertEqual(4.0, parser.parse_args(['--gt1.a.le4', '4.0']).gt1.a.le4)
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--gt1.a.le4', '1.0']))
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--gt1.a.le4', '5.5']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--gt1.a.le4', '1.0']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--gt1.a.le4', '5.5']))
 
         self.assertEqual(1.5, parser.parse_yaml_string('gt1:\n  a:\n    le4: 1.5').gt1.a.le4)
         self.assertEqual(4.0, parser.parse_yaml_string('gt1:\n  a:\n    le4: 4.0').gt1.a.le4)
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_yaml_string('gt1:\n  a:\n    le4: 1.0'))
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_yaml_string('gt1:\n  a:\n    le4: 5.5'))
+        self.assertRaises(ParserError, lambda: parser.parse_yaml_string('gt1:\n  a:\n    le4: 1.0'))
+        self.assertRaises(ParserError, lambda: parser.parse_yaml_string('gt1:\n  a:\n    le4: 5.5'))
 
         self.assertEqual(1.5, parser.parse_env(env={'APP_GT1__A__LE4': '1.5'}).gt1.a.le4)
         self.assertEqual(4.0, parser.parse_env(env={'APP_GT1__A__LE4': '4.0'}).gt1.a.le4)
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_env(env={'APP_GT1__A__LE4': '1.0'}))
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_env(env={'APP_GT1__A__LE4': '5.5'}))
+        self.assertRaises(ParserError, lambda: parser.parse_env(env={'APP_GT1__A__LE4': '1.0'}))
+        self.assertRaises(ParserError, lambda: parser.parse_env(env={'APP_GT1__A__LE4': '5.5'}))
 
         self.assertEqual(2, parser.parse_args(['--lt5.o.ge10.o.eq7', '2']).lt5.o.ge10.o.eq7)
         self.assertEqual(7, parser.parse_args(['--lt5.o.ge10.o.eq7', '7']).lt5.o.ge10.o.eq7)
         self.assertEqual(10, parser.parse_args(['--lt5.o.ge10.o.eq7', '10']).lt5.o.ge10.o.eq7)
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '5']))
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '8']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '5']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '8']))
 
         self.assertEqual(9, parser.parse_args(['--gt0.o.off', '9']).gt0.o.off)
         self.assertEqual('off', parser.parse_args(['--gt0.o.off', 'off']).gt0.o.off)
-        self.assertRaises(ArgumentTypeError, lambda: parser.parse_args(['--gt0.o.off', 'on']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--gt0.o.off', 'on']))
 
         self.assertEqual([0, 1, 2], parser.parse_args(['--ge0', '0', '1', '2']).ge0)
 
-        self.assertRaises(Exception, lambda: parser.add_argument('--op1', action=ActionOperators))
-        self.assertRaises(Exception, lambda: parser.add_argument('--op2', action=ActionOperators()))
-        self.assertRaises(Exception, lambda: parser.add_argument('--op3', action=ActionOperators(expr='<')))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionOperators))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionOperators()))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionOperators(expr='<')))
 
 
 if __name__ == '__main__':

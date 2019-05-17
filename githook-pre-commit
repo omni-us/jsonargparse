@@ -64,11 +64,9 @@ if [ -z ${BUMPVERSION_NEW_VERSION+x} ]; then
 else
   VERSION="$BUMPVERSION_NEW_VERSION";
 fi
-python setup.py build_sphinx --quiet --builder html,text --version $VERSION --release $VERSION &&
+python setup.py build_sphinx --quiet --builder html --version $VERSION --release $VERSION &&
   rm -r docs &&
   mv sphinx/_build/html docs &&
-  mv sphinx/_build/text/index.txt docs/LONG_DESCRIPTION.md &&
-  sed -i '1,/^$/d; /^Indices and tables$/,$d;' docs/LONG_DESCRIPTION.md &&
   touch docs/.nojekyll &&
   git add docs;
 [ "$?" != "0" ] && exit 1;
