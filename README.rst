@@ -109,7 +109,7 @@ follows:
         description='Description for my app.')
 
 
-.. _nested-namespaces-label:
+.. _nested-namespaces:
 
 Nested namespaces
 =================
@@ -138,7 +138,7 @@ In the case of environment variables, the parser checks existing variables whose
 name is of the form :code:`[PROG_][LEV__]*OPT`, that is all in upper case, first
 only if set the name of the program followed by underscore and then the argument
 name replacing dots with two underscores. Using the parser from the
-:ref:`nested-namespaces-label` section above, in your shell you would set the
+:ref:`nested-namespaces` section above, in your shell you would set the
 environment variables as:
 
 .. code-block:: bash
@@ -169,14 +169,14 @@ YAML configuration files
 ========================
 
 An important feature of this module is the parsing of yaml files. The dot
-notation hierarchy of the arguments (see :ref:`nested-namespaces-label`) are
+notation hierarchy of the arguments (see :ref:`nested-namespaces`) are
 used for the expected structure of the yaml files.
 
 When parsing command line arguments, it is possible to add a yaml configuration
 file path argument. The yaml file would be read and parsed in the specific
 position among the command line arguments, so the arguments after would override
 the values from the yaml file. Again using the parser from the
-:ref:`nested-namespaces-label` section above, for example we could have the
+:ref:`nested-namespaces` section above, for example we could have the
 following yaml:
 
 .. code-block:: yaml

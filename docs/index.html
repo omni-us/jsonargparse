@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.14.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.14.0+1commits/2019.05.18 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.14.0
+                master/v1.14.0+1commits/2019.05.18
               </div>
             
           
@@ -249,7 +249,7 @@ follows:</p>
 </div>
 </div>
 <div class="section" id="nested-namespaces">
-<span id="nested-namespaces-label"></span><h1>Nested namespaces<a class="headerlink" href="#nested-namespaces" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Nested namespaces<a class="headerlink" href="#nested-namespaces" title="Permalink to this headline">¶</a></h1>
 <p>A difference with respect to the basic argparse is that it by using dot notation
 in the argument names, you can define a hierarchy of nested namespaces. So for
 example you could do the following:</p>
@@ -271,7 +271,7 @@ In the case of environment variables, the parser checks existing variables whose
 name is of the form <code class="code docutils literal notranslate"><span class="pre">[PROG_][LEV__]*OPT</span></code>, that is all in upper case, first
 only if set the name of the program followed by underscore and then the argument
 name replacing dots with two underscores. Using the parser from the
-<a class="reference internal" href="#nested-namespaces-label"><span class="std std-ref">Nested namespaces</span></a> section above, in your shell you would set the
+<a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a> section above, in your shell you would set the
 environment variables as:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">APP_LEV1__OPT1</span><span class="o">=</span><span class="s1">&#39;from env 1&#39;</span>
 <span class="nb">export</span> <span class="nv">APP_LEV1__OPT2</span><span class="o">=</span><span class="s1">&#39;from env 2&#39;</span>
@@ -296,13 +296,13 @@ there is no command line call involved.</p>
 <div class="section" id="yaml-configuration-files">
 <h1>YAML configuration files<a class="headerlink" href="#yaml-configuration-files" title="Permalink to this headline">¶</a></h1>
 <p>An important feature of this module is the parsing of yaml files. The dot
-notation hierarchy of the arguments (see <a class="reference internal" href="#nested-namespaces-label"><span class="std std-ref">Nested namespaces</span></a>) are
+notation hierarchy of the arguments (see <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a>) are
 used for the expected structure of the yaml files.</p>
 <p>When parsing command line arguments, it is possible to add a yaml configuration
 file path argument. The yaml file would be read and parsed in the specific
 position among the command line arguments, so the arguments after would override
 the values from the yaml file. Again using the parser from the
-<a class="reference internal" href="#nested-namespaces-label"><span class="std std-ref">Nested namespaces</span></a> section above, for example we could have the
+<a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a> section above, for example we could have the
 following yaml:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># File: example.yaml</span>
 <span class="nt">lev1</span><span class="p">:</span>

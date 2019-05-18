@@ -19,7 +19,7 @@ LICENSE = 'MIT'
 AUTHOR = 'Mauricio Villegas'
 AUTHOR_EMAIL = 'mauricio@omnius.com'
 DESCRIPTION = 'Parsing of command line options, yaml config files and/or environment variables based on argparse.'
-LONG_DESCRIPTION = open('README.rst').read()
+LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:', '', open('README.rst').read())
 
 
 class CoverageCommand(Command):
@@ -49,7 +49,6 @@ setup(name=NAME,
       version=__import__(NAME).__version__,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
-      long_description_content_type='text/x-rst',
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
       url=URL,
