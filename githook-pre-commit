@@ -38,9 +38,11 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
   check_change_after_staged "${FILES[$n]}" "${FILES[$((n-1))]}";
   case "${FILES[$n]}" in
     *.py )
-      echo "${0##*/}: mypy ${FILES[$n]}" 1>&2;
-      mypy "${FILES[$n]}";
-      [ "$?" != "0" ] && exit 1;
+      if [ "${FILES[$n]}" != "sphinx/conf.py" ]; then
+        echo "${0##*/}: mypy ${FILES[$n]}" 1>&2;
+        mypy "${FILES[$n]}";
+        [ "$?" != "0" ] && exit 1;
+      fi
       echo "${0##*/}: $PYLINT --errors-only ${FILES[$n]}" 1>&2;
       $PYLINT --errors-only "${FILES[$n]}";
       ;;

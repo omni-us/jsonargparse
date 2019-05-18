@@ -41,7 +41,7 @@ def get_runtime_requirements():
     """Returns a list of required packages filtered to include only the ones necessary at runtime."""
     with open('requirements.txt') as f:
         requirements = [x.strip() for x in f.readlines()]
-    regex = re.compile('^(coverage|pylint|mypy|sphinx)', re.IGNORECASE)
+    regex = re.compile('^(coverage|pylint|mypy|sphinx|autodocsumm)', re.IGNORECASE)
     return [x for x in requirements if not regex.match(x)]
 
 
@@ -61,7 +61,7 @@ setup(name=NAME,
       command_options={
           'build_sphinx': {
               'project': ('setup.py', NAME),
-              #'version': ('setup.py', 'local'),
-              #'release': ('setup.py', 'local'),
+              'version': ('setup.py', 'local build'),
+              'release': ('setup.py', 'local build'),
               'build_dir': ('setup.py', 'sphinx/_build'),
               'source_dir': ('setup.py', 'sphinx')}})

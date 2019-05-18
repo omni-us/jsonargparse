@@ -29,11 +29,16 @@ Features
 
 - Parsers are configured just like with python's argparse, thus it has a gentile learning curve.
 
-- Not exclusively intended for parsing command line arguments. The module has functions to parse environment variables and yaml config files.
+- Not exclusively intended for parsing command line arguments. The main focus is parsing yaml configuration files and not necessarily from a command line tool.
 
 - Support for nested namespaces which makes it possible to parse yaml with non-flat hierarchies.
 
-- Parsing of relative paths within yaml files.
+- Parsing of relative paths within yaml files and path lists.
+
+- Default behavior is not identical to argparse, though it is possible to configure it to be identical. The main differences are:
+
+  - When parsing fails :class:`ParserError` is raised, instead of printing usage and program exit.
+  - To modify the behavior for parsing errors (e.g. print usage) an error handler function can be provided.
 
 - Configuration settings are overridden based on the following precedence.
 
@@ -52,18 +57,18 @@ create a parser object and then add arguments to it. A simple example would be:
 
     import yamlargparse
     parser = yamlargparse.ArgumentParser(
-        prog = 'app',
-        description = 'Description for my app.')
+        prog='app',
+        description='Description for my app.')
 
     parser.add_argument('--opt1',
-        type = int,
-        default = 0,
-        help = 'Help for option 1.')
+        type=int,
+        default=0,
+        help='Help for option 1.')
 
     parser.add_argument('--opt2',
-        type = float,
-        default = 1.0,
-        help = 'Help for option 2.')
+        type=float,
+        default=1.0,
+        help='Help for option 2.')
 
 
 After creating the parser, you can use it to parse command line arguments with
@@ -80,6 +85,28 @@ from above you would observe:
     (0, <class 'int'>)
     >>> cfg.opt2, type(cfg.opt2)
     (2.3, <class 'float'>)
+
+If the parsing fails a :class:`ParserError` is raised, so depending on the use case it
+might be necessary to catch it.
+
+.. code-block:: python
+
+    >>> try:
+    ...     cfg = parser.parse_args(['--opt2', 'four'])
+    ... except yamlargparse.ParserError as ex:
+    ...     print('parser error: '+str(ex))
+    ...
+    parser error: argument --opt2: invalid float value: 'four'
+
+To get the default behavior of argparse the ArgumentParser can be initialized as
+follows:
+
+.. code-block:: python
+
+    parser = yamlargparse.ArgumentParser(
+        prog='app',
+        error_handler=yamlargparse.usage_and_exit_error_handler,
+        description='Description for my app.')
 
 
 .. _nested-namespaces-label:

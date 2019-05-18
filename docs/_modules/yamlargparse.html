@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse &mdash; yamlargparse master/v1.13.0+1commits/2019.05.17 documentation</title>
+  <title>yamlargparse &mdash; yamlargparse master/v1.13.0+2commits/2019.05.18 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v1.13.0+1commits/2019.05.17
+                master/v1.13.0+2commits/2019.05.18
               </div>
             
           
@@ -157,43 +157,39 @@
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">Action</span><span class="p">,</span> <span class="n">OPTIONAL</span><span class="p">,</span> <span class="n">REMAINDER</span><span class="p">,</span> <span class="n">SUPPRESS</span><span class="p">,</span> <span class="n">PARSER</span><span class="p">,</span> <span class="n">ONE_OR_MORE</span><span class="p">,</span> <span class="n">ZERO_OR_MORE</span>
 <span class="kn">from</span> <span class="nn">types</span> <span class="k">import</span> <span class="n">SimpleNamespace</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Union</span>
-<span class="kn">from</span> <span class="nn">contextlib</span> <span class="k">import</span> <span class="n">contextmanager</span><span class="p">,</span><span class="n">redirect_stderr</span><span class="p">,</span><span class="n">redirect_stdout</span>
-<span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">devnull</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="k">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>
 
 
 <span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;1.13.0&#39;</span>
 
 
 <div class="viewcode-block" id="ArgumentParser"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser">[docs]</a><span class="k">class</span> <span class="nc">ArgumentParser</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Extension to python&#39;s argparse which simplifies parsing of configuration</span>
-<span class="sd">    options from command line arguments, yaml configuration files, environment</span>
-<span class="sd">    variables and hard-coded defaults.</span>
-
-<span class="sd">    All the arguments from the constructor of `argparse.ArgumentParser</span>
-<span class="sd">    &lt;https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser&gt;`_</span>
-<span class="sd">    are supported. Additionally it accepts:</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`[&#39;~/.config/myapp/*.yaml&#39;]`.</span>
-<span class="sd">        logger (Logger): Object for logging events.</span>
-<span class="sd">        error_handler (Callable): Handler for parsing errors (default=None). For same behavior of argparse use :func:`usage_and_exit_error_handler`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Parser for command line, yaml files and environment variables.&quot;&quot;&quot;</span>
 
     <span class="n">groups</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># type: Dict[str, argparse._ArgumentGroup]</span>
 
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">default_config_files</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="p">[],</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_handler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.__init__"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">default_config_files</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="p">[],</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_handler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for ArgumentParser instance.</span>
+
+<span class="sd">        All the arguments from the initializer of `argparse.ArgumentParser</span>
+<span class="sd">        &lt;https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser&gt;`_</span>
+<span class="sd">        are supported. Additionally it accepts:</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`[&#39;~/.config/myapp/*.yaml&#39;]`.</span>
+<span class="sd">            logger (logging.Logger): Object for logging events.</span>
+<span class="sd">            error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_config_files</span> <span class="o">=</span> <span class="n">default_config_files</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;null&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">logger</span>
+        <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;null&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logger</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">error_handler</span> <span class="o">=</span> <span class="n">error_handler</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-
-<div class="viewcode-block" id="ArgumentParser.error"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.error">[docs]</a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_handler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">error_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
-        <span class="k">raise</span> <span class="n">ParserError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ArgumentParser.parse_args"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_args">[docs]</a>    <span class="k">def</span> <span class="nf">parse_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -208,24 +204,27 @@
 <span class="sd">            nested (bool): Whether the namespace should be nested.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            SimpleNamespace: An object with all parsed values as nested attributes.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">_suppress_stdout_stderr</span><span class="p">():</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">namespace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">env</span> <span class="k">else</span> <span class="kc">None</span>
+<span class="sd">            types.SimpleNamespace: An object with all parsed values as nested attributes.</span>
 
+<span class="sd">        Raises:</span>
+<span class="sd">            ParserError: If there is a parsing error and error_handler=None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">namespace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">env</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="k">with</span> <span class="n">_suppress_stderr</span><span class="p">():</span>
                 <span class="n">cfg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">)</span>
 
-                <span class="n">ActionParser</span><span class="o">.</span><span class="n">_fix_conflicts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+            <span class="n">ActionParser</span><span class="o">.</span><span class="n">_fix_conflicts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">nested</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">cfg</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">nested</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">cfg</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed arguments&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed arguments&#39;</span><span class="p">)</span>
 
-            <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span></div>
 
@@ -240,7 +239,10 @@
 <span class="sd">            nested (bool): Whether the namespace should be nested.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            SimpleNamespace: An object with all parsed values as nested attributes.</span>
+<span class="sd">            types.SimpleNamespace: An object with all parsed values as nested attributes.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ParserError: If there is a parsing error and error_handler=None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
         <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">yaml_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">pardir</span><span class="p">)))</span>
@@ -265,26 +267,28 @@
 <span class="sd">            nested (bool): Whether the namespace should be nested.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            SimpleNamespace: An object with all parsed values as attributes.</span>
+<span class="sd">            types.SimpleNamespace: An object with all parsed values as attributes.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ParserError: If there is a parsing error and error_handler=None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">_suppress_stdout_stderr</span><span class="p">():</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_yaml</span><span class="p">(</span><span class="n">yaml_str</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_yaml</span><span class="p">(</span><span class="n">yaml_str</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">nested</span><span class="p">:</span>
-                    <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">nested</span><span class="p">:</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
 
-                <span class="k">if</span> <span class="n">env</span><span class="p">:</span>
-                    <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">defaults</span><span class="o">=</span><span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">env</span><span class="p">:</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">defaults</span><span class="o">=</span><span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
 
-                <span class="k">if</span> <span class="n">defaults</span><span class="p">:</span>
-                    <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">defaults</span><span class="p">:</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
 
-                <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed yaml string&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed yaml string&#39;</span><span class="p">)</span>
 
-            <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
 
@@ -294,6 +298,9 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            yaml_str (str): The yaml content.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If there is an invalid value according to the parser.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">yaml_str</span><span class="p">)</span>
         <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
@@ -307,10 +314,13 @@
         <span class="sd">&quot;&quot;&quot;Generates a yaml string for a configuration object.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            cfg (SimpleNamespace | dict): The configuration object to dump.</span>
+<span class="sd">            cfg (types.SimpleNamespace or dict): The configuration object to dump.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: The configuration in yaml format.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If any of the values of cfg is invalid according to the parser.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
@@ -333,36 +343,38 @@
         <span class="sd">&quot;&quot;&quot;Parses environment variables.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            env (Dict[str, str]): The environment object to use, if None `os.environ` is used.</span>
+<span class="sd">            env (dict[str, str]): The environment object to use, if None `os.environ` is used.</span>
 <span class="sd">            defaults (bool): Whether to merge with the parser&#39;s defaults.</span>
 <span class="sd">            nested (bool): Whether the namespace should be nested.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            SimpleNamespace: An object with all parsed values as attributes.</span>
+<span class="sd">            types.SimpleNamespace: An object with all parsed values as attributes.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ParserError: If there is a parsing error and error_handler=None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">_suppress_stdout_stderr</span><span class="p">():</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">env</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
-                <span class="n">cfg</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">==</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
-                        <span class="k">continue</span>
-                    <span class="n">env_var</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prog</span><span class="o">+</span><span class="s1">&#39;_&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>
-                    <span class="n">env_var</span> <span class="o">=</span> <span class="n">env_var</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="n">env_var</span> <span class="ow">in</span> <span class="n">env</span><span class="p">:</span>
-                        <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_value_key</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">env</span><span class="p">[</span><span class="n">env_var</span><span class="p">],</span> <span class="n">env_var</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">env</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">==</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">env_var</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prog</span><span class="o">+</span><span class="s1">&#39;_&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>
+                <span class="n">env_var</span> <span class="o">=</span> <span class="n">env_var</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">env_var</span> <span class="ow">in</span> <span class="n">env</span><span class="p">:</span>
+                    <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_value_key</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">env</span><span class="p">[</span><span class="n">env_var</span><span class="p">],</span> <span class="n">env_var</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">nested</span><span class="p">:</span>
-                    <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">SimpleNamespace</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">nested</span><span class="p">:</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">SimpleNamespace</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">))</span>
 
-                <span class="k">if</span> <span class="n">defaults</span><span class="p">:</span>
-                    <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">defaults</span><span class="p">:</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed environment variables&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed environment variables&#39;</span><span class="p">)</span>
 
-            <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
 
@@ -374,31 +386,33 @@
 <span class="sd">            nested (bool): Whether the namespace should be nested.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            SimpleNamespace: An object with all default values as attributes.</span>
+<span class="sd">            types.SimpleNamespace: An object with all default values as attributes.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ParserError: If there is a parsing error and error_handler=None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">_suppress_stdout_stderr</span><span class="p">():</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">cfg</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">option_strings</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
-                        <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">option_strings</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
+                    <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;loaded default values from parser&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;loaded default values from parser&#39;</span><span class="p">)</span>
 
-                <span class="n">default_config_files</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># type: List[str]</span>
-                <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_config_files</span><span class="p">:</span>
-                    <span class="n">default_config_files</span> <span class="o">+=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">pattern</span><span class="p">))</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">default_config_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">default_config_files</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                        <span class="n">cfg_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_yaml</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
-                    <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed configuration from default path: &#39;</span><span class="o">+</span><span class="n">default_config_files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">default_config_files</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># type: List[str]</span>
+            <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_config_files</span><span class="p">:</span>
+                <span class="n">default_config_files</span> <span class="o">+=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">pattern</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">default_config_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">default_config_files</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">cfg_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_yaml</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed configuration from default path: &#39;</span><span class="o">+</span><span class="n">default_config_files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-                <span class="k">if</span> <span class="n">nested</span><span class="p">:</span>
-                    <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">SimpleNamespace</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">nested</span><span class="p">:</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">SimpleNamespace</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">))</span>
 
-            <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
 
@@ -427,8 +441,12 @@
         <span class="sd">&quot;&quot;&quot;Checks that the content of a given configuration object conforms with the parser.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            cfg (SimpleNamespace | dict): The configuration object to check.</span>
+<span class="sd">            cfg (types.SimpleNamespace or dict): The configuration object to check.</span>
 <span class="sd">            skip_none (bool): Whether to skip checking of values that are None.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If any of the values are not valid.</span>
+<span class="sd">            KeyError: If a key in cfg is not defined in the parser.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
@@ -461,11 +479,11 @@
         <span class="sd">&quot;&quot;&quot;Merges the first configuration into the second configuration.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            cfg_from (SimpleNamespace): The configuration from which to merge.</span>
-<span class="sd">            cfg_to (SimpleNamespace): The configuration into which to merge.</span>
+<span class="sd">            cfg_from (types.SimpleNamespace): The configuration from which to merge.</span>
+<span class="sd">            cfg_to (types.SimpleNamespace): The configuration into which to merge.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            SimpleNamespace: The merged configuration.</span>
+<span class="sd">            types.SimpleNamespace: The merged configuration.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">ArgumentParser</span><span class="o">.</span><span class="n">_dict_to_namespace</span><span class="p">(</span><span class="n">ArgumentParser</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg_from</span><span class="p">,</span> <span class="n">cfg_to</span><span class="p">))</span></div>
 
@@ -475,8 +493,8 @@
         <span class="sd">&quot;&quot;&quot;Merges the first configuration into the second configuration.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            cfg_from (SimpleNamespace | dict): The configuration from which to merge.</span>
-<span class="sd">            cfg_to (SimpleNamespace | dict): The configuration into which to merge.</span>
+<span class="sd">            cfg_from (types.SimpleNamespace or dict): The configuration from which to merge.</span>
+<span class="sd">            cfg_to (types.SimpleNamespace or dict): The configuration into which to merge.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: The merged configuration.</span>
@@ -506,6 +524,9 @@
 <span class="sd">            action (Action): The action used for parsing.</span>
 <span class="sd">            value (Any): The value to parse.</span>
 <span class="sd">            key (str): The configuration key.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If the value is not valid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">action</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&quot;: received action==None&#39;</span><span class="p">)</span>
@@ -514,14 +535,14 @@
                 <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
                         <span class="s1">&#39;choices&#39;</span><span class="p">:</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span> <span class="n">action</span><span class="o">.</span><span class="n">choices</span><span class="p">))}</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;invalid choice: </span><span class="si">%(value)r</span><span class="s1"> (choose from </span><span class="si">%(choices)s</span><span class="s1">)&#39;</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="p">(</span><span class="n">msg</span> <span class="o">%</span> <span class="n">args</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="p">(</span><span class="n">msg</span> <span class="o">%</span> <span class="n">args</span><span class="p">))</span>
         <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="s1">&#39;_check_type&#39;</span><span class="p">):</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="c1"># type: ignore</span>
         <span class="k">elif</span> <span class="n">action</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">value</span>
 
 
@@ -530,7 +551,7 @@
         <span class="sd">&quot;&quot;&quot;Converts a flat namespace into a nested dictionary.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            cfg_ns (SimpleNamespace): The configuration to process.</span>
+<span class="sd">            cfg_ns (types.SimpleNamespace): The configuration to process.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: The nested configuration dictionary.</span>
@@ -562,7 +583,7 @@
 <span class="sd">            cfg_dict (dict): The configuration to process.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            SimpleNamespace: The configuration namespace.</span>
+<span class="sd">            types.SimpleNamespace: The configuration namespace.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cfg_ns</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -587,7 +608,7 @@
 <span class="sd">            cfg_args (dict): The configuration to process.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            SimpleNamespace: The nested configuration namespace.</span>
+<span class="sd">            types.SimpleNamespace: The nested configuration namespace.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">expand_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -602,7 +623,7 @@
         <span class="sd">&quot;&quot;&quot;Converts a nested namespace into a nested dictionary.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            cfg_args (SimpleNamespace): The configuration to process.</span>
+<span class="sd">            cfg_args (types.SimpleNamespace): The configuration to process.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: The nested configuration dictionary.</span>
@@ -613,20 +634,35 @@
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">SimpleNamespace</span><span class="p">):</span>
                     <span class="n">cfg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">expand_namespace</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">cfg</span>
-        <span class="k">return</span> <span class="n">expand_namespace</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">expand_namespace</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ArgumentParser.error"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.error">[docs]</a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Logs error message if a logger is set, calls the error handler and raises a ParserError.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_handler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">redirect_stderr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">error_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ParserError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="ActionConfigFile"><a class="viewcode-back" href="../index.html#yamlargparse.ActionConfigFile">[docs]</a><span class="k">class</span> <span class="nc">ActionConfigFile</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to indicate that an argument is a configuration file.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionConfigFile.__init__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionConfigFile.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for ActionConfigFile instance.&quot;&quot;&quot;</span>
         <span class="n">opt_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">]</span>
         <span class="n">opt_name</span> <span class="o">=</span> <span class="n">opt_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt_name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">opt_name</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;--&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">opt_name</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Config file must be a top level option.&#39;</span><span class="p">)</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionConfigFile.__call__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionConfigFile.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parses the given configuration file and adds all the corresponding keys to the namespace.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If there are problems parsing the configuration file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="p">[])</span>
         <span class="k">try</span><span class="p">:</span>
@@ -635,12 +671,13 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;parser key &quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
         <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_yaml_path</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span></div>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="ActionYesNo"><a class="viewcode-back" href="../index.html#yamlargparse.ActionYesNo">[docs]</a><span class="k">class</span> <span class="nc">ActionYesNo</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Paired action --opt, --no_opt to set True or False respectively.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionYesNo.__init__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionYesNo.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for ActionYesNo instance.&quot;&quot;&quot;</span>
         <span class="n">opt_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="s1">&#39;dest&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^--&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">opt_name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
@@ -651,22 +688,27 @@
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;value not boolean: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">x</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boolean</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionYesNo.__call__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionYesNo.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the corresponding key to True or False depending on the option string used.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">option_string</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;--no_&#39;</span><span class="p">):</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="ActionParser"><a class="viewcode-back" href="../index.html#yamlargparse.ActionParser">[docs]</a><span class="k">class</span> <span class="nc">ActionParser</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value.</span>
+    <span class="sd">&quot;&quot;&quot;Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ActionParser.__init__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionParser.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for ActionParser instance.</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        parser (ArgumentParser): A yamlargparse parser to parse the option with.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="sd">        Args:</span>
+<span class="sd">            parser (ArgumentParser): A yamlargparse parser to parse the option with.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the parser parameter is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;parser&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;parser&#39;</span><span class="p">})</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;parser&#39;</span><span class="p">]</span>
@@ -677,13 +719,18 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_parser&#39;</span><span class="p">)</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
-            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionParser.__call__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionParser.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If the argument is not valid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_parser&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span>
             <span class="k">return</span> <span class="n">ActionParser</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
 
     <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
@@ -707,16 +754,20 @@
 
 
 <div class="viewcode-block" id="ActionOperators"><a class="viewcode-back" href="../index.html#yamlargparse.ActionOperators">[docs]</a><span class="k">class</span> <span class="nc">ActionOperators</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Action to restrict a number range with comparison operators.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        expr (tuple or list of tuples): Pairs of operators (&gt; &gt;= &lt; &lt;= == !=) and reference values, e.g. [(&#39;&gt;=&#39;, 1),...].</span>
-<span class="sd">        join (str): How to combine multiple comparisons, must be &#39;or&#39; or &#39;and&#39; (default=&#39;and&#39;).</span>
-<span class="sd">        type (type): The value type (default=int).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Action to restrict a value with comparison operators.&quot;&quot;&quot;</span>
     <span class="n">_operators</span> <span class="o">=</span> <span class="p">{</span><span class="n">operator</span><span class="o">.</span><span class="n">gt</span><span class="p">:</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">ge</span><span class="p">:</span> <span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">:</span> <span class="s1">&#39;&lt;&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">le</span><span class="p">:</span> <span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">eq</span><span class="p">:</span> <span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">ne</span><span class="p">:</span> <span class="s1">&#39;!=&#39;</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionOperators.__init__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionOperators.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for ActionOperators instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            expr (tuple or list[tuple]): Pairs of operators (&gt; &gt;= &lt; &lt;= == !=) and reference values, e.g. [(&#39;&gt;=&#39;, 1),...].</span>
+<span class="sd">            join (str): How to combine multiple comparisons, must be &#39;or&#39; or &#39;and&#39; (default=&#39;and&#39;).</span>
+<span class="sd">            type (type): The value type (default=int).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any of the parameters (expr, join or type) are invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;expr&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;expr&#39;</span><span class="p">,</span> <span class="s1">&#39;join&#39;</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">})</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;type&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="nb">int</span>
@@ -736,9 +787,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_type&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="s1">&#39;type&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                 <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
-            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionOperators.__call__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionOperators.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If the argument is not valid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="s1">&#39;nargs&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;nargs&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid nargs=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;nargs&#39;</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39; for ActionOperators.&#39;</span><span class="p">)</span>
@@ -746,7 +802,7 @@
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_join&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_join</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type</span>
             <span class="k">return</span> <span class="n">ActionOperators</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
 
     <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">islist</span> <span class="o">=</span> <span class="n">_is_action_value_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -773,12 +829,16 @@
 
 
 <div class="viewcode-block" id="ActionPath"><a class="viewcode-back" href="../index.html#yamlargparse.ActionPath">[docs]</a><span class="k">class</span> <span class="nc">ActionPath</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Action to check and store a file path.</span>
+    <span class="sd">&quot;&quot;&quot;Action to check and store a path.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ActionPath.__init__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionPath.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for ActionPath instance.</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPath(mode=&#39;drw&#39;).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="sd">        Args:</span>
+<span class="sd">            mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPath(mode=&#39;drw&#39;).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the mode parameter is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;mode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;mode&#39;</span><span class="p">})</span>
             <span class="n">Path</span><span class="o">.</span><span class="n">_check_mode</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">])</span>
@@ -788,15 +848,20 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_mode&#39;</span><span class="p">)</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
-            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionPath.__call__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionPath.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parses an argument as a Path and if valid sets the parsed value to the corresponding key.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If the argument is not a valid Path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="s1">&#39;nargs&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;nargs&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid nargs=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;nargs&#39;</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39; for ActionPath.&#39;</span><span class="p">)</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span>
             <span class="k">return</span> <span class="n">ActionPath</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
 
     <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">islist</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">islist</span> <span class="o">=</span> <span class="n">_is_action_value_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="n">islist</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">islist</span>
@@ -819,17 +884,17 @@
 
 
 <div class="viewcode-block" id="ActionPathList"><a class="viewcode-back" href="../index.html#yamlargparse.ActionPathList">[docs]</a><span class="k">class</span> <span class="nc">ActionPathList</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Action to check and store a list of file paths read from a plain text file or stream.</span>
+    <span class="sd">&quot;&quot;&quot;Action to check and store a list of file paths read from a plain text file or stream.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ActionPathList.__init__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionPathList.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for ActionPathList instance.</span>
 
-<span class="sd">    Note:</span>
-<span class="sd">        The paths in the list if relative should be with respect to the current</span>
-<span class="sd">        working directory, not with respect to the directory where the list is.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPathList(mode=&#39;r&#39;).</span>
+<span class="sd">            rel (str): Whether relative paths are with respect to current working directory &#39;cwd&#39; or the list&#39;s parent directory &#39;list&#39; (default=&#39;cwd&#39;).</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPathList(mode=&#39;r&#39;).</span>
-<span class="sd">        rel (str): Whether relative paths are with respect to current working directory &#39;cwd&#39; or the list&#39;s parent directory &#39;list&#39; (default=&#39;cwd&#39;).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any of the parameters (mode or rel) are invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;mode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;mode&#39;</span><span class="p">,</span> <span class="s1">&#39;rel&#39;</span><span class="p">})</span>
             <span class="n">Path</span><span class="o">.</span><span class="n">_check_mode</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">])</span>
@@ -843,16 +908,21 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_mode&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_rel</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_rel&#39;</span><span class="p">)</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
-            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionPathList.__call__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionPathList.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parses an argument as a PathList and if valid sets the parsed value to the corresponding key.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If the argument is not a valid PathList.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="s1">&#39;nargs&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;nargs not allowed for ActionPathList.&#39;</span><span class="p">)</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_rel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rel</span>
             <span class="k">return</span> <span class="n">ActionPathList</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
 
     <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -886,16 +956,19 @@
 <span class="sd">    (d=directory, r=readable, w=writeable, x=executable). The absolute path can</span>
 <span class="sd">    be obtained without having to remember the working directory from when the</span>
 <span class="sd">    object was created.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        path (str): The path to check and store.</span>
-<span class="sd">        mode (str): The required type and access permissions among [drwx].</span>
-<span class="sd">        cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.</span>
-
-<span class="sd">    Args called:</span>
-<span class="sd">        absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Path.__init__"><a class="viewcode-back" href="../index.html#yamlargparse.Path.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for Path instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): The path to check and store.</span>
+<span class="sd">            mode (str): The required type and access permissions among [drwx].</span>
+<span class="sd">            cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the provided mode is invalid.</span>
+<span class="sd">            TypeError: If the path does not exist or does not agree with the mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cwd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
@@ -924,13 +997,18 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span> <span class="o">=</span> <span class="n">abs_path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cwd</span> <span class="o">=</span> <span class="n">cwd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cwd</span> <span class="o">=</span> <span class="n">cwd</span></div>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span> <span class="k">if</span> <span class="n">absolute</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
+<div class="viewcode-block" id="Path.__call__"><a class="viewcode-back" href="../index.html#yamlargparse.Path.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the path as a string.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span> <span class="k">if</span> <span class="n">absolute</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span></div>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_check_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
@@ -946,7 +1024,12 @@
 
 
 <div class="viewcode-block" id="usage_and_exit_error_handler"><a class="viewcode-back" href="../index.html#yamlargparse.usage_and_exit_error_handler">[docs]</a><span class="k">def</span> <span class="nf">usage_and_exit_error_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Error handler with the same behavior as in argparse.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Error handler to get the same behavior as in argparse.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        self (ArgumentParser): The ArgumentParser object.</span>
+<span class="sd">        message (str): The message describing the error being handled.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">print_usage</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;prog&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">message</span><span class="p">}</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%(prog)s</span><span class="s1">: error: </span><span class="si">%(message)s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">args</span><span class="p">)</span>
@@ -954,11 +1037,11 @@
 
 
 <span class="nd">@contextmanager</span>
-<span class="k">def</span> <span class="nf">_suppress_stdout_stderr</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;A context manager that redirects stdout and stderr to devnull&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">devnull</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fnull</span><span class="p">:</span>
-        <span class="k">with</span> <span class="n">redirect_stderr</span><span class="p">(</span><span class="n">fnull</span><span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">,</span> <span class="n">redirect_stdout</span><span class="p">(</span><span class="n">fnull</span><span class="p">)</span> <span class="k">as</span> <span class="n">out</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_suppress_stderr</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;A context manager that redirects stderr to devnull&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fnull</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">redirect_stderr</span><span class="p">(</span><span class="n">fnull</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="kc">None</span>
 
 
 <span class="k">def</span> <span class="nf">_is_action_value_list</span><span class="p">(</span><span class="n">action</span><span class="p">:</span><span class="n">Action</span><span class="p">):</span>

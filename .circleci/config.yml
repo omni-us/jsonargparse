@@ -9,13 +9,13 @@ jobs:
       - run:
           name: Build wheel package
           command: |
-            sed -i -r '/^(coverage|pylint|mypy|Sphinx)/Id' requirements.txt
+            sed -i -r '/^(coverage|pylint|mypy|sphinx|autodocsumm)/Id' requirements.txt
             pip install --user -r requirements.txt
             ./setup.py bdist_wheel
       - persist_to_workspace:
           root: .
           paths: ./dist/*.whl
-  test-35: &test-35
+  test-py35: &test-py35
     docker:
       - image: circleci/python:3.5
     steps:
@@ -26,12 +26,12 @@ jobs:
           command: |
             pip install --user ./dist/*.whl
             python -m yamlargparse_tests
-  test-36:
-    <<: *test-35
+  test-py36:
+    <<: *test-py35
     docker:
       - image: circleci/python:3.6
-  test-37:
-    <<: *test-35
+  test-py37:
+    <<: *test-py35
     docker:
       - image: circleci/python:3.7
   publish-pypi:
@@ -52,13 +52,13 @@ workflows:
           filters: &tagfilter
             tags:
               only: /^v\d+\.\d+\.\d+$/
-      - test-35: &testreq
+      - test-py35: &testreq
           <<: *buildreq
           requires:
             - build
-      - test-36:
+      - test-py36:
           <<: *testreq
-      - test-37:
+      - test-py37:
           <<: *testreq
       - publish-pypi:
           filters:
@@ -67,6 +67,6 @@ workflows:
             <<: *tagfilter
           context: yamlargparse-context
           requires:
-            - test-35
-            - test-36
-            - test-37
+            - test-py35
+            - test-py36
+            - test-py37

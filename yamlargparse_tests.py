@@ -47,7 +47,6 @@ lev1:
 
 nums:
   val1: -1
-  val2: -2.0
 '''
 
 example_env = {
@@ -74,6 +73,14 @@ class YamlargparseTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val2', 'eight']))
 
 
+    def test_usage_and_exit_error_handler(self):
+        parser = ArgumentParser(prog='app', error_handler=usage_and_exit_error_handler)
+        parser.add_argument('--val', type=int)
+        self.assertEqual(8, parser.parse_args(['--val', '8']).val)
+        sys.stderr.write('\n')
+        self.assertRaises(SystemExit, lambda: parser.parse_args(['--val', 'eight']))
+
+
     def test_yes_no_action(self):
         """Test the correct functioning of ActionYesNo."""
         parser = example_parser()
@@ -94,7 +101,7 @@ class YamlargparseTests(unittest.TestCase):
         self.assertEqual('opt1_yaml', cfg1.lev1.lev2.opt1)
         self.assertEqual('opt2_yaml', cfg1.lev1.lev2.opt2)
         self.assertEqual(-1,   cfg1.nums.val1)
-        self.assertEqual(-2.0, cfg1.nums.val2)
+        self.assertEqual(2.0, cfg1.nums.val2)
         self.assertEqual(False, cfg1.bools.def_false)
         self.assertEqual(True,  cfg1.bools.def_true)
 
@@ -104,12 +111,18 @@ class YamlargparseTests(unittest.TestCase):
 
         tmpdir = tempfile.mkdtemp(prefix='_yamlargparse_tests_')
         yaml_file = os.path.realpath(os.path.join(tmpdir, 'example.yaml'))
+
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml)
         self.assertEqual(cfg1, parser.parse_yaml_path(yaml_file, defaults=True))
         self.assertEqual(cfg2, parser.parse_yaml_path(yaml_file, defaults=False))
         self.assertNotEqual(cfg2, parser.parse_yaml_path(yaml_file, defaults=True))
         self.assertNotEqual(cfg1, parser.parse_yaml_path(yaml_file, defaults=False))
+
+        with open(yaml_file, 'w') as output_file:
+            output_file.write(example_yaml+'  val2: eight\n')
+        self.assertRaises(ParserError, lambda: parser.parse_yaml_path(yaml_file))
+
         shutil.rmtree(tmpdir)
 
 

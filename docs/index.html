@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse master/v1.13.0+1commits/2019.05.17 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.13.0+2commits/2019.05.18 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v1.13.0+1commits/2019.05.17
+                master/v1.13.0+2commits/2019.05.18
               </div>
             
           
@@ -178,9 +178,15 @@ alternatives it seemed simpler to create a new module.</p>
 <h1>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
 <li><p>Parsers are configured just like with python’s argparse, thus it has a gentile learning curve.</p></li>
-<li><p>Not exclusively intended for parsing command line arguments. The module has functions to parse environment variables and yaml config files.</p></li>
+<li><p>Not exclusively intended for parsing command line arguments. The main focus is parsing yaml configuration files and not necessarily from a command line tool.</p></li>
 <li><p>Support for nested namespaces which makes it possible to parse yaml with non-flat hierarchies.</p></li>
-<li><p>Parsing of relative paths within yaml files.</p></li>
+<li><p>Parsing of relative paths within yaml files and path lists.</p></li>
+<li><p>Default behavior is not identical to argparse, though it is possible to configure it to be identical. The main differences are:</p>
+<ul>
+<li><p>When parsing fails <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, instead of printing usage and program exit.</p></li>
+<li><p>To modify the behavior for parsing errors (e.g. print usage) an error handler function can be provided.</p></li>
+</ul>
+</li>
 <li><p>Configuration settings are overridden based on the following precedence.</p>
 <ul>
 <li><p><strong>Parsing command line:</strong> command line arguments (might include config file) &gt; environment variables &gt; default config file &gt; defaults.</p></li>
@@ -196,18 +202,18 @@ alternatives it seemed simpler to create a new module.</p>
 create a parser object and then add arguments to it. A simple example would be:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">yamlargparse</span>
 <span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
-    <span class="n">prog</span> <span class="o">=</span> <span class="s1">&#39;app&#39;</span><span class="p">,</span>
-    <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;Description for my app.&#39;</span><span class="p">)</span>
+    <span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Description for my app.&#39;</span><span class="p">)</span>
 
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--opt1&#39;</span><span class="p">,</span>
-    <span class="nb">type</span> <span class="o">=</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">default</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="n">help</span> <span class="o">=</span> <span class="s1">&#39;Help for option 1.&#39;</span><span class="p">)</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Help for option 1.&#39;</span><span class="p">)</span>
 
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--opt2&#39;</span><span class="p">,</span>
-    <span class="nb">type</span> <span class="o">=</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">default</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-    <span class="n">help</span> <span class="o">=</span> <span class="s1">&#39;Help for option 2.&#39;</span><span class="p">)</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Help for option 2.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>After creating the parser, you can use it to parse command line arguments with
@@ -221,6 +227,24 @@ from above you would observe:</p>
 <span class="go">(0, &lt;class &#39;int&#39;&gt;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">opt2</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">opt2</span><span class="p">)</span>
 <span class="go">(2.3, &lt;class &#39;float&#39;&gt;)</span>
+</pre></div>
+</div>
+<p>If the parsing fails a <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, so depending on the use case it
+might be necessary to catch it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--opt2&#39;</span><span class="p">,</span> <span class="s1">&#39;four&#39;</span><span class="p">])</span>
+<span class="gp">... </span><span class="k">except</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ParserError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;parser error: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+<span class="gp">...</span>
+<span class="go">parser error: argument --opt2: invalid float value: &#39;four&#39;</span>
+</pre></div>
+</div>
+<p>To get the default behavior of argparse the ArgumentParser can be initialized as
+follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+    <span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span>
+    <span class="n">error_handler</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">usage_and_exit_error_handler</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Description for my app.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -375,31 +399,125 @@ examples of arguments that can be added using this action are the following:</p>
 </div>
 <div class="section" id="module-yamlargparse">
 <span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-yamlargparse" title="Permalink to this headline">¶</a></h1>
+<p><strong>Classes</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile" title="yamlargparse.ActionConfigFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a>(**kwargs)</p></td>
+<td><p>Action to indicate that an argument is a configuration file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionOperators" title="yamlargparse.ActionOperators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>(**kwargs)</p></td>
+<td><p>Action to restrict a value with comparison operators.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code></a>(**kwargs)</p></td>
+<td><p>Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPath</span></code></a>(**kwargs)</p></td>
+<td><p>Action to check and store a path.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionPathList" title="yamlargparse.ActionPathList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPathList</span></code></a>(**kwargs)</p></td>
+<td><p>Action to check and store a list of file paths read from a plain text file or stream.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
+<td><p>Paired action –opt, –no_opt to set True or False respectively.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args, default_config_files)</p></td>
+<td><p>Parser for command line, yaml files and environment variables.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd)</p></td>
+<td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exceptions</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParserError</span></code></a></p></td>
+<td><p>Error raised when parsing a value fails.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Functions</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.usage_and_exit_error_handler" title="yamlargparse.usage_and_exit_error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">usage_and_exit_error_handler</span></code></a>(self, message)</p></td>
+<td><p>Error handler to get the same behavior as in argparse.</p></td>
+</tr>
+</tbody>
+</table>
 <dl class="class">
 <dt id="yamlargparse.ArgumentParser">
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ArgumentParser</code><span class="sig-paren">(</span><em>*args</em>, <em>default_config_files: List[str] = []</em>, <em>logger=None</em>, <em>error_handler=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a></p>
-<p>Extension to python’s argparse which simplifies parsing of configuration
-options from command line arguments, yaml configuration files, environment
-variables and hard-coded defaults.</p>
-<p>All the arguments from the constructor of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser">argparse.ArgumentParser</a>
+<p>Parser for command line, yaml files and environment variables.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.__init__" title="yamlargparse.ArgumentParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, default_config_files[, …])</p></td>
+<td><p>Initializer for ArgumentParser instance.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.add_argument_group" title="yamlargparse.ArgumentParser.add_argument_group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_argument_group</span></code></a>(*args, name, **kwargs)</p></td>
+<td><p>Adds a group to the parser.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.check_config" title="yamlargparse.ArgumentParser.check_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_config</span></code></a>(cfg, dict], skip_none)</p></td>
+<td><p>Checks that the content of a given configuration object conforms with the parser.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.dump_yaml" title="yamlargparse.ArgumentParser.dump_yaml"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump_yaml</span></code></a>(cfg, dict])</p></td>
+<td><p>Generates a yaml string for a configuration object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.error" title="yamlargparse.ArgumentParser.error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error</span></code></a>(message)</p></td>
+<td><p>Logs error message if a logger is set, calls the error handler and raises a ParserError.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.get_defaults" title="yamlargparse.ArgumentParser.get_defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_defaults</span></code></a>(nested)</p></td>
+<td><p>Returns a namespace with all default values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.merge_config" title="yamlargparse.ArgumentParser.merge_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_config</span></code></a>(cfg_from, cfg_to)</p></td>
+<td><p>Merges the first configuration into the second configuration.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.parse_args" title="yamlargparse.ArgumentParser.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>([args, namespace])</p></td>
+<td><p>Parses command line argument strings.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.parse_env" title="yamlargparse.ArgumentParser.parse_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_env</span></code></a>(env, str] = None, defaults, nested)</p></td>
+<td><p>Parses environment variables.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.parse_yaml_path" title="yamlargparse.ArgumentParser.parse_yaml_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_yaml_path</span></code></a>(yaml_path, env, defaults, nested)</p></td>
+<td><p>Parses a yaml file given its path.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="yamlargparse.ArgumentParser.parse_yaml_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_yaml_string</span></code></a>(yaml_str, env, defaults, …)</p></td>
+<td><p>Parses yaml given as a string.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>*args</em>, <em>default_config_files: List[str] = []</em>, <em>logger=None</em>, <em>error_handler=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ArgumentParser instance.</p>
+<p>All the arguments from the initializer of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser">argparse.ArgumentParser</a>
 are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>default_config_files</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>]</em>) – List of strings defining default config file locations. For example: <code class="code docutils literal notranslate"><span class="pre">['~/.config/myapp/*.yaml']</span></code>.</p></li>
-<li><p><strong>logger</strong> (<em>Logger</em>) – Object for logging events.</p></li>
-<li><p><strong>error_handler</strong> (<em>Callable</em>) – Handler for parsing errors (default=None). For same behavior of argparse use <a class="reference internal" href="#yamlargparse.usage_and_exit_error_handler" title="yamlargparse.usage_and_exit_error_handler"><code class="xref py py-func docutils literal notranslate"><span class="pre">usage_and_exit_error_handler()</span></code></a>.</p></li>
+<li><p><strong>logger</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.7)"><em>logging.Logger</em></a>) – Object for logging events.</p></li>
+<li><p><strong>error_handler</strong> (<em>Callable</em>) – Handler for parsing errors (default=None). For same behavior as argparse use <a class="reference internal" href="#yamlargparse.usage_and_exit_error_handler" title="yamlargparse.usage_and_exit_error_handler"><code class="xref py py-func docutils literal notranslate"><span class="pre">usage_and_exit_error_handler()</span></code></a>.</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="method">
-<dt id="yamlargparse.ArgumentParser.error">
-<code class="descname">error</code><span class="sig-paren">(</span><em>message: string</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.error" title="Permalink to this definition">¶</a></dt>
-<dd><p>Prints a usage message incorporating the message to stderr and
-exits.</p>
-<p>If you override this in a subclass, it should not return – it
-should either exit or raise an exception.</p>
 </dd></dl>
 
 <dl class="method">
@@ -419,7 +537,10 @@ are supported. Additionally it accepts:</p>
 <dd class="field-even"><p>An object with all parsed values as nested attributes.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -441,7 +562,10 @@ are supported. Additionally it accepts:</p>
 <dd class="field-even"><p>An object with all parsed values as nested attributes.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -463,7 +587,10 @@ are supported. Additionally it accepts:</p>
 <dd class="field-even"><p>An object with all parsed values as attributes.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -474,13 +601,16 @@ are supported. Additionally it accepts:</p>
 <dd><p>Generates a yaml string for a configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg</strong> (<em>SimpleNamespace | dict</em>) – The configuration object to dump.</p>
+<dd class="field-odd"><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration object to dump.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The configuration in yaml format.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If any of the values of cfg is invalid according to the parser.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -492,7 +622,7 @@ are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>env</strong> (<em>Dict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>]</em>) – The environment object to use, if None <cite>os.environ</cite> is used.</p></li>
+<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>]</em>) – The environment object to use, if None <cite>os.environ</cite> is used.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
 </ul>
@@ -501,7 +631,10 @@ are supported. Additionally it accepts:</p>
 <dd class="field-even"><p>An object with all parsed values as attributes.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -518,7 +651,10 @@ are supported. Additionally it accepts:</p>
 <dd class="field-even"><p>An object with all default values as attributes.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -546,8 +682,14 @@ are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cfg</strong> (<em>SimpleNamespace | dict</em>) – The configuration object to check.</p></li>
+<li><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration object to check.</p></li>
 <li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip checking of values that are None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If any of the values are not valid.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.7)"><strong>KeyError</strong></a> – If a key in cfg is not defined in the parser.</p></li>
 </ul>
 </dd>
 </dl>
@@ -560,17 +702,23 @@ are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cfg_from</strong> (<em>SimpleNamespace</em>) – The configuration from which to merge.</p></li>
-<li><p><strong>cfg_to</strong> (<em>SimpleNamespace</em>) – The configuration into which to merge.</p></li>
+<li><p><strong>cfg_from</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)"><em>types.SimpleNamespace</em></a>) – The configuration from which to merge.</p></li>
+<li><p><strong>cfg_to</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)"><em>types.SimpleNamespace</em></a>) – The configuration into which to merge.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The merged configuration.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>SimpleNamespace</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.error">
+<code class="descname">error</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs error message if a logger is set, calls the error handler and raises a ParserError.</p>
 </dd></dl>
 
 </dd></dl>
@@ -580,6 +728,38 @@ are supported. Additionally it accepts:</p>
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionConfigFile</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to indicate that an argument is a configuration file.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile.__call__" title="yamlargparse.ActionConfigFile.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(parser, namespace, values[, …])</p></td>
+<td><p>Parses the given configuration file and adds all the corresponding keys to the namespace.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile.__init__" title="yamlargparse.ActionConfigFile.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initializer for ActionConfigFile instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.ActionConfigFile.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ActionConfigFile instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ActionConfigFile.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>parser</em>, <em>namespace</em>, <em>values</em>, <em>option_string=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the given configuration file and adds all the corresponding keys to the namespace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If there are problems parsing the configuration file.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -587,6 +767,33 @@ are supported. Additionally it accepts:</p>
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionYesNo</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Paired action –opt, –no_opt to set True or False respectively.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo.__call__" title="yamlargparse.ActionYesNo.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(parser, namespace, values[, …])</p></td>
+<td><p>Sets the corresponding key to True or False depending on the option string used.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo.__init__" title="yamlargparse.ActionYesNo.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initializer for ActionYesNo instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.ActionYesNo.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ActionYesNo instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ActionYesNo.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>parser</em>, <em>namespace</em>, <em>values</em>, <em>option_string=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the corresponding key to True or False depending on the option string used.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -594,39 +801,144 @@ are supported. Additionally it accepts:</p>
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionParser</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionParser.__call__" title="yamlargparse.ActionParser.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionParser.__init__" title="yamlargparse.ActionParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initializer for ActionParser instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.ActionParser.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionParser.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ActionParser instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>parser</strong> (<a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><em>ArgumentParser</em></a>) – A yamlargparse parser to parse the option with.</p>
 </dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – If the parser parameter is invalid.</p>
+</dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ActionParser.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionParser.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionParser.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If the argument is not valid.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="yamlargparse.ActionOperators">
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionOperators</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionOperators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionOperators" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
-<p>Action to restrict a number range with comparison operators.</p>
+<p>Action to restrict a value with comparison operators.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionOperators.__call__" title="yamlargparse.ActionOperators.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionOperators.__init__" title="yamlargparse.ActionOperators.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initializer for ActionOperators instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.ActionOperators.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionOperators.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionOperators.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ActionOperators instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>expr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)"><em>tuple</em></a><em> or </em><em>list of tuples</em>) – Pairs of operators (&gt; &gt;= &lt; &lt;= == !=) and reference values, e.g. [(‘&gt;=’, 1),…].</p></li>
+<li><p><strong>expr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)"><em>tuple</em></a><em>]</em>) – Pairs of operators (&gt; &gt;= &lt; &lt;= == !=) and reference values, e.g. [(‘&gt;=’, 1),…].</p></li>
 <li><p><strong>join</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – How to combine multiple comparisons, must be ‘or’ or ‘and’ (default=’and’).</p></li>
 <li><p><strong>type</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.7)"><em>type</em></a>) – The value type (default=int).</p></li>
 </ul>
 </dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – If any of the parameters (expr, join or type) are invalid.</p>
+</dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ActionOperators.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionOperators.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionOperators.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If the argument is not valid.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="yamlargparse.ActionPath">
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionPath</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
-<p>Action to check and store a file path.</p>
+<p>Action to check and store a path.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionPath.__call__" title="yamlargparse.ActionPath.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Parses an argument as a Path and if valid sets the parsed value to the corresponding key.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionPath.__init__" title="yamlargparse.ActionPath.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initializer for ActionPath instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.ActionPath.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPath.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPath.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ActionPath instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPath(mode=’drw’).</p>
 </dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – If the mode parameter is invalid.</p>
+</dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ActionPath.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPath.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPath.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses an argument as a Path and if valid sets the parsed value to the corresponding key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If the argument is not a valid Path.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -634,11 +946,25 @@ are supported. Additionally it accepts:</p>
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionPathList</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPathList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPathList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to check and store a list of file paths read from a plain text file or stream.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The paths in the list if relative should be with respect to the current
-working directory, not with respect to the directory where the list is.</p>
-</div>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionPathList.__call__" title="yamlargparse.ActionPathList.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Parses an argument as a PathList and if valid sets the parsed value to the corresponding key.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionPathList.__init__" title="yamlargparse.ActionPathList.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initializer for ActionPathList instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.ActionPathList.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPathList.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPathList.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ActionPathList instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -646,7 +972,23 @@ working directory, not with respect to the directory where the list is.</p>
 <li><p><strong>rel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Whether relative paths are with respect to current working directory ‘cwd’ or the list’s parent directory ‘list’ (default=’cwd’).</p></li>
 </ul>
 </dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – If any of the parameters (mode or rel) are invalid.</p>
+</dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ActionPathList.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPathList.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPathList.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses an argument as a PathList and if valid sets the parsed value to the corresponding key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If the argument is not a valid PathList.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -659,6 +1001,25 @@ it is a file or directory and whether has the required access permissions
 (d=directory, r=readable, w=writeable, x=executable). The absolute path can
 be obtained without having to remember the working directory from when the
 object was created.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.Path.__call__" title="yamlargparse.Path.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>([absolute])</p></td>
+<td><p>Returns the path as a string.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path.__init__" title="yamlargparse.Path.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(path, mode, cwd)</p></td>
+<td><p>Initializer for Path instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.Path.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>path</em>, <em>mode: str = 'r'</em>, <em>cwd: str = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for Path instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -667,11 +1028,26 @@ object was created.</p>
 <li><p><strong>cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Working directory for relative paths. If None, then os.getcwd() is used.</p></li>
 </ul>
 </dd>
-</dl>
-<dl class="simple">
-<dt>Args called:</dt><dd><p>absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.</p>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – If the provided mode is invalid.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If the path does not exist or does not agree with the mode.</p></li>
+</ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.Path.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>absolute=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the path as a string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>absolute</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – If false returns the original path given, otherwise the corresponding absolute path.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="exception">
@@ -684,7 +1060,15 @@ object was created.</p>
 <dl class="function">
 <dt id="yamlargparse.usage_and_exit_error_handler">
 <code class="descclassname">yamlargparse.</code><code class="descname">usage_and_exit_error_handler</code><span class="sig-paren">(</span><em>self</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#usage_and_exit_error_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.usage_and_exit_error_handler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Error handler with the same behavior as in argparse.</p>
+<dd><p>Error handler to get the same behavior as in argparse.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> (<a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><em>ArgumentParser</em></a>) – The ArgumentParser object.</p></li>
+<li><p><strong>message</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The message describing the error being handled.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 </div>

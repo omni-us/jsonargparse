@@ -10,43 +10,39 @@ import argparse
 from argparse import Action, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE
 from types import SimpleNamespace
 from typing import Any, List, Dict, Set, Union
-from contextlib import contextmanager,redirect_stderr,redirect_stdout
-from os import devnull
+from contextlib import contextmanager, redirect_stderr
 
 
 __version__ = '1.13.0'
 
 
 class ArgumentParser(argparse.ArgumentParser):
-    """Extension to python's argparse which simplifies parsing of configuration
-    options from command line arguments, yaml configuration files, environment
-    variables and hard-coded defaults.
-
-    All the arguments from the constructor of `argparse.ArgumentParser
-    <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser>`_
-    are supported. Additionally it accepts:
-
-    Args:
-        default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
-        logger (Logger): Object for logging events.
-        error_handler (Callable): Handler for parsing errors (default=None). For same behavior of argparse use :func:`usage_and_exit_error_handler`.
-    """
+    """Parser for command line, yaml files and environment variables."""
 
     groups = {} # type: Dict[str, argparse._ArgumentGroup]
 
 
     def __init__(self, *args, default_config_files:List[str]=[], logger=None, error_handler=None, **kwargs):
+        """Initializer for ArgumentParser instance.
+
+        All the arguments from the initializer of `argparse.ArgumentParser
+        <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser>`_
+        are supported. Additionally it accepts:
+
+        Args:
+            default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
+            logger (logging.Logger): Object for logging events.
+            error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
+        """
         self._default_config_files = default_config_files
-        self._logger = logging.getLogger('null') if logger is None else logger
+        if logger is None:
+            self._logger = logging.getLogger('null')
+            self._logger.addHandler(logging.NullHandler())
+        else:
+            self._logger = logger
         self.error_handler = error_handler
+        self._stderr = sys.stderr
         super().__init__(*args, **kwargs)
-
-
-    def error(self, message):
-        self._logger.error(message)
-        if self.error_handler is not None:
-            self.error_handler(self, message)
-        raise ParserError(message)
 
 
     def parse_args(self, args=None, namespace=None, env:bool=True, nested:bool=True):
@@ -61,24 +57,27 @@ class ArgumentParser(argparse.ArgumentParser):
             nested (bool): Whether the namespace should be nested.
 
         Returns:
-            SimpleNamespace: An object with all parsed values as nested attributes.
-        """
-        with _suppress_stdout_stderr():
-            try:
-                if namespace is not None:
-                    namespace = self.parse_env(nested=False) if env else None
+            types.SimpleNamespace: An object with all parsed values as nested attributes.
 
+        Raises:
+            ParserError: If there is a parsing error and error_handler=None.
+        """
+        try:
+            if namespace is not None:
+                namespace = self.parse_env(nested=False) if env else None
+
+            with _suppress_stderr():
                 cfg = super().parse_args(args=args, namespace=namespace)
 
-                ActionParser._fix_conflicts(self, cfg)
+            ActionParser._fix_conflicts(self, cfg)
 
-                if not nested:
-                    return cfg
+            if not nested:
+                return cfg
 
-                self._logger.info('parsed arguments')
+            self._logger.info('parsed arguments')
 
-            except TypeError as ex:
-                self.error(str(ex))
+        except TypeError as ex:
+            self.error(str(ex))
 
         return self._dict_to_namespace(self._flat_namespace_to_dict(cfg))
 
@@ -93,7 +92,10 @@ class ArgumentParser(argparse.ArgumentParser):
             nested (bool): Whether the namespace should be nested.
 
         Returns:
-            SimpleNamespace: An object with all parsed values as nested attributes.
+            types.SimpleNamespace: An object with all parsed values as nested attributes.
+
+        Raises:
+            ParserError: If there is a parsing error and error_handler=None.
         """
         cwd = os.getcwd()
         os.chdir(os.path.abspath(os.path.join(yaml_path, os.pardir)))
@@ -118,26 +120,28 @@ class ArgumentParser(argparse.ArgumentParser):
             nested (bool): Whether the namespace should be nested.
 
         Returns:
-            SimpleNamespace: An object with all parsed values as attributes.
+            types.SimpleNamespace: An object with all parsed values as attributes.
+
+        Raises:
+            ParserError: If there is a parsing error and error_handler=None.
         """
-        with _suppress_stdout_stderr():
-            try:
-                cfg = self._load_yaml(yaml_str)
+        try:
+            cfg = self._load_yaml(yaml_str)
 
-                if nested:
-                    cfg = self._flat_namespace_to_dict(self._dict_to_namespace(cfg))
+            if nested:
+                cfg = self._flat_namespace_to_dict(self._dict_to_namespace(cfg))
 
-                if env:
-                    cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
+            if env:
+                cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
 
-                if defaults:
-                    cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
+            if defaults:
+                cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
-                if log:
-                    self._logger.info('parsed yaml string')
+            if log:
+                self._logger.info('parsed yaml string')
 
-            except TypeError as ex:
-                self.error(str(ex))
+        except TypeError as ex:
+            self.error(str(ex))
 
         return self._dict_to_namespace(cfg)
 
@@ -147,6 +151,9 @@ class ArgumentParser(argparse.ArgumentParser):
 
         Args:
             yaml_str (str): The yaml content.
+
+        Raises:
+            TypeError: If there is an invalid value according to the parser.
         """
         cfg = yaml.safe_load(yaml_str)
         cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
@@ -160,10 +167,13 @@ class ArgumentParser(argparse.ArgumentParser):
         """Generates a yaml string for a configuration object.
 
         Args:
-            cfg (SimpleNamespace | dict): The configuration object to dump.
+            cfg (types.SimpleNamespace or dict): The configuration object to dump.
 
         Returns:
             str: The configuration in yaml format.
+
+        Raises:
+            TypeError: If any of the values of cfg is invalid according to the parser.
         """
         if not isinstance(cfg, dict):
             cfg = self._namespace_to_dict(cfg)
@@ -186,36 +196,38 @@ class ArgumentParser(argparse.ArgumentParser):
         """Parses environment variables.
 
         Args:
-            env (Dict[str, str]): The environment object to use, if None `os.environ` is used.
+            env (dict[str, str]): The environment object to use, if None `os.environ` is used.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
 
         Returns:
-            SimpleNamespace: An object with all parsed values as attributes.
+            types.SimpleNamespace: An object with all parsed values as attributes.
+
+        Raises:
+            ParserError: If there is a parsing error and error_handler=None.
         """
-        with _suppress_stdout_stderr():
-            try:
-                if env is None:
-                    env = dict(os.environ)
-                cfg = {}
-                for action in self._actions:
-                    if action.default == '==SUPPRESS==':
-                        continue
-                    env_var = (self.prog+'_' if self.prog else '') + action.dest
-                    env_var = env_var.replace('.', '__').upper()
-                    if env_var in env:
-                        cfg[action.dest] = self._check_value_key(action, env[env_var], env_var)
+        try:
+            if env is None:
+                env = dict(os.environ)
+            cfg = {}
+            for action in self._actions:
+                if action.default == '==SUPPRESS==':
+                    continue
+                env_var = (self.prog+'_' if self.prog else '') + action.dest
+                env_var = env_var.replace('.', '__').upper()
+                if env_var in env:
+                    cfg[action.dest] = self._check_value_key(action, env[env_var], env_var)
 
-                if nested:
-                    cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
+            if nested:
+                cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
 
-                if defaults:
-                    cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
+            if defaults:
+                cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
-                self._logger.info('parsed environment variables')
+            self._logger.info('parsed environment variables')
 
-            except TypeError as ex:
-                self.error(str(ex))
+        except TypeError as ex:
+            self.error(str(ex))
 
         return self._dict_to_namespace(cfg)
 
@@ -227,31 +239,33 @@ class ArgumentParser(argparse.ArgumentParser):
             nested (bool): Whether the namespace should be nested.
 
         Returns:
-            SimpleNamespace: An object with all default values as attributes.
+            types.SimpleNamespace: An object with all default values as attributes.
+
+        Raises:
+            ParserError: If there is a parsing error and error_handler=None.
         """
-        with _suppress_stdout_stderr():
-            try:
-                cfg = {}
-                for action in self._actions:
-                    if len(action.option_strings) > 0 and action.default != '==SUPPRESS==':
-                        cfg[action.dest] = action.default
+        try:
+            cfg = {}
+            for action in self._actions:
+                if len(action.option_strings) > 0 and action.default != '==SUPPRESS==':
+                    cfg[action.dest] = action.default
 
-                self._logger.info('loaded default values from parser')
+            self._logger.info('loaded default values from parser')
 
-                default_config_files = [] # type: List[str]
-                for pattern in self._default_config_files:
-                    default_config_files += glob.glob(os.path.expanduser(pattern))
-                if len(default_config_files) > 0:
-                    with open(default_config_files[0], 'r') as f:
-                        cfg_file = self._load_yaml(f.read())
-                    cfg = self._merge_config(cfg_file, cfg)
-                    self._logger.info('parsed configuration from default path: '+default_config_files[0])
+            default_config_files = [] # type: List[str]
+            for pattern in self._default_config_files:
+                default_config_files += glob.glob(os.path.expanduser(pattern))
+            if len(default_config_files) > 0:
+                with open(default_config_files[0], 'r') as f:
+                    cfg_file = self._load_yaml(f.read())
+                cfg = self._merge_config(cfg_file, cfg)
+                self._logger.info('parsed configuration from default path: '+default_config_files[0])
 
-                if nested:
-                    cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
+            if nested:
+                cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
 
-            except TypeError as ex:
-                self.error(str(ex))
+        except TypeError as ex:
+            self.error(str(ex))
 
         return self._dict_to_namespace(cfg)
 
@@ -280,8 +294,12 @@ class ArgumentParser(argparse.ArgumentParser):
         """Checks that the content of a given configuration object conforms with the parser.
 
         Args:
-            cfg (SimpleNamespace | dict): The configuration object to check.
+            cfg (types.SimpleNamespace or dict): The configuration object to check.
             skip_none (bool): Whether to skip checking of values that are None.
+
+        Raises:
+            TypeError: If any of the values are not valid.
+            KeyError: If a key in cfg is not defined in the parser.
         """
         if not isinstance(cfg, dict):
             cfg = self._namespace_to_dict(cfg)
@@ -314,11 +332,11 @@ class ArgumentParser(argparse.ArgumentParser):
         """Merges the first configuration into the second configuration.
 
         Args:
-            cfg_from (SimpleNamespace): The configuration from which to merge.
-            cfg_to (SimpleNamespace): The configuration into which to merge.
+            cfg_from (types.SimpleNamespace): The configuration from which to merge.
+            cfg_to (types.SimpleNamespace): The configuration into which to merge.
 
         Returns:
-            SimpleNamespace: The merged configuration.
+            types.SimpleNamespace: The merged configuration.
         """
         return ArgumentParser._dict_to_namespace(ArgumentParser._merge_config(cfg_from, cfg_to))
 
@@ -328,8 +346,8 @@ class ArgumentParser(argparse.ArgumentParser):
         """Merges the first configuration into the second configuration.
 
         Args:
-            cfg_from (SimpleNamespace | dict): The configuration from which to merge.
-            cfg_to (SimpleNamespace | dict): The configuration into which to merge.
+            cfg_from (types.SimpleNamespace or dict): The configuration from which to merge.
+            cfg_to (types.SimpleNamespace or dict): The configuration into which to merge.
 
         Returns:
             dict: The merged configuration.
@@ -359,6 +377,9 @@ class ArgumentParser(argparse.ArgumentParser):
             action (Action): The action used for parsing.
             value (Any): The value to parse.
             key (str): The configuration key.
+
+        Raises:
+            TypeError: If the value is not valid.
         """
         if action is None:
             raise ValueError('parser key "'+str(key)+'": received action==None')
@@ -367,14 +388,14 @@ class ArgumentParser(argparse.ArgumentParser):
                 args = {'value': value,
                         'choices': ', '.join(map(repr, action.choices))}
                 msg = 'invalid choice: %(value)r (choose from %(choices)s)'
-                raise ValueError('parser key "'+str(key)+'": '+(msg % args))
+                raise TypeError('parser key "'+str(key)+'": '+(msg % args))
         elif hasattr(action, '_check_type'):
             value = action._check_type(value) # type: ignore
         elif action.type is not None:
             try:
                 value = action.type(value)
-            except TypeError as ex:
-                raise ValueError('parser key "'+str(key)+'": '+str(ex))
+            except (TypeError, ValueError) as ex:
+                raise TypeError('parser key "'+str(key)+'": '+str(ex))
         return value
 
 
@@ -383,7 +404,7 @@ class ArgumentParser(argparse.ArgumentParser):
         """Converts a flat namespace into a nested dictionary.
 
         Args:
-            cfg_ns (SimpleNamespace): The configuration to process.
+            cfg_ns (types.SimpleNamespace): The configuration to process.
 
         Returns:
             dict: The nested configuration dictionary.
@@ -415,7 +436,7 @@ class ArgumentParser(argparse.ArgumentParser):
             cfg_dict (dict): The configuration to process.
 
         Returns:
-            SimpleNamespace: The configuration namespace.
+            types.SimpleNamespace: The configuration namespace.
         """
         cfg_ns = {}
 
@@ -440,7 +461,7 @@ class ArgumentParser(argparse.ArgumentParser):
             cfg_args (dict): The configuration to process.
 
         Returns:
-            SimpleNamespace: The nested configuration namespace.
+            types.SimpleNamespace: The nested configuration namespace.
         """
         def expand_dict(cfg):
             for k, v in cfg.items():
@@ -455,7 +476,7 @@ class ArgumentParser(argparse.ArgumentParser):
         """Converts a nested namespace into a nested dictionary.
 
         Args:
-            cfg_args (SimpleNamespace): The configuration to process.
+            cfg_args (types.SimpleNamespace): The configuration to process.
 
         Returns:
             dict: The nested configuration dictionary.
@@ -469,9 +490,19 @@ class ArgumentParser(argparse.ArgumentParser):
         return expand_namespace(cfg_ns)
 
 
+    def error(self, message):
+        """Logs error message if a logger is set, calls the error handler and raises a ParserError."""
+        self._logger.error(message)
+        if self.error_handler is not None:
+            with redirect_stderr(self._stderr):
+                self.error_handler(self, message)
+        raise ParserError(message)
+
+
 class ActionConfigFile(Action):
     """Action to indicate that an argument is a configuration file."""
     def __init__(self, **kwargs):
+        """Initializer for ActionConfigFile instance."""
         opt_name = kwargs['option_strings']
         opt_name = opt_name[0] if len(opt_name) == 1 else [x for x in opt_name if x[0:2] == '--'][0]
         if '.' in opt_name:
@@ -480,6 +511,11 @@ class ActionConfigFile(Action):
         super().__init__(**kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
+        """Parses the given configuration file and adds all the corresponding keys to the namespace.
+
+        Raises:
+            TypeError: If there are problems parsing the configuration file.
+        """
         if not isinstance(getattr(namespace, self.dest), list):
             setattr(namespace, self.dest, [])
         try:
@@ -494,6 +530,7 @@ class ActionConfigFile(Action):
 class ActionYesNo(Action):
     """Paired action --opt, --no_opt to set True or False respectively."""
     def __init__(self, **kwargs):
+        """Initializer for ActionYesNo instance."""
         opt_name = kwargs['option_strings'][0]
         if 'dest' not in kwargs:
             kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
@@ -507,6 +544,7 @@ class ActionYesNo(Action):
         super().__init__(**kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
+        """Sets the corresponding key to True or False depending on the option string used."""
         if option_string.startswith('--no_'):
             setattr(namespace, self.dest, False)
         else:
@@ -514,12 +552,16 @@ class ActionYesNo(Action):
 
 
 class ActionParser(Action):
-    """Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value.
-
-    Args:
-        parser (ArgumentParser): A yamlargparse parser to parse the option with.
-    """
+    """Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value."""
     def __init__(self, **kwargs):
+        """Initializer for ActionParser instance.
+
+        Args:
+            parser (ArgumentParser): A yamlargparse parser to parse the option with.
+
+        Raises:
+            ValueError: If the parser parameter is invalid.
+        """
         if 'parser' in kwargs:
             _check_unknown_kwargs(kwargs, {'parser'})
             self._parser = kwargs['parser']
@@ -533,6 +575,11 @@ class ActionParser(Action):
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
+        """Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.
+
+        Raises:
+            TypeError: If the argument is not valid.
+        """
         if len(args) == 0:
             kwargs['_parser'] = self._parser
             return ActionParser(**kwargs)
@@ -560,16 +607,20 @@ class ActionParser(Action):
 
 
 class ActionOperators(Action):
-    """Action to restrict a number range with comparison operators.
-
-    Args:
-        expr (tuple or list of tuples): Pairs of operators (> >= < <= == !=) and reference values, e.g. [('>=', 1),...].
-        join (str): How to combine multiple comparisons, must be 'or' or 'and' (default='and').
-        type (type): The value type (default=int).
-    """
+    """Action to restrict a value with comparison operators."""
     _operators = {operator.gt: '>', operator.ge: '>=', operator.lt: '<', operator.le: '<=', operator.eq: '==', operator.ne: '!='}
 
     def __init__(self, **kwargs):
+        """Initializer for ActionOperators instance.
+
+        Args:
+            expr (tuple or list[tuple]): Pairs of operators (> >= < <= == !=) and reference values, e.g. [('>=', 1),...].
+            join (str): How to combine multiple comparisons, must be 'or' or 'and' (default='and').
+            type (type): The value type (default=int).
+
+        Raises:
+            ValueError: If any of the parameters (expr, join or type) are invalid.
+        """
         if 'expr' in kwargs:
             _check_unknown_kwargs(kwargs, {'expr', 'join', 'type'})
             self._type = kwargs['type'] if 'type' in kwargs else int
@@ -592,6 +643,11 @@ class ActionOperators(Action):
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
+        """Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.
+
+        Raises:
+            TypeError: If the argument is not valid.
+        """
         if len(args) == 0:
             if 'nargs' in kwargs and kwargs['nargs'] == 0:
                 raise ValueError('Invalid nargs='+str(kwargs['nargs'])+' for ActionOperators.')
@@ -626,12 +682,16 @@ class ActionOperators(Action):
 
 
 class ActionPath(Action):
-    """Action to check and store a file path.
-
-    Args:
-        mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPath(mode='drw').
-    """
+    """Action to check and store a path."""
     def __init__(self, **kwargs):
+        """Initializer for ActionPath instance.
+
+        Args:
+            mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPath(mode='drw').
+
+        Raises:
+            ValueError: If the mode parameter is invalid.
+        """
         if 'mode' in kwargs:
             _check_unknown_kwargs(kwargs, {'mode'})
             Path._check_mode(kwargs['mode'])
@@ -644,6 +704,11 @@ class ActionPath(Action):
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
+        """Parses an argument as a Path and if valid sets the parsed value to the corresponding key.
+
+        Raises:
+            TypeError: If the argument is not a valid Path.
+        """
         if len(args) == 0:
             if 'nargs' in kwargs and kwargs['nargs'] == 0:
                 raise ValueError('Invalid nargs='+str(kwargs['nargs'])+' for ActionPath.')
@@ -672,17 +737,17 @@ class ActionPath(Action):
 
 
 class ActionPathList(Action):
-    """Action to check and store a list of file paths read from a plain text file or stream.
-
-    Note:
-        The paths in the list if relative should be with respect to the current
-        working directory, not with respect to the directory where the list is.
-
-    Args:
-        mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPathList(mode='r').
-        rel (str): Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list' (default='cwd').
-    """
+    """Action to check and store a list of file paths read from a plain text file or stream."""
     def __init__(self, **kwargs):
+        """Initializer for ActionPathList instance.
+
+        Args:
+            mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPathList(mode='r').
+            rel (str): Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list' (default='cwd').
+
+        Raises:
+            ValueError: If any of the parameters (mode or rel) are invalid.
+        """
         if 'mode' in kwargs:
             _check_unknown_kwargs(kwargs, {'mode', 'rel'})
             Path._check_mode(kwargs['mode'])
@@ -699,6 +764,11 @@ class ActionPathList(Action):
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
+        """Parses an argument as a PathList and if valid sets the parsed value to the corresponding key.
+
+        Raises:
+            TypeError: If the argument is not a valid PathList.
+        """
         if len(args) == 0:
             if 'nargs' in kwargs:
                 raise ValueError('nargs not allowed for ActionPathList.')
@@ -739,16 +809,19 @@ class Path(object):
     (d=directory, r=readable, w=writeable, x=executable). The absolute path can
     be obtained without having to remember the working directory from when the
     object was created.
-
-    Args:
-        path (str): The path to check and store.
-        mode (str): The required type and access permissions among [drwx].
-        cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
-
-    Args called:
-        absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.
     """
     def __init__(self, path, mode:str='r', cwd:str=None):
+        """Initializer for Path instance.
+
+        Args:
+            path (str): The path to check and store.
+            mode (str): The required type and access permissions among [drwx].
+            cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
+
+        Raises:
+            ValueError: If the provided mode is invalid.
+            TypeError: If the path does not exist or does not agree with the mode.
+        """
         self._check_mode(mode)
         if cwd is None:
             cwd = os.getcwd()
@@ -783,6 +856,11 @@ class Path(object):
         return self.abs_path
 
     def __call__(self, absolute=True):
+        """Returns the path as a string.
+
+        Args:
+            absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.
+        """
         return self.abs_path if absolute else self.path
 
     @staticmethod
@@ -799,7 +877,12 @@ class ParserError(Exception):
 
 
 def usage_and_exit_error_handler(self, message):
-    """Error handler with the same behavior as in argparse."""
+    """Error handler to get the same behavior as in argparse.
+
+    Args:
+        self (ArgumentParser): The ArgumentParser object.
+        message (str): The message describing the error being handled.
+    """
     self.print_usage(sys.stderr)
     args = {'prog': self.prog, 'message': message}
     sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
@@ -807,11 +890,11 @@ def usage_and_exit_error_handler(self, message):
 
 
 @contextmanager
-def _suppress_stdout_stderr():
-    """A context manager that redirects stdout and stderr to devnull"""
-    with open(devnull, 'w') as fnull:
-        with redirect_stderr(fnull) as err, redirect_stdout(fnull) as out:
-            yield (err, out)
+def _suppress_stderr():
+    """A context manager that redirects stderr to devnull"""
+    with open(os.devnull, 'w') as fnull:
+        with redirect_stderr(fnull):
+            yield None
 
 
 def _is_action_value_list(action:Action):

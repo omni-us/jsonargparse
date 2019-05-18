@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'autodocsumm',
     #'sphinxarg.ext',
 ]
 
@@ -45,6 +46,14 @@ autodoc_default_options = {
     'exclude-members': 'groups',
     'member-order': 'bysource'
 }
+
+def skip(app, what, name, obj, would_skip, options):
+    if name == "__init__" or name == "__call__":
+        return False
+    return would_skip
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
