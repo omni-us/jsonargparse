@@ -233,7 +233,7 @@ and is readable, the following could be done:
 .. code-block:: python
 
     >>> parser = yamlargparse.ArgumentParser(prog='app')
-    >>> parser.add_argument('--databases.info', action=yamlargparse.ActionPath(mode='r'))
+    >>> parser.add_argument('--databases.info', action=yamlargparse.ActionPath(mode='fr'))
     >>> cfg = parser.parse_yaml('app/config.yaml')
 
 After parsing it is possible to get both the original relative path as included
@@ -257,7 +257,7 @@ as argument either the path to a file listing the paths is given or the special
 
 .. code-block:: python
 
-    >>> parser.add_argument('--list', action=yamlargparse.ActionPathList(mode='r'))
+    >>> parser.add_argument('--list', action=yamlargparse.ActionPathList(mode='fr'))
     >>> cfg = parser.parse_args(['--list', 'paths.lst')  # Text file with paths
     >>> cfg = parser.parse_args(['--list', '-')          # List from stdin
 

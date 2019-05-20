@@ -519,7 +519,7 @@ class ActionConfigFile(Action):
         if not isinstance(getattr(namespace, self.dest), list):
             setattr(namespace, self.dest, [])
         try:
-            getattr(namespace, self.dest).append(Path(values, mode='r'))
+            getattr(namespace, self.dest).append(Path(values, mode='fr'))
         except TypeError as ex:
             raise TypeError('parser key "'+self.dest+'": '+str(ex))
         cfg_file = parser.parse_yaml_path(values, env=False, defaults=False, nested=False)
@@ -588,7 +588,7 @@ class ActionParser(Action):
     def _check_type(self, value):
         try:
             if isinstance(value, str):
-                yaml_path = Path(value, mode='r')
+                yaml_path = Path(value, mode='fr')
                 value = self._parser.parse_yaml_path(yaml_path())
             else:
                 self._parser.check_config(value, skip_none=True)
@@ -687,7 +687,7 @@ class ActionPath(Action):
         """Initializer for ActionPath instance.
 
         Args:
-            mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPath(mode='drw').
+            mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument, e.g. ActionPath(mode='drw').
 
         Raises:
             ValueError: If the mode parameter is invalid.
@@ -742,7 +742,7 @@ class ActionPathList(Action):
         """Initializer for ActionPathList instance.
 
         Args:
-            mode (str): The required type and access permissions among [drwx] as a keyword argument, e.g. ActionPathList(mode='r').
+            mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument, e.g. ActionPathList(mode='fr').
             rel (str): Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list' (default='cwd').
 
         Raises:
@@ -806,16 +806,17 @@ class Path(object):
 
     When a Path instance is created it is checked that: the path exists, whether
     it is a file or directory and whether has the required access permissions
-    (d=directory, r=readable, w=writeable, x=executable). The absolute path can
-    be obtained without having to remember the working directory from when the
+    (f=file, d=directory, r=readable, w=writeable, x=executable, or the same in
+    uppercase meaning not, e.g. W=not_writeable). The absolute path can be
+    obtained without having to remember the working directory from when the
     object was created.
     """
-    def __init__(self, path, mode:str='r', cwd:str=None):
+    def __init__(self, path, mode:str='fr', cwd:str=None):
         """Initializer for Path instance.
 
         Args:
             path (str): The path to check and store.
-            mode (str): The required type and access permissions among [drwx].
+            mode (str): The required type and access permissions among [fdrwxFDRWX].
             cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
 
         Raises:
@@ -839,7 +840,7 @@ class Path(object):
             raise TypeError(ptype+' does not exist: '+abs_path)
         if 'd' in mode and not os.path.isdir(abs_path):
             raise TypeError('path is not a directory: '+abs_path)
-        if 'd' not in mode and not os.path.isfile(abs_path):
+        if 'f' in mode and not os.path.isfile(abs_path):
             raise TypeError('path is not a file: '+abs_path)
         if 'r' in mode and not os.access(abs_path, os.R_OK):
             raise TypeError(ptype+' is not readable: '+abs_path)
@@ -847,6 +848,16 @@ class Path(object):
             raise TypeError(ptype+' is not writeable: '+abs_path)
         if 'x' in mode and not os.access(abs_path, os.X_OK):
             raise TypeError(ptype+' is not executable: '+abs_path)
+        if 'D' in mode and os.path.isdir(abs_path):
+            raise TypeError('path is a directory: '+abs_path)
+        if 'F' in mode and os.path.isfile(abs_path):
+            raise TypeError('path is a file: '+abs_path)
+        if 'R' in mode and os.access(abs_path, os.R_OK):
+            raise TypeError(ptype+' is readable: '+abs_path)
+        if 'W' in mode and os.access(abs_path, os.W_OK):
+            raise TypeError(ptype+' is writeable: '+abs_path)
+        if 'X' in mode and os.access(abs_path, os.X_OK):
+            raise TypeError(ptype+' is executable: '+abs_path)
 
         self.path = path
         self.abs_path = abs_path
@@ -867,8 +878,8 @@ class Path(object):
     def _check_mode(mode:str):
         if not isinstance(mode, str):
             raise ValueError('Expected mode to be a string.')
-        if len(set(mode)-set('drwx')) > 0:
-            raise ValueError('Expected mode to only include [drwx] flags.')
+        if len(set(mode)-set('fdrwxFDRWX')) > 0:
+            raise ValueError('Expected mode to only include [fdrwxFDRWX] flags.')
 
 
 class ParserError(Exception):

@@ -168,12 +168,12 @@ class YamlargparseTests(unittest.TestCase):
         parser.add_argument('--cfg',
             action=ActionConfigFile)
         parser.add_argument('--file',
-            action=ActionPath(mode='r'))
+            action=ActionPath(mode='fr'))
         parser.add_argument('--dir',
             action=ActionPath(mode='drw'))
         parser.add_argument('--files',
             nargs='+',
-            action=ActionPath(mode='r'))
+            action=ActionPath(mode='fr'))
 
         cfg = parser.parse_args(['--cfg', abs_yaml_file])
         self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))
