@@ -42,6 +42,7 @@ class ArgumentParser(argparse.ArgumentParser):
             self._logger = logger
         self.error_handler = error_handler
         self._stderr = sys.stderr
+        kwargs['formatter_class'] = formatter_class
         super().__init__(*args, **kwargs)
 
 
