@@ -13,7 +13,7 @@ from typing import Any, List, Dict, Set, Union
 from contextlib import contextmanager, redirect_stderr
 
 
-__version__ = '1.16.0'
+__version__ = '1.16.1'
 
 
 class ArgumentParser(argparse.ArgumentParser):
