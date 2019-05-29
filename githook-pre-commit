@@ -24,7 +24,7 @@ fi
 
 
 ### Check files that changed ###
-FILES=( $(git status --porcelain | sed -r 's|^ |_|; s|^(.) |\1_|;' | grep -E '^([MRA]|.M)') );
+FILES=( $(git status --porcelain | sed -r 's|^ |_|; s|^(.) |\1_|; s|^R_ .* ->|R_|;' | grep -E '^([MRA]|.M)') );
 PYLINT=$(which pylint pylint3 | head -n 1);
 
 check_change_after_staged () {

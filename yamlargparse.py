@@ -22,7 +22,7 @@ class ArgumentParser(argparse.ArgumentParser):
     groups = {} # type: Dict[str, argparse._ArgumentGroup]
 
 
-    def __init__(self, *args, default_config_files:List[str]=[], logger=None, error_handler=None, **kwargs):
+    def __init__(self, *args, default_config_files:List[str]=[], logger=None, error_handler=None, formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs):
         """Initializer for ArgumentParser instance.
 
         All the arguments from the initializer of `argparse.ArgumentParser
