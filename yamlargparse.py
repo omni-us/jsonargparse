@@ -8,6 +8,7 @@ import logging
 import operator
 import argparse
 from argparse import Action, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE
+from copy import deepcopy
 from types import SimpleNamespace
 from typing import Any, List, Dict, Set, Union
 from contextlib import contextmanager, redirect_stderr
@@ -164,11 +165,13 @@ class ArgumentParser(argparse.ArgumentParser):
         return cfg
 
 
-    def dump_yaml(self, cfg:Union[SimpleNamespace, dict]) -> str:
+    def dump_yaml(self, cfg:Union[SimpleNamespace, dict], skip_none:bool=True, skip_check:bool=False) -> str:
         """Generates a yaml string for a configuration object.
 
         Args:
             cfg (types.SimpleNamespace or dict): The configuration object to dump.
+            skip_none (bool): Whether to exclude settings whose value is None.
+            skip_check (bool): Whether to skip parser checking.
 
         Returns:
             str: The configuration in yaml format.
@@ -176,14 +179,18 @@ class ArgumentParser(argparse.ArgumentParser):
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
+        cfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
             cfg = self._namespace_to_dict(cfg)
 
-        self.check_config(cfg, skip_none=True)
+        if not skip_check:
+            self.check_config(cfg, skip_none=True)
 
         cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
         for action in self._actions:
-            if isinstance(action, ActionPath):
+            if skip_none and action.dest in cfg and cfg[action.dest] is None:
+                del cfg[action.dest]
+            elif isinstance(action, ActionPath):
                 if cfg[action.dest] is not None:
                     cfg[action.dest] = cfg[action.dest](absolute=False)
             elif isinstance(action, ActionConfigFile):
@@ -812,13 +819,14 @@ class Path(object):
     obtained without having to remember the working directory from when the
     object was created.
     """
-    def __init__(self, path, mode:str='fr', cwd:str=None):
+    def __init__(self, path, mode:str='fr', cwd:str=None, skip_check:bool=False):
         """Initializer for Path instance.
 
         Args:
             path (str): The path to check and store.
             mode (str): The required type and access permissions among [fdrwxFDRWX].
             cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
+            skip_check (bool): Whether to skip path checks.
 
         Raises:
             ValueError: If the provided mode is invalid.
@@ -836,29 +844,30 @@ class Path(object):
         else:
             abs_path = path if os.path.isabs(path) else os.path.join(cwd, path)
 
-        ptype = 'directory' if 'd' in mode else 'file'
-        if not os.access(abs_path, os.F_OK):
-            raise TypeError(ptype+' does not exist: '+abs_path)
-        if 'd' in mode and not os.path.isdir(abs_path):
-            raise TypeError('path is not a directory: '+abs_path)
-        if 'f' in mode and not os.path.isfile(abs_path):
-            raise TypeError('path is not a file: '+abs_path)
-        if 'r' in mode and not os.access(abs_path, os.R_OK):
-            raise TypeError(ptype+' is not readable: '+abs_path)
-        if 'w' in mode and not os.access(abs_path, os.W_OK):
-            raise TypeError(ptype+' is not writeable: '+abs_path)
-        if 'x' in mode and not os.access(abs_path, os.X_OK):
-            raise TypeError(ptype+' is not executable: '+abs_path)
-        if 'D' in mode and os.path.isdir(abs_path):
-            raise TypeError('path is a directory: '+abs_path)
-        if 'F' in mode and os.path.isfile(abs_path):
-            raise TypeError('path is a file: '+abs_path)
-        if 'R' in mode and os.access(abs_path, os.R_OK):
-            raise TypeError(ptype+' is readable: '+abs_path)
-        if 'W' in mode and os.access(abs_path, os.W_OK):
-            raise TypeError(ptype+' is writeable: '+abs_path)
-        if 'X' in mode and os.access(abs_path, os.X_OK):
-            raise TypeError(ptype+' is executable: '+abs_path)
+        if not skip_check:
+            ptype = 'directory' if 'd' in mode else 'file'
+            if not os.access(abs_path, os.F_OK):
+                raise TypeError(ptype+' does not exist: '+abs_path)
+            if 'd' in mode and not os.path.isdir(abs_path):
+                raise TypeError('path is not a directory: '+abs_path)
+            if 'f' in mode and not os.path.isfile(abs_path):
+                raise TypeError('path is not a file: '+abs_path)
+            if 'r' in mode and not os.access(abs_path, os.R_OK):
+                raise TypeError(ptype+' is not readable: '+abs_path)
+            if 'w' in mode and not os.access(abs_path, os.W_OK):
+                raise TypeError(ptype+' is not writeable: '+abs_path)
+            if 'x' in mode and not os.access(abs_path, os.X_OK):
+                raise TypeError(ptype+' is not executable: '+abs_path)
+            if 'D' in mode and os.path.isdir(abs_path):
+                raise TypeError('path is a directory: '+abs_path)
+            if 'F' in mode and os.path.isfile(abs_path):
+                raise TypeError('path is a file: '+abs_path)
+            if 'R' in mode and os.access(abs_path, os.R_OK):
+                raise TypeError(ptype+' is readable: '+abs_path)
+            if 'W' in mode and os.access(abs_path, os.W_OK):
+                raise TypeError(ptype+' is writeable: '+abs_path)
+            if 'X' in mode and os.access(abs_path, os.X_OK):
+                raise TypeError(ptype+' is executable: '+abs_path)
 
         self.path = path
         self.abs_path = abs_path

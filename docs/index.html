@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.16.1 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.16.1+1commits/2019.05.30 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.16.1
+                master/v1.16.1+1commits/2019.05.30
               </div>
             
           
@@ -427,7 +427,7 @@ examples of arguments that can be added using this action are the following:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args, default_config_files)</p></td>
 <td><p>Parser for command line, yaml files and environment variables.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
 </tbody>
@@ -477,7 +477,7 @@ examples of arguments that can be added using this action are the following:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.check_config" title="yamlargparse.ArgumentParser.check_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_config</span></code></a>(cfg, dict], skip_none)</p></td>
 <td><p>Checks that the content of a given configuration object conforms with the parser.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.dump_yaml" title="yamlargparse.ArgumentParser.dump_yaml"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump_yaml</span></code></a>(cfg, dict])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.dump_yaml" title="yamlargparse.ArgumentParser.dump_yaml"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump_yaml</span></code></a>(cfg, dict], skip_none, skip_check)</p></td>
 <td><p>Generates a yaml string for a configuration object.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.error" title="yamlargparse.ArgumentParser.error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error</span></code></a>(message)</p></td>
@@ -597,11 +597,15 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.dump_yaml">
-<code class="descname">dump_yaml</code><span class="sig-paren">(</span><em>cfg: Union[types.SimpleNamespace, dict]</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dump_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dump_yaml" title="Permalink to this definition">¶</a></dt>
+<code class="descname">dump_yaml</code><span class="sig-paren">(</span><em>cfg: Union[types.SimpleNamespace, dict], skip_none: bool = True, skip_check: bool = False</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dump_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dump_yaml" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a yaml string for a configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration object to dump.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration object to dump.</p></li>
+<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to exclude settings whose value is None.</p></li>
+<li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip parser checking.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The configuration in yaml format.</p>
@@ -993,7 +997,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="class">
 <dt id="yamlargparse.Path">
-<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">Path</code><span class="sig-paren">(</span><em>path</em>, <em>mode: str = 'fr'</em>, <em>cwd: str = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">Path</code><span class="sig-paren">(</span><em>path</em>, <em>mode: str = 'fr'</em>, <em>cwd: str = None</em>, <em>skip_check: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Stores a (possibly relative) path and the corresponding absolute path.</p>
 <p>When a Path instance is created it is checked that: the path exists, whether
@@ -1012,14 +1016,14 @@ object was created.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.Path.__call__" title="yamlargparse.Path.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>([absolute])</p></td>
 <td><p>Returns the path as a string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path.__init__" title="yamlargparse.Path.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(path, mode, cwd)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path.__init__" title="yamlargparse.Path.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Initializer for Path instance.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
 <dt id="yamlargparse.Path.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>path</em>, <em>mode: str = 'fr'</em>, <em>cwd: str = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>path</em>, <em>mode: str = 'fr'</em>, <em>cwd: str = None</em>, <em>skip_check: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for Path instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1027,6 +1031,7 @@ object was created.</p>
 <li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The path to check and store.</p></li>
 <li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [fdrwxFDRWX].</p></li>
 <li><p><strong>cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Working directory for relative paths. If None, then os.getcwd() is used.</p></li>
+<li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip path checks.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises</dt>
