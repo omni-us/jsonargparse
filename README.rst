@@ -134,12 +134,11 @@ Environment variables
 =====================
 
 The yamlargparse parsers by default also get values from environment variables.
-In the case of environment variables, the parser checks existing variables whose
-name is of the form :code:`[PROG_][LEV__]*OPT`, that is all in upper case, first
-only if set the name of the program followed by underscore and then the argument
-name replacing dots with two underscores. Using the parser from the
-:ref:`nested-namespaces` section above, in your shell you would set the
-environment variables as:
+The parser checks existing environment variables whose name is of the form
+:code:`[PROG_][LEV__]*OPT`, that is all in upper case, first the name of the
+program followed by underscore and then the argument name replacing dots with
+two underscores. Using the parser from the :ref:`nested-namespaces` section
+above, in your shell you would set the environment variables as:
 
 .. code-block:: bash
 
@@ -171,6 +170,10 @@ YAML configuration files
 An important feature of this module is the parsing of yaml files. The dot
 notation hierarchy of the arguments (see :ref:`nested-namespaces`) are
 used for the expected structure of the yaml files.
+
+When creating the :class:`.ArgumentParser` the :code:`default_config_files`
+argument can be given to specify patterns to search for configuration files.
+Only the first matched config file is parsed.
 
 When parsing command line arguments, it is possible to add a yaml configuration
 file path argument. The yaml file would be read and parsed in the specific
@@ -262,19 +265,6 @@ as argument either the path to a file listing the paths is given or the special
     >>> cfg = parser.parse_args(['--list', '-')          # List from stdin
 
 
-Parsing with another parser
-===========================
-
-Sometimes an element in a yaml file could be a path to another yaml file with a
-complex structure which should also be parsed. To handle these cases there is
-the :class:`.ActionParser` which receives as argument a yamlargparse parser
-object. For example:
-
-.. code-block:: python
-
-    parser.add_argument('--complex.node', action=yamlargparse.ActionParser(parser=node_parser))
-
-
 Comparison operators
 ====================
 
@@ -291,3 +281,31 @@ examples of arguments that can be added using this action are the following:
     # Either larger than zero or 'off' string
     def int_or_off(x): return x if x == 'off' else int(x)
     parser.add_argument('--op3', action=yamlargparse.ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
+
+
+Yes/No arguments
+================
+
+When parsing boolean values from the command line, sometimes it is useful to
+define two paired options, one to set to true and the other for false. The
+:class:`.ActionYesNo` makes this straightforward. A couple of examples would be:
+
+.. code-block:: python
+
+    # --opt1 for true and --no_opt1 for false.
+    parser.add_argument('--op1', action=yamlargparse.ActionYesNo)
+    # --with-opt2 for true and --without-opt2 for false.
+    parser.add_argument('--with-op2', action=yamlargparse.ActionYesNo(yes_prefix='with-', no_prefix='without-'))
+
+
+Parsing with another parser
+===========================
+
+Sometimes an element in a yaml file could be a path to another yaml file with a
+complex structure which should also be parsed. To handle these cases there is
+the :class:`.ActionParser` which receives as argument a yamlargparse parser
+object. For example:
+
+.. code-block:: python
+
+    parser.add_argument('--complex.node', action=yamlargparse.ActionParser(parser=node_parser))

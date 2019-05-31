@@ -536,27 +536,52 @@ class ActionConfigFile(Action):
 
 
 class ActionYesNo(Action):
-    """Paired action --opt, --no_opt to set True or False respectively."""
+    """Paired options --{yes_prefix}opt, --{no_prefix}opt to set True or False respectively."""
     def __init__(self, **kwargs):
-        """Initializer for ActionYesNo instance."""
-        opt_name = kwargs['option_strings'][0]
-        if 'dest' not in kwargs:
-            kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
-        kwargs['option_strings'] += [re.sub('^--', '--no_', opt_name)]
-        kwargs['nargs'] = 0
-        def boolean(x):
-            if not isinstance(x, bool):
-                raise TypeError('value not boolean: '+str(x))
-            return x
-        kwargs['type'] = boolean
-        super().__init__(**kwargs)
+        """Initializer for ActionYesNo instance.
 
-    def __call__(self, parser, namespace, values, option_string=None):
-        """Sets the corresponding key to True or False depending on the option string used."""
-        if option_string.startswith('--no_'):
-            setattr(namespace, self.dest, False)
+        Args:
+            yes_prefix (str): Prefix for yes option (default='').
+            no_prefix (str): Prefix for no option (default='no_').
+
+        Raises:
+            ValueError: If a parameter is invalid.
+        """
+        self._yes_prefix = ''
+        self._no_prefix = 'no_'
+        if 'yes_prefix' in kwargs or 'no_prefix' in kwargs or len(kwargs) == 0:
+            _check_unknown_kwargs(kwargs, {'yes_prefix', 'no_prefix'})
+            if 'yes_prefix' in kwargs:
+                self._yes_prefix = kwargs['yes_prefix']
+            if 'no_prefix' in kwargs:
+                self._no_prefix = kwargs['no_prefix']
+        elif not 'option_strings' in kwargs:
+            raise ValueError('Expected yes_prefix and/or no_prefix keyword arguments.')
         else:
-            setattr(namespace, self.dest, True)
+            self._yes_prefix = kwargs.pop('_yes_prefix') if '_yes_prefix' in kwargs else ''
+            self._no_prefix = kwargs.pop('_no_prefix') if '_no_prefix' in kwargs else 'no_'
+            opt_name = kwargs['option_strings'][0]
+            if 'dest' not in kwargs:
+                kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
+            kwargs['option_strings'] += [re.sub('^--'+self._yes_prefix, '--'+self._no_prefix, opt_name)]
+            kwargs['nargs'] = 0
+            def boolean(x):
+                if not isinstance(x, bool):
+                    raise TypeError('value not boolean: '+str(x))
+                return x
+            kwargs['type'] = boolean
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        """Sets the corresponding key to True or False depending on the option string used."""
+        if len(args) == 0:
+            kwargs['_yes_prefix'] = self._yes_prefix
+            kwargs['_no_prefix'] = self._no_prefix
+            return ActionYesNo(**kwargs)
+        if args[3].startswith('--'+self._no_prefix):
+            setattr(args[1], self.dest, False)
+        else:
+            setattr(args[1], self.dest, True)
 
 
 class ActionParser(Action):

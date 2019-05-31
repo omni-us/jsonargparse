@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.17.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.17.0+2commits/2019.05.31 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.17.0
+                master/v1.17.0+2commits/2019.05.31
               </div>
             
           
@@ -91,8 +91,9 @@
 <li><a class="reference internal" href="#environment-variables">Environment variables</a></li>
 <li><a class="reference internal" href="#yaml-configuration-files">YAML configuration files</a></li>
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
-<li><a class="reference internal" href="#parsing-with-another-parser">Parsing with another parser</a></li>
 <li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
+<li><a class="reference internal" href="#yes-no-arguments">Yes/No arguments</a></li>
+<li><a class="reference internal" href="#parsing-with-another-parser">Parsing with another parser</a></li>
 <li><a class="reference internal" href="#module-yamlargparse">API Reference</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
@@ -267,12 +268,11 @@ example you could do the following:</p>
 <div class="section" id="environment-variables">
 <h1>Environment variables<a class="headerlink" href="#environment-variables" title="Permalink to this headline">¶</a></h1>
 <p>The yamlargparse parsers by default also get values from environment variables.
-In the case of environment variables, the parser checks existing variables whose
-name is of the form <code class="code docutils literal notranslate"><span class="pre">[PROG_][LEV__]*OPT</span></code>, that is all in upper case, first
-only if set the name of the program followed by underscore and then the argument
-name replacing dots with two underscores. Using the parser from the
-<a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a> section above, in your shell you would set the
-environment variables as:</p>
+The parser checks existing environment variables whose name is of the form
+<code class="code docutils literal notranslate"><span class="pre">[PROG_][LEV__]*OPT</span></code>, that is all in upper case, first the name of the
+program followed by underscore and then the argument name replacing dots with
+two underscores. Using the parser from the <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a> section
+above, in your shell you would set the environment variables as:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">APP_LEV1__OPT1</span><span class="o">=</span><span class="s1">&#39;from env 1&#39;</span>
 <span class="nb">export</span> <span class="nv">APP_LEV1__OPT2</span><span class="o">=</span><span class="s1">&#39;from env 2&#39;</span>
 </pre></div>
@@ -298,6 +298,9 @@ there is no command line call involved.</p>
 <p>An important feature of this module is the parsing of yaml files. The dot
 notation hierarchy of the arguments (see <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a>) are
 used for the expected structure of the yaml files.</p>
+<p>When creating the <a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a> the <code class="code docutils literal notranslate"><span class="pre">default_config_files</span></code>
+argument can be given to specify patterns to search for configuration files.
+Only the first matched config file is parsed.</p>
 <p>When parsing command line arguments, it is possible to add a yaml configuration
 file path argument. The yaml file would be read and parsed in the specific
 position among the command line arguments, so the arguments after would override
@@ -372,16 +375,6 @@ as argument either the path to a file listing the paths is given or the special
 </pre></div>
 </div>
 </div>
-<div class="section" id="parsing-with-another-parser">
-<h1>Parsing with another parser<a class="headerlink" href="#parsing-with-another-parser" title="Permalink to this headline">¶</a></h1>
-<p>Sometimes an element in a yaml file could be a path to another yaml file with a
-complex structure which should also be parsed. To handle these cases there is
-the <a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> which receives as argument a yamlargparse parser
-object. For example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--complex.node&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionParser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">node_parser</span><span class="p">))</span>
-</pre></div>
-</div>
-</div>
 <div class="section" id="comparison-operators">
 <h1>Comparison operators<a class="headerlink" href="#comparison-operators" title="Permalink to this headline">¶</a></h1>
 <p>It is quite common that when parsing a number, its range should be limited. To
@@ -394,6 +387,28 @@ examples of arguments that can be added using this action are the following:</p>
 <span class="c1"># Either larger than zero or &#39;off&#39; string</span>
 <span class="k">def</span> <span class="nf">int_or_off</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;off&#39;</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op3&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="s1">&#39;off&#39;</span><span class="p">)],</span> <span class="n">join</span><span class="o">=</span><span class="s1">&#39;or&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">int_or_off</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="yes-no-arguments">
+<h1>Yes/No arguments<a class="headerlink" href="#yes-no-arguments" title="Permalink to this headline">¶</a></h1>
+<p>When parsing boolean values from the command line, sometimes it is useful to
+define two paired options, one to set to true and the other for false. The
+<a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a> makes this straightforward. A couple of examples would be:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># --opt1 for true and --no_opt1 for false.</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionYesNo</span><span class="p">)</span>
+<span class="c1"># --with-opt2 for true and --without-opt2 for false.</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--with-op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionYesNo</span><span class="p">(</span><span class="n">yes_prefix</span><span class="o">=</span><span class="s1">&#39;with-&#39;</span><span class="p">,</span> <span class="n">no_prefix</span><span class="o">=</span><span class="s1">&#39;without-&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="parsing-with-another-parser">
+<h1>Parsing with another parser<a class="headerlink" href="#parsing-with-another-parser" title="Permalink to this headline">¶</a></h1>
+<p>Sometimes an element in a yaml file could be a path to another yaml file with a
+complex structure which should also be parsed. To handle these cases there is
+the <a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> which receives as argument a yamlargparse parser
+object. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--complex.node&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionParser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">node_parser</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -422,7 +437,7 @@ examples of arguments that can be added using this action are the following:</p>
 <td><p>Action to check and store a list of file paths read from a plain text file or stream.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
-<td><p>Paired action –opt, –no_opt to set True or False respectively.</p></td>
+<td><p>Paired options –{yes_prefix}opt, –{no_prefix}opt to set True or False respectively.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args, default_config_files)</p></td>
 <td><p>Parser for command line, yaml files and environment variables.</p></td>
@@ -770,7 +785,7 @@ are supported. Additionally it accepts:</p>
 <dt id="yamlargparse.ActionYesNo">
 <em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionYesNo</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
-<p>Paired action –opt, –no_opt to set True or False respectively.</p>
+<p>Paired options –{yes_prefix}opt, –{no_prefix}opt to set True or False respectively.</p>
 <p><strong>Methods</strong></p>
 <table class="longtable docutils align-center">
 <colgroup>
@@ -778,7 +793,7 @@ are supported. Additionally it accepts:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo.__call__" title="yamlargparse.ActionYesNo.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(parser, namespace, values[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo.__call__" title="yamlargparse.ActionYesNo.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Sets the corresponding key to True or False depending on the option string used.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo.__init__" title="yamlargparse.ActionYesNo.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
@@ -790,11 +805,22 @@ are supported. Additionally it accepts:</p>
 <dt id="yamlargparse.ActionYesNo.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionYesNo instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>yes_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for yes option (default=’‘).</p></li>
+<li><p><strong>no_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for no option (default=’<a href="#id2"><span class="problematic" id="id3">no_</span></a>’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – If a parameter is invalid.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="yamlargparse.ActionYesNo.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>parser</em>, <em>namespace</em>, <em>values</em>, <em>option_string=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the corresponding key to True or False depending on the option string used.</p>
 </dd></dl>
 

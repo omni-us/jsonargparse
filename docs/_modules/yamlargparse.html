@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse &mdash; yamlargparse 1.17.0 documentation</title>
+  <title>yamlargparse &mdash; yamlargparse master/v1.17.0+2commits/2019.05.31 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.17.0
+                master/v1.17.0+2commits/2019.05.31
               </div>
             
           
@@ -683,27 +683,52 @@
 
 
 <div class="viewcode-block" id="ActionYesNo"><a class="viewcode-back" href="../index.html#yamlargparse.ActionYesNo">[docs]</a><span class="k">class</span> <span class="nc">ActionYesNo</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Paired action --opt, --no_opt to set True or False respectively.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Paired options --{yes_prefix}opt, --{no_prefix}opt to set True or False respectively.&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="ActionYesNo.__init__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionYesNo.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initializer for ActionYesNo instance.&quot;&quot;&quot;</span>
-        <span class="n">opt_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s1">&#39;dest&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^--&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">opt_name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^--&#39;</span><span class="p">,</span> <span class="s1">&#39;--no_&#39;</span><span class="p">,</span> <span class="n">opt_name</span><span class="p">)]</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;nargs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">def</span> <span class="nf">boolean</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;value not boolean: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-            <span class="k">return</span> <span class="n">x</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boolean</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="sd">&quot;&quot;&quot;Initializer for ActionYesNo instance.</span>
 
-<div class="viewcode-block" id="ActionYesNo.__call__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionYesNo.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sets the corresponding key to True or False depending on the option string used.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">option_string</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;--no_&#39;</span><span class="p">):</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="sd">        Args:</span>
+<span class="sd">            yes_prefix (str): Prefix for yes option (default=&#39;&#39;).</span>
+<span class="sd">            no_prefix (str): Prefix for no option (default=&#39;no_&#39;).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If a parameter is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span> <span class="o">=</span> <span class="s1">&#39;no_&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;yes_prefix&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="s1">&#39;no_prefix&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;yes_prefix&#39;</span><span class="p">,</span> <span class="s1">&#39;no_prefix&#39;</span><span class="p">})</span>
+            <span class="k">if</span> <span class="s1">&#39;yes_prefix&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;yes_prefix&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;no_prefix&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;no_prefix&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="s1">&#39;option_strings&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected yes_prefix and/or no_prefix keyword arguments.&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_yes_prefix&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;_yes_prefix&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_no_prefix&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;_no_prefix&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s1">&#39;no_&#39;</span>
+            <span class="n">opt_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;dest&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^--&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">opt_name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span><span class="p">,</span> <span class="n">opt_name</span><span class="p">)]</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;nargs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">def</span> <span class="nf">boolean</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;value not boolean: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">x</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boolean</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ActionYesNo.__call__"><a class="viewcode-back" href="../index.html#yamlargparse.ActionYesNo.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the corresponding key to True or False depending on the option string used.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_yes_prefix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_no_prefix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span>
+            <span class="k">return</span> <span class="n">ActionYesNo</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="ActionParser"><a class="viewcode-back" href="../index.html#yamlargparse.ActionParser">[docs]</a><span class="k">class</span> <span class="nc">ActionParser</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
