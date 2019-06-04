@@ -283,6 +283,36 @@ examples of arguments that can be added using this action are the following:
     parser.add_argument('--op3', action=yamlargparse.ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
 
 
+Json schemas
+============
+
+The :class:`.ActionJsonSchema` class is provided to allow parsing and validation
+of values using a json schema. This class requires the `jsonschema
+<https://pypi.org/project/jsonschema/>`_ python package. Though note that
+jsonschema is not a requirement of yamlargparse, so to use
+:class:`.ActionJsonSchema` it is required to explicitly install jsonschema.
+
+Check out the `jsonschema documentation
+<https://python-jsonschema.readthedocs.io/>`_ to learn how to write a schema.
+The current version of yamlargparse uses Draft7Validator. Parsing an argument
+using a json schema is done like in the following example:
+
+.. code-block:: python
+
+    >>> schema = {
+    ...     "type" : "object",
+    ...     "properties" : {
+    ...         "price" : {"type" : "number"},
+    ...         "name" : {"type" : "string"},
+    ...     },
+    ... }
+
+    >>> parser.add_argument('--op', action=yamlargparse.ActionJsonSchema(schema=schema))
+
+    >>> parser.parse_args(['--op', '{"price": 1.5, "name": "cookie"}'])
+    namespace(op=namespace(name='cookie', price=1.5))
+
+
 Yes/No arguments
 ================
 

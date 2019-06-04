@@ -13,6 +13,12 @@ from types import SimpleNamespace
 from typing import Any, List, Dict, Set, Union
 from contextlib import contextmanager, redirect_stderr
 
+try:
+    import jsonschema # type: ignore
+    from jsonschema import Draft7Validator as jsonvalidator # type: ignore
+except ImportError:
+    jsonschema = False
+
 
 __version__ = '1.18.0'
 
@@ -582,6 +588,63 @@ class ActionYesNo(Action):
             setattr(args[1], self.dest, False)
         else:
             setattr(args[1], self.dest, True)
+
+
+class ActionJsonSchema(Action):
+    """Action to parse option as json validated by a jsonschema."""
+    def __init__(self, **kwargs):
+        """Initializer for ActionJsonSchema instance.
+
+        Args:
+            schema (str or object): Schema to validate values against.
+
+        Raises:
+            ImportError: If jsonschema package is not available.
+            ValueError: If a parameter is invalid.
+            jsonschema.exceptions.SchemaError: If the schema is invalid.
+        """
+        if 'schema' in kwargs:
+            if not jsonschema:
+                raise ImportError('jsonschema is required by ActionJsonSchema.')
+            _check_unknown_kwargs(kwargs, {'schema'})
+            self._schema = kwargs['schema']
+            if isinstance(self._schema, str):
+                self._schema = yaml.safe_load(self._schema)
+            jsonvalidator.check_schema(self._schema)
+        elif not '_schema' in kwargs:
+            raise ValueError('Expected schema keyword argument.')
+        else:
+            self._schema = kwargs.pop('_schema')
+            kwargs['type'] = str
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        """Parses an argument with the corresponding jsonschema.
+
+        Raises:
+            TypeError: If the argument is not valid.
+        """
+        if len(args) == 0:
+            kwargs['_schema'] = self._schema
+            return ActionJsonSchema(**kwargs)
+        setattr(args[1], self.dest, self._check_type(args[2]))
+
+    def _check_type(self, value):
+        islist = _is_action_value_list(self)
+        if not islist:
+            value = [value]
+        elif not isinstance(value, list):
+            raise TypeError('for ActionJsonSchema with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
+        for num, val in enumerate(value):
+            try:
+                if isinstance(val, str):
+                    val = yaml.safe_load(val)
+                    value[num] = val
+                jsonschema.validate(val, schema=self._schema)
+            except (TypeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:
+                elem = '' if not islist else ' element '+str(num+1)
+                raise TypeError('parser key "'+self.dest+'"'+elem+': '+str(ex))
+        return value if islist else value[0]
 
 
 class ActionParser(Action):

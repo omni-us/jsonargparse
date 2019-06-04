@@ -273,6 +273,43 @@ class YamlargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
+    def test_jsonschema(self):
+        """Test the use of ActionJsonSchema."""
+        if not jsonschema:
+            print('warning: jsonschema not installed thus ActionJsonSchema test skipped.')
+            return
+
+        schema1 = {
+            "type": "array",
+            "items": { "type": "integer" }
+        }
+
+        schema2 = {
+            "type": "object",
+            "properties": {
+                "k1": { "type": "string" },
+                "k2": { "type": "integer" },
+                "k3": { "type": "number" }
+            },
+            "additionalProperties": False
+        }
+
+        parser = ArgumentParser(prog='app')
+        parser.add_argument('--op1',
+            action=ActionJsonSchema(schema=schema1))
+        parser.add_argument('--op2',
+            action=ActionJsonSchema(schema=schema2))
+
+        self.assertEqual([1, 2, 3, 4], parser.parse_args(['--op1', '[1, 2, 3, 4]']).op1)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '[1, "two"]']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '[1.5, 2]']))
+
+        self.assertEqual({"k1": "one", "k2": 2, "k3": 3.3}, vars(parser.parse_args(['--op2', '{"k1": "one", "k2": 2, "k3": 3.3}']).op2))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k1": 1}']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k2": "2"}']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k4": 4}']))
+
+
     def test_operators(self):
         """Test the use of ActionOperators."""
         parser = ArgumentParser(prog='app')

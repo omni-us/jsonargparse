@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.18.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.18.0+2commits/2019.06.04 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.18.0
+                master/v1.18.0+2commits/2019.06.04
               </div>
             
           
@@ -92,6 +92,7 @@
 <li><a class="reference internal" href="#yaml-configuration-files">YAML configuration files</a></li>
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
 <li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
+<li><a class="reference internal" href="#json-schemas">Json schemas</a></li>
 <li><a class="reference internal" href="#yes-no-arguments">Yes/No arguments</a></li>
 <li><a class="reference internal" href="#parsing-with-another-parser">Parsing with another parser</a></li>
 <li><a class="reference internal" href="#module-yamlargparse">API Reference</a></li>
@@ -390,6 +391,30 @@ examples of arguments that can be added using this action are the following:</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="json-schemas">
+<h1>Json schemas<a class="headerlink" href="#json-schemas" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> class is provided to allow parsing and validation
+of values using a json schema. This class requires the <a class="reference external" href="https://pypi.org/project/jsonschema/">jsonschema</a> python package. Though note that
+jsonschema is not a requirement of yamlargparse, so to use
+<a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> it is required to explicitly install jsonschema.</p>
+<p>Check out the <a class="reference external" href="https://python-jsonschema.readthedocs.io/">jsonschema documentation</a> to learn how to write a schema.
+The current version of yamlargparse uses Draft7Validator. Parsing an argument
+using a json schema is done like in the following example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">schema</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;properties&quot;</span> <span class="p">:</span> <span class="p">{</span>
+<span class="gp">... </span>        <span class="s2">&quot;price&quot;</span> <span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;number&quot;</span><span class="p">},</span>
+<span class="gp">... </span>        <span class="s2">&quot;name&quot;</span> <span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span><span class="p">}</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">))</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="s1">&#39;{&quot;price&quot;: 1.5, &quot;name&quot;: &quot;cookie&quot;}&#39;</span><span class="p">])</span>
+<span class="go">namespace(op=namespace(name=&#39;cookie&#39;, price=1.5))</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="yes-no-arguments">
 <h1>Yes/No arguments<a class="headerlink" href="#yes-no-arguments" title="Permalink to this headline">¶</a></h1>
 <p>When parsing boolean values from the command line, sometimes it is useful to
@@ -424,25 +449,28 @@ object. For example:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile" title="yamlargparse.ActionConfigFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a>(**kwargs)</p></td>
 <td><p>Action to indicate that an argument is a configuration file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionOperators" title="yamlargparse.ActionOperators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a>(**kwargs)</p></td>
+<td><p>Action to parse option as json validated by a jsonschema.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionOperators" title="yamlargparse.ActionOperators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>(**kwargs)</p></td>
 <td><p>Action to restrict a value with comparison operators.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code></a>(**kwargs)</p></td>
 <td><p>Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPath</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPath</span></code></a>(**kwargs)</p></td>
 <td><p>Action to check and store a path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionPathList" title="yamlargparse.ActionPathList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPathList</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionPathList" title="yamlargparse.ActionPathList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPathList</span></code></a>(**kwargs)</p></td>
 <td><p>Action to check and store a list of file paths read from a plain text file or stream.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
 <td><p>Paired options –{yes_prefix}opt, –{no_prefix}opt to set True or False respectively.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args, default_config_files)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args, default_config_files)</p></td>
 <td><p>Parser for command line, yaml files and environment variables.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
 </tbody>
@@ -822,6 +850,57 @@ are supported. Additionally it accepts:</p>
 <dt id="yamlargparse.ActionYesNo.__call__">
 <code class="descname">__call__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the corresponding key to True or False depending on the option string used.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="yamlargparse.ActionJsonSchema">
+<em class="property">class </em><code class="descclassname">yamlargparse.</code><code class="descname">ActionJsonSchema</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonSchema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonSchema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
+<p>Action to parse option as json validated by a jsonschema.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonSchema.__call__" title="yamlargparse.ActionJsonSchema.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Parses an argument with the corresponding jsonschema.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonSchema.__init__" title="yamlargparse.ActionJsonSchema.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initializer for ActionJsonSchema instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.ActionJsonSchema.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonSchema.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonSchema.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ActionJsonSchema instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>schema</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a>) – Schema to validate values against.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.7)"><strong>ImportError</strong></a> – If jsonschema package is not available.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – If a parameter is invalid.</p></li>
+<li><p><strong>jsonschema.exceptions.SchemaError</strong> – If the schema is invalid.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ActionJsonSchema.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonSchema.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonSchema.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses an argument with the corresponding jsonschema.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If the argument is not valid.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
