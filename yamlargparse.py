@@ -20,7 +20,7 @@ except ImportError:
     jsonschema = False
 
 
-__version__ = '1.19.0'
+__version__ = '1.20.0'
 
 
 class ArgumentParser(argparse.ArgumentParser):
