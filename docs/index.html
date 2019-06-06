@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.19.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.19.0+1commits/2019.06.06 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.19.0
+                master/v1.19.0+1commits/2019.06.06
               </div>
             
           
@@ -520,17 +520,23 @@ object. For example:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.check_config" title="yamlargparse.ArgumentParser.check_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_config</span></code></a>(cfg, dict], skip_none)</p></td>
 <td><p>Checks that the content of a given configuration object conforms with the parser.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.dump_yaml" title="yamlargparse.ArgumentParser.dump_yaml"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump_yaml</span></code></a>(cfg, dict], skip_none, skip_check)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.dict_to_namespace" title="yamlargparse.ArgumentParser.dict_to_namespace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict_to_namespace</span></code></a>(cfg_dict, Any])</p></td>
+<td><p>Converts a nested dictionary into a nested namespace.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.dump_yaml" title="yamlargparse.ArgumentParser.dump_yaml"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump_yaml</span></code></a>(cfg, dict], skip_none, skip_check)</p></td>
 <td><p>Generates a yaml string for a configuration object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.error" title="yamlargparse.ArgumentParser.error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error</span></code></a>(message)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.error" title="yamlargparse.ArgumentParser.error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error</span></code></a>(message)</p></td>
 <td><p>Logs error message if a logger is set, calls the error handler and raises a ParserError.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.get_defaults" title="yamlargparse.ArgumentParser.get_defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_defaults</span></code></a>(nested)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.get_defaults" title="yamlargparse.ArgumentParser.get_defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_defaults</span></code></a>(nested)</p></td>
 <td><p>Returns a namespace with all default values.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.merge_config" title="yamlargparse.ArgumentParser.merge_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_config</span></code></a>(cfg_from, cfg_to)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.merge_config" title="yamlargparse.ArgumentParser.merge_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_config</span></code></a>(cfg_from, cfg_to)</p></td>
 <td><p>Merges the first configuration into the second configuration.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.namespace_to_dict" title="yamlargparse.ArgumentParser.namespace_to_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">namespace_to_dict</span></code></a>(cfg_ns)</p></td>
+<td><p>Converts a nested namespace into a nested dictionary.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.parse_args" title="yamlargparse.ArgumentParser.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>([args, namespace])</p></td>
 <td><p>Parses command line argument strings.</p></td>
@@ -758,6 +764,40 @@ are supported. Additionally it accepts:</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.dict_to_namespace">
+<em class="property">static </em><code class="descname">dict_to_namespace</code><span class="sig-paren">(</span><em>cfg_dict: Dict[str, Any]</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dict_to_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dict_to_namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a nested dictionary into a nested namespace.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The nested configuration namespace.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="yamlargparse.ArgumentParser.namespace_to_dict">
+<em class="property">static </em><code class="descname">namespace_to_dict</code><span class="sig-paren">(</span><em>cfg_ns: types.SimpleNamespace</em><span class="sig-paren">)</span> &#x2192; Dict[str, Any]<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.namespace_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a nested namespace into a nested dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)"><em>types.SimpleNamespace</em></a>) – The configuration to process.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The nested configuration dictionary.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>

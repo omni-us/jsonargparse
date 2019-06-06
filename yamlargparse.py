@@ -87,7 +87,7 @@ class ArgumentParser(argparse.ArgumentParser):
         except TypeError as ex:
             self.error(str(ex))
 
-        return self._dict_to_namespace(self._flat_namespace_to_dict(cfg))
+        return self.dict_to_namespace(self._flatnamespace_to_dict(cfg))
 
 
     def parse_yaml_path(self, yaml_path:str, env:bool=True, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
@@ -137,7 +137,7 @@ class ArgumentParser(argparse.ArgumentParser):
             cfg = self._load_yaml(yaml_str)
 
             if nested:
-                cfg = self._flat_namespace_to_dict(self._dict_to_namespace(cfg))
+                cfg = self._flatnamespace_to_dict(self.dict_to_namespace(cfg))
 
             if env:
                 cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
@@ -151,7 +151,7 @@ class ArgumentParser(argparse.ArgumentParser):
         except TypeError as ex:
             self.error(str(ex))
 
-        return self._dict_to_namespace(cfg)
+        return self.dict_to_namespace(cfg)
 
 
     def _load_yaml(self, yaml_str:str) -> Dict[str, Any]:
@@ -164,7 +164,7 @@ class ArgumentParser(argparse.ArgumentParser):
             TypeError: If there is an invalid value according to the parser.
         """
         cfg = yaml.safe_load(yaml_str)
-        cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
+        cfg = self.namespace_to_dict(self._dict_to_flat_namespace(cfg))
         for action in self._actions:
             if action.dest in cfg:
                 cfg[action.dest] = self._check_value_key(action, cfg[action.dest], action.dest)
@@ -187,12 +187,12 @@ class ArgumentParser(argparse.ArgumentParser):
         """
         cfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
-            cfg = self._namespace_to_dict(cfg)
+            cfg = self.namespace_to_dict(cfg)
 
         if not skip_check:
             self.check_config(cfg, skip_none=True)
 
-        cfg = self._namespace_to_dict(self._dict_to_flat_namespace(cfg))
+        cfg = self.namespace_to_dict(self._dict_to_flat_namespace(cfg))
         for action in self._actions:
             if skip_none and action.dest in cfg and cfg[action.dest] is None:
                 del cfg[action.dest]
@@ -201,7 +201,7 @@ class ArgumentParser(argparse.ArgumentParser):
                     cfg[action.dest] = cfg[action.dest](absolute=False)
             elif isinstance(action, ActionConfigFile):
                 del cfg[action.dest]
-        cfg = self._flat_namespace_to_dict(self._dict_to_namespace(cfg))
+        cfg = self._flatnamespace_to_dict(self.dict_to_namespace(cfg))
 
         return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
 
@@ -233,7 +233,7 @@ class ArgumentParser(argparse.ArgumentParser):
                     cfg[action.dest] = self._check_value_key(action, env[env_var], env_var)
 
             if nested:
-                cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
+                cfg = self._flatnamespace_to_dict(SimpleNamespace(**cfg))
 
             if defaults:
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
@@ -243,7 +243,7 @@ class ArgumentParser(argparse.ArgumentParser):
         except TypeError as ex:
             self.error(str(ex))
 
-        return self._dict_to_namespace(cfg)
+        return self.dict_to_namespace(cfg)
 
 
     def get_defaults(self, nested:bool=True) -> SimpleNamespace:
@@ -276,12 +276,12 @@ class ArgumentParser(argparse.ArgumentParser):
                 self._logger.info('parsed configuration from default path: '+default_config_files[0])
 
             if nested:
-                cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
+                cfg = self._flatnamespace_to_dict(SimpleNamespace(**cfg))
 
         except TypeError as ex:
             self.error(str(ex))
 
-        return self._dict_to_namespace(cfg)
+        return self.dict_to_namespace(cfg)
 
 
     def add_argument_group(self, *args, name:str=None, **kwargs):
@@ -315,8 +315,9 @@ class ArgumentParser(argparse.ArgumentParser):
             TypeError: If any of the values are not valid.
             KeyError: If a key in cfg is not defined in the parser.
         """
+        cfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
-            cfg = self._namespace_to_dict(cfg)
+            cfg = self.namespace_to_dict(cfg)
 
         def find_action(dest):
             for action in self._actions:
@@ -352,7 +353,7 @@ class ArgumentParser(argparse.ArgumentParser):
         Returns:
             types.SimpleNamespace: The merged configuration.
         """
-        return ArgumentParser._dict_to_namespace(ArgumentParser._merge_config(cfg_from, cfg_to))
+        return ArgumentParser.dict_to_namespace(ArgumentParser._merge_config(cfg_from, cfg_to))
 
 
     @staticmethod
@@ -378,8 +379,8 @@ class ArgumentParser(argparse.ArgumentParser):
                     cfg_to[k] = merge_values(cfg_from[k], cfg_to[k])
             return cfg_to
 
-        cfg_from = cfg_from if isinstance(cfg_from, dict) else ArgumentParser._namespace_to_dict(cfg_from)
-        cfg_to = cfg_to if isinstance(cfg_to, dict) else ArgumentParser._namespace_to_dict(cfg_to)
+        cfg_from = cfg_from if isinstance(cfg_from, dict) else ArgumentParser.namespace_to_dict(cfg_from)
+        cfg_to = cfg_to if isinstance(cfg_to, dict) else ArgumentParser.namespace_to_dict(cfg_to)
         return merge_values(cfg_from, cfg_to.copy())
 
 
@@ -414,7 +415,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
 
     @staticmethod
-    def _flat_namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
+    def _flatnamespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
         """Converts a flat namespace into a nested dictionary.
 
         Args:
@@ -468,7 +469,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
 
     @staticmethod
-    def _dict_to_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
+    def dict_to_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
         """Converts a nested dictionary into a nested namespace.
 
         Args:
@@ -481,12 +482,16 @@ class ArgumentParser(argparse.ArgumentParser):
             for k, v in cfg.items():
                 if isinstance(v, dict):
                     cfg[k] = expand_dict(v)
+                elif isinstance(v, list):
+                    for nn, vv in enumerate(v):
+                        if isinstance(vv, dict):
+                            cfg[k][nn] = expand_dict(vv)
             return SimpleNamespace(**cfg)
         return expand_dict(cfg_dict)
 
 
     @staticmethod
-    def _namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
+    def namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
         """Converts a nested namespace into a nested dictionary.
 
         Args:
@@ -500,6 +505,10 @@ class ArgumentParser(argparse.ArgumentParser):
             for k, v in cfg.items():
                 if isinstance(v, SimpleNamespace):
                     cfg[k] = expand_namespace(v)
+                elif isinstance(v, list):
+                    for nn, vv in enumerate(v):
+                        if isinstance(vv, SimpleNamespace):
+                            cfg[k][nn] = expand_namespace(vv)
             return cfg
         return expand_namespace(cfg_ns)
 
@@ -694,7 +703,7 @@ class ActionParser(Action):
 
     @staticmethod
     def _fix_conflicts(parser, cfg):
-        cfg_dict = parser._namespace_to_dict(cfg)
+        cfg_dict = parser.namespace_to_dict(cfg)
         for action in parser._actions:
             if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
                 children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]
