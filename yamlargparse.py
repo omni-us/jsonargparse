@@ -14,10 +14,10 @@ from typing import Any, List, Dict, Set, Union
 from contextlib import contextmanager, redirect_stderr
 
 try:
-    import jsonschema # type: ignore
-    from jsonschema import Draft7Validator as jsonvalidator # type: ignore
-except ImportError:
-    jsonschema = False
+    import jsonschema  # type: ignore
+    from jsonschema import Draft4Validator as jsonvalidator  # type: ignore
+except Exception as ex:
+    jsonschema = jsonvalidator = ex
 
 
 __version__ = '1.20.0'
@@ -198,7 +198,10 @@ class ArgumentParser(argparse.ArgumentParser):
                 del cfg[action.dest]
             elif isinstance(action, ActionPath):
                 if cfg[action.dest] is not None:
-                    cfg[action.dest] = cfg[action.dest](absolute=False)
+                    if isinstance(cfg[action.dest], list):
+                        cfg[action.dest] = [p(absolute=False) for p in cfg[action.dest]]
+                    else:
+                        cfg[action.dest] = cfg[action.dest](absolute=False)
             elif isinstance(action, ActionConfigFile):
                 del cfg[action.dest]
         cfg = self._flatnamespace_to_dict(self.dict_to_namespace(cfg))
@@ -405,7 +408,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 msg = 'invalid choice: %(value)r (choose from %(choices)s)'
                 raise TypeError('parser key "'+str(key)+'": '+(msg % args))
         elif hasattr(action, '_check_type'):
-            value = action._check_type(value) # type: ignore
+            value = action._check_type(value)  # type: ignore
         elif action.type is not None:
             try:
                 value = action.type(value)
@@ -428,18 +431,24 @@ class ArgumentParser(argparse.ArgumentParser):
         for k, v in vars(cfg_ns).items():
             ksplit = k.split('.')
             if len(ksplit) == 1:
-                cfg_dict[k] = v
+                if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
+                    cfg_dict[k] = [ArgumentParser.namespace_to_dict(x) for x in v]
+                else:
+                    cfg_dict[k] = v
             else:
                 kdict = cfg_dict
                 for num, kk in enumerate(ksplit[:len(ksplit)-1]):
                     if kk not in kdict:
-                        kdict[kk] = {}
+                        kdict[kk] = {}  # type: ignore
                     elif not isinstance(kdict[kk], dict):
                         raise ParserError('Conflicting namespace base: '+'.'.join(ksplit[:num+1]))
-                    kdict = kdict[kk]
+                    kdict = kdict[kk]  # type: ignore
                 if ksplit[-1] in kdict:
                     raise ParserError('Conflicting namespace base: '+k)
-                kdict[ksplit[-1]] = v
+                if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
+                    cfg_dict[k] = [ArgumentParser.namespace_to_dict(x) for x in v]
+                else:
+                    kdict[ksplit[-1]] = v
         return cfg_dict
 
 
@@ -613,8 +622,8 @@ class ActionJsonSchema(Action):
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
         if 'schema' in kwargs:
-            if not jsonschema:
-                raise ImportError('jsonschema is required by ActionJsonSchema.')
+            if isinstance(jsonvalidator, ImportError):
+                raise ImportError('jsonschema is required by ActionJsonSchema :: '+str(jsonvalidator))
             _check_unknown_kwargs(kwargs, {'schema'})
             self._schema = kwargs['schema']
             if isinstance(self._schema, str):
