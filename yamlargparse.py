@@ -622,7 +622,7 @@ class ActionJsonSchema(Action):
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
         if 'schema' in kwargs:
-            if isinstance(jsonvalidator, ImportError):
+            if isinstance(jsonvalidator, Exception):
                 raise ImportError('jsonschema is required by ActionJsonSchema :: '+str(jsonvalidator))
             _check_unknown_kwargs(kwargs, {'schema'})
             self._schema = kwargs['schema']

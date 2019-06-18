@@ -273,11 +273,9 @@ class YamlargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
-    @unittest.skipIf(isinstance(jsonvalidator, ModuleNotFoundError), 'jsonschema package is required :: '+str(jsonvalidator))
+    @unittest.skipIf(isinstance(jsonvalidator, Exception), 'jsonschema package is required :: '+str(jsonvalidator))
     def test_jsonschema(self):
         """Test the use of ActionJsonSchema."""
-        if isinstance(jsonvalidator, ModuleNotFoundError):
-            raise ModuleNotFoundError(str(jsonvalidator))
 
         schema1 = {
             "type": "array",

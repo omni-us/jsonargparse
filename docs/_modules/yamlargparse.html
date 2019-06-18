@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse &mdash; yamlargparse 1.21.0 documentation</title>
+  <title>yamlargparse &mdash; yamlargparse master/v1.21.0+1commits/2019.06.18 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.21.0
+                master/v1.21.0+1commits/2019.06.18
               </div>
             
           
@@ -769,7 +769,7 @@
 <span class="sd">            jsonschema.exceptions.SchemaError: If the schema is invalid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;schema&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;jsonschema is required by ActionJsonSchema :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">))</span>
             <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;schema&#39;</span><span class="p">})</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_schema</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">]</span>
