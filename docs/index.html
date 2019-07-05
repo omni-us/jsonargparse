@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.21.1 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.21.1+1commits/2019.07.05 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.21.1
+                master/v1.21.1+1commits/2019.07.05
               </div>
             
           
@@ -309,9 +309,9 @@ the values from the yaml file. Again using the parser from the
 <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a> section above, for example we could have the
 following yaml:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># File: example.yaml</span>
-<span class="nt">lev1</span><span class="p">:</span>
-  <span class="nt">opt1</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">from yaml 1</span>
-  <span class="nt">opt2</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">from yaml 2</span>
+<span class="l l-Scalar l-Scalar-Plain">lev1</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">opt1</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">from yaml 1</span>
+  <span class="l l-Scalar l-Scalar-Plain">opt2</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">from yaml 2</span>
 </pre></div>
 </div>
 <p>Then in python adding a yaml file argument and parsing some example arguments,
@@ -344,8 +344,8 @@ situations yamlargparse includes the <a class="reference internal" href="#yamlar
 <code class="code docutils literal notranslate"><span class="pre">app/config.yaml</span></code> and some data <code class="code docutils literal notranslate"><span class="pre">app/data/info.db</span></code>. The contents of
 the yaml file is the following:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># File: config.yaml</span>
-<span class="nt">databases</span><span class="p">:</span>
-  <span class="nt">info</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/info.db</span>
+<span class="l l-Scalar l-Scalar-Plain">databases</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">info</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">data/info.db</span>
 </pre></div>
 </div>
 <p>To create a parser that checks that the value of <code class="code docutils literal notranslate"><span class="pre">databases.info</span></code> exists
@@ -447,7 +447,7 @@ object. For example:</p>
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile" title="yamlargparse.ActionConfigFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a>(**kwargs)</p></td>
-<td><p>Action to indicate that an argument is a configuration file.</p></td>
+<td><p>Action to indicate that an argument is a configuration file or a configuration string.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a>(**kwargs)</p></td>
 <td><p>Action to parse option as json validated by a jsonschema.</p></td>
@@ -814,7 +814,7 @@ are supported. Additionally it accepts:</p>
 <dt id="yamlargparse.ActionConfigFile">
 <em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ActionConfigFile</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
-<p>Action to indicate that an argument is a configuration file.</p>
+<p>Action to indicate that an argument is a configuration file or a configuration string.</p>
 <p><strong>Methods</strong></p>
 <table class="longtable docutils align-default">
 <colgroup>
@@ -823,7 +823,7 @@ are supported. Additionally it accepts:</p>
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile.__call__" title="yamlargparse.ActionConfigFile.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(parser, namespace, values[, …])</p></td>
-<td><p>Parses the given configuration file and adds all the corresponding keys to the namespace.</p></td>
+<td><p>Parses the given configuration and adds all the corresponding keys to the namespace.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile.__init__" title="yamlargparse.ActionConfigFile.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionConfigFile instance.</p></td>
@@ -839,10 +839,10 @@ are supported. Additionally it accepts:</p>
 <dl class="method">
 <dt id="yamlargparse.ActionConfigFile.__call__">
 <code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">parser</em>, <em class="sig-param">namespace</em>, <em class="sig-param">values</em>, <em class="sig-param">option_string=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parses the given configuration file and adds all the corresponding keys to the namespace.</p>
+<dd><p>Parses the given configuration and adds all the corresponding keys to the namespace.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If there are problems parsing the configuration file.</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If there are problems parsing the configuration.</p>
 </dd>
 </dl>
 </dd></dl>

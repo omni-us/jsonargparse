@@ -14,8 +14,8 @@ from typing import Any, List, Dict, Set, Union
 from contextlib import contextmanager, redirect_stderr
 
 try:
-    import jsonschema  # type: ignore
-    from jsonschema import Draft4Validator as jsonvalidator  # type: ignore
+    import jsonschema
+    from jsonschema import Draft4Validator as jsonvalidator
 except Exception as ex:
     jsonschema = jsonvalidator = ex
 
@@ -322,11 +322,15 @@ class ArgumentParser(argparse.ArgumentParser):
         if not isinstance(cfg, dict):
             cfg = self.namespace_to_dict(cfg)
 
-        def find_action(dest):
-            for action in self._actions:
+        def find_action(parser, dest):
+            for action in parser._actions:
                 if action.dest == dest:
-                    return action
-            return None
+                    return action, dest
+                elif isinstance(action, ActionParser) and dest.startswith(action.dest+'.'):
+                    _action, _dest = find_action(action._parser, dest[len(action.dest)+1:])
+                    if _action is not None:
+                        return _action, _dest
+            return None, dest
 
         def check_values(cfg, base=None):
             for key, val in cfg.items():
@@ -336,7 +340,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 if isinstance(val, dict):
                     check_values(val, kbase)
                 else:
-                    action = find_action(kbase)
+                    action, kbase = find_action(self, kbase)
                     if action is not None:
                         self._check_value_key(action, val, kbase)
                     elif not skip_none:
@@ -532,29 +536,36 @@ class ArgumentParser(argparse.ArgumentParser):
 
 
 class ActionConfigFile(Action):
-    """Action to indicate that an argument is a configuration file."""
+    """Action to indicate that an argument is a configuration file or a configuration string."""
     def __init__(self, **kwargs):
         """Initializer for ActionConfigFile instance."""
         opt_name = kwargs['option_strings']
         opt_name = opt_name[0] if len(opt_name) == 1 else [x for x in opt_name if x[0:2] == '--'][0]
         if '.' in opt_name:
-            raise ValueError('Config file must be a top level option.')
+            raise ValueError('ActionConfigFile must be a top level option.')
         kwargs['type'] = str
         super().__init__(**kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        """Parses the given configuration file and adds all the corresponding keys to the namespace.
+        """Parses the given configuration and adds all the corresponding keys to the namespace.
 
         Raises:
-            TypeError: If there are problems parsing the configuration file.
+            TypeError: If there are problems parsing the configuration.
         """
         if not isinstance(getattr(namespace, self.dest), list):
             setattr(namespace, self.dest, [])
         try:
-            getattr(namespace, self.dest).append(Path(values, mode='fr'))
+            cfg_path = Path(values, mode='fr')
         except TypeError as ex:
-            raise TypeError('parser key "'+self.dest+'": '+str(ex))
-        cfg_file = parser.parse_yaml_path(values, env=False, defaults=False, nested=False)
+            try:
+                cfg_path = None
+                cfg_file = parser.parse_yaml_string(values, env=False, defaults=False, nested=False)
+            except:
+                raise TypeError('parser key "'+self.dest+'": '+str(ex))
+        else:
+            cfg_file = parser.parse_yaml_path(values, env=False, defaults=False, nested=False)
+        parser.check_config(cfg_file)
+        getattr(namespace, self.dest).append(cfg_path)
         for key, val in vars(cfg_file).items():
             setattr(namespace, key, val)
 
