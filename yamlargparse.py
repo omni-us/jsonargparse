@@ -14,7 +14,9 @@ from typing import Any, List, Dict, Set, Union
 from contextlib import contextmanager, redirect_stderr
 
 try:
+    import json
     import jsonschema
+    from jsonschema import validators
     from jsonschema import Draft4Validator as jsonvalidator
 except Exception as ex:
     jsonschema = jsonvalidator = ex
@@ -599,9 +601,15 @@ class ActionYesNo(Action):
             if 'dest' not in kwargs:
                 kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
             kwargs['option_strings'] += [re.sub('^--'+self._yes_prefix, '--'+self._no_prefix, opt_name)]
-            kwargs['nargs'] = 0
+            if 'nargs' in kwargs and kwargs['nargs'] == '?':
+                kwargs['metavar'] = 'true|yes|false|no'
+            else:
+                kwargs['nargs'] = 0
+                kwargs['metavar'] = None
             def boolean(x):
-                if not isinstance(x, bool):
+                if isinstance(x, str) and x.lower() in {'true', 'yes', 'false', 'no'}:
+                    x = True if x.lower() in {'true', 'yes'} else False
+                elif not isinstance(x, bool):
                     raise TypeError('value not boolean: '+str(x))
                 return x
             kwargs['type'] = boolean
@@ -613,10 +621,11 @@ class ActionYesNo(Action):
             kwargs['_yes_prefix'] = self._yes_prefix
             kwargs['_no_prefix'] = self._no_prefix
             return ActionYesNo(**kwargs)
+        value = args[2] if isinstance(args[2], bool) else True
         if args[3].startswith('--'+self._no_prefix):
-            setattr(args[1], self.dest, False)
+            setattr(args[1], self.dest, not value)
         else:
-            setattr(args[1], self.dest, True)
+            setattr(args[1], self.dest, value)
 
 
 class ActionJsonSchema(Action):
@@ -636,14 +645,15 @@ class ActionJsonSchema(Action):
             if isinstance(jsonvalidator, Exception):
                 raise ImportError('jsonschema is required by ActionJsonSchema :: '+str(jsonvalidator))
             _check_unknown_kwargs(kwargs, {'schema'})
-            self._schema = kwargs['schema']
-            if isinstance(self._schema, str):
-                self._schema = yaml.safe_load(self._schema)
-            jsonvalidator.check_schema(self._schema)
-        elif not '_schema' in kwargs:
+            schema = kwargs['schema']
+            if isinstance(schema, str):
+                schema = yaml.safe_load(schema)
+            jsonvalidator.check_schema(schema)
+            self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
+        elif not '_validator' in kwargs:
             raise ValueError('Expected schema keyword argument.')
         else:
-            self._schema = kwargs.pop('_schema')
+            self._validator = kwargs.pop('_validator')
             kwargs['type'] = str
             super().__init__(**kwargs)
 
@@ -654,7 +664,9 @@ class ActionJsonSchema(Action):
             TypeError: If the argument is not valid.
         """
         if len(args) == 0:
-            kwargs['_schema'] = self._schema
+            kwargs['_validator'] = self._validator
+            if 'help' in kwargs and '%s' in kwargs['help']:
+                kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, indent=2, sort_keys=True)
             return ActionJsonSchema(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
@@ -668,12 +680,27 @@ class ActionJsonSchema(Action):
             try:
                 if isinstance(val, str):
                     val = yaml.safe_load(val)
-                    value[num] = val
-                jsonschema.validate(val, schema=self._schema)
+                self._validator.validate(val)
+                value[num] = val
             except (TypeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError('parser key "'+self.dest+'"'+elem+': '+str(ex))
         return value if islist else value[0]
+
+    @staticmethod
+    def _extend_jsonvalidator_with_default(validator_class):
+        """Extends a json schema validator so that it fills in default values."""
+        validate_properties = validator_class.VALIDATORS['properties']
+
+        def set_defaults(validator, properties, instance, schema):
+            for property, subschema in properties.items():
+                if 'default' in subschema:
+                    instance.setdefault(property, subschema['default'])
+
+            for error in validate_properties(validator, properties, instance, schema):
+                yield error
+
+        return validators.extend(validator_class, {'properties' : set_defaults})
 
 
 class ActionParser(Action):
@@ -867,7 +894,7 @@ class ActionPathList(Action):
         """Initializer for ActionPathList instance.
 
         Args:
-            mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument, e.g. ActionPathList(mode='fr').
+            mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
             rel (str): Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list' (default='cwd').
 
         Raises:

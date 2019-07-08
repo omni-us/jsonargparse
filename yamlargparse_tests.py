@@ -17,9 +17,11 @@ def example_parser():
     group_one = parser.add_argument_group('Group 1', name='group1')
     group_one.add_argument('--bools.def_false',
         default=False,
+        nargs='?',
         action=ActionYesNo)
     group_one.add_argument('--bools.def_true',
         default=True,
+        nargs='?',
         action=ActionYesNo)
 
     group_two = parser.add_argument_group('Group 2', name='group2')
@@ -91,6 +93,12 @@ class YamlargparseTests(unittest.TestCase):
         self.assertEqual(False, parser.parse_args(['--no_bools.def_false']).bools.def_false)
         self.assertEqual(True,  parser.parse_args(['--bools.def_true']).bools.def_true)
         self.assertEqual(False, parser.parse_args(['--no_bools.def_true']).bools.def_true)
+        self.assertEqual(True,  parser.parse_args(['--bools.def_false=true']).bools.def_false)
+        self.assertEqual(False, parser.parse_args(['--bools.def_false=false']).bools.def_false)
+        self.assertEqual(True,  parser.parse_args(['--bools.def_false=yes']).bools.def_false)
+        self.assertEqual(False, parser.parse_args(['--bools.def_false=no']).bools.def_false)
+        self.assertEqual(True,  parser.parse_args(['--no_bools.def_true=no']).bools.def_true)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--bools.def_true nope']))
 
 
     def test_parse_yaml(self):

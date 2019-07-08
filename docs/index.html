@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.22.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.22.0+2commits/2019.07.08 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.22.0
+                master/v1.22.0+2commits/2019.07.08
               </div>
             
           
@@ -309,9 +309,9 @@ the values from the yaml file. Again using the parser from the
 <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a> section above, for example we could have the
 following yaml:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># File: example.yaml</span>
-<span class="l l-Scalar l-Scalar-Plain">lev1</span><span class="p p-Indicator">:</span>
-  <span class="l l-Scalar l-Scalar-Plain">opt1</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">from yaml 1</span>
-  <span class="l l-Scalar l-Scalar-Plain">opt2</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">from yaml 2</span>
+<span class="nt">lev1</span><span class="p">:</span>
+  <span class="nt">opt1</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">from yaml 1</span>
+  <span class="nt">opt2</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">from yaml 2</span>
 </pre></div>
 </div>
 <p>Then in python adding a yaml file argument and parsing some example arguments,
@@ -344,8 +344,8 @@ situations yamlargparse includes the <a class="reference internal" href="#yamlar
 <code class="code docutils literal notranslate"><span class="pre">app/config.yaml</span></code> and some data <code class="code docutils literal notranslate"><span class="pre">app/data/info.db</span></code>. The contents of
 the yaml file is the following:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># File: config.yaml</span>
-<span class="l l-Scalar l-Scalar-Plain">databases</span><span class="p p-Indicator">:</span>
-  <span class="l l-Scalar l-Scalar-Plain">info</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">data/info.db</span>
+<span class="nt">databases</span><span class="p">:</span>
+  <span class="nt">info</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">data/info.db</span>
 </pre></div>
 </div>
 <p>To create a parser that checks that the value of <code class="code docutils literal notranslate"><span class="pre">databases.info</span></code> exists
@@ -398,7 +398,7 @@ of values using a json schema. This class requires the <a class="reference exter
 jsonschema is not a requirement of yamlargparse, so to use
 <a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> it is required to explicitly install jsonschema.</p>
 <p>Check out the <a class="reference external" href="https://python-jsonschema.readthedocs.io/">jsonschema documentation</a> to learn how to write a schema.
-The current version of yamlargparse uses Draft7Validator. Parsing an argument
+The current version of yamlargparse uses Draft4Validator. Parsing an argument
 using a json schema is done like in the following example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">schema</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
@@ -414,6 +414,10 @@ using a json schema is done like in the following example:</p>
 <span class="go">namespace(op=namespace(name=&#39;cookie&#39;, price=1.5))</span>
 </pre></div>
 </div>
+<p>If the schema defines default values, these will be used by the parser to
+initialize the config values that are not specified. When adding an argument
+with the <a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> action, you can use “%s” in the <code class="code docutils literal notranslate"><span class="pre">help</span></code>
+string so that in that position the schema will be printed.</p>
 </div>
 <div class="section" id="yes-no-arguments">
 <h1>Yes/No arguments<a class="headerlink" href="#yes-no-arguments" title="Permalink to this headline">¶</a></h1>
@@ -426,13 +430,16 @@ define two paired options, one to set to true and the other for false. The
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--with-op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionYesNo</span><span class="p">(</span><span class="n">yes_prefix</span><span class="o">=</span><span class="s1">&#39;with-&#39;</span><span class="p">,</span> <span class="n">no_prefix</span><span class="o">=</span><span class="s1">&#39;without-&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
+<p>If the <a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a> class is used in conjunction with
+<code class="code docutils literal notranslate"><span class="pre">nargs='?'</span></code> the options can also be set by giving as value any of
+<code class="code docutils literal notranslate"><span class="pre">{'true',</span> <span class="pre">'yes',</span> <span class="pre">'false',</span> <span class="pre">'no'}</span></code>.</p>
 </div>
 <div class="section" id="parsing-with-another-parser">
 <h1>Parsing with another parser<a class="headerlink" href="#parsing-with-another-parser" title="Permalink to this headline">¶</a></h1>
 <p>Sometimes an element in a yaml file could be a path to another yaml file with a
 complex structure which should also be parsed. To handle these cases there is
-the <a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> which receives as argument a yamlargparse parser
-object. For example:</p>
+the <a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> class which receives as argument a yamlargparse
+parser object. For example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--complex.node&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionParser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">node_parser</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -1117,7 +1124,7 @@ are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [fdrwxFDRWX] as a keyword argument, e.g. ActionPathList(mode=’fr’).</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [fdrwxFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode=’fr’).</p></li>
 <li><p><strong>rel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Whether relative paths are with respect to current working directory ‘cwd’ or the list’s parent directory ‘list’ (default=’cwd’).</p></li>
 </ul>
 </dd>

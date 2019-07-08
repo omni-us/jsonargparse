@@ -294,7 +294,7 @@ jsonschema is not a requirement of yamlargparse, so to use
 
 Check out the `jsonschema documentation
 <https://python-jsonschema.readthedocs.io/>`_ to learn how to write a schema.
-The current version of yamlargparse uses Draft7Validator. Parsing an argument
+The current version of yamlargparse uses Draft4Validator. Parsing an argument
 using a json schema is done like in the following example:
 
 .. code-block:: python
@@ -312,6 +312,11 @@ using a json schema is done like in the following example:
     >>> parser.parse_args(['--op', '{"price": 1.5, "name": "cookie"}'])
     namespace(op=namespace(name='cookie', price=1.5))
 
+If the schema defines default values, these will be used by the parser to
+initialize the config values that are not specified. When adding an argument
+with the :class:`.ActionJsonSchema` action, you can use "%s" in the :code:`help`
+string so that in that position the schema will be printed.
+
 
 Yes/No arguments
 ================
@@ -327,14 +332,18 @@ define two paired options, one to set to true and the other for false. The
     # --with-opt2 for true and --without-opt2 for false.
     parser.add_argument('--with-op2', action=yamlargparse.ActionYesNo(yes_prefix='with-', no_prefix='without-'))
 
+If the :class:`.ActionYesNo` class is used in conjunction with
+:code:`nargs='?'` the options can also be set by giving as value any of
+:code:`{'true', 'yes', 'false', 'no'}`.
+
 
 Parsing with another parser
 ===========================
 
 Sometimes an element in a yaml file could be a path to another yaml file with a
 complex structure which should also be parsed. To handle these cases there is
-the :class:`.ActionParser` which receives as argument a yamlargparse parser
-object. For example:
+the :class:`.ActionParser` class which receives as argument a yamlargparse
+parser object. For example:
 
 .. code-block:: python
 
