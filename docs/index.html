@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.23.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.23.0+1commits/2019.07.15 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.23.0
+                master/v1.23.0+1commits/2019.07.15
               </div>
             
           
@@ -375,6 +375,8 @@ as argument either the path to a file listing the paths is given or the special
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>          <span class="c1"># List from stdin</span>
 </pre></div>
 </div>
+<p>If <code class="code docutils literal notranslate"><span class="pre">nargs='+'</span></code> is given to <code class="code docutils literal notranslate"><span class="pre">add_argument</span></code> then a single list is
+generated including all paths in all lists provided.</p>
 </div>
 <div class="section" id="comparison-operators">
 <h1>Comparison operators<a class="headerlink" href="#comparison-operators" title="Permalink to this headline">¶</a></h1>
@@ -414,10 +416,12 @@ using a json schema is done like in the following example:</p>
 <span class="go">namespace(op=namespace(name=&#39;cookie&#39;, price=1.5))</span>
 </pre></div>
 </div>
-<p>If the schema defines default values, these will be used by the parser to
-initialize the config values that are not specified. When adding an argument
-with the <a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> action, you can use “%s” in the <code class="code docutils literal notranslate"><span class="pre">help</span></code>
-string so that in that position the schema will be printed.</p>
+<p>Instead of giving a json string as argument value, it is also possible to
+provide a path to a json/yaml file, which would be loaded and validated against
+the schema. If the schema defines default values, these will be used by the
+parser to initialize the config values that are not specified. When adding an
+argument with the <a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> action, you can use “%s” in the
+<code class="code docutils literal notranslate"><span class="pre">help</span></code> string so that in that position the schema will be printed.</p>
 </div>
 <div class="section" id="yes-no-arguments">
 <h1>Yes/No arguments<a class="headerlink" href="#yes-no-arguments" title="Permalink to this headline">¶</a></h1>

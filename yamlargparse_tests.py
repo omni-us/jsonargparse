@@ -222,19 +222,28 @@ class YamlargparseTests(unittest.TestCase):
         pathlib.Path(os.path.join(tmpdir, 'file2')).touch()
         pathlib.Path(os.path.join(tmpdir, 'file3')).touch()
         pathlib.Path(os.path.join(tmpdir, 'file4')).touch()
+        pathlib.Path(os.path.join(tmpdir, 'file5')).touch()
         list_file = os.path.join(tmpdir, 'files.lst')
+        list_file2 = os.path.join(tmpdir, 'files2.lst')
         with open(list_file, 'w') as output_file:
             output_file.write('file1\nfile2\nfile3\nfile4\n')
+        with open(list_file2, 'w') as output_file:
+            output_file.write('file5\n')
 
         parser = ArgumentParser(prog='app')
         parser.add_argument('--list',
-            action=ActionPathList(mode='r', rel='list'))
+            nargs='+',
+            action=ActionPathList(mode='fr', rel='list'))
         parser.add_argument('--list_cwd',
-            action=ActionPathList(mode='r', rel='cwd'))
+            action=ActionPathList(mode='fr', rel='cwd'))
 
         cfg = parser.parse_args(['--list', list_file])
         self.assertEqual(4, len(cfg.list))
         self.assertEqual(['file1', 'file2', 'file3', 'file4'], [x(absolute=False) for x in cfg.list])
+
+        cfg = parser.parse_args(['--list', list_file, list_file2])
+        self.assertEqual(5, len(cfg.list))
+        self.assertEqual(['file1', 'file2', 'file3', 'file4', 'file5'], [x(absolute=False) for x in cfg.list])
 
         cwd = os.getcwd()
         os.chdir(tmpdir)
@@ -244,8 +253,8 @@ class YamlargparseTests(unittest.TestCase):
         os.chdir(cwd)
 
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPathList))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPathList(mode='r'), nargs='+'))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPathList(mode='r', rel='.')))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPathList(mode='fr'), nargs='*'))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPathList(mode='fr', rel='.')))
 
         shutil.rmtree(tmpdir)
 
@@ -292,18 +301,38 @@ class YamlargparseTests(unittest.TestCase):
         """Test the use of ActionJsonSchema."""
 
         schema1 = {
-            "type": "array",
-            "items": { "type": "integer" }
+            'type': 'array',
+            'items': {'type': 'integer'},
         }
 
         schema2 = {
-            "type": "object",
-            "properties": {
-                "k1": { "type": "string" },
-                "k2": { "type": "integer" },
-                "k3": { "type": "number" }
+            'type': 'object',
+            'properties': {
+                'k1': {'type': 'string'},
+                'k2': {'type': 'integer'},
+                'k3': {
+                    'type': 'number',
+                    'default': 17,
+                },
             },
-            "additionalProperties": False
+            'additionalProperties': False,
+        }
+
+        schema3 = {
+            'type': 'object',
+            'properties': {
+                'n1': {
+                    'type': 'array',
+                    'minItems': 1,
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'k1': {'type': 'string'},
+                            'k2': {'type': 'integer'},
+                        },
+                    },
+                },
+            },
         }
 
         parser = ArgumentParser(prog='app')
@@ -311,15 +340,52 @@ class YamlargparseTests(unittest.TestCase):
             action=ActionJsonSchema(schema=schema1))
         parser.add_argument('--op2',
             action=ActionJsonSchema(schema=schema2))
+        parser.add_argument('--op3',
+            action=ActionJsonSchema(schema=schema3))
+        parser.add_argument('--cfg',
+            action=ActionConfigFile)
 
-        self.assertEqual([1, 2, 3, 4], parser.parse_args(['--op1', '[1, 2, 3, 4]']).op1)
+        op1_val = [1, 2, 3, 4]
+        op2_val = {'k1': 'one', 'k2': 2, 'k3': 3.3}
+
+        self.assertEqual(op1_val, parser.parse_args(['--op1', str(op1_val)]).op1)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '[1, "two"]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '[1.5, 2]']))
 
-        self.assertEqual({"k1": "one", "k2": 2, "k3": 3.3}, vars(parser.parse_args(['--op2', '{"k1": "one", "k2": 2, "k3": 3.3}']).op2))
+        self.assertEqual(op2_val, vars(parser.parse_args(['--op2', str(op2_val)]).op2))
+        self.assertEqual(17, parser.parse_args(['--op2', '{"k2": 2}']).op2.k3)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k1": 1}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k2": "2"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k4": 4}']))
+
+        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_yamlargparse_tests_'))
+        op1_file = os.path.join(tmpdir, 'op1.json')
+        op2_file = os.path.join(tmpdir, 'op2.json')
+        cfg1_file = os.path.join(tmpdir, 'cfg1.yaml')
+        cfg3_file = os.path.join(tmpdir, 'cfg3.yaml')
+        cfg2_str = 'op1:\n  '+str(op1_val)+'\nop2:\n  '+str(op2_val)+'\n'
+        with open(op1_file, 'w') as f:
+            f.write(str(op1_val))
+        with open(op2_file, 'w') as f:
+            f.write(str(op2_val))
+        with open(cfg1_file, 'w') as f:
+            f.write('op1:\n  '+op1_file+'\nop2:\n  '+op2_file+'\n')
+        with open(cfg3_file, 'w') as f:
+            f.write('op3:\n  n1:\n  - '+str(op2_val)+'\n')
+
+        cfg = ArgumentParser.namespace_to_dict(parser.parse_yaml_path(cfg1_file))
+        self.assertEqual(op1_val, cfg['op1'])
+        self.assertEqual(op2_val, cfg['op2'])
+
+        cfg = ArgumentParser.namespace_to_dict(parser.parse_yaml_string(cfg2_str))
+        self.assertEqual(op1_val, cfg['op1'])
+        self.assertEqual(op2_val, cfg['op2'])
+
+        cfg = parser.parse_args(['--cfg', cfg3_file])
+        self.assertEqual(op2_val, ArgumentParser.namespace_to_dict(cfg.op3.n1[0]))
+        parser.check_config(cfg, skip_none=True)
+
+        shutil.rmtree(tmpdir)
 
 
     def test_operators(self):

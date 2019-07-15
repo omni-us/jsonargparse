@@ -264,6 +264,9 @@ as argument either the path to a file listing the paths is given or the special
     >>> cfg = parser.parse_args(['--list', 'paths.lst')  # Text file with paths
     >>> cfg = parser.parse_args(['--list', '-')          # List from stdin
 
+If :code:`nargs='+'` is given to :code:`add_argument` then a single list is
+generated including all paths in all lists provided.
+
 
 Comparison operators
 ====================
@@ -312,10 +315,12 @@ using a json schema is done like in the following example:
     >>> parser.parse_args(['--op', '{"price": 1.5, "name": "cookie"}'])
     namespace(op=namespace(name='cookie', price=1.5))
 
-If the schema defines default values, these will be used by the parser to
-initialize the config values that are not specified. When adding an argument
-with the :class:`.ActionJsonSchema` action, you can use "%s" in the :code:`help`
-string so that in that position the schema will be printed.
+Instead of giving a json string as argument value, it is also possible to
+provide a path to a json/yaml file, which would be loaded and validated against
+the schema. If the schema defines default values, these will be used by the
+parser to initialize the config values that are not specified. When adding an
+argument with the :class:`.ActionJsonSchema` action, you can use "%s" in the
+:code:`help` string so that in that position the schema will be printed.
 
 
 Yes/No arguments

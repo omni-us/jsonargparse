@@ -89,7 +89,7 @@ class ArgumentParser(argparse.ArgumentParser):
         except TypeError as ex:
             self.error(str(ex))
 
-        return self.dict_to_namespace(self._flatnamespace_to_dict(cfg))
+        return self.dict_to_namespace(self._flat_namespace_to_dict(cfg))
 
 
     def parse_yaml_path(self, yaml_path:str, env:bool=True, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
@@ -139,7 +139,7 @@ class ArgumentParser(argparse.ArgumentParser):
             cfg = self._load_yaml(yaml_str)
 
             if nested:
-                cfg = self._flatnamespace_to_dict(self.dict_to_namespace(cfg))
+                cfg = self._flat_namespace_to_dict(self.dict_to_namespace(cfg))
 
             if env:
                 cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
@@ -206,7 +206,7 @@ class ArgumentParser(argparse.ArgumentParser):
                         cfg[action.dest] = cfg[action.dest](absolute=False)
             elif isinstance(action, ActionConfigFile):
                 del cfg[action.dest]
-        cfg = self._flatnamespace_to_dict(self.dict_to_namespace(cfg))
+        cfg = self._flat_namespace_to_dict(self.dict_to_namespace(cfg))
 
         return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
 
@@ -238,7 +238,7 @@ class ArgumentParser(argparse.ArgumentParser):
                     cfg[action.dest] = self._check_value_key(action, env[env_var], env_var)
 
             if nested:
-                cfg = self._flatnamespace_to_dict(SimpleNamespace(**cfg))
+                cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
 
             if defaults:
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
@@ -281,7 +281,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 self._logger.info('parsed configuration from default path: '+default_config_files[0])
 
             if nested:
-                cfg = self._flatnamespace_to_dict(SimpleNamespace(**cfg))
+                cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
 
         except TypeError as ex:
             self.error(str(ex))
@@ -339,14 +339,13 @@ class ArgumentParser(argparse.ArgumentParser):
                 if skip_none and val is None:
                     continue
                 kbase = key if base is None else base+'.'+key
-                if isinstance(val, dict):
+                action, _kbase = find_action(self, kbase)
+                if action is not None:
+                    self._check_value_key(action, val, _kbase)
+                elif isinstance(val, dict):
                     check_values(val, kbase)
                 else:
-                    action, kbase = find_action(self, kbase)
-                    if action is not None:
-                        self._check_value_key(action, val, kbase)
-                    elif not skip_none:
-                        raise KeyError('no action for key '+key+' to check its value')
+                    raise KeyError('No action for key '+key+' to check its value.')
 
         check_values(cfg)
 
@@ -406,25 +405,25 @@ class ArgumentParser(argparse.ArgumentParser):
             TypeError: If the value is not valid.
         """
         if action is None:
-            raise ValueError('parser key "'+str(key)+'": received action==None')
+            raise ValueError('Parser key "'+str(key)+'": received action==None.')
         if action.choices is not None:
             if value not in action.choices:
                 args = {'value': value,
                         'choices': ', '.join(map(repr, action.choices))}
-                msg = 'invalid choice: %(value)r (choose from %(choices)s)'
-                raise TypeError('parser key "'+str(key)+'": '+(msg % args))
+                msg = 'invalid choice: %(value)r (choose from %(choices)s).'
+                raise TypeError('Parser key "'+str(key)+'": '+(msg % args))
         elif hasattr(action, '_check_type'):
             value = action._check_type(value)  # type: ignore
         elif action.type is not None:
             try:
                 value = action.type(value)
             except (TypeError, ValueError) as ex:
-                raise TypeError('parser key "'+str(key)+'": '+str(ex))
+                raise TypeError('Parser key "'+str(key)+'": '+str(ex))
         return value
 
 
     @staticmethod
-    def _flatnamespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
+    def _flat_namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
         """Converts a flat namespace into a nested dictionary.
 
         Args:
@@ -433,6 +432,7 @@ class ArgumentParser(argparse.ArgumentParser):
         Returns:
             dict: The nested configuration dictionary.
         """
+        cfg_ns = deepcopy(cfg_ns)
         cfg_dict = {}
         for k, v in vars(cfg_ns).items():
             ksplit = k.split('.')
@@ -444,15 +444,15 @@ class ArgumentParser(argparse.ArgumentParser):
             else:
                 kdict = cfg_dict
                 for num, kk in enumerate(ksplit[:len(ksplit)-1]):
-                    if kk not in kdict:
+                    if kk not in kdict or kdict[kk] is None:
                         kdict[kk] = {}  # type: ignore
                     elif not isinstance(kdict[kk], dict):
                         raise ParserError('Conflicting namespace base: '+'.'.join(ksplit[:num+1]))
                     kdict = kdict[kk]  # type: ignore
-                if ksplit[-1] in kdict:
+                if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None:
                     raise ParserError('Conflicting namespace base: '+k)
                 if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
-                    cfg_dict[k] = [ArgumentParser.namespace_to_dict(x) for x in v]
+                    kdict[ksplit[-1]] = [ArgumentParser.namespace_to_dict(x) for x in v]
                 else:
                     kdict[ksplit[-1]] = v
         return cfg_dict
@@ -468,6 +468,7 @@ class ArgumentParser(argparse.ArgumentParser):
         Returns:
             types.SimpleNamespace: The configuration namespace.
         """
+        cfg_dict = deepcopy(cfg_dict)
         cfg_ns = {}
 
         def flatten_dict(cfg, base=None):
@@ -493,6 +494,7 @@ class ArgumentParser(argparse.ArgumentParser):
         Returns:
             types.SimpleNamespace: The nested configuration namespace.
         """
+        cfg_dict = deepcopy(cfg_dict)
         def expand_dict(cfg):
             for k, v in cfg.items():
                 if isinstance(v, dict):
@@ -515,6 +517,7 @@ class ArgumentParser(argparse.ArgumentParser):
         Returns:
             dict: The nested configuration dictionary.
         """
+        cfg_ns = deepcopy(cfg_ns)
         def expand_namespace(cfg):
             cfg = dict(vars(cfg))
             for k, v in cfg.items():
@@ -563,10 +566,10 @@ class ActionConfigFile(Action):
                 cfg_path = None
                 cfg_file = parser.parse_yaml_string(values, env=False, defaults=False, nested=False)
             except:
-                raise TypeError('parser key "'+self.dest+'": '+str(ex))
+                raise TypeError('Parser key "'+self.dest+'": '+str(ex))
         else:
             cfg_file = parser.parse_yaml_path(values, env=False, defaults=False, nested=False)
-        parser.check_config(cfg_file)
+        parser.check_config(parser._flat_namespace_to_dict(cfg_file), skip_none=True)
         getattr(namespace, self.dest).append(cfg_path)
         for key, val in vars(cfg_file).items():
             setattr(namespace, key, val)
@@ -610,7 +613,7 @@ class ActionYesNo(Action):
                 if isinstance(x, str) and x.lower() in {'true', 'yes', 'false', 'no'}:
                     x = True if x.lower() in {'true', 'yes'} else False
                 elif not isinstance(x, bool):
-                    raise TypeError('value not boolean: '+str(x))
+                    raise TypeError('Value not boolean: '+str(x)+'.')
                 return x
             kwargs['type'] = boolean
             super().__init__(**kwargs)
@@ -675,16 +678,26 @@ class ActionJsonSchema(Action):
         if not islist:
             value = [value]
         elif not isinstance(value, list):
-            raise TypeError('for ActionJsonSchema with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
+            raise TypeError('For ActionJsonSchema with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
         for num, val in enumerate(value):
             try:
                 if isinstance(val, str):
                     val = yaml.safe_load(val)
-                self._validator.validate(val)
+                if isinstance(val, str):
+                    try:
+                        Path(val, mode='fr')
+                        with open(val) as f:
+                            val = yaml.safe_load(f.read())
+                    except:
+                        pass
+                if isinstance(val, SimpleNamespace):
+                    self._validator.validate(ArgumentParser.namespace_to_dict(val))
+                else:
+                    self._validator.validate(val)
                 value[num] = val
             except (TypeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)
-                raise TypeError('parser key "'+self.dest+'"'+elem+': '+str(ex))
+                raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex))
         return value if islist else value[0]
 
     @staticmethod
@@ -745,7 +758,7 @@ class ActionParser(Action):
             else:
                 self._parser.check_config(value, skip_none=True)
         except TypeError as ex:
-            raise TypeError(re.sub('^parser key ([^:]+):', 'parser key '+self.dest+'.\\1: ', str(ex)))
+            raise TypeError(re.sub('^Parser key ([^:]+):', 'Parser key '+self.dest+'.\\1: ', str(ex)))
         return value
 
     @staticmethod
@@ -814,7 +827,7 @@ class ActionOperators(Action):
         if not islist:
             value = [value]
         elif not isinstance(value, list):
-            raise TypeError('for ActionOperators with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
+            raise TypeError('For ActionOperators with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
         def test_op(op, val, ref):
             try:
                 return op(val, ref)
@@ -824,11 +837,11 @@ class ActionOperators(Action):
             try:
                 val = self._type(val)
             except:
-                raise TypeError('parser key "'+self.dest+'": invalid value, expected type to be '+self._type.__name__+' but got as value '+str(val)+'.')
+                raise TypeError('Parser key "'+self.dest+'": invalid value, expected type to be '+self._type.__name__+' but got as value '+str(val)+'.')
             check = [test_op(op, val, ref) for op, ref in self._expr]
             if (self._join == 'and' and not all(check)) or (self._join == 'or' and not any(check)):
                 expr = (' '+self._join+' ').join(['v'+self._operators[op]+str(ref) for op, ref in self._expr])
-                raise TypeError('parser key "'+self.dest+'": invalid value, for v='+str(val)+' it is false that '+expr+'.')
+                raise TypeError('Parser key "'+self.dest+'": invalid value, for v='+str(val)+' it is false that '+expr+'.')
             value[num] = val
         return value if islist else value[0]
 
@@ -873,7 +886,7 @@ class ActionPath(Action):
         if not islist:
             value = [value]
         elif not isinstance(value, list):
-            raise TypeError('for ActionPath with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
+            raise TypeError('For ActionPath with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
         try:
             for num, val in enumerate(value):
                 if isinstance(val, str):
@@ -884,7 +897,7 @@ class ActionPath(Action):
                     raise TypeError('expected either a string or a Path object, received: value='+str(val)+' type='+str(type(val))+'.')
                 value[num] = val
         except TypeError as ex:
-            raise TypeError('parser key "'+self.dest+'": '+str(ex))
+            raise TypeError('Parser key "'+self.dest+'": '+str(ex))
         return value if islist else value[0]
 
 
@@ -922,32 +935,40 @@ class ActionPathList(Action):
             TypeError: If the argument is not a valid PathList.
         """
         if len(args) == 0:
-            if 'nargs' in kwargs:
-                raise ValueError('nargs not allowed for ActionPathList.')
+            if 'nargs' in kwargs and kwargs['nargs'] not in {'+', 1}:
+                raise ValueError('ActionPathList only supports nargs of 1 or "+".')
             kwargs['_mode'] = self._mode
             kwargs['_rel'] = self._rel
             return ActionPathList(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
     def _check_type(self, value):
-        if isinstance(value, str):
-            path_list = value
-            try:
-                with sys.stdin if path_list == '-' else open(path_list, 'r') as f:
-                    value = [x.strip() for x in f.readlines()]
-            except:
-                raise TypeError('problems reading path list: '+path_list)
-            cwd = os.getcwd()
-            if self._rel == 'list' and path_list != '-':
-                os.chdir(os.path.abspath(os.path.join(path_list, os.pardir)))
-            try:
-                for num, val in enumerate(value):
-                    try:
-                        value[num] = Path(val, mode=self._mode)
-                    except TypeError as ex:
-                        raise TypeError('path number '+str(num+1)+' in list '+path_list+', '+str(ex))
-            finally:
-                os.chdir(cwd)
+        if value == []:
+            return value
+        islist = _is_action_value_list(self)
+        if not islist:
+            value = [value]
+        if isinstance(value, list) and all(isinstance(v, str) for v in value):
+            path_list_files = value
+            value = []
+            for path_list_file in path_list_files:
+                try:
+                    with sys.stdin if path_list_file == '-' else open(path_list_file, 'r') as f:
+                        path_list = [x.strip() for x in f.readlines()]
+                except:
+                    raise TypeError('Problems reading path list: '+path_list_file)
+                cwd = os.getcwd()
+                if self._rel == 'list' and path_list_file != '-':
+                    os.chdir(os.path.abspath(os.path.join(path_list_file, os.pardir)))
+                try:
+                    for num, val in enumerate(path_list):
+                        try:
+                            path_list[num] = Path(val, mode=self._mode)
+                        except TypeError as ex:
+                            raise TypeError('Path number '+str(num+1)+' in list '+path_list_file+', '+str(ex))
+                finally:
+                    os.chdir(cwd)
+                value += path_list
             return value
         else:
             return ActionPath._check_type(self, value, islist=True)
@@ -989,13 +1010,13 @@ class Path(object):
             abs_path = path if os.path.isabs(path) else os.path.join(cwd, path)
 
         if not skip_check:
-            ptype = 'directory' if 'd' in mode else 'file'
+            ptype = 'Directory' if 'd' in mode else 'File'
             if not os.access(abs_path, os.F_OK):
                 raise TypeError(ptype+' does not exist: '+abs_path)
             if 'd' in mode and not os.path.isdir(abs_path):
-                raise TypeError('path is not a directory: '+abs_path)
+                raise TypeError('Path is not a directory: '+abs_path)
             if 'f' in mode and not os.path.isfile(abs_path):
-                raise TypeError('path is not a file: '+abs_path)
+                raise TypeError('Path is not a file: '+abs_path)
             if 'r' in mode and not os.access(abs_path, os.R_OK):
                 raise TypeError(ptype+' is not readable: '+abs_path)
             if 'w' in mode and not os.access(abs_path, os.W_OK):
@@ -1003,9 +1024,9 @@ class Path(object):
             if 'x' in mode and not os.access(abs_path, os.X_OK):
                 raise TypeError(ptype+' is not executable: '+abs_path)
             if 'D' in mode and os.path.isdir(abs_path):
-                raise TypeError('path is a directory: '+abs_path)
+                raise TypeError('Path is a directory: '+abs_path)
             if 'F' in mode and os.path.isfile(abs_path):
-                raise TypeError('path is a file: '+abs_path)
+                raise TypeError('Path is a file: '+abs_path)
             if 'R' in mode and os.access(abs_path, os.R_OK):
                 raise TypeError(ptype+' is readable: '+abs_path)
             if 'W' in mode and os.access(abs_path, os.W_OK):
@@ -1076,4 +1097,4 @@ def _check_unknown_kwargs(kwargs:Dict[str, Any], keys:Set[str]):
         keys (set): The expected keys.
     """
     if len(set(kwargs.keys())-keys) > 0:
-        raise ValueError('Unknown keyword arguments: '+', '.join(set(kwargs.keys())-keys))
+        raise ValueError('Unknown keyword arguments: '+', '.join(set(kwargs.keys())-keys)+'.')
