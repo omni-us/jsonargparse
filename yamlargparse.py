@@ -28,7 +28,7 @@ __version__ = '1.24.0'
 class ArgumentParser(argparse.ArgumentParser):
     """Parser for command line, yaml files and environment variables."""
 
-    groups = {} # type: Dict[str, argparse._ArgumentGroup]
+    groups = {}  # type: Dict[str, argparse._ArgumentGroup]
 
 
     def __init__(self, *args, default_config_files:List[str]=[], logger=None, error_handler=None, formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs):
@@ -55,7 +55,7 @@ class ArgumentParser(argparse.ArgumentParser):
         super().__init__(*args, **kwargs)
 
 
-    def parse_args(self, args=None, namespace=None, env:bool=True, nested:bool=True):
+    def parse_args(self, args=None, namespace=None, env:bool=False, nested:bool=True):
         """Parses command line argument strings.
 
         All the arguments from `argparse.ArgumentParser.parse_args
@@ -73,8 +73,9 @@ class ArgumentParser(argparse.ArgumentParser):
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            if namespace is not None:
-                namespace = self.parse_env(nested=False) if env else None
+            if env:
+                cfg_env = self.parse_env(nested=False)
+                namespace = cfg_env if namespace is None else self._merge_config(namespace, cfg_env)
 
             with _suppress_stderr():
                 cfg = super().parse_args(args=args, namespace=namespace)
@@ -92,7 +93,7 @@ class ArgumentParser(argparse.ArgumentParser):
         return self.dict_to_namespace(self._flat_namespace_to_dict(cfg))
 
 
-    def parse_yaml_path(self, yaml_path:str, env:bool=True, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
+    def parse_yaml_path(self, yaml_path:str, env:bool=False, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
         """Parses a yaml file given its path.
 
         Args:
@@ -120,7 +121,7 @@ class ArgumentParser(argparse.ArgumentParser):
         return parsed_yaml
 
 
-    def parse_yaml_string(self, yaml_str:str, env:bool=True, defaults:bool=True, nested:bool=True, log=True) -> SimpleNamespace:
+    def parse_yaml_string(self, yaml_str:str, env:bool=False, defaults:bool=True, nested:bool=True, log=True) -> SimpleNamespace:
         """Parses yaml given as a string.
 
         Args:
@@ -228,14 +229,19 @@ class ArgumentParser(argparse.ArgumentParser):
         try:
             if env is None:
                 env = dict(os.environ)
-            cfg = {}
+            cfg = {}  # type: ignore
             for action in self._actions:
                 if action.default == '==SUPPRESS==':
                     continue
                 env_var = (self.prog+'_' if self.prog else '') + action.dest
                 env_var = env_var.replace('.', '__').upper()
                 if env_var in env:
-                    cfg[action.dest] = self._check_value_key(action, env[env_var], env_var)
+                    if isinstance(action, ActionConfigFile):
+                        namespace = self._dict_to_flat_namespace(cfg)
+                        ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
+                        cfg = vars(namespace)
+                    else:
+                        cfg[action.dest] = self._check_value_key(action, env[env_var], env_var)
 
             if nested:
                 cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
@@ -248,7 +254,10 @@ class ArgumentParser(argparse.ArgumentParser):
         except TypeError as ex:
             self.error(str(ex))
 
-        return self.dict_to_namespace(cfg)
+        cfg_ns = self.dict_to_namespace(cfg)
+        self.check_config(cfg_ns, skip_none=True)
+
+        return cfg_ns
 
 
     def get_defaults(self, nested:bool=True) -> SimpleNamespace:
@@ -271,7 +280,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
             self._logger.info('loaded default values from parser')
 
-            default_config_files = [] # type: List[str]
+            default_config_files = []  # type: List[str]
             for pattern in self._default_config_files:
                 default_config_files += glob.glob(os.path.expanduser(pattern))
             if len(default_config_files) > 0:
@@ -557,20 +566,24 @@ class ActionConfigFile(Action):
         Raises:
             TypeError: If there are problems parsing the configuration.
         """
-        if not isinstance(getattr(namespace, self.dest), list):
-            setattr(namespace, self.dest, [])
+        self._apply_config(parser, namespace, self.dest, values)
+
+    @staticmethod
+    def _apply_config(parser, namespace, dest, value):
+        if not hasattr(namespace, dest) or not isinstance(getattr(namespace, dest), list):
+            setattr(namespace, dest, [])
         try:
-            cfg_path = Path(values, mode='fr')
+            cfg_path = Path(value, mode='fr')
         except TypeError as ex:
             try:
                 cfg_path = None
-                cfg_file = parser.parse_yaml_string(values, env=False, defaults=False, nested=False)
+                cfg_file = parser.parse_yaml_string(value, env=False, defaults=False, nested=False)
             except:
-                raise TypeError('Parser key "'+self.dest+'": '+str(ex))
+                raise TypeError('Parser key "'+dest+'": '+str(ex))
         else:
-            cfg_file = parser.parse_yaml_path(values, env=False, defaults=False, nested=False)
+            cfg_file = parser.parse_yaml_path(value, env=False, defaults=False, nested=False)
         parser.check_config(parser._flat_namespace_to_dict(cfg_file), skip_none=True)
-        getattr(namespace, self.dest).append(cfg_path)
+        getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():
             setattr(namespace, key, val)
 
@@ -595,7 +608,7 @@ class ActionYesNo(Action):
                 self._yes_prefix = kwargs['yes_prefix']
             if 'no_prefix' in kwargs:
                 self._no_prefix = kwargs['no_prefix']
-        elif not 'option_strings' in kwargs:
+        elif 'option_strings' not in kwargs:
             raise ValueError('Expected yes_prefix and/or no_prefix keyword arguments.')
         else:
             self._yes_prefix = kwargs.pop('_yes_prefix') if '_yes_prefix' in kwargs else ''
@@ -653,7 +666,7 @@ class ActionJsonSchema(Action):
                 schema = yaml.safe_load(schema)
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
-        elif not '_validator' in kwargs:
+        elif '_validator' not in kwargs:
             raise ValueError('Expected schema keyword argument.')
         else:
             self._validator = kwargs.pop('_validator')
@@ -713,7 +726,7 @@ class ActionJsonSchema(Action):
             for error in validate_properties(validator, properties, instance, schema):
                 yield error
 
-        return validators.extend(validator_class, {'properties' : set_defaults})
+        return validators.extend(validator_class, {'properties': set_defaults})
 
 
 class ActionParser(Action):
@@ -732,7 +745,7 @@ class ActionParser(Action):
             self._parser = kwargs['parser']
             if not isinstance(self._parser, ArgumentParser):
                 raise ValueError('Expected parser keyword argument to be a yamlargparse parser.')
-        elif not '_parser' in kwargs:
+        elif '_parser' not in kwargs:
             raise ValueError('Expected parser keyword argument.')
         else:
             self._parser = kwargs.pop('_parser')
@@ -794,10 +807,11 @@ class ActionOperators(Action):
                 raise ValueError("Expected join to be either 'or' or 'and'.")
             _operators = {v: k for k, v in self._operators.items()}
             expr = [kwargs['expr']] if isinstance(kwargs['expr'], tuple) else kwargs['expr']
-            if not isinstance(expr, list) or not all([all([len(x)==2, x[0] in _operators, x[1] == self._type(x[1])]) for x in expr]):
-                raise ValueError('Expected expr to be a list of tuples each with a comparison operator (> >= < <= == !=) and a reference value of type '+self._type.__name__+'.')
+            if not isinstance(expr, list) or not all([all([len(x) == 2, x[0] in _operators, x[1] == self._type(x[1])]) for x in expr]):
+                raise ValueError('Expected expr to be a list of tuples each with a comparison operator (> >= < <= == !=)'
+                                 ' and a reference value of type '+self._type.__name__+'.')
             self._expr = [(_operators[x[0]], x[1]) for x in expr]
-        elif not '_expr' in kwargs:
+        elif '_expr' not in kwargs:
             raise ValueError('Expected expr keyword argument.')
         else:
             self._expr = kwargs.pop('_expr')
@@ -861,7 +875,7 @@ class ActionPath(Action):
             _check_unknown_kwargs(kwargs, {'mode'})
             Path._check_mode(kwargs['mode'])
             self._mode = kwargs['mode']
-        elif not '_mode' in kwargs:
+        elif '_mode' not in kwargs:
             raise ValueError('Expected mode keyword argument.')
         else:
             self._mode = kwargs.pop('_mode')
@@ -920,7 +934,7 @@ class ActionPathList(Action):
             self._rel = kwargs['rel'] if 'rel' in kwargs else 'cwd'
             if self._rel not in {'cwd', 'list'}:
                 raise ValueError('rel must be either "cwd" or "list", got '+str(self._rel)+'.')
-        elif not '_mode' in kwargs:
+        elif '_mode' not in kwargs:
             raise ValueError('Expected mode keyword argument.')
         else:
             self._mode = kwargs.pop('_mode')
@@ -1085,7 +1099,7 @@ def _suppress_stderr():
 
 def _is_action_value_list(action:Action):
     if action.nargs in {'*', '+'} or isinstance(action.nargs, int):
-      return True
+        return True
     return False
 
 

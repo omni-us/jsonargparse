@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.24.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.24.0+2commits/2019.07.17 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.24.0
+                master/v1.24.0+2commits/2019.07.17
               </div>
             
           
@@ -582,7 +582,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_args">
-<code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">namespace=None</em>, <em class="sig-param">env: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">namespace=None</em>, <em class="sig-param">env: bool = False</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses command line argument strings.</p>
 <p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args">argparse.ArgumentParser.parse_args</a>
 are supported. Additionally it accepts:</p>
@@ -607,7 +607,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_yaml_path">
-<code class="sig-name descname">parse_yaml_path</code><span class="sig-paren">(</span><em class="sig-param">yaml_path: str</em>, <em class="sig-param">env: bool = True</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_path" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_yaml_path</code><span class="sig-paren">(</span><em class="sig-param">yaml_path: str</em>, <em class="sig-param">env: bool = False</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a yaml file given its path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -632,7 +632,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_yaml_string">
-<code class="sig-name descname">parse_yaml_string</code><span class="sig-paren">(</span><em class="sig-param">yaml_str: str</em>, <em class="sig-param">env: bool = True</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">log=True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_yaml_string</code><span class="sig-paren">(</span><em class="sig-param">yaml_str: str</em>, <em class="sig-param">env: bool = False</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">log=True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses yaml given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

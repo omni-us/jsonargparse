@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-### Create pre-commit symlink if unset ###
+## Create pre-commit symlink if unset ##
 GITDIR="";
 if [ -d .git ]; then
   GITDIR=".git";
@@ -23,8 +23,8 @@ if [ ! -h "$GITDIR/hooks/pre-commit" ]; then
 fi
 
 
-### Check files that changed ###
-FILES=( $(git status --porcelain | sed -r 's|^ |_|; s|^(.) |\1_|; s|^R_ .* ->|R_|;' | grep -E '^([MRA]|.M)') );
+## Check files that changed ##
+FILES=( $(git status --porcelain | sed -r 's|^ |_|; s|^(.) |\1_|; s|^(R[_M]) .* ->|\1|;' | grep -E '^([MRA]|.M)') );
 PYLINT=$(which pylint pylint3 | head -n 1);
 
 check_change_after_staged () {
@@ -43,6 +43,9 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
         mypy "${FILES[$n]}";
         [ "$?" != "0" ] && exit 1;
       fi
+      echo "${0##*/}: pycodestyle ${FILES[$n]}" 1>&2;
+      pycodestyle "${FILES[$n]}";
+      [ "$?" != "0" ] && exit 1;
       echo "${0##*/}: $PYLINT --errors-only ${FILES[$n]}" 1>&2;
       $PYLINT --errors-only "${FILES[$n]}";
       ;;
@@ -54,11 +57,11 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
   n=$((n+2));
 done
 
-### Run unit tests ###
+## Run unit tests ##
 python setup.py test;
 [ "$?" != "0" ] && exit 1;
 
-### Update documentation ###
+## Update documentation ##
 if [ -z ${BUMPVERSION_NEW_VERSION+x} ]; then
   TAG=$(git describe --tags --abbrev=0);
   NUM=$(( 1 + $(git rev-list --count $TAG..HEAD) ))"commits";
@@ -67,7 +70,7 @@ else
   VERSION="$BUMPVERSION_NEW_VERSION";
 fi
 python setup.py build_sphinx --quiet --builder html --version $VERSION --release $VERSION &&
-  rm -r docs &&
+  rm -fr docs &&
   mv sphinx/_build/html docs &&
   touch docs/.nojekyll &&
   git add docs;
