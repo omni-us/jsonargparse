@@ -25,13 +25,27 @@ except Exception as ex:
 __version__ = '1.25.0'
 
 
+class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
+    """Help message formatter with yaml key, env var and default values in argument help."""
+
+    def _format_action_invocation(self, action):
+        extr = ''
+        if action.default != '==SUPPRESS==':
+            if not isinstance(action, ActionConfigFile):
+                extr = '\n  YAML: ' + action.dest
+            env_var = (self.prog+'_' if self.prog else '') + action.dest  # pylint: disable=E1101
+            env_var = env_var.replace('.', '__').upper()
+            extr += '\n  ENV:  ' + env_var
+        return 'ARG:  ' + super()._format_action_invocation(action) + extr
+
+
 class ArgumentParser(argparse.ArgumentParser):
     """Parser for command line, yaml files and environment variables."""
 
     groups = {}  # type: Dict[str, argparse._ArgumentGroup]
 
 
-    def __init__(self, *args, default_config_files:List[str]=[], logger=None, error_handler=None, formatter_class=argparse.ArgumentDefaultsHelpFormatter, **kwargs):
+    def __init__(self, *args, default_config_files:List[str]=[], logger=None, error_handler=None, formatter_class=DefaultHelpFormatter, **kwargs):
         """Initializer for ArgumentParser instance.
 
         All the arguments from the initializer of `argparse.ArgumentParser
@@ -53,6 +67,7 @@ class ArgumentParser(argparse.ArgumentParser):
         self._stderr = sys.stderr
         kwargs['formatter_class'] = formatter_class
         super().__init__(*args, **kwargs)
+        setattr(formatter_class, 'prog', self.prog)
 
 
     def parse_args(self, args=None, namespace=None, env:bool=False, nested:bool=True):
@@ -83,7 +98,7 @@ class ArgumentParser(argparse.ArgumentParser):
             ActionParser._fix_conflicts(self, cfg)
 
             if not nested:
-                return cfg
+                return self._dict_to_flat_namespace(self._flat_namespace_to_dict(cfg))
 
             self._logger.info('parsed arguments')
 

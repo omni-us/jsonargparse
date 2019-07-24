@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.25.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.25.0+1commits/2019.07.24 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.25.0
+                master/v1.25.0+1commits/2019.07.24
               </div>
             
           
@@ -481,7 +481,10 @@ parser object. For example:</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args, default_config_files)</p></td>
 <td><p>Parser for command line, yaml files and environment variables.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.DefaultHelpFormatter" title="yamlargparse.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
+<td><p>Help message formatter with yaml key, env var and default values in argument help.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
 </tbody>
@@ -511,8 +514,15 @@ parser object. For example:</p>
 </tbody>
 </table>
 <dl class="class">
+<dt id="yamlargparse.DefaultHelpFormatter">
+<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">DefaultHelpFormatter</code><span class="sig-paren">(</span><em class="sig-param">prog</em>, <em class="sig-param">indent_increment=2</em>, <em class="sig-param">max_help_position=24</em>, <em class="sig-param">width=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#DefaultHelpFormatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.DefaultHelpFormatter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentDefaultsHelpFormatter" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentDefaultsHelpFormatter</span></code></a></p>
+<p>Help message formatter with yaml key, env var and default values in argument help.</p>
+</dd></dl>
+
+<dl class="class">
 <dt id="yamlargparse.ArgumentParser">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'argparse.ArgumentDefaultsHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a></p>
 <p>Parser for command line, yaml files and environment variables.</p>
 <p><strong>Methods</strong></p>
@@ -565,7 +575,7 @@ parser object. For example:</p>
 </table>
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'argparse.ArgumentDefaultsHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ArgumentParser instance.</p>
 <p>All the arguments from the initializer of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser">argparse.ArgumentParser</a>
 are supported. Additionally it accepts:</p>
