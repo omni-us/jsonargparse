@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """Setup file for yamlargparse package."""
 
-from setuptools import setup, find_packages, Command # type: ignore
+from setuptools import setup, find_packages, Command
 import subprocess
 from glob import glob
 import re
 
 try:
-    from sphinx.setup_command import BuildDoc # type: ignore
+    from sphinx.setup_command import BuildDoc
 except ImportError:
     BuildDoc = False
     print('warning: sphinx not found, build_sphinx target will not be available.')
@@ -41,7 +41,7 @@ def get_runtime_requirements():
     """Returns a list of required packages filtered to include only the ones necessary at runtime."""
     with open('requirements.txt') as f:
         requirements = [x.strip() for x in f.readlines()]
-    regex = re.compile('^(coverage|pylint|mypy|sphinx|autodocsumm)', re.IGNORECASE)
+    regex = re.compile('^(coverage|pylint|pycodestyle|mypy|sphinx|autodocsumm)', re.IGNORECASE)
     return [x for x in requirements if not regex.match(x)]
 
 

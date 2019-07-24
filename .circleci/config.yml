@@ -25,7 +25,11 @@ jobs:
           name: Run unit tests
           command: |
             pip install --user ./dist/*.whl
-            python -m yamlargparse_tests
+            pip install --user python-subunit junitxml
+            mkdir tests_report
+            python -m subunit.run yamlargparse_tests | subunit2junitxml > tests_report/unittest.xml
+      - store_test_results:
+          path: ./tests_report
   test-py36:
     <<: *test-py35
     docker:
