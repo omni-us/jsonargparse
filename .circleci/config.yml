@@ -15,9 +15,9 @@ jobs:
       - persist_to_workspace:
           root: .
           paths: ./dist/*.whl
-  test-py35: &test-py35
+  test-py37: &test-py37
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:3.7
     steps:
       - attach_workspace:
           at: .
@@ -31,13 +31,13 @@ jobs:
       - store_test_results:
           path: ./tests_report
   test-py36:
-    <<: *test-py35
+    <<: *test-py37
     docker:
       - image: circleci/python:3.6
-  test-py37:
-    <<: *test-py35
-    docker:
-      - image: circleci/python:3.7
+  #test-py35:
+  #  <<: *test-py37
+  #  docker:
+  #    - image: circleci/python:3.5
   publish-pypi:
     docker:
       - image: mauvilsa/docker-twine:1.11.0
@@ -56,14 +56,14 @@ workflows:
           filters: &tagfilter
             tags:
               only: /^v\d+\.\d+\.\d+$/
-      - test-py35: &testreq
+      - test-py37: &testreq
           <<: *buildreq
           requires:
             - build
       - test-py36:
           <<: *testreq
-      - test-py37:
-          <<: *testreq
+      #- test-py35:
+      #    <<: *testreq
       - publish-pypi:
           filters:
             branches:
@@ -71,6 +71,6 @@ workflows:
             <<: *tagfilter
           context: yamlargparse-context
           requires:
-            - test-py35
-            - test-py36
             - test-py37
+            - test-py36
+            #- test-py35

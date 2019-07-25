@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse &mdash; yamlargparse 1.26.1 documentation</title>
+  <title>yamlargparse &mdash; yamlargparse master/v1.26.1+1commits/2019.07.25 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.26.1
+                master/v1.26.1+1commits/2019.07.25
               </div>
             
           
@@ -177,7 +177,7 @@
 
     <span class="k">def</span> <span class="nf">_format_action_invocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
         <span class="n">extr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">option_strings</span> <span class="o">!=</span> <span class="p">[]</span> <span class="ow">and</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionConfigFile</span><span class="p">):</span>
                 <span class="n">extr</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  YAML: &#39;</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>
             <span class="n">env_var</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prog</span><span class="o">+</span><span class="s1">&#39;_&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>  <span class="c1"># pylint: disable=E1101</span>

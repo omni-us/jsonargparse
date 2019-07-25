@@ -30,7 +30,7 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 
     def _format_action_invocation(self, action):
         extr = ''
-        if action.default != '==SUPPRESS==':
+        if action.option_strings != [] and action.default != '==SUPPRESS==':
             if not isinstance(action, ActionConfigFile):
                 extr = '\n  YAML: ' + action.dest
             env_var = (self.prog+'_' if self.prog else '') + action.dest  # pylint: disable=E1101
