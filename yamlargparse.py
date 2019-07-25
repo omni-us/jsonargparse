@@ -22,7 +22,7 @@ except Exception as ex:
     jsonschema = jsonvalidator = ex
 
 
-__version__ = '1.26.1'
+__version__ = '1.27.0'
 
 
 class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
