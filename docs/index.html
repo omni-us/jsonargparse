@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.27.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.27.0+1commits/2019.07.29 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.27.0
+                master/v1.27.0+1commits/2019.07.29
               </div>
             
           
@@ -478,7 +478,7 @@ parser object. For example:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
 <td><p>Paired options –{yes_prefix}opt, –{no_prefix}opt to set True or False respectively.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args, default_config_files)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args, default_config_files, …)</p></td>
 <td><p>Parser for command line, yaml files and environment variables.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.DefaultHelpFormatter" title="yamlargparse.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
@@ -513,16 +513,32 @@ parser object. For example:</p>
 </tr>
 </tbody>
 </table>
+<dl class="exception">
+<dt id="yamlargparse.ParserError">
+<em class="property">exception </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ParserError</code><a class="reference internal" href="_modules/yamlargparse.html#ParserError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ParserError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Error raised when parsing a value fails.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="yamlargparse.DefaultHelpFormatter">
 <em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">DefaultHelpFormatter</code><span class="sig-paren">(</span><em class="sig-param">prog</em>, <em class="sig-param">indent_increment=2</em>, <em class="sig-param">max_help_position=24</em>, <em class="sig-param">width=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#DefaultHelpFormatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.DefaultHelpFormatter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentDefaultsHelpFormatter" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentDefaultsHelpFormatter</span></code></a></p>
 <p>Help message formatter with yaml key, env var and default values in argument help.</p>
+<p>This class is an extension of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentDefaultsHelpFormatter">argparse.ArgumentDefaultsHelpFormatter</a>.
+The main difference is that optional arguments are preceded by ‘ARG:’, the yaml key in dot
+notation is included preceded by ‘YAML:’, and if the ArgumentParser’s default_env=True, the
+environment variable is included preceded by ‘ENV:’.</p>
+<dl class="attribute">
+<dt id="yamlargparse.DefaultHelpFormatter.prog">
+<code class="sig-name descname">prog</code><em class="property"> = None</em><a class="headerlink" href="#yamlargparse.DefaultHelpFormatter.prog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="yamlargparse.ArgumentParser">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a></p>
 <p>Parser for command line, yaml files and environment variables.</p>
 <p><strong>Methods</strong></p>
@@ -532,7 +548,7 @@ parser object. For example:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.__init__" title="yamlargparse.ArgumentParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, default_config_files[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.__init__" title="yamlargparse.ArgumentParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, default_config_files, …[, …])</p></td>
 <td><p>Initializer for ArgumentParser instance.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.add_argument_group" title="yamlargparse.ArgumentParser.add_argument_group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_argument_group</span></code></a>(*args, name, **kwargs)</p></td>
@@ -575,7 +591,7 @@ parser object. For example:</p>
 </table>
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ArgumentParser instance.</p>
 <p>All the arguments from the initializer of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser">argparse.ArgumentParser</a>
 are supported. Additionally it accepts:</p>
@@ -583,6 +599,7 @@ are supported. Additionally it accepts:</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>default_config_files</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>]</em>) – List of strings defining default config file locations. For example: <code class="code docutils literal notranslate"><span class="pre">['~/.config/myapp/*.yaml']</span></code>.</p></li>
+<li><p><strong>default_env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Set the default value on whether to parse environment variables.</p></li>
 <li><p><strong>logger</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.7)"><em>logging.Logger</em></a>) – Object for logging events.</p></li>
 <li><p><strong>error_handler</strong> (<em>Callable</em>) – Handler for parsing errors (default=None). For same behavior as argparse use <a class="reference internal" href="#yamlargparse.usage_and_exit_error_handler" title="yamlargparse.usage_and_exit_error_handler"><code class="xref py py-func docutils literal notranslate"><span class="pre">usage_and_exit_error_handler()</span></code></a>.</p></li>
 </ul>
@@ -592,14 +609,14 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_args">
-<code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">namespace=None</em>, <em class="sig-param">env: bool = False</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">namespace=None</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses command line argument strings.</p>
 <p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args">argparse.ArgumentParser.parse_args</a>
 are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parsed environment.</p></li>
+<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Whether to merge with the parsed environment. None means use the ArgumentParser’s default.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
 </ul>
 </dd>
@@ -617,13 +634,13 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_yaml_path">
-<code class="sig-name descname">parse_yaml_path</code><span class="sig-paren">(</span><em class="sig-param">yaml_path: str</em>, <em class="sig-param">env: bool = False</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_path" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_yaml_path</code><span class="sig-paren">(</span><em class="sig-param">yaml_path: str</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a yaml file given its path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>yaml_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path to the yaml file to parse.</p></li>
-<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parsed environment.</p></li>
+<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Whether to merge with the parsed environment. None means use the ArgumentParser’s default.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
 </ul>
@@ -642,13 +659,13 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.parse_yaml_string">
-<code class="sig-name descname">parse_yaml_string</code><span class="sig-paren">(</span><em class="sig-param">yaml_str: str</em>, <em class="sig-param">env: bool = False</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">log=True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_yaml_string</code><span class="sig-paren">(</span><em class="sig-param">yaml_str: str</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">log: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_yaml_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_yaml_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses yaml given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>yaml_str</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The yaml content.</p></li>
-<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parsed environment.</p></li>
+<li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Whether to merge with the parsed environment. None means use the ArgumentParser’s default.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
 </ul>
@@ -1220,13 +1237,6 @@ object was created.</p>
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="exception">
-<dt id="yamlargparse.ParserError">
-<em class="property">exception </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ParserError</code><a class="reference internal" href="_modules/yamlargparse.html#ParserError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ParserError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
-<p>Error raised when parsing a value fails.</p>
 </dd></dl>
 
 <dl class="function">

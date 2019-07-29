@@ -25,17 +25,33 @@ except Exception as ex:
 __version__ = '1.27.0'
 
 
+class ParserError(Exception):
+    """Error raised when parsing a value fails."""
+    pass
+
+
 class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
-    """Help message formatter with yaml key, env var and default values in argument help."""
+    """Help message formatter with yaml key, env var and default values in argument help.
+
+    This class is an extension of `argparse.ArgumentDefaultsHelpFormatter
+    <https://docs.python.org/3/library/argparse.html#argparse.ArgumentDefaultsHelpFormatter>`_.
+    The main difference is that optional arguments are preceded by 'ARG:', the yaml key in dot
+    notation is included preceded by 'YAML:', and if the ArgumentParser's default_env=True, the
+    environment variable is included preceded by 'ENV:'.
+    """
+
+    prog = None
+    _default_env = True
 
     def _format_action_invocation(self, action):
         extr = ''
         if action.option_strings != [] and action.default != '==SUPPRESS==':
             if not isinstance(action, ActionConfigFile):
                 extr = '\n  YAML: ' + action.dest
-            env_var = (self.prog+'_' if self.prog else '') + action.dest  # pylint: disable=E1101
-            env_var = env_var.replace('.', '__').upper()
-            extr += '\n  ENV:  ' + env_var
+            if self._default_env:
+                env_var = (self.prog+'_' if self.prog else '') + action.dest
+                env_var = env_var.replace('.', '__').upper()
+                extr += '\n  ENV:  ' + env_var
         return 'ARG:  ' + super()._format_action_invocation(action) + extr
 
 
@@ -45,7 +61,14 @@ class ArgumentParser(argparse.ArgumentParser):
     groups = {}  # type: Dict[str, argparse._ArgumentGroup]
 
 
-    def __init__(self, *args, default_config_files:List[str]=[], logger=None, error_handler=None, formatter_class=DefaultHelpFormatter, **kwargs):
+    def __init__(self,
+                 *args,
+                 default_config_files:List[str]=[],
+                 default_env:bool=False,
+                 logger=None,
+                 error_handler=None,
+                 formatter_class=DefaultHelpFormatter,
+                 **kwargs):
         """Initializer for ArgumentParser instance.
 
         All the arguments from the initializer of `argparse.ArgumentParser
@@ -54,10 +77,12 @@ class ArgumentParser(argparse.ArgumentParser):
 
         Args:
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
+            default_env (bool): Set the default value on whether to parse environment variables.
             logger (logging.Logger): Object for logging events.
             error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
         """
         self._default_config_files = default_config_files
+        self._default_env = default_env
         if logger is None:
             self._logger = logging.getLogger('null')
             self._logger.addHandler(logging.NullHandler())
@@ -67,10 +92,12 @@ class ArgumentParser(argparse.ArgumentParser):
         self._stderr = sys.stderr
         kwargs['formatter_class'] = formatter_class
         super().__init__(*args, **kwargs)
-        setattr(formatter_class, 'prog', self.prog)
+        if formatter_class == DefaultHelpFormatter:
+            setattr(formatter_class, 'prog', self.prog)
+            setattr(formatter_class, '_default_env', default_env)
 
 
-    def parse_args(self, args=None, namespace=None, env:bool=False, nested:bool=True):
+    def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True):
         """Parses command line argument strings.
 
         All the arguments from `argparse.ArgumentParser.parse_args
@@ -78,7 +105,7 @@ class ArgumentParser(argparse.ArgumentParser):
         are supported. Additionally it accepts:
 
         Args:
-            env (bool): Whether to merge with the parsed environment.
+            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             nested (bool): Whether the namespace should be nested.
 
         Returns:
@@ -88,7 +115,7 @@ class ArgumentParser(argparse.ArgumentParser):
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            if env:
+            if env or (env is None and self._default_env):
                 cfg_env = self.parse_env(nested=False)
                 namespace = cfg_env if namespace is None else self._merge_config(namespace, cfg_env)
 
@@ -108,12 +135,12 @@ class ArgumentParser(argparse.ArgumentParser):
         return self.dict_to_namespace(self._flat_namespace_to_dict(cfg))
 
 
-    def parse_yaml_path(self, yaml_path:str, env:bool=False, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
+    def parse_yaml_path(self, yaml_path:str, env:bool=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
         """Parses a yaml file given its path.
 
         Args:
             yaml_path (str): Path to the yaml file to parse.
-            env (bool): Whether to merge with the parsed environment.
+            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
 
@@ -136,12 +163,12 @@ class ArgumentParser(argparse.ArgumentParser):
         return parsed_yaml
 
 
-    def parse_yaml_string(self, yaml_str:str, env:bool=False, defaults:bool=True, nested:bool=True, log=True) -> SimpleNamespace:
+    def parse_yaml_string(self, yaml_str:str, env:bool=None, defaults:bool=True, nested:bool=True, log:bool=True) -> SimpleNamespace:
         """Parses yaml given as a string.
 
         Args:
             yaml_str (str): The yaml content.
-            env (bool): Whether to merge with the parsed environment.
+            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
 
@@ -157,7 +184,7 @@ class ArgumentParser(argparse.ArgumentParser):
             if nested:
                 cfg = self._flat_namespace_to_dict(self.dict_to_namespace(cfg))
 
-            if env:
+            if env or (env is None and self._default_env):
                 cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
 
             if defaults:
@@ -463,7 +490,7 @@ class ArgumentParser(argparse.ArgumentParser):
             if len(ksplit) == 1:
                 if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
                     cfg_dict[k] = [ArgumentParser.namespace_to_dict(x) for x in v]
-                else:
+                elif not (v is None and k in cfg_dict):
                     cfg_dict[k] = v
             else:
                 kdict = cfg_dict
@@ -477,7 +504,7 @@ class ArgumentParser(argparse.ArgumentParser):
                     raise ParserError('Conflicting namespace base: '+k)
                 if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
                     kdict[ksplit[-1]] = [ArgumentParser.namespace_to_dict(x) for x in v]
-                else:
+                elif not (v is None and ksplit[-1] in kdict):
                     kdict[ksplit[-1]] = v
         return cfg_dict
 
@@ -1086,11 +1113,6 @@ class Path(object):
             raise ValueError('Expected mode to only include [fdrwxFDRWX] flags.')
 
 
-class ParserError(Exception):
-    """Error raised when parsing a value fails."""
-    pass
-
-
 def usage_and_exit_error_handler(self, message):
     """Error handler to get the same behavior as in argparse.
 
@@ -1106,24 +1128,35 @@ def usage_and_exit_error_handler(self, message):
 
 @contextmanager
 def _suppress_stderr():
-    """A context manager that redirects stderr to devnull"""
+    """A context manager that redirects stderr to devnull."""
     with open(os.devnull, 'w') as fnull:
         with redirect_stderr(fnull):
             yield None
 
 
 def _is_action_value_list(action:Action):
+    """Checks whether an action produces a list value.
+
+    Args:
+        action (Action): An argparse action to check.
+
+    Returns:
+        bool: True if produces list otherwise False.
+    """
     if action.nargs in {'*', '+'} or isinstance(action.nargs, int):
         return True
     return False
 
 
 def _check_unknown_kwargs(kwargs:Dict[str, Any], keys:Set[str]):
-    """Raises exception if a kwargs has unexpected keys.
+    """Checks whether a kwargs dict has unexpected keys.
 
     Args:
-        kwargs (dict): The keyword arguments to check.
+        kwargs (dict): The keyword arguments dict to check.
         keys (set): The expected keys.
+
+    Raises:
+        ValueError: If an unexpected keyword argument is found.
     """
     if len(set(kwargs.keys())-keys) > 0:
-        raise ValueError('Unknown keyword arguments: '+', '.join(set(kwargs.keys())-keys)+'.')
+        raise ValueError('Unexpected keyword arguments: '+', '.join(set(kwargs.keys())-keys)+'.')
