@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.28.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.28.0+1commits/2019.08.02 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.28.0
+                master/v1.28.0+1commits/2019.08.02
               </div>
             
           
@@ -268,19 +268,20 @@ example you could do the following:</p>
 </div>
 <div class="section" id="environment-variables">
 <h1>Environment variables<a class="headerlink" href="#environment-variables" title="Permalink to this headline">¶</a></h1>
-<p>The yamlargparse parsers by default also get values from environment variables.
-The parser checks existing environment variables whose name is of the form
-<code class="code docutils literal notranslate"><span class="pre">[PROG_][LEV__]*OPT</span></code>, that is all in upper case, first the name of the
-program followed by underscore and then the argument name replacing dots with
-two underscores. Using the parser from the <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a> section
-above, in your shell you would set the environment variables as:</p>
+<p>The yamlargparse parsers can also get values from environment variables. The
+parser checks existing environment variables whose name is of the form
+<code class="code docutils literal notranslate"><span class="pre">[PREFIX_][LEV__]*OPT</span></code>, that is all in upper case, first a prefix (set by
+<code class="code docutils literal notranslate"><span class="pre">env_prefix</span></code>, or if unset the <code class="code docutils literal notranslate"><span class="pre">prog</span></code> without extension) followed by
+underscore and then the argument name replacing dots with two underscores. Using
+the parser from the <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a> section above, in your shell you
+would set the environment variables as:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">APP_LEV1__OPT1</span><span class="o">=</span><span class="s1">&#39;from env 1&#39;</span>
 <span class="nb">export</span> <span class="nv">APP_LEV1__OPT2</span><span class="o">=</span><span class="s1">&#39;from env 2&#39;</span>
 </pre></div>
 </div>
 <p>Then in python the parser would use these variables, unless overridden by the
 command line arguments, that is:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="n">default_env</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 2&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="s1">&#39;from arg 1&#39;</span><span class="p">])</span>
@@ -290,6 +291,9 @@ command line arguments, that is:</p>
 <span class="go">&#39;from env 2&#39;</span>
 </pre></div>
 </div>
+<p>Note that when creating the parser, <code class="code docutils literal notranslate"><span class="pre">default_env=True</span></code> was given as
+argument. By default <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_args" title="yamlargparse.ArgumentParser.parse_args"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_args()</span></code></a> does not
+check environment variables, so it has to be enabled explicitly.</p>
 <p>There is also the <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_env" title="yamlargparse.ArgumentParser.parse_env"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_env()</span></code></a> function to only
 parse environment variables, which might be useful for some use cases in which
 there is no command line call involved.</p>
@@ -529,16 +533,11 @@ parser object. For example:</p>
 The main difference is that optional arguments are preceded by ‘ARG:’, the yaml key in dot
 notation is included preceded by ‘YAML:’, and if the ArgumentParser’s default_env=True, the
 environment variable is included preceded by ‘ENV:’.</p>
-<dl class="attribute">
-<dt id="yamlargparse.DefaultHelpFormatter.prog">
-<code class="sig-name descname">prog</code><em class="property"> = None</em><a class="headerlink" href="#yamlargparse.DefaultHelpFormatter.prog" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">
 <dt id="yamlargparse.ArgumentParser">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">version=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a></p>
 <p>Parser for command line, yaml files and environment variables.</p>
 <p><strong>Methods</strong></p>
@@ -591,7 +590,7 @@ environment variable is included preceded by ‘ENV:’.</p>
 </table>
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">version=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ArgumentParser instance.</p>
 <p>All the arguments from the initializer of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser">argparse.ArgumentParser</a>
 are supported. Additionally it accepts:</p>
@@ -600,8 +599,10 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>default_config_files</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>]</em>) – List of strings defining default config file locations. For example: <code class="code docutils literal notranslate"><span class="pre">['~/.config/myapp/*.yaml']</span></code>.</p></li>
 <li><p><strong>default_env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Set the default value on whether to parse environment variables.</p></li>
+<li><p><strong>env_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for environment variables.</p></li>
 <li><p><strong>logger</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.7)"><em>logging.Logger</em></a>) – Object for logging events.</p></li>
 <li><p><strong>error_handler</strong> (<em>Callable</em>) – Handler for parsing errors (default=None). For same behavior as argparse use <a class="reference internal" href="#yamlargparse.usage_and_exit_error_handler" title="yamlargparse.usage_and_exit_error_handler"><code class="xref py py-func docutils literal notranslate"><span class="pre">usage_and_exit_error_handler()</span></code></a>.</p></li>
+<li><p><strong>version</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Program version string to add –version argument.</p></li>
 </ul>
 </dd>
 </dl>

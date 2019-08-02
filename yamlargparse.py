@@ -40,18 +40,17 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     environment variable is included preceded by 'ENV:'.
     """
 
-    prog = None
+    _env_prefix = None
     _default_env = True
 
     def _format_action_invocation(self, action):
+        if action.option_strings == [] or action.default == '==SUPPRESS==':
+            return super()._format_action_invocation(action)
         extr = ''
-        if action.option_strings != [] and action.default != '==SUPPRESS==':
-            if not isinstance(action, ActionConfigFile):
-                extr = '\n  YAML: ' + action.dest
-            if self._default_env:
-                env_var = (self.prog+'_' if self.prog else '') + action.dest
-                env_var = env_var.replace('.', '__').upper()
-                extr += '\n  ENV:  ' + env_var
+        if not isinstance(action, ActionConfigFile):
+            extr = '\n  YAML: ' + action.dest
+        if self._default_env:
+            extr += '\n  ENV:  ' + ArgumentParser._get_env_var(self, action)
         return 'ARG:  ' + super()._format_action_invocation(action) + extr
 
 
@@ -65,9 +64,11 @@ class ArgumentParser(argparse.ArgumentParser):
                  *args,
                  default_config_files:List[str]=[],
                  default_env:bool=False,
+                 env_prefix=None,
                  logger=None,
                  error_handler=None,
                  formatter_class=DefaultHelpFormatter,
+                 version=None,
                  **kwargs):
         """Initializer for ArgumentParser instance.
 
@@ -78,8 +79,10 @@ class ArgumentParser(argparse.ArgumentParser):
         Args:
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
             default_env (bool): Set the default value on whether to parse environment variables.
+            env_prefix (str): Prefix for environment variables.
             logger (logging.Logger): Object for logging events.
             error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
+            version (str): Program version string to add --version argument.
         """
         self._default_config_files = default_config_files
         self._default_env = default_env
@@ -92,8 +95,13 @@ class ArgumentParser(argparse.ArgumentParser):
         self._stderr = sys.stderr
         kwargs['formatter_class'] = formatter_class
         super().__init__(*args, **kwargs)
+        if env_prefix is None:
+            env_prefix = os.path.splitext(self.prog)[0]
+        self._env_prefix = env_prefix
+        if version is not None:
+            self.add_argument('--version', action='version', version='%(prog)s '+version)
         if formatter_class == DefaultHelpFormatter:
-            setattr(formatter_class, 'prog', self.prog)
+            setattr(formatter_class, '_env_prefix', env_prefix)
             setattr(formatter_class, '_default_env', default_env)
 
 
@@ -254,6 +262,14 @@ class ArgumentParser(argparse.ArgumentParser):
         return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
 
 
+    @staticmethod
+    def _get_env_var(parser, action) -> str:
+        """Returns the environment variable for a given parser and action."""
+        env_var = (parser._env_prefix+'_' if parser._env_prefix else '') + action.dest
+        env_var = env_var.replace('.', '__').upper()
+        return env_var
+
+
     def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
         """Parses environment variables.
 
@@ -275,8 +291,7 @@ class ArgumentParser(argparse.ArgumentParser):
             for action in self._actions:
                 if action.default == '==SUPPRESS==':
                     continue
-                env_var = (self.prog+'_' if self.prog else '') + action.dest
-                env_var = env_var.replace('.', '__').upper()
+                env_var = self._get_env_var(self, action)
                 if env_var in env:
                     if isinstance(action, ActionConfigFile):
                         namespace = self._dict_to_flat_namespace(cfg)

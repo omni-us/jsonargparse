@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse &mdash; yamlargparse 1.28.0 documentation</title>
+  <title>yamlargparse &mdash; yamlargparse master/v1.28.0+1commits/2019.08.02 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.28.0
+                master/v1.28.0+1commits/2019.08.02
               </div>
             
           
@@ -187,18 +187,17 @@
 <span class="sd">    environment variable is included preceded by &#39;ENV:&#39;.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">prog</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_env_prefix</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">_default_env</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span> <span class="nf">_format_action_invocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">option_strings</span> <span class="o">==</span> <span class="p">[]</span> <span class="ow">or</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">==</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_format_action_invocation</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
         <span class="n">extr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">option_strings</span> <span class="o">!=</span> <span class="p">[]</span> <span class="ow">and</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionConfigFile</span><span class="p">):</span>
-                <span class="n">extr</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  YAML: &#39;</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_env</span><span class="p">:</span>
-                <span class="n">env_var</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prog</span><span class="o">+</span><span class="s1">&#39;_&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>
-                <span class="n">env_var</span> <span class="o">=</span> <span class="n">env_var</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
-                <span class="n">extr</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  ENV:  &#39;</span> <span class="o">+</span> <span class="n">env_var</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionConfigFile</span><span class="p">):</span>
+            <span class="n">extr</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  YAML: &#39;</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_env</span><span class="p">:</span>
+            <span class="n">extr</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  ENV:  &#39;</span> <span class="o">+</span> <span class="n">ArgumentParser</span><span class="o">.</span><span class="n">_get_env_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
         <span class="k">return</span> <span class="s1">&#39;ARG:  &#39;</span> <span class="o">+</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_format_action_invocation</span><span class="p">(</span><span class="n">action</span><span class="p">)</span> <span class="o">+</span> <span class="n">extr</span></div>
 
 
@@ -212,9 +211,11 @@
                  <span class="o">*</span><span class="n">args</span><span class="p">,</span>
                  <span class="n">default_config_files</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">default_env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">env_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">error_handler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">formatter_class</span><span class="o">=</span><span class="n">DefaultHelpFormatter</span><span class="p">,</span>
+                 <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ArgumentParser instance.</span>
 
@@ -225,8 +226,10 @@
 <span class="sd">        Args:</span>
 <span class="sd">            default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`[&#39;~/.config/myapp/*.yaml&#39;]`.</span>
 <span class="sd">            default_env (bool): Set the default value on whether to parse environment variables.</span>
+<span class="sd">            env_prefix (str): Prefix for environment variables.</span>
 <span class="sd">            logger (logging.Logger): Object for logging events.</span>
 <span class="sd">            error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.</span>
+<span class="sd">            version (str): Program version string to add --version argument.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_config_files</span> <span class="o">=</span> <span class="n">default_config_files</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_env</span> <span class="o">=</span> <span class="n">default_env</span>
@@ -239,8 +242,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;formatter_class&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">formatter_class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">env_prefix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">env_prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prog</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env_prefix</span> <span class="o">=</span> <span class="n">env_prefix</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--version&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;version&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(prog)s</span><span class="s1"> &#39;</span><span class="o">+</span><span class="n">version</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">formatter_class</span> <span class="o">==</span> <span class="n">DefaultHelpFormatter</span><span class="p">:</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="n">formatter_class</span><span class="p">,</span> <span class="s1">&#39;prog&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">formatter_class</span><span class="p">,</span> <span class="s1">&#39;_env_prefix&#39;</span><span class="p">,</span> <span class="n">env_prefix</span><span class="p">)</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="n">formatter_class</span><span class="p">,</span> <span class="s1">&#39;_default_env&#39;</span><span class="p">,</span> <span class="n">default_env</span><span class="p">)</span></div>
 
 
@@ -401,6 +409,14 @@
         <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">allow_unicode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_env_var</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Returns the environment variable for a given parser and action.&quot;&quot;&quot;</span>
+        <span class="n">env_var</span> <span class="o">=</span> <span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">_env_prefix</span><span class="o">+</span><span class="s1">&#39;_&#39;</span> <span class="k">if</span> <span class="n">parser</span><span class="o">.</span><span class="n">_env_prefix</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>
+        <span class="n">env_var</span> <span class="o">=</span> <span class="n">env_var</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">env_var</span>
+
+
 <div class="viewcode-block" id="ArgumentParser.parse_env"><a class="viewcode-back" href="../index.html#yamlargparse.ArgumentParser.parse_env">[docs]</a>    <span class="k">def</span> <span class="nf">parse_env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Parses environment variables.</span>
 
@@ -422,8 +438,7 @@
             <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">default</span> <span class="o">==</span> <span class="s1">&#39;==SUPPRESS==&#39;</span><span class="p">:</span>
                     <span class="k">continue</span>
-                <span class="n">env_var</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prog</span><span class="o">+</span><span class="s1">&#39;_&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>
-                <span class="n">env_var</span> <span class="o">=</span> <span class="n">env_var</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+                <span class="n">env_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_env_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">env_var</span> <span class="ow">in</span> <span class="n">env</span><span class="p">:</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionConfigFile</span><span class="p">):</span>
                         <span class="n">namespace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>

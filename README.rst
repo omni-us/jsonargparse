@@ -133,12 +133,13 @@ example you could do the following:
 Environment variables
 =====================
 
-The yamlargparse parsers by default also get values from environment variables.
-The parser checks existing environment variables whose name is of the form
-:code:`[PROG_][LEV__]*OPT`, that is all in upper case, first the name of the
-program followed by underscore and then the argument name replacing dots with
-two underscores. Using the parser from the :ref:`nested-namespaces` section
-above, in your shell you would set the environment variables as:
+The yamlargparse parsers can also get values from environment variables. The
+parser checks existing environment variables whose name is of the form
+:code:`[PREFIX_][LEV__]*OPT`, that is all in upper case, first a prefix (set by
+:code:`env_prefix`, or if unset the :code:`prog` without extension) followed by
+underscore and then the argument name replacing dots with two underscores. Using
+the parser from the :ref:`nested-namespaces` section above, in your shell you
+would set the environment variables as:
 
 .. code-block:: bash
 
@@ -150,7 +151,7 @@ command line arguments, that is:
 
 .. code-block:: python
 
-    >>> parser = yamlargparse.ArgumentParser(prog='app')
+    >>> parser = yamlargparse.ArgumentParser(env_prefix='app', default_env=True)
     >>> parser.add_argument('--lev1.opt1', default='from default 1')
     >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1'])
@@ -158,6 +159,10 @@ command line arguments, that is:
     'from arg 1'
     >>> cfg.lev1.opt2
     'from env 2'
+
+Note that when creating the parser, :code:`default_env=True` was given as
+argument. By default :func:`yamlargparse.ArgumentParser.parse_args` does not
+check environment variables, so it has to be enabled explicitly.
 
 There is also the :func:`yamlargparse.ArgumentParser.parse_env` function to only
 parse environment variables, which might be useful for some use cases in which
