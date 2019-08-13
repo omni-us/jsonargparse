@@ -84,25 +84,36 @@ class ArgumentParser(argparse.ArgumentParser):
             error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
             version (str): Program version string to add --version argument.
         """
+        kwargs['formatter_class'] = formatter_class
+        super().__init__(*args, **kwargs)
+        self._stderr = sys.stderr
         self._default_config_files = default_config_files
-        self._default_env = default_env
+        self.default_env = default_env
+        self.env_prefix = env_prefix
+        self.logger = logger
+        self.error_handler = error_handler
+        if version is not None:
+            self.add_argument('--version', action='version', version='%(prog)s '+version)
+
+
+    @property
+    def logger(self):
+        """Gets the current logger."""
+        return self._logger
+
+
+    @logger.setter
+    def logger(self, logger):
+        """Sets a new logger.
+
+        Args:
+            logger (logging.Logger or None): A logger to use or None for a null logger.
+        """
         if logger is None:
-            self._logger = logging.getLogger('null')
+            self._logger = logging.Logger('null')
             self._logger.addHandler(logging.NullHandler())
         else:
             self._logger = logger
-        self.error_handler = error_handler
-        self._stderr = sys.stderr
-        kwargs['formatter_class'] = formatter_class
-        super().__init__(*args, **kwargs)
-        if env_prefix is None:
-            env_prefix = os.path.splitext(self.prog)[0]
-        self._env_prefix = env_prefix
-        if version is not None:
-            self.add_argument('--version', action='version', version='%(prog)s '+version)
-        if formatter_class == DefaultHelpFormatter:
-            setattr(formatter_class, '_env_prefix', env_prefix)
-            setattr(formatter_class, '_default_env', default_env)
 
 
     def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True):
@@ -268,6 +279,44 @@ class ArgumentParser(argparse.ArgumentParser):
         env_var = (parser._env_prefix+'_' if parser._env_prefix else '') + action.dest
         env_var = env_var.replace('.', '__').upper()
         return env_var
+
+
+    @property
+    def default_env(self):
+        """Gets the current value of the default_env property."""
+        return self._default_env
+
+
+    @default_env.setter
+    def default_env(self, default_env):
+        """Sets a new value to the default_env property.
+
+        Args:
+            default_env (bool): Whether default environment parsing is enabled or not.
+        """
+        self._default_env = default_env
+        if self.formatter_class == DefaultHelpFormatter:
+            setattr(self.formatter_class, '_default_env', default_env)
+
+
+    @property
+    def env_prefix(self):
+        """Gets the current value of the env_prefix property."""
+        return self._env_prefix
+
+
+    @env_prefix.setter
+    def env_prefix(self, env_prefix):
+        """Sets a new value to the env_prefix property.
+
+        Args:
+            env_prefix (str or None): Set prefix for environment variables, use None to derive it from prog.
+        """
+        if env_prefix is None:
+            env_prefix = os.path.splitext(self.prog)[0]
+        self._env_prefix = env_prefix
+        if self.formatter_class == DefaultHelpFormatter:
+            setattr(self.formatter_class, '_env_prefix', env_prefix)
 
 
     def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.29.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.29.0+1commits/2019.08.13 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.29.0
+                master/v1.29.0+1commits/2019.08.13
               </div>
             
           
@@ -588,6 +588,24 @@ environment variable is included preceded by ‘ENV:’.</p>
 </tr>
 </tbody>
 </table>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.default_env" title="yamlargparse.ArgumentParser.default_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_env</span></code></a></p></td>
+<td><p>Gets the current value of the default_env property.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.env_prefix" title="yamlargparse.ArgumentParser.env_prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">env_prefix</span></code></a></p></td>
+<td><p>Gets the current value of the env_prefix property.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.logger" title="yamlargparse.ArgumentParser.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p>Gets the current logger.</p></td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="yamlargparse.ArgumentParser.__init__">
 <code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">version=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
@@ -606,6 +624,12 @@ are supported. Additionally it accepts:</p>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.logger">
+<em class="property">property </em><code class="sig-name descname">logger</code><a class="headerlink" href="#yamlargparse.ArgumentParser.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the current logger.</p>
 </dd></dl>
 
 <dl class="method">
@@ -705,6 +729,18 @@ are supported. Additionally it accepts:</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.7)"><strong>TypeError</strong></a> – If any of the values of cfg is invalid according to the parser.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.default_env">
+<em class="property">property </em><code class="sig-name descname">default_env</code><a class="headerlink" href="#yamlargparse.ArgumentParser.default_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the current value of the default_env property.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.ArgumentParser.env_prefix">
+<em class="property">property </em><code class="sig-name descname">env_prefix</code><a class="headerlink" href="#yamlargparse.ArgumentParser.env_prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the current value of the env_prefix property.</p>
 </dd></dl>
 
 <dl class="method">
@@ -915,7 +951,7 @@ are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>yes_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for yes option (default=’‘).</p></li>
+<li><p><strong>yes_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for yes option (default=’’).</p></li>
 <li><p><strong>no_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for no option (default=’<a href="#id2"><span class="problematic" id="id3">no_</span></a>’).</p></li>
 </ul>
 </dd>
