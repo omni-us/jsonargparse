@@ -54,7 +54,43 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
         return 'ARG:  ' + super()._format_action_invocation(action) + extr
 
 
-class ArgumentParser(argparse.ArgumentParser):
+class LoggerProperty:
+    """Class designed to be inherited by other classes to add a logger property."""
+
+    def __init__(self):
+        """Initializer for LoggerProperty class."""
+        if not hasattr(self, '_logger'):
+            self.logger = None
+
+
+    @property
+    def logger(self):
+        """The current logger."""
+        return self._logger
+
+
+    @logger.setter
+    def logger(self, logger):
+        """Sets a new logger.
+
+        Args:
+            logger (logging.Logger or True or None): A logger to use or True to use the default logger or None for a null logger.
+
+        Raises:
+            ValueError: If an invalid logger value is given.
+        """
+        if logger is None:
+            self._logger = logging.Logger('null')
+            self._logger.addHandler(logging.NullHandler())
+        elif isinstance(logger, bool) and logger:
+            self._logger = logging
+        elif not isinstance(logger, logging.Logger):
+            raise ValueError('Expected logger to be an instance of logging.Logger.')
+        else:
+            self._logger = logger
+
+
+class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
     """Parser for command line, yaml files and environment variables."""
 
     groups = {}  # type: Dict[str, argparse._ArgumentGroup]
@@ -80,7 +116,7 @@ class ArgumentParser(argparse.ArgumentParser):
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
             default_env (bool): Set the default value on whether to parse environment variables.
             env_prefix (str): Prefix for environment variables.
-            logger (logging.Logger): Object for logging events.
+            logger (logging.Logger or True or None): Object for logging events.
             error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
             version (str): Program version string to add --version argument.
         """
@@ -94,26 +130,6 @@ class ArgumentParser(argparse.ArgumentParser):
         self.error_handler = error_handler
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version)
-
-
-    @property
-    def logger(self):
-        """Gets the current logger."""
-        return self._logger
-
-
-    @logger.setter
-    def logger(self, logger):
-        """Sets a new logger.
-
-        Args:
-            logger (logging.Logger or None): A logger to use or None for a null logger.
-        """
-        if logger is None:
-            self._logger = logging.Logger('null')
-            self._logger.addHandler(logging.NullHandler())
-        else:
-            self._logger = logger
 
 
     def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True):

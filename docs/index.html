@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse 1.30.0 documentation</title>
+  <title>yamlargparse python module &mdash; yamlargparse master/v1.30.0+1commits/2019.08.20 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                1.30.0
+                master/v1.30.0+1commits/2019.08.20
               </div>
             
           
@@ -488,7 +488,10 @@ parser object. For example:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.DefaultHelpFormatter" title="yamlargparse.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
 <td><p>Help message formatter with yaml key, env var and default values in argument help.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.LoggerProperty" title="yamlargparse.LoggerProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoggerProperty</span></code></a>()</p></td>
+<td><p>Class designed to be inherited by other classes to add a logger property.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
 </tbody>
@@ -536,9 +539,52 @@ environment variable is included preceded by ‘ENV:’.</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="yamlargparse.LoggerProperty">
+<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">LoggerProperty</code><a class="reference internal" href="_modules/yamlargparse.html#LoggerProperty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.LoggerProperty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class designed to be inherited by other classes to add a logger property.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.LoggerProperty.__init__" title="yamlargparse.LoggerProperty.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
+<td><p>Initializer for LoggerProperty class.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.LoggerProperty.logger" title="yamlargparse.LoggerProperty.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p>The current logger.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="yamlargparse.LoggerProperty.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#LoggerProperty.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.LoggerProperty.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for LoggerProperty class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="yamlargparse.LoggerProperty.logger">
+<em class="property">property </em><code class="sig-name descname">logger</code><a class="headerlink" href="#yamlargparse.LoggerProperty.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current logger.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="yamlargparse.ArgumentParser">
 <em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class=&lt;class 'yamlargparse.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">version=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a>, <a class="reference internal" href="#yamlargparse.LoggerProperty" title="yamlargparse.LoggerProperty"><code class="xref py py-class docutils literal notranslate"><span class="pre">yamlargparse.LoggerProperty</span></code></a></p>
 <p>Parser for command line, yaml files and environment variables.</p>
 <p><strong>Methods</strong></p>
 <table class="longtable docutils align-default">
@@ -601,9 +647,6 @@ environment variable is included preceded by ‘ENV:’.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.env_prefix" title="yamlargparse.ArgumentParser.env_prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">env_prefix</span></code></a></p></td>
 <td><p>Gets the current value of the env_prefix property.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.logger" title="yamlargparse.ArgumentParser.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
-<td><p>Gets the current logger.</p></td>
-</tr>
 </tbody>
 </table>
 <dl class="method">
@@ -618,18 +661,12 @@ are supported. Additionally it accepts:</p>
 <li><p><strong>default_config_files</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em>]</em>) – List of strings defining default config file locations. For example: <code class="code docutils literal notranslate"><span class="pre">['~/.config/myapp/*.yaml']</span></code>.</p></li>
 <li><p><strong>default_env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Set the default value on whether to parse environment variables.</p></li>
 <li><p><strong>env_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for environment variables.</p></li>
-<li><p><strong>logger</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.7)"><em>logging.Logger</em></a>) – Object for logging events.</p></li>
+<li><p><strong>logger</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.7)"><em>logging.Logger</em></a><em> or </em><em>True</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Object for logging events.</p></li>
 <li><p><strong>error_handler</strong> (<em>Callable</em>) – Handler for parsing errors (default=None). For same behavior as argparse use <a class="reference internal" href="#yamlargparse.usage_and_exit_error_handler" title="yamlargparse.usage_and_exit_error_handler"><code class="xref py py-func docutils literal notranslate"><span class="pre">usage_and_exit_error_handler()</span></code></a>.</p></li>
 <li><p><strong>version</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Program version string to add –version argument.</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="yamlargparse.ArgumentParser.logger">
-<em class="property">property </em><code class="sig-name descname">logger</code><a class="headerlink" href="#yamlargparse.ArgumentParser.logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the current logger.</p>
 </dd></dl>
 
 <dl class="method">
