@@ -21,6 +21,11 @@ try:
 except Exception as ex:
     jsonschema = jsonvalidator = ex
 
+try:
+    import _jsonnet
+except Exception as ex:
+    _jsonnet = ex
+
 
 __version__ = '1.31.0'
 
@@ -849,6 +854,75 @@ class ActionJsonSchema(Action):
                 yield error
 
         return validators.extend(validator_class, {'properties': set_defaults})
+
+
+class ActionJsonnet(Action):
+    """Action to parse a jsonnet, optionally validating against a jsonschema."""
+    def __init__(self, **kwargs):
+        """Initializer for ActionJsonnet instance.
+
+        Args:
+            schema (str or object or None): Schema to validate values against. Keyword argument required even if schema=None.
+
+        Raises:
+            ImportError: If jsonnet or jsonschema packages are not available.
+            ValueError: If a parameter is invalid.
+            jsonschema.exceptions.SchemaError: If the schema is invalid.
+        """
+        if 'schema' in kwargs:
+            if isinstance(_jsonnet, Exception):
+                raise ImportError('jsonnet is required by ActionJsonnet :: '+str(_jsonnet))
+            _check_unknown_kwargs(kwargs, {'schema'})
+            schema = kwargs['schema']
+            if schema is not None:
+                if isinstance(jsonvalidator, Exception):
+                    raise ImportError('jsonschema is required by ActionJsonnet :: '+str(jsonvalidator))
+                if isinstance(schema, str):
+                    schema = yaml.safe_load(schema)
+                jsonvalidator.check_schema(schema)
+                self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
+            else:
+                self._validator = None
+        elif '_validator' not in kwargs:
+            raise ValueError('Expected schema keyword argument.')
+        else:
+            self._validator = kwargs.pop('_validator')
+            kwargs['type'] = str
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        """Parses an argument with the corresponding jsonschema.
+
+        Raises:
+            TypeError: If the argument is not valid.
+        """
+        if len(args) == 0:
+            kwargs['_validator'] = self._validator
+            if 'help' in kwargs and '%s' in kwargs['help'] and self._validator is not None:
+                kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, indent=2, sort_keys=True)
+            return ActionJsonnet(**kwargs)
+        setattr(args[1], self.dest, self._check_type(args[2]))
+
+    def _check_type(self, value):
+        islist = _is_action_value_list(self)
+        if not islist:
+            value = [value]
+        elif not isinstance(value, list):
+            raise TypeError('For ActionJsonnet with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
+        for num, val in enumerate(value):
+            try:
+                if isinstance(val, str):
+                    val = yaml.safe_load(_jsonnet.evaluate_file(val))
+                if self._validator is not None:
+                    if isinstance(val, SimpleNamespace):
+                        self._validator.validate(ArgumentParser.namespace_to_dict(val))
+                    else:
+                        self._validator.validate(val)
+                value[num] = val
+            except (TypeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:
+                elem = '' if not islist else ' element '+str(num+1)
+                raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex))
+        return value if islist else value[0]
 
 
 class ActionParser(Action):

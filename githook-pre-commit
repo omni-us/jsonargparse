@@ -46,8 +46,8 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
       echo "${0##*/}: pycodestyle ${FILES[$n]}" 1>&2;
       pycodestyle "${FILES[$n]}";
       [ "$?" != "0" ] && exit 1;
-      echo "${0##*/}: $PYLINT --errors-only ${FILES[$n]}" 1>&2;
-      $PYLINT --errors-only "${FILES[$n]}";
+      echo "${0##*/}: $PYLINT --errors-only --extension-pkg-whitelist=_jsonnet ${FILES[$n]}" 1>&2;
+      $PYLINT --errors-only --extension-pkg-whitelist=_jsonnet "${FILES[$n]}";
       ;;
     .circleci/config.yml )
       echo "${0##*/}: circleci config validate -c .circleci/config.yml" 1>&2;

@@ -1,1 +1,2 @@
 jsonschema>=2.6.0
+jsonnet>=0.13.0
