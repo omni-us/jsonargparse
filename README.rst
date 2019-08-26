@@ -12,8 +12,8 @@ yamlargparse python module
 https://omni-us.github.io/yamlargparse/
 
 This module is an extension to python's argparse which simplifies parsing of
-configuration options from command line arguments, yaml configuration files,
-environment variables and hard-coded defaults.
+configuration options from command line arguments, json supersets (yaml or
+jsonnet) configuration files, environment variables and hard-coded defaults.
 
 The aim is similar to other projects such as `configargparse
 <https://pypi.org/project/ConfigArgParse/>`_, `yconf
@@ -24,27 +24,34 @@ the existing projects had the exact features we wanted and after analyzing the
 alternatives it seemed simpler to create a new module.
 
 
+
+
 Features
 ========
 
 - Parsers are configured just like with python's argparse, thus it has a gentile learning curve.
 
-- Not exclusively intended for parsing command line arguments. The main focus is parsing yaml configuration files and not necessarily from a command line tool.
+- Not exclusively intended for parsing command line arguments. The main focus is parsing yaml or jsonnet configuration files and not necessarily from a command line tool.
 
-- Support for nested namespaces which makes it possible to parse yaml with non-flat hierarchies.
+- Support for nested namespaces which makes it possible to parse config files with non-flat hierarchies.
 
-- Parsing of relative paths within yaml files and path lists.
+- Support for two popular supersets of json making config files more versatile and powerful.
+
+- Parsing of relative paths within config files and path lists.
+
+- Several convenient action classes to ease common parsing use cases.
 
 - Default behavior is not identical to argparse, though it is possible to configure it to be identical. The main differences are:
 
   - When parsing fails :class:`ParserError` is raised, instead of printing usage and program exit.
   - To modify the behavior for parsing errors (e.g. print usage) an error handler function can be provided.
 
-- Configuration settings are overridden based on the following precedence.
+- Configuration values are overridden based on the following precedence.
 
   - **Parsing command line:** command line arguments (might include config file) > environment variables > default config file > defaults.
-  - **Parsing yaml:** config file > environment variables > default config file > defaults.
+  - **Parsing files:** config file > environment variables > default config file > defaults.
   - **Parsing environment:** environment variables > default config file > defaults.
+
 
 
 Using the module
@@ -209,9 +216,9 @@ the following would be observed:
     >>> cfg.lev1.opt2
     'from arg 2'
 
-There are also functions :func:`yamlargparse.ArgumentParser.parse_yaml_path` and
-:func:`yamlargparse.ArgumentParser.parse_yaml_string` to only parse a yaml file
-or yaml contained in a string respectively.
+There are also functions :func:`yamlargparse.ArgumentParser.parse_path` and
+:func:`yamlargparse.ArgumentParser.parse_string` to only parse a config file or
+a config contained in a string respectively.
 
 
 Parsing paths
@@ -242,7 +249,7 @@ and is readable, the following could be done:
 
     >>> parser = yamlargparse.ArgumentParser(prog='app')
     >>> parser.add_argument('--databases.info', action=yamlargparse.ActionPath(mode='fr'))
-    >>> cfg = parser.parse_yaml('app/config.yaml')
+    >>> cfg = parser.parse_path('app/config.yaml')
 
 After parsing it is possible to get both the original relative path as included
 in the yaml file, or the corresponding absolute path:

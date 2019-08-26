@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import glob
+import json
 import yaml
 import logging
 import operator
@@ -14,7 +15,6 @@ from typing import Any, List, Dict, Set, Union
 from contextlib import contextmanager, redirect_stderr
 
 try:
-    import json
     import jsonschema
     from jsonschema import validators
     from jsonschema import Draft4Validator as jsonvalidator
@@ -36,13 +36,14 @@ class ParserError(Exception):
 
 
 class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
-    """Help message formatter with yaml key, env var and default values in argument help.
+    """Help message formatter with namespace key, env var and default values in argument help.
 
     This class is an extension of `argparse.ArgumentDefaultsHelpFormatter
     <https://docs.python.org/3/library/argparse.html#argparse.ArgumentDefaultsHelpFormatter>`_.
-    The main difference is that optional arguments are preceded by 'ARG:', the yaml key in dot
-    notation is included preceded by 'YAML:', and if the ArgumentParser's default_env=True, the
-    environment variable is included preceded by 'ENV:'.
+    The main difference is that optional arguments are preceded by 'ARG:', the
+    nested namespace key in dot notation is included preceded by 'NSKEY:', and
+    if the ArgumentParser's default_env=True, the environment variable name is
+    included preceded by 'ENV:'.
     """
 
     _env_prefix = None
@@ -53,10 +54,10 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
             return super()._format_action_invocation(action)
         extr = ''
         if not isinstance(action, ActionConfigFile):
-            extr = '\n  YAML: ' + action.dest
+            extr = '\n  NSKEY: ' + action.dest
         if self._default_env:
-            extr += '\n  ENV:  ' + ArgumentParser._get_env_var(self, action)
-        return 'ARG:  ' + super()._format_action_invocation(action) + extr
+            extr += '\n  ENV:   ' + ArgumentParser._get_env_var(self, action)
+        return 'ARG:   ' + super()._format_action_invocation(action) + extr
 
 
 class LoggerProperty:
@@ -96,20 +97,21 @@ class LoggerProperty:
 
 
 class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
-    """Parser for command line, yaml files and environment variables."""
+    """Parser for command line, yaml/jsonnet files and environment variables."""
 
     groups = {}  # type: Dict[str, argparse._ArgumentGroup]
 
 
     def __init__(self,
                  *args,
+                 env_prefix=None,
+                 error_handler=None,
+                 formatter_class='default',
+                 logger=None,
+                 version=None,
+                 parser_mode='yaml',
                  default_config_files:List[str]=[],
                  default_env:bool=False,
-                 env_prefix=None,
-                 logger=None,
-                 error_handler=None,
-                 formatter_class=DefaultHelpFormatter,
-                 version=None,
                  **kwargs):
         """Initializer for ArgumentParser instance.
 
@@ -118,23 +120,57 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         are supported. Additionally it accepts:
 
         Args:
+            env_prefix (str): Prefix for environment variables.
+            error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
+            formatter_class (argparse.HelpFormatter or str): Class for printing help messages or one of {"default", "default_argparse"}.
+            logger (logging.Logger or True or None): Object for logging events.
+            version (str): Program version string to add --version argument.
+            parser_mode (str): Mode for parsing configuration files, either "yaml" or "jsonnet".
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
             default_env (bool): Set the default value on whether to parse environment variables.
-            env_prefix (str): Prefix for environment variables.
-            logger (logging.Logger or True or None): Object for logging events.
-            error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
-            version (str): Program version string to add --version argument.
         """
+        if isinstance(formatter_class, str) and formatter_class not in {'default', 'default_argparse'}:
+            raise ValueError('The only accepted values for formatter_class are {"default", "default_argparse"} or a HelpFormatter class.')
+        if formatter_class == 'default':
+            formatter_class = DefaultHelpFormatter
+        elif formatter_class == 'default_argparse':
+            formatter_class = argparse.ArgumentDefaultsHelpFormatter
         kwargs['formatter_class'] = formatter_class
         super().__init__(*args, **kwargs)
         self._stderr = sys.stderr
         self._default_config_files = default_config_files
         self.default_env = default_env
         self.env_prefix = env_prefix
+        self.parser_mode = parser_mode
         self.logger = logger
         self.error_handler = error_handler
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version)
+        if parser_mode not in {'yaml', 'jsonnet'}:
+            raise ValueError('The only accepted values for parser_mode are {"yaml", "jsonnet"}.')
+        if parser_mode == 'jsonnet' and isinstance(_jsonnet, Exception):
+            raise ImportError('jsonnet package is required for parser_mode=jsonnet :: '+str(_jsonnet))
+
+
+    @property
+    def error_handler(self):
+        """The current error_handler."""
+        return self._error_handler
+
+
+    @error_handler.setter
+    def error_handler(self, error_handler):
+        """Sets a new value to the error_handler property.
+
+        Args:
+            error_handler (Callable or str or None): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
+        """
+        if error_handler == 'usage_and_exit_error_handler':
+            self._error_handler = usage_and_exit_error_handler
+        elif callable(error_handler) or error_handler is None:
+            self._error_handler = error_handler
+        else:
+            raise ValueError('error_handler can be either a Callable or the "usage_and_exit_error_handler" string or None.')
 
 
     def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True):
@@ -165,21 +201,21 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             ActionParser._fix_conflicts(self, cfg)
 
             if not nested:
-                return self._dict_to_flat_namespace(self._flat_namespace_to_dict(cfg))
+                return _dict_to_flat_namespace(_flat_namespace_to_dict(cfg))
 
             self._logger.info('parsed arguments')
 
         except TypeError as ex:
             self.error(str(ex))
 
-        return self.dict_to_namespace(self._flat_namespace_to_dict(cfg))
+        return dict_to_namespace(_flat_namespace_to_dict(cfg))
 
 
-    def parse_yaml_path(self, yaml_path:str, env:bool=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
-        """Parses a yaml file given its path.
+    def parse_path(self, cfg_path:str, env:bool=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
+        """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
-            yaml_path (str): Path to the yaml file to parse.
+            cfg_path (str): Path to the configuration file to parse.
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
@@ -191,23 +227,23 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             ParserError: If there is a parsing error and error_handler=None.
         """
         cwd = os.getcwd()
-        os.chdir(os.path.abspath(os.path.join(yaml_path, os.pardir)))
+        os.chdir(os.path.abspath(os.path.join(cfg_path, os.pardir)))
         try:
-            with open(os.path.basename(yaml_path), 'r') as f:
-                parsed_yaml = self.parse_yaml_string(f.read(), env, defaults, nested, log=False)
+            with open(os.path.basename(cfg_path), 'r') as f:
+                parsed_cfg = self.parse_string(f.read(), env, defaults, nested, log=False)
         finally:
             os.chdir(cwd)
 
-        self._logger.info('parsed yaml from path: '+yaml_path)
+        self._logger.info('Parsed '+self.parser_mode+' from path: '+cfg_path)
 
-        return parsed_yaml
+        return parsed_cfg
 
 
-    def parse_yaml_string(self, yaml_str:str, env:bool=None, defaults:bool=True, nested:bool=True, log:bool=True) -> SimpleNamespace:
-        """Parses yaml given as a string.
+    def parse_string(self, cfg_str:str, env:bool=None, defaults:bool=True, nested:bool=True, log:bool=True) -> SimpleNamespace:
+        """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
-            yaml_str (str): The yaml content.
+            cfg_str (str): The configuration content.
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
@@ -219,10 +255,10 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            cfg = self._load_yaml(yaml_str)
+            cfg = self._load_cfg(cfg_str)
 
             if nested:
-                cfg = self._flat_namespace_to_dict(self.dict_to_namespace(cfg))
+                cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
             if env or (env is None and self._default_env):
                 cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
@@ -231,53 +267,56 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
             if log:
-                self._logger.info('parsed yaml string')
+                self._logger.info('Parsed '+self.parser_mode+' string.')
 
         except TypeError as ex:
             self.error(str(ex))
 
-        return self.dict_to_namespace(cfg)
+        return dict_to_namespace(cfg)
 
 
-    def _load_yaml(self, yaml_str:str) -> Dict[str, Any]:
-        """Loads a yaml string into a namespace checking all values against the parser.
+    def _load_cfg(self, cfg_str:str) -> Dict[str, Any]:
+        """Loads a configuration string (yaml or jsonnet) into a namespace checking all values against the parser.
 
         Args:
-            yaml_str (str): The yaml content.
+            cfg_str (str): The configuration content.
 
         Raises:
             TypeError: If there is an invalid value according to the parser.
         """
-        cfg = yaml.safe_load(yaml_str)
-        cfg = self.namespace_to_dict(self._dict_to_flat_namespace(cfg))
+        if self.parser_mode == 'jsonnet':
+            cfg_str = _jsonnet.evaluate_snippet('', cfg_str)
+        cfg = yaml.safe_load(cfg_str)
+        cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         for action in self._actions:
             if action.dest in cfg:
                 cfg[action.dest] = self._check_value_key(action, cfg[action.dest], action.dest)
         return cfg
 
 
-    def dump_yaml(self, cfg:Union[SimpleNamespace, dict], skip_none:bool=True, skip_check:bool=False) -> str:
-        """Generates a yaml string for a configuration object.
+    def dump(self, cfg:Union[SimpleNamespace, dict], format='parser_mode', skip_none:bool=True, skip_check:bool=False) -> str:
+        """Generates a yaml or json string for the given configuration object.
 
         Args:
             cfg (types.SimpleNamespace or dict): The configuration object to dump.
+            format (str): The output format, either "yaml" or "json" or "parser_mode".
             skip_none (bool): Whether to exclude settings whose value is None.
             skip_check (bool): Whether to skip parser checking.
 
         Returns:
-            str: The configuration in yaml format.
+            str: The configuration in yaml or json format.
 
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
         cfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
-            cfg = self.namespace_to_dict(cfg)
+            cfg = namespace_to_dict(cfg)
 
         if not skip_check:
             self.check_config(cfg, skip_none=True)
 
-        cfg = self.namespace_to_dict(self._dict_to_flat_namespace(cfg))
+        cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         for action in self._actions:
             if skip_none and action.dest in cfg and cfg[action.dest] is None:
                 del cfg[action.dest]
@@ -289,9 +328,14 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                         cfg[action.dest] = cfg[action.dest](absolute=False)
             elif isinstance(action, ActionConfigFile):
                 del cfg[action.dest]
-        cfg = self._flat_namespace_to_dict(self.dict_to_namespace(cfg))
+        cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
-        return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
+        if format == 'parser_mode':
+            format = self.parser_mode
+        if format == 'yaml':
+            return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
+        else:
+            return json.dumps(cfg, indent=2, sort_keys=True)
 
 
     @staticmethod
@@ -304,7 +348,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
 
     @property
     def default_env(self):
-        """Gets the current value of the default_env property."""
+        """The current value of the default_env."""
         return self._default_env
 
 
@@ -322,7 +366,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
 
     @property
     def env_prefix(self):
-        """Gets the current value of the env_prefix property."""
+        """The current value of the env_prefix."""
         return self._env_prefix
 
 
@@ -364,14 +408,14 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                 env_var = self._get_env_var(self, action)
                 if env_var in env:
                     if isinstance(action, ActionConfigFile):
-                        namespace = self._dict_to_flat_namespace(cfg)
+                        namespace = _dict_to_flat_namespace(cfg)
                         ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
                         cfg = vars(namespace)
                     else:
                         cfg[action.dest] = self._check_value_key(action, env[env_var], env_var)
 
             if nested:
-                cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
+                cfg = _flat_namespace_to_dict(SimpleNamespace(**cfg))
 
             if defaults:
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
@@ -381,7 +425,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         except TypeError as ex:
             self.error(str(ex))
 
-        cfg_ns = self.dict_to_namespace(cfg)
+        cfg_ns = dict_to_namespace(cfg)
         self.check_config(cfg_ns, skip_none=True)
 
         return cfg_ns
@@ -412,17 +456,26 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                 default_config_files += glob.glob(os.path.expanduser(pattern))
             if len(default_config_files) > 0:
                 with open(default_config_files[0], 'r') as f:
-                    cfg_file = self._load_yaml(f.read())
+                    cfg_file = self._load_cfg(f.read())
                 cfg = self._merge_config(cfg_file, cfg)
                 self._logger.info('parsed configuration from default path: '+default_config_files[0])
 
             if nested:
-                cfg = self._flat_namespace_to_dict(SimpleNamespace(**cfg))
+                cfg = _flat_namespace_to_dict(SimpleNamespace(**cfg))
 
         except TypeError as ex:
             self.error(str(ex))
 
-        return self.dict_to_namespace(cfg)
+        return dict_to_namespace(cfg)
+
+
+    def error(self, message):
+        """Logs error message if a logger is set, calls the error handler and raises a ParserError."""
+        self._logger.error(message)
+        if self._error_handler is not None:
+            with redirect_stderr(self._stderr):
+                self._error_handler(self, message)
+        raise ParserError(message)
 
 
     def add_argument_group(self, *args, name:str=None, **kwargs):
@@ -458,7 +511,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         """
         cfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
-            cfg = self.namespace_to_dict(cfg)
+            cfg = namespace_to_dict(cfg)
 
         def find_action(parser, dest):
             for action in parser._actions:
@@ -497,7 +550,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         Returns:
             types.SimpleNamespace: The merged configuration.
         """
-        return ArgumentParser.dict_to_namespace(ArgumentParser._merge_config(cfg_from, cfg_to))
+        return dict_to_namespace(ArgumentParser._merge_config(cfg_from, cfg_to))
 
 
     @staticmethod
@@ -523,8 +576,8 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                     cfg_to[k] = merge_values(cfg_from[k], cfg_to[k])
             return cfg_to
 
-        cfg_from = cfg_from if isinstance(cfg_from, dict) else ArgumentParser.namespace_to_dict(cfg_from)
-        cfg_to = cfg_to if isinstance(cfg_to, dict) else ArgumentParser.namespace_to_dict(cfg_to)
+        cfg_from = cfg_from if isinstance(cfg_from, dict) else namespace_to_dict(cfg_from)
+        cfg_to = cfg_to if isinstance(cfg_to, dict) else namespace_to_dict(cfg_to)
         return merge_values(cfg_from, cfg_to.copy())
 
 
@@ -558,122 +611,109 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         return value
 
 
-    @staticmethod
-    def _flat_namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
-        """Converts a flat namespace into a nested dictionary.
+def _flat_namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
+    """Converts a flat namespace into a nested dictionary.
 
-        Args:
-            cfg_ns (types.SimpleNamespace): The configuration to process.
+    Args:
+        cfg_ns (types.SimpleNamespace): The configuration to process.
 
-        Returns:
-            dict: The nested configuration dictionary.
-        """
-        cfg_ns = deepcopy(cfg_ns)
-        cfg_dict = {}
-        for k, v in vars(cfg_ns).items():
-            ksplit = k.split('.')
-            if len(ksplit) == 1:
-                if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
-                    cfg_dict[k] = [ArgumentParser.namespace_to_dict(x) for x in v]
-                elif not (v is None and k in cfg_dict):
-                    cfg_dict[k] = v
+    Returns:
+        dict: The nested configuration dictionary.
+    """
+    cfg_ns = deepcopy(cfg_ns)
+    cfg_dict = {}
+    for k, v in vars(cfg_ns).items():
+        ksplit = k.split('.')
+        if len(ksplit) == 1:
+            if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
+                cfg_dict[k] = [namespace_to_dict(x) for x in v]
+            elif not (v is None and k in cfg_dict):
+                cfg_dict[k] = v
+        else:
+            kdict = cfg_dict
+            for num, kk in enumerate(ksplit[:len(ksplit)-1]):
+                if kk not in kdict or kdict[kk] is None:
+                    kdict[kk] = {}  # type: ignore
+                elif not isinstance(kdict[kk], dict):
+                    raise ParserError('Conflicting namespace base: '+'.'.join(ksplit[:num+1]))
+                kdict = kdict[kk]  # type: ignore
+            if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None:
+                raise ParserError('Conflicting namespace base: '+k)
+            if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
+                kdict[ksplit[-1]] = [namespace_to_dict(x) for x in v]
+            elif not (v is None and ksplit[-1] in kdict):
+                kdict[ksplit[-1]] = v
+    return cfg_dict
+
+
+def _dict_to_flat_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
+    """Converts a nested dictionary into a flat namespace.
+
+    Args:
+        cfg_dict (dict): The configuration to process.
+
+    Returns:
+        types.SimpleNamespace: The configuration namespace.
+    """
+    cfg_dict = deepcopy(cfg_dict)
+    cfg_ns = {}
+
+    def flatten_dict(cfg, base=None):
+        for key, val in cfg.items():
+            kbase = key if base is None else base+'.'+key
+            if isinstance(val, dict):
+                flatten_dict(val, kbase)
             else:
-                kdict = cfg_dict
-                for num, kk in enumerate(ksplit[:len(ksplit)-1]):
-                    if kk not in kdict or kdict[kk] is None:
-                        kdict[kk] = {}  # type: ignore
-                    elif not isinstance(kdict[kk], dict):
-                        raise ParserError('Conflicting namespace base: '+'.'.join(ksplit[:num+1]))
-                    kdict = kdict[kk]  # type: ignore
-                if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None:
-                    raise ParserError('Conflicting namespace base: '+k)
-                if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
-                    kdict[ksplit[-1]] = [ArgumentParser.namespace_to_dict(x) for x in v]
-                elif not (v is None and ksplit[-1] in kdict):
-                    kdict[ksplit[-1]] = v
-        return cfg_dict
+                cfg_ns[kbase] = val
+
+    flatten_dict(cfg_dict)
+
+    return SimpleNamespace(**cfg_ns)
 
 
-    @staticmethod
-    def _dict_to_flat_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
-        """Converts a nested dictionary into a flat namespace.
+def dict_to_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
+    """Converts a nested dictionary into a nested namespace.
 
-        Args:
-            cfg_dict (dict): The configuration to process.
+    Args:
+        cfg_args (dict): The configuration to process.
 
-        Returns:
-            types.SimpleNamespace: The configuration namespace.
-        """
-        cfg_dict = deepcopy(cfg_dict)
-        cfg_ns = {}
-
-        def flatten_dict(cfg, base=None):
-            for key, val in cfg.items():
-                kbase = key if base is None else base+'.'+key
-                if isinstance(val, dict):
-                    flatten_dict(val, kbase)
-                else:
-                    cfg_ns[kbase] = val
-
-        flatten_dict(cfg_dict)
-
-        return SimpleNamespace(**cfg_ns)
+    Returns:
+        types.SimpleNamespace: The nested configuration namespace.
+    """
+    cfg_dict = deepcopy(cfg_dict)
+    def expand_dict(cfg):
+        for k, v in cfg.items():
+            if isinstance(v, dict):
+                cfg[k] = expand_dict(v)
+            elif isinstance(v, list):
+                for nn, vv in enumerate(v):
+                    if isinstance(vv, dict):
+                        cfg[k][nn] = expand_dict(vv)
+        return SimpleNamespace(**cfg)
+    return expand_dict(cfg_dict)
 
 
-    @staticmethod
-    def dict_to_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
-        """Converts a nested dictionary into a nested namespace.
+def namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
+    """Converts a nested namespace into a nested dictionary.
 
-        Args:
-            cfg_args (dict): The configuration to process.
+    Args:
+        cfg_args (types.SimpleNamespace): The configuration to process.
 
-        Returns:
-            types.SimpleNamespace: The nested configuration namespace.
-        """
-        cfg_dict = deepcopy(cfg_dict)
-        def expand_dict(cfg):
-            for k, v in cfg.items():
-                if isinstance(v, dict):
-                    cfg[k] = expand_dict(v)
-                elif isinstance(v, list):
-                    for nn, vv in enumerate(v):
-                        if isinstance(vv, dict):
-                            cfg[k][nn] = expand_dict(vv)
-            return SimpleNamespace(**cfg)
-        return expand_dict(cfg_dict)
-
-
-    @staticmethod
-    def namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
-        """Converts a nested namespace into a nested dictionary.
-
-        Args:
-            cfg_args (types.SimpleNamespace): The configuration to process.
-
-        Returns:
-            dict: The nested configuration dictionary.
-        """
-        cfg_ns = deepcopy(cfg_ns)
-        def expand_namespace(cfg):
-            cfg = dict(vars(cfg))
-            for k, v in cfg.items():
-                if isinstance(v, SimpleNamespace):
-                    cfg[k] = expand_namespace(v)
-                elif isinstance(v, list):
-                    for nn, vv in enumerate(v):
-                        if isinstance(vv, SimpleNamespace):
-                            cfg[k][nn] = expand_namespace(vv)
-            return cfg
-        return expand_namespace(cfg_ns)
-
-
-    def error(self, message):
-        """Logs error message if a logger is set, calls the error handler and raises a ParserError."""
-        self._logger.error(message)
-        if self.error_handler is not None:
-            with redirect_stderr(self._stderr):
-                self.error_handler(self, message)
-        raise ParserError(message)
+    Returns:
+        dict: The nested configuration dictionary.
+    """
+    cfg_ns = deepcopy(cfg_ns)
+    def expand_namespace(cfg):
+        cfg = dict(vars(cfg))
+        for k, v in cfg.items():
+            if isinstance(v, SimpleNamespace):
+                cfg[k] = expand_namespace(v)
+            elif isinstance(v, list):
+                for nn, vv in enumerate(v):
+                    if isinstance(vv, SimpleNamespace):
+                        cfg[k][nn] = expand_namespace(vv)
+        return cfg
+    return expand_namespace(cfg_ns)
 
 
 class ActionConfigFile(Action):
@@ -704,12 +744,12 @@ class ActionConfigFile(Action):
         except TypeError as ex:
             try:
                 cfg_path = None
-                cfg_file = parser.parse_yaml_string(value, env=False, defaults=False, nested=False)
+                cfg_file = parser.parse_string(value, env=False, defaults=False, nested=False)
             except:
                 raise TypeError('Parser key "'+dest+'": '+str(ex))
         else:
-            cfg_file = parser.parse_yaml_path(value, env=False, defaults=False, nested=False)
-        parser.check_config(parser._flat_namespace_to_dict(cfg_file), skip_none=True)
+            cfg_file = parser.parse_path(value, env=False, defaults=False, nested=False)
+        parser.check_config(_flat_namespace_to_dict(cfg_file), skip_none=True)
         getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():
             setattr(namespace, key, val)
@@ -831,7 +871,7 @@ class ActionJsonSchema(Action):
                     except:
                         pass
                 if isinstance(val, SimpleNamespace):
-                    self._validator.validate(ArgumentParser.namespace_to_dict(val))
+                    self._validator.validate(namespace_to_dict(val))
                 else:
                     self._validator.validate(val)
                 value[num] = val
@@ -915,23 +955,48 @@ class ActionJsonnet(Action):
                     val = yaml.safe_load(_jsonnet.evaluate_file(val))
                 if self._validator is not None:
                     if isinstance(val, SimpleNamespace):
-                        self._validator.validate(ArgumentParser.namespace_to_dict(val))
+                        self._validator.validate(namespace_to_dict(val))
                     else:
                         self._validator.validate(val)
                 value[num] = val
-            except (TypeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:
+            except (TypeError, RuntimeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex))
         return value if islist else value[0]
 
+    def parse(self, jsonnet):
+        """Method that can be used to parse jsonnet independent from an ArgumentParser.
+
+        Args:
+            jsonnet (str): Either a path to a jsonnet file or the jsonnet content.
+
+        Returns:
+            SimpleNamespace: The parsed jsonnet object.
+
+        Raises:
+            TypeError: If the input is neither a path to an existent file nor a jsonnet.
+        """
+        try:
+            path = Path(jsonnet, mode='fr')
+        except TypeError as ex:
+            try:
+                values = yaml.safe_load(_jsonnet.evaluate_snippet(jsonnet))
+            except:
+                raise ex
+        else:
+            values = yaml.safe_load(_jsonnet.evaluate_file(jsonnet))
+        if self._validator is not None:
+            self._validator.validate(values)
+        return dict_to_namespace(values)
+
 
 class ActionParser(Action):
-    """Action to parse option with a given yamlargparse parser optionally loading from yaml file if string value."""
+    """Action to parse option with a given parser optionally loading from file if string value."""
     def __init__(self, **kwargs):
         """Initializer for ActionParser instance.
 
         Args:
-            parser (ArgumentParser): A yamlargparse parser to parse the option with.
+            parser (ArgumentParser): A parser to parse the option with.
 
         Raises:
             ValueError: If the parser parameter is invalid.
@@ -940,7 +1005,7 @@ class ActionParser(Action):
             _check_unknown_kwargs(kwargs, {'parser'})
             self._parser = kwargs['parser']
             if not isinstance(self._parser, ArgumentParser):
-                raise ValueError('Expected parser keyword argument to be a yamlargparse parser.')
+                raise ValueError('Expected parser keyword argument to be an ArgumentParser.')
         elif '_parser' not in kwargs:
             raise ValueError('Expected parser keyword argument.')
         else:
@@ -962,8 +1027,8 @@ class ActionParser(Action):
     def _check_type(self, value):
         try:
             if isinstance(value, str):
-                yaml_path = Path(value, mode='fr')
-                value = self._parser.parse_yaml_path(yaml_path())
+                cfg_path = Path(value, mode='fr')
+                value = self._parser.parse_path(cfg_path())
             else:
                 self._parser.check_config(value, skip_none=True)
         except TypeError as ex:
@@ -972,7 +1037,7 @@ class ActionParser(Action):
 
     @staticmethod
     def _fix_conflicts(parser, cfg):
-        cfg_dict = parser.namespace_to_dict(cfg)
+        cfg_dict = namespace_to_dict(cfg)
         for action in parser._actions:
             if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
                 children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]

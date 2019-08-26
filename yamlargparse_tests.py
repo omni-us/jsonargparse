@@ -105,15 +105,15 @@ class YamlargparseTests(unittest.TestCase):
         """Test the parsing and checking of yaml."""
         parser = example_parser()
 
-        cfg1 = parser.parse_yaml_string(example_yaml)
+        cfg1 = parser.parse_string(example_yaml)
         self.assertEqual('opt1_yaml', cfg1.lev1.lev2.opt1)
         self.assertEqual('opt2_yaml', cfg1.lev1.lev2.opt2)
-        self.assertEqual(-1,   cfg1.nums.val1)
+        self.assertEqual(-1,  cfg1.nums.val1)
         self.assertEqual(2.0, cfg1.nums.val2)
         self.assertEqual(False, cfg1.bools.def_false)
         self.assertEqual(True,  cfg1.bools.def_true)
 
-        cfg2 = parser.parse_yaml_string(example_yaml, defaults=False)
+        cfg2 = parser.parse_string(example_yaml, defaults=False)
         self.assertFalse(hasattr(cfg2, 'bools'))
         self.assertTrue(hasattr(cfg2, 'nums'))
 
@@ -122,14 +122,14 @@ class YamlargparseTests(unittest.TestCase):
 
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml)
-        self.assertEqual(cfg1, parser.parse_yaml_path(yaml_file, defaults=True))
-        self.assertEqual(cfg2, parser.parse_yaml_path(yaml_file, defaults=False))
-        self.assertNotEqual(cfg2, parser.parse_yaml_path(yaml_file, defaults=True))
-        self.assertNotEqual(cfg1, parser.parse_yaml_path(yaml_file, defaults=False))
+        self.assertEqual(cfg1, parser.parse_path(yaml_file, defaults=True))
+        self.assertEqual(cfg2, parser.parse_path(yaml_file, defaults=False))
+        self.assertNotEqual(cfg2, parser.parse_path(yaml_file, defaults=True))
+        self.assertNotEqual(cfg1, parser.parse_path(yaml_file, defaults=False))
 
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml+'  val2: eight\n')
-        self.assertRaises(ParserError, lambda: parser.parse_yaml_path(yaml_file))
+        self.assertRaises(ParserError, lambda: parser.parse_path(yaml_file))
 
         shutil.rmtree(tmpdir)
 
@@ -287,8 +287,8 @@ class YamlargparseTests(unittest.TestCase):
 
         self.assertEqual('from single', parser1.parse_args(['--cfg', yaml1_file]).root.child)
         self.assertEqual('from example3', parser1.parse_args(['--cfg', yaml2_file]).root.child)
-        self.assertEqual('from single', parser1.parse_yaml_string(yaml1_str).root.child)
-        self.assertEqual('from example3', parser1.parse_yaml_path(yaml2_file).root.child)
+        self.assertEqual('from single', parser1.parse_string(yaml1_str).root.child)
+        self.assertEqual('from example3', parser1.parse_path(yaml2_file).root.child)
 
         self.assertRaises(ValueError, lambda: parser1.add_argument('--op1', action=ActionParser))
         self.assertRaises(ValueError, lambda: parser1.add_argument('--op2', action=ActionParser()))
@@ -373,16 +373,16 @@ class YamlargparseTests(unittest.TestCase):
         with open(cfg3_file, 'w') as f:
             f.write('op3:\n  n1:\n  - '+str(op2_val)+'\n')
 
-        cfg = ArgumentParser.namespace_to_dict(parser.parse_yaml_path(cfg1_file))
+        cfg = namespace_to_dict(parser.parse_path(cfg1_file))
         self.assertEqual(op1_val, cfg['op1'])
         self.assertEqual(op2_val, cfg['op2'])
 
-        cfg = ArgumentParser.namespace_to_dict(parser.parse_yaml_string(cfg2_str))
+        cfg = namespace_to_dict(parser.parse_string(cfg2_str))
         self.assertEqual(op1_val, cfg['op1'])
         self.assertEqual(op2_val, cfg['op2'])
 
         cfg = parser.parse_args(['--cfg', cfg3_file])
-        self.assertEqual(op2_val, ArgumentParser.namespace_to_dict(cfg.op3.n1[0]))
+        self.assertEqual(op2_val, namespace_to_dict(cfg.op3.n1[0]))
         parser.check_config(cfg, skip_none=True)
 
         shutil.rmtree(tmpdir)
@@ -409,10 +409,10 @@ class YamlargparseTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--gt1.a.le4', '1.0']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--gt1.a.le4', '5.5']))
 
-        self.assertEqual(1.5, parser.parse_yaml_string('gt1:\n  a:\n    le4: 1.5').gt1.a.le4)
-        self.assertEqual(4.0, parser.parse_yaml_string('gt1:\n  a:\n    le4: 4.0').gt1.a.le4)
-        self.assertRaises(ParserError, lambda: parser.parse_yaml_string('gt1:\n  a:\n    le4: 1.0'))
-        self.assertRaises(ParserError, lambda: parser.parse_yaml_string('gt1:\n  a:\n    le4: 5.5'))
+        self.assertEqual(1.5, parser.parse_string('gt1:\n  a:\n    le4: 1.5').gt1.a.le4)
+        self.assertEqual(4.0, parser.parse_string('gt1:\n  a:\n    le4: 4.0').gt1.a.le4)
+        self.assertRaises(ParserError, lambda: parser.parse_string('gt1:\n  a:\n    le4: 1.0'))
+        self.assertRaises(ParserError, lambda: parser.parse_string('gt1:\n  a:\n    le4: 5.5'))
 
         self.assertEqual(1.5, parser.parse_env(env={'APP_GT1__A__LE4': '1.5'}).gt1.a.le4)
         self.assertEqual(4.0, parser.parse_env(env={'APP_GT1__A__LE4': '4.0'}).gt1.a.le4)
