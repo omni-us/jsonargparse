@@ -27,7 +27,7 @@ jobs:
             pip install --user ./dist/*.whl
             pip install --user python-subunit junitxml
             mkdir tests_report
-            python -m subunit.run yamlargparse_tests | $HOME/.local/bin/subunit2junitxml > tests_report/unittest.xml
+            python -m subunit.run jsonargparse_test | $HOME/.local/bin/subunit2junitxml > tests_report/unittest.xml
       - store_test_results:
           path: ./tests_report
   test-py36:
@@ -69,7 +69,7 @@ workflows:
             branches:
               ignore: /.*/
             <<: *tagfilter
-          context: yamlargparse-context
+          context: jsonargparse-context
           requires:
             - test-py37
             - test-py36

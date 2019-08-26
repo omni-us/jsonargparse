@@ -1,15 +1,15 @@
-.. image:: https://circleci.com/gh/omni-us/yamlargparse.svg?style=svg
-    :target: https://circleci.com/gh/omni-us/yamlargparse
-.. image:: https://badge.fury.io/py/yamlargparse.svg
-    :target: https://badge.fury.io/py/yamlargparse
+.. image:: https://circleci.com/gh/omni-us/jsonargparse.svg?style=svg
+    :target: https://circleci.com/gh/omni-us/jsonargparse
+.. image:: https://badge.fury.io/py/jsonargparse.svg
+    :target: https://badge.fury.io/py/jsonargparse
 .. image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg
-    :target: https://github.com/omni-us/yamlargparse
+    :target: https://github.com/omni-us/jsonargparse
 
 
-yamlargparse python module
+jsonargparse python module
 ==========================
 
-https://omni-us.github.io/yamlargparse/
+https://omni-us.github.io/jsonargparse/
 
 This module is an extension to python's argparse which simplifies parsing of
 configuration options from command line arguments, json supersets (yaml or
@@ -62,8 +62,8 @@ create a parser object and then add arguments to it. A simple example would be:
 
 .. code-block:: python
 
-    import yamlargparse
-    parser = yamlargparse.ArgumentParser(
+    import jsonargparse
+    parser = jsonargparse.ArgumentParser(
         prog='app',
         description='Description for my app.')
 
@@ -79,7 +79,7 @@ create a parser object and then add arguments to it. A simple example would be:
 
 
 After creating the parser, you can use it to parse command line arguments with
-the :func:`yamlargparse.ArgumentParser.parse_args` function, after which you get
+the :func:`jsonargparse.ArgumentParser.parse_args` function, after which you get
 an object with the parsed values or defaults available as attributes. For
 illustrative purposes giving to :func:`parse_args` a list of arguments (instead
 of automatically getting them from the command line arguments), with the parser
@@ -100,7 +100,7 @@ might be necessary to catch it.
 
     >>> try:
     ...     cfg = parser.parse_args(['--opt2', 'four'])
-    ... except yamlargparse.ParserError as ex:
+    ... except jsonargparse.ParserError as ex:
     ...     print('parser error: '+str(ex))
     ...
     parser error: argument --opt2: invalid float value: 'four'
@@ -110,9 +110,9 @@ follows:
 
 .. code-block:: python
 
-    parser = yamlargparse.ArgumentParser(
+    parser = jsonargparse.ArgumentParser(
         prog='app',
-        error_handler=yamlargparse.usage_and_exit_error_handler,
+        error_handler='usage_and_exit_error_handler',
         description='Description for my app.')
 
 
@@ -127,7 +127,7 @@ example you could do the following:
 
 .. code-block:: python
 
-    >>> parser = yamlargparse.ArgumentParser(prog='app')
+    >>> parser = jsonargparse.ArgumentParser(prog='app')
     >>> parser.add_argument('--lev1.opt1', default='from default 1')
     >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> cfg = parser.get_defaults()
@@ -140,7 +140,7 @@ example you could do the following:
 Environment variables
 =====================
 
-The yamlargparse parsers can also get values from environment variables. The
+The jsonargparse parsers can also get values from environment variables. The
 parser checks existing environment variables whose name is of the form
 :code:`[PREFIX_][LEV__]*OPT`, that is all in upper case, first a prefix (set by
 :code:`env_prefix`, or if unset the :code:`prog` without extension) followed by
@@ -158,7 +158,7 @@ command line arguments, that is:
 
 .. code-block:: python
 
-    >>> parser = yamlargparse.ArgumentParser(env_prefix='app', default_env=True)
+    >>> parser = jsonargparse.ArgumentParser(env_prefix='app', default_env=True)
     >>> parser.add_argument('--lev1.opt1', default='from default 1')
     >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1'])
@@ -168,10 +168,10 @@ command line arguments, that is:
     'from env 2'
 
 Note that when creating the parser, :code:`default_env=True` was given as
-argument. By default :func:`yamlargparse.ArgumentParser.parse_args` does not
+argument. By default :func:`jsonargparse.ArgumentParser.parse_args` does not
 check environment variables, so it has to be enabled explicitly.
 
-There is also the :func:`yamlargparse.ArgumentParser.parse_env` function to only
+There is also the :func:`jsonargparse.ArgumentParser.parse_env` function to only
 parse environment variables, which might be useful for some use cases in which
 there is no command line call involved.
 
@@ -206,18 +206,18 @@ the following would be observed:
 
 .. code-block:: python
 
-    >>> parser = yamlargparse.ArgumentParser(prog='app')
+    >>> parser = jsonargparse.ArgumentParser(prog='app')
     >>> parser.add_argument('--lev1.opt1', default='from default 1')
     >>> parser.add_argument('--lev1.opt2', default='from default 2')
-    >>> parser.add_argument('--cfg', action=yamlargparse.ActionConfigFile)
+    >>> parser.add_argument('--cfg', action=jsonargparse.ActionConfigFile)
     >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1', '--cfg', 'example.yaml', '--lev1.opt2', 'from arg 2'])
     >>> cfg.lev1.opt1
     'from yaml 1'
     >>> cfg.lev1.opt2
     'from arg 2'
 
-There are also functions :func:`yamlargparse.ArgumentParser.parse_path` and
-:func:`yamlargparse.ArgumentParser.parse_string` to only parse a config file or
+There are also functions :func:`jsonargparse.ArgumentParser.parse_path` and
+:func:`jsonargparse.ArgumentParser.parse_string` to only parse a config file or
 a config contained in a string respectively.
 
 
@@ -229,7 +229,7 @@ and access permissions, but not necessarily opening the file. Moreover, a file
 path could be included in a yaml file as relative with respect to the yaml
 file's location. After parsing it should be easy to access the parsed file path
 without having to consider the location of the yaml file. To help in these
-situations yamlargparse includes the :class:`.ActionPath` and the
+situations jsonargparse includes the :class:`.ActionPath` and the
 :class:`.ActionPathList` classes.
 
 For example suppose you have a directory with a configuration file
@@ -247,8 +247,8 @@ and is readable, the following could be done:
 
 .. code-block:: python
 
-    >>> parser = yamlargparse.ArgumentParser(prog='app')
-    >>> parser.add_argument('--databases.info', action=yamlargparse.ActionPath(mode='fr'))
+    >>> parser = jsonargparse.ArgumentParser(prog='app')
+    >>> parser.add_argument('--databases.info', action=jsonargparse.ActionPath(mode='fr'))
     >>> cfg = parser.parse_path('app/config.yaml')
 
 After parsing it is possible to get both the original relative path as included
@@ -272,7 +272,7 @@ as argument either the path to a file listing the paths is given or the special
 
 .. code-block:: python
 
-    >>> parser.add_argument('--list', action=yamlargparse.ActionPathList(mode='fr'))
+    >>> parser.add_argument('--list', action=jsonargparse.ActionPathList(mode='fr'))
     >>> cfg = parser.parse_args(['--list', 'paths.lst')  # Text file with paths
     >>> cfg = parser.parse_args(['--list', '-')          # List from stdin
 
@@ -290,12 +290,12 @@ examples of arguments that can be added using this action are the following:
 .. code-block:: python
 
     # Larger than zero
-    parser.add_argument('--op1', action=yamlargparse.ActionOperators(expr=('>', 0)))
+    parser.add_argument('--op1', action=jsonargparse.ActionOperators(expr=('>', 0)))
     # Between 0 and 10
-    parser.add_argument('--op2', action=yamlargparse.ActionOperators(expr=[('>=', 0), ('<=', 10)]))
+    parser.add_argument('--op2', action=jsonargparse.ActionOperators(expr=[('>=', 0), ('<=', 10)]))
     # Either larger than zero or 'off' string
     def int_or_off(x): return x if x == 'off' else int(x)
-    parser.add_argument('--op3', action=yamlargparse.ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
+    parser.add_argument('--op3', action=jsonargparse.ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
 
 
 Json schemas
@@ -304,12 +304,12 @@ Json schemas
 The :class:`.ActionJsonSchema` class is provided to allow parsing and validation
 of values using a json schema. This class requires the `jsonschema
 <https://pypi.org/project/jsonschema/>`_ python package. Though note that
-jsonschema is not a requirement of yamlargparse, so to use
+jsonschema is not a requirement of jsonargparse, so to use
 :class:`.ActionJsonSchema` it is required to explicitly install jsonschema.
 
 Check out the `jsonschema documentation
 <https://python-jsonschema.readthedocs.io/>`_ to learn how to write a schema.
-The current version of yamlargparse uses Draft4Validator. Parsing an argument
+The current version of jsonargparse uses Draft4Validator. Parsing an argument
 using a json schema is done like in the following example:
 
 .. code-block:: python
@@ -322,7 +322,7 @@ using a json schema is done like in the following example:
     ...     },
     ... }
 
-    >>> parser.add_argument('--op', action=yamlargparse.ActionJsonSchema(schema=schema))
+    >>> parser.add_argument('--op', action=jsonargparse.ActionJsonSchema(schema=schema))
 
     >>> parser.parse_args(['--op', '{"price": 1.5, "name": "cookie"}'])
     namespace(op=namespace(name='cookie', price=1.5))
@@ -345,9 +345,9 @@ define two paired options, one to set to true and the other for false. The
 .. code-block:: python
 
     # --opt1 for true and --no_opt1 for false.
-    parser.add_argument('--op1', action=yamlargparse.ActionYesNo)
+    parser.add_argument('--op1', action=jsonargparse.ActionYesNo)
     # --with-opt2 for true and --without-opt2 for false.
-    parser.add_argument('--with-op2', action=yamlargparse.ActionYesNo(yes_prefix='with-', no_prefix='without-'))
+    parser.add_argument('--with-op2', action=jsonargparse.ActionYesNo(yes_prefix='with-', no_prefix='without-'))
 
 If the :class:`.ActionYesNo` class is used in conjunction with
 :code:`nargs='?'` the options can also be set by giving as value any of
@@ -359,9 +359,9 @@ Parsing with another parser
 
 Sometimes an element in a yaml file could be a path to another yaml file with a
 complex structure which should also be parsed. To handle these cases there is
-the :class:`.ActionParser` class which receives as argument a yamlargparse
+the :class:`.ActionParser` class which receives as argument a jsonargparse
 parser object. For example:
 
 .. code-block:: python
 
-    parser.add_argument('--complex.node', action=yamlargparse.ActionParser(parser=node_parser))
+    parser.add_argument('--complex.node', action=jsonargparse.ActionParser(parser=node_parser))

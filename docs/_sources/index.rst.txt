@@ -4,7 +4,7 @@
 API Reference
 =============
 
-.. automodule:: yamlargparse
+.. automodule:: jsonargparse
     :members:
     :undoc-members:
     :show-inheritance:

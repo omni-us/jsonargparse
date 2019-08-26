@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>yamlargparse python module &mdash; yamlargparse master/v1.31.0+2commits/2019.08.26 documentation</title>
+  <title>jsonargparse python module &mdash; jsonargparse master/v1.31.0+3commits/2019.08.26 documentation</title>
   
 
   
@@ -48,7 +48,7 @@
           
 
           
-            <a href="#" class="icon icon-home"> yamlargparse
+            <a href="#" class="icon icon-home"> jsonargparse
           
 
           
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v1.31.0+2commits/2019.08.26
+                master/v1.31.0+3commits/2019.08.26
               </div>
             
           
@@ -84,7 +84,7 @@
             
               <!-- Local TOC -->
               <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">yamlargparse python module</a></li>
+<li><a class="reference internal" href="#">jsonargparse python module</a></li>
 <li><a class="reference internal" href="#features">Features</a></li>
 <li><a class="reference internal" href="#using-the-module">Using the module</a></li>
 <li><a class="reference internal" href="#nested-namespaces">Nested namespaces</a></li>
@@ -95,7 +95,7 @@
 <li><a class="reference internal" href="#json-schemas">Json schemas</a></li>
 <li><a class="reference internal" href="#yes-no-arguments">Yes/No arguments</a></li>
 <li><a class="reference internal" href="#parsing-with-another-parser">Parsing with another parser</a></li>
-<li><a class="reference internal" href="#module-yamlargparse">API Reference</a></li>
+<li><a class="reference internal" href="#module-jsonargparse">API Reference</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
@@ -112,7 +112,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">yamlargparse</a>
+          <a href="#">jsonargparse</a>
         
       </nav>
 
@@ -143,7 +143,7 @@
     
       <li><a href="#">Docs</a> &raquo;</li>
         
-      <li>yamlargparse python module</li>
+      <li>jsonargparse python module</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -162,12 +162,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <a class="reference external image-reference" href="https://circleci.com/gh/omni-us/yamlargparse"><img alt="https://circleci.com/gh/omni-us/yamlargparse.svg?style=svg" src="https://circleci.com/gh/omni-us/yamlargparse.svg?style=svg" /></a>
-<a class="reference external image-reference" href="https://badge.fury.io/py/yamlargparse"><img alt="https://badge.fury.io/py/yamlargparse.svg" src="https://badge.fury.io/py/yamlargparse.svg" /></a>
-<a class="reference external image-reference" href="https://github.com/omni-us/yamlargparse"><img alt="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
-<div class="section" id="yamlargparse-python-module">
-<h1>yamlargparse python module<a class="headerlink" href="#yamlargparse-python-module" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="https://omni-us.github.io/yamlargparse/">https://omni-us.github.io/yamlargparse/</a></p>
+  <a class="reference external image-reference" href="https://circleci.com/gh/omni-us/jsonargparse"><img alt="https://circleci.com/gh/omni-us/jsonargparse.svg?style=svg" src="https://circleci.com/gh/omni-us/jsonargparse.svg?style=svg" /></a>
+<a class="reference external image-reference" href="https://badge.fury.io/py/jsonargparse"><img alt="https://badge.fury.io/py/jsonargparse.svg" src="https://badge.fury.io/py/jsonargparse.svg" /></a>
+<a class="reference external image-reference" href="https://github.com/omni-us/jsonargparse"><img alt="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
+<div class="section" id="jsonargparse-python-module">
+<h1>jsonargparse python module<a class="headerlink" href="#jsonargparse-python-module" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="https://omni-us.github.io/jsonargparse/">https://omni-us.github.io/jsonargparse/</a></p>
 <p>This module is an extension to python’s argparse which simplifies parsing of
 configuration options from command line arguments, json supersets (yaml or
 jsonnet) configuration files, environment variables and hard-coded defaults.</p>
@@ -204,8 +204,8 @@ alternatives it seemed simpler to create a new module.</p>
 <h1>Using the module<a class="headerlink" href="#using-the-module" title="Permalink to this headline">¶</a></h1>
 <p>A parser is created just like it is done with argparse. You import the module,
 create a parser object and then add arguments to it. A simple example would be:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">yamlargparse</span>
-<span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">jsonargparse</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
     <span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Description for my app.&#39;</span><span class="p">)</span>
 
@@ -221,7 +221,7 @@ create a parser object and then add arguments to it. A simple example would be:<
 </pre></div>
 </div>
 <p>After creating the parser, you can use it to parse command line arguments with
-the <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_args" title="yamlargparse.ArgumentParser.parse_args"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_args()</span></code></a> function, after which you get
+the <a class="reference internal" href="#jsonargparse.ArgumentParser.parse_args" title="jsonargparse.ArgumentParser.parse_args"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_args()</span></code></a> function, after which you get
 an object with the parsed values or defaults available as attributes. For
 illustrative purposes giving to <code class="xref py py-func docutils literal notranslate"><span class="pre">parse_args()</span></code> a list of arguments (instead
 of automatically getting them from the command line arguments), with the parser
@@ -237,7 +237,7 @@ from above you would observe:</p>
 might be necessary to catch it.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--opt2&#39;</span><span class="p">,</span> <span class="s1">&#39;four&#39;</span><span class="p">])</span>
-<span class="gp">... </span><span class="k">except</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ParserError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+<span class="gp">... </span><span class="k">except</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ParserError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;parser error: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 <span class="gp">...</span>
 <span class="go">parser error: argument --opt2: invalid float value: &#39;four&#39;</span>
@@ -245,9 +245,9 @@ might be necessary to catch it.</p>
 </div>
 <p>To get the default behavior of argparse the ArgumentParser can be initialized as
 follows:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
     <span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span>
-    <span class="n">error_handler</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">usage_and_exit_error_handler</span><span class="p">,</span>
+    <span class="n">error_handler</span><span class="o">=</span><span class="s1">&#39;usage_and_exit_error_handler&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Description for my app.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -257,7 +257,7 @@ follows:</p>
 <p>A difference with respect to the basic argparse is that it by using dot notation
 in the argument names, you can define a hierarchy of nested namespaces. So for
 example you could do the following:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 2&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">()</span>
@@ -270,7 +270,7 @@ example you could do the following:</p>
 </div>
 <div class="section" id="environment-variables">
 <h1>Environment variables<a class="headerlink" href="#environment-variables" title="Permalink to this headline">¶</a></h1>
-<p>The yamlargparse parsers can also get values from environment variables. The
+<p>The jsonargparse parsers can also get values from environment variables. The
 parser checks existing environment variables whose name is of the form
 <code class="code docutils literal notranslate"><span class="pre">[PREFIX_][LEV__]*OPT</span></code>, that is all in upper case, first a prefix (set by
 <code class="code docutils literal notranslate"><span class="pre">env_prefix</span></code>, or if unset the <code class="code docutils literal notranslate"><span class="pre">prog</span></code> without extension) followed by
@@ -283,7 +283,7 @@ would set the environment variables as:</p>
 </div>
 <p>Then in python the parser would use these variables, unless overridden by the
 command line arguments, that is:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="n">default_env</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="n">default_env</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 2&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="s1">&#39;from arg 1&#39;</span><span class="p">])</span>
@@ -294,9 +294,9 @@ command line arguments, that is:</p>
 </pre></div>
 </div>
 <p>Note that when creating the parser, <code class="code docutils literal notranslate"><span class="pre">default_env=True</span></code> was given as
-argument. By default <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_args" title="yamlargparse.ArgumentParser.parse_args"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_args()</span></code></a> does not
+argument. By default <a class="reference internal" href="#jsonargparse.ArgumentParser.parse_args" title="jsonargparse.ArgumentParser.parse_args"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_args()</span></code></a> does not
 check environment variables, so it has to be enabled explicitly.</p>
-<p>There is also the <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_env" title="yamlargparse.ArgumentParser.parse_env"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_env()</span></code></a> function to only
+<p>There is also the <a class="reference internal" href="#jsonargparse.ArgumentParser.parse_env" title="jsonargparse.ArgumentParser.parse_env"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_env()</span></code></a> function to only
 parse environment variables, which might be useful for some use cases in which
 there is no command line call involved.</p>
 </div>
@@ -305,7 +305,7 @@ there is no command line call involved.</p>
 <p>An important feature of this module is the parsing of yaml files. The dot
 notation hierarchy of the arguments (see <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a>) are
 used for the expected structure of the yaml files.</p>
-<p>When creating the <a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a> the <code class="code docutils literal notranslate"><span class="pre">default_config_files</span></code>
+<p>When creating the <a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a> the <code class="code docutils literal notranslate"><span class="pre">default_config_files</span></code>
 argument can be given to specify patterns to search for configuration files.
 Only the first matched config file is parsed.</p>
 <p>When parsing command line arguments, it is possible to add a yaml configuration
@@ -322,10 +322,10 @@ following yaml:</p>
 </div>
 <p>Then in python adding a yaml file argument and parsing some example arguments,
 the following would be observed:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 2&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionConfigFile</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionConfigFile</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="s1">&#39;from arg 1&#39;</span><span class="p">,</span> <span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="s1">&#39;example.yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="s1">&#39;from arg 2&#39;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">lev1</span><span class="o">.</span><span class="n">opt1</span>
 <span class="go">&#39;from yaml 1&#39;</span>
@@ -333,8 +333,8 @@ the following would be observed:</p>
 <span class="go">&#39;from arg 2&#39;</span>
 </pre></div>
 </div>
-<p>There are also functions <a class="reference internal" href="#yamlargparse.ArgumentParser.parse_path" title="yamlargparse.ArgumentParser.parse_path"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_path()</span></code></a> and
-<a class="reference internal" href="#yamlargparse.ArgumentParser.parse_string" title="yamlargparse.ArgumentParser.parse_string"><code class="xref py py-func docutils literal notranslate"><span class="pre">yamlargparse.ArgumentParser.parse_string()</span></code></a> to only parse a config file or
+<p>There are also functions <a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_path()</span></code></a> and
+<a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_string()</span></code></a> to only parse a config file or
 a config contained in a string respectively.</p>
 </div>
 <div class="section" id="parsing-paths">
@@ -344,8 +344,8 @@ and access permissions, but not necessarily opening the file. Moreover, a file
 path could be included in a yaml file as relative with respect to the yaml
 file’s location. After parsing it should be easy to access the parsed file path
 without having to consider the location of the yaml file. To help in these
-situations yamlargparse includes the <a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> and the
-<a class="reference internal" href="#yamlargparse.ActionPathList" title="yamlargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> classes.</p>
+situations jsonargparse includes the <a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> and the
+<a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> classes.</p>
 <p>For example suppose you have a directory with a configuration file
 <code class="code docutils literal notranslate"><span class="pre">app/config.yaml</span></code> and some data <code class="code docutils literal notranslate"><span class="pre">app/data/info.db</span></code>. The contents of
 the yaml file is the following:</p>
@@ -356,8 +356,8 @@ the yaml file is the following:</p>
 </div>
 <p>To create a parser that checks that the value of <code class="code docutils literal notranslate"><span class="pre">databases.info</span></code> exists
 and is readable, the following could be done:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">yamlargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--databases.info&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionPath</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--databases.info&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionPath</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="s1">&#39;app/config.yaml&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -371,12 +371,12 @@ in the yaml file, or the corresponding absolute path:</p>
 </div>
 <p>Likewise directories can also be parsed by including in the mode the <code class="code docutils literal notranslate"><span class="pre">'d'</span></code>
 flag, e.g. <code class="code docutils literal notranslate"><span class="pre">ActionPath(mode='drw')</span></code>.</p>
-<p>An argument with <a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> can be given <code class="code docutils literal notranslate"><span class="pre">nargs='+'</span></code> to parse
+<p>An argument with <a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> can be given <code class="code docutils literal notranslate"><span class="pre">nargs='+'</span></code> to parse
 multiple paths. But it might also be wanted to parse a list of paths found in a
-plain text file or from stdin. For this the <a class="reference internal" href="#yamlargparse.ActionPathList" title="yamlargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> is used and
+plain text file or from stdin. For this the <a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> is used and
 as argument either the path to a file listing the paths is given or the special
 <code class="code docutils literal notranslate"><span class="pre">'-'</span></code> string for reading the list from stdin. For for example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionPathList</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionPathList</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="s1">&#39;paths.lst&#39;</span><span class="p">)</span>  <span class="c1"># Text file with paths</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>          <span class="c1"># List from stdin</span>
 </pre></div>
@@ -387,26 +387,26 @@ generated including all paths in all lists provided.</p>
 <div class="section" id="comparison-operators">
 <h1>Comparison operators<a class="headerlink" href="#comparison-operators" title="Permalink to this headline">¶</a></h1>
 <p>It is quite common that when parsing a number, its range should be limited. To
-ease these cases the module includes the <a class="reference internal" href="#yamlargparse.ActionOperators" title="yamlargparse.ActionOperators"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>. Some
+ease these cases the module includes the <a class="reference internal" href="#jsonargparse.ActionOperators" title="jsonargparse.ActionOperators"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>. Some
 examples of arguments that can be added using this action are the following:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Larger than zero</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
 <span class="c1"># Between 0 and 10</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]))</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]))</span>
 <span class="c1"># Either larger than zero or &#39;off&#39; string</span>
 <span class="k">def</span> <span class="nf">int_or_off</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;off&#39;</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op3&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="s1">&#39;off&#39;</span><span class="p">)],</span> <span class="n">join</span><span class="o">=</span><span class="s1">&#39;or&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">int_or_off</span><span class="p">))</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op3&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="s1">&#39;off&#39;</span><span class="p">)],</span> <span class="n">join</span><span class="o">=</span><span class="s1">&#39;or&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">int_or_off</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="json-schemas">
 <h1>Json schemas<a class="headerlink" href="#json-schemas" title="Permalink to this headline">¶</a></h1>
-<p>The <a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> class is provided to allow parsing and validation
+<p>The <a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> class is provided to allow parsing and validation
 of values using a json schema. This class requires the <a class="reference external" href="https://pypi.org/project/jsonschema/">jsonschema</a> python package. Though note that
-jsonschema is not a requirement of yamlargparse, so to use
-<a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> it is required to explicitly install jsonschema.</p>
+jsonschema is not a requirement of jsonargparse, so to use
+<a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> it is required to explicitly install jsonschema.</p>
 <p>Check out the <a class="reference external" href="https://python-jsonschema.readthedocs.io/">jsonschema documentation</a> to learn how to write a schema.
-The current version of yamlargparse uses Draft4Validator. Parsing an argument
+The current version of jsonargparse uses Draft4Validator. Parsing an argument
 using a json schema is done like in the following example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">schema</span> <span class="o">=</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
@@ -416,7 +416,7 @@ using a json schema is done like in the following example:</p>
 <span class="gp">... </span>    <span class="p">},</span>
 <span class="gp">... </span><span class="p">}</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">))</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="s1">&#39;{&quot;price&quot;: 1.5, &quot;name&quot;: &quot;cookie&quot;}&#39;</span><span class="p">])</span>
 <span class="go">namespace(op=namespace(name=&#39;cookie&#39;, price=1.5))</span>
@@ -426,21 +426,21 @@ using a json schema is done like in the following example:</p>
 provide a path to a json/yaml file, which would be loaded and validated against
 the schema. If the schema defines default values, these will be used by the
 parser to initialize the config values that are not specified. When adding an
-argument with the <a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> action, you can use “%s” in the
+argument with the <a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> action, you can use “%s” in the
 <code class="code docutils literal notranslate"><span class="pre">help</span></code> string so that in that position the schema will be printed.</p>
 </div>
 <div class="section" id="yes-no-arguments">
 <h1>Yes/No arguments<a class="headerlink" href="#yes-no-arguments" title="Permalink to this headline">¶</a></h1>
 <p>When parsing boolean values from the command line, sometimes it is useful to
 define two paired options, one to set to true and the other for false. The
-<a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a> makes this straightforward. A couple of examples would be:</p>
+<a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a> makes this straightforward. A couple of examples would be:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># --opt1 for true and --no_opt1 for false.</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionYesNo</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionYesNo</span><span class="p">)</span>
 <span class="c1"># --with-opt2 for true and --without-opt2 for false.</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--with-op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionYesNo</span><span class="p">(</span><span class="n">yes_prefix</span><span class="o">=</span><span class="s1">&#39;with-&#39;</span><span class="p">,</span> <span class="n">no_prefix</span><span class="o">=</span><span class="s1">&#39;without-&#39;</span><span class="p">))</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--with-op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionYesNo</span><span class="p">(</span><span class="n">yes_prefix</span><span class="o">=</span><span class="s1">&#39;with-&#39;</span><span class="p">,</span> <span class="n">no_prefix</span><span class="o">=</span><span class="s1">&#39;without-&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>If the <a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a> class is used in conjunction with
+<p>If the <a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a> class is used in conjunction with
 <code class="code docutils literal notranslate"><span class="pre">nargs='?'</span></code> the options can also be set by giving as value any of
 <code class="code docutils literal notranslate"><span class="pre">{'true',</span> <span class="pre">'yes',</span> <span class="pre">'false',</span> <span class="pre">'no'}</span></code>.</p>
 </div>
@@ -448,14 +448,14 @@ define two paired options, one to set to true and the other for false. The
 <h1>Parsing with another parser<a class="headerlink" href="#parsing-with-another-parser" title="Permalink to this headline">¶</a></h1>
 <p>Sometimes an element in a yaml file could be a path to another yaml file with a
 complex structure which should also be parsed. To handle these cases there is
-the <a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> class which receives as argument a yamlargparse
+the <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> class which receives as argument a jsonargparse
 parser object. For example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--complex.node&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">yamlargparse</span><span class="o">.</span><span class="n">ActionParser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">node_parser</span><span class="p">))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--complex.node&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionParser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">node_parser</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
-<div class="section" id="module-yamlargparse">
-<span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-yamlargparse" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-jsonargparse">
+<span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-jsonargparse" title="Permalink to this headline">¶</a></h1>
 <p><strong>Classes</strong></p>
 <table class="longtable docutils align-default">
 <colgroup>
@@ -463,40 +463,40 @@ parser object. For example:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile" title="yamlargparse.ActionConfigFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionConfigFile" title="jsonargparse.ActionConfigFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a>(**kwargs)</p></td>
 <td><p>Action to indicate that an argument is a configuration file or a configuration string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonSchema" title="yamlargparse.ActionJsonSchema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a>(**kwargs)</p></td>
 <td><p>Action to parse option as json validated by a jsonschema.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonnet" title="yamlargparse.ActionJsonnet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonnet</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet" title="jsonargparse.ActionJsonnet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonnet</span></code></a>(**kwargs)</p></td>
 <td><p>Action to parse a jsonnet, optionally validating against a jsonschema.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionOperators" title="yamlargparse.ActionOperators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionOperators" title="jsonargparse.ActionOperators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>(**kwargs)</p></td>
 <td><p>Action to restrict a value with comparison operators.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionParser" title="yamlargparse.ActionParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code></a>(**kwargs)</p></td>
 <td><p>Action to parse option with a given parser optionally loading from file if string value.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionPath" title="yamlargparse.ActionPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPath</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPath</span></code></a>(**kwargs)</p></td>
 <td><p>Action to check and store a path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionPathList" title="yamlargparse.ActionPathList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPathList</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPathList</span></code></a>(**kwargs)</p></td>
 <td><p>Action to check and store a list of file paths read from a plain text file or stream.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo" title="yamlargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
 <td><p>Paired options –{yes_prefix}opt, –{no_prefix}opt to set True or False respectively.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args[, env_prefix, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args[, env_prefix, …])</p></td>
 <td><p>Parser for command line, yaml/jsonnet files and environment variables.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.DefaultHelpFormatter" title="yamlargparse.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.DefaultHelpFormatter" title="jsonargparse.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
 <td><p>Help message formatter with namespace key, env var and default values in argument help.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.LoggerProperty" title="yamlargparse.LoggerProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoggerProperty</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.LoggerProperty" title="jsonargparse.LoggerProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoggerProperty</span></code></a>()</p></td>
 <td><p>Class designed to be inherited by other classes to add a logger property.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path" title="yamlargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.Path" title="jsonargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
 </tbody>
@@ -508,7 +508,7 @@ parser object. For example:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParserError</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ParserError" title="jsonargparse.ParserError"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParserError</span></code></a></p></td>
 <td><p>Error raised when parsing a value fails.</p></td>
 </tr>
 </tbody>
@@ -520,27 +520,27 @@ parser object. For example:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.dict_to_namespace" title="yamlargparse.dict_to_namespace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict_to_namespace</span></code></a>(cfg_dict, Any])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.dict_to_namespace" title="jsonargparse.dict_to_namespace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict_to_namespace</span></code></a>(cfg_dict, Any])</p></td>
 <td><p>Converts a nested dictionary into a nested namespace.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.namespace_to_dict" title="yamlargparse.namespace_to_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">namespace_to_dict</span></code></a>(cfg_ns)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.namespace_to_dict" title="jsonargparse.namespace_to_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">namespace_to_dict</span></code></a>(cfg_ns)</p></td>
 <td><p>Converts a nested namespace into a nested dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.usage_and_exit_error_handler" title="yamlargparse.usage_and_exit_error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">usage_and_exit_error_handler</span></code></a>(self, message)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.usage_and_exit_error_handler" title="jsonargparse.usage_and_exit_error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">usage_and_exit_error_handler</span></code></a>(self, message)</p></td>
 <td><p>Error handler to get the same behavior as in argparse.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="exception">
-<dt id="yamlargparse.ParserError">
-<em class="property">exception </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ParserError</code><a class="reference internal" href="_modules/yamlargparse.html#ParserError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ParserError" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ParserError">
+<em class="property">exception </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ParserError</code><a class="reference internal" href="_modules/jsonargparse.html#ParserError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ParserError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
 <p>Error raised when parsing a value fails.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.DefaultHelpFormatter">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">DefaultHelpFormatter</code><span class="sig-paren">(</span><em class="sig-param">prog</em>, <em class="sig-param">indent_increment=2</em>, <em class="sig-param">max_help_position=24</em>, <em class="sig-param">width=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#DefaultHelpFormatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.DefaultHelpFormatter" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.DefaultHelpFormatter">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">DefaultHelpFormatter</code><span class="sig-paren">(</span><em class="sig-param">prog</em>, <em class="sig-param">indent_increment=2</em>, <em class="sig-param">max_help_position=24</em>, <em class="sig-param">width=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#DefaultHelpFormatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.DefaultHelpFormatter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentDefaultsHelpFormatter" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentDefaultsHelpFormatter</span></code></a></p>
 <p>Help message formatter with namespace key, env var and default values in argument help.</p>
 <p>This class is an extension of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentDefaultsHelpFormatter">argparse.ArgumentDefaultsHelpFormatter</a>.
@@ -551,8 +551,8 @@ included preceded by ‘ENV:’.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.LoggerProperty">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">LoggerProperty</code><a class="reference internal" href="_modules/yamlargparse.html#LoggerProperty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.LoggerProperty" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.LoggerProperty">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">LoggerProperty</code><a class="reference internal" href="_modules/jsonargparse.html#LoggerProperty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.LoggerProperty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class designed to be inherited by other classes to add a logger property.</p>
 <p><strong>Methods</strong></p>
@@ -562,7 +562,7 @@ included preceded by ‘ENV:’.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.LoggerProperty.__init__" title="yamlargparse.LoggerProperty.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.LoggerProperty.__init__" title="jsonargparse.LoggerProperty.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
 <td><p>Initializer for LoggerProperty class.</p></td>
 </tr>
 </tbody>
@@ -574,29 +574,29 @@ included preceded by ‘ENV:’.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.LoggerProperty.logger" title="yamlargparse.LoggerProperty.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.LoggerProperty.logger" title="jsonargparse.LoggerProperty.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
 <td><p>The current logger.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.LoggerProperty.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#LoggerProperty.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.LoggerProperty.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.LoggerProperty.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#LoggerProperty.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.LoggerProperty.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for LoggerProperty class.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.LoggerProperty.logger">
-<em class="property">property </em><code class="sig-name descname">logger</code><a class="headerlink" href="#yamlargparse.LoggerProperty.logger" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.LoggerProperty.logger">
+<em class="property">property </em><code class="sig-name descname">logger</code><a class="headerlink" href="#jsonargparse.LoggerProperty.logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current logger.</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ArgumentParser">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a>, <a class="reference internal" href="#yamlargparse.LoggerProperty" title="yamlargparse.LoggerProperty"><code class="xref py py-class docutils literal notranslate"><span class="pre">yamlargparse.LoggerProperty</span></code></a></p>
+<dt id="jsonargparse.ArgumentParser">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a>, <a class="reference internal" href="#jsonargparse.LoggerProperty" title="jsonargparse.LoggerProperty"><code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.LoggerProperty</span></code></a></p>
 <p>Parser for command line, yaml/jsonnet files and environment variables.</p>
 <p><strong>Methods</strong></p>
 <table class="longtable docutils align-default">
@@ -605,37 +605,37 @@ included preceded by ‘ENV:’.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.__init__" title="yamlargparse.ArgumentParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args[, env_prefix, error_handler, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.__init__" title="jsonargparse.ArgumentParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args[, env_prefix, error_handler, …])</p></td>
 <td><p>Initializer for ArgumentParser instance.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.add_argument_group" title="yamlargparse.ArgumentParser.add_argument_group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_argument_group</span></code></a>(*args, name, **kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.add_argument_group" title="jsonargparse.ArgumentParser.add_argument_group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_argument_group</span></code></a>(*args, name, **kwargs)</p></td>
 <td><p>Adds a group to the parser.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.check_config" title="yamlargparse.ArgumentParser.check_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_config</span></code></a>(cfg, dict], skip_none)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.check_config" title="jsonargparse.ArgumentParser.check_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_config</span></code></a>(cfg, dict], skip_none)</p></td>
 <td><p>Checks that the content of a given configuration object conforms with the parser.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.dump" title="yamlargparse.ArgumentParser.dump"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump</span></code></a>(cfg, dict][, format])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.dump" title="jsonargparse.ArgumentParser.dump"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump</span></code></a>(cfg, dict][, format])</p></td>
 <td><p>Generates a yaml or json string for the given configuration object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.error" title="yamlargparse.ArgumentParser.error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error</span></code></a>(message)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.error" title="jsonargparse.ArgumentParser.error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error</span></code></a>(message)</p></td>
 <td><p>Logs error message if a logger is set, calls the error handler and raises a ParserError.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.get_defaults" title="yamlargparse.ArgumentParser.get_defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_defaults</span></code></a>(nested)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.get_defaults" title="jsonargparse.ArgumentParser.get_defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_defaults</span></code></a>(nested)</p></td>
 <td><p>Returns a namespace with all default values.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.merge_config" title="yamlargparse.ArgumentParser.merge_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_config</span></code></a>(cfg_from, cfg_to)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.merge_config" title="jsonargparse.ArgumentParser.merge_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_config</span></code></a>(cfg_from, cfg_to)</p></td>
 <td><p>Merges the first configuration into the second configuration.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.parse_args" title="yamlargparse.ArgumentParser.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>([args, namespace])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_args" title="jsonargparse.ArgumentParser.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>([args, namespace])</p></td>
 <td><p>Parses command line argument strings.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.parse_env" title="yamlargparse.ArgumentParser.parse_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_env</span></code></a>(env, str] = None, defaults, nested)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_env" title="jsonargparse.ArgumentParser.parse_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_env</span></code></a>(env, str] = None, defaults, nested)</p></td>
 <td><p>Parses environment variables.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.parse_path" title="yamlargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, env, defaults, nested)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, env, defaults, nested)</p></td>
 <td><p>Parses a configuration file (yaml or jsonnet) given its path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.parse_string" title="yamlargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, env, defaults, nested, log)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, env, defaults, nested, log)</p></td>
 <td><p>Parses configuration (yaml or jsonnet) given as a string.</p></td>
 </tr>
 </tbody>
@@ -647,20 +647,20 @@ included preceded by ‘ENV:’.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.default_env" title="yamlargparse.ArgumentParser.default_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_env</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.default_env" title="jsonargparse.ArgumentParser.default_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_env</span></code></a></p></td>
 <td><p>The current value of the default_env.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.env_prefix" title="yamlargparse.ArgumentParser.env_prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">env_prefix</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.env_prefix" title="jsonargparse.ArgumentParser.env_prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">env_prefix</span></code></a></p></td>
 <td><p>The current value of the env_prefix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ArgumentParser.error_handler" title="yamlargparse.ArgumentParser.error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_handler</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.error_handler" title="jsonargparse.ArgumentParser.error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_handler</span></code></a></p></td>
 <td><p>The current error_handler.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ArgumentParser instance.</p>
 <p>All the arguments from the initializer of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser">argparse.ArgumentParser</a>
 are supported. Additionally it accepts:</p>
@@ -668,7 +668,7 @@ are supported. Additionally it accepts:</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for environment variables.</p></li>
-<li><p><strong>error_handler</strong> (<em>Callable</em>) – Handler for parsing errors (default=None). For same behavior as argparse use <a class="reference internal" href="#yamlargparse.usage_and_exit_error_handler" title="yamlargparse.usage_and_exit_error_handler"><code class="xref py py-func docutils literal notranslate"><span class="pre">usage_and_exit_error_handler()</span></code></a>.</p></li>
+<li><p><strong>error_handler</strong> (<em>Callable</em>) – Handler for parsing errors (default=None). For same behavior as argparse use <a class="reference internal" href="#jsonargparse.usage_and_exit_error_handler" title="jsonargparse.usage_and_exit_error_handler"><code class="xref py py-func docutils literal notranslate"><span class="pre">usage_and_exit_error_handler()</span></code></a>.</p></li>
 <li><p><strong>formatter_class</strong> (<em>argparse.HelpFormatter</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Class for printing help messages or one of {“default”, “default_argparse”}.</p></li>
 <li><p><strong>logger</strong> (<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.7)"><em>logging.Logger</em></a><em> or </em><em>True</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Object for logging events.</p></li>
 <li><p><strong>version</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Program version string to add –version argument.</p></li>
@@ -681,14 +681,14 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.error_handler">
-<em class="property">property </em><code class="sig-name descname">error_handler</code><a class="headerlink" href="#yamlargparse.ArgumentParser.error_handler" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.error_handler">
+<em class="property">property </em><code class="sig-name descname">error_handler</code><a class="headerlink" href="#jsonargparse.ArgumentParser.error_handler" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current error_handler.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.parse_args">
-<code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">namespace=None</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.parse_args">
+<code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">namespace=None</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses command line argument strings.</p>
 <p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args">argparse.ArgumentParser.parse_args</a>
 are supported. Additionally it accepts:</p>
@@ -706,14 +706,14 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
 </dd>
 <dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
+<dd class="field-even"><p><a class="reference internal" href="#jsonargparse.ParserError" title="jsonargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.parse_path">
-<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.parse_path">
+<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a configuration file (yaml or jsonnet) given its path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -731,14 +731,14 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
 </dd>
 <dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
+<dd class="field-even"><p><a class="reference internal" href="#jsonargparse.ParserError" title="jsonargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.parse_string">
-<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">log: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.parse_string">
+<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">log: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses configuration (yaml or jsonnet) given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -756,14 +756,14 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
 </dd>
 <dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
+<dd class="field-even"><p><a class="reference internal" href="#jsonargparse.ParserError" title="jsonargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.dump">
-<code class="sig-name descname">dump</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], format='parser_mode', skip_none: bool = True, skip_check: bool = False</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.dump" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.dump">
+<code class="sig-name descname">dump</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], format='parser_mode', skip_none: bool = True, skip_check: bool = False</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.dump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a yaml or json string for the given configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -787,20 +787,20 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.default_env">
-<em class="property">property </em><code class="sig-name descname">default_env</code><a class="headerlink" href="#yamlargparse.ArgumentParser.default_env" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.default_env">
+<em class="property">property </em><code class="sig-name descname">default_env</code><a class="headerlink" href="#jsonargparse.ArgumentParser.default_env" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current value of the default_env.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.env_prefix">
-<em class="property">property </em><code class="sig-name descname">env_prefix</code><a class="headerlink" href="#yamlargparse.ArgumentParser.env_prefix" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.env_prefix">
+<em class="property">property </em><code class="sig-name descname">env_prefix</code><a class="headerlink" href="#jsonargparse.ArgumentParser.env_prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current value of the env_prefix.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.parse_env">
-<code class="sig-name descname">parse_env</code><span class="sig-paren">(</span><em class="sig-param">env: Dict[str</em>, <em class="sig-param">str] = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.parse_env">
+<code class="sig-name descname">parse_env</code><span class="sig-paren">(</span><em class="sig-param">env: Dict[str</em>, <em class="sig-param">str] = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses environment variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -817,14 +817,14 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
 </dd>
 <dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
+<dd class="field-even"><p><a class="reference internal" href="#jsonargparse.ParserError" title="jsonargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.get_defaults">
-<code class="sig-name descname">get_defaults</code><span class="sig-paren">(</span><em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.get_defaults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.get_defaults" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.get_defaults">
+<code class="sig-name descname">get_defaults</code><span class="sig-paren">(</span><em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.get_defaults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.get_defaults" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a namespace with all default values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -837,20 +837,20 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)">types.SimpleNamespace</a></p>
 </dd>
 <dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference internal" href="#yamlargparse.ParserError" title="yamlargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
+<dd class="field-even"><p><a class="reference internal" href="#jsonargparse.ParserError" title="jsonargparse.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.error">
-<code class="sig-name descname">error</code><span class="sig-paren">(</span><em class="sig-param">message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.error" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.error">
+<code class="sig-name descname">error</code><span class="sig-paren">(</span><em class="sig-param">message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.error" title="Permalink to this definition">¶</a></dt>
 <dd><p>Logs error message if a logger is set, calls the error handler and raises a ParserError.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.add_argument_group">
-<code class="sig-name descname">add_argument_group</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">name: str = None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.add_argument_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.add_argument_group" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.add_argument_group">
+<code class="sig-name descname">add_argument_group</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">name: str = None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.add_argument_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.add_argument_group" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a group to the parser.</p>
 <p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group">argparse.ArgumentParser.add_argument_group</a>
 are supported. Additionally it accepts:</p>
@@ -865,8 +865,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.check_config">
-<code class="sig-name descname">check_config</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], skip_none: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.check_config">
+<code class="sig-name descname">check_config</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], skip_none: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks that the content of a given configuration object conforms with the parser.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -885,8 +885,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ArgumentParser.merge_config">
-<em class="property">static </em><code class="sig-name descname">merge_config</code><span class="sig-paren">(</span><em class="sig-param">cfg_from: types.SimpleNamespace</em>, <em class="sig-param">cfg_to: types.SimpleNamespace</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ArgumentParser.merge_config">
+<em class="property">static </em><code class="sig-name descname">merge_config</code><span class="sig-paren">(</span><em class="sig-param">cfg_from: types.SimpleNamespace</em>, <em class="sig-param">cfg_to: types.SimpleNamespace</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merges the first configuration into the second configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -907,8 +907,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="yamlargparse.dict_to_namespace">
-<code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">dict_to_namespace</code><span class="sig-paren">(</span><em class="sig-param">cfg_dict: Dict[str, Any]</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/yamlargparse.html#dict_to_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.dict_to_namespace" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.dict_to_namespace">
+<code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">dict_to_namespace</code><span class="sig-paren">(</span><em class="sig-param">cfg_dict: Dict[str, Any]</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#dict_to_namespace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.dict_to_namespace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts a nested dictionary into a nested namespace.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -924,8 +924,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="yamlargparse.namespace_to_dict">
-<code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">namespace_to_dict</code><span class="sig-paren">(</span><em class="sig-param">cfg_ns: types.SimpleNamespace</em><span class="sig-paren">)</span> &#x2192; Dict[str, Any]<a class="reference internal" href="_modules/yamlargparse.html#namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.namespace_to_dict" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.namespace_to_dict">
+<code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">namespace_to_dict</code><span class="sig-paren">(</span><em class="sig-param">cfg_ns: types.SimpleNamespace</em><span class="sig-paren">)</span> &#x2192; Dict[str, Any]<a class="reference internal" href="_modules/jsonargparse.html#namespace_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.namespace_to_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts a nested namespace into a nested dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -941,8 +941,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ActionConfigFile">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ActionConfigFile</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionConfigFile">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionConfigFile</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionConfigFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to indicate that an argument is a configuration file or a configuration string.</p>
 <p><strong>Methods</strong></p>
@@ -952,23 +952,23 @@ are supported. Additionally it accepts:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile.__call__" title="yamlargparse.ActionConfigFile.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(parser, namespace, values[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionConfigFile.__call__" title="jsonargparse.ActionConfigFile.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(parser, namespace, values[, …])</p></td>
 <td><p>Parses the given configuration and adds all the corresponding keys to the namespace.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionConfigFile.__init__" title="yamlargparse.ActionConfigFile.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionConfigFile.__init__" title="jsonargparse.ActionConfigFile.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionConfigFile instance.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.ActionConfigFile.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionConfigFile.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionConfigFile.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionConfigFile.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionConfigFile instance.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ActionConfigFile.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">parser</em>, <em class="sig-param">namespace</em>, <em class="sig-param">values</em>, <em class="sig-param">option_string=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionConfigFile.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionConfigFile.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionConfigFile.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">parser</em>, <em class="sig-param">namespace</em>, <em class="sig-param">values</em>, <em class="sig-param">option_string=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionConfigFile.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionConfigFile.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses the given configuration and adds all the corresponding keys to the namespace.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -980,8 +980,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ActionYesNo">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ActionYesNo</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionYesNo">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionYesNo</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionYesNo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionYesNo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Paired options –{yes_prefix}opt, –{no_prefix}opt to set True or False respectively.</p>
 <p><strong>Methods</strong></p>
@@ -991,17 +991,17 @@ are supported. Additionally it accepts:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo.__call__" title="yamlargparse.ActionYesNo.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionYesNo.__call__" title="jsonargparse.ActionYesNo.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Sets the corresponding key to True or False depending on the option string used.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionYesNo.__init__" title="yamlargparse.ActionYesNo.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionYesNo.__init__" title="jsonargparse.ActionYesNo.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionYesNo instance.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.ActionYesNo.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionYesNo.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionYesNo.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionYesNo.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionYesNo instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1017,16 +1017,16 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ActionYesNo.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionYesNo.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionYesNo.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionYesNo.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionYesNo.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionYesNo.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the corresponding key to True or False depending on the option string used.</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ActionJsonSchema">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ActionJsonSchema</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonSchema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonSchema" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionJsonSchema">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionJsonSchema</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonSchema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonSchema" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to parse option as json validated by a jsonschema.</p>
 <p><strong>Methods</strong></p>
@@ -1036,17 +1036,17 @@ are supported. Additionally it accepts:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonSchema.__call__" title="yamlargparse.ActionJsonSchema.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonSchema.__call__" title="jsonargparse.ActionJsonSchema.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Parses an argument with the corresponding jsonschema.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonSchema.__init__" title="yamlargparse.ActionJsonSchema.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonSchema.__init__" title="jsonargparse.ActionJsonSchema.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionJsonSchema instance.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.ActionJsonSchema.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonSchema.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonSchema.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionJsonSchema.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonSchema.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonSchema.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionJsonSchema instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1063,8 +1063,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ActionJsonSchema.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonSchema.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonSchema.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionJsonSchema.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonSchema.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonSchema.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses an argument with the corresponding jsonschema.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -1076,8 +1076,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ActionJsonnet">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ActionJsonnet</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonnet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonnet" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionJsonnet">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionJsonnet</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to parse a jsonnet, optionally validating against a jsonschema.</p>
 <p><strong>Methods</strong></p>
@@ -1087,20 +1087,20 @@ are supported. Additionally it accepts:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonnet.__call__" title="yamlargparse.ActionJsonnet.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet.__call__" title="jsonargparse.ActionJsonnet.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Parses an argument with the corresponding jsonschema.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonnet.__init__" title="yamlargparse.ActionJsonnet.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet.__init__" title="jsonargparse.ActionJsonnet.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionJsonnet instance.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionJsonnet.parse" title="yamlargparse.ActionJsonnet.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a>(jsonnet)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet.parse" title="jsonargparse.ActionJsonnet.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a>(jsonnet)</p></td>
 <td><p>Method that can be used to parse jsonnet independent from an ArgumentParser.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.ActionJsonnet.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonnet.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonnet.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionJsonnet.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnet.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnet.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionJsonnet instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1117,8 +1117,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ActionJsonnet.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonnet.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonnet.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionJsonnet.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnet.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnet.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses an argument with the corresponding jsonschema.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -1128,8 +1128,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ActionJsonnet.parse">
-<code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">jsonnet</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionJsonnet.parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionJsonnet.parse" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionJsonnet.parse">
+<code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">jsonnet</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnet.parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnet.parse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method that can be used to parse jsonnet independent from an ArgumentParser.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1150,8 +1150,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ActionParser">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ActionParser</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionParser" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionParser">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionParser</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to parse option with a given parser optionally loading from file if string value.</p>
 <p><strong>Methods</strong></p>
@@ -1161,21 +1161,21 @@ are supported. Additionally it accepts:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionParser.__call__" title="yamlargparse.ActionParser.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionParser.__call__" title="jsonargparse.ActionParser.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionParser.__init__" title="yamlargparse.ActionParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionParser.__init__" title="jsonargparse.ActionParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionParser instance.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.ActionParser.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionParser.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionParser.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionParser.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionParser instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>parser</strong> (<a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><em>ArgumentParser</em></a>) – A parser to parse the option with.</p>
+<dd class="field-odd"><p><strong>parser</strong> (<a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><em>ArgumentParser</em></a>) – A parser to parse the option with.</p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – If the parser parameter is invalid.</p>
@@ -1184,8 +1184,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ActionParser.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionParser.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionParser.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionParser.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionParser.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionParser.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -1197,8 +1197,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ActionOperators">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ActionOperators</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionOperators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionOperators" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionOperators">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionOperators</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionOperators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionOperators" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to restrict a value with comparison operators.</p>
 <p><strong>Methods</strong></p>
@@ -1208,17 +1208,17 @@ are supported. Additionally it accepts:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionOperators.__call__" title="yamlargparse.ActionOperators.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionOperators.__call__" title="jsonargparse.ActionOperators.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionOperators.__init__" title="yamlargparse.ActionOperators.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionOperators.__init__" title="jsonargparse.ActionOperators.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionOperators instance.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.ActionOperators.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionOperators.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionOperators.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionOperators.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionOperators.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionOperators.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionOperators instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1235,8 +1235,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ActionOperators.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionOperators.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionOperators.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionOperators.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionOperators.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionOperators.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -1248,8 +1248,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ActionPath">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ActionPath</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPath" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionPath">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionPath</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionPath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to check and store a path.</p>
 <p><strong>Methods</strong></p>
@@ -1259,17 +1259,17 @@ are supported. Additionally it accepts:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionPath.__call__" title="yamlargparse.ActionPath.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionPath.__call__" title="jsonargparse.ActionPath.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Parses an argument as a Path and if valid sets the parsed value to the corresponding key.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionPath.__init__" title="yamlargparse.ActionPath.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionPath.__init__" title="jsonargparse.ActionPath.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionPath instance.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.ActionPath.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPath.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPath.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionPath.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionPath.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionPath.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionPath instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1282,8 +1282,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ActionPath.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPath.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPath.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionPath.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionPath.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionPath.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses an argument as a Path and if valid sets the parsed value to the corresponding key.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -1295,8 +1295,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.ActionPathList">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">ActionPathList</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPathList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPathList" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionPathList">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionPathList</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionPathList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionPathList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
 <p>Action to check and store a list of file paths read from a plain text file or stream.</p>
 <p><strong>Methods</strong></p>
@@ -1306,17 +1306,17 @@ are supported. Additionally it accepts:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.ActionPathList.__call__" title="yamlargparse.ActionPathList.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionPathList.__call__" title="jsonargparse.ActionPathList.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Parses an argument as a PathList and if valid sets the parsed value to the corresponding key.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.ActionPathList.__init__" title="yamlargparse.ActionPathList.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionPathList.__init__" title="jsonargparse.ActionPathList.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionPathList instance.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.ActionPathList.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPathList.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPathList.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionPathList.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionPathList.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionPathList.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionPathList instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1332,8 +1332,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.ActionPathList.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#ActionPathList.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.ActionPathList.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.ActionPathList.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionPathList.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionPathList.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses an argument as a PathList and if valid sets the parsed value to the corresponding key.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -1345,8 +1345,8 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="yamlargparse.Path">
-<em class="property">class </em><code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">Path</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">mode: str = 'fr'</em>, <em class="sig-param">cwd: str = None</em>, <em class="sig-param">skip_check: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.Path">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">Path</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">mode: str = 'fr'</em>, <em class="sig-param">cwd: str = None</em>, <em class="sig-param">skip_check: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#Path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.Path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Stores a (possibly relative) path and the corresponding absolute path.</p>
 <p>When a Path instance is created it is checked that: the path exists, whether
@@ -1362,17 +1362,17 @@ object was created.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#yamlargparse.Path.__call__" title="yamlargparse.Path.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>([absolute])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.Path.__call__" title="jsonargparse.Path.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>([absolute])</p></td>
 <td><p>Returns the path as a string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#yamlargparse.Path.__init__" title="yamlargparse.Path.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.Path.__init__" title="jsonargparse.Path.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Initializer for Path instance.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="yamlargparse.Path.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">mode: str = 'fr'</em>, <em class="sig-param">cwd: str = None</em>, <em class="sig-param">skip_check: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.Path.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">mode: str = 'fr'</em>, <em class="sig-param">cwd: str = None</em>, <em class="sig-param">skip_check: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#Path.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.Path.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for Path instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1393,8 +1393,8 @@ object was created.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="yamlargparse.Path.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">absolute=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#Path.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.Path.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.Path.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">absolute=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#Path.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.Path.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the path as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1406,13 +1406,13 @@ object was created.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="yamlargparse.usage_and_exit_error_handler">
-<code class="sig-prename descclassname">yamlargparse.</code><code class="sig-name descname">usage_and_exit_error_handler</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/yamlargparse.html#usage_and_exit_error_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#yamlargparse.usage_and_exit_error_handler" title="Permalink to this definition">¶</a></dt>
+<dt id="jsonargparse.usage_and_exit_error_handler">
+<code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">usage_and_exit_error_handler</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#usage_and_exit_error_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.usage_and_exit_error_handler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Error handler to get the same behavior as in argparse.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>self</strong> (<a class="reference internal" href="#yamlargparse.ArgumentParser" title="yamlargparse.ArgumentParser"><em>ArgumentParser</em></a>) – The ArgumentParser object.</p></li>
+<li><p><strong>self</strong> (<a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><em>ArgumentParser</em></a>) – The ArgumentParser object.</p></li>
 <li><p><strong>message</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The message describing the error being handled.</p></li>
 </ul>
 </dd>

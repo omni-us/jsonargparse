@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Setup file for yamlargparse package."""
+"""Setup file for jsonargparse package."""
 
 from setuptools import setup, find_packages, Command
 import subprocess
@@ -13,12 +13,12 @@ except ImportError:
     print('warning: sphinx not found, build_sphinx target will not be available.')
 
 
-NAME = 'yamlargparse'
-URL = 'https://omni-us.github.io/yamlargparse/'
+NAME = 'jsonargparse'
+URL = 'https://omni-us.github.io/jsonargparse/'
 LICENSE = 'MIT'
 AUTHOR = 'Mauricio Villegas'
 AUTHOR_EMAIL = 'mauricio@omnius.com'
-DESCRIPTION = 'Parsing of command line options, yaml config files and/or environment variables based on argparse.'
+DESCRIPTION = 'Parsing of command line options, yaml/jsonnet config files and/or environment variables based on argparse.'
 LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:', '', open('README.rst').read())
 
 
@@ -53,10 +53,10 @@ setup(name=NAME,
       author_email=AUTHOR_EMAIL,
       url=URL,
       license=LICENSE,
-      py_modules=[NAME, NAME+'_tests'],
+      py_modules=[NAME, NAME+'_test'],
       python_requires='>=3.5',
       install_requires=get_runtime_requirements(),
-      test_suite=NAME+'_tests',
+      test_suite=NAME+'_test',
       cmdclass=CMDCLASS,
       command_options={
           'build_sphinx': {

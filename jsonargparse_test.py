@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Unit tests for the yamlargparse module."""
+"""Unit tests for the jsonargparse module."""
 
 import os
 import sys
@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import pathlib
 import unittest
-from yamlargparse import *
+from jsonargparse import *
 
 
 def example_parser():
@@ -57,8 +57,8 @@ example_env = {
 }
 
 
-class YamlargparseTests(unittest.TestCase):
-    """Tests for yamlargparse."""
+class JsonargparseTests(unittest.TestCase):
+    """Tests for jsonargparse."""
 
     def test_groups(self):
         """Test storage of named groups."""
@@ -117,7 +117,7 @@ class YamlargparseTests(unittest.TestCase):
         self.assertFalse(hasattr(cfg2, 'bools'))
         self.assertTrue(hasattr(cfg2, 'nums'))
 
-        tmpdir = tempfile.mkdtemp(prefix='_yamlargparse_tests_')
+        tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
         yaml_file = os.path.realpath(os.path.join(tmpdir, 'example.yaml'))
 
         with open(yaml_file, 'w') as output_file:
@@ -147,7 +147,7 @@ class YamlargparseTests(unittest.TestCase):
 
     def test_default_config_files(self):
         """Test the use of default_config_files."""
-        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_yamlargparse_tests_'))
+        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
         default_config_file = os.path.realpath(os.path.join(tmpdir, 'example.yaml'))
         with open(default_config_file, 'w') as output_file:
             output_file.write('op1: from default config file\n')
@@ -165,7 +165,7 @@ class YamlargparseTests(unittest.TestCase):
 
     def test_configfile_filepath(self):
         """Test the use of ActionConfigFile and ActionPath."""
-        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_yamlargparse_tests_'))
+        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
         os.mkdir(os.path.join(tmpdir, 'example'))
         rel_yaml_file = os.path.join('..', 'example', 'example.yaml')
         abs_yaml_file = os.path.realpath(os.path.join(tmpdir, 'example', rel_yaml_file))
@@ -217,7 +217,7 @@ class YamlargparseTests(unittest.TestCase):
 
     def test_filepathlist(self):
         """Test the use of ActionPathList."""
-        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_yamlargparse_tests_'))
+        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
         pathlib.Path(os.path.join(tmpdir, 'file1')).touch()
         pathlib.Path(os.path.join(tmpdir, 'file2')).touch()
         pathlib.Path(os.path.join(tmpdir, 'file3')).touch()
@@ -273,7 +273,7 @@ class YamlargparseTests(unittest.TestCase):
         parser1.add_argument('--cfg',
             action=ActionConfigFile)
 
-        tmpdir = tempfile.mkdtemp(prefix='_yamlargparse_tests_')
+        tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
         os.mkdir(os.path.join(tmpdir, 'example'))
         yaml1_file = os.path.join(tmpdir, 'example1.yaml')
         yaml2_file = os.path.join(tmpdir, 'example2.yaml')
@@ -358,7 +358,7 @@ class YamlargparseTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k2": "2"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k4": 4}']))
 
-        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_yamlargparse_tests_'))
+        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
         op1_file = os.path.join(tmpdir, 'op1.json')
         op2_file = os.path.join(tmpdir, 'op2.json')
         cfg1_file = os.path.join(tmpdir, 'cfg1.yaml')
