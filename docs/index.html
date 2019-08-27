@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse python module &mdash; jsonargparse 2.0.0 documentation</title>
+  <title>jsonargparse python module &mdash; jsonargparse master/v1.31.0+5commits/2019.08.27 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.0.0
+                master/v1.31.0+5commits/2019.08.27
               </div>
             
           
@@ -1093,7 +1093,7 @@ are supported. Additionally it accepts:</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet.__init__" title="jsonargparse.ActionJsonnet.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionJsonnet instance.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet.parse" title="jsonargparse.ActionJsonnet.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a>(jsonnet)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet.parse" title="jsonargparse.ActionJsonnet.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a>(jsonnet[, ext_vars])</p></td>
 <td><p>Method that can be used to parse jsonnet independent from an ArgumentParser.</p></td>
 </tr>
 </tbody>
@@ -1129,11 +1129,14 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ActionJsonnet.parse">
-<code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">jsonnet</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnet.parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnet.parse" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">jsonnet</em>, <em class="sig-param">ext_vars={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnet.parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnet.parse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method that can be used to parse jsonnet independent from an ArgumentParser.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>jsonnet</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Either a path to a jsonnet file or the jsonnet content.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>jsonnet</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Either a path to a jsonnet file or the jsonnet content.</p></li>
+<li><p><strong>ext_vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em> or </em><em>SimpleNamespace</em>) – Dictionary of external variables. Values can be strings or any other basic type.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The parsed jsonnet object.</p>

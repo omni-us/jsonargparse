@@ -964,11 +964,12 @@ class ActionJsonnet(Action):
                 raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex))
         return value if islist else value[0]
 
-    def parse(self, jsonnet):
+    def parse(self, jsonnet, ext_vars={}):
         """Method that can be used to parse jsonnet independent from an ArgumentParser.
 
         Args:
             jsonnet (str): Either a path to a jsonnet file or the jsonnet content.
+            ext_vars (dict or SimpleNamespace): Dictionary of external variables. Values can be strings or any other basic type.
 
         Returns:
             SimpleNamespace: The parsed jsonnet object.
@@ -976,15 +977,19 @@ class ActionJsonnet(Action):
         Raises:
             TypeError: If the input is neither a path to an existent file nor a jsonnet.
         """
+        if isinstance(ext_vars, SimpleNamespace):
+            ext_vars = namespace_to_dict(ext_vars)
+        ext_codes = {k: json.dumps(v) for k, v in ext_vars.items() if not isinstance(v, str)}
+        ext_vars = {k: v for k, v in ext_vars.items() if isinstance(v, str)}
         try:
-            path = Path(jsonnet, mode='fr')
+            Path(jsonnet, mode='fr')
         except TypeError as ex:
             try:
-                values = yaml.safe_load(_jsonnet.evaluate_snippet(jsonnet))
+                values = yaml.safe_load(_jsonnet.evaluate_snippet(jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
             except:
                 raise ex
         else:
-            values = yaml.safe_load(_jsonnet.evaluate_file(jsonnet))
+            values = yaml.safe_load(_jsonnet.evaluate_file(jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
         if self._validator is not None:
             self._validator.validate(values)
         return dict_to_namespace(values)
