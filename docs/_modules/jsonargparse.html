@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.1.0 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.1.0+1commits/2019.08.31 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.1.0
+                master/v2.1.0+1commits/2019.08.31
               </div>
             
           
@@ -342,15 +342,19 @@
                 <span class="n">cfg_env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="n">namespace</span> <span class="o">=</span> <span class="n">cfg_env</span> <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">cfg_env</span><span class="p">)</span>
 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cfg_def</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">namespace</span> <span class="o">=</span> <span class="n">cfg_def</span> <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">cfg_def</span><span class="p">)</span>
+
             <span class="k">with</span> <span class="n">_suppress_stderr</span><span class="p">():</span>
                 <span class="n">cfg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">)</span>
 
             <span class="n">ActionParser</span><span class="o">.</span><span class="n">_fix_conflicts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
 
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed arguments&#39;</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="ow">not</span> <span class="n">nested</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed arguments&#39;</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>

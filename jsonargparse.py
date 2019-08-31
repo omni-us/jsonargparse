@@ -195,15 +195,19 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                 cfg_env = self.parse_env(nested=False)
                 namespace = cfg_env if namespace is None else self._merge_config(namespace, cfg_env)
 
+            else:
+                cfg_def = self.get_defaults(nested=False)
+                namespace = cfg_def if namespace is None else self._merge_config(namespace, cfg_def)
+
             with _suppress_stderr():
                 cfg = super().parse_args(args=args, namespace=namespace)
 
             ActionParser._fix_conflicts(self, cfg)
 
+            self._logger.info('parsed arguments')
+
             if not nested:
                 return _dict_to_flat_namespace(_flat_namespace_to_dict(cfg))
-
-            self._logger.info('parsed arguments')
 
         except TypeError as ex:
             self.error(str(ex))
