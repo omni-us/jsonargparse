@@ -195,7 +195,7 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(None, cfg.cfg[0])
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
-        self.assertRaises(KeyError, lambda: parser.parse_args(['--cfg', '{"k":"v"}']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '{"k":"v"}']))
 
         cfg = parser.parse_args(['--file', abs_yaml_file, '--dir', tmpdir])
         self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))

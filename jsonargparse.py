@@ -270,13 +270,16 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             if defaults:
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
+            cfg_ns = dict_to_namespace(cfg)
+            self.check_config(cfg_ns, skip_none=True)
+
             if log:
                 self._logger.info('Parsed '+self.parser_mode+' string.')
 
         except TypeError as ex:
             self.error(str(ex))
 
-        return dict_to_namespace(cfg)
+        return cfg_ns
 
 
     def _load_cfg(self, cfg_str:str) -> Dict[str, Any]:
@@ -424,13 +427,13 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             if defaults:
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
-            self._logger.info('parsed environment variables')
+            cfg_ns = dict_to_namespace(cfg)
+            self.check_config(cfg_ns, skip_none=True)
+
+            self._logger.info('Parsed environment variables.')
 
         except TypeError as ex:
             self.error(str(ex))
-
-        cfg_ns = dict_to_namespace(cfg)
-        self.check_config(cfg_ns, skip_none=True)
 
         return cfg_ns
 
@@ -529,16 +532,19 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
 
         def check_values(cfg, base=None):
             for key, val in cfg.items():
-                if skip_none and val is None:
-                    continue
                 kbase = key if base is None else base+'.'+key
                 action, _kbase = find_action(self, kbase)
                 if action is not None:
+                    if val is None:
+                        if action.required:
+                            raise TypeError('Key "'+key+'" is required but its value is None.')
+                        elif skip_none:
+                            continue
                     self._check_value_key(action, val, _kbase)
                 elif isinstance(val, dict):
                     check_values(val, kbase)
                 else:
-                    raise KeyError('No action for key '+key+' to check its value.')
+                    raise KeyError('No action for key "'+key+'" to check its value.')
 
         check_values(cfg)
 
@@ -748,12 +754,13 @@ class ActionConfigFile(Action):
         except TypeError as ex:
             try:
                 cfg_path = None
-                cfg_file = parser.parse_string(value, env=False, defaults=False, nested=False)
+                cfg_file = parser.parse_string(value, env=False, defaults=False)
             except:
                 raise TypeError('Parser key "'+dest+'": '+str(ex))
         else:
-            cfg_file = parser.parse_path(value, env=False, defaults=False, nested=False)
-        parser.check_config(_flat_namespace_to_dict(cfg_file), skip_none=True)
+            cfg_file = parser.parse_path(value, env=False, defaults=False)
+        parser.check_config(cfg_file, skip_none=True)
+        cfg_file = _dict_to_flat_namespace(namespace_to_dict(cfg_file))
         getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():
             setattr(namespace, key, val)
