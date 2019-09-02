@@ -6,14 +6,15 @@
     :target: https://github.com/omni-us/jsonargparse
 
 
-jsonargparse python module
-==========================
+jsonargparse (former yamlargparse)
+==================================
 
 https://omni-us.github.io/jsonargparse/
 
 This module is an extension to python's argparse which simplifies parsing of
-configuration options from command line arguments, json supersets (yaml or
-jsonnet) configuration files, environment variables and hard-coded defaults.
+configuration options from command line arguments, json supersets (`yaml
+<https://yaml.org/>`_ or `jsonnet <https://jsonnet.org/>`_) configuration files,
+environment variables and hard-coded defaults.
 
 The aim is similar to other projects such as `configargparse
 <https://pypi.org/project/ConfigArgParse/>`_, `yconf
@@ -22,8 +23,6 @@ The aim is similar to other projects such as `configargparse
 module similar to many already existing ones? The answer is simply that none of
 the existing projects had the exact features we wanted and after analyzing the
 alternatives it seemed simpler to create a new module.
-
-
 
 
 Features
@@ -35,11 +34,11 @@ Features
 
 - Support for nested namespaces which makes it possible to parse config files with non-flat hierarchies.
 
-- Support for two popular supersets of json making config files more versatile and powerful.
+- Support for two popular supersets of json, making config files more versatile and powerful.
 
 - Parsing of relative paths within config files and path lists.
 
-- Several convenient action classes to ease common parsing use cases.
+- Several convenient action classes to ease common parsing use cases (json schemas, comparison operators, ...).
 
 - Default behavior is not identical to argparse, though it is possible to configure it to be identical. The main differences are:
 
@@ -53,9 +52,8 @@ Features
   - **Parsing environment:** environment variables > default config file > defaults.
 
 
-
-Using the module
-================
+Basic usage
+===========
 
 A parser is created just like it is done with argparse. You import the module,
 create a parser object and then add arguments to it. A simple example would be:
@@ -176,8 +174,8 @@ parse environment variables, which might be useful for some use cases in which
 there is no command line call involved.
 
 
-YAML configuration files
-========================
+YAML files
+==========
 
 An important feature of this module is the parsing of yaml files. The dot
 notation hierarchy of the arguments (see :ref:`nested-namespaces`) are
@@ -206,7 +204,7 @@ the following would be observed:
 
 .. code-block:: python
 
-    >>> parser = jsonargparse.ArgumentParser(prog='app')
+    >>> parser = jsonargparse.ArgumentParser()
     >>> parser.add_argument('--lev1.opt1', default='from default 1')
     >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> parser.add_argument('--cfg', action=jsonargparse.ActionConfigFile)
@@ -221,14 +219,110 @@ There are also functions :func:`jsonargparse.ArgumentParser.parse_path` and
 a config contained in a string respectively.
 
 
+Json schemas
+============
+
+The :class:`.ActionJsonSchema` class is provided to allow parsing and validation
+of values using a json schema. This class requires the `jsonschema
+<https://pypi.org/project/jsonschema/>`_ python package. Though note that
+jsonschema is not a requirement of the minimal jsonargparse install. To enable
+this functionality install the module with the *all* extras requires as:
+
+.. code-block:: bash
+
+    $ pip3 install 'jsonargparse[all]'
+
+Check out the `jsonschema documentation
+<https://python-jsonschema.readthedocs.io/>`_ to learn how to write a schema.
+The current version of jsonargparse uses Draft4Validator. Parsing an argument
+using a json schema is done like in the following example:
+
+.. code-block:: python
+
+    >>> schema = {
+    ...     "type" : "object",
+    ...     "properties" : {
+    ...         "price" : {"type" : "number"},
+    ...         "name" : {"type" : "string"},
+    ...     },
+    ... }
+
+    >>> parser.add_argument('--op', action=jsonargparse.ActionJsonSchema(schema=schema))
+
+    >>> parser.parse_args(['--op', '{"price": 1.5, "name": "cookie"}'])
+    namespace(op=namespace(name='cookie', price=1.5))
+
+Instead of giving a json string as argument value, it is also possible to
+provide a path to a json/yaml file, which would be loaded and validated against
+the schema. If the schema defines default values, these will be used by the
+parser to initialize the config values that are not specified. When adding an
+argument with the :class:`.ActionJsonSchema` action, you can use "%s" in the
+:code:`help` string so that in that position the schema will be printed.
+
+
+Jsonnet files
+=============
+
+The Jsonnet support requires `jsonschema
+<https://pypi.org/project/jsonschema/>`_ and `jsonnet
+<https://pypi.org/project/jsonnet/>`_ python packages which are not included
+with minimal jsonargparse install. To enable this functionality install
+jsonargparse with the *all* extras requires as:
+
+.. code-block:: bash
+
+    $ pip3 install 'jsonargparse[all]'
+
+By default an :class:`.ArgumentParser` parses configuration files as yaml.
+However, if instantiated giving as argument :code:`parser_mode='jsonnet'`, then
+:func:`parse_args`, :func:`parse_path` and :func:`parse_string` will expect
+config files to be in jsonnet format instead. Example:
+
+.. code-block:: python
+
+    >>> parser = jsonargparse.ArgumentParser(parser_mode='jsonnet')
+    >>> parser.add_argument('--cfg', action=jsonargparse.ActionConfigFile)
+    >>> cfg = parser.parse_args(['--cfg', 'example.jsonnet'])
+
+Jsonnet files are commonly parametrized, thus requiring external variables for
+parsing. For these cases, instead of changing the parser mode away from yaml,
+the :class:`.ActionJsonnet` class can be used. This action allows to define an
+argument which would be a path to a jsonnet file. Moreover, another argument can
+be specified as the source for any external variables required, which would be
+either a path to or a string containing a json dictionary of variables. Its use
+would be as follows:
+
+.. code-block:: python
+
+        parser = ArgumentParser()
+        parser.add_argument('--in_ext_vars',
+            action=jsonargparse.ActionJsonnetExtVars)
+        parser.add_argument('--in_jsonnet',
+            action=jsonargparse.ActionJsonnet(ext_vars='in_ext_vars'))
+
+For example, if a jsonnet file required some external variable :code:`param`,
+then the jsonnet and the external variable could be given as:
+
+.. code-block:: python
+
+        cfg = parser.parse_args(['--in_ext_vars', '{"param": 123}', '--in_jsonnet', 'path_to_jsonnet'])
+
+Note that the external variables argument must be provided before the jsonnet
+path so that this dictionary already exists when parsing the jsonnet.
+
+The :class:`.ActionJsonnet` class also accepts as argument a json schema, in
+which case the jsonnet would be validated against this schema right after
+parsing.
+
+
 Parsing paths
 =============
 
 For some use cases it is necessary to parse file paths, checking its existence
 and access permissions, but not necessarily opening the file. Moreover, a file
-path could be included in a yaml file as relative with respect to the yaml
+path could be included in a config file as relative with respect to the config
 file's location. After parsing it should be easy to access the parsed file path
-without having to consider the location of the yaml file. To help in these
+without having to consider the location of the config file. To help in these
 situations jsonargparse includes the :class:`.ActionPath` and the
 :class:`.ActionPathList` classes.
 
@@ -247,7 +341,7 @@ and is readable, the following could be done:
 
 .. code-block:: python
 
-    >>> parser = jsonargparse.ArgumentParser(prog='app')
+    >>> parser = jsonargparse.ArgumentParser()
     >>> parser.add_argument('--databases.info', action=jsonargparse.ActionPath(mode='fr'))
     >>> cfg = parser.parse_path('app/config.yaml')
 
@@ -298,43 +392,6 @@ examples of arguments that can be added using this action are the following:
     parser.add_argument('--op3', action=jsonargparse.ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
 
 
-Json schemas
-============
-
-The :class:`.ActionJsonSchema` class is provided to allow parsing and validation
-of values using a json schema. This class requires the `jsonschema
-<https://pypi.org/project/jsonschema/>`_ python package. Though note that
-jsonschema is not a requirement of jsonargparse, so to use
-:class:`.ActionJsonSchema` it is required to explicitly install jsonschema.
-
-Check out the `jsonschema documentation
-<https://python-jsonschema.readthedocs.io/>`_ to learn how to write a schema.
-The current version of jsonargparse uses Draft4Validator. Parsing an argument
-using a json schema is done like in the following example:
-
-.. code-block:: python
-
-    >>> schema = {
-    ...     "type" : "object",
-    ...     "properties" : {
-    ...         "price" : {"type" : "number"},
-    ...         "name" : {"type" : "string"},
-    ...     },
-    ... }
-
-    >>> parser.add_argument('--op', action=jsonargparse.ActionJsonSchema(schema=schema))
-
-    >>> parser.parse_args(['--op', '{"price": 1.5, "name": "cookie"}'])
-    namespace(op=namespace(name='cookie', price=1.5))
-
-Instead of giving a json string as argument value, it is also possible to
-provide a path to a json/yaml file, which would be loaded and validated against
-the schema. If the schema defines default values, these will be used by the
-parser to initialize the config values that are not specified. When adding an
-argument with the :class:`.ActionJsonSchema` action, you can use "%s" in the
-:code:`help` string so that in that position the schema will be printed.
-
-
 Yes/No arguments
 ================
 
@@ -357,10 +414,10 @@ If the :class:`.ActionYesNo` class is used in conjunction with
 Parsing with another parser
 ===========================
 
-Sometimes an element in a yaml file could be a path to another yaml file with a
-complex structure which should also be parsed. To handle these cases there is
-the :class:`.ActionParser` class which receives as argument a jsonargparse
-parser object. For example:
+Sometimes an element in a config file could be a path to another config file
+with a complex structure which should also be parsed. To handle these cases
+there is the :class:`.ActionParser` class which receives as argument a
+jsonargparse parser object. For example:
 
 .. code-block:: python
 

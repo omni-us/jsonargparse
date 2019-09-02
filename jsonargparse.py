@@ -215,11 +215,12 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         return dict_to_namespace(_flat_namespace_to_dict(cfg))
 
 
-    def parse_path(self, cfg_path:str, env:bool=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
+    def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
             cfg_path (str): Path to the configuration file to parse.
+            ext_vars (dict): Optional external variables used for parsing jsonnet.
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
@@ -234,7 +235,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         os.chdir(os.path.abspath(os.path.join(cfg_path, os.pardir)))
         try:
             with open(os.path.basename(cfg_path), 'r') as f:
-                parsed_cfg = self.parse_string(f.read(), env, defaults, nested, log=False)
+                parsed_cfg = self.parse_string(f.read(), cfg_path, ext_vars, env, defaults, nested, log=False)
         finally:
             os.chdir(cwd)
 
@@ -243,11 +244,13 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         return parsed_cfg
 
 
-    def parse_string(self, cfg_str:str, env:bool=None, defaults:bool=True, nested:bool=True, log:bool=True) -> SimpleNamespace:
+    def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True, log:bool=True) -> SimpleNamespace:
         """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
             cfg_str (str): The configuration content.
+            cfg_path (str): Optional path to original config path, just for error printing.
+            ext_vars (dict): Optional external variables used for parsing jsonnet.
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
@@ -259,7 +262,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            cfg = self._load_cfg(cfg_str)
+            cfg = self._load_cfg(cfg_str, cfg_path, ext_vars)
 
             if nested:
                 cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
@@ -282,22 +285,25 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         return cfg_ns
 
 
-    def _load_cfg(self, cfg_str:str) -> Dict[str, Any]:
+    def _load_cfg(self, cfg_str:str, cfg_path:str='', ext_vars:dict=None) -> Dict[str, Any]:
         """Loads a configuration string (yaml or jsonnet) into a namespace checking all values against the parser.
 
         Args:
             cfg_str (str): The configuration content.
+            cfg_path (str): Optional path to original config path, just for error printing.
+            ext_vars (dict): Optional external variables used for parsing jsonnet.
 
         Raises:
             TypeError: If there is an invalid value according to the parser.
         """
         if self.parser_mode == 'jsonnet':
-            cfg_str = _jsonnet.evaluate_snippet('', cfg_str)
+            ext_vars, ext_codes = ActionJsonnet.split_ext_vars(ext_vars)
+            cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)
         cfg = yaml.safe_load(cfg_str)
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         for action in self._actions:
             if action.dest in cfg:
-                cfg[action.dest] = self._check_value_key(action, cfg[action.dest], action.dest)
+                cfg[action.dest] = self._check_value_key(action, cfg[action.dest], action.dest, cfg)
         return cfg
 
 
@@ -419,7 +425,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                         ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
                         cfg = vars(namespace)
                     else:
-                        cfg[action.dest] = self._check_value_key(action, env[env_var], env_var)
+                        cfg[action.dest] = self._check_value_key(action, env[env_var], env_var, cfg)
 
             if nested:
                 cfg = _flat_namespace_to_dict(SimpleNamespace(**cfg))
@@ -516,7 +522,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             TypeError: If any of the values are not valid.
             KeyError: If a key in cfg is not defined in the parser.
         """
-        cfg = deepcopy(cfg)
+        cfg = ccfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
             cfg = namespace_to_dict(cfg)
 
@@ -540,7 +546,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                             raise TypeError('Key "'+key+'" is required but its value is None.')
                         elif skip_none:
                             continue
-                    self._check_value_key(action, val, _kbase)
+                    self._check_value_key(action, val, _kbase, ccfg)
                 elif isinstance(val, dict):
                     check_values(val, kbase)
                 else:
@@ -592,7 +598,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
 
 
     @staticmethod
-    def _check_value_key(action:Action, value:Any, key:str) -> Any:
+    def _check_value_key(action:Action, value:Any, key:str, cfg) -> Any:
         """Checks the value for a given action.
 
         Args:
@@ -612,13 +618,31 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                 msg = 'invalid choice: %(value)r (choose from %(choices)s).'
                 raise TypeError('Parser key "'+str(key)+'": '+(msg % args))
         elif hasattr(action, '_check_type'):
-            value = action._check_type(value)  # type: ignore
+            value = action._check_type(value, cfg=cfg)  # type: ignore
         elif action.type is not None:
             try:
                 value = action.type(value)
             except (TypeError, ValueError) as ex:
                 raise TypeError('Parser key "'+str(key)+'": '+str(ex))
         return value
+
+
+def _get_key_value(cfg, key):
+    """Gets the value for a given key in a config object (dict, SimpleNamespace or argparse.Namespace)."""
+    def key_in_cfg(cfg, key):
+        if isinstance(cfg, (SimpleNamespace, argparse.Namespace)) and hasattr(cfg, key):
+            return True
+        elif isinstance(cfg, dict) and key in cfg:
+            return True
+        return False
+
+    c = cfg
+    k = key
+    while '.' in key and not key_in_cfg(c, k):
+        kp, k = k.split('.', 1)
+        c = c[kp] if isinstance(c, dict) else getattr(c, kp)
+
+    return c[k] if isinstance(c, dict) else getattr(c, k)
 
 
 def _flat_namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
@@ -864,7 +888,7 @@ class ActionJsonSchema(Action):
             return ActionJsonSchema(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
-    def _check_type(self, value):
+    def _check_type(self, value, cfg=None):
         islist = _is_action_value_list(self)
         if not islist:
             value = [value]
@@ -913,6 +937,7 @@ class ActionJsonnet(Action):
         """Initializer for ActionJsonnet instance.
 
         Args:
+            ext_vars (str or None): Key where to find the external variables required to parse the jsonnet.
             schema (str or object or None): Schema to validate values against. Keyword argument required even if schema=None.
 
         Raises:
@@ -920,11 +945,14 @@ class ActionJsonnet(Action):
             ValueError: If a parameter is invalid.
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
-        if 'schema' in kwargs:
+        if 'ext_vars' in kwargs or 'schema' in kwargs:
             if isinstance(_jsonnet, Exception):
                 raise ImportError('jsonnet is required by ActionJsonnet :: '+str(_jsonnet))
-            _check_unknown_kwargs(kwargs, {'schema'})
-            schema = kwargs['schema']
+            _check_unknown_kwargs(kwargs, {'schema', 'ext_vars'})
+            if 'ext_vars' in kwargs and not isinstance(kwargs['ext_vars'], (str, type(None))):
+                raise ValueError('ext_vars has to be either None or a string.')
+            self._ext_vars = kwargs['ext_vars'] if 'ext_vars' in kwargs else None
+            schema = kwargs['schema'] if 'schema' in kwargs else None
             if schema is not None:
                 if isinstance(jsonvalidator, Exception):
                     raise ImportError('jsonschema is required by ActionJsonnet :: '+str(jsonvalidator))
@@ -934,9 +962,10 @@ class ActionJsonnet(Action):
                 self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             else:
                 self._validator = None
-        elif '_validator' not in kwargs:
-            raise ValueError('Expected schema keyword argument.')
+        elif '_ext_vars' not in kwargs or '_validator' not in kwargs:
+            raise ValueError('Expected ext_vars and/or schema keyword arguments.')
         else:
+            self._ext_vars = kwargs.pop('_ext_vars')
             self._validator = kwargs.pop('_validator')
             kwargs['type'] = str
             super().__init__(**kwargs)
@@ -948,14 +977,21 @@ class ActionJsonnet(Action):
             TypeError: If the argument is not valid.
         """
         if len(args) == 0:
+            kwargs['_ext_vars'] = self._ext_vars
             kwargs['_validator'] = self._validator
             if 'help' in kwargs and '%s' in kwargs['help'] and self._validator is not None:
                 kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, indent=2, sort_keys=True)
             return ActionJsonnet(**kwargs)
-        setattr(args[1], self.dest, self._check_type(args[2]))
+        setattr(args[1], self.dest, self._check_type(args[2], cfg=args[1]))
 
-    def _check_type(self, value):
+    def _check_type(self, value, cfg):
         islist = _is_action_value_list(self)
+        ext_vars = {}
+        if self._ext_vars is not None:
+            try:
+                ext_vars = _get_key_value(cfg, self._ext_vars)
+            except Exception as ex:
+                raise ValueError('Unable to find key "'+self._ext_vars+'" in config object :: '+str(ex))
         if not islist:
             value = [value]
         elif not isinstance(value, list):
@@ -963,8 +999,8 @@ class ActionJsonnet(Action):
         for num, val in enumerate(value):
             try:
                 if isinstance(val, str):
-                    val = yaml.safe_load(_jsonnet.evaluate_file(val))
-                if self._validator is not None:
+                    val = self.parse(val, ext_vars=ext_vars)
+                elif self._validator is not None:
                     if isinstance(val, SimpleNamespace):
                         self._validator.validate(namespace_to_dict(val))
                     else:
@@ -975,12 +1011,27 @@ class ActionJsonnet(Action):
                 raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex))
         return value if islist else value[0]
 
+    @staticmethod
+    def split_ext_vars(ext_vars):
+        """Splits an ext_vars dict into the ext_codes and ext_vars required by jsonnet.
+
+        Args:
+            ext_vars (dict): External variables. Values can be strings or any other basic type.
+        """
+        if ext_vars is None:
+            ext_vars = {}
+        elif isinstance(ext_vars, SimpleNamespace):
+            ext_vars = namespace_to_dict(ext_vars)
+        ext_codes = {k: json.dumps(v) for k, v in ext_vars.items() if not isinstance(v, str)}
+        ext_vars = {k: v for k, v in ext_vars.items() if isinstance(v, str)}
+        return ext_vars, ext_codes
+
     def parse(self, jsonnet, ext_vars={}):
         """Method that can be used to parse jsonnet independent from an ArgumentParser.
 
         Args:
             jsonnet (str): Either a path to a jsonnet file or the jsonnet content.
-            ext_vars (dict or SimpleNamespace): Dictionary of external variables. Values can be strings or any other basic type.
+            ext_vars (dict): External variables. Values can be strings or any other basic type.
 
         Returns:
             SimpleNamespace: The parsed jsonnet object.
@@ -988,15 +1039,12 @@ class ActionJsonnet(Action):
         Raises:
             TypeError: If the input is neither a path to an existent file nor a jsonnet.
         """
-        if isinstance(ext_vars, SimpleNamespace):
-            ext_vars = namespace_to_dict(ext_vars)
-        ext_codes = {k: json.dumps(v) for k, v in ext_vars.items() if not isinstance(v, str)}
-        ext_vars = {k: v for k, v in ext_vars.items() if isinstance(v, str)}
+        ext_vars, ext_codes = self.split_ext_vars(ext_vars)
         try:
             Path(jsonnet, mode='fr')
         except TypeError as ex:
             try:
-                values = yaml.safe_load(_jsonnet.evaluate_snippet(jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
+                values = yaml.safe_load(_jsonnet.evaluate_snippet('', jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
             except:
                 raise ex
         else:
@@ -1040,7 +1088,7 @@ class ActionParser(Action):
             return ActionParser(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
-    def _check_type(self, value):
+    def _check_type(self, value, cfg=None):
         try:
             if isinstance(value, str):
                 cfg_path = Path(value, mode='fr')
@@ -1113,7 +1161,7 @@ class ActionOperators(Action):
             return ActionOperators(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
-    def _check_type(self, value):
+    def _check_type(self, value, cfg=None):
         islist = _is_action_value_list(self)
         if not islist:
             value = [value]
@@ -1172,7 +1220,7 @@ class ActionPath(Action):
             return ActionPath(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
-    def _check_type(self, value, islist=None):
+    def _check_type(self, value, cfg=None, islist=None):
         islist = _is_action_value_list(self) if islist is None else islist
         if not islist:
             value = [value]
@@ -1233,7 +1281,7 @@ class ActionPathList(Action):
             return ActionPathList(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
-    def _check_type(self, value):
+    def _check_type(self, value, cfg=None):
         if value == []:
             return value
         islist = _is_action_value_list(self)
@@ -1395,3 +1443,9 @@ def _check_unknown_kwargs(kwargs:Dict[str, Any], keys:Set[str]):
     """
     if len(set(kwargs.keys())-keys) > 0:
         raise ValueError('Unexpected keyword arguments: '+', '.join(set(kwargs.keys())-keys)+'.')
+
+
+if not isinstance(_jsonnet, Exception) and not isinstance(jsonvalidator, Exception):
+    ActionJsonnetExtVars = ActionJsonSchema(schema={'type': 'object'})
+else:
+    ActionJsonnetExtVars = _jsonnet if isinstance(_jsonnet, Exception) else jsonvalidator

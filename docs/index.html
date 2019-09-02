@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse python module &mdash; jsonargparse master/v2.1.1+1commits/2019.09.01 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.1.1+2commits/2019.09.02 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.1.1+1commits/2019.09.01
+                master/v2.1.1+2commits/2019.09.02
               </div>
             
           
@@ -84,15 +84,16 @@
             
               <!-- Local TOC -->
               <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">jsonargparse python module</a></li>
+<li><a class="reference internal" href="#">jsonargparse (former yamlargparse)</a></li>
 <li><a class="reference internal" href="#features">Features</a></li>
-<li><a class="reference internal" href="#using-the-module">Using the module</a></li>
+<li><a class="reference internal" href="#basic-usage">Basic usage</a></li>
 <li><a class="reference internal" href="#nested-namespaces">Nested namespaces</a></li>
 <li><a class="reference internal" href="#environment-variables">Environment variables</a></li>
-<li><a class="reference internal" href="#yaml-configuration-files">YAML configuration files</a></li>
+<li><a class="reference internal" href="#yaml-files">YAML files</a></li>
+<li><a class="reference internal" href="#json-schemas">Json schemas</a></li>
+<li><a class="reference internal" href="#jsonnet-files">Jsonnet files</a></li>
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
 <li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
-<li><a class="reference internal" href="#json-schemas">Json schemas</a></li>
 <li><a class="reference internal" href="#yes-no-arguments">Yes/No arguments</a></li>
 <li><a class="reference internal" href="#parsing-with-another-parser">Parsing with another parser</a></li>
 <li><a class="reference internal" href="#module-jsonargparse">API Reference</a></li>
@@ -143,7 +144,7 @@
     
       <li><a href="#">Docs</a> &raquo;</li>
         
-      <li>jsonargparse python module</li>
+      <li>jsonargparse (former yamlargparse)</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -165,12 +166,12 @@
   <a class="reference external image-reference" href="https://circleci.com/gh/omni-us/jsonargparse"><img alt="https://circleci.com/gh/omni-us/jsonargparse.svg?style=svg" src="https://circleci.com/gh/omni-us/jsonargparse.svg?style=svg" /></a>
 <a class="reference external image-reference" href="https://badge.fury.io/py/jsonargparse"><img alt="https://badge.fury.io/py/jsonargparse.svg" src="https://badge.fury.io/py/jsonargparse.svg" /></a>
 <a class="reference external image-reference" href="https://github.com/omni-us/jsonargparse"><img alt="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
-<div class="section" id="jsonargparse-python-module">
-<h1>jsonargparse python module<a class="headerlink" href="#jsonargparse-python-module" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="jsonargparse-former-yamlargparse">
+<h1>jsonargparse (former yamlargparse)<a class="headerlink" href="#jsonargparse-former-yamlargparse" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://omni-us.github.io/jsonargparse/">https://omni-us.github.io/jsonargparse/</a></p>
 <p>This module is an extension to python’s argparse which simplifies parsing of
-configuration options from command line arguments, json supersets (yaml or
-jsonnet) configuration files, environment variables and hard-coded defaults.</p>
+configuration options from command line arguments, json supersets (<a class="reference external" href="https://yaml.org/">yaml</a> or <a class="reference external" href="https://jsonnet.org/">jsonnet</a>) configuration files,
+environment variables and hard-coded defaults.</p>
 <p>The aim is similar to other projects such as <a class="reference external" href="https://pypi.org/project/ConfigArgParse/">configargparse</a>, <a class="reference external" href="https://pypi.org/project/yconf/">yconf</a> and <a class="reference external" href="https://pypi.org/project/confuse/">confuse</a>. The obvious question is, why yet another
 module similar to many already existing ones? The answer is simply that none of
 the existing projects had the exact features we wanted and after analyzing the
@@ -182,9 +183,9 @@ alternatives it seemed simpler to create a new module.</p>
 <li><p>Parsers are configured just like with python’s argparse, thus it has a gentile learning curve.</p></li>
 <li><p>Not exclusively intended for parsing command line arguments. The main focus is parsing yaml or jsonnet configuration files and not necessarily from a command line tool.</p></li>
 <li><p>Support for nested namespaces which makes it possible to parse config files with non-flat hierarchies.</p></li>
-<li><p>Support for two popular supersets of json making config files more versatile and powerful.</p></li>
+<li><p>Support for two popular supersets of json, making config files more versatile and powerful.</p></li>
 <li><p>Parsing of relative paths within config files and path lists.</p></li>
-<li><p>Several convenient action classes to ease common parsing use cases.</p></li>
+<li><p>Several convenient action classes to ease common parsing use cases (json schemas, comparison operators, …).</p></li>
 <li><p>Default behavior is not identical to argparse, though it is possible to configure it to be identical. The main differences are:</p>
 <ul>
 <li><p>When parsing fails <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, instead of printing usage and program exit.</p></li>
@@ -200,8 +201,8 @@ alternatives it seemed simpler to create a new module.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="using-the-module">
-<h1>Using the module<a class="headerlink" href="#using-the-module" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="basic-usage">
+<h1>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h1>
 <p>A parser is created just like it is done with argparse. You import the module,
 create a parser object and then add arguments to it. A simple example would be:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">jsonargparse</span>
@@ -300,8 +301,8 @@ check environment variables, so it has to be enabled explicitly.</p>
 parse environment variables, which might be useful for some use cases in which
 there is no command line call involved.</p>
 </div>
-<div class="section" id="yaml-configuration-files">
-<h1>YAML configuration files<a class="headerlink" href="#yaml-configuration-files" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="yaml-files">
+<h1>YAML files<a class="headerlink" href="#yaml-files" title="Permalink to this headline">¶</a></h1>
 <p>An important feature of this module is the parsing of yaml files. The dot
 notation hierarchy of the arguments (see <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a>) are
 used for the expected structure of the yaml files.</p>
@@ -322,7 +323,7 @@ following yaml:</p>
 </div>
 <p>Then in python adding a yaml file argument and parsing some example arguments,
 the following would be observed:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 2&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionConfigFile</span><span class="p">)</span>
@@ -337,13 +338,88 @@ the following would be observed:</p>
 <a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_string()</span></code></a> to only parse a config file or
 a config contained in a string respectively.</p>
 </div>
+<div class="section" id="json-schemas">
+<h1>Json schemas<a class="headerlink" href="#json-schemas" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> class is provided to allow parsing and validation
+of values using a json schema. This class requires the <a class="reference external" href="https://pypi.org/project/jsonschema/">jsonschema</a> python package. Though note that
+jsonschema is not a requirement of the minimal jsonargparse install. To enable
+this functionality install the module with the <em>all</em> extras requires as:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip3 install <span class="s1">&#39;jsonargparse[all]&#39;</span>
+</pre></div>
+</div>
+<p>Check out the <a class="reference external" href="https://python-jsonschema.readthedocs.io/">jsonschema documentation</a> to learn how to write a schema.
+The current version of jsonargparse uses Draft4Validator. Parsing an argument
+using a json schema is done like in the following example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">schema</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;properties&quot;</span> <span class="p">:</span> <span class="p">{</span>
+<span class="gp">... </span>        <span class="s2">&quot;price&quot;</span> <span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;number&quot;</span><span class="p">},</span>
+<span class="gp">... </span>        <span class="s2">&quot;name&quot;</span> <span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span><span class="p">}</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">))</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="s1">&#39;{&quot;price&quot;: 1.5, &quot;name&quot;: &quot;cookie&quot;}&#39;</span><span class="p">])</span>
+<span class="go">namespace(op=namespace(name=&#39;cookie&#39;, price=1.5))</span>
+</pre></div>
+</div>
+<p>Instead of giving a json string as argument value, it is also possible to
+provide a path to a json/yaml file, which would be loaded and validated against
+the schema. If the schema defines default values, these will be used by the
+parser to initialize the config values that are not specified. When adding an
+argument with the <a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> action, you can use “%s” in the
+<code class="code docutils literal notranslate"><span class="pre">help</span></code> string so that in that position the schema will be printed.</p>
+</div>
+<div class="section" id="jsonnet-files">
+<h1>Jsonnet files<a class="headerlink" href="#jsonnet-files" title="Permalink to this headline">¶</a></h1>
+<p>The Jsonnet support requires <a class="reference external" href="https://pypi.org/project/jsonschema/">jsonschema</a> and <a class="reference external" href="https://pypi.org/project/jsonnet/">jsonnet</a> python packages which are not included
+with minimal jsonargparse install. To enable this functionality install
+jsonargparse with the <em>all</em> extras requires as:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip3 install <span class="s1">&#39;jsonargparse[all]&#39;</span>
+</pre></div>
+</div>
+<p>By default an <a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a> parses configuration files as yaml.
+However, if instantiated giving as argument <code class="code docutils literal notranslate"><span class="pre">parser_mode='jsonnet'</span></code>, then
+<code class="xref py py-func docutils literal notranslate"><span class="pre">parse_args()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">parse_path()</span></code> and <code class="xref py py-func docutils literal notranslate"><span class="pre">parse_string()</span></code> will expect
+config files to be in jsonnet format instead. Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">parser_mode</span><span class="o">=</span><span class="s1">&#39;jsonnet&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionConfigFile</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="s1">&#39;example.jsonnet&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Jsonnet files are commonly parametrized, thus requiring external variables for
+parsing. For these cases, instead of changing the parser mode away from yaml,
+the <a class="reference internal" href="#jsonargparse.ActionJsonnet" title="jsonargparse.ActionJsonnet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonnet</span></code></a> class can be used. This action allows to define an
+argument which would be a path to a jsonnet file. Moreover, another argument can
+be specified as the source for any external variables required, which would be
+either a path to or a string containing a json dictionary of variables. Its use
+would be as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--in_ext_vars&#39;</span><span class="p">,</span>
+    <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionJsonnetExtVars</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--in_jsonnet&#39;</span><span class="p">,</span>
+    <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionJsonnet</span><span class="p">(</span><span class="n">ext_vars</span><span class="o">=</span><span class="s1">&#39;in_ext_vars&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>For example, if a jsonnet file required some external variable <code class="code docutils literal notranslate"><span class="pre">param</span></code>,
+then the jsonnet and the external variable could be given as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--in_ext_vars&#39;</span><span class="p">,</span> <span class="s1">&#39;{&quot;param&quot;: 123}&#39;</span><span class="p">,</span> <span class="s1">&#39;--in_jsonnet&#39;</span><span class="p">,</span> <span class="s1">&#39;path_to_jsonnet&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Note that the external variables argument must be provided before the jsonnet
+path so that this dictionary already exists when parsing the jsonnet.</p>
+<p>The <a class="reference internal" href="#jsonargparse.ActionJsonnet" title="jsonargparse.ActionJsonnet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonnet</span></code></a> class also accepts as argument a json schema, in
+which case the jsonnet would be validated against this schema right after
+parsing.</p>
+</div>
 <div class="section" id="parsing-paths">
 <h1>Parsing paths<a class="headerlink" href="#parsing-paths" title="Permalink to this headline">¶</a></h1>
 <p>For some use cases it is necessary to parse file paths, checking its existence
 and access permissions, but not necessarily opening the file. Moreover, a file
-path could be included in a yaml file as relative with respect to the yaml
+path could be included in a config file as relative with respect to the config
 file’s location. After parsing it should be easy to access the parsed file path
-without having to consider the location of the yaml file. To help in these
+without having to consider the location of the config file. To help in these
 situations jsonargparse includes the <a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> and the
 <a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> classes.</p>
 <p>For example suppose you have a directory with a configuration file
@@ -356,7 +432,7 @@ the yaml file is the following:</p>
 </div>
 <p>To create a parser that checks that the value of <code class="code docutils literal notranslate"><span class="pre">databases.info</span></code> exists
 and is readable, the following could be done:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--databases.info&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionPath</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="s1">&#39;app/config.yaml&#39;</span><span class="p">)</span>
 </pre></div>
@@ -399,36 +475,6 @@ examples of arguments that can be added using this action are the following:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="json-schemas">
-<h1>Json schemas<a class="headerlink" href="#json-schemas" title="Permalink to this headline">¶</a></h1>
-<p>The <a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> class is provided to allow parsing and validation
-of values using a json schema. This class requires the <a class="reference external" href="https://pypi.org/project/jsonschema/">jsonschema</a> python package. Though note that
-jsonschema is not a requirement of jsonargparse, so to use
-<a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> it is required to explicitly install jsonschema.</p>
-<p>Check out the <a class="reference external" href="https://python-jsonschema.readthedocs.io/">jsonschema documentation</a> to learn how to write a schema.
-The current version of jsonargparse uses Draft4Validator. Parsing an argument
-using a json schema is done like in the following example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">schema</span> <span class="o">=</span> <span class="p">{</span>
-<span class="gp">... </span>    <span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="s2">&quot;properties&quot;</span> <span class="p">:</span> <span class="p">{</span>
-<span class="gp">... </span>        <span class="s2">&quot;price&quot;</span> <span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;number&quot;</span><span class="p">},</span>
-<span class="gp">... </span>        <span class="s2">&quot;name&quot;</span> <span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
-<span class="gp">... </span>    <span class="p">},</span>
-<span class="gp">... </span><span class="p">}</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">))</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="s1">&#39;{&quot;price&quot;: 1.5, &quot;name&quot;: &quot;cookie&quot;}&#39;</span><span class="p">])</span>
-<span class="go">namespace(op=namespace(name=&#39;cookie&#39;, price=1.5))</span>
-</pre></div>
-</div>
-<p>Instead of giving a json string as argument value, it is also possible to
-provide a path to a json/yaml file, which would be loaded and validated against
-the schema. If the schema defines default values, these will be used by the
-parser to initialize the config values that are not specified. When adding an
-argument with the <a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> action, you can use “%s” in the
-<code class="code docutils literal notranslate"><span class="pre">help</span></code> string so that in that position the schema will be printed.</p>
-</div>
 <div class="section" id="yes-no-arguments">
 <h1>Yes/No arguments<a class="headerlink" href="#yes-no-arguments" title="Permalink to this headline">¶</a></h1>
 <p>When parsing boolean values from the command line, sometimes it is useful to
@@ -446,10 +492,10 @@ define two paired options, one to set to true and the other for false. The
 </div>
 <div class="section" id="parsing-with-another-parser">
 <h1>Parsing with another parser<a class="headerlink" href="#parsing-with-another-parser" title="Permalink to this headline">¶</a></h1>
-<p>Sometimes an element in a yaml file could be a path to another yaml file with a
-complex structure which should also be parsed. To handle these cases there is
-the <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> class which receives as argument a jsonargparse
-parser object. For example:</p>
+<p>Sometimes an element in a config file could be a path to another config file
+with a complex structure which should also be parsed. To handle these cases
+there is the <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> class which receives as argument a
+jsonargparse parser object. For example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--complex.node&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionParser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">node_parser</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -632,10 +678,10 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_env" title="jsonargparse.ArgumentParser.parse_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_env</span></code></a>(env, str] = None, defaults, nested)</p></td>
 <td><p>Parses environment variables.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, env, defaults, nested)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, ext_vars, env, …)</p></td>
 <td><p>Parses a configuration file (yaml or jsonnet) given its path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, env, defaults, nested, log)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, cfg_path, ext_vars, …)</p></td>
 <td><p>Parses configuration (yaml or jsonnet) given as a string.</p></td>
 </tr>
 </tbody>
@@ -713,12 +759,13 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_path">
-<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a configuration file (yaml or jsonnet) given its path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cfg_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path to the configuration file to parse.</p></li>
+<li><p><strong>ext_vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – Optional external variables used for parsing jsonnet.</p></li>
 <li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Whether to merge with the parsed environment. None means use the ArgumentParser’s default.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
@@ -738,12 +785,14 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_string">
-<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">log: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">cfg_path: str = ''</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">log: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses configuration (yaml or jsonnet) given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cfg_str</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The configuration content.</p></li>
+<li><p><strong>cfg_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Optional path to original config path, just for error printing.</p></li>
+<li><p><strong>ext_vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – Optional external variables used for parsing jsonnet.</p></li>
 <li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Whether to merge with the parsed environment. None means use the ArgumentParser’s default.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
@@ -1007,7 +1056,7 @@ are supported. Additionally it accepts:</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>yes_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for yes option (default=’’).</p></li>
-<li><p><strong>no_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for no option (default=’<a href="#id2"><span class="problematic" id="id3">no_</span></a>’).</p></li>
+<li><p><strong>no_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix for no option (default=’<a href="#id4"><span class="problematic" id="id5">no_</span></a>’).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises</dt>
@@ -1096,6 +1145,9 @@ are supported. Additionally it accepts:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet.parse" title="jsonargparse.ActionJsonnet.parse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse</span></code></a>(jsonnet[, ext_vars])</p></td>
 <td><p>Method that can be used to parse jsonnet independent from an ArgumentParser.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet.split_ext_vars" title="jsonargparse.ActionJsonnet.split_ext_vars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_ext_vars</span></code></a>(ext_vars)</p></td>
+<td><p>Splits an ext_vars dict into the ext_codes and ext_vars required by jsonnet.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="method">
@@ -1104,7 +1156,10 @@ are supported. Additionally it accepts:</p>
 <dd><p>Initializer for ActionJsonnet instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>schema</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Schema to validate values against. Keyword argument required even if schema=None.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ext_vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Key where to find the external variables required to parse the jsonnet.</p></li>
+<li><p><strong>schema</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><em>object</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Schema to validate values against. Keyword argument required even if schema=None.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><ul class="simple">
@@ -1128,6 +1183,17 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="jsonargparse.ActionJsonnet.split_ext_vars">
+<em class="property">static </em><code class="sig-name descname">split_ext_vars</code><span class="sig-paren">(</span><em class="sig-param">ext_vars</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnet.split_ext_vars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnet.split_ext_vars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Splits an ext_vars dict into the ext_codes and ext_vars required by jsonnet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ext_vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – External variables. Values can be strings or any other basic type.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="jsonargparse.ActionJsonnet.parse">
 <code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">jsonnet</em>, <em class="sig-param">ext_vars={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnet.parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnet.parse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method that can be used to parse jsonnet independent from an ArgumentParser.</p>
@@ -1135,7 +1201,7 @@ are supported. Additionally it accepts:</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>jsonnet</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Either a path to a jsonnet file or the jsonnet content.</p></li>
-<li><p><strong>ext_vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a><em> or </em><em>SimpleNamespace</em>) – Dictionary of external variables. Values can be strings or any other basic type.</p></li>
+<li><p><strong>ext_vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – External variables. Values can be strings or any other basic type.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
