@@ -13,13 +13,13 @@ https://omni-us.github.io/jsonargparse/
 
 This module is an extension to python's argparse which simplifies parsing of
 configuration options from command line arguments, json supersets (`yaml
-<https://yaml.org/>`_ or `jsonnet <https://jsonnet.org/>`_) configuration files,
+<https://yaml.org/>`__ or `jsonnet <https://jsonnet.org/>`__) configuration files,
 environment variables and hard-coded defaults.
 
 The aim is similar to other projects such as `configargparse
-<https://pypi.org/project/ConfigArgParse/>`_, `yconf
-<https://pypi.org/project/yconf/>`_ and `confuse
-<https://pypi.org/project/confuse/>`_. The obvious question is, why yet another
+<https://pypi.org/project/ConfigArgParse/>`__, `yconf
+<https://pypi.org/project/yconf/>`__ and `confuse
+<https://pypi.org/project/confuse/>`__. The obvious question is, why yet another
 module similar to many already existing ones? The answer is simply that none of
 the existing projects had the exact features we wanted and after analyzing the
 alternatives it seemed simpler to create a new module.
@@ -224,7 +224,7 @@ Json schemas
 
 The :class:`.ActionJsonSchema` class is provided to allow parsing and validation
 of values using a json schema. This class requires the `jsonschema
-<https://pypi.org/project/jsonschema/>`_ python package. Though note that
+<https://pypi.org/project/jsonschema/>`__ python package. Though note that
 jsonschema is not a requirement of the minimal jsonargparse install. To enable
 this functionality install the module with the *all* extras requires as:
 
@@ -233,7 +233,7 @@ this functionality install the module with the *all* extras requires as:
     $ pip3 install 'jsonargparse[all]'
 
 Check out the `jsonschema documentation
-<https://python-jsonschema.readthedocs.io/>`_ to learn how to write a schema.
+<https://python-jsonschema.readthedocs.io/>`__ to learn how to write a schema.
 The current version of jsonargparse uses Draft4Validator. Parsing an argument
 using a json schema is done like in the following example:
 
@@ -264,8 +264,8 @@ Jsonnet files
 =============
 
 The Jsonnet support requires `jsonschema
-<https://pypi.org/project/jsonschema/>`_ and `jsonnet
-<https://pypi.org/project/jsonnet/>`_ python packages which are not included
+<https://pypi.org/project/jsonschema/>`__ and `jsonnet
+<https://pypi.org/project/jsonnet/>`__ python packages which are not included
 with minimal jsonargparse install. To enable this functionality install
 jsonargparse with the *all* extras requires as:
 
