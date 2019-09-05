@@ -1,4 +1,3 @@
-
 import os
 import re
 import sys
@@ -12,7 +11,11 @@ from argparse import Action, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE,
 from copy import deepcopy
 from types import SimpleNamespace
 from typing import Any, List, Dict, Set, Union
-from contextlib import contextmanager, redirect_stderr
+try:
+    from contextlib import contextmanager, redirect_stderr
+except:
+    from contextlib2 import contextmanager, redirect_stderr
+
 
 try:
     import jsonschema
