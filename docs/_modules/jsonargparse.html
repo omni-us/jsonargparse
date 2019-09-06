@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse master/v2.2.1+1commits/2019.09.06 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.2.1+3commits/2019.09.06 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.2.1+1commits/2019.09.06
+                master/v2.2.1+3commits/2019.09.06
               </div>
             
           
@@ -145,8 +145,7 @@
            <div itemprop="articleBody">
             
   <h1>Source code for jsonargparse</h1><div class="highlight"><pre>
-<span></span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">glob</span>
@@ -159,7 +158,11 @@
 <span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span> <span class="nn">types</span> <span class="k">import</span> <span class="n">SimpleNamespace</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Union</span>
-<span class="kn">from</span> <span class="nn">contextlib</span> <span class="k">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">contextlib</span> <span class="k">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">contextlib2</span> <span class="k">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>  <span class="c1"># type: ignore</span>
+
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">jsonschema</span>

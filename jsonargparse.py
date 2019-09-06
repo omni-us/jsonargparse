@@ -14,7 +14,7 @@ from typing import Any, List, Dict, Set, Union
 try:
     from contextlib import contextmanager, redirect_stderr
 except:
-    from contextlib2 import contextmanager, redirect_stderr
+    from contextlib2 import contextmanager, redirect_stderr  # type: ignore
 
 
 try:
