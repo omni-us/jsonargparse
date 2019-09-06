@@ -38,7 +38,7 @@ Features
 
 - Parsing of relative paths within config files and path lists.
 
-- Several convenient action classes to ease common parsing use cases (json schemas, comparison operators, ...).
+- Several convenient action classes to ease common parsing use cases (paths, comparison operators, json schemas, ...).
 
 - Default behavior is not identical to argparse, though it is possible to configure it to be identical. The main differences are:
 
@@ -214,9 +214,20 @@ the following would be observed:
     >>> cfg.lev1.opt2
     'from arg 2'
 
-There are also functions :func:`jsonargparse.ArgumentParser.parse_path` and
-:func:`jsonargparse.ArgumentParser.parse_string` to only parse a config file or
-a config contained in a string respectively.
+Instead of providing a path to a configuration file, a string with the
+configuration content can also be provided.
+
+.. code-block:: python
+
+    >>> cfg = parser.parse_args(['--cfg', '{"lev1":{"opt1":"from string 1"}}'])
+    >>> cfg.lev1.opt1
+    'from string 1'
+
+A configuration file or string can also be parsed without parsing command line
+arguments. The functions for this are
+:func:`jsonargparse.ArgumentParser.parse_path` and
+:func:`jsonargparse.ArgumentParser.parse_string` to parse a config file or a
+config contained in a string respectively.
 
 
 Json schemas

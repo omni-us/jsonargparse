@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.3.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.3.0+2commits/2019.09.06 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.3.0
+                master/v2.3.0+2commits/2019.09.06
               </div>
             
           
@@ -184,7 +184,7 @@ alternatives it seemed simpler to create a new module.</p>
 <li><p>Support for nested namespaces which makes it possible to parse config files with non-flat hierarchies.</p></li>
 <li><p>Support for two popular supersets of json, making config files more versatile and powerful.</p></li>
 <li><p>Parsing of relative paths within config files and path lists.</p></li>
-<li><p>Several convenient action classes to ease common parsing use cases (json schemas, comparison operators, …).</p></li>
+<li><p>Several convenient action classes to ease common parsing use cases (paths, comparison operators, json schemas, …).</p></li>
 <li><p>Default behavior is not identical to argparse, though it is possible to configure it to be identical. The main differences are:</p>
 <ul>
 <li><p>When parsing fails <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, instead of printing usage and program exit.</p></li>
@@ -333,9 +333,18 @@ the following would be observed:</p>
 <span class="go">&#39;from arg 2&#39;</span>
 </pre></div>
 </div>
-<p>There are also functions <a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_path()</span></code></a> and
-<a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_string()</span></code></a> to only parse a config file or
-a config contained in a string respectively.</p>
+<p>Instead of providing a path to a configuration file, a string with the
+configuration content can also be provided.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="s1">&#39;{&quot;lev1&quot;:{&quot;opt1&quot;:&quot;from string 1&quot;}}&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">lev1</span><span class="o">.</span><span class="n">opt1</span>
+<span class="go">&#39;from string 1&#39;</span>
+</pre></div>
+</div>
+<p>A configuration file or string can also be parsed without parsing command line
+arguments. The functions for this are
+<a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_path()</span></code></a> and
+<a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_string()</span></code></a> to parse a config file or a
+config contained in a string respectively.</p>
 </div>
 <div class="section" id="json-schemas">
 <h1>Json schemas<a class="headerlink" href="#json-schemas" title="Permalink to this headline">¶</a></h1>

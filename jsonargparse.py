@@ -11,11 +11,11 @@ from argparse import Action, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE,
 from copy import deepcopy
 from types import SimpleNamespace
 from typing import Any, List, Dict, Set, Union
+
 try:
     from contextlib import contextmanager, redirect_stderr
 except:
     from contextlib2 import contextmanager, redirect_stderr  # type: ignore
-
 
 try:
     import jsonschema
@@ -240,7 +240,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             if not nested:
                 return _dict_to_flat_namespace(namespace_to_dict(cfg_ns))
 
-        except TypeError as ex:
+        except (TypeError, KeyError) as ex:
             self.error(str(ex))
 
         return cfg_ns
@@ -310,7 +310,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             if log:
                 self._logger.info('Parsed '+self.parser_mode+' string.')
 
-        except TypeError as ex:
+        except (TypeError, KeyError) as ex:
             self.error(str(ex))
 
         return cfg_ns
@@ -823,12 +823,14 @@ class ActionConfigFile(Action):
             setattr(namespace, dest, [])
         try:
             cfg_path = Path(value, mode='fr')
-        except TypeError as ex:
+        except TypeError as ex_path:
+            if isinstance(yaml.safe_load(value), str):
+                raise ex_path
             try:
                 cfg_path = None
                 cfg_file = parser.parse_string(value, env=False, defaults=False)
-            except:
-                raise TypeError('Parser key "'+dest+'": '+str(ex))
+            except TypeError as ex_str:
+                raise TypeError('Parser key "'+dest+'": '+str(ex_str))
         else:
             cfg_file = parser.parse_path(value, env=False, defaults=False)
         parser.check_config(cfg_file, skip_none=True)
