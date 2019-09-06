@@ -51,9 +51,10 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 
     _env_prefix = None
     _default_env = True
+    _conf_file = True
 
     def _format_action_invocation(self, action):
-        if action.option_strings == [] or action.default == '==SUPPRESS==':
+        if action.option_strings == [] or action.default == '==SUPPRESS==' or (not self._conf_file and not self._default_env):
             return super()._format_action_invocation(action)
         extr = ''
         if not isinstance(action, ActionConfigFile):
@@ -99,6 +100,27 @@ class LoggerProperty:
             self._logger = logger
 
 
+class _ArgumentGroup(argparse._ArgumentGroup):
+    """Extension of argparse._ArgumentGroup to support additional functionalities."""
+
+    parser = None  # type: Union[ArgumentParser, None]
+
+    def add_argument(self, *args, **kwargs):
+        """Adds an argument to a group.
+
+        All the arguments from `argparse.ArgumentParser.add_argument
+        <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument>`_
+        are supported.
+        """
+        action = super().add_argument(*args, **kwargs)
+        if action.required:
+            self.parser.required_args.add(action.dest)
+            action.required = False
+        if isinstance(action, ActionConfigFile) and self.parser.formatter_class == DefaultHelpFormatter:
+            setattr(self.parser.formatter_class, '_conf_file', True)
+        return action
+
+
 class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
     """Parser for command line, yaml/jsonnet files and environment variables."""
 
@@ -139,7 +161,10 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         elif formatter_class == 'default_argparse':
             formatter_class = argparse.ArgumentDefaultsHelpFormatter
         kwargs['formatter_class'] = formatter_class
+        if formatter_class == DefaultHelpFormatter:
+            setattr(formatter_class, '_conf_file', False)
         super().__init__(*args, **kwargs)
+        self.required_args = set()  # type: Set[str]
         self._stderr = sys.stderr
         self._default_config_files = default_config_files
         self.default_env = default_env
@@ -205,17 +230,20 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             with _suppress_stderr():
                 cfg = super().parse_args(args=args, namespace=namespace)
 
-            ActionParser._fix_conflicts(self, cfg)
+            #ActionParser._fix_conflicts(self, cfg)
+
+            cfg_ns = dict_to_namespace(_flat_namespace_to_dict(cfg))
+            self.check_config(cfg_ns, skip_none=True)
 
             self._logger.info('parsed arguments')
 
             if not nested:
-                return _dict_to_flat_namespace(_flat_namespace_to_dict(cfg))
+                return _dict_to_flat_namespace(namespace_to_dict(cfg_ns))
 
         except TypeError as ex:
             self.error(str(ex))
 
-        return dict_to_namespace(_flat_namespace_to_dict(cfg))
+        return cfg_ns
 
 
     def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
@@ -494,6 +522,22 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         raise ParserError(message)
 
 
+    def add_argument(self, *args, **kwargs):
+        """Adds an argument to the parser.
+
+        All the arguments from `argparse.ArgumentParser.add_argument
+        <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument>`_
+        are supported.
+        """
+        action = super().add_argument(*args, **kwargs)
+        if action.required:
+            self.required_args.add(action.dest)
+            action.required = False
+        if isinstance(action, ActionConfigFile) and self.formatter_class == DefaultHelpFormatter:
+            setattr(self.formatter_class, '_conf_file', True)
+        return action
+
+
     def add_argument_group(self, *args, name:str=None, **kwargs):
         """Adds a group to the parser.
 
@@ -507,7 +551,8 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         Returns:
             The group object.
         """
-        group = argparse._ArgumentGroup(self, *args, **kwargs)
+        group = _ArgumentGroup(self, *args, **kwargs)
+        group.parser = self
         self._action_groups.append(group)
         if name is not None:
             self.groups[name] = group
@@ -533,10 +578,10 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
             for action in parser._actions:
                 if action.dest == dest:
                     return action, dest
-                elif isinstance(action, ActionParser) and dest.startswith(action.dest+'.'):
-                    _action, _dest = find_action(action._parser, dest[len(action.dest)+1:])
-                    if _action is not None:
-                        return _action, _dest
+                #elif isinstance(action, ActionParser) and dest.startswith(action.dest+'.'):
+                #    _action, _dest = find_action(action._parser, dest[len(action.dest)+1:])
+                #    if _action is not None:
+                #        return _action, _dest
             return None, dest
 
         def check_values(cfg, base=None):
@@ -545,7 +590,7 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
                 action, _kbase = find_action(self, kbase)
                 if action is not None:
                     if val is None:
-                        if action.required:
+                        if action.dest in self.required_args:
                             raise TypeError('Key "'+key+'" is required but its value is None.')
                         elif skip_none:
                             continue
@@ -1057,59 +1102,59 @@ class ActionJsonnet(Action):
         return dict_to_namespace(values)
 
 
-class ActionParser(Action):
-    """Action to parse option with a given parser optionally loading from file if string value."""
-    def __init__(self, **kwargs):
-        """Initializer for ActionParser instance.
-
-        Args:
-            parser (ArgumentParser): A parser to parse the option with.
-
-        Raises:
-            ValueError: If the parser parameter is invalid.
-        """
-        if 'parser' in kwargs:
-            _check_unknown_kwargs(kwargs, {'parser'})
-            self._parser = kwargs['parser']
-            if not isinstance(self._parser, ArgumentParser):
-                raise ValueError('Expected parser keyword argument to be an ArgumentParser.')
-        elif '_parser' not in kwargs:
-            raise ValueError('Expected parser keyword argument.')
-        else:
-            self._parser = kwargs.pop('_parser')
-            kwargs['type'] = str
-            super().__init__(**kwargs)
-
-    def __call__(self, *args, **kwargs):
-        """Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.
-
-        Raises:
-            TypeError: If the argument is not valid.
-        """
-        if len(args) == 0:
-            kwargs['_parser'] = self._parser
-            return ActionParser(**kwargs)
-        setattr(args[1], self.dest, self._check_type(args[2]))
-
-    def _check_type(self, value, cfg=None):
-        try:
-            if isinstance(value, str):
-                cfg_path = Path(value, mode='fr')
-                value = self._parser.parse_path(cfg_path())
-            else:
-                self._parser.check_config(value, skip_none=True)
-        except TypeError as ex:
-            raise TypeError(re.sub('^Parser key ([^:]+):', 'Parser key '+self.dest+'.\\1: ', str(ex)))
-        return value
-
-    @staticmethod
-    def _fix_conflicts(parser, cfg):
-        cfg_dict = namespace_to_dict(cfg)
-        for action in parser._actions:
-            if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
-                children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]
-                if len(children) > 0:
-                    delattr(cfg, action.dest)
+#class ActionParser(Action):
+#    """Action to parse option with a given parser optionally loading from file if string value."""
+#    def __init__(self, **kwargs):
+#        """Initializer for ActionParser instance.
+#
+#        Args:
+#            parser (ArgumentParser): A parser to parse the option with.
+#
+#        Raises:
+#            ValueError: If the parser parameter is invalid.
+#        """
+#        if 'parser' in kwargs:
+#            _check_unknown_kwargs(kwargs, {'parser'})
+#            self._parser = kwargs['parser']
+#            if not isinstance(self._parser, ArgumentParser):
+#                raise ValueError('Expected parser keyword argument to be an ArgumentParser.')
+#        elif '_parser' not in kwargs:
+#            raise ValueError('Expected parser keyword argument.')
+#        else:
+#            self._parser = kwargs.pop('_parser')
+#            kwargs['type'] = str
+#            super().__init__(**kwargs)
+#
+#    def __call__(self, *args, **kwargs):
+#        """Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.
+#
+#        Raises:
+#            TypeError: If the argument is not valid.
+#        """
+#        if len(args) == 0:
+#            kwargs['_parser'] = self._parser
+#            return ActionParser(**kwargs)
+#        setattr(args[1], self.dest, self._check_type(args[2]))
+#
+#    def _check_type(self, value, cfg=None):
+#        try:
+#            if isinstance(value, str):
+#                cfg_path = Path(value, mode='fr')
+#                value = self._parser.parse_path(cfg_path())
+#            else:
+#                self._parser.check_config(value, skip_none=True)
+#        except TypeError as ex:
+#            raise TypeError(re.sub('^Parser key ([^:]+):', 'Parser key '+self.dest+'.\\1: ', str(ex)))
+#        return value
+#
+#    @staticmethod
+#    def _fix_conflicts(parser, cfg):
+#        cfg_dict = namespace_to_dict(cfg)
+#        for action in parser._actions:
+#            if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
+#                children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]
+#                if len(children) > 0:
+#                    delattr(cfg, action.dest)
 
 
 class ActionOperators(Action):
@@ -1288,7 +1333,7 @@ class ActionPathList(Action):
         if value == []:
             return value
         islist = _is_action_value_list(self)
-        if not islist:
+        if not islist and not isinstance(value, list):
             value = [value]
         if isinstance(value, list) and all(isinstance(v, str) for v in value):
             path_list_files = value

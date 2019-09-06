@@ -58,8 +58,15 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
 done
 
 ## Run unit tests ##
-python setup.py test;
+./setup.py test;
 [ "$?" != "0" ] && exit 1;
+
+## If bumping version, check wheel ok for pypi ##
+if [ -n ${BUMPVERSION_NEW_VERSION+x} ]; then
+  ./setup.py bdist_wheel;
+  twine check dist/*.whl;
+  [ "$?" != "0" ] && exit 1;
+fi
 
 ## Update documentation ##
 if [ -z ${BUMPVERSION_NEW_VERSION+x} ]; then

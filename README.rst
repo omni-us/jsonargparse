@@ -409,16 +409,3 @@ define two paired options, one to set to true and the other for false. The
 If the :class:`.ActionYesNo` class is used in conjunction with
 :code:`nargs='?'` the options can also be set by giving as value any of
 :code:`{'true', 'yes', 'false', 'no'}`.
-
-
-Parsing with another parser
-===========================
-
-Sometimes an element in a config file could be a path to another config file
-with a complex structure which should also be parsed. To handle these cases
-there is the :class:`.ActionParser` class which receives as argument a
-jsonargparse parser object. For example:
-
-.. code-block:: python
-
-    parser.add_argument('--complex.node', action=jsonargparse.ActionParser(parser=node_parser))
