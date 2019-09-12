@@ -100,28 +100,37 @@ class LoggerProperty:
             self._logger = logger
 
 
-class _ArgumentGroup(argparse._ArgumentGroup):
-    """Extension of argparse._ArgumentGroup to support additional functionalities."""
-
-    parser = None  # type: Union[ArgumentParser, None]
+class _ActionsContainer(argparse._ActionsContainer):
+    """Extension of argparse._ActionsContainer to support additional functionalities."""
 
     def add_argument(self, *args, **kwargs):
-        """Adds an argument to a group.
+        """Adds an argument to the parser or argument group.
 
         All the arguments from `argparse.ArgumentParser.add_argument
         <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument>`_
         are supported.
         """
+        if 'type' in kwargs and kwargs['type'] == bool:
+            if 'nargs' in kwargs and kwargs['nargs'] != 1:
+                raise ValueError('Argument with type=bool only supports nargs=1.')
+            kwargs['nargs'] = 1
+            kwargs['action'] = ActionYesNo(no_prefix=None)
         action = super().add_argument(*args, **kwargs)
+        parser = self.parser if hasattr(self, 'parser') else self  # pylint: disable=no-member
         if action.required:
-            self.parser.required_args.add(action.dest)
+            parser.required_args.add(action.dest)
             action.required = False
-        if isinstance(action, ActionConfigFile) and self.parser.formatter_class == DefaultHelpFormatter:
-            setattr(self.parser.formatter_class, '_conf_file', True)
+        if isinstance(action, ActionConfigFile) and parser.formatter_class == DefaultHelpFormatter:
+            setattr(parser.formatter_class, '_conf_file', True)
         return action
 
 
-class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
+class _ArgumentGroup(argparse._ArgumentGroup):
+    """Extension of argparse._ArgumentGroup to support additional functionalities."""
+    parser = None  # type: Union[ArgumentParser, None]
+
+
+class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty):
     """Parser for command line, yaml/jsonnet files and environment variables."""
 
     groups = {}  # type: Dict[str, argparse._ArgumentGroup]
@@ -522,22 +531,6 @@ class ArgumentParser(argparse.ArgumentParser, LoggerProperty):
         raise ParserError(message)
 
 
-    def add_argument(self, *args, **kwargs):
-        """Adds an argument to the parser.
-
-        All the arguments from `argparse.ArgumentParser.add_argument
-        <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument>`_
-        are supported.
-        """
-        action = super().add_argument(*args, **kwargs)
-        if action.required:
-            self.required_args.add(action.dest)
-            action.required = False
-        if isinstance(action, ActionConfigFile) and self.formatter_class == DefaultHelpFormatter:
-            setattr(self.formatter_class, '_conf_file', True)
-        return action
-
-
     def add_argument_group(self, *args, name:str=None, **kwargs):
         """Adds a group to the parser.
 
@@ -847,7 +840,7 @@ class ActionYesNo(Action):
 
         Args:
             yes_prefix (str): Prefix for yes option (default='').
-            no_prefix (str): Prefix for no option (default='no_').
+            no_prefix (str or None): Prefix for no option (default='no_').
 
         Raises:
             ValueError: If a parameter is invalid.
@@ -868,8 +861,11 @@ class ActionYesNo(Action):
             opt_name = kwargs['option_strings'][0]
             if 'dest' not in kwargs:
                 kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
-            kwargs['option_strings'] += [re.sub('^--'+self._yes_prefix, '--'+self._no_prefix, opt_name)]
-            if 'nargs' in kwargs and kwargs['nargs'] == '?':
+            if self._no_prefix is not None:
+                kwargs['option_strings'] += [re.sub('^--'+self._yes_prefix, '--'+self._no_prefix, opt_name)]
+            if self._no_prefix is None and 'nargs' in kwargs and kwargs['nargs'] != 1:
+                raise ValueError('ActionYesNo with no_prefix=None only supports nargs=1.')
+            if 'nargs' in kwargs and kwargs['nargs'] in {'?', 1}:
                 kwargs['metavar'] = 'true|yes|false|no'
             else:
                 kwargs['nargs'] = 0
@@ -889,8 +885,8 @@ class ActionYesNo(Action):
             kwargs['_yes_prefix'] = self._yes_prefix
             kwargs['_no_prefix'] = self._no_prefix
             return ActionYesNo(**kwargs)
-        value = args[2] if isinstance(args[2], bool) else True
-        if args[3].startswith('--'+self._no_prefix):
+        value = args[2][0] if isinstance(args[2], list) and len(args[2]) == 1 else args[2] if isinstance(args[2], bool) else True
+        if self._no_prefix is not None and args[3].startswith('--'+self._no_prefix):
             setattr(args[1], self.dest, not value)
         else:
             setattr(args[1], self.dest, value)
