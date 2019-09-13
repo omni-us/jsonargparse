@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse master/v2.4.1+1commits/2019.09.12 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.4.1+3commits/2019.09.13 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.4.1+1commits/2019.09.12
+                master/v2.4.1+3commits/2019.09.13
               </div>
             
           
@@ -272,7 +272,7 @@
         <span class="k">return</span> <span class="n">action</span>
 
 
-<span class="k">class</span> <span class="nc">_ArgumentGroup</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">_ArgumentGroup</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_ArgumentGroup</span><span class="p">(</span><span class="n">_ActionsContainer</span><span class="p">,</span> <span class="n">argparse</span><span class="o">.</span><span class="n">_ArgumentGroup</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Extension of argparse._ArgumentGroup to support additional functionalities.&quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: Union[ArgumentParser, None]</span>
 

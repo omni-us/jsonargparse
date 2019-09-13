@@ -94,6 +94,7 @@ class JsonargparseTests(unittest.TestCase):
 
 
     def test_parse_args(self):
+        """Test the parse_args method."""
         parser = example_parser()
         self.assertEqual('opt1_arg', parser.parse_args(['--lev1.lev2.opt1', 'opt1_arg']).lev1.lev2.opt1)
         self.assertEqual(9, parser.parse_args(['--nums.val1', '9']).nums.val1)
@@ -102,8 +103,19 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val2', 'eight']))
 
 
+    def test_dump(self):
+        """Test the dump method."""
+        parser = example_parser()
+        cfg1 = parser.get_defaults()
+        cfg2 = parser.parse_string(parser.dump(cfg1))
+        self.assertEqual(cfg1, cfg2)
+        delattr(cfg2, 'lev1')
+        parser.dump(cfg2)
+
+
     def test_usage_and_exit_error_handler(self):
-        parser = ArgumentParser(prog='app', error_handler=usage_and_exit_error_handler)
+        """Test the usage_and_exit_error_handler error handler."""
+        parser = ArgumentParser(prog='app', error_handler='usage_and_exit_error_handler')
         parser.add_argument('--val', type=int)
         self.assertEqual(8, parser.parse_args(['--val', '8']).val)
         sys.stderr.write('\n')
@@ -182,6 +194,26 @@ class JsonargparseTests(unittest.TestCase):
         cfg = parser.parse_env(env=example_env, defaults=False)
         self.assertFalse(hasattr(cfg, 'bools'))
         self.assertTrue(hasattr(cfg, 'nums'))
+
+
+    def test_required(self):
+        """Test the user of required arguments."""
+        parser = ArgumentParser(env_prefix='APP')
+        group = parser.add_argument_group('Group 1')
+        group.add_argument('--req1', required=True)
+        parser.add_argument('--lev1.req2', required=True)
+        cfg = parser.parse_args(['--req1', 'val1', '--lev1.req2', 'val2'])
+        self.assertEqual('val1', cfg.req1)
+        self.assertEqual('val2', cfg.lev1.req2)
+        cfg = parser.parse_string('{"req1":"val3","lev1":{"req2":"val4"}}')
+        self.assertEqual('val3', cfg.req1)
+        self.assertEqual('val4', cfg.lev1.req2)
+        cfg = parser.parse_env(env={'APP_REQ1': 'val5', 'APP_LEV1__REQ2': 'val6'})
+        self.assertEqual('val5', cfg.req1)
+        self.assertEqual('val6', cfg.lev1.req2)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--req1', 'val1']))
+        self.assertRaises(ParserError, lambda: parser.parse_string('{"lev1":{"req2":"val4"}}'))
+        self.assertRaises(ParserError, lambda: parser.parse_env(env={}))
 
 
     def test_default_config_files(self):

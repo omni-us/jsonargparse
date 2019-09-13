@@ -403,12 +403,29 @@ examples of arguments that can be added using this action are the following:
     parser.add_argument('--op3', action=jsonargparse.ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
 
 
-Yes/No arguments
-================
+Boolean arguments
+=================
 
-When parsing boolean values from the command line, sometimes it is useful to
-define two paired options, one to set to true and the other for false. The
-:class:`.ActionYesNo` makes this straightforward. A couple of examples would be:
+Parsing boolean arguments is very common, however, the original argparse only
+has a limited support for them, via :code:`store_true` and :code:`store_false`.
+Futhermore unexperienced users might mistakenly use :code:`type=bool` which
+would not provide the intended behavior.
+
+With jsonargparse adding an argument with :code:`type=bool` the intended action
+is implemented. If given as values :code:`{'yes', 'true'}` or :code:`{'no',
+'false'}` the corresponding parsed values would be :code:`True` or
+:code:`False`. For example:
+
+.. code-block:: python
+
+    >>> parser.add_argument('--op1', type=bool, default=False)
+    >>> parser.add_argument('--op2', type=bool, default=True)
+    >>> parser.parse_args(['--op1', 'yes', '--op2', 'false'])
+    namespace(op1=True, op2=False)
+
+Sometimes it is also useful to define two paired options, one to set
+:code:`True` and the other to set :code:`False`. The :class:`.ActionYesNo` class
+makes this straightforward. A couple of examples would be:
 
 .. code-block:: python
 

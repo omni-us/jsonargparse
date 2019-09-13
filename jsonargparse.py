@@ -125,7 +125,7 @@ class _ActionsContainer(argparse._ActionsContainer):
         return action
 
 
-class _ArgumentGroup(argparse._ArgumentGroup):
+class _ArgumentGroup(_ActionsContainer, argparse._ArgumentGroup):
     """Extension of argparse._ArgumentGroup to support additional functionalities."""
     parser = None  # type: Union[ArgumentParser, None]
 
