@@ -8,10 +8,7 @@ jobs:
       - checkout
       - run:
           name: Build wheel package
-          command: |
-            sed -i -r '/^(coverage|pylint|mypy|sphinx|autodocsumm)/Id' requirements.txt
-            pip install --user -r requirements.txt
-            ./setup.py bdist_wheel
+          command: ./setup.py bdist_wheel
       - persist_to_workspace:
           root: .
           paths: ./dist/*.whl

@@ -3,7 +3,6 @@ import re
 import sys
 import glob
 import json
-import yaml
 import logging
 import operator
 import argparse
@@ -16,6 +15,11 @@ try:
     from contextlib import contextmanager, redirect_stderr
 except:
     from contextlib2 import contextmanager, redirect_stderr  # type: ignore
+
+try:
+    import yaml
+except Exception as ex:
+    yaml = ex  # type: ignore
 
 try:
     import jsonschema
@@ -163,6 +167,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
             default_env (bool): Set the default value on whether to parse environment variables.
         """
+        if isinstance(yaml, Exception):
+            raise ImportError('PyYAML package is required :: '+str(yaml))
         if isinstance(formatter_class, str) and formatter_class not in {'default', 'default_argparse'}:
             raise ValueError('The only accepted values for formatter_class are {"default", "default_argparse"} or a HelpFormatter class.')
         if formatter_class == 'default':

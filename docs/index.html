@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.5.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.5.0+1commits/2019.09.14 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.5.0
+                master/v2.5.0+1commits/2019.09.14
               </div>
             
           
@@ -95,6 +95,7 @@
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
 <li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
 <li><a class="reference internal" href="#boolean-arguments">Boolean arguments</a></li>
+<li><a class="reference internal" href="#contributing">Contributing</a></li>
 <li><a class="reference internal" href="#module-jsonargparse">API Reference</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
@@ -511,6 +512,34 @@ makes this straightforward. A couple of examples would be:</p>
 <p>If the <a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a> class is used in conjunction with
 <code class="code docutils literal notranslate"><span class="pre">nargs='?'</span></code> the options can also be set by giving as value any of
 <code class="code docutils literal notranslate"><span class="pre">{'true',</span> <span class="pre">'yes',</span> <span class="pre">'false',</span> <span class="pre">'no'}</span></code>.</p>
+</div>
+<div class="section" id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
+<p>Contributions to the jsonargparse package are very welcome, be it just to create
+<a class="reference external" href="https://github.com/omni-us/jsonargparse/issues">issues</a> for reporting bugs
+and proposing enhancements, or more directly by creating <a class="reference external" href="https://github.com/omni-us/jsonargparse/pulls">pull requests</a>.</p>
+<p>If you intend to work with the source code, note that this project does not
+include any <code class="code docutils literal notranslate"><span class="pre">requirements.txt</span></code> file. This is by intention. To make it very
+clear what are the requirements for different use cases, all the requirements of
+the project are stored in the file <code class="code docutils literal notranslate"><span class="pre">setup.cfg</span></code>. The basic runtime
+requirements are defined in section <code class="code docutils literal notranslate"><span class="pre">[options]</span></code> in the
+<code class="code docutils literal notranslate"><span class="pre">install_requires</span></code> entry. All optional requirements are stored in section
+<code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code> in the <code class="code docutils literal notranslate"><span class="pre">all</span></code> entry. And finally there is
+a <code class="code docutils literal notranslate"><span class="pre">dev</span></code> entry in the same <code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code> section which
+lists requirements for development.</p>
+<p>The recommended way to work with the source code is the following. First clone
+the repository, then create a virtual environment, activate it and finally
+install the development requirements. More precisely the steps would be:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/omni-us/jsonargparse.git
+<span class="nb">cd</span> jsonargparse
+virtualenv -p python3 venv
+. venv/bin/activate
+</pre></div>
+</div>
+<p>The crucial step is installing the requirements which would be done by running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --editable <span class="s2">&quot;.[dev,all]&quot;</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="module-jsonargparse">
 <span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-jsonargparse" title="Permalink to this headline">¶</a></h1>

@@ -77,7 +77,7 @@ if [ $(git rev-parse --abbrev-ref HEAD) = "master" ]; then
   else
     VERSION="$BUMPVERSION_NEW_VERSION";
   fi
-  python setup.py build_sphinx --quiet --builder html --version $VERSION --release $VERSION &&
+  ./setup.py build_sphinx --quiet --builder html --version $VERSION --release $VERSION &&
     rm -fr docs &&
     mv sphinx/_build/html docs &&
     touch docs/.nojekyll &&

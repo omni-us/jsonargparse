@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Unit tests for the jsonargparse module."""
 
 import os
@@ -563,5 +563,10 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionOperators(expr='<')))
 
 
+def run_tests():
+    tests = unittest.defaultTestLoader.discover('.', pattern='*_test.py')
+    return unittest.TextTestRunner(verbosity=2).run(tests)
+
+
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    sys.exit(not run_tests().wasSuccessful())
