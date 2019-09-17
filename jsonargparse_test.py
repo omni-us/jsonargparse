@@ -564,7 +564,7 @@ class JsonargparseTests(unittest.TestCase):
 
 
 def run_tests():
-    tests = unittest.defaultTestLoader.discover('.', pattern='*_test.py')
+    tests = unittest.defaultTestLoader.loadTestsFromTestCase(JsonargparseTests)
     return unittest.TextTestRunner(verbosity=2).run(tests)
 
 

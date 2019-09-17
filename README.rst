@@ -241,7 +241,7 @@ this functionality install the module with the *all* extras requires as:
 
 .. code-block:: bash
 
-    $ pip3 install 'jsonargparse[all]'
+    $ pip3 install jsonargparse[all]
 
 Check out the `jsonschema documentation
 <https://python-jsonschema.readthedocs.io/>`__ to learn how to write a schema.
@@ -472,4 +472,4 @@ The crucial step is installing the requirements which would be done by running:
 
 .. code-block:: bash
 
-    pip install --editable ".[dev,all]"
+    pip install --editable .[dev,all]
