@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.6.1 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.6.1+1commits/2019.10.07 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.6.1
+                master/v2.6.1+1commits/2019.10.07
               </div>
             
           
@@ -1333,7 +1333,10 @@ are supported. Additionally it accepts:</p>
 <dd><p>Initializer for ActionPath instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [fdrwxFDRWX] as a keyword argument, e.g. ActionPath(mode=’drw’).</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [fdrwxFDRWX] as a keyword argument, e.g. ActionPath(mode=’drw’).</p></li>
+<li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip path checks (def.=False).</p></li>
+</ul>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – If the mode parameter is invalid.</p>
@@ -1382,6 +1385,7 @@ are supported. Additionally it accepts:</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [fdrwxFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode=’fr’).</p></li>
+<li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip path checks (def.=False).</p></li>
 <li><p><strong>rel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Whether relative paths are with respect to current working directory ‘cwd’ or the list’s parent directory ‘list’ (default=’cwd’).</p></li>
 </ul>
 </dd>

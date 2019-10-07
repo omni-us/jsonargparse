@@ -1244,18 +1244,21 @@ class ActionPath(Action):
 
         Args:
             mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument, e.g. ActionPath(mode='drw').
+            skip_check (bool): Whether to skip path checks (def.=False).
 
         Raises:
             ValueError: If the mode parameter is invalid.
         """
         if 'mode' in kwargs:
-            _check_unknown_kwargs(kwargs, {'mode'})
+            _check_unknown_kwargs(kwargs, {'mode', 'skip_check'})
             Path._check_mode(kwargs['mode'])
             self._mode = kwargs['mode']
+            self._skip_check = kwargs['skip_check'] if 'skip_check' in kwargs else False
         elif '_mode' not in kwargs:
             raise ValueError('Expected mode keyword argument.')
         else:
             self._mode = kwargs.pop('_mode')
+            self._skip_check = kwargs.pop('_skip_check')
             kwargs['type'] = str
             super().__init__(**kwargs)
 
@@ -1269,6 +1272,7 @@ class ActionPath(Action):
             if 'nargs' in kwargs and kwargs['nargs'] == 0:
                 raise ValueError('Invalid nargs='+str(kwargs['nargs'])+' for ActionPath.')
             kwargs['_mode'] = self._mode
+            kwargs['_skip_check'] = self._skip_check
             return ActionPath(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
 
@@ -1281,9 +1285,9 @@ class ActionPath(Action):
         try:
             for num, val in enumerate(value):
                 if isinstance(val, str):
-                    val = Path(val, mode=self._mode)
+                    val = Path(val, mode=self._mode, skip_check=self._skip_check)
                 elif isinstance(val, Path):
-                    val = Path(val(absolute=False), mode=self._mode, cwd=val.cwd)
+                    val = Path(val(absolute=False), mode=self._mode, skip_check=self._skip_check, cwd=val.cwd)
                 else:
                     raise TypeError('expected either a string or a Path object, received: value='+str(val)+' type='+str(type(val))+'.')
                 value[num] = val
@@ -1299,15 +1303,17 @@ class ActionPathList(Action):
 
         Args:
             mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
+            skip_check (bool): Whether to skip path checks (def.=False).
             rel (str): Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list' (default='cwd').
 
         Raises:
             ValueError: If any of the parameters (mode or rel) are invalid.
         """
         if 'mode' in kwargs:
-            _check_unknown_kwargs(kwargs, {'mode', 'rel'})
+            _check_unknown_kwargs(kwargs, {'mode', 'skip_check', 'rel'})
             Path._check_mode(kwargs['mode'])
             self._mode = kwargs['mode']
+            self._skip_check = kwargs['skip_check'] if 'skip_check' in kwargs else False
             self._rel = kwargs['rel'] if 'rel' in kwargs else 'cwd'
             if self._rel not in {'cwd', 'list'}:
                 raise ValueError('rel must be either "cwd" or "list", got '+str(self._rel)+'.')
@@ -1315,6 +1321,7 @@ class ActionPathList(Action):
             raise ValueError('Expected mode keyword argument.')
         else:
             self._mode = kwargs.pop('_mode')
+            self._skip_check = kwargs.pop('_skip_check')
             self._rel = kwargs.pop('_rel')
             kwargs['type'] = str
             super().__init__(**kwargs)
@@ -1329,6 +1336,7 @@ class ActionPathList(Action):
             if 'nargs' in kwargs and kwargs['nargs'] not in {'+', 1}:
                 raise ValueError('ActionPathList only supports nargs of 1 or "+".')
             kwargs['_mode'] = self._mode
+            kwargs['_skip_check'] = self._skip_check
             kwargs['_rel'] = self._rel
             return ActionPathList(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
