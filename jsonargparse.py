@@ -267,7 +267,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
-            cfg_path (str): Path to the configuration file to parse.
+            cfg_path (str or Path): Path to the configuration file to parse.
             ext_vars (dict): Optional external variables used for parsing jsonnet.
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
@@ -280,6 +280,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
+        if isinstance(cfg_path, Path):
+            cfg_path = cfg_path()
         cwd = os.getcwd()
         os.chdir(os.path.abspath(os.path.join(cfg_path, os.pardir)))
         try:
@@ -614,6 +616,17 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     raise KeyError('No action for key "'+key+'" to check its value.')
 
         check_values(cfg)
+
+
+    def _get_config_files(self, cfg):
+        """Returns a list of loaded config file paths."""
+        if not isinstance(cfg, dict):
+            cfg = vars(cfg)
+        cfg_files = []
+        for action in self._actions:
+            if isinstance(action, ActionConfigFile) and action.dest in cfg:
+                cfg_files = [p for p in cfg[action.dest] if p is not None]
+        return cfg_files
 
 
     @staticmethod

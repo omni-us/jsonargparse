@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.8.0 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.8.0+1commits/2019.10.10 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.8.0
+                master/v2.8.0+1commits/2019.10.10
               </div>
             
           
@@ -414,7 +414,7 @@
         <span class="sd">&quot;&quot;&quot;Parses a configuration file (yaml or jsonnet) given its path.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            cfg_path (str): Path to the configuration file to parse.</span>
+<span class="sd">            cfg_path (str or Path): Path to the configuration file to parse.</span>
 <span class="sd">            ext_vars (dict): Optional external variables used for parsing jsonnet.</span>
 <span class="sd">            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser&#39;s default.</span>
 <span class="sd">            defaults (bool): Whether to merge with the parser&#39;s defaults.</span>
@@ -427,6 +427,8 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            ParserError: If there is a parsing error and error_handler=None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+            <span class="n">cfg_path</span> <span class="o">=</span> <span class="n">cfg_path</span><span class="p">()</span>
         <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
         <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">pardir</span><span class="p">)))</span>
         <span class="k">try</span><span class="p">:</span>
@@ -761,6 +763,17 @@
                     <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;No action for key &quot;&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;&quot; to check its value.&#39;</span><span class="p">)</span>
 
         <span class="n">check_values</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_config_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of loaded config file paths.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="n">cfg_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionConfigFile</span><span class="p">)</span> <span class="ow">and</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
+                <span class="n">cfg_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cfg_files</span>
 
 
 <div class="viewcode-block" id="ArgumentParser.merge_config"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.merge_config">[docs]</a>    <span class="nd">@staticmethod</span>
