@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.7.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.7.0+1commits/2019.10.10 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.7.0
+                master/v2.7.0+1commits/2019.10.10
               </div>
             
           
@@ -797,7 +797,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_path">
-<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_cwd: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a configuration file (yaml or jsonnet) given its path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -807,6 +807,7 @@ are supported. Additionally it accepts:</p>
 <li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.7)"><em>None</em></a>) – Whether to merge with the parsed environment. None means use the ArgumentParser’s default.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
+<li><p><strong>with_cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to include __cwd__ in config object.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -999,7 +1000,7 @@ are supported. Additionally it accepts:</p>
 <dd><p>Converts a nested dictionary into a nested namespace.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
+<dd class="field-odd"><p><strong>cfg_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The configuration to process.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The nested configuration namespace.</p>
@@ -1016,7 +1017,7 @@ are supported. Additionally it accepts:</p>
 <dd><p>Converts a nested namespace into a nested dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)"><em>types.SimpleNamespace</em></a>) – The configuration to process.</p>
+<dd class="field-odd"><p><strong>cfg_ns</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.7)"><em>types.SimpleNamespace</em></a>) – The configuration to process.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The nested configuration dictionary.</p>
@@ -1441,7 +1442,7 @@ object was created.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The path to check and store.</p></li>
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference internal" href="#jsonargparse.Path" title="jsonargparse.Path"><em>Path</em></a>) – The path to check and store.</p></li>
 <li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The required type and access permissions among [fdrwxFDRWX].</p></li>
 <li><p><strong>cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Working directory for relative paths. If None, then os.getcwd() is used.</p></li>
 <li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to skip path checks.</p></li>

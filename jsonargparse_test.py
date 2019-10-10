@@ -173,10 +173,12 @@ class JsonargparseTests(unittest.TestCase):
 
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml)
-        self.assertEqual(cfg1, parser.parse_path(yaml_file, defaults=True))
-        self.assertEqual(cfg2, parser.parse_path(yaml_file, defaults=False))
-        self.assertNotEqual(cfg2, parser.parse_path(yaml_file, defaults=True))
-        self.assertNotEqual(cfg1, parser.parse_path(yaml_file, defaults=False))
+        self.assertEqual(cfg1, parser.parse_path(yaml_file, defaults=True, with_cwd=False))
+        self.assertEqual(cfg2, parser.parse_path(yaml_file, defaults=False, with_cwd=False))
+        self.assertNotEqual(cfg2, parser.parse_path(yaml_file, defaults=True, with_cwd=False))
+        self.assertNotEqual(cfg1, parser.parse_path(yaml_file, defaults=False, with_cwd=False))
+        self.assertTrue(hasattr(parser.parse_path(yaml_file), '__cwd__'))
+        self.assertFalse(hasattr(parser.parse_path(yaml_file, with_cwd=False), '__cwd__'))
 
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml+'  val2: eight\n')

@@ -120,6 +120,8 @@ class _ActionsContainer(argparse._ActionsContainer):
             kwargs['nargs'] = 1
             kwargs['action'] = ActionYesNo(no_prefix=None)
         action = super().add_argument(*args, **kwargs)
+        if '__cwd__' in action.dest:
+            raise ValueError('Argument with destination name "__cwd__" not allowed.')
         parser = self.parser if hasattr(self, 'parser') else self  # pylint: disable=no-member
         if action.required:
             parser.required_args.add(action.dest)
@@ -261,7 +263,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return cfg_ns
 
 
-    def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
+    def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True, with_cwd:bool=True) -> SimpleNamespace:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
@@ -270,6 +272,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
+            with_cwd (bool): Whether to include __cwd__ in config object.
 
         Returns:
             types.SimpleNamespace: An object with all parsed values as nested attributes.
@@ -282,6 +285,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         try:
             with open(os.path.basename(cfg_path), 'r') as f:
                 parsed_cfg = self.parse_string(f.read(), cfg_path, ext_vars, env, defaults, nested, log=False)
+                if with_cwd:
+                    if hasattr(parsed_cfg, '__cwd__'):
+                        parsed_cfg.__cwd__.append(os.getcwd())
+                    else:
+                        parsed_cfg.__cwd__ = [os.getcwd()]
         finally:
             os.chdir(cwd)
 
@@ -371,6 +379,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         cfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
             cfg = namespace_to_dict(cfg)
+
+        if '__cwd__' in cfg:
+            del cfg['__cwd__']
 
         if not skip_check:
             self.check_config(cfg, skip_none=True)
@@ -573,6 +584,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if not isinstance(cfg, dict):
             cfg = namespace_to_dict(cfg)
 
+        if '__cwd__' in cfg:
+            del cfg['__cwd__']
+
         def find_action(parser, dest):
             for action in parser._actions:
                 if action.dest == dest:
@@ -756,7 +770,7 @@ def dict_to_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
     """Converts a nested dictionary into a nested namespace.
 
     Args:
-        cfg_args (dict): The configuration to process.
+        cfg_dict (dict): The configuration to process.
 
     Returns:
         types.SimpleNamespace: The nested configuration namespace.
@@ -778,7 +792,7 @@ def namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
     """Converts a nested namespace into a nested dictionary.
 
     Args:
-        cfg_args (types.SimpleNamespace): The configuration to process.
+        cfg_ns (types.SimpleNamespace): The configuration to process.
 
     Returns:
         dict: The nested configuration dictionary.
@@ -836,7 +850,10 @@ class ActionConfigFile(Action):
         cfg_file = _dict_to_flat_namespace(namespace_to_dict(cfg_file))
         getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():
-            setattr(namespace, key, val)
+            if key == '__cwd__' and hasattr(namespace, '__cwd__'):
+                setattr(namespace, key, getattr(namespace, key)+val)
+            else:
+                setattr(namespace, key, val)
 
 
 class ActionYesNo(Action):
@@ -1387,7 +1404,7 @@ class Path(object):
         """Initializer for Path instance.
 
         Args:
-            path (str): The path to check and store.
+            path (str or Path): The path to check and store.
             mode (str): The required type and access permissions among [fdrwxFDRWX].
             cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
             skip_check (bool): Whether to skip path checks.
@@ -1400,9 +1417,13 @@ class Path(object):
         if cwd is None:
             cwd = os.getcwd()
 
+        if isinstance(cwd, list):
+            cwd = cwd[0]  # Temporal until multiple cwds is implemented.
+
         if isinstance(path, Path):
-            abs_path = path(absolute=True)
-            path = path()
+            cwd = path.cwd  # type: ignore
+            abs_path = path.abs_path  # type: ignore
+            path = path.path  # type: ignore
         elif not isinstance(path, str):
             raise TypeError('Expected path to be a string or a Path object.')
         else:
@@ -1439,6 +1460,9 @@ class Path(object):
 
     def __str__(self):
         return self.abs_path
+
+    def __repr__(self):
+        return 'Path(path="'+self.path+'", abs_path="'+self.abs_path+'", cwd="'+self.cwd+'")'
 
     def __call__(self, absolute=True):
         """Returns the path as a string.
