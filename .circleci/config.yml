@@ -24,7 +24,7 @@ jobs:
             pip install --user $(ls ./dist/*.whl)[all]
             pip install --user python-subunit junitxml
             mkdir tests_report
-            python -m subunit.run jsonargparse_test | $HOME/.local/bin/subunit2junitxml > tests_report/unittest.xml
+            python -m subunit.run jsonargparse_tests | $HOME/.local/bin/subunit2junitxml > tests_report/unittest.xml
       - store_test_results:
           path: ./tests_report
   test-py36:
