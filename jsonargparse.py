@@ -124,10 +124,10 @@ class _ActionsContainer(argparse._ActionsContainer):
             raise ValueError('Argument with destination name "__cwd__" not allowed.')
         parser = self.parser if hasattr(self, 'parser') else self  # pylint: disable=no-member
         if action.required:
-            parser.required_args.add(action.dest)
+            parser.required_args.add(action.dest)  # pylint: disable=no-member
             action.required = False
-        if isinstance(action, ActionConfigFile) and parser.formatter_class == DefaultHelpFormatter:
-            setattr(parser.formatter_class, '_conf_file', True)
+        if isinstance(action, ActionConfigFile) and parser.formatter_class == DefaultHelpFormatter:  # pylint: disable=no-member
+            setattr(parser.formatter_class, '_conf_file', True)  # pylint: disable=no-member
         return action
 
 

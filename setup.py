@@ -44,8 +44,6 @@ except Exception:
 
 
 ## Run setuptools setup ##
-setup(version=__import__(NAME).__version__,
+setup(version=__import__(NAME).__version__,  # type: ignore
       long_description=LONG_DESCRIPTION,
-      py_modules=[NAME, NAME_TEST],
-      test_suite=NAME_TEST,
       cmdclass=CMDCLASS)
