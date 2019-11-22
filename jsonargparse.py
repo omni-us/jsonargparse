@@ -406,8 +406,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             format = self.parser_mode
         if format == 'yaml':
             return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
-        else:
+        elif format == 'json_indented':
             return json.dumps(cfg, indent=2, sort_keys=True)
+        elif format == 'json':
+            return json.dumps(cfg, sort_keys=True)
+        else:
+            raise ValueError('unknown dump format '+str(format))
 
 
     @staticmethod
