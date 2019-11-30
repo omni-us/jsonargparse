@@ -38,19 +38,17 @@ jobs:
     docker:
       - image: circleci/python:3.7
     steps:
-      - attach_workspace:
-          at: .
+      - checkout
       - run:
           name: Code climate coverage
           command: |
-            pip3 install --user $(ls ./dist/*.whl)[all,test]
+            pip3 install --user -e .[all,test]
             curl -o ./cc-test-reporter -sL https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
             chmod +x ./cc-test-reporter
             ./cc-test-reporter before-build
             python3 -m coverage run -m jsonargparse_tests
-            RC=$?
             python3 -m coverage xml -o coverage.xml
-            ./cc-test-reporter after-build --coverage-input-type coverage.py --exit-code $RC
+            ./cc-test-reporter after-build --coverage-input-type coverage.py
   publish-pypi:
     docker:
       - image: mauvilsa/docker-twine:1.11.0
@@ -78,7 +76,7 @@ workflows:
       - test-py35:
           <<: *testreq
       - coverage-py37:
-          <<: *testreq
+          <<: *buildreq
       - publish-pypi:
           filters:
             branches:
