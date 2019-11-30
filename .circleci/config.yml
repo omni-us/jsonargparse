@@ -76,7 +76,7 @@ workflows:
       - test-py35:
           <<: *testreq
       - coverage-py37:
-          <<: *buildreq
+          <<: *testreq
       - publish-pypi:
           filters:
             branches:
