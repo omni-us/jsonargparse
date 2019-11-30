@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.7
     steps:
       - checkout
       - run:
@@ -44,11 +44,13 @@ jobs:
           name: Code climate coverage
           command: |
             pip3 install --user $(ls ./dist/*.whl)[all,test]
-            curl -o ./cc-test-reporter -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
+            curl -o ./cc-test-reporter -sL https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
             chmod +x ./cc-test-reporter
             ./cc-test-reporter before-build
             python3 -m coverage run -m jsonargparse_tests
-            ./cc-test-reporter after-build --coverage-input-type coverage.py --exit-code $?
+            RC=$?
+            python3 -m coverage xml -o coverage.xml
+            ./cc-test-reporter after-build --coverage-input-type coverage.py --exit-code $RC
   publish-pypi:
     docker:
       - image: mauvilsa/docker-twine:1.11.0

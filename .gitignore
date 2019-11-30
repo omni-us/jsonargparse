@@ -3,6 +3,7 @@ __pycache__
 *.egg-info
 .eggs
 .coverage
+coverage.xml
 .mypy_cache
 sphinx/_build
 build
