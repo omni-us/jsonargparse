@@ -6,7 +6,7 @@ import re
 
 
 NAME = next(filter(lambda x: x.startswith('name = '), open('setup.cfg').readlines())).strip().split()[-1]
-NAME_TEST = NAME+'_test'
+NAME_TESTS = next(filter(lambda x: x.startswith('test_suite = '), open('setup.cfg').readlines())).strip().split()[-1]
 LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:', '', open('README.rst').read())
 CMDCLASS = {}
 
@@ -23,10 +23,12 @@ try:
         def run(self):
             cov = coverage.Coverage()
             cov.start()
-            __import__(NAME_TEST).run_tests()
+            __import__(NAME_TESTS).run_tests()
             cov.stop()
             cov.save()
-            cov.report(show_missing=True, include=[NAME+'*'], omit=['*_test*'])
+            cov.report()
+            cov.html_report(directory='htmlcov')
+            print('\nSaved html report to directory htmlcov')
 
     CMDCLASS['test_coverage'] = CoverageCommand
 

@@ -7,3 +7,4 @@ __pycache__
 sphinx/_build
 build
 dist
+htmlcov

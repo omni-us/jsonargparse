@@ -1,0 +1,7 @@
+exclude_patterns:
+- "docs/"
+- "dist/"
+- "build/"
+- "htmlcov/"
+- "__pycache__/"
+- "*.egg-info/"

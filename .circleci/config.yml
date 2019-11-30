@@ -21,10 +21,9 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-            pip install --user $(ls ./dist/*.whl)[all]
-            pip install --user python-subunit junitxml
+            pip3 install --user $(ls ./dist/*.whl)[all,test]
             mkdir tests_report
-            python -m subunit.run jsonargparse_tests | $HOME/.local/bin/subunit2junitxml > tests_report/unittest.xml
+            python3 -m subunit.run jsonargparse_tests | $HOME/.local/bin/subunit2junitxml > tests_report/unittest.xml
       - store_test_results:
           path: ./tests_report
   test-py36:
@@ -35,6 +34,21 @@ jobs:
     <<: *test-py37
     docker:
       - image: circleci/python:3.5
+  coverage-py37:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Code climate coverage
+          command: |
+            pip3 install --user $(ls ./dist/*.whl)[all,test]
+            curl -o ./cc-test-reporter -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
+            chmod +x ./cc-test-reporter
+            ./cc-test-reporter before-build
+            python3 -m coverage run -m jsonargparse_tests
+            ./cc-test-reporter after-build --coverage-input-type coverage.py --exit-code $?
   publish-pypi:
     docker:
       - image: mauvilsa/docker-twine:1.11.0
@@ -61,6 +75,8 @@ workflows:
           <<: *testreq
       - test-py35:
           <<: *testreq
+      - coverage-py37:
+          <<: *testreq
       - publish-pypi:
           filters:
             branches:
@@ -71,3 +87,4 @@ workflows:
             - test-py37
             - test-py36
             - test-py35
+            - coverage-py37

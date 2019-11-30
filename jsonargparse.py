@@ -355,7 +355,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if self.parser_mode == 'jsonnet':
             ext_vars, ext_codes = ActionJsonnet.split_ext_vars(ext_vars)
             cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)
-        cfg = yaml.safe_load(cfg_str)
+        try:
+            cfg = yaml.safe_load(cfg_str)
+        except Exception as ex:
+            raise type(ex)('Problems parsing config :: '+str(ex))
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         for action in self._actions:
             if action.dest in cfg:
@@ -951,7 +954,10 @@ class ActionJsonSchema(Action):
             _check_unknown_kwargs(kwargs, {'schema'})
             schema = kwargs['schema']
             if isinstance(schema, str):
-                schema = yaml.safe_load(schema)
+                try:
+                    schema = yaml.safe_load(schema)
+                except Exception as ex:
+                    raise type(ex)('Problems parsing schema :: '+str(ex))
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
         elif '_validator' not in kwargs:
@@ -1043,7 +1049,10 @@ class ActionJsonnet(Action):
                 if isinstance(jsonvalidator, Exception):
                     raise ImportError('jsonschema is required by ActionJsonnet :: '+str(jsonvalidator))
                 if isinstance(schema, str):
-                    schema = yaml.safe_load(schema)
+                    try:
+                        schema = yaml.safe_load(schema)
+                    except Exception as ex:
+                        raise type(ex)('Problems parsing schema :: '+str(ex))
                 jsonvalidator.check_schema(schema)
                 self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             else:
@@ -1131,10 +1140,13 @@ class ActionJsonnet(Action):
         except TypeError as ex:
             try:
                 values = yaml.safe_load(_jsonnet.evaluate_snippet('', jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
-            except:
-                raise ex
+            except Exception as ex:
+                raise type(ex)('Problems evaluating jsonnet snippet :: '+str(ex))
         else:
-            values = yaml.safe_load(_jsonnet.evaluate_file(jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
+            try:
+                values = yaml.safe_load(_jsonnet.evaluate_file(jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
+            except Exception as ex:
+                raise type(ex)('Problems evaluating jsonnet file :: '+str(ex))
         if self._validator is not None:
             self._validator.validate(values)
         return dict_to_namespace(values)
