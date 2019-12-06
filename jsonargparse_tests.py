@@ -152,6 +152,29 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--val2', type=bool, nargs='+'))
 
 
+    def test_nargs(self):
+        """Test the correct functioning of nargs."""
+        parser = ArgumentParser()
+        parser.add_argument('--val', nargs='+', type=int)
+        self.assertEqual([9],        parser.parse_args(['--val', '9']).val)
+        self.assertEqual([3, 6, 2],  parser.parse_args(['--val', '3', '6', '2']).val)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--val']))
+        parser = ArgumentParser()
+        parser.add_argument('--val', nargs='*', type=float)
+        self.assertEqual([5.2, 1.9], parser.parse_args(['--val', '5.2', '1.9']).val)
+        self.assertEqual([],         parser.parse_args(['--val']).val)
+        parser = ArgumentParser()
+        parser.add_argument('--val', nargs='?', type=str)
+        self.assertEqual('~',        parser.parse_args(['--val', '~']).val)
+        self.assertEqual(None,       parser.parse_args(['--val']).val)
+        parser = ArgumentParser()
+        parser.add_argument('--val', nargs=2)
+        self.assertEqual(['q', 'p'], parser.parse_args(['--val', 'q', 'p']).val)
+        parser = ArgumentParser()
+        parser.add_argument('--val', nargs=1)
+        self.assertEqual(['-'],      parser.parse_args(['--val', '-']).val)
+
+
     def test_parse_yaml(self):
         """Test the parsing and checking of yaml."""
         parser = example_parser()

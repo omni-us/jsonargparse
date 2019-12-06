@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.12.0+2commits/2019.11.30 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.12.0+3commits/2019.12.06 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.12.0+2commits/2019.11.30
+                master/v2.12.0+3commits/2019.12.06
               </div>
             
           
@@ -239,7 +239,7 @@ might be necessary to catch it.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--opt2&#39;</span><span class="p">,</span> <span class="s1">&#39;four&#39;</span><span class="p">])</span>
 <span class="gp">... </span><span class="k">except</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ParserError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;parser error: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;parser error: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 <span class="gp">...</span>
 <span class="go">parser error: argument --opt2: invalid float value: &#39;four&#39;</span>
 </pre></div>
@@ -284,7 +284,7 @@ would set the environment variables as:</p>
 </div>
 <p>Then in python the parser would use these variables, unless overridden by the
 command line arguments, that is:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="n">default_env</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="n">default_env</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 2&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="s1">&#39;from arg 1&#39;</span><span class="p">])</span>
@@ -448,7 +448,7 @@ and is readable, the following could be done:</p>
 </div>
 <p>After parsing it is possible to get both the original relative path as included
 in the yaml file, or the corresponding absolute path:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">databases</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">absolute</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">databases</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">&#39;data/info.db&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">databases</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
 <span class="go">&#39;/YOUR_CWD/app/data/info.db&#39;</span>
@@ -494,8 +494,8 @@ would not provide the intended behavior.</p>
 is implemented. If given as values <code class="code docutils literal notranslate"><span class="pre">{'yes',</span> <span class="pre">'true'}</span></code> or <code class="code docutils literal notranslate"><span class="pre">{'no',</span>
 <span class="pre">'false'}</span></code> the corresponding parsed values would be <code class="code docutils literal notranslate"><span class="pre">True</span></code> or
 <code class="code docutils literal notranslate"><span class="pre">False</span></code>. For example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="s1">&#39;yes&#39;</span><span class="p">,</span> <span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="s1">&#39;false&#39;</span><span class="p">])</span>
 <span class="go">namespace(op1=True, op2=False)</span>
 </pre></div>

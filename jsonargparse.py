@@ -115,8 +115,8 @@ class _ActionsContainer(argparse._ActionsContainer):
         are supported.
         """
         if 'type' in kwargs and kwargs['type'] == bool:
-            if 'nargs' in kwargs and kwargs['nargs'] != 1:
-                raise ValueError('Argument with type=bool only supports nargs=1.')
+            if 'nargs' in kwargs:
+                raise ValueError('Argument with type=bool does not support nargs.')
             kwargs['nargs'] = 1
             kwargs['action'] = ActionYesNo(no_prefix=None)
         action = super().add_argument(*args, **kwargs)
@@ -702,7 +702,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             value = action._check_type(value, cfg=cfg)  # type: ignore
         elif action.type is not None:
             try:
-                value = action.type(value)
+                if action.nargs in {None, '?'}:
+                    value = action.type(value)
+                else:
+                    for k, v in enumerate(value):
+                        value[k] = action.type(v)
             except (TypeError, ValueError) as ex:
                 raise TypeError('Parser key "'+str(key)+'": '+str(ex))
         return value
@@ -910,6 +914,8 @@ class ActionYesNo(Action):
                 raise ValueError('ActionYesNo with no_prefix=None only supports nargs=1.')
             if 'nargs' in kwargs and kwargs['nargs'] in {'?', 1}:
                 kwargs['metavar'] = 'true|yes|false|no'
+                if kwargs['nargs'] == 1:
+                    kwargs['nargs'] = None
             else:
                 kwargs['nargs'] = 0
                 kwargs['metavar'] = None
