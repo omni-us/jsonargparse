@@ -702,7 +702,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             value = action._check_type(value, cfg=cfg)  # type: ignore
         elif action.type is not None:
             try:
-                if action.nargs in {None, '?'}:
+                if action.nargs in {None, '?'} or action.nargs == 0:
                     value = action.type(value)
                 else:
                     for k, v in enumerate(value):
@@ -906,6 +906,8 @@ class ActionYesNo(Action):
             self._yes_prefix = kwargs.pop('_yes_prefix') if '_yes_prefix' in kwargs else ''
             self._no_prefix = kwargs.pop('_no_prefix') if '_no_prefix' in kwargs else 'no_'
             opt_name = kwargs['option_strings'][0]
+            if not opt_name.startswith('--'+self._yes_prefix):
+                raise ValueError('Expected option string to start with "--'+self._yes_prefix+'".')
             if 'dest' not in kwargs:
                 kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
             if self._no_prefix is not None:

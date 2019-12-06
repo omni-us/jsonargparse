@@ -138,6 +138,16 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual(False, parser.parse_args(['--bools.def_false=no']).bools.def_false)
         self.assertEqual(True,  parser.parse_args(['--no_bools.def_true=no']).bools.def_true)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--bools.def_true nope']))
+        parser = ArgumentParser()
+        parser.add_argument('--val', action=ActionYesNo)
+        self.assertEqual(True,  parser.parse_args(['--val']).val)
+        self.assertEqual(False, parser.parse_args(['--no_val']).val)
+        parser = ArgumentParser()
+        parser.add_argument('--with-val', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
+        self.assertEqual(True,  parser.parse_args(['--with-val']).with_val)
+        self.assertEqual(False, parser.parse_args(['--without-val']).with_val)
+        parser = ArgumentParser()
+        self.assertRaises(ValueError, lambda: parser.add_argument('--val', action=ActionYesNo(yes_prefix='yes_')))
 
 
     def test_bool_type(self):
