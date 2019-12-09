@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.13.1 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.13.1+1commits/2019.12.09 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.13.1
+                master/v2.13.1+1commits/2019.12.09
               </div>
             
           
@@ -365,7 +365,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;error_handler can be either a Callable or the &quot;usage_and_exit_error_handler&quot; string or None.&#39;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="ArgumentParser.parse_args"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_args">[docs]</a>    <span class="k">def</span> <span class="nf">parse_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.parse_args"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_args">[docs]</a>    <span class="k">def</span> <span class="nf">parse_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">with_cwd</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parses command line argument strings.</span>
 
 <span class="sd">        All the arguments from `argparse.ArgumentParser.parse_args</span>
@@ -375,6 +375,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser&#39;s default.</span>
 <span class="sd">            nested (bool): Whether the namespace should be nested.</span>
+<span class="sd">            with_cwd (bool): Whether to include __cwd__ in config object.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            types.SimpleNamespace: An object with all parsed values as nested attributes.</span>
@@ -394,10 +395,15 @@
             <span class="k">with</span> <span class="n">_suppress_stderr</span><span class="p">():</span>
                 <span class="n">cfg</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">)</span>
 
-            <span class="c1">#ActionParser._fix_conflicts(self, cfg)</span>
-
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">with_cwd</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s1">&#39;__cwd__&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">__cwd__</span><span class="p">:</span>
+                        <span class="n">cfg</span><span class="o">.</span><span class="n">__cwd__</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cfg</span><span class="o">.</span><span class="n">__cwd__</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()]</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;parsed arguments&#39;</span><span class="p">)</span>
 
@@ -433,12 +439,7 @@
         <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">pardir</span><span class="p">)))</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">),</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="n">parsed_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_string</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">cfg_path</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">with_cwd</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parsed_cfg</span><span class="p">,</span> <span class="s1">&#39;__cwd__&#39;</span><span class="p">):</span>
-                        <span class="n">parsed_cfg</span><span class="o">.</span><span class="n">__cwd__</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">parsed_cfg</span><span class="o">.</span><span class="n">__cwd__</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()]</span>
+                <span class="n">parsed_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_string</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">cfg_path</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="p">,</span> <span class="n">with_cwd</span><span class="o">=</span><span class="n">with_cwd</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">cwd</span><span class="p">)</span>
 
@@ -447,7 +448,8 @@
         <span class="k">return</span> <span class="n">parsed_cfg</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.parse_string"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_string">[docs]</a>    <span class="k">def</span> <span class="nf">parse_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg_str</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">:</span><span class="nb">dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
+<div class="viewcode-block" id="ArgumentParser.parse_string"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_string">[docs]</a>    <span class="k">def</span> <span class="nf">parse_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg_str</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">:</span><span class="nb">dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">with_cwd</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Parses configuration (yaml or jsonnet) given as a string.</span>
 
 <span class="sd">        Args:</span>
@@ -457,6 +459,7 @@
 <span class="sd">            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser&#39;s default.</span>
 <span class="sd">            defaults (bool): Whether to merge with the parser&#39;s defaults.</span>
 <span class="sd">            nested (bool): Whether the namespace should be nested.</span>
+<span class="sd">            with_cwd (bool): Whether to include __cwd__ in config object.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            types.SimpleNamespace: An object with all parsed values as attributes.</span>
@@ -478,6 +481,13 @@
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">with_cwd</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="s1">&#39;__cwd__&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cfg_ns</span><span class="o">.</span><span class="n">__cwd__</span><span class="p">:</span>
+                        <span class="n">cfg_ns</span><span class="o">.</span><span class="n">__cwd__</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cfg_ns</span><span class="o">.</span><span class="n">__cwd__</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()]</span>
 
             <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Parsed &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">parser_mode</span><span class="o">+</span><span class="s1">&#39; string.&#39;</span><span class="p">)</span>
@@ -610,13 +620,14 @@
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">formatter_class</span><span class="p">,</span> <span class="s1">&#39;_env_prefix&#39;</span><span class="p">,</span> <span class="n">env_prefix</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="ArgumentParser.parse_env"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_env">[docs]</a>    <span class="k">def</span> <span class="nf">parse_env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
+<div class="viewcode-block" id="ArgumentParser.parse_env"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_env">[docs]</a>    <span class="k">def</span> <span class="nf">parse_env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">with_cwd</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Parses environment variables.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            env (dict[str, str]): The environment object to use, if None `os.environ` is used.</span>
 <span class="sd">            defaults (bool): Whether to merge with the parser&#39;s defaults.</span>
 <span class="sd">            nested (bool): Whether the namespace should be nested.</span>
+<span class="sd">            with_cwd (bool): Whether to include __cwd__ in config object.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            types.SimpleNamespace: An object with all parsed values as attributes.</span>
@@ -648,6 +659,13 @@
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">with_cwd</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="s1">&#39;__cwd__&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cfg_ns</span><span class="o">.</span><span class="n">__cwd__</span><span class="p">:</span>
+                        <span class="n">cfg_ns</span><span class="o">.</span><span class="n">__cwd__</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cfg_ns</span><span class="o">.</span><span class="n">__cwd__</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()]</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Parsed environment variables.&#39;</span><span class="p">)</span>
 
@@ -747,10 +765,6 @@
             <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span> <span class="o">==</span> <span class="n">dest</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">action</span><span class="p">,</span> <span class="n">dest</span>
-                <span class="c1">#elif isinstance(action, ActionParser) and dest.startswith(action.dest+&#39;.&#39;):</span>
-                <span class="c1">#    _action, _dest = find_action(action._parser, dest[len(action.dest)+1:])</span>
-                <span class="c1">#    if _action is not None:</span>
-                <span class="c1">#        return _action, _dest</span>
             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dest</span>
 
         <span class="k">def</span> <span class="nf">check_values</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -770,6 +784,45 @@
                     <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;No action for key &quot;&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;&quot; to check its value.&#39;</span><span class="p">)</span>
 
         <span class="n">check_values</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ArgumentParser.strip_unknown"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.strip_unknown">[docs]</a>    <span class="k">def</span> <span class="nf">strip_unknown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes all unknown keys from a configuration object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cfg (types.SimpleNamespace or dict): The configuration object to strip.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            types.SimpleNamespace: The stripped configuration object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">find_action</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span> <span class="o">==</span> <span class="n">dest</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">action</span><span class="p">,</span> <span class="n">dest</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dest</span>
+
+        <span class="k">def</span> <span class="nf">strip_keys</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">del_keys</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">kbase</span> <span class="o">=</span> <span class="n">key</span> <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
+                <span class="n">action</span><span class="p">,</span> <span class="n">_kbase</span> <span class="o">=</span> <span class="n">find_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">strip_keys</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">del_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;__cwd__&#39;</span> <span class="ow">in</span> <span class="n">del_keys</span><span class="p">:</span>
+                <span class="n">del_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">del_keys</span> <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">&#39;__cwd__&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">del_keys</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">strip_keys</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
 
 
     <span class="k">def</span> <span class="nf">_get_config_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
@@ -1305,61 +1358,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">values</span><span class="p">)</span></div></div>
-
-
-<span class="c1">#class ActionParser(Action):</span>
-<span class="c1">#    &quot;&quot;&quot;Action to parse option with a given parser optionally loading from file if string value.&quot;&quot;&quot;</span>
-<span class="c1">#    def __init__(self, **kwargs):</span>
-<span class="c1">#        &quot;&quot;&quot;Initializer for ActionParser instance.</span>
-<span class="c1">#</span>
-<span class="c1">#        Args:</span>
-<span class="c1">#            parser (ArgumentParser): A parser to parse the option with.</span>
-<span class="c1">#</span>
-<span class="c1">#        Raises:</span>
-<span class="c1">#            ValueError: If the parser parameter is invalid.</span>
-<span class="c1">#        &quot;&quot;&quot;</span>
-<span class="c1">#        if &#39;parser&#39; in kwargs:</span>
-<span class="c1">#            _check_unknown_kwargs(kwargs, {&#39;parser&#39;})</span>
-<span class="c1">#            self._parser = kwargs[&#39;parser&#39;]</span>
-<span class="c1">#            if not isinstance(self._parser, ArgumentParser):</span>
-<span class="c1">#                raise ValueError(&#39;Expected parser keyword argument to be an ArgumentParser.&#39;)</span>
-<span class="c1">#        elif &#39;_parser&#39; not in kwargs:</span>
-<span class="c1">#            raise ValueError(&#39;Expected parser keyword argument.&#39;)</span>
-<span class="c1">#        else:</span>
-<span class="c1">#            self._parser = kwargs.pop(&#39;_parser&#39;)</span>
-<span class="c1">#            kwargs[&#39;type&#39;] = str</span>
-<span class="c1">#            super().__init__(**kwargs)</span>
-<span class="c1">#</span>
-<span class="c1">#    def __call__(self, *args, **kwargs):</span>
-<span class="c1">#        &quot;&quot;&quot;Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</span>
-<span class="c1">#</span>
-<span class="c1">#        Raises:</span>
-<span class="c1">#            TypeError: If the argument is not valid.</span>
-<span class="c1">#        &quot;&quot;&quot;</span>
-<span class="c1">#        if len(args) == 0:</span>
-<span class="c1">#            kwargs[&#39;_parser&#39;] = self._parser</span>
-<span class="c1">#            return ActionParser(**kwargs)</span>
-<span class="c1">#        setattr(args[1], self.dest, self._check_type(args[2]))</span>
-<span class="c1">#</span>
-<span class="c1">#    def _check_type(self, value, cfg=None):</span>
-<span class="c1">#        try:</span>
-<span class="c1">#            if isinstance(value, str):</span>
-<span class="c1">#                cfg_path = Path(value, mode=&#39;fr&#39;)</span>
-<span class="c1">#                value = self._parser.parse_path(cfg_path())</span>
-<span class="c1">#            else:</span>
-<span class="c1">#                self._parser.check_config(value, skip_none=True)</span>
-<span class="c1">#        except TypeError as ex:</span>
-<span class="c1">#            raise TypeError(re.sub(&#39;^Parser key ([^:]+):&#39;, &#39;Parser key &#39;+self.dest+&#39;.\\1: &#39;, str(ex)))</span>
-<span class="c1">#        return value</span>
-<span class="c1">#</span>
-<span class="c1">#    @staticmethod</span>
-<span class="c1">#    def _fix_conflicts(parser, cfg):</span>
-<span class="c1">#        cfg_dict = namespace_to_dict(cfg)</span>
-<span class="c1">#        for action in parser._actions:</span>
-<span class="c1">#            if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:</span>
-<span class="c1">#                children = [x for x in cfg_dict.keys() if x.startswith(action.dest+&#39;.&#39;)]</span>
-<span class="c1">#                if len(children) &gt; 0:</span>
-<span class="c1">#                    delattr(cfg, action.dest)</span>
 
 
 <div class="viewcode-block" id="ActionOperators"><a class="viewcode-back" href="../index.html#jsonargparse.ActionOperators">[docs]</a><span class="k">class</span> <span class="nc">ActionOperators</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>

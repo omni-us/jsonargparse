@@ -107,7 +107,7 @@ class JsonargparseTests(unittest.TestCase):
         """Test the dump method."""
         parser = example_parser()
         cfg1 = parser.get_defaults()
-        cfg2 = parser.parse_string(parser.dump(cfg1))
+        cfg2 = parser.parse_string(parser.dump(cfg1), with_cwd=False)
         self.assertEqual(cfg1, cfg2)
         delattr(cfg2, 'lev1')
         parser.dump(cfg2)
@@ -189,7 +189,7 @@ class JsonargparseTests(unittest.TestCase):
         """Test the parsing and checking of yaml."""
         parser = example_parser()
 
-        cfg1 = parser.parse_string(example_yaml)
+        cfg1 = parser.parse_string(example_yaml, with_cwd=False)
         self.assertEqual('opt1_yaml', cfg1.lev1.lev2.opt1)
         self.assertEqual('opt2_yaml', cfg1.lev1.lev2.opt2)
         self.assertEqual(-1,  cfg1.nums.val1)
@@ -197,7 +197,7 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual(False, cfg1.bools.def_false)
         self.assertEqual(True,  cfg1.bools.def_true)
 
-        cfg2 = parser.parse_string(example_yaml, defaults=False)
+        cfg2 = parser.parse_string(example_yaml, defaults=False, with_cwd=False)
         self.assertFalse(hasattr(cfg2, 'bools'))
         self.assertTrue(hasattr(cfg2, 'nums'))
 
@@ -267,6 +267,19 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual('from parser default', cfg.op2)
 
         shutil.rmtree(tmpdir)
+
+
+    def test_strip_unknown(self):
+        """Test the strip_unknown function."""
+        base_parser = example_parser()
+        ext_parser = example_parser()
+        ext_parser.add_argument('--val')
+        ext_parser.add_argument('--lev1.lev2.opt3', default='opt3_def')
+        ext_parser.add_argument('--lev1.opt4', default='opt3_def')
+        ext_parser.add_argument('--nums.val3', type=float, default=1.5)
+        cfg = ext_parser.parse_args([])
+        cfg = base_parser.strip_unknown(cfg)
+        base_parser.check_config(cfg)
 
 
     def test_configfile_filepath(self):
@@ -363,43 +376,6 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPathList(mode='fr', rel='.')))
 
         shutil.rmtree(tmpdir)
-
-
-    #def test_actionparser(self):
-    #    """Test the use of ActionParser."""
-    #    yaml1_str = 'root:\n  child: from single\n'
-    #    yaml2_str = 'root:\n  example3.yaml\n'
-    #    yaml3_str = 'child: from example3\n'
-
-    #    parser2 = ArgumentParser()
-    #    parser2.add_argument('--child')
-    #    parser1 = ArgumentParser(prog='app')
-    #    parser1.add_argument('--root',
-    #        action=ActionParser(parser=parser2))
-    #    parser1.add_argument('--cfg',
-    #        action=ActionConfigFile)
-
-    #    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
-    #    os.mkdir(os.path.join(tmpdir, 'example'))
-    #    yaml1_file = os.path.join(tmpdir, 'example1.yaml')
-    #    yaml2_file = os.path.join(tmpdir, 'example2.yaml')
-    #    yaml3_file = os.path.join(tmpdir, 'example3.yaml')
-    #    with open(yaml1_file, 'w') as output_file:
-    #        output_file.write(yaml1_str)
-    #    with open(yaml2_file, 'w') as output_file:
-    #        output_file.write(yaml2_str)
-    #    with open(yaml3_file, 'w') as output_file:
-    #        output_file.write(yaml3_str)
-
-    #    self.assertEqual('from single', parser1.parse_args(['--cfg', yaml1_file]).root.child)
-    #    self.assertEqual('from example3', parser1.parse_args(['--cfg', yaml2_file]).root.child)
-    #    self.assertEqual('from single', parser1.parse_string(yaml1_str).root.child)
-    #    self.assertEqual('from example3', parser1.parse_path(yaml2_file).root.child)
-
-    #    self.assertRaises(ValueError, lambda: parser1.add_argument('--op1', action=ActionParser))
-    #    self.assertRaises(ValueError, lambda: parser1.add_argument('--op2', action=ActionParser()))
-
-    #    shutil.rmtree(tmpdir)
 
 
     @unittest.skipIf(isinstance(jsonvalidator, Exception), 'jsonschema package is required :: '+str(jsonvalidator))

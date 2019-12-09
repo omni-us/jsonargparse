@@ -218,7 +218,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             raise ValueError('error_handler can be either a Callable or the "usage_and_exit_error_handler" string or None.')
 
 
-    def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True):
+    def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True, with_cwd:bool=True):
         """Parses command line argument strings.
 
         All the arguments from `argparse.ArgumentParser.parse_args
@@ -228,6 +228,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Args:
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             nested (bool): Whether the namespace should be nested.
+            with_cwd (bool): Whether to include __cwd__ in config object.
 
         Returns:
             types.SimpleNamespace: An object with all parsed values as nested attributes.
@@ -247,10 +248,15 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with _suppress_stderr():
                 cfg = super().parse_args(args=args, namespace=namespace)
 
-            #ActionParser._fix_conflicts(self, cfg)
-
             cfg_ns = dict_to_namespace(_flat_namespace_to_dict(cfg))
             self.check_config(cfg_ns, skip_none=True)
+
+            if with_cwd:
+                if hasattr(cfg, '__cwd__'):
+                    if os.getcwd() not in cfg.__cwd__:
+                        cfg.__cwd__.insert(0, os.getcwd())
+                else:
+                    cfg.__cwd__ = [os.getcwd()]
 
             self._logger.info('parsed arguments')
 
@@ -286,12 +292,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         os.chdir(os.path.abspath(os.path.join(cfg_path, os.pardir)))
         try:
             with open(os.path.basename(cfg_path), 'r') as f:
-                parsed_cfg = self.parse_string(f.read(), cfg_path, ext_vars, env, defaults, nested, log=False)
-                if with_cwd:
-                    if hasattr(parsed_cfg, '__cwd__'):
-                        parsed_cfg.__cwd__.append(os.getcwd())
-                    else:
-                        parsed_cfg.__cwd__ = [os.getcwd()]
+                parsed_cfg = self.parse_string(f.read(), cfg_path, ext_vars, env, defaults, nested, with_cwd=with_cwd, log=False)
         finally:
             os.chdir(cwd)
 
@@ -300,7 +301,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return parsed_cfg
 
 
-    def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True, log:bool=True) -> SimpleNamespace:
+    def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True,
+                     nested:bool=True, with_cwd:bool=True, log:bool=True) -> SimpleNamespace:
         """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
@@ -310,6 +312,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
+            with_cwd (bool): Whether to include __cwd__ in config object.
 
         Returns:
             types.SimpleNamespace: An object with all parsed values as attributes.
@@ -331,6 +334,13 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
             cfg_ns = dict_to_namespace(cfg)
             self.check_config(cfg_ns, skip_none=True)
+
+            if with_cwd:
+                if hasattr(cfg_ns, '__cwd__'):
+                    if os.getcwd() not in cfg_ns.__cwd__:
+                        cfg_ns.__cwd__.insert(0, os.getcwd())
+                else:
+                    cfg_ns.__cwd__ = [os.getcwd()]
 
             if log:
                 self._logger.info('Parsed '+self.parser_mode+' string.')
@@ -463,13 +473,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             setattr(self.formatter_class, '_env_prefix', env_prefix)
 
 
-    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True) -> SimpleNamespace:
+    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True, with_cwd:bool=True) -> SimpleNamespace:
         """Parses environment variables.
 
         Args:
             env (dict[str, str]): The environment object to use, if None `os.environ` is used.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
+            with_cwd (bool): Whether to include __cwd__ in config object.
 
         Returns:
             types.SimpleNamespace: An object with all parsed values as attributes.
@@ -501,6 +512,13 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
             cfg_ns = dict_to_namespace(cfg)
             self.check_config(cfg_ns, skip_none=True)
+
+            if with_cwd:
+                if hasattr(cfg_ns, '__cwd__'):
+                    if os.getcwd() not in cfg_ns.__cwd__:
+                        cfg_ns.__cwd__.insert(0, os.getcwd())
+                else:
+                    cfg_ns.__cwd__ = [os.getcwd()]
 
             self._logger.info('Parsed environment variables.')
 
@@ -600,10 +618,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             for action in parser._actions:
                 if action.dest == dest:
                     return action, dest
-                #elif isinstance(action, ActionParser) and dest.startswith(action.dest+'.'):
-                #    _action, _dest = find_action(action._parser, dest[len(action.dest)+1:])
-                #    if _action is not None:
-                #        return _action, _dest
             return None, dest
 
         def check_values(cfg, base=None):
@@ -623,6 +637,45 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     raise KeyError('No action for key "'+key+'" to check its value.')
 
         check_values(cfg)
+
+
+    def strip_unknown(self, cfg):
+        """Removes all unknown keys from a configuration object.
+
+        Args:
+            cfg (types.SimpleNamespace or dict): The configuration object to strip.
+
+        Returns:
+            types.SimpleNamespace: The stripped configuration object.
+        """
+        cfg = deepcopy(cfg)
+        if not isinstance(cfg, dict):
+            cfg = namespace_to_dict(cfg)
+
+        def find_action(parser, dest):
+            for action in parser._actions:
+                if action.dest == dest:
+                    return action, dest
+            return None, dest
+
+        def strip_keys(cfg, base=None):
+            del_keys = []
+            for key, val in cfg.items():
+                kbase = key if base is None else base+'.'+key
+                action, _kbase = find_action(self, kbase)
+                if action is not None:
+                    pass
+                elif isinstance(val, dict):
+                    strip_keys(val, kbase)
+                else:
+                    del_keys.append(key)
+            if base is None and '__cwd__' in del_keys:
+                del_keys = [v for v in del_keys if v != '__cwd__']
+            for key in del_keys:
+                del cfg[key]
+
+        strip_keys(cfg)
+        return dict_to_namespace(cfg)
 
 
     def _get_config_files(self, cfg):
@@ -1158,61 +1211,6 @@ class ActionJsonnet(Action):
         if self._validator is not None:
             self._validator.validate(values)
         return dict_to_namespace(values)
-
-
-#class ActionParser(Action):
-#    """Action to parse option with a given parser optionally loading from file if string value."""
-#    def __init__(self, **kwargs):
-#        """Initializer for ActionParser instance.
-#
-#        Args:
-#            parser (ArgumentParser): A parser to parse the option with.
-#
-#        Raises:
-#            ValueError: If the parser parameter is invalid.
-#        """
-#        if 'parser' in kwargs:
-#            _check_unknown_kwargs(kwargs, {'parser'})
-#            self._parser = kwargs['parser']
-#            if not isinstance(self._parser, ArgumentParser):
-#                raise ValueError('Expected parser keyword argument to be an ArgumentParser.')
-#        elif '_parser' not in kwargs:
-#            raise ValueError('Expected parser keyword argument.')
-#        else:
-#            self._parser = kwargs.pop('_parser')
-#            kwargs['type'] = str
-#            super().__init__(**kwargs)
-#
-#    def __call__(self, *args, **kwargs):
-#        """Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.
-#
-#        Raises:
-#            TypeError: If the argument is not valid.
-#        """
-#        if len(args) == 0:
-#            kwargs['_parser'] = self._parser
-#            return ActionParser(**kwargs)
-#        setattr(args[1], self.dest, self._check_type(args[2]))
-#
-#    def _check_type(self, value, cfg=None):
-#        try:
-#            if isinstance(value, str):
-#                cfg_path = Path(value, mode='fr')
-#                value = self._parser.parse_path(cfg_path())
-#            else:
-#                self._parser.check_config(value, skip_none=True)
-#        except TypeError as ex:
-#            raise TypeError(re.sub('^Parser key ([^:]+):', 'Parser key '+self.dest+'.\\1: ', str(ex)))
-#        return value
-#
-#    @staticmethod
-#    def _fix_conflicts(parser, cfg):
-#        cfg_dict = namespace_to_dict(cfg)
-#        for action in parser._actions:
-#            if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
-#                children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]
-#                if len(children) > 0:
-#                    delattr(cfg, action.dest)
 
 
 class ActionOperators(Action):
