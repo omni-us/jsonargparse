@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.14.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.14.0+1commits/2019.12.10 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.14.0
+                master/v2.14.0+1commits/2019.12.10
               </div>
             
           
@@ -716,13 +716,16 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_env" title="jsonargparse.ArgumentParser.parse_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_env</span></code></a>(env, str] = None, defaults, …)</p></td>
 <td><p>Parses environment variables.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, ext_vars, env, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_known_args" title="jsonargparse.ArgumentParser.parse_known_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_known_args</span></code></a>([args, namespace])</p></td>
+<td><p>parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, ext_vars, env, …)</p></td>
 <td><p>Parses a configuration file (yaml or jsonnet) given its path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, cfg_path, ext_vars, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, cfg_path, ext_vars, …)</p></td>
 <td><p>Parses configuration (yaml or jsonnet) given as a string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
 <td><p>Removes all unknown keys from a configuration object.</p></td>
 </tr>
 </tbody>
@@ -771,6 +774,12 @@ are supported. Additionally it accepts:</p>
 <dt id="jsonargparse.ArgumentParser.error_handler">
 <em class="property">property </em><code class="sig-name descname">error_handler</code><a class="headerlink" href="#jsonargparse.ArgumentParser.error_handler" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current error_handler.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jsonargparse.ArgumentParser.parse_known_args">
+<code class="sig-name descname">parse_known_args</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">namespace=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_known_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_known_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.</p>
 </dd></dl>
 
 <dl class="method">

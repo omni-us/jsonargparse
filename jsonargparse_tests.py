@@ -216,6 +216,9 @@ class JsonargparseTests(unittest.TestCase):
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml+'  val2: eight\n')
         self.assertRaises(ParserError, lambda: parser.parse_path(yaml_file))
+        with open(yaml_file, 'w') as output_file:
+            output_file.write(example_yaml+'  val3: key_not_defined\n')
+        self.assertRaises(ParserError, lambda: parser.parse_path(yaml_file))
 
         shutil.rmtree(tmpdir)
 

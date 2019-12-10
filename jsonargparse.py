@@ -218,6 +218,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             raise ValueError('error_handler can be either a Callable or the "usage_and_exit_error_handler" string or None.')
 
 
+    def parse_known_args(self, args=None, namespace=None):
+        """parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed."""
+        raise NotImplementedError('parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.')
+
+
     def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True, with_cwd:bool=True):
         """Parses command line argument strings.
 
@@ -246,7 +251,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 namespace = cfg_def if namespace is None else self._merge_config(namespace, cfg_def)
 
             with _suppress_stderr():
-                cfg = super().parse_args(args=args, namespace=namespace)
+                cfg, unk = super().parse_known_args(args=args, namespace=namespace)
+                if unk:
+                    self.error('unrecognized arguments: %s' % ' '.join(unk))
 
             cfg_ns = dict_to_namespace(_flat_namespace_to_dict(cfg))
             self.check_config(cfg_ns, skip_none=True)
@@ -762,6 +769,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                         value[k] = action.type(v)
             except (TypeError, ValueError) as ex:
                 raise TypeError('Parser key "'+str(key)+'": '+str(ex))
+        elif isinstance(action, argparse._StoreAction) and isinstance(value, dict):
+            raise TypeError('StoreAction (key='+key+') does not allow dict value ('+str(value)+'), consider using ActionJsonSchema instead.')
         return value
 
 
@@ -783,7 +792,7 @@ def _get_key_value(cfg, key):
     return c[k] if isinstance(c, dict) else getattr(c, k)
 
 
-def _flat_namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
+def _flat_namespace_to_dict(cfg_ns:Union[SimpleNamespace, argparse.Namespace]) -> Dict[str, Any]:
     """Converts a flat namespace into a nested dictionary.
 
     Args:
