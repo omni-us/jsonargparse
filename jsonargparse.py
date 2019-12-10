@@ -139,7 +139,7 @@ class _ArgumentGroup(_ActionsContainer, argparse._ArgumentGroup):
 class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty):
     """Parser for command line, yaml/jsonnet files and environment variables."""
 
-    groups = {}  # type: Dict[str, argparse._ArgumentGroup]
+    groups = None  # type: Dict[str, argparse._ArgumentGroup]
 
 
     def __init__(self,
@@ -180,6 +180,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         kwargs['formatter_class'] = formatter_class
         if formatter_class == DefaultHelpFormatter:
             setattr(formatter_class, '_conf_file', False)
+        if self.groups is None:
+            self.groups = {}
         super().__init__(*args, **kwargs)
         self.required_args = set()  # type: Set[str]
         self._stderr = sys.stderr

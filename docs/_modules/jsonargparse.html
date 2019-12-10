@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.14.1 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.14.1+1commits/2019.12.10 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.14.1
+                master/v2.14.1+1commits/2019.12.10
               </div>
             
           
@@ -286,7 +286,7 @@
 <div class="viewcode-block" id="ArgumentParser"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser">[docs]</a><span class="k">class</span> <span class="nc">ArgumentParser</span><span class="p">(</span><span class="n">_ActionsContainer</span><span class="p">,</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">LoggerProperty</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Parser for command line, yaml/jsonnet files and environment variables.&quot;&quot;&quot;</span>
 
-    <span class="n">groups</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># type: Dict[str, argparse._ArgumentGroup]</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: Dict[str, argparse._ArgumentGroup]</span>
 
 
 <div class="viewcode-block" id="ArgumentParser.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -327,6 +327,8 @@
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;formatter_class&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">formatter_class</span>
         <span class="k">if</span> <span class="n">formatter_class</span> <span class="o">==</span> <span class="n">DefaultHelpFormatter</span><span class="p">:</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="n">formatter_class</span><span class="p">,</span> <span class="s1">&#39;_conf_file&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">groups</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">required_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># type: Set[str]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span>
