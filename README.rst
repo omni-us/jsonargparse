@@ -13,8 +13,8 @@ https://omni-us.github.io/jsonargparse/
 
 This module is an extension to python's argparse which simplifies parsing of
 configuration options from command line arguments, json supersets (`yaml
-<https://yaml.org/>`__ or `jsonnet <https://jsonnet.org/>`__) configuration files,
-environment variables and hard-coded defaults.
+<https://yaml.org/>`__ or `jsonnet <https://jsonnet.org/>`__) configuration
+files, environment variables and hard-coded defaults.
 
 The aim is similar to other projects such as `configargparse
 <https://pypi.org/project/ConfigArgParse/>`__, `yconf
@@ -28,28 +28,40 @@ alternatives it seemed simpler to create a new module.
 Features
 ========
 
-- Parsers are configured just like with python's argparse, thus it has a gentile learning curve.
+- Parsers are configured just like with python's argparse, thus it has a gentle
+  learning curve.
 
-- Not exclusively intended for parsing command line arguments. The main focus is parsing yaml or jsonnet configuration files and not necessarily from a command line tool.
+- Not exclusively intended for parsing command line arguments. The main focus is
+  parsing yaml or jsonnet configuration files and not necessarily from a command
+  line tool.
 
-- Support for nested namespaces which makes it possible to parse config files with non-flat hierarchies.
+- Support for nested namespaces which makes it possible to parse config files
+  with non-flat hierarchies.
 
-- Support for two popular supersets of json, making config files more versatile and powerful.
+- Support for two popular supersets of json, making config files more versatile
+  and powerful.
 
 - Parsing of relative paths within config files and path lists.
 
-- Several convenient action classes to ease common parsing use cases (paths, comparison operators, json schemas, ...).
+- Several convenient action classes to ease common parsing use cases (paths,
+  comparison operators, json schemas, ...).
 
-- Default behavior is not identical to argparse, though it is possible to configure it to be identical. The main differences are:
+- Default behavior is not identical to argparse, though it is possible to
+  configure it to be identical. The main differences are:
 
-  - When parsing fails :class:`ParserError` is raised, instead of printing usage and program exit.
-  - To modify the behavior for parsing errors (e.g. print usage) an error handler function can be provided.
+  - When parsing fails :class:`ParserError` is raised, instead of printing usage
+    and program exit.
+  - To modify the behavior for parsing errors (e.g. print usage) an error
+    handler function can be provided.
 
 - Configuration values are overridden based on the following precedence.
 
-  - **Parsing command line:** command line arguments (might include config file) > environment variables > default config file > defaults.
-  - **Parsing files:** config file > environment variables > default config file > defaults.
-  - **Parsing environment:** environment variables > default config file > defaults.
+  - **Parsing command line:** command line arguments (might include config file)
+    > environment variables > default config file > defaults.
+  - **Parsing files:** config file > environment variables > default config file
+    > defaults.
+  - **Parsing environment:** environment variables > default config file >
+    defaults.
 
 
 Basic usage
@@ -60,8 +72,8 @@ create a parser object and then add arguments to it. A simple example would be:
 
 .. code-block:: python
 
-    import jsonargparse
-    parser = jsonargparse.ArgumentParser(
+    from jsonargparse import ArgumentParser
+    parser = ArgumentParser(
         prog='app',
         description='Description for my app.')
 
@@ -91,8 +103,8 @@ from above you would observe:
     >>> cfg.opt2, type(cfg.opt2)
     (2.3, <class 'float'>)
 
-If the parsing fails a :class:`ParserError` is raised, so depending on the use case it
-might be necessary to catch it.
+If the parsing fails a :class:`ParserError` is raised, so depending on the use
+case it might be necessary to catch it.
 
 .. code-block:: python
 
@@ -108,7 +120,7 @@ follows:
 
 .. code-block:: python
 
-    parser = jsonargparse.ArgumentParser(
+    parser = ArgumentParser(
         prog='app',
         error_handler='usage_and_exit_error_handler',
         description='Description for my app.')
@@ -125,7 +137,7 @@ example you could do the following:
 
 .. code-block:: python
 
-    >>> parser = jsonargparse.ArgumentParser(prog='app')
+    >>> parser = ArgumentParser(prog='app')
     >>> parser.add_argument('--lev1.opt1', default='from default 1')
     >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> cfg = parser.get_defaults()
@@ -156,7 +168,7 @@ command line arguments, that is:
 
 .. code-block:: python
 
-    >>> parser = jsonargparse.ArgumentParser(env_prefix='app', default_env=True)
+    >>> parser = ArgumentParser(env_prefix='APP', default_env=True)
     >>> parser.add_argument('--lev1.opt1', default='from default 1')
     >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1'])
@@ -204,10 +216,11 @@ the following would be observed:
 
 .. code-block:: python
 
-    >>> parser = jsonargparse.ArgumentParser()
+    >>> from jsonargparse import ArgumentParser, ActionConfigFile
+    >>> parser = ArgumentParser()
     >>> parser.add_argument('--lev1.opt1', default='from default 1')
     >>> parser.add_argument('--lev1.opt2', default='from default 2')
-    >>> parser.add_argument('--cfg', action=jsonargparse.ActionConfigFile)
+    >>> parser.add_argument('--cfg', action=ActionConfigFile)
     >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1', '--cfg', 'example.yaml', '--lev1.opt2', 'from arg 2'])
     >>> cfg.lev1.opt1
     'from yaml 1'
@@ -258,7 +271,8 @@ using a json schema is done like in the following example:
     ...     },
     ... }
 
-    >>> parser.add_argument('--op', action=jsonargparse.ActionJsonSchema(schema=schema))
+    >>> from jsonargparse import ActionJsonSchema
+    >>> parser.add_argument('--op', action=ActionJsonSchema(schema=schema))
 
     >>> parser.parse_args(['--op', '{"price": 1.5, "name": "cookie"}'])
     namespace(op=namespace(name='cookie', price=1.5))
@@ -291,8 +305,9 @@ config files to be in jsonnet format instead. Example:
 
 .. code-block:: python
 
-    >>> parser = jsonargparse.ArgumentParser(parser_mode='jsonnet')
-    >>> parser.add_argument('--cfg', action=jsonargparse.ActionConfigFile)
+    >>> from jsonargparse import ArgumentParser, ActionConfigFile
+    >>> parser = ArgumentParser(parser_mode='jsonnet')
+    >>> parser.add_argument('--cfg', action=ActionConfigFile)
     >>> cfg = parser.parse_args(['--cfg', 'example.jsonnet'])
 
 Jsonnet files are commonly parametrized, thus requiring external variables for
@@ -305,11 +320,12 @@ would be as follows:
 
 .. code-block:: python
 
-        parser = ArgumentParser()
-        parser.add_argument('--in_ext_vars',
-            action=jsonargparse.ActionJsonnetExtVars)
-        parser.add_argument('--in_jsonnet',
-            action=jsonargparse.ActionJsonnet(ext_vars='in_ext_vars'))
+    from jsonargparse import ArgumentParser, ActionJsonnet, ActionJsonnetExtVars
+    parser = ArgumentParser()
+    parser.add_argument('--in_ext_vars',
+        action=ActionJsonnetExtVars)
+    parser.add_argument('--in_jsonnet',
+        action=ActionJsonnet(ext_vars='in_ext_vars'))
 
 For example, if a jsonnet file required some external variable :code:`param`,
 then the jsonnet and the external variable could be given as:
@@ -352,8 +368,9 @@ and is readable, the following could be done:
 
 .. code-block:: python
 
-    >>> parser = jsonargparse.ArgumentParser()
-    >>> parser.add_argument('--databases.info', action=jsonargparse.ActionPath(mode='fr'))
+    >>> from jsonargparse import ArgumentParser, ActionPath
+    >>> parser = ArgumentParser()
+    >>> parser.add_argument('--databases.info', action=ActionPath(mode='fr'))
     >>> cfg = parser.parse_path('app/config.yaml')
 
 After parsing it is possible to get both the original relative path as included
@@ -377,7 +394,8 @@ as argument either the path to a file listing the paths is given or the special
 
 .. code-block:: python
 
-    >>> parser.add_argument('--list', action=jsonargparse.ActionPathList(mode='fr'))
+    >>> from jsonargparse import ActionPathList
+    >>> parser.add_argument('--list', action=ActionPathList(mode='fr'))
     >>> cfg = parser.parse_args(['--list', 'paths.lst')  # Text file with paths
     >>> cfg = parser.parse_args(['--list', '-')          # List from stdin
 
@@ -394,13 +412,14 @@ examples of arguments that can be added using this action are the following:
 
 .. code-block:: python
 
+    from jsonargparse import ActionOperators
     # Larger than zero
-    parser.add_argument('--op1', action=jsonargparse.ActionOperators(expr=('>', 0)))
+    parser.add_argument('--op1', action=ActionOperators(expr=('>', 0)))
     # Between 0 and 10
-    parser.add_argument('--op2', action=jsonargparse.ActionOperators(expr=[('>=', 0), ('<=', 10)]))
+    parser.add_argument('--op2', action=ActionOperators(expr=[('>=', 0), ('<=', 10)]))
     # Either larger than zero or 'off' string
     def int_or_off(x): return x if x == 'off' else int(x)
-    parser.add_argument('--op3', action=jsonargparse.ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
+    parser.add_argument('--op3', action=ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
 
 
 Boolean arguments
@@ -429,10 +448,11 @@ makes this straightforward. A couple of examples would be:
 
 .. code-block:: python
 
+    from jsonargparse import ActionYesNo
     # --opt1 for true and --no_opt1 for false.
-    parser.add_argument('--op1', action=jsonargparse.ActionYesNo)
+    parser.add_argument('--op1', action=ActionYesNo)
     # --with-opt2 for true and --without-opt2 for false.
-    parser.add_argument('--with-op2', action=jsonargparse.ActionYesNo(yes_prefix='with-', no_prefix='without-'))
+    parser.add_argument('--with-op2', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
 
 If the :class:`.ActionYesNo` class is used in conjunction with
 :code:`nargs='?'` the options can also be set by giving as value any of

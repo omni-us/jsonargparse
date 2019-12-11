@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.14.2 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.14.2+1commits/2019.12.11 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.14.2
+                master/v2.14.2+1commits/2019.12.11
               </div>
             
           
@@ -170,8 +170,8 @@
 <h1>jsonargparse (former yamlargparse)<a class="headerlink" href="#jsonargparse-former-yamlargparse" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://omni-us.github.io/jsonargparse/">https://omni-us.github.io/jsonargparse/</a></p>
 <p>This module is an extension to python’s argparse which simplifies parsing of
-configuration options from command line arguments, json supersets (<a class="reference external" href="https://yaml.org/">yaml</a> or <a class="reference external" href="https://jsonnet.org/">jsonnet</a>) configuration files,
-environment variables and hard-coded defaults.</p>
+configuration options from command line arguments, json supersets (<a class="reference external" href="https://yaml.org/">yaml</a> or <a class="reference external" href="https://jsonnet.org/">jsonnet</a>) configuration
+files, environment variables and hard-coded defaults.</p>
 <p>The aim is similar to other projects such as <a class="reference external" href="https://pypi.org/project/ConfigArgParse/">configargparse</a>, <a class="reference external" href="https://pypi.org/project/yconf/">yconf</a> and <a class="reference external" href="https://pypi.org/project/confuse/">confuse</a>. The obvious question is, why yet another
 module similar to many already existing ones? The answer is simply that none of
 the existing projects had the exact features we wanted and after analyzing the
@@ -180,23 +180,35 @@ alternatives it seemed simpler to create a new module.</p>
 <div class="section" id="features">
 <h1>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li><p>Parsers are configured just like with python’s argparse, thus it has a gentile learning curve.</p></li>
-<li><p>Not exclusively intended for parsing command line arguments. The main focus is parsing yaml or jsonnet configuration files and not necessarily from a command line tool.</p></li>
-<li><p>Support for nested namespaces which makes it possible to parse config files with non-flat hierarchies.</p></li>
-<li><p>Support for two popular supersets of json, making config files more versatile and powerful.</p></li>
+<li><p>Parsers are configured just like with python’s argparse, thus it has a gentle
+learning curve.</p></li>
+<li><p>Not exclusively intended for parsing command line arguments. The main focus is
+parsing yaml or jsonnet configuration files and not necessarily from a command
+line tool.</p></li>
+<li><p>Support for nested namespaces which makes it possible to parse config files
+with non-flat hierarchies.</p></li>
+<li><p>Support for two popular supersets of json, making config files more versatile
+and powerful.</p></li>
 <li><p>Parsing of relative paths within config files and path lists.</p></li>
-<li><p>Several convenient action classes to ease common parsing use cases (paths, comparison operators, json schemas, …).</p></li>
-<li><p>Default behavior is not identical to argparse, though it is possible to configure it to be identical. The main differences are:</p>
+<li><p>Several convenient action classes to ease common parsing use cases (paths,
+comparison operators, json schemas, …).</p></li>
+<li><p>Default behavior is not identical to argparse, though it is possible to
+configure it to be identical. The main differences are:</p>
 <ul>
-<li><p>When parsing fails <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, instead of printing usage and program exit.</p></li>
-<li><p>To modify the behavior for parsing errors (e.g. print usage) an error handler function can be provided.</p></li>
+<li><p>When parsing fails <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, instead of printing usage
+and program exit.</p></li>
+<li><p>To modify the behavior for parsing errors (e.g. print usage) an error
+handler function can be provided.</p></li>
 </ul>
 </li>
 <li><p>Configuration values are overridden based on the following precedence.</p>
 <ul>
-<li><p><strong>Parsing command line:</strong> command line arguments (might include config file) &gt; environment variables &gt; default config file &gt; defaults.</p></li>
-<li><p><strong>Parsing files:</strong> config file &gt; environment variables &gt; default config file &gt; defaults.</p></li>
-<li><p><strong>Parsing environment:</strong> environment variables &gt; default config file &gt; defaults.</p></li>
+<li><p><strong>Parsing command line:</strong> command line arguments (might include config file)
+&gt; environment variables &gt; default config file &gt; defaults.</p></li>
+<li><p><strong>Parsing files:</strong> config file &gt; environment variables &gt; default config file
+&gt; defaults.</p></li>
+<li><p><strong>Parsing environment:</strong> environment variables &gt; default config file &gt;
+defaults.</p></li>
 </ul>
 </li>
 </ul>
@@ -205,8 +217,8 @@ alternatives it seemed simpler to create a new module.</p>
 <h1>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h1>
 <p>A parser is created just like it is done with argparse. You import the module,
 create a parser object and then add arguments to it. A simple example would be:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">jsonargparse</span>
-<span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span>
     <span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Description for my app.&#39;</span><span class="p">)</span>
 
@@ -234,8 +246,8 @@ from above you would observe:</p>
 <span class="go">(2.3, &lt;class &#39;float&#39;&gt;)</span>
 </pre></div>
 </div>
-<p>If the parsing fails a <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, so depending on the use case it
-might be necessary to catch it.</p>
+<p>If the parsing fails a <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, so depending on the use
+case it might be necessary to catch it.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--opt2&#39;</span><span class="p">,</span> <span class="s1">&#39;four&#39;</span><span class="p">])</span>
 <span class="gp">... </span><span class="k">except</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ParserError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
@@ -246,7 +258,7 @@ might be necessary to catch it.</p>
 </div>
 <p>To get the default behavior of argparse the ArgumentParser can be initialized as
 follows:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span>
     <span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span>
     <span class="n">error_handler</span><span class="o">=</span><span class="s1">&#39;usage_and_exit_error_handler&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Description for my app.&#39;</span><span class="p">)</span>
@@ -258,7 +270,7 @@ follows:</p>
 <p>A difference with respect to the basic argparse is that it by using dot notation
 in the argument names, you can define a hierarchy of nested namespaces. So for
 example you could do the following:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 2&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">()</span>
@@ -284,7 +296,7 @@ would set the environment variables as:</p>
 </div>
 <p>Then in python the parser would use these variables, unless overridden by the
 command line arguments, that is:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="n">default_env</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;APP&#39;</span><span class="p">,</span> <span class="n">default_env</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 2&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="s1">&#39;from arg 1&#39;</span><span class="p">])</span>
@@ -323,10 +335,11 @@ following yaml:</p>
 </div>
 <p>Then in python adding a yaml file argument and parsing some example arguments,
 the following would be observed:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ActionConfigFile</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;from default 2&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionConfigFile</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionConfigFile</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--lev1.opt1&#39;</span><span class="p">,</span> <span class="s1">&#39;from arg 1&#39;</span><span class="p">,</span> <span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="s1">&#39;example.yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;--lev1.opt2&#39;</span><span class="p">,</span> <span class="s1">&#39;from arg 2&#39;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">lev1</span><span class="o">.</span><span class="n">opt1</span>
 <span class="go">&#39;from yaml 1&#39;</span>
@@ -367,7 +380,8 @@ using a json schema is done like in the following example:</p>
 <span class="gp">... </span>    <span class="p">},</span>
 <span class="gp">... </span><span class="p">}</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ActionJsonSchema</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">))</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="s1">&#39;{&quot;price&quot;: 1.5, &quot;name&quot;: &quot;cookie&quot;}&#39;</span><span class="p">])</span>
 <span class="go">namespace(op=namespace(name=&#39;cookie&#39;, price=1.5))</span>
@@ -392,8 +406,9 @@ jsonargparse with the <em>all</em> extras requires as:</p>
 However, if instantiated giving as argument <code class="code docutils literal notranslate"><span class="pre">parser_mode='jsonnet'</span></code>, then
 <code class="xref py py-func docutils literal notranslate"><span class="pre">parse_args()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">parse_path()</span></code> and <code class="xref py py-func docutils literal notranslate"><span class="pre">parse_string()</span></code> will expect
 config files to be in jsonnet format instead. Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">parser_mode</span><span class="o">=</span><span class="s1">&#39;jsonnet&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionConfigFile</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ActionConfigFile</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">parser_mode</span><span class="o">=</span><span class="s1">&#39;jsonnet&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionConfigFile</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--cfg&#39;</span><span class="p">,</span> <span class="s1">&#39;example.jsonnet&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -404,11 +419,12 @@ argument which would be a path to a jsonnet file. Moreover, another argument can
 be specified as the source for any external variables required, which would be
 either a path to or a string containing a json dictionary of variables. Its use
 would be as follows:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ActionJsonnet</span><span class="p">,</span> <span class="n">ActionJsonnetExtVars</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--in_ext_vars&#39;</span><span class="p">,</span>
-    <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionJsonnetExtVars</span><span class="p">)</span>
+    <span class="n">action</span><span class="o">=</span><span class="n">ActionJsonnetExtVars</span><span class="p">)</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--in_jsonnet&#39;</span><span class="p">,</span>
-    <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionJsonnet</span><span class="p">(</span><span class="n">ext_vars</span><span class="o">=</span><span class="s1">&#39;in_ext_vars&#39;</span><span class="p">))</span>
+    <span class="n">action</span><span class="o">=</span><span class="n">ActionJsonnet</span><span class="p">(</span><span class="n">ext_vars</span><span class="o">=</span><span class="s1">&#39;in_ext_vars&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>For example, if a jsonnet file required some external variable <code class="code docutils literal notranslate"><span class="pre">param</span></code>,
@@ -441,8 +457,9 @@ the yaml file is the following:</p>
 </div>
 <p>To create a parser that checks that the value of <code class="code docutils literal notranslate"><span class="pre">databases.info</span></code> exists
 and is readable, the following could be done:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">jsonargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--databases.info&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionPath</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ActionPath</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--databases.info&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionPath</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="s1">&#39;app/config.yaml&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -461,7 +478,8 @@ multiple paths. But it might also be wanted to parse a list of paths found in a
 plain text file or from stdin. For this the <a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> is used and
 as argument either the path to a file listing the paths is given or the special
 <code class="code docutils literal notranslate"><span class="pre">'-'</span></code> string for reading the list from stdin. For for example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionPathList</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ActionPathList</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionPathList</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="s1">&#39;paths.lst&#39;</span><span class="p">)</span>  <span class="c1"># Text file with paths</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--list&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>          <span class="c1"># List from stdin</span>
 </pre></div>
@@ -474,13 +492,14 @@ generated including all paths in all lists provided.</p>
 <p>It is quite common that when parsing a number, its range should be limited. To
 ease these cases the module includes the <a class="reference internal" href="#jsonargparse.ActionOperators" title="jsonargparse.ActionOperators"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>. Some
 examples of arguments that can be added using this action are the following:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Larger than zero</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ActionOperators</span>
+<span class="c1"># Larger than zero</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
 <span class="c1"># Between 0 and 10</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]))</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]))</span>
 <span class="c1"># Either larger than zero or &#39;off&#39; string</span>
 <span class="k">def</span> <span class="nf">int_or_off</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;off&#39;</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op3&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="s1">&#39;off&#39;</span><span class="p">)],</span> <span class="n">join</span><span class="o">=</span><span class="s1">&#39;or&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">int_or_off</span><span class="p">))</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op3&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="s1">&#39;off&#39;</span><span class="p">)],</span> <span class="n">join</span><span class="o">=</span><span class="s1">&#39;or&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">int_or_off</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -503,10 +522,11 @@ is implemented. If given as values <code class="code docutils literal notranslat
 <p>Sometimes it is also useful to define two paired options, one to set
 <code class="code docutils literal notranslate"><span class="pre">True</span></code> and the other to set <code class="code docutils literal notranslate"><span class="pre">False</span></code>. The <a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a> class
 makes this straightforward. A couple of examples would be:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># --opt1 for true and --no_opt1 for false.</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionYesNo</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ActionYesNo</span>
+<span class="c1"># --opt1 for true and --no_opt1 for false.</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionYesNo</span><span class="p">)</span>
 <span class="c1"># --with-opt2 for true and --without-opt2 for false.</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--with-op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">jsonargparse</span><span class="o">.</span><span class="n">ActionYesNo</span><span class="p">(</span><span class="n">yes_prefix</span><span class="o">=</span><span class="s1">&#39;with-&#39;</span><span class="p">,</span> <span class="n">no_prefix</span><span class="o">=</span><span class="s1">&#39;without-&#39;</span><span class="p">))</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--with-op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionYesNo</span><span class="p">(</span><span class="n">yes_prefix</span><span class="o">=</span><span class="s1">&#39;with-&#39;</span><span class="p">,</span> <span class="n">no_prefix</span><span class="o">=</span><span class="s1">&#39;without-&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>If the <a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a> class is used in conjunction with
