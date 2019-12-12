@@ -502,16 +502,24 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 env = dict(os.environ)
             cfg = {}  # type: ignore
             for action in self._actions:
-                if action.default == '==SUPPRESS==':
-                    continue
                 env_var = self._get_env_var(self, action)
-                if env_var in env:
-                    if isinstance(action, ActionConfigFile):
-                        namespace = _dict_to_flat_namespace(cfg)
-                        ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
-                        cfg = vars(namespace)
-                    else:
-                        cfg[action.dest] = self._check_value_key(action, env[env_var], env_var, cfg)
+                if env_var in env and isinstance(action, ActionConfigFile):
+                    namespace = _dict_to_flat_namespace(cfg)
+                    ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
+                    cfg = vars(namespace)
+            for action in [a for a in self._actions if a.default != '==SUPPRESS==']:
+                env_var = self._get_env_var(self, action)
+                if env_var in env and not isinstance(action, ActionConfigFile):
+                    env_val = env[env_var]
+                    if _is_action_value_list(action):
+                        if re.match('^ *\\[.+,.+] *$', env_val):
+                            try:
+                                env_val = yaml.safe_load(env_val)
+                            except:
+                                env_val = [env_val]  # type: ignore
+                        else:
+                            env_val = [env_val]  # type: ignore
+                    cfg[action.dest] = self._check_value_key(action, env_val, env_var, cfg)
 
             if nested:
                 cfg = _flat_namespace_to_dict(SimpleNamespace(**cfg))

@@ -186,23 +186,24 @@ parse environment variables, which might be useful for some use cases in which
 there is no command line call involved.
 
 
-YAML files
-==========
+Configuration files
+===================
 
-An important feature of this module is the parsing of yaml files. The dot
-notation hierarchy of the arguments (see :ref:`nested-namespaces`) are
-used for the expected structure of the yaml files.
+An important feature of this module is the parsing of yaml/json files. The dot
+notation hierarchy of the arguments (see :ref:`nested-namespaces`) are used for
+the expected structure in the config files.
 
 When creating the :class:`.ArgumentParser` the :code:`default_config_files`
 argument can be given to specify patterns to search for configuration files.
 Only the first matched config file is parsed.
 
-When parsing command line arguments, it is possible to add a yaml configuration
-file path argument. The yaml file would be read and parsed in the specific
-position among the command line arguments, so the arguments after would override
-the values from the yaml file. Again using the parser from the
-:ref:`nested-namespaces` section above, for example we could have the
-following yaml:
+When parsing command line arguments, it is possible to add a configuration file
+path argument. The config file would be read and parsed in the specific position
+among the command line arguments, so the arguments after would override the
+values from the configuration file. If the config argument can be given multiple
+times, each overriding the values of the previous. Again using the parser from
+the :ref:`nested-namespaces` section above, for example we could have the
+following config file in yaml format:
 
 .. code-block:: yaml
 
@@ -235,6 +236,11 @@ configuration content can also be provided.
     >>> cfg = parser.parse_args(['--cfg', '{"lev1":{"opt1":"from string 1"}}'])
     >>> cfg.lev1.opt1
     'from string 1'
+
+The config file could also be provided as an environment variable as explained
+in section :ref:`environment-variables`. The configuration file environment
+variable is the first one to be parsed. So any other argument provided through
+environment variables would override the config file one.
 
 A configuration file or string can also be parsed without parsing command line
 arguments. The functions for this are
@@ -296,7 +302,7 @@ jsonargparse with the *all* extras requires as:
 
 .. code-block:: bash
 
-    $ pip3 install 'jsonargparse[all]'
+    $ pip3 install jsonargparse[all]
 
 By default an :class:`.ArgumentParser` parses configuration files as yaml.
 However, if instantiated giving as argument :code:`parser_mode='jsonnet'`, then

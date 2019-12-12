@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import pathlib
 import unittest
+from collections import OrderedDict
 from jsonargparse import *
 from jsonargparse import _jsonnet
 
@@ -232,6 +233,15 @@ class JsonargparseTests(unittest.TestCase):
         cfg = parser.parse_env(env=example_env, defaults=False)
         self.assertFalse(hasattr(cfg, 'bools'))
         self.assertTrue(hasattr(cfg, 'nums'))
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        env = OrderedDict(example_env)
+        env['APP_CFG'] = '{"nums": {"val1": 1}}'
+        self.assertEqual(0, parser.parse_env(env=env).nums.val1)
+        parser.add_argument('req', nargs='+')
+        env['APP_REQ'] = 'abc'
+        self.assertEqual(['abc'], parser.parse_env(env=env).req)
+        env['APP_REQ'] = '["abc", "xyz"]'
+        self.assertEqual(['abc', 'xyz'], parser.parse_env(env=env).req)
 
 
     def test_required(self):
