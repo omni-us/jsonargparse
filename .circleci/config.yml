@@ -51,6 +51,7 @@ jobs:
             python3 -m coverage html
             python3 -m coverage xml -o coverage.xml
             ./cc-test-reporter after-build --coverage-input-type coverage.py
+            codecov -t $CODECOV_TOKEN
       - store_artifacts:
           path: htmlcov
   publish-pypi:
