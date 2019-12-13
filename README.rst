@@ -1,5 +1,7 @@
 .. image:: https://circleci.com/gh/omni-us/jsonargparse.svg?style=svg
     :target: https://circleci.com/gh/omni-us/jsonargparse
+.. image:: https://codecov.io/gh/omni-us/jsonargparse/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/omni-us/jsonargparse
 .. image:: https://badge.fury.io/py/jsonargparse.svg
     :target: https://badge.fury.io/py/jsonargparse
 .. image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg
