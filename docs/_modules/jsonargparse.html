@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse master/v2.15.0+2commits/2019.12.13 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.15.0+3commits/2019.12.16 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.15.0+2commits/2019.12.13
+                master/v2.15.0+3commits/2019.12.16
               </div>
             
           
@@ -1461,7 +1461,7 @@
         <span class="sd">&quot;&quot;&quot;Initializer for ActionPath instance.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument, e.g. ActionPath(mode=&#39;drw&#39;).</span>
+<span class="sd">            mode (str): The required type and access permissions among [fdrwxcFDRWX] as a keyword argument, e.g. ActionPath(mode=&#39;drw&#39;).</span>
 <span class="sd">            skip_check (bool): Whether to skip path checks (def.=False).</span>
 
 <span class="sd">        Raises:</span>
@@ -1520,7 +1520,7 @@
         <span class="sd">&quot;&quot;&quot;Initializer for ActionPathList instance.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode=&#39;fr&#39;).</span>
+<span class="sd">            mode (str): The required type and access permissions among [fdrwxcFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode=&#39;fr&#39;).</span>
 <span class="sd">            skip_check (bool): Whether to skip path checks (def.=False).</span>
 <span class="sd">            rel (str): Whether relative paths are with respect to current working directory &#39;cwd&#39; or the list&#39;s parent directory &#39;list&#39; (default=&#39;cwd&#39;).</span>
 
@@ -1596,17 +1596,17 @@
 
 <span class="sd">    When a Path instance is created it is checked that: the path exists, whether</span>
 <span class="sd">    it is a file or directory and whether has the required access permissions</span>
-<span class="sd">    (f=file, d=directory, r=readable, w=writeable, x=executable, or the same in</span>
-<span class="sd">    uppercase meaning not, e.g. W=not_writeable). The absolute path can be</span>
-<span class="sd">    obtained without having to remember the working directory from when the</span>
-<span class="sd">    object was created.</span>
+<span class="sd">    (f=file, d=directory, r=readable, w=writeable, x=executable, c=creatable, or</span>
+<span class="sd">    the same except creatable in uppercase meaning not, e.g. W=not_writeable).</span>
+<span class="sd">    The absolute path can be obtained without having to remember the working</span>
+<span class="sd">    directory from when the object was created.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="Path.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.Path.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for Path instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path (str or Path): The path to check and store.</span>
-<span class="sd">            mode (str): The required type and access permissions among [fdrwxFDRWX].</span>
+<span class="sd">            mode (str): The required type and access permissions among [fdrwxcFDRWX].</span>
 <span class="sd">            cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.</span>
 <span class="sd">            skip_check (bool): Whether to skip path checks.</span>
 
@@ -1632,12 +1632,23 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">skip_check</span><span class="p">:</span>
             <span class="n">ptype</span> <span class="o">=</span> <span class="s1">&#39;Directory&#39;</span> <span class="k">if</span> <span class="s1">&#39;d&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="k">else</span> <span class="s1">&#39;File&#39;</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">F_OK</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; does not exist: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s1">&#39;d&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path is not a directory: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s1">&#39;f&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path is not a file: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;c&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">:</span>
+                <span class="n">pdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="s1">&#39;..&#39;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">pdir</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; is not creatable since parent directory does not exist: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">pdir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; is not creatable since parent directory not writeable: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;d&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">F_OK</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; is not creatable since path already exists: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;f&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">F_OK</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; is not creatable since path already exists: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">F_OK</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; does not exist: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;d&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path is not a directory: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;f&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path is not a file: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
             <span class="k">if</span> <span class="s1">&#39;r&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; is not readable: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
             <span class="k">if</span> <span class="s1">&#39;w&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
@@ -1677,8 +1688,8 @@
     <span class="k">def</span> <span class="nf">_check_mode</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected mode to be a string.&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span><span class="o">-</span><span class="nb">set</span><span class="p">(</span><span class="s1">&#39;fdrwxFDRWX&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected mode to only include [fdrwxFDRWX] flags.&#39;</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span><span class="o">-</span><span class="nb">set</span><span class="p">(</span><span class="s1">&#39;fdrwxcFDRWX&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected mode to only include [fdrwxcFDRWX] flags.&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="usage_and_exit_error_handler"><a class="viewcode-back" href="../index.html#jsonargparse.usage_and_exit_error_handler">[docs]</a><span class="k">def</span> <span class="nf">usage_and_exit_error_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>

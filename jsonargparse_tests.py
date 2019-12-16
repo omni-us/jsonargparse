@@ -3,6 +3,7 @@
 
 import os
 import sys
+import stat
 import shutil
 import tempfile
 import pathlib
@@ -293,6 +294,66 @@ class JsonargparseTests(unittest.TestCase):
         cfg = ext_parser.parse_args([])
         cfg = base_parser.strip_unknown(cfg)
         base_parser.check_config(cfg)
+
+
+    def test_path(self):
+        """Test options of the Path class."""
+        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
+
+        file_rw = os.path.join(tmpdir, 'file_rw')
+        file_r = os.path.join(tmpdir, 'file_r')
+        file_ = os.path.join(tmpdir, 'file_')
+        dir_rwx = os.path.join(tmpdir, 'dir_rwx')
+        dir_rx = os.path.join(tmpdir, 'dir_rx')
+        dir_x = os.path.join(tmpdir, 'dir_x')
+        dir_file_rx = os.path.join(dir_x, 'file_rx')
+
+        pathlib.Path(file_rw).touch()
+        pathlib.Path(file_r).touch()
+        pathlib.Path(file_).touch()
+        os.mkdir(dir_rwx)
+        os.mkdir(dir_rx)
+        os.mkdir(dir_x)
+        pathlib.Path(dir_file_rx).touch()
+
+        os.chmod(file_rw, (stat.S_IREAD | stat.S_IWRITE))
+        os.chmod(file_r, stat.S_IREAD)
+        os.chmod(file_, 0)
+        os.chmod(dir_file_rx, (stat.S_IREAD | stat.S_IEXEC))
+        os.chmod(dir_rwx, (stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC))
+        os.chmod(dir_rx, (stat.S_IREAD | stat.S_IEXEC))
+        os.chmod(dir_x, stat.S_IEXEC)
+
+        Path(file_rw, 'frw')
+        Path(file_r, 'fr')
+        Path(file_, 'f')
+        Path(dir_file_rx, 'fr')
+        self.assertRaises(TypeError, lambda: Path(file_rw, 'fx'))
+        self.assertRaises(TypeError, lambda: Path(file_r, 'fw'))
+        self.assertRaises(TypeError, lambda: Path(file_, 'fr'))
+        self.assertRaises(TypeError, lambda: Path(dir_file_rx, 'fw'))
+        Path(dir_rwx, 'drwx')
+        Path(dir_rx, 'drx')
+        Path(dir_x, 'dx')
+        self.assertRaises(TypeError, lambda: Path(dir_rx, 'dw'))
+        self.assertRaises(TypeError, lambda: Path(dir_x, 'dr'))
+        Path(file_rw, 'fcrw')
+        Path(os.path.join(tmpdir, 'file_c'), 'fc')
+        Path(dir_rwx, 'dcrwx')
+        Path(os.path.join(tmpdir, 'dir_c'), 'dc')
+        self.assertRaises(TypeError, lambda: Path(os.path.join(dir_rx, 'file_c'), 'fc'))
+        self.assertRaises(TypeError, lambda: Path(os.path.join(dir_rx, 'dir_c'), 'dc'))
+        self.assertRaises(TypeError, lambda: Path(file_rw, 'dc'))
+        self.assertRaises(TypeError, lambda: Path(dir_rwx, 'fc'))
+        self.assertRaises(TypeError, lambda: Path(os.path.join(dir_rwx, 'ne', 'file_c'), 'fc'))
+        self.assertRaises(TypeError, lambda: Path(file_rw, 'fW'))
+        self.assertRaises(TypeError, lambda: Path(file_rw, 'fR'))
+        self.assertRaises(TypeError, lambda: Path(dir_rwx, 'dX'))
+        self.assertRaises(TypeError, lambda: Path(file_rw, 'F'))
+        self.assertRaises(TypeError, lambda: Path(dir_rwx, 'D'))
+
+        os.chmod(dir_x, (stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC))
+        shutil.rmtree(tmpdir)
 
 
     def test_configfile_filepath(self):

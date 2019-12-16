@@ -1314,7 +1314,7 @@ class ActionPath(Action):
         """Initializer for ActionPath instance.
 
         Args:
-            mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument, e.g. ActionPath(mode='drw').
+            mode (str): The required type and access permissions among [fdrwxcFDRWX] as a keyword argument, e.g. ActionPath(mode='drw').
             skip_check (bool): Whether to skip path checks (def.=False).
 
         Raises:
@@ -1373,7 +1373,7 @@ class ActionPathList(Action):
         """Initializer for ActionPathList instance.
 
         Args:
-            mode (str): The required type and access permissions among [fdrwxFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
+            mode (str): The required type and access permissions among [fdrwxcFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
             skip_check (bool): Whether to skip path checks (def.=False).
             rel (str): Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list' (default='cwd').
 
@@ -1449,17 +1449,17 @@ class Path(object):
 
     When a Path instance is created it is checked that: the path exists, whether
     it is a file or directory and whether has the required access permissions
-    (f=file, d=directory, r=readable, w=writeable, x=executable, or the same in
-    uppercase meaning not, e.g. W=not_writeable). The absolute path can be
-    obtained without having to remember the working directory from when the
-    object was created.
+    (f=file, d=directory, r=readable, w=writeable, x=executable, c=creatable, or
+    the same except creatable in uppercase meaning not, e.g. W=not_writeable).
+    The absolute path can be obtained without having to remember the working
+    directory from when the object was created.
     """
     def __init__(self, path, mode:str='fr', cwd:str=None, skip_check:bool=False):
         """Initializer for Path instance.
 
         Args:
             path (str or Path): The path to check and store.
-            mode (str): The required type and access permissions among [fdrwxFDRWX].
+            mode (str): The required type and access permissions among [fdrwxcFDRWX].
             cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
             skip_check (bool): Whether to skip path checks.
 
@@ -1485,12 +1485,23 @@ class Path(object):
 
         if not skip_check:
             ptype = 'Directory' if 'd' in mode else 'File'
-            if not os.access(abs_path, os.F_OK):
-                raise TypeError(ptype+' does not exist: '+abs_path)
-            if 'd' in mode and not os.path.isdir(abs_path):
-                raise TypeError('Path is not a directory: '+abs_path)
-            if 'f' in mode and not os.path.isfile(abs_path):
-                raise TypeError('Path is not a file: '+abs_path)
+            if 'c' in mode:
+                pdir = os.path.realpath(os.path.join(abs_path, '..'))
+                if not os.path.isdir(pdir):
+                    raise TypeError(ptype+' is not creatable since parent directory does not exist: '+abs_path)
+                if not os.access(pdir, os.W_OK):
+                    raise TypeError(ptype+' is not creatable since parent directory not writeable: '+abs_path)
+                if 'd' in mode and os.access(abs_path, os.F_OK) and not os.path.isdir(abs_path):
+                    raise TypeError(ptype+' is not creatable since path already exists: '+abs_path)
+                if 'f' in mode and os.access(abs_path, os.F_OK) and not os.path.isfile(abs_path):
+                    raise TypeError(ptype+' is not creatable since path already exists: '+abs_path)
+            else:
+                if not os.access(abs_path, os.F_OK):
+                    raise TypeError(ptype+' does not exist: '+abs_path)
+                if 'd' in mode and not os.path.isdir(abs_path):
+                    raise TypeError('Path is not a directory: '+abs_path)
+                if 'f' in mode and not os.path.isfile(abs_path):
+                    raise TypeError('Path is not a file: '+abs_path)
             if 'r' in mode and not os.access(abs_path, os.R_OK):
                 raise TypeError(ptype+' is not readable: '+abs_path)
             if 'w' in mode and not os.access(abs_path, os.W_OK):
@@ -1530,8 +1541,8 @@ class Path(object):
     def _check_mode(mode:str):
         if not isinstance(mode, str):
             raise ValueError('Expected mode to be a string.')
-        if len(set(mode)-set('fdrwxFDRWX')) > 0:
-            raise ValueError('Expected mode to only include [fdrwxFDRWX] flags.')
+        if len(set(mode)-set('fdrwxcFDRWX')) > 0:
+            raise ValueError('Expected mode to only include [fdrwxcFDRWX] flags.')
 
 
 def usage_and_exit_error_handler(self, message):
