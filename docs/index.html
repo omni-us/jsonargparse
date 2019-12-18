@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.16.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.16.0+2commits/2019.12.18 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.16.0
+                master/v2.16.0+2commits/2019.12.18
               </div>
             
           
@@ -898,7 +898,7 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – The configuration object to dump.</p></li>
 <li><p><strong>format</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The output format, either “yaml” or “json” or “parser_mode”.</p></li>
-<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to exclude settings whose value is None.</p></li>
+<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to exclude checking values that are None.</p></li>
 <li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to skip parser checking.</p></li>
 </ul>
 </dd>
@@ -995,7 +995,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.check_config">
-<code class="sig-name descname">check_config</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], skip_none: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">check_config</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], skip_none: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks that the content of a given configuration object conforms with the parser.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

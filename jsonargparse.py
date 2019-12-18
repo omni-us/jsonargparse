@@ -258,7 +258,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     self.error('unrecognized arguments: %s' % ' '.join(unk))
 
             cfg_ns = dict_to_namespace(_flat_namespace_to_dict(cfg))
-            self.check_config(cfg_ns, skip_none=True)
+            self.check_config(cfg_ns)
 
             if with_cwd:
                 if hasattr(cfg, '__cwd__'):
@@ -342,7 +342,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
             cfg_ns = dict_to_namespace(cfg)
-            self.check_config(cfg_ns, skip_none=True)
+            self.check_config(cfg_ns)
 
             if with_cwd:
                 if hasattr(cfg_ns, '__cwd__'):
@@ -391,7 +391,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Args:
             cfg (types.SimpleNamespace or dict): The configuration object to dump.
             format (str): The output format, either "yaml" or "json" or "parser_mode".
-            skip_none (bool): Whether to exclude settings whose value is None.
+            skip_none (bool): Whether to exclude checking values that are None.
             skip_check (bool): Whether to skip parser checking.
 
         Returns:
@@ -408,7 +408,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             del cfg['__cwd__']
 
         if not skip_check:
-            self.check_config(cfg, skip_none=True)
+            self.check_config(cfg)
 
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         for action in self._actions:
@@ -528,7 +528,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
             cfg_ns = dict_to_namespace(cfg)
-            self.check_config(cfg_ns, skip_none=True)
+            self.check_config(cfg_ns)
 
             if with_cwd:
                 if hasattr(cfg_ns, '__cwd__'):
@@ -613,7 +613,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return group
 
 
-    def check_config(self, cfg:Union[SimpleNamespace, dict], skip_none:bool=False):
+    def check_config(self, cfg:Union[SimpleNamespace, dict], skip_none:bool=True):
         """Checks that the content of a given configuration object conforms with the parser.
 
         Args:
@@ -653,7 +653,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 else:
                     raise KeyError('No action for key "'+key+'" to check its value.')
 
-        check_values(cfg)
+        try:
+            check_values(cfg)
+        except Exception as ex:
+            self.error('Config checking failed :: '+str(ex))
 
 
     def strip_unknown(self, cfg):
@@ -942,7 +945,7 @@ class ActionConfigFile(Action):
                 raise TypeError('Parser key "'+dest+'": '+str(ex_str))
         else:
             cfg_file = parser.parse_path(value, env=False, defaults=False)
-        parser.check_config(cfg_file, skip_none=True)
+        parser.check_config(cfg_file)
         cfg_file = _dict_to_flat_namespace(namespace_to_dict(cfg_file))
         getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():

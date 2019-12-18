@@ -293,7 +293,7 @@ class JsonargparseTests(unittest.TestCase):
         ext_parser.add_argument('--nums.val3', type=float, default=1.5)
         cfg = ext_parser.parse_args([])
         cfg = base_parser.strip_unknown(cfg)
-        base_parser.check_config(cfg)
+        base_parser.check_config(cfg, skip_none=False)
 
 
     def test_path(self):

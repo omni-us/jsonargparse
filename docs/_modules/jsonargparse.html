@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.16.0 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.16.0+2commits/2019.12.18 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.16.0
+                master/v2.16.0+2commits/2019.12.18
               </div>
             
           
@@ -405,7 +405,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;unrecognized arguments: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">unk</span><span class="p">))</span>
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">with_cwd</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s1">&#39;__cwd__&#39;</span><span class="p">):</span>
@@ -489,7 +489,7 @@
                 <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">with_cwd</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="s1">&#39;__cwd__&#39;</span><span class="p">):</span>
@@ -538,7 +538,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            cfg (types.SimpleNamespace or dict): The configuration object to dump.</span>
 <span class="sd">            format (str): The output format, either &quot;yaml&quot; or &quot;json&quot; or &quot;parser_mode&quot;.</span>
-<span class="sd">            skip_none (bool): Whether to exclude settings whose value is None.</span>
+<span class="sd">            skip_none (bool): Whether to exclude checking values that are None.</span>
 <span class="sd">            skip_check (bool): Whether to skip parser checking.</span>
 
 <span class="sd">        Returns:</span>
@@ -555,7 +555,7 @@
             <span class="k">del</span> <span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;__cwd__&#39;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">skip_check</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
@@ -675,7 +675,7 @@
                 <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">with_cwd</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">,</span> <span class="s1">&#39;__cwd__&#39;</span><span class="p">):</span>
@@ -760,7 +760,7 @@
         <span class="k">return</span> <span class="n">group</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.check_config"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.check_config">[docs]</a>    <span class="k">def</span> <span class="nf">check_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="n">skip_none</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="ArgumentParser.check_config"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.check_config">[docs]</a>    <span class="k">def</span> <span class="nf">check_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="n">skip_none</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks that the content of a given configuration object conforms with the parser.</span>
 
 <span class="sd">        Args:</span>
@@ -800,7 +800,10 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;No action for key &quot;&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;&quot; to check its value.&#39;</span><span class="p">)</span>
 
-        <span class="n">check_values</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">check_values</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Config checking failed :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="ArgumentParser.strip_unknown"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.strip_unknown">[docs]</a>    <span class="k">def</span> <span class="nf">strip_unknown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
@@ -1089,7 +1092,7 @@
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex_str</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">parser</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">)</span>
         <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">))</span>
         <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
