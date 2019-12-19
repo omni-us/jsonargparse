@@ -93,7 +93,7 @@ class LoggerProperty:
         Raises:
             ValueError: If an invalid logger value is given.
         """
-        if logger is None:
+        if logger is None or (isinstance(logger, bool) and not logger):
             self._logger = logging.Logger('null')
             self._logger.addHandler(logging.NullHandler())
         elif isinstance(logger, bool) and logger:
@@ -267,7 +267,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 else:
                     cfg.__cwd__ = [os.getcwd()]
 
-            self._logger.info('parsed arguments')
+            self._logger.info('Parsed arguments.')
 
             if not nested:
                 return _dict_to_flat_namespace(namespace_to_dict(cfg_ns))
@@ -305,7 +305,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         finally:
             os.chdir(cwd)
 
-        self._logger.info('Parsed '+self.parser_mode+' from path: '+cfg_path)
+        self._logger.info('Parsed %s from path: %s', self.parser_mode, cfg_path)
 
         return parsed_cfg
 
@@ -352,7 +352,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     cfg_ns.__cwd__ = [os.getcwd()]
 
             if log:
-                self._logger.info('Parsed '+self.parser_mode+' string.')
+                self._logger.info('Parsed %s string.', self.parser_mode)
 
         except (TypeError, KeyError) as ex:
             self.error(str(ex))
@@ -563,7 +563,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 if len(action.option_strings) > 0 and action.default != '==SUPPRESS==':
                     cfg[action.dest] = action.default
 
-            self._logger.info('loaded default values from parser')
+            self._logger.info('Loaded default values from parser.')
 
             default_config_files = []  # type: List[str]
             for pattern in self._default_config_files:
@@ -572,7 +572,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 with open(default_config_files[0], 'r') as f:
                     cfg_file = self._load_cfg(f.read())
                 cfg = self._merge_config(cfg_file, cfg)
-                self._logger.info('parsed configuration from default path: '+default_config_files[0])
+                self._logger.info('Parsed configuration from default path: %s', default_config_files[0])
 
             if nested:
                 cfg = _flat_namespace_to_dict(SimpleNamespace(**cfg))
