@@ -34,7 +34,7 @@ except Exception as ex:
     _jsonnet = ex
 
 
-__version__ = '2.17.0'
+__version__ = '2.18.0'
 
 
 class ParserError(Exception):
