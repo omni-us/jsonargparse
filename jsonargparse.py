@@ -766,7 +766,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if action is None:
             raise ValueError('Parser key "'+str(key)+'": received action==None.')
         if action.choices is not None:
-            if value not in action.choices:
+            vals = value if _is_action_value_list(action) else [value]
+            if not all([v in action.choices for v in vals]):
                 args = {'value': value,
                         'choices': ', '.join(map(repr, action.choices))}
                 msg = 'invalid choice: %(value)r (choose from %(choices)s).'
