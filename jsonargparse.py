@@ -88,7 +88,7 @@ class LoggerProperty:
         """Sets a new logger.
 
         Args:
-            logger (logging.Logger or True or None): A logger to use or True to use the default logger or None for a null logger.
+            logger (logging.Logger or bool or str None): A logger to use or True to use the default logger or False/None for a null logger.
 
         Raises:
             ValueError: If an invalid logger value is given.
@@ -96,8 +96,13 @@ class LoggerProperty:
         if logger is None or (isinstance(logger, bool) and not logger):
             self._logger = logging.Logger('null')
             self._logger.addHandler(logging.NullHandler())
-        elif isinstance(logger, bool) and logger:
-            self._logger = logging
+        elif isinstance(logger, (bool, str)) and logger:
+            logger = logging.getLogger(logger if isinstance(logger, str) else os.path.basename(__file__))
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+            logger.addHandler(handler)
+            logger.setLevel(logging.INFO)
+            self._logger = logger
         elif not isinstance(logger, logging.Logger):
             raise ValueError('Expected logger to be an instance of logging.Logger.')
         else:
