@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.19.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.19.0+1commits/2020.01.09 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.19.0
+                master/v2.19.0+1commits/2020.01.09
               </div>
             
           
@@ -550,9 +550,9 @@ clear what are the requirements for different use cases, all the requirements of
 the project are stored in the file <code class="code docutils literal notranslate"><span class="pre">setup.cfg</span></code>. The basic runtime
 requirements are defined in section <code class="code docutils literal notranslate"><span class="pre">[options]</span></code> in the
 <code class="code docutils literal notranslate"><span class="pre">install_requires</span></code> entry. All optional requirements are stored in section
-<code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code> in the <code class="code docutils literal notranslate"><span class="pre">all</span></code> entry. And finally there is
-a <code class="code docutils literal notranslate"><span class="pre">dev</span></code> entry in the same <code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code> section which
-lists requirements for development.</p>
+<code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code> in the <code class="code docutils literal notranslate"><span class="pre">all</span></code> entry. And finally there are
+<code class="code docutils literal notranslate"><span class="pre">dev</span></code> and <code class="code docutils literal notranslate"><span class="pre">doc</span></code> entries in the same <code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code>
+section which lists requirements for development and documentation building.</p>
 <p>The recommended way to work with the source code is the following. First clone
 the repository, then create a virtual environment, activate it and finally
 install the development requirements. More precisely the steps would be:</p>
@@ -563,7 +563,7 @@ virtualenv -p python3 venv
 </pre></div>
 </div>
 <p>The crucial step is installing the requirements which would be done by running:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --editable .<span class="o">[</span>dev,all<span class="o">]</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --editable .<span class="o">[</span>dev,doc,all<span class="o">]</span>
 </pre></div>
 </div>
 </div>
