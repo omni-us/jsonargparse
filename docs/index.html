@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.20.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.20.0+1commits/2020.01.16 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.20.0
+                master/v2.20.0+1commits/2020.01.16
               </div>
             
           
@@ -705,7 +705,7 @@ included preceded by ‘ENV:’.</p>
 
 <dl class="class">
 <dt id="jsonargparse.ArgumentParser">
-<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">default_meta: bool = True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse._ActionsContainer</span></code>, <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a>, <a class="reference internal" href="#jsonargparse.LoggerProperty" title="jsonargparse.LoggerProperty"><code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.LoggerProperty</span></code></a></p>
 <p>Parser for command line, yaml/jsonnet files and environment variables.</p>
 <p><strong>Methods</strong></p>
@@ -751,7 +751,10 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, cfg_path, ext_vars, …)</p></td>
 <td><p>Parses configuration (yaml or jsonnet) given as a string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_meta" title="jsonargparse.ArgumentParser.strip_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_meta</span></code></a>(cfg)</p></td>
+<td><p>Removes all metadata keys from a configuration object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
 <td><p>Removes all unknown keys from a configuration object.</p></td>
 </tr>
 </tbody>
@@ -766,17 +769,20 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.default_env" title="jsonargparse.ArgumentParser.default_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_env</span></code></a></p></td>
 <td><p>The current value of the default_env.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.env_prefix" title="jsonargparse.ArgumentParser.env_prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">env_prefix</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.default_meta" title="jsonargparse.ArgumentParser.default_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_meta</span></code></a></p></td>
+<td><p>The current value of the default_meta.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.env_prefix" title="jsonargparse.ArgumentParser.env_prefix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">env_prefix</span></code></a></p></td>
 <td><p>The current value of the env_prefix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.error_handler" title="jsonargparse.ArgumentParser.error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_handler</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.error_handler" title="jsonargparse.ArgumentParser.error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_handler</span></code></a></p></td>
 <td><p>The current error_handler.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=None</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">default_meta: bool = True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ArgumentParser instance.</p>
 <p>All the arguments from the initializer of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser">argparse.ArgumentParser</a>
 are supported. Additionally it accepts:</p>
@@ -791,6 +797,7 @@ are supported. Additionally it accepts:</p>
 <li><p><strong>parser_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Mode for parsing configuration files, either “yaml” or “jsonnet”.</p></li>
 <li><p><strong>default_config_files</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>]</em>) – List of strings defining default config file locations. For example: <code class="code docutils literal notranslate"><span class="pre">['~/.config/myapp/*.yaml']</span></code>.</p></li>
 <li><p><strong>default_env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Set the default value on whether to parse environment variables.</p></li>
+<li><p><strong>default_meta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Set the default value on whether to include metadata in config objects.</p></li>
 </ul>
 </dd>
 </dl>
@@ -810,7 +817,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_args">
-<code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">namespace=None</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_cwd: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">namespace=None</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses command line argument strings.</p>
 <p>All the arguments from <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args">argparse.ArgumentParser.parse_args</a>
 are supported. Additionally it accepts:</p>
@@ -819,7 +826,7 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.8)"><em>None</em></a>) – Whether to merge with the parsed environment. None means use the ArgumentParser’s default.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
-<li><p><strong>with_cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to include __cwd__ in config object.</p></li>
+<li><p><strong>with_meta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to include metadata in config object.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -836,7 +843,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_path">
-<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_cwd: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a configuration file (yaml or jsonnet) given its path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -846,7 +853,7 @@ are supported. Additionally it accepts:</p>
 <li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.8)"><em>None</em></a>) – Whether to merge with the parsed environment. None means use the ArgumentParser’s default.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
-<li><p><strong>with_cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to include __cwd__ in config object.</p></li>
+<li><p><strong>with_meta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to include metadata in config object.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -863,7 +870,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_string">
-<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">cfg_path: str = ''</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_cwd: bool = True</em>, <em class="sig-param">log: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">cfg_path: str = ''</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em>, <em class="sig-param">log: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses configuration (yaml or jsonnet) given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -874,7 +881,7 @@ are supported. Additionally it accepts:</p>
 <li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.8)"><em>None</em></a>) – Whether to merge with the parsed environment. None means use the ArgumentParser’s default.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
-<li><p><strong>with_cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to include __cwd__ in config object.</p></li>
+<li><p><strong>with_meta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to include metadata in config object.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -921,6 +928,12 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="jsonargparse.ArgumentParser.default_meta">
+<em class="property">property </em><code class="sig-name descname">default_meta</code><a class="headerlink" href="#jsonargparse.ArgumentParser.default_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current value of the default_meta.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="jsonargparse.ArgumentParser.env_prefix">
 <em class="property">property </em><code class="sig-name descname">env_prefix</code><a class="headerlink" href="#jsonargparse.ArgumentParser.env_prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current value of the env_prefix.</p>
@@ -928,7 +941,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_env">
-<code class="sig-name descname">parse_env</code><span class="sig-paren">(</span><em class="sig-param">env: Dict[str</em>, <em class="sig-param">str] = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_cwd: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_env</code><span class="sig-paren">(</span><em class="sig-param">env: Dict[str</em>, <em class="sig-param">str] = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses environment variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -936,7 +949,7 @@ are supported. Additionally it accepts:</p>
 <li><p><strong>env</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>]</em>) – The environment object to use, if None <cite>os.environ</cite> is used.</p></li>
 <li><p><strong>defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to merge with the parser’s defaults.</p></li>
 <li><p><strong>nested</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether the namespace should be nested.</p></li>
-<li><p><strong>with_cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to include __cwd__ in config object.</p></li>
+<li><p><strong>with_meta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to include metadata in config object.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1017,6 +1030,23 @@ are supported. Additionally it accepts:</p>
 <dt id="jsonargparse.ArgumentParser.strip_unknown">
 <code class="sig-name descname">strip_unknown</code><span class="sig-paren">(</span><em class="sig-param">cfg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.strip_unknown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.strip_unknown" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes all unknown keys from a configuration object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – The configuration object to strip.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The stripped configuration object.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)">types.SimpleNamespace</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="jsonargparse.ArgumentParser.strip_meta">
+<code class="sig-name descname">strip_meta</code><span class="sig-paren">(</span><em class="sig-param">cfg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.strip_meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.strip_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes all metadata keys from a configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – The configuration object to strip.</p>

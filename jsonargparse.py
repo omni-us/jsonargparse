@@ -127,6 +127,8 @@ class _ActionsContainer(argparse._ActionsContainer):
         action = super().add_argument(*args, **kwargs)
         if '__cwd__' in action.dest:
             raise ValueError('Argument with destination name "__cwd__" not allowed.')
+        if '__path__' in action.dest:
+            raise ValueError('Argument with destination name "__path__" not allowed.')
         parser = self.parser if hasattr(self, 'parser') else self  # pylint: disable=no-member
         if action.required:
             parser.required_args.add(action.dest)  # pylint: disable=no-member
@@ -157,6 +159,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                  parser_mode='yaml',
                  default_config_files:List[str]=[],
                  default_env:bool=False,
+                 default_meta:bool=True,
                  **kwargs):
         """Initializer for ArgumentParser instance.
 
@@ -173,6 +176,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             parser_mode (str): Mode for parsing configuration files, either "yaml" or "jsonnet".
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
             default_env (bool): Set the default value on whether to parse environment variables.
+            default_meta (bool): Set the default value on whether to include metadata in config objects.
         """
         if isinstance(yaml, Exception):
             raise ImportError('PyYAML package is required :: '+str(yaml))
@@ -191,6 +195,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         self.required_args = set()  # type: Set[str]
         self._stderr = sys.stderr
         self._default_config_files = default_config_files
+        self.default_meta = default_meta
         self.default_env = default_env
         self.env_prefix = env_prefix
         self.parser_mode = parser_mode
@@ -230,7 +235,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         raise NotImplementedError('parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.')
 
 
-    def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True, with_cwd:bool=True):
+    def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True, with_meta:bool=None):
         """Parses command line argument strings.
 
         All the arguments from `argparse.ArgumentParser.parse_args
@@ -240,7 +245,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Args:
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             nested (bool): Whether the namespace should be nested.
-            with_cwd (bool): Whether to include __cwd__ in config object.
+            with_meta (bool): Whether to include metadata in config object.
 
         Returns:
             types.SimpleNamespace: An object with all parsed values as nested attributes.
@@ -262,15 +267,19 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 if unk:
                     self.error('unrecognized arguments: %s' % ' '.join(unk))
 
-            cfg_ns = dict_to_namespace(_flat_namespace_to_dict(cfg))
+            cfg_dict = _flat_namespace_to_dict(cfg)
+            if not (with_meta or (with_meta is None and self._default_meta)):
+                cfg_dict = self.strip_meta(cfg_dict)
+
+            cfg_ns = dict_to_namespace(cfg_dict)
             self.check_config(cfg_ns)
 
-            if with_cwd:
-                if hasattr(cfg, '__cwd__'):
-                    if os.getcwd() not in cfg.__cwd__:
-                        cfg.__cwd__.insert(0, os.getcwd())
+            if with_meta or (with_meta is None and self._default_meta):
+                if hasattr(cfg_ns, '__cwd__'):
+                    if os.getcwd() not in cfg_ns.__cwd__:
+                        cfg_ns.__cwd__.insert(0, os.getcwd())
                 else:
-                    cfg.__cwd__ = [os.getcwd()]
+                    cfg_ns.__cwd__ = [os.getcwd()]
 
             self._logger.info('Parsed arguments.')
 
@@ -283,7 +292,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return cfg_ns
 
 
-    def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True, with_cwd:bool=True) -> SimpleNamespace:
+    def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True, with_meta:bool=None) -> SimpleNamespace:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
@@ -292,7 +301,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
-            with_cwd (bool): Whether to include __cwd__ in config object.
+            with_meta (bool): Whether to include metadata in config object.
 
         Returns:
             types.SimpleNamespace: An object with all parsed values as nested attributes.
@@ -306,7 +315,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         os.chdir(os.path.abspath(os.path.join(cfg_path, os.pardir)))
         try:
             with open(os.path.basename(cfg_path), 'r') as f:
-                parsed_cfg = self.parse_string(f.read(), cfg_path, ext_vars, env, defaults, nested, with_cwd=with_cwd, log=False)
+                parsed_cfg = self.parse_string(f.read(), cfg_path, ext_vars, env, defaults, nested, with_meta=with_meta, log=False)
+            if with_meta or (with_meta is None and self._default_meta):
+                parsed_cfg.__path__ = cfg_path
         finally:
             os.chdir(cwd)
 
@@ -316,7 +327,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True,
-                     nested:bool=True, with_cwd:bool=True, log:bool=True) -> SimpleNamespace:
+                     nested:bool=True, with_meta:bool=None, log:bool=True) -> SimpleNamespace:
         """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
@@ -326,7 +337,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
-            with_cwd (bool): Whether to include __cwd__ in config object.
+            with_meta (bool): Whether to include metadata in config object.
 
         Returns:
             types.SimpleNamespace: An object with all parsed values as attributes.
@@ -346,10 +357,13 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             if defaults:
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
+            if not (with_meta or (with_meta is None and self._default_meta)):
+                cfg = self.strip_meta(cfg)
+
             cfg_ns = dict_to_namespace(cfg)
             self.check_config(cfg_ns)
 
-            if with_cwd:
+            if with_meta or (with_meta is None and self._default_meta):
                 if hasattr(cfg_ns, '__cwd__'):
                     if os.getcwd() not in cfg_ns.__cwd__:
                         cfg_ns.__cwd__.insert(0, os.getcwd())
@@ -409,8 +423,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if not isinstance(cfg, dict):
             cfg = namespace_to_dict(cfg)
 
-        if '__cwd__' in cfg:
-            del cfg['__cwd__']
+        cfg = self.strip_meta(cfg)
 
         if not skip_check:
             self.check_config(cfg)
@@ -468,6 +481,22 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     @property
+    def default_meta(self):
+        """The current value of the default_meta."""
+        return self._default_meta
+
+
+    @default_meta.setter
+    def default_meta(self, default_meta):
+        """Sets a new value to the default_meta property.
+
+        Args:
+            default_meta (bool): Whether by default metadata is included in config objects.
+        """
+        self._default_meta = default_meta
+
+
+    @property
     def env_prefix(self):
         """The current value of the env_prefix."""
         return self._env_prefix
@@ -487,14 +516,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             setattr(self.formatter_class, '_env_prefix', env_prefix)
 
 
-    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True, with_cwd:bool=True) -> SimpleNamespace:
+    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True, with_meta:bool=None) -> SimpleNamespace:
         """Parses environment variables.
 
         Args:
             env (dict[str, str]): The environment object to use, if None `os.environ` is used.
             defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
-            with_cwd (bool): Whether to include __cwd__ in config object.
+            with_meta (bool): Whether to include metadata in config object.
 
         Returns:
             types.SimpleNamespace: An object with all parsed values as attributes.
@@ -532,10 +561,13 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             if defaults:
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
+            if not (with_meta or (with_meta is None and self._default_meta)):
+                cfg = self.strip_meta(cfg)
+
             cfg_ns = dict_to_namespace(cfg)
             self.check_config(cfg_ns)
 
-            if with_cwd:
+            if with_meta or (with_meta is None and self._default_meta):
                 if hasattr(cfg_ns, '__cwd__'):
                     if os.getcwd() not in cfg_ns.__cwd__:
                         cfg_ns.__cwd__.insert(0, os.getcwd())
@@ -633,8 +665,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if not isinstance(cfg, dict):
             cfg = namespace_to_dict(cfg)
 
-        if '__cwd__' in cfg:
-            del cfg['__cwd__']
+        cfg = self.strip_meta(cfg)
 
         def find_action(parser, dest):
             for action in parser._actions:
@@ -701,6 +732,36 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         strip_keys(cfg)
         return dict_to_namespace(cfg)
+
+
+    def strip_meta(self, cfg):
+        """Removes all metadata keys from a configuration object.
+
+        Args:
+            cfg (types.SimpleNamespace or dict): The configuration object to strip.
+
+        Returns:
+            types.SimpleNamespace: The stripped configuration object.
+        """
+        cfg = deepcopy(cfg)
+        if not isinstance(cfg, dict):
+            cfg = namespace_to_dict(cfg)
+
+        meta_keys = {'__cwd__', '__path__'}
+
+        def strip_keys(cfg, base=None):
+            del_keys = []
+            for key, val in cfg.items():
+                kbase = key if base is None else base+'.'+key
+                if isinstance(val, dict):
+                    strip_keys(val, kbase)
+                elif key in meta_keys:
+                    del_keys.append(key)
+            for key in del_keys:
+                del cfg[key]
+
+        strip_keys(cfg)
+        return cfg
 
 
     def _get_config_files(self, cfg):
@@ -827,6 +888,8 @@ def _flat_namespace_to_dict(cfg_ns:Union[SimpleNamespace, argparse.Namespace]) -
         if len(ksplit) == 1:
             if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
                 cfg_dict[k] = [namespace_to_dict(x) for x in v]
+            elif isinstance(v, SimpleNamespace):
+                cfg_dict[k] = vars(v)  # type: ignore
             elif not (v is None and k in cfg_dict):
                 cfg_dict[k] = v
         else:
@@ -1077,11 +1140,13 @@ class ActionJsonSchema(Action):
             raise TypeError('For ActionJsonSchema with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
         for num, val in enumerate(value):
             try:
+                fpath = None
                 if isinstance(val, str):
                     val = yaml.safe_load(val)
                 if isinstance(val, str):
                     try:
                         Path(val, mode='fr')
+                        fpath = val
                         with open(val) as f:
                             val = yaml.safe_load(f.read())
                     except:
@@ -1090,6 +1155,8 @@ class ActionJsonSchema(Action):
                     self._validator.validate(namespace_to_dict(val))
                 else:
                     self._validator.validate(val)
+                if isinstance(val, dict) and fpath is not None:
+                    val['__path__'] = fpath
                 value[num] = val
             except (TypeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)

@@ -15,7 +15,7 @@ from jsonargparse import _jsonnet
 
 def example_parser():
     """Creates a simple parser for doing tests."""
-    parser = ArgumentParser(prog='app')
+    parser = ArgumentParser(prog='app', default_meta=False)
 
     group_one = parser.add_argument_group('Group 1', name='group1')
     group_one.add_argument('--bools.def_false',
@@ -109,7 +109,7 @@ class JsonargparseTests(unittest.TestCase):
         """Test the dump method."""
         parser = example_parser()
         cfg1 = parser.get_defaults()
-        cfg2 = parser.parse_string(parser.dump(cfg1), with_cwd=False)
+        cfg2 = parser.parse_string(parser.dump(cfg1))
         self.assertEqual(cfg1, cfg2)
         delattr(cfg2, 'lev1')
         parser.dump(cfg2)
@@ -191,7 +191,7 @@ class JsonargparseTests(unittest.TestCase):
         """Test the parsing and checking of yaml."""
         parser = example_parser()
 
-        cfg1 = parser.parse_string(example_yaml, with_cwd=False)
+        cfg1 = parser.parse_string(example_yaml)
         self.assertEqual('opt1_yaml', cfg1.lev1.lev2.opt1)
         self.assertEqual('opt2_yaml', cfg1.lev1.lev2.opt2)
         self.assertEqual(-1,  cfg1.nums.val1)
@@ -199,7 +199,7 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual(False, cfg1.bools.def_false)
         self.assertEqual(True,  cfg1.bools.def_true)
 
-        cfg2 = parser.parse_string(example_yaml, defaults=False, with_cwd=False)
+        cfg2 = parser.parse_string(example_yaml, defaults=False)
         self.assertFalse(hasattr(cfg2, 'bools'))
         self.assertTrue(hasattr(cfg2, 'nums'))
 
@@ -208,12 +208,12 @@ class JsonargparseTests(unittest.TestCase):
 
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml)
-        self.assertEqual(cfg1, parser.parse_path(yaml_file, defaults=True, with_cwd=False))
-        self.assertEqual(cfg2, parser.parse_path(yaml_file, defaults=False, with_cwd=False))
-        self.assertNotEqual(cfg2, parser.parse_path(yaml_file, defaults=True, with_cwd=False))
-        self.assertNotEqual(cfg1, parser.parse_path(yaml_file, defaults=False, with_cwd=False))
-        self.assertTrue(hasattr(parser.parse_path(yaml_file), '__cwd__'))
-        self.assertFalse(hasattr(parser.parse_path(yaml_file, with_cwd=False), '__cwd__'))
+        self.assertEqual(cfg1, parser.parse_path(yaml_file, defaults=True))
+        self.assertEqual(cfg2, parser.parse_path(yaml_file, defaults=False))
+        self.assertNotEqual(cfg2, parser.parse_path(yaml_file, defaults=True))
+        self.assertNotEqual(cfg1, parser.parse_path(yaml_file, defaults=False))
+        self.assertTrue(hasattr(parser.parse_path(yaml_file, with_meta=True), '__cwd__'))
+        self.assertFalse(hasattr(parser.parse_path(yaml_file), '__cwd__'))
 
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml+'  val2: eight\n')
@@ -491,7 +491,7 @@ class JsonargparseTests(unittest.TestCase):
             },
         }
 
-        parser = ArgumentParser(prog='app')
+        parser = ArgumentParser(prog='app', default_meta=False)
         parser.add_argument('--op1',
             action=ActionJsonSchema(schema=schema1))
         parser.add_argument('--op2',
