@@ -1250,7 +1250,7 @@ class ActionJsonnet(Action):
         for num, val in enumerate(value):
             try:
                 if isinstance(val, str):
-                    val = self.parse(val, ext_vars=ext_vars)
+                    val = self.parse(val, ext_vars=ext_vars, with_meta=True)
                 elif self._validator is not None:
                     if isinstance(val, SimpleNamespace):
                         self._validator.validate(namespace_to_dict(val))
@@ -1277,7 +1277,7 @@ class ActionJsonnet(Action):
         ext_vars = {k: v for k, v in ext_vars.items() if isinstance(v, str)}
         return ext_vars, ext_codes
 
-    def parse(self, jsonnet, ext_vars={}):
+    def parse(self, jsonnet, ext_vars={}, with_meta=False):
         """Method that can be used to parse jsonnet independent from an ArgumentParser.
 
         Args:
@@ -1291,6 +1291,7 @@ class ActionJsonnet(Action):
             TypeError: If the input is neither a path to an existent file nor a jsonnet.
         """
         ext_vars, ext_codes = self.split_ext_vars(ext_vars)
+        fpath = None
         try:
             Path(jsonnet, mode='fr')
         except TypeError as ex:
@@ -1300,11 +1301,14 @@ class ActionJsonnet(Action):
                 raise type(ex)('Problems evaluating jsonnet snippet :: '+str(ex))
         else:
             try:
+                fpath = jsonnet
                 values = yaml.safe_load(_jsonnet.evaluate_file(jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
             except Exception as ex:
                 raise type(ex)('Problems evaluating jsonnet file :: '+str(ex))
         if self._validator is not None:
             self._validator.validate(values)
+        if with_meta and isinstance(values, dict) and fpath is not None:
+            values['__path__'] = fpath
         return dict_to_namespace(values)
 
 

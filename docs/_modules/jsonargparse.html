@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.21.0 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.21.0+1commits/2020.01.17 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.21.0
+                master/v2.21.0+1commits/2020.01.17
               </div>
             
           
@@ -1397,7 +1397,7 @@
         <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="n">ext_vars</span><span class="p">)</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="n">ext_vars</span><span class="p">,</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">SimpleNamespace</span><span class="p">):</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
@@ -1424,7 +1424,7 @@
         <span class="n">ext_vars</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ext_vars</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">)}</span>
         <span class="k">return</span> <span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span></div>
 
-<div class="viewcode-block" id="ActionJsonnet.parse"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet.parse">[docs]</a>    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jsonnet</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="p">{}):</span>
+<div class="viewcode-block" id="ActionJsonnet.parse"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet.parse">[docs]</a>    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jsonnet</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="p">{},</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Method that can be used to parse jsonnet independent from an ArgumentParser.</span>
 
 <span class="sd">        Args:</span>
@@ -1438,6 +1438,7 @@
 <span class="sd">            TypeError: If the input is neither a path to an existent file nor a jsonnet.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_ext_vars</span><span class="p">(</span><span class="n">ext_vars</span><span class="p">)</span>
+        <span class="n">fpath</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">Path</span><span class="p">(</span><span class="n">jsonnet</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
@@ -1447,11 +1448,14 @@
                 <span class="k">raise</span> <span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="p">)(</span><span class="s1">&#39;Problems evaluating jsonnet snippet :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
+                <span class="n">fpath</span> <span class="o">=</span> <span class="n">jsonnet</span>
                 <span class="n">values</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">_jsonnet</span><span class="o">.</span><span class="n">evaluate_file</span><span class="p">(</span><span class="n">jsonnet</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span><span class="o">=</span><span class="n">ext_codes</span><span class="p">))</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="p">)(</span><span class="s1">&#39;Problems evaluating jsonnet file :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">with_meta</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">values</span><span class="p">[</span><span class="s1">&#39;__path__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fpath</span>
         <span class="k">return</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">values</span><span class="p">)</span></div></div>
 
 
