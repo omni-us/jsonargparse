@@ -452,6 +452,54 @@ class JsonargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
+    def test_actionparser(self):
+        """Test the use of ActionParser."""
+        parser = ArgumentParser(prog='xyz')
+        parser.add_argument('--inner.vals',
+            action=ActionParser(parser=example_parser()))
+        parser.add_argument('--inner.flag',
+            default='flag_def')
+        parser.add_argument('--cfg',
+            action=ActionConfigFile)
+
+        cfg = parser.get_defaults()
+        self.assertEqual('opt1_def', parser.get_defaults().inner.vals.lev1.lev2.opt1)
+
+        tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
+        yaml1_file = os.path.join(tmpdir, 'example1.yaml')
+        yaml2_file = os.path.join(tmpdir, 'example2.yaml')
+        yaml3_file = os.path.join(tmpdir, 'example3.yaml')
+
+        with open(yaml1_file, 'w') as output_file:
+            output_file.write('inner:\n  vals: example2.yaml\n  flag: flag_yaml\n')
+        with open(yaml2_file, 'w') as output_file:
+            output_file.write(example_yaml)
+        with open(yaml3_file, 'w') as output_file:
+            output_file.write('inner:\n  flag: flag_yaml\n')
+        cfg = parser.parse_args(['--cfg', yaml1_file], with_meta=False)
+        self.assertEqual('flag_yaml', cfg.inner.flag)
+        self.assertEqual('opt1_yaml', cfg.inner.vals.lev1.lev2.opt1)
+
+        cfg = parser.parse_args(['--cfg', yaml3_file], with_meta=False)
+        self.assertEqual('flag_yaml', cfg.inner.flag)
+        self.assertEqual('opt1_def', cfg.inner.vals.lev1.lev2.opt1)
+
+        with open(yaml3_file, 'w') as output_file:
+            output_file.write(parser.dump(cfg))
+        self.assertEqual(cfg.inner, parser.parse_path(yaml3_file, with_meta=False).inner)
+
+        #cfg = parser.parse_args(['--cfg', yaml1_file, '--inner.vals.lev1.lev2.opt1', 'opt1_arg'])
+        #self.assertEqual('opt1_arg', cfg.inner.vals.lev1.lev2.opt1)
+
+        self.assertEqual('flag_env', parser.parse_env(env={'XYZ_INNER__FLAG': 'flag_env'}).inner.flag)
+        self.assertEqual('opt1_env', parser.parse_env(env={'XYZ_INNER__VALS__LEV1__LEV2__OPT1': 'opt1_env'}).inner.vals.lev1.lev2.opt1)
+
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionParser))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionParser()))
+
+        shutil.rmtree(tmpdir)
+
+
     @unittest.skipIf(isinstance(jsonvalidator, Exception), 'jsonschema package is required :: '+str(jsonvalidator))
     def test_jsonschema(self):
         """Test the use of ActionJsonSchema."""

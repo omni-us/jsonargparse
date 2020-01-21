@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.21.0+1commits/2020.01.17 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.21.0+2commits/2020.01.21 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.21.0+1commits/2020.01.17
+                master/v2.21.0+2commits/2020.01.21
               </div>
             
           
@@ -95,6 +95,7 @@
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
 <li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
 <li><a class="reference internal" href="#boolean-arguments">Boolean arguments</a></li>
+<li><a class="reference internal" href="#parsers-as-arguments">Parsers as arguments</a></li>
 <li><a class="reference internal" href="#contributing">Contributing</a></li>
 <li><a class="reference internal" href="#module-jsonargparse">API Reference</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
@@ -539,6 +540,37 @@ makes this straightforward. A couple of examples would be:</p>
 <code class="code docutils literal notranslate"><span class="pre">nargs='?'</span></code> the options can also be set by giving as value any of
 <code class="code docutils literal notranslate"><span class="pre">{'true',</span> <span class="pre">'yes',</span> <span class="pre">'false',</span> <span class="pre">'no'}</span></code>.</p>
 </div>
+<div class="section" id="parsers-as-arguments">
+<h1>Parsers as arguments<a class="headerlink" href="#parsers-as-arguments" title="Permalink to this headline">¶</a></h1>
+<p>Sometimes it is useful to take an already existing parser that is required
+standalone in some part of the code, and reuse it to parse an inner node of
+another more complex parser. For these cases an argument can be defined using
+the <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> class. An example of how to use this class is the
+following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ActionParser</span>
+<span class="n">inner_parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app1&#39;</span><span class="p">)</span>
+<span class="n">inner_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="n">outer_parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app2&#39;</span><span class="p">)</span>
+<span class="n">outer_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--inner.node&#39;</span><span class="p">,</span>
+    <span class="n">action</span><span class="o">=</span><span class="n">ActionParser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">inner_parser</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>When using the <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> class, the value of the node in a config
+file can be either the complex node itself, or the path to a file which will be
+loaded and parsed with the corresponding inner parser.</p>
+<p>Currently it is not supported to give as command line argument a single leaf
+node of an inner parser. Thus in the example above from the command line only
+<code class="code docutils literal notranslate"><span class="pre">--inner.node</span> <span class="pre">/path/to/inner/config</span></code> would be possible. Naturally using
+<a class="reference internal" href="#jsonargparse.ActionConfigFile" title="jsonargparse.ActionConfigFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a> to parse a complete config file will parse the inner
+nodes correctly.</p>
+<p>Regarding environment variables, the prefix of the outer parser will be used to
+populate the leaf nodes of the inner parser. So in the example above, if
+<code class="code docutils literal notranslate"><span class="pre">inner_parser</span></code> is used to parse environment variables, then as normal
+<code class="code docutils literal notranslate"><span class="pre">APP1_OP1</span></code> would be checked to populate option <code class="code docutils literal notranslate"><span class="pre">op1</span></code>. But if
+<code class="code docutils literal notranslate"><span class="pre">outer_parser</span></code> is used, then <code class="code docutils literal notranslate"><span class="pre">APP2_INNER__NODE__OP1</span></code> would be
+checked to populate <code class="code docutils literal notranslate"><span class="pre">inner.node.op1</span></code>.</p>
+</div>
 <div class="section" id="contributing">
 <h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
 <p>Contributions to the jsonargparse package are very welcome, be it just to create
@@ -588,25 +620,28 @@ virtualenv -p python3 venv
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionOperators" title="jsonargparse.ActionOperators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>(**kwargs)</p></td>
 <td><p>Action to restrict a value with comparison operators.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPath</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code></a>(**kwargs)</p></td>
+<td><p>Action to parse option with a given parser optionally loading from file if string value.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPath</span></code></a>(**kwargs)</p></td>
 <td><p>Action to check and store a path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPathList</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPathList</span></code></a>(**kwargs)</p></td>
 <td><p>Action to check and store a list of file paths read from a plain text file or stream.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
 <td><p>Paired options –{yes_prefix}opt, –{no_prefix}opt to set True or False respectively.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args[, env_prefix, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args[, env_prefix, …])</p></td>
 <td><p>Parser for command line, yaml/jsonnet files and environment variables.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.DefaultHelpFormatter" title="jsonargparse.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.DefaultHelpFormatter" title="jsonargparse.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
 <td><p>Help message formatter with namespace key, env var and default values in argument help.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.LoggerProperty" title="jsonargparse.LoggerProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoggerProperty</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.LoggerProperty" title="jsonargparse.LoggerProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoggerProperty</span></code></a>()</p></td>
 <td><p>Class designed to be inherited by other classes to add a logger property.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.Path" title="jsonargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.Path" title="jsonargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
 </tbody>
@@ -941,7 +976,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_env">
-<code class="sig-name descname">parse_env</code><span class="sig-paren">(</span><em class="sig-param">env: Dict[str</em>, <em class="sig-param">str] = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_env</code><span class="sig-paren">(</span><em class="sig-param">env: Dict[str</em>, <em class="sig-param">str] = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em>, <em class="sig-param">log: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_env" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses environment variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1339,6 +1374,53 @@ are supported. Additionally it accepts:</p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.8)"><strong>TypeError</strong></a> – If the input is neither a path to an existent file nor a jsonnet.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="jsonargparse.ActionParser">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionParser</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
+<p>Action to parse option with a given parser optionally loading from file if string value.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionParser.__call__" title="jsonargparse.ActionParser.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionParser.__init__" title="jsonargparse.ActionParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initializer for ActionParser instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="jsonargparse.ActionParser.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionParser.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ActionParser instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>parser</strong> (<a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><em>ArgumentParser</em></a>) – A parser to parse the option with.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – If the parser parameter is invalid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="jsonargparse.ActionParser.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionParser.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionParser.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.8)"><strong>TypeError</strong></a> – If the argument is not valid.</p>
 </dd>
 </dl>
 </dd></dl>
