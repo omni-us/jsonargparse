@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.22.0 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.22.0+1commits/2020.01.22 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.22.0
+                master/v2.22.0+1commits/2020.01.22
               </div>
             
           
@@ -558,7 +558,7 @@
         <span class="k">return</span> <span class="n">cfg</span>
 
 
-<div class="viewcode-block" id="ArgumentParser.dump"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.dump">[docs]</a>    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;parser_mode&#39;</span><span class="p">,</span> <span class="n">skip_none</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<div class="viewcode-block" id="ArgumentParser.dump"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.dump">[docs]</a>    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="nb">format</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;parser_mode&#39;</span><span class="p">,</span> <span class="n">skip_none</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Generates a yaml or json string for the given configuration object.</span>
 
 <span class="sd">        Args:</span>
@@ -605,7 +605,86 @@
         <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unknown dump format &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">format</span><span class="p">))</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown output format &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">format</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ArgumentParser.save"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">SimpleNamespace</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;parser_mode&#39;</span><span class="p">,</span> <span class="n">skip_none</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+             <span class="n">skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">multifile</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Generates a yaml or json string for the given configuration object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cfg (types.SimpleNamespace or dict): The configuration object to save.</span>
+<span class="sd">            path (str): Path to the location where to save config.</span>
+<span class="sd">            format (str): The output format, either &quot;yaml&quot; or &quot;json&quot; or &quot;parser_mode&quot;.</span>
+<span class="sd">            skip_none (bool): Whether to exclude checking values that are None.</span>
+<span class="sd">            skip_check (bool): Whether to skip parser checking.</span>
+<span class="sd">            overwrite (bool): Whether to overwrite existing files.</span>
+<span class="sd">            multifile (bool): Whether to save multiple config files by using the __path__ metas.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If any of the values of cfg is invalid according to the parser.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Refusing to overwrite existing file: &#39;</span><span class="o">+</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fc&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">format</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;parser_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;json_indented&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">}:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown output format &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">format</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;parser_mode&#39;</span><span class="p">:</span>
+            <span class="nb">format</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser_mode</span>
+
+        <span class="n">dump_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="nb">format</span><span class="p">,</span> <span class="s1">&#39;skip_none&#39;</span><span class="p">:</span> <span class="n">skip_none</span><span class="p">,</span> <span class="s1">&#39;skip_check&#39;</span><span class="p">:</span> <span class="n">skip_check</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">multifile</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">(),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="o">**</span><span class="n">dump_kwargs</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">skip_check</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
+
+            <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">())</span>
+            <span class="n">save_kwargs</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">dump_kwargs</span><span class="p">)</span>
+            <span class="n">save_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;overwrite&#39;</span><span class="p">:</span> <span class="n">overwrite</span><span class="p">,</span> <span class="s1">&#39;multifile&#39;</span><span class="p">:</span> <span class="n">multifile</span><span class="p">})</span>
+
+            <span class="k">def</span> <span class="nf">save_paths</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                <span class="n">replace_keys</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">kbase</span> <span class="o">=</span> <span class="n">key</span> <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="s1">&#39;__path__&#39;</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+                            <span class="n">val_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="s1">&#39;__path__&#39;</span><span class="p">]())),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fc&#39;</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">val_path</span><span class="p">()):</span>
+                                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Refusing to overwrite existing file: &#39;</span><span class="o">+</span><span class="n">val_path</span><span class="p">)</span>
+                            <span class="n">action</span> <span class="o">=</span> <span class="n">_find_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionParser</span><span class="p">):</span>
+                                <span class="n">replace_keys</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val_path</span>
+                                <span class="n">action</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">val_path</span><span class="p">(),</span> <span class="o">**</span><span class="n">save_kwargs</span><span class="p">)</span>
+                            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="p">(</span><span class="n">ActionJsonSchema</span><span class="p">,</span> <span class="n">ActionJsonnet</span><span class="p">)):</span>
+                                <span class="n">replace_keys</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val_path</span>
+                                <span class="n">val_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;yaml&#39;</span><span class="p">:</span>
+                                    <span class="n">val_str</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">val_out</span><span class="p">,</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">allow_unicode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                                <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;json_indented&#39;</span><span class="p">:</span>
+                                    <span class="n">val_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">val_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                                <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
+                                    <span class="n">val_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">val_out</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">val_path</span><span class="p">(),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">val_str</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">save_paths</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">save_paths</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">replace_keys</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">val</span><span class="p">())</span>
+
+            <span class="n">save_paths</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+            <span class="n">dump_kwargs</span><span class="p">[</span><span class="s1">&#39;skip_check&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">(),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="o">**</span><span class="n">dump_kwargs</span><span class="p">))</span>  <span class="c1"># type: ignore</span></div>
 
 
     <span class="nd">@staticmethod</span>
@@ -830,23 +909,17 @@
 
         <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">find_action</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span> <span class="o">==</span> <span class="n">dest</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">action</span><span class="p">,</span> <span class="n">dest</span>
-            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dest</span>
-
         <span class="k">def</span> <span class="nf">check_values</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">kbase</span> <span class="o">=</span> <span class="n">key</span> <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
-                <span class="n">action</span><span class="p">,</span> <span class="n">_kbase</span> <span class="o">=</span> <span class="n">find_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
+                <span class="n">action</span> <span class="o">=</span> <span class="n">_find_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_args</span><span class="p">:</span>
                             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Key &quot;&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;&quot; is required but its value is None.&#39;</span><span class="p">)</span>
                         <span class="k">elif</span> <span class="n">skip_none</span><span class="p">:</span>
                             <span class="k">continue</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_check_value_key</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">_kbase</span><span class="p">,</span> <span class="n">ccfg</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_check_value_key</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">kbase</span><span class="p">,</span> <span class="n">ccfg</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                     <span class="n">check_values</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -871,17 +944,11 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">cfg</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">find_action</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span> <span class="o">==</span> <span class="n">dest</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">action</span><span class="p">,</span> <span class="n">dest</span>
-            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dest</span>
-
         <span class="k">def</span> <span class="nf">strip_keys</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
             <span class="n">del_keys</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">kbase</span> <span class="o">=</span> <span class="n">key</span> <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
-                <span class="n">action</span><span class="p">,</span> <span class="n">_kbase</span> <span class="o">=</span> <span class="n">find_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
+                <span class="n">action</span> <span class="o">=</span> <span class="n">_find_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">pass</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
@@ -1867,6 +1934,22 @@
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fnull</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">redirect_stderr</span><span class="p">(</span><span class="n">fnull</span><span class="p">):</span>
             <span class="k">yield</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_find_action</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Finds an action in a parser given its dest.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parser (ArgumentParser): A parser where to search.</span>
+<span class="sd">        dest (str): The dest string to search with.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Action or None: The action if found, otherwise None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span> <span class="o">==</span> <span class="n">dest</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">action</span>
+    <span class="k">return</span> <span class="kc">None</span>
 
 
 <span class="k">def</span> <span class="nf">_is_action_value_list</span><span class="p">(</span><span class="n">action</span><span class="p">:</span><span class="n">Action</span><span class="p">):</span>

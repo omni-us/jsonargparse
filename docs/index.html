@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.22.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.22.0+1commits/2020.01.22 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.22.0
+                master/v2.22.0+1commits/2020.01.22
               </div>
             
           
@@ -759,7 +759,7 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.check_config" title="jsonargparse.ArgumentParser.check_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_config</span></code></a>(cfg, dict], skip_none)</p></td>
 <td><p>Checks that the content of a given configuration object conforms with the parser.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.dump" title="jsonargparse.ArgumentParser.dump"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump</span></code></a>(cfg, dict][, format])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.dump" title="jsonargparse.ArgumentParser.dump"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump</span></code></a>(cfg, dict], format, skip_none, skip_check)</p></td>
 <td><p>Generates a yaml or json string for the given configuration object.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.error" title="jsonargparse.ArgumentParser.error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error</span></code></a>(message)</p></td>
@@ -786,10 +786,13 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, cfg_path, ext_vars, …)</p></td>
 <td><p>Parses configuration (yaml or jsonnet) given as a string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_meta" title="jsonargparse.ArgumentParser.strip_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_meta</span></code></a>(cfg)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.save" title="jsonargparse.ArgumentParser.save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code></a>(cfg, dict], path, format, skip_none, …)</p></td>
+<td><p>Generates a yaml or json string for the given configuration object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_meta" title="jsonargparse.ArgumentParser.strip_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_meta</span></code></a>(cfg)</p></td>
 <td><p>Removes all metadata keys from a configuration object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
 <td><p>Removes all unknown keys from a configuration object.</p></td>
 </tr>
 </tbody>
@@ -933,7 +936,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.dump">
-<code class="sig-name descname">dump</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], format='parser_mode', skip_none: bool = True, skip_check: bool = False</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.dump" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">dump</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], format: str = 'parser_mode', skip_none: bool = True, skip_check: bool = False</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.dump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a yaml or json string for the given configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -949,6 +952,28 @@ are supported. Additionally it accepts:</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.8)"><strong>TypeError</strong></a> – If any of the values of cfg is invalid according to the parser.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="jsonargparse.ArgumentParser.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], path: str, format: str = 'parser_mode', skip_none: bool = True, skip_check: bool = False, overwrite: bool = False, multifile: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a yaml or json string for the given configuration object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – The configuration object to save.</p></li>
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Path to the location where to save config.</p></li>
+<li><p><strong>format</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The output format, either “yaml” or “json” or “parser_mode”.</p></li>
+<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to exclude checking values that are None.</p></li>
+<li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to skip parser checking.</p></li>
+<li><p><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to overwrite existing files.</p></li>
+<li><p><strong>multifile</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to save multiple config files by using the __path__ metas.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.8)"><strong>TypeError</strong></a> – If any of the values of cfg is invalid according to the parser.</p>

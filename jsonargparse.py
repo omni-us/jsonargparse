@@ -411,7 +411,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return cfg
 
 
-    def dump(self, cfg:Union[SimpleNamespace, dict], format='parser_mode', skip_none:bool=True, skip_check:bool=False) -> str:
+    def dump(self, cfg:Union[SimpleNamespace, dict], format:str='parser_mode', skip_none:bool=True, skip_check:bool=False) -> str:
         """Generates a yaml or json string for the given configuration object.
 
         Args:
@@ -458,7 +458,86 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         elif format == 'json':
             return json.dumps(cfg, sort_keys=True)
         else:
-            raise ValueError('unknown dump format '+str(format))
+            raise ValueError('Unknown output format '+str(format))
+
+
+    def save(self, cfg:Union[SimpleNamespace, dict], path:str, format:str='parser_mode', skip_none:bool=True,
+             skip_check:bool=False, overwrite:bool=False, multifile:bool=True) -> None:
+        """Generates a yaml or json string for the given configuration object.
+
+        Args:
+            cfg (types.SimpleNamespace or dict): The configuration object to save.
+            path (str): Path to the location where to save config.
+            format (str): The output format, either "yaml" or "json" or "parser_mode".
+            skip_none (bool): Whether to exclude checking values that are None.
+            skip_check (bool): Whether to skip parser checking.
+            overwrite (bool): Whether to overwrite existing files.
+            multifile (bool): Whether to save multiple config files by using the __path__ metas.
+
+        Raises:
+            TypeError: If any of the values of cfg is invalid according to the parser.
+        """
+        if not overwrite and os.path.isfile(path):
+            raise ValueError('Refusing to overwrite existing file: '+path)
+        path = Path(path, mode='fc')
+        if format not in {'parser_mode', 'yaml', 'json_indented', 'json'}:
+            raise ValueError('Unknown output format '+str(format))
+        if format == 'parser_mode':
+            format = self.parser_mode
+
+        dump_kwargs = {'format': format, 'skip_none': skip_none, 'skip_check': skip_check}
+
+        if not multifile:
+            with open(path(), 'w') as f:
+                f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
+
+        else:
+            cfg = deepcopy(cfg)
+            if not isinstance(cfg, dict):
+                cfg = namespace_to_dict(cfg)
+
+            if not skip_check:
+                self.check_config(self.strip_meta(cfg))
+
+            dirname = os.path.dirname(path())
+            save_kwargs = deepcopy(dump_kwargs)
+            save_kwargs.update({'overwrite': overwrite, 'multifile': multifile})
+
+            def save_paths(cfg, base=None):
+                replace_keys = {}
+                for key, val in cfg.items():
+                    kbase = key if base is None else base+'.'+key
+                    if isinstance(val, dict):
+                        if '__path__' in val:
+                            val_path = Path(os.path.join(dirname, os.path.basename(val['__path__']())), mode='fc')
+                            if not overwrite and os.path.isfile(val_path()):
+                                raise ValueError('Refusing to overwrite existing file: '+val_path)
+                            action = _find_action(self, kbase)
+                            if isinstance(action, ActionParser):
+                                replace_keys[key] = val_path
+                                action._parser.save(val, val_path(), **save_kwargs)
+                            elif isinstance(action, (ActionJsonSchema, ActionJsonnet)):
+                                replace_keys[key] = val_path
+                                val_out = self.strip_meta(val)
+                                if format == 'yaml':
+                                    val_str = yaml.dump(val_out, default_flow_style=False, allow_unicode=True)
+                                elif format == 'json_indented':
+                                    val_str = json.dumps(val_out, indent=2, sort_keys=True)
+                                elif format == 'json':
+                                    val_str = json.dumps(val_out, sort_keys=True)
+                                with open(val_path(), 'w') as f:
+                                    f.write(val_str)
+                            else:
+                                save_paths(val, kbase)
+                        else:
+                            save_paths(val, kbase)
+                for key, val in replace_keys.items():
+                    cfg[key] = os.path.basename(val())
+
+            save_paths(cfg)
+            dump_kwargs['skip_check'] = True
+            with open(path(), 'w') as f:
+                f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
 
 
     @staticmethod
@@ -683,23 +762,17 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         cfg = self.strip_meta(cfg)
 
-        def find_action(parser, dest):
-            for action in parser._actions:
-                if action.dest == dest:
-                    return action, dest
-            return None, dest
-
         def check_values(cfg, base=None):
             for key, val in cfg.items():
                 kbase = key if base is None else base+'.'+key
-                action, _kbase = find_action(self, kbase)
+                action = _find_action(self, kbase)
                 if action is not None:
                     if val is None:
                         if action.dest in self.required_args:
                             raise TypeError('Key "'+key+'" is required but its value is None.')
                         elif skip_none:
                             continue
-                    self._check_value_key(action, val, _kbase, ccfg)
+                    self._check_value_key(action, val, kbase, ccfg)
                 elif isinstance(val, dict):
                     check_values(val, kbase)
                 else:
@@ -724,17 +797,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if not isinstance(cfg, dict):
             cfg = namespace_to_dict(cfg)
 
-        def find_action(parser, dest):
-            for action in parser._actions:
-                if action.dest == dest:
-                    return action, dest
-            return None, dest
-
         def strip_keys(cfg, base=None):
             del_keys = []
             for key, val in cfg.items():
                 kbase = key if base is None else base+'.'+key
-                action, _kbase = find_action(self, kbase)
+                action = _find_action(self, kbase)
                 if action is not None:
                     pass
                 elif isinstance(val, dict):
@@ -1720,6 +1787,22 @@ def _suppress_stderr():
     with open(os.devnull, 'w') as fnull:
         with redirect_stderr(fnull):
             yield None
+
+
+def _find_action(parser, dest):
+    """Finds an action in a parser given its dest.
+
+    Args:
+        parser (ArgumentParser): A parser where to search.
+        dest (str): The dest string to search with.
+
+    Returns:
+        Action or None: The action if found, otherwise None.
+    """
+    for action in parser._actions:
+        if action.dest == dest:
+            return action
+    return None
 
 
 def _is_action_value_list(action:Action):

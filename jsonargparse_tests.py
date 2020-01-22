@@ -4,6 +4,7 @@
 import os
 import sys
 import stat
+import json
 import shutil
 import tempfile
 import pathlib
@@ -496,6 +497,66 @@ class JsonargparseTests(unittest.TestCase):
 
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionParser))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionParser()))
+
+        shutil.rmtree(tmpdir)
+
+
+    def test_save(self):
+        """Test the use of save."""
+        parser = ArgumentParser()
+        schema = {
+            'type': 'object',
+            'properties': {
+                'a': {'type': 'number'},
+                'b': {'type': 'number'},
+            },
+        }
+        parser.add_argument('--schema',
+            default={'a': 1, 'b': 2},
+            action=ActionJsonSchema(schema=schema))
+        parser.add_argument('--jsonnet',
+            default={'c': 3, 'd': 4},
+            action=ActionJsonnetExtVars)
+        parser.add_argument('--parser',
+            action=ActionParser(parser=example_parser()))
+
+        tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
+        indir = os.path.join(tmpdir, 'input')
+        outdir = os.path.join(tmpdir, 'output')
+        os.mkdir(outdir)
+        os.mkdir(indir)
+        main_file = os.path.join(indir, 'main.yaml')
+        schema_file = os.path.join(indir, 'schema.yaml')
+        jsonnet_file = os.path.join(indir, 'jsonnet.yaml')
+        parser_file = os.path.join(indir, 'parser.yaml')
+
+        cfg1 = parser.get_defaults()
+
+        with open(main_file, 'w') as output_file:
+            output_file.write('parser: parser.yaml\nschema: schema.yaml\njsonnet: jsonnet.yaml\n')
+        with open(schema_file, 'w') as output_file:
+            output_file.write(json.dumps(namespace_to_dict(cfg1.schema))+'\n')
+        with open(jsonnet_file, 'w') as output_file:
+            output_file.write(json.dumps(namespace_to_dict(cfg1.jsonnet))+'\n')
+        with open(parser_file, 'w') as output_file:
+            output_file.write(example_parser().dump(cfg1.parser))
+
+        cfg2 = parser.parse_path(main_file, with_meta=True)
+        self.assertEqual(namespace_to_dict(cfg1), parser.strip_meta(cfg2))
+
+        parser.save(cfg2, os.path.join(outdir, 'main.yaml'))
+        self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))
+        self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.yaml')))
+        self.assertTrue(os.path.isfile(os.path.join(outdir, 'parser.yaml')))
+
+        cfg3 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
+        self.assertEqual(namespace_to_dict(cfg1), namespace_to_dict(cfg3))
+
+        self.assertRaises(ValueError, lambda: parser.save(cfg2, os.path.join(outdir, 'main.yaml')))
+
+        parser.save(cfg2, os.path.join(outdir, 'main.yaml'), multifile=False, overwrite=True)
+        cfg4 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
+        self.assertEqual(namespace_to_dict(cfg1), namespace_to_dict(cfg4))
 
         shutil.rmtree(tmpdir)
 
