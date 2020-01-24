@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Setup file for jsonargparse package."""
 
 from setuptools import setup, Command
 import re

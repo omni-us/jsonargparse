@@ -87,7 +87,7 @@ workflows:
             branches:
               ignore: /.*/
             <<: *tagfilter
-          context: jsonargparse-context
+          context: pypi-upload-context
           requires:
             - test-py37
             - test-py36

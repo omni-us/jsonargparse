@@ -37,6 +37,9 @@ except Exception as ex:
 __version__ = '2.22.0'
 
 
+meta_keys = {'__cwd__', '__path__'}
+
+
 class ParserError(Exception):
     """Error raised when parsing a value fails."""
     pass
@@ -64,7 +67,7 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
         if not isinstance(action, ActionConfigFile):
             extr = '\n  NSKEY: ' + action.dest
         if self._default_env:
-            extr += '\n  ENV:   ' + ArgumentParser._get_env_var(self, action)
+            extr += '\n  ENV:   ' + _get_env_var(self, action)
         return 'ARG:   ' + super()._format_action_invocation(action) + extr
 
 
@@ -125,10 +128,9 @@ class _ActionsContainer(argparse._ActionsContainer):
             kwargs['nargs'] = 1
             kwargs['action'] = ActionYesNo(no_prefix=None)
         action = super().add_argument(*args, **kwargs)
-        if '__cwd__' in action.dest:
-            raise ValueError('Argument with destination name "__cwd__" not allowed.')
-        if '__path__' in action.dest:
-            raise ValueError('Argument with destination name "__path__" not allowed.')
+        for key in meta_keys:
+            if key in action.dest:
+                raise ValueError('Argument with destination name "'+key+'" not allowed.')
         parser = self.parser if hasattr(self, 'parser') else self  # pylint: disable=no-member
         if action.required:
             parser.required_args.add(action.dest)  # pylint: disable=no-member
@@ -136,7 +138,7 @@ class _ActionsContainer(argparse._ActionsContainer):
         if isinstance(action, ActionConfigFile) and parser.formatter_class == DefaultHelpFormatter:  # pylint: disable=no-member
             setattr(parser.formatter_class, '_conf_file', True)  # pylint: disable=no-member
         elif isinstance(action, ActionParser):
-            action._parser.env_prefix = self._get_env_var(self, action)+'_'  # pylint: disable=no-member
+            _set_inner_parser_env_prefix(self, action)
         return action
 
 
@@ -258,10 +260,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         try:
             with _suppress_stderr():
                 cfg, unk = super().parse_known_args(args=args)
+                ActionParser._fix_conflicts(self, cfg)
                 if unk:
                     self.error('unrecognized arguments: %s' % ' '.join(unk))
-
-            ActionParser._fix_conflicts(self, cfg)
 
             cfg_dict = _flat_namespace_to_dict(cfg)
             if nested:
@@ -540,14 +541,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
 
 
-    @staticmethod
-    def _get_env_var(parser, action) -> str:
-        """Returns the environment variable for a given parser and action."""
-        env_var = (parser._env_prefix+'_' if parser._env_prefix else '') + action.dest
-        env_var = env_var.replace('.', '__').upper()
-        return env_var
-
-
     @property
     def default_env(self):
         """The current value of the default_env."""
@@ -622,7 +615,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 env = dict(os.environ)
             cfg = {}  # type: ignore
             for action in self._actions:
-                env_var = self._get_env_var(self, action)
+                env_var = _get_env_var(self, action)
                 if env_var in env and isinstance(action, ActionConfigFile):
                     namespace = _dict_to_flat_namespace(cfg)
                     ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
@@ -631,9 +624,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 if isinstance(action, ActionParser):
                     pcfg = action._parser.parse_env(env=env, defaults=defaults, nested=False, with_meta=with_meta, log=False)
                     for k, v in vars(pcfg).items():
-                        cfg[action.dest+'.'+k] = v
+                        if k not in meta_keys:
+                            cfg[action.dest+'.'+k] = v
                     continue
-                env_var = self._get_env_var(self, action)
+                env_var = _get_env_var(self, action)
                 if env_var in env and not isinstance(action, ActionConfigFile):
                     env_val = env[env_var]
                     if _is_action_value_list(action):
@@ -645,6 +639,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                         else:
                             env_val = [env_val]  # type: ignore
                     cfg[action.dest] = self._check_value_key(action, env_val, env_var, cfg)
+
+            cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
 
             if nested:
                 cfg = _flat_namespace_to_dict(SimpleNamespace(**cfg))
@@ -691,9 +687,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             for action in self._actions:
                 if len(action.option_strings) > 0 and action.default != '==SUPPRESS==':
                     if isinstance(action, ActionParser):
-                        cfg[action.dest] = action._parser.get_defaults()
+                        cfg[action.dest] = namespace_to_dict(action._parser.get_defaults(nested=True))
                     else:
                         cfg[action.dest] = action.default
+
+            cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
 
             self._logger.info('Loaded default values from parser.')
 
@@ -808,8 +806,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     strip_keys(val, kbase)
                 else:
                     del_keys.append(key)
-            if base is None and '__cwd__' in del_keys:
-                del_keys = [v for v in del_keys if v != '__cwd__']
+            if base is None and any([k in del_keys for k in meta_keys]):
+                del_keys = [v for v in del_keys if v not in meta_keys]
             for key in del_keys:
                 del cfg[key]
 
@@ -829,8 +827,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         cfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
             cfg = namespace_to_dict(cfg)
-
-        meta_keys = {'__cwd__', '__path__'}
 
         def strip_keys(cfg, base=None):
             del_keys = []
@@ -1802,7 +1798,31 @@ def _find_action(parser, dest):
     for action in parser._actions:
         if action.dest == dest:
             return action
+        elif isinstance(action, ActionParser) and dest.startswith(action.dest+'.'):
+            return _find_action(action._parser, dest[len(action.dest)+1:])
     return None
+
+
+def _set_inner_parser_env_prefix(parser, action):
+    """Sets the value of env_prefix to an ActionParser and all sub ActionParsers it contains.
+
+    Args:
+        parser (ArgumentParser): The parser to which the action belongs.
+        action (ActionParser): The action to set its env_prefix.
+    """
+    if not isinstance(action, ActionParser):
+        raise ValueError('Expected action to be an ActionParser')
+    action._parser.env_prefix = _get_env_var(parser, action)+'_'
+    for subaction in action._parser._actions:
+        if isinstance(subaction, ActionParser):
+            _set_inner_parser_env_prefix(action._parser, subaction)
+
+
+def _get_env_var(parser, action) -> str:
+    """Returns the environment variable for a given parser and action."""
+    env_var = (parser._env_prefix+'_' if parser._env_prefix else '') + action.dest
+    env_var = env_var.replace('.', '__').upper()
+    return env_var
 
 
 def _is_action_value_list(action:Action):
