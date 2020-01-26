@@ -7,6 +7,7 @@ import logging
 import operator
 import argparse
 from argparse import Action, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE
+from argparse import ArgumentError, _UNRECOGNIZED_ARGS_ATTR
 from copy import deepcopy
 from types import SimpleNamespace
 from typing import Any, List, Dict, Set, Union
@@ -61,7 +62,7 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     _conf_file = True
 
     def _format_action_invocation(self, action):
-        if action.option_strings == [] or action.default == '==SUPPRESS==' or (not self._conf_file and not self._default_env):
+        if action.option_strings == [] or action.default == SUPPRESS or (not self._conf_file and not self._default_env):
             return super()._format_action_invocation(action)
         extr = ''
         if not isinstance(action, ActionConfigFile):
@@ -138,7 +139,7 @@ class _ActionsContainer(argparse._ActionsContainer):
         if isinstance(action, ActionConfigFile) and parser.formatter_class == DefaultHelpFormatter:  # pylint: disable=no-member
             setattr(parser.formatter_class, '_conf_file', True)  # pylint: disable=no-member
         elif isinstance(action, ActionParser):
-            _set_inner_parser_env_prefix(self, action)
+            _set_inner_parser_prefix(self, action)
         return action
 
 
@@ -239,6 +240,25 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         raise NotImplementedError('parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.')
 
 
+    def _parse_known_args(self, args=None):
+        """Parses known arguments for internal use only."""
+        if args is None:
+            args = sys.argv[1:]
+        else:
+            args = list(args)
+
+        try:
+            namespace = SimpleNamespace()
+            namespace, args = super()._parse_known_args(args, namespace)
+            if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
+                args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
+                delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
+            return namespace, args
+        except ArgumentError:
+            err = sys.exc_info()[1]
+            self.error(str(err))
+
+
     def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True, with_meta:bool=None):
         """Parses command line argument strings.
 
@@ -259,7 +279,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         """
         try:
             with _suppress_stderr():
-                cfg, unk = super().parse_known_args(args=args)
+                cfg, unk = self._parse_known_args(args=args)
                 ActionParser._fix_conflicts(self, cfg)
                 if unk:
                     self.error('unrecognized arguments: %s' % ' '.join(unk))
@@ -293,7 +313,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             if not nested:
                 return _dict_to_flat_namespace(namespace_to_dict(cfg_ns))
 
-        except (TypeError, KeyError) as ex:
+        except (TypeError, KeyError, ValueError) as ex:
             self.error(str(ex))
 
         return cfg_ns
@@ -620,7 +640,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     namespace = _dict_to_flat_namespace(cfg)
                     ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
                     cfg = vars(namespace)
-            for action in [a for a in self._actions if a.default != '==SUPPRESS==']:
+            for action in [a for a in self._actions if a.default != SUPPRESS]:
                 if isinstance(action, ActionParser):
                     pcfg = action._parser.parse_env(env=env, defaults=defaults, nested=False, with_meta=with_meta, log=False)
                     for k, v in vars(pcfg).items():
@@ -685,7 +705,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         try:
             cfg = {}
             for action in self._actions:
-                if len(action.option_strings) > 0 and action.default != '==SUPPRESS==':
+                if len(action.option_strings) > 0 and action.default != SUPPRESS:
                     if isinstance(action, ActionParser):
                         cfg[action.dest] = namespace_to_dict(action._parser.get_defaults(nested=True))
                     else:
@@ -1803,7 +1823,7 @@ def _find_action(parser, dest):
     return None
 
 
-def _set_inner_parser_env_prefix(parser, action):
+def _set_inner_parser_prefix(parser, action):
     """Sets the value of env_prefix to an ActionParser and all sub ActionParsers it contains.
 
     Args:
@@ -1811,11 +1831,11 @@ def _set_inner_parser_env_prefix(parser, action):
         action (ActionParser): The action to set its env_prefix.
     """
     if not isinstance(action, ActionParser):
-        raise ValueError('Expected action to be an ActionParser')
+        raise ValueError('Expected action to be an ActionParser.')
     action._parser.env_prefix = _get_env_var(parser, action)+'_'
     for subaction in action._parser._actions:
         if isinstance(subaction, ActionParser):
-            _set_inner_parser_env_prefix(action._parser, subaction)
+            _set_inner_parser_prefix(action._parser, subaction)
 
 
 def _get_env_var(parser, action) -> str:

@@ -284,6 +284,72 @@ class JsonargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
+    def test_precedence(self):
+        """Test the parsing precedence for different sources."""
+        tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
+        input1_config_file = os.path.realpath(os.path.join(tmpdir, 'input1.yaml'))
+        input2_config_file = os.path.realpath(os.path.join(tmpdir, 'input2.yaml'))
+        default_config_file = os.path.realpath(os.path.join(tmpdir, 'default.yaml'))
+
+        parser = ArgumentParser(prog='app',
+                                default_env=True,
+                                default_config_files=[default_config_file])
+        parser.add_argument('--op1', default='from parser default')
+        parser.add_argument('--op2')
+        parser.add_argument('--cfg', action=ActionConfigFile)
+
+        with open(input1_config_file, 'w') as output_file:
+            output_file.write('op1: from input config file')
+        with open(input2_config_file, 'w') as output_file:
+            output_file.write('op2: unused')
+
+        ## check parse_env precedence ##
+        self.assertEqual('from parser default', parser.parse_env().op1)
+        with open(default_config_file, 'w') as output_file:
+            output_file.write('op1: from default config file')
+        self.assertEqual('from default config file', parser.parse_env().op1)
+        env = {'APP_CFG': '{"op1": "from env config"}'}
+        self.assertEqual('from env config', parser.parse_env(env=env).op1)
+        env['APP_OP1'] = 'from env var'
+        self.assertEqual('from env var', parser.parse_env(env=env).op1)
+
+        ## check parse_path precedence ##
+        os.remove(default_config_file)
+        for key in [k for k in ['APP_CFG', 'APP_OP1'] if k in os.environ]:
+            del os.environ[key]
+        self.assertEqual('from parser default', parser.parse_path(input2_config_file).op1)
+        with open(default_config_file, 'w') as output_file:
+            output_file.write('op1: from default config file')
+        self.assertEqual('from default config file', parser.parse_path(input2_config_file).op1)
+        os.environ['APP_CFG'] = input1_config_file
+        self.assertEqual('from input config file', parser.parse_path(input2_config_file).op1)
+        os.environ['APP_OP1'] = 'from env var'
+        self.assertEqual('from env var', parser.parse_path(input2_config_file).op1)
+        os.environ['APP_CFG'] = input2_config_file
+        self.assertEqual('from input config file', parser.parse_path(input1_config_file).op1)
+
+        ## check parse_args precedence ##
+        os.remove(default_config_file)
+        for key in ['APP_CFG', 'APP_OP1']:
+            del os.environ[key]
+        self.assertEqual('from parser default', parser.parse_args(args=[]).op1)
+        with open(default_config_file, 'w') as output_file:
+            output_file.write('op1: from default config file')
+        self.assertEqual('from default config file', parser.parse_args(args=[]).op1)
+        os.environ['APP_CFG'] = input1_config_file
+        self.assertEqual('from input config file', parser.parse_args(args=[]).op1)
+        os.environ['APP_OP1'] = 'from env var'
+        self.assertEqual('from env var', parser.parse_args(args=[]).op1)
+        os.environ['APP_CFG'] = input2_config_file
+        self.assertEqual('from arg', parser.parse_args(args=['--op1', 'from arg']).op1)
+        self.assertEqual('from arg', parser.parse_args(args=['--cfg', input1_config_file, '--op1', 'from arg']).op1)
+        self.assertEqual('from input config file', parser.parse_args(args=['--op1', 'from arg', '--cfg', input1_config_file]).op1)
+
+        for key in ['APP_CFG', 'APP_OP1']:
+            del os.environ[key]
+        shutil.rmtree(tmpdir)
+
+
     def test_strip_unknown(self):
         """Test the strip_unknown function."""
         base_parser = example_parser()
