@@ -488,20 +488,24 @@ following:
 
 When using the :class:`.ActionParser` class, the value of the node in a config
 file can be either the complex node itself, or the path to a file which will be
-loaded and parsed with the corresponding inner parser.
-
-Currently it is not supported to give as command line argument a single leaf
-node of an inner parser. Thus in the example above from the command line only
-:code:`--inner.node /path/to/inner/config` would be possible. Naturally using
+loaded and parsed with the corresponding inner parser. Naturally using
 :class:`.ActionConfigFile` to parse a complete config file will parse the inner
 nodes correctly.
 
+From the command line the help of the inner parsers can be shown by calling the
+tool with a prefixed help command, that is, for the example above it would be
+:code:`--inner.node.help`.
+
 Regarding environment variables, the prefix of the outer parser will be used to
-populate the leaf nodes of the inner parser. So in the example above, if
+populate the leaf nodes of the inner parser. In the example above, if
 :code:`inner_parser` is used to parse environment variables, then as normal
 :code:`APP1_OP1` would be checked to populate option :code:`op1`. But if
 :code:`outer_parser` is used, then :code:`APP2_INNER__NODE__OP1` would be
 checked to populate :code:`inner.node.op1`.
+
+An important detail to note is that the parsers that are given to
+:class:`.ActionParser` are internally modified. So they should be instantiated
+exclusively for the :class:`.ActionParser` and not used standalone.
 
 
 Contributing

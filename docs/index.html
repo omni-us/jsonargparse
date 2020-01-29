@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.22.2 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.22.2+1commits/2020.01.29 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.22.2
+                master/v2.22.2+1commits/2020.01.29
               </div>
             
           
@@ -558,18 +558,21 @@ following:</p>
 </div>
 <p>When using the <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> class, the value of the node in a config
 file can be either the complex node itself, or the path to a file which will be
-loaded and parsed with the corresponding inner parser.</p>
-<p>Currently it is not supported to give as command line argument a single leaf
-node of an inner parser. Thus in the example above from the command line only
-<code class="code docutils literal notranslate"><span class="pre">--inner.node</span> <span class="pre">/path/to/inner/config</span></code> would be possible. Naturally using
+loaded and parsed with the corresponding inner parser. Naturally using
 <a class="reference internal" href="#jsonargparse.ActionConfigFile" title="jsonargparse.ActionConfigFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a> to parse a complete config file will parse the inner
 nodes correctly.</p>
+<p>From the command line the help of the inner parsers can be shown by calling the
+tool with a prefixed help command, that is, for the example above it would be
+<code class="code docutils literal notranslate"><span class="pre">--inner.node.help</span></code>.</p>
 <p>Regarding environment variables, the prefix of the outer parser will be used to
-populate the leaf nodes of the inner parser. So in the example above, if
+populate the leaf nodes of the inner parser. In the example above, if
 <code class="code docutils literal notranslate"><span class="pre">inner_parser</span></code> is used to parse environment variables, then as normal
 <code class="code docutils literal notranslate"><span class="pre">APP1_OP1</span></code> would be checked to populate option <code class="code docutils literal notranslate"><span class="pre">op1</span></code>. But if
 <code class="code docutils literal notranslate"><span class="pre">outer_parser</span></code> is used, then <code class="code docutils literal notranslate"><span class="pre">APP2_INNER__NODE__OP1</span></code> would be
 checked to populate <code class="code docutils literal notranslate"><span class="pre">inner.node.op1</span></code>.</p>
+<p>An important detail to note is that the parsers that are given to
+<a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> are internally modified. So they should be instantiated
+exclusively for the <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> and not used standalone.</p>
 </div>
 <div class="section" id="contributing">
 <h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
@@ -756,7 +759,7 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.add_argument_group" title="jsonargparse.ArgumentParser.add_argument_group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_argument_group</span></code></a>(*args, name, **kwargs)</p></td>
 <td><p>Adds a group to the parser.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.check_config" title="jsonargparse.ArgumentParser.check_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_config</span></code></a>(cfg, dict], skip_none)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.check_config" title="jsonargparse.ArgumentParser.check_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_config</span></code></a>(cfg, dict], skip_none[, branch])</p></td>
 <td><p>Checks that the content of a given configuration object conforms with the parser.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.dump" title="jsonargparse.ArgumentParser.dump"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump</span></code></a>(cfg, dict], format, skip_none, skip_check)</p></td>
@@ -780,7 +783,7 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_known_args" title="jsonargparse.ArgumentParser.parse_known_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_known_args</span></code></a>([args, namespace])</p></td>
 <td><p>parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, ext_vars, env, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, ext_vars, env, …[, base])</p></td>
 <td><p>Parses a configuration file (yaml or jsonnet) given its path.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, cfg_path, ext_vars, …)</p></td>
@@ -881,7 +884,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_path">
-<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_path</code><span class="sig-paren">(</span><em class="sig-param">cfg_path: str</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em>, <em class="sig-param">base=None</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses a configuration file (yaml or jsonnet) given its path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -908,7 +911,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_string">
-<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">cfg_path: str = ''</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em>, <em class="sig-param">log: bool = True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">cfg_path: str = ''</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em>, <em class="sig-param">log: bool = True</em>, <em class="sig-param">base=None</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses configuration (yaml or jsonnet) given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -961,7 +964,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.save">
-<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], path: str, format: str = 'parser_mode', skip_none: bool = True, skip_check: bool = False, overwrite: bool = False, multifile: bool = True</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.save" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], path: str, format: str = 'parser_mode', skip_none: bool = True, skip_check: bool = False, overwrite: bool = False, multifile: bool = True, branch=None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a yaml or json string for the given configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1068,7 +1071,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.check_config">
-<code class="sig-name descname">check_config</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], skip_none: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">check_config</code><span class="sig-paren">(</span><em class="sig-param">cfg: Union[types.SimpleNamespace, dict], skip_none: bool = True, branch=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.check_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.check_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks that the content of a given configuration object conforms with the parser.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1418,7 +1421,7 @@ are supported. Additionally it accepts:</p>
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionParser.__call__" title="jsonargparse.ActionParser.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</p></td>
+<td><p>Parses an argument with the corresponding parser and if valid, sets the parsed value to the corresponding key.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionParser.__init__" title="jsonargparse.ActionParser.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionParser instance.</p></td>
@@ -1442,7 +1445,7 @@ are supported. Additionally it accepts:</p>
 <dl class="method">
 <dt id="jsonargparse.ActionParser.__call__">
 <code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionParser.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionParser.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parses an argument with the corresponding parser and if valid sets the parsed value to the corresponding key.</p>
+<dd><p>Parses an argument with the corresponding parser and if valid, sets the parsed value to the corresponding key.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.8)"><strong>TypeError</strong></a> – If the argument is not valid.</p>

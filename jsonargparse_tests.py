@@ -521,45 +521,58 @@ class JsonargparseTests(unittest.TestCase):
 
     def test_actionparser(self):
         """Test the use of ActionParser."""
-        parser = ArgumentParser(prog='xyz')
-        parser.add_argument('--inner.vals',
-            action=ActionParser(parser=example_parser()))
-        parser.add_argument('--inner.flag',
-            default='flag_def')
+        parser_lv3 = ArgumentParser(prog='lv3', default_env=False)
+        parser_lv3.add_argument('--opt3',
+            default='opt3_def')
+
+        parser_lv2 = ArgumentParser(prog='lv2', default_env=False)
+        parser_lv2.add_argument('--opt2',
+            default='opt2_def')
+        parser_lv2.add_argument('--inner3',
+            action=ActionParser(parser=parser_lv3))
+
+        parser = ArgumentParser(prog='lv1', default_env=True)
+        parser.add_argument('--opt1',
+            default='opt1_def')
+        parser.add_argument('--inner2',
+            action=ActionParser(parser=parser_lv2))
         parser.add_argument('--cfg',
             action=ActionConfigFile)
 
         cfg = parser.get_defaults()
-        self.assertEqual('opt1_def', parser.get_defaults().inner.vals.lev1.lev2.opt1)
+        self.assertEqual('opt1_def', cfg.opt1)
+        self.assertEqual('opt2_def', cfg.inner2.opt2)
+        self.assertEqual('opt3_def', cfg.inner2.inner3.opt3)
 
         tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
-        yaml1_file = os.path.join(tmpdir, 'example1.yaml')
-        yaml2_file = os.path.join(tmpdir, 'example2.yaml')
-        yaml3_file = os.path.join(tmpdir, 'example3.yaml')
+        yaml_main_file = os.path.join(tmpdir, 'main.yaml')
+        yaml_inner2_file = os.path.join(tmpdir, 'inner2.yaml')
+        yaml_inner3_file = os.path.join(tmpdir, 'inner3.yaml')
 
-        with open(yaml1_file, 'w') as output_file:
-            output_file.write('inner:\n  vals: example2.yaml\n  flag: flag_yaml\n')
-        with open(yaml2_file, 'w') as output_file:
-            output_file.write(example_yaml)
-        with open(yaml3_file, 'w') as output_file:
-            output_file.write('inner:\n  flag: flag_yaml\n')
-        cfg = parser.parse_args(['--cfg', yaml1_file], with_meta=False)
-        self.assertEqual('flag_yaml', cfg.inner.flag)
-        self.assertEqual('opt1_yaml', cfg.inner.vals.lev1.lev2.opt1)
+        with open(yaml_main_file, 'w') as output_file:
+            output_file.write('opt1: opt1_yaml\ninner2: inner2.yaml\n')
+        with open(yaml_inner2_file, 'w') as output_file:
+            output_file.write('opt2: opt2_yaml\ninner3: inner3.yaml\n')
+        with open(yaml_inner3_file, 'w') as output_file:
+            output_file.write('opt3: opt3_yaml\n')
+        expected = {'opt1': 'opt1_yaml', 'inner2': {'opt2': 'opt2_yaml', 'inner3': {'opt3': 'opt3_yaml'}}}
+        cfg = parser.parse_args(['--cfg', yaml_main_file], with_meta=False)
+        delattr(cfg, 'cfg')
+        self.assertEqual(expected, namespace_to_dict(cfg))
 
-        cfg = parser.parse_args(['--cfg', yaml3_file], with_meta=False)
-        self.assertEqual('flag_yaml', cfg.inner.flag)
-        self.assertEqual('opt1_def', cfg.inner.vals.lev1.lev2.opt1)
+        cfg = parser.parse_args(['--cfg', yaml_main_file, '--inner2.opt2', 'opt2_arg', '--inner2.inner3.opt3', 'opt3_arg'])
+        self.assertEqual('opt2_arg', cfg.inner2.opt2)
+        self.assertEqual('opt3_arg', cfg.inner2.inner3.opt3)
 
-        with open(yaml3_file, 'w') as output_file:
+        cfg = parser.parse_path(yaml_main_file, with_meta=False)
+        with open(yaml_main_file, 'w') as output_file:
             output_file.write(parser.dump(cfg))
-        self.assertEqual(cfg.inner, parser.parse_path(yaml3_file, with_meta=False).inner)
+        cfg2 = parser.parse_path(yaml_main_file, with_meta=False)
+        delattr(cfg2, 'cfg')
+        self.assertEqual(expected, namespace_to_dict(cfg2))
 
-        #cfg = parser.parse_args(['--cfg', yaml1_file, '--inner.vals.lev1.lev2.opt1', 'opt1_arg'])
-        #self.assertEqual('opt1_arg', cfg.inner.vals.lev1.lev2.opt1)
-
-        self.assertEqual('flag_env', parser.parse_env(env={'XYZ_INNER__FLAG': 'flag_env'}).inner.flag)
-        self.assertEqual('opt1_env', parser.parse_env(env={'XYZ_INNER__VALS__LEV1__LEV2__OPT1': 'opt1_env'}).inner.vals.lev1.lev2.opt1)
+        self.assertEqual('opt2_env', parser.parse_env(env={'LV1_INNER2__OPT2': 'opt2_env'}).inner2.opt2)
+        self.assertEqual('opt3_env', parser.parse_env(env={'LV1_INNER2__INNER3__OPT3': 'opt3_env'}).inner2.inner3.opt3)
 
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionParser))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionParser()))
@@ -580,9 +593,9 @@ class JsonargparseTests(unittest.TestCase):
         parser.add_argument('--schema',
             default={'a': 1, 'b': 2},
             action=ActionJsonSchema(schema=schema))
-        parser.add_argument('--jsonnet',
-            default={'c': 3, 'd': 4},
-            action=ActionJsonnetExtVars)
+        #parser.add_argument('--jsonnet',
+        #    default={'c': 3, 'd': 4},
+        #    action=ActionJsonnet(ext_vars=None))
         parser.add_argument('--parser',
             action=ActionParser(parser=example_parser()))
 
@@ -599,11 +612,12 @@ class JsonargparseTests(unittest.TestCase):
         cfg1 = parser.get_defaults()
 
         with open(main_file, 'w') as output_file:
-            output_file.write('parser: parser.yaml\nschema: schema.yaml\njsonnet: jsonnet.yaml\n')
+            output_file.write('parser: parser.yaml\nschema: schema.yaml\n')
+            #output_file.write('parser: parser.yaml\nschema: schema.yaml\njsonnet: jsonnet.yaml\n')
         with open(schema_file, 'w') as output_file:
             output_file.write(json.dumps(namespace_to_dict(cfg1.schema))+'\n')
-        with open(jsonnet_file, 'w') as output_file:
-            output_file.write(json.dumps(namespace_to_dict(cfg1.jsonnet))+'\n')
+        #with open(jsonnet_file, 'w') as output_file:
+        #    output_file.write(json.dumps(namespace_to_dict(cfg1.jsonnet))+'\n')
         with open(parser_file, 'w') as output_file:
             output_file.write(example_parser().dump(cfg1.parser))
 
@@ -612,7 +626,7 @@ class JsonargparseTests(unittest.TestCase):
 
         parser.save(cfg2, os.path.join(outdir, 'main.yaml'))
         self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))
-        self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.yaml')))
+        #self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.yaml')))
         self.assertTrue(os.path.isfile(os.path.join(outdir, 'parser.yaml')))
 
         cfg3 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
@@ -758,7 +772,7 @@ class JsonargparseTests(unittest.TestCase):
 
     @unittest.skipIf(isinstance(_jsonnet, Exception), 'jsonnet package is required :: '+str(_jsonnet))
     @unittest.skipIf(isinstance(jsonvalidator, Exception), 'jsonschema package is required :: '+str(jsonvalidator))
-    def test_action_jsonnet(self):
+    def test_actionjsonnet(self):
         """Test the use of ActionJsonnet."""
         parser = ArgumentParser()
         parser.add_argument('--input.ext_vars',
