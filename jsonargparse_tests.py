@@ -593,9 +593,9 @@ class JsonargparseTests(unittest.TestCase):
         parser.add_argument('--schema',
             default={'a': 1, 'b': 2},
             action=ActionJsonSchema(schema=schema))
-        #parser.add_argument('--jsonnet',
-        #    default={'c': 3, 'd': 4},
-        #    action=ActionJsonnet(ext_vars=None))
+        parser.add_argument('--jsonnet',
+            default={'c': 3, 'd': 4},
+            action=ActionJsonnet(ext_vars=None))
         parser.add_argument('--parser',
             action=ActionParser(parser=example_parser()))
 
@@ -612,12 +612,11 @@ class JsonargparseTests(unittest.TestCase):
         cfg1 = parser.get_defaults()
 
         with open(main_file, 'w') as output_file:
-            output_file.write('parser: parser.yaml\nschema: schema.yaml\n')
-            #output_file.write('parser: parser.yaml\nschema: schema.yaml\njsonnet: jsonnet.yaml\n')
+            output_file.write('parser: parser.yaml\nschema: schema.yaml\njsonnet: jsonnet.yaml\n')
         with open(schema_file, 'w') as output_file:
             output_file.write(json.dumps(namespace_to_dict(cfg1.schema))+'\n')
-        #with open(jsonnet_file, 'w') as output_file:
-        #    output_file.write(json.dumps(namespace_to_dict(cfg1.jsonnet))+'\n')
+        with open(jsonnet_file, 'w') as output_file:
+            output_file.write(json.dumps(namespace_to_dict(cfg1.jsonnet))+'\n')
         with open(parser_file, 'w') as output_file:
             output_file.write(example_parser().dump(cfg1.parser))
 
@@ -626,7 +625,7 @@ class JsonargparseTests(unittest.TestCase):
 
         parser.save(cfg2, os.path.join(outdir, 'main.yaml'))
         self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))
-        #self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.yaml')))
+        self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.yaml')))
         self.assertTrue(os.path.isfile(os.path.join(outdir, 'parser.yaml')))
 
         cfg3 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)

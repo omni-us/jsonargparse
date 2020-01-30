@@ -562,10 +562,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                             elif isinstance(action, (ActionJsonSchema, ActionJsonnet)):
                                 replace_keys[key] = val_path
                                 val_out = self.strip_meta(val)
-                                if format == 'yaml':
-                                    val_str = yaml.dump(val_out, default_flow_style=False, allow_unicode=True)
-                                elif format == 'json_indented':
+                                if format == 'json_indented' or isinstance(action, ActionJsonnet):
                                     val_str = json.dumps(val_out, indent=2, sort_keys=True)
+                                elif format == 'yaml':
+                                    val_str = yaml.dump(val_out, default_flow_style=False, allow_unicode=True)
                                 elif format == 'json':
                                     val_str = json.dumps(val_out, sort_keys=True)
                                 with open(val_path(), 'w') as f:
