@@ -459,7 +459,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         Args:
             cfg (types.SimpleNamespace or dict): The configuration object to dump.
-            format (str): The output format, either "yaml" or "json" or "parser_mode".
+            format (str): The output format: "yaml", "json", "json_indented" or "parser_mode".
             skip_none (bool): Whether to exclude checking values that are None.
             skip_check (bool): Whether to skip parser checking.
 
@@ -493,7 +493,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
         if format == 'parser_mode':
-            format = self.parser_mode
+            format = 'yaml' if self.parser_mode == 'yaml' else 'json_indented'
         if format == 'yaml':
             return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
         elif format == 'json_indented':
@@ -511,7 +511,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Args:
             cfg (types.SimpleNamespace or dict): The configuration object to save.
             path (str): Path to the location where to save config.
-            format (str): The output format, either "yaml" or "json" or "parser_mode".
+            format (str): The output format: "yaml", "json", "json_indented" or "parser_mode".
             skip_none (bool): Whether to exclude checking values that are None.
             skip_check (bool): Whether to skip parser checking.
             overwrite (bool): Whether to overwrite existing files.
@@ -526,7 +526,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if format not in {'parser_mode', 'yaml', 'json_indented', 'json'}:
             raise ValueError('Unknown output format '+str(format))
         if format == 'parser_mode':
-            format = self.parser_mode
+            format = 'yaml' if self.parser_mode == 'yaml' else 'json_indented'
 
         dump_kwargs = {'format': format, 'skip_none': skip_none, 'skip_check': skip_check}
 

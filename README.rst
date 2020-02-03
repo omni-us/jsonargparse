@@ -187,6 +187,10 @@ There is also the :func:`jsonargparse.ArgumentParser.parse_env` function to only
 parse environment variables, which might be useful for some use cases in which
 there is no command line call involved.
 
+If a parser includes an :class:`.ActionConfigFile` argument, then the
+environment variable for this config file will be checked before all the other
+environment variables.
+
 
 Configuration files
 ===================
