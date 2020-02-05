@@ -94,7 +94,7 @@ class LoggerProperty:
         """Sets a new logger.
 
         Args:
-            logger (logging.Logger or bool or str None): A logger to use or True to use the default logger or False/None for a null logger.
+            logger (logging.Logger or bool or str or None): A logger to use or True/str(logger name) to use the default logger or False/None for a null logger.
 
         Raises:
             ValueError: If an invalid logger value is given.
@@ -110,7 +110,7 @@ class LoggerProperty:
             logger.setLevel(logging.INFO)
             self._logger = logger
         elif not isinstance(logger, logging.Logger):
-            raise ValueError('Expected logger to be an instance of logging.Logger.')
+            raise ValueError('Expected logger to be an instance of logging.Logger or bool or str or None.')
         else:
             self._logger = logger
 
@@ -178,7 +178,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             env_prefix (str): Prefix for environment variables.
             error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
             formatter_class (argparse.HelpFormatter or str): Class for printing help messages or one of {"default", "default_argparse"}.
-            logger (logging.Logger or True or None): Object for logging events.
+            logger (logging.Logger or bool or str or None): Option for logging events, see :class:`.LoggerProperty`.
             version (str): Program version string to add --version argument.
             parser_mode (str): Mode for parsing configuration files, either "yaml" or "jsonnet".
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
