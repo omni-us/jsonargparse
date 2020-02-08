@@ -367,7 +367,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True,
-                     nested:bool=True, with_meta:bool=None, log:bool=True, base=None) -> SimpleNamespace:
+                     nested:bool=True, with_meta:bool=None, log:bool=True, base=None, check=True) -> SimpleNamespace:
         """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
@@ -401,7 +401,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = self.strip_meta(cfg)
 
             cfg_ns = dict_to_namespace(cfg)
-            self.check_config(cfg_ns)
+            if check:
+                self.check_config(cfg_ns)
 
             if with_meta or (with_meta is None and self._default_meta):
                 if hasattr(cfg_ns, '__cwd__'):
@@ -660,7 +661,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 env_var = _get_env_var(self, action)
                 if env_var in env and isinstance(action, ActionConfigFile):
                     namespace = _dict_to_flat_namespace(cfg)
-                    ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
+                    ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var], check=False)
                     cfg = vars(namespace)
             for action in [a for a in self._actions if a.default != SUPPRESS]:
                 if isinstance(action, ActionParser):
@@ -723,7 +724,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         try:
             cfg = {}
             for action in self._actions:
-                if len(action.option_strings) > 0 and action.default != SUPPRESS:
+                if action.default != SUPPRESS:
                     if isinstance(action, ActionParser):
                         cfg.update(namespace_to_dict(action._parser.get_defaults(nested=False)))
                     else:
@@ -798,6 +799,21 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if isinstance(branch, str):
             cfg = _flat_namespace_to_dict(_dict_to_flat_namespace({branch: cfg}))
 
+        def get_key_value(dct, key):
+            keys = key.split('.')
+            for key in keys:
+                dct = dct[key]
+            return dct
+
+        def check_required(cfg):
+            for reqkey in self.required_args:
+                try:
+                    val = get_key_value(cfg, reqkey)
+                    if val is None:
+                        raise TypeError('Key "'+reqkey+'" is required but its value is None.')
+                except:
+                    raise TypeError('Key "'+reqkey+'" is required but not included in config object.')
+
         def check_values(cfg, base=None):
             for key, val in cfg.items():
                 if key in meta_keys:
@@ -805,11 +821,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 kbase = key if base is None else base+'.'+key
                 action = _find_action(self, kbase)
                 if action is not None:
-                    if val is None:
-                        if action.dest in self.required_args:
-                            raise TypeError('Key "'+kbase+'" is required but its value is None.')
-                        elif skip_none:
-                            continue
+                    if val is None and skip_none:
+                        continue
                     self._check_value_key(action, val, kbase, ccfg)
                 elif isinstance(val, dict):
                     check_values(val, kbase)
@@ -817,6 +830,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     raise KeyError('No action for key "'+kbase+'" to check its value.')
 
         try:
+            check_required(cfg)
             check_values(cfg)
         except Exception as ex:
             self.error('Config checking failed :: '+str(ex))
@@ -1118,7 +1132,7 @@ class ActionConfigFile(Action):
         self._apply_config(parser, namespace, self.dest, values)
 
     @staticmethod
-    def _apply_config(parser, namespace, dest, value):
+    def _apply_config(parser, namespace, dest, value, check=True):
         if not hasattr(namespace, dest) or not isinstance(getattr(namespace, dest), list):
             setattr(namespace, dest, [])
         try:
@@ -1128,12 +1142,13 @@ class ActionConfigFile(Action):
                 raise ex_path
             try:
                 cfg_path = None
-                cfg_file = parser.parse_string(value, env=False, defaults=False)
+                cfg_file = parser.parse_string(value, env=False, defaults=False, check=False)
             except TypeError as ex_str:
                 raise TypeError('Parser key "'+dest+'": '+str(ex_str))
         else:
             cfg_file = parser.parse_path(value, env=False, defaults=False)
-        parser.check_config(cfg_file)
+        if check:
+            parser.check_config(cfg_file)
         cfg_file = _dict_to_flat_namespace(namespace_to_dict(cfg_file))
         getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():

@@ -188,8 +188,8 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual(['-'],      parser.parse_args(['--val', '-']).val)
 
 
-    def test_parse_yaml(self):
-        """Test the parsing and checking of yaml."""
+    def test_parse_string_and_path(self):
+        """Test the parsing and checking of config string and path."""
         parser = example_parser()
 
         cfg1 = parser.parse_string(example_yaml)
@@ -229,21 +229,21 @@ class JsonargparseTests(unittest.TestCase):
     def test_parse_env(self):
         """Test the parsing of environment variables."""
         parser = example_parser()
-        cfg = parser.parse_env(env=example_env)
+        cfg = parser.parse_env(example_env)
         self.assertEqual('opt1_env', cfg.lev1.lev2.opt1)
         self.assertEqual(0, cfg.nums.val1)
-        cfg = parser.parse_env(env=example_env, defaults=False)
+        cfg = parser.parse_env(example_env, defaults=False)
         self.assertFalse(hasattr(cfg, 'bools'))
         self.assertTrue(hasattr(cfg, 'nums'))
         parser.add_argument('--cfg', action=ActionConfigFile)
         env = OrderedDict(example_env)
         env['APP_CFG'] = '{"nums": {"val1": 1}}'
-        self.assertEqual(0, parser.parse_env(env=env).nums.val1)
+        self.assertEqual(0, parser.parse_env(env).nums.val1)
         parser.add_argument('req', nargs='+')
         env['APP_REQ'] = 'abc'
-        self.assertEqual(['abc'], parser.parse_env(env=env).req)
+        self.assertEqual(['abc'], parser.parse_env(env).req)
         env['APP_REQ'] = '["abc", "xyz"]'
-        self.assertEqual(['abc', 'xyz'], parser.parse_env(env=env).req)
+        self.assertEqual(['abc', 'xyz'], parser.parse_env(env).req)
 
 
     def test_required(self):
@@ -258,12 +258,29 @@ class JsonargparseTests(unittest.TestCase):
         cfg = parser.parse_string('{"req1":"val3","lev1":{"req2":"val4"}}')
         self.assertEqual('val3', cfg.req1)
         self.assertEqual('val4', cfg.lev1.req2)
-        cfg = parser.parse_env(env={'APP_REQ1': 'val5', 'APP_LEV1__REQ2': 'val6'})
+        cfg = parser.parse_env({'APP_REQ1': 'val5', 'APP_LEV1__REQ2': 'val6'})
         self.assertEqual('val5', cfg.req1)
         self.assertEqual('val6', cfg.lev1.req2)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--req1', 'val1']))
         self.assertRaises(ParserError, lambda: parser.parse_string('{"lev1":{"req2":"val4"}}'))
-        self.assertRaises(ParserError, lambda: parser.parse_env(env={}))
+        self.assertRaises(ParserError, lambda: parser.parse_env({}))
+
+
+    def test_positionals(self):
+        """Test parsing of positional arguments."""
+        parser = ArgumentParser()
+        parser.add_argument('pos1')
+        parser.add_argument('pos2', nargs='?')
+        self.assertRaises(ParserError, lambda: parser.parse_args([]))
+        self.assertIsNone(parser.parse_args(['v1']).pos2)
+        self.assertEqual('v1', parser.parse_args(['v1']).pos1)
+        self.assertEqual('v2', parser.parse_args(['v1', 'v2']).pos2)
+
+        parser = ArgumentParser()
+        parser.add_argument('pos1')
+        parser.add_argument('pos2', nargs='+')
+        self.assertRaises(ParserError, lambda: parser.parse_args(['v1']).pos2)
+        self.assertEqual(['v2', 'v3'], parser.parse_args(['v1', 'v2', 'v3']).pos2)
 
 
     def test_default_config_files(self):
@@ -309,9 +326,9 @@ class JsonargparseTests(unittest.TestCase):
             output_file.write('op1: from default config file')
         self.assertEqual('from default config file', parser.parse_env().op1)
         env = {'APP_CFG': '{"op1": "from env config"}'}
-        self.assertEqual('from env config', parser.parse_env(env=env).op1)
+        self.assertEqual('from env config', parser.parse_env(env).op1)
         env['APP_OP1'] = 'from env var'
-        self.assertEqual('from env var', parser.parse_env(env=env).op1)
+        self.assertEqual('from env var', parser.parse_env(env).op1)
 
         ## check parse_path precedence ##
         os.remove(default_config_file)
@@ -332,18 +349,18 @@ class JsonargparseTests(unittest.TestCase):
         os.remove(default_config_file)
         for key in ['APP_CFG', 'APP_OP1']:
             del os.environ[key]
-        self.assertEqual('from parser default', parser.parse_args(args=[]).op1)
+        self.assertEqual('from parser default', parser.parse_args([]).op1)
         with open(default_config_file, 'w') as output_file:
             output_file.write('op1: from default config file')
-        self.assertEqual('from default config file', parser.parse_args(args=[]).op1)
+        self.assertEqual('from default config file', parser.parse_args([]).op1)
         os.environ['APP_CFG'] = input1_config_file
-        self.assertEqual('from input config file', parser.parse_args(args=[]).op1)
+        self.assertEqual('from input config file', parser.parse_args([]).op1)
         os.environ['APP_OP1'] = 'from env var'
-        self.assertEqual('from env var', parser.parse_args(args=[]).op1)
+        self.assertEqual('from env var', parser.parse_args([]).op1)
         os.environ['APP_CFG'] = input2_config_file
-        self.assertEqual('from arg', parser.parse_args(args=['--op1', 'from arg']).op1)
-        self.assertEqual('from arg', parser.parse_args(args=['--cfg', input1_config_file, '--op1', 'from arg']).op1)
-        self.assertEqual('from input config file', parser.parse_args(args=['--op1', 'from arg', '--cfg', input1_config_file]).op1)
+        self.assertEqual('from arg', parser.parse_args(['--op1', 'from arg']).op1)
+        self.assertEqual('from arg', parser.parse_args(['--cfg', input1_config_file, '--op1', 'from arg']).op1)
+        self.assertEqual('from input config file', parser.parse_args(['--op1', 'from arg', '--cfg', input1_config_file]).op1)
 
         for key in ['APP_CFG', 'APP_OP1']:
             del os.environ[key]
@@ -571,8 +588,8 @@ class JsonargparseTests(unittest.TestCase):
         delattr(cfg2, 'cfg')
         self.assertEqual(expected, namespace_to_dict(cfg2))
 
-        self.assertEqual('opt2_env', parser.parse_env(env={'LV1_INNER2__OPT2': 'opt2_env'}).inner2.opt2)
-        self.assertEqual('opt3_env', parser.parse_env(env={'LV1_INNER2__INNER3__OPT3': 'opt3_env'}).inner2.inner3.opt3)
+        self.assertEqual('opt2_env', parser.parse_env({'LV1_INNER2__OPT2': 'opt2_env'}).inner2.opt2)
+        self.assertEqual('opt3_env', parser.parse_env({'LV1_INNER2__INNER3__OPT3': 'opt3_env'}).inner2.inner3.opt3)
 
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionParser))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionParser()))
@@ -814,10 +831,10 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_string('gt1:\n  a:\n    le4: 1.0'))
         self.assertRaises(ParserError, lambda: parser.parse_string('gt1:\n  a:\n    le4: 5.5'))
 
-        self.assertEqual(1.5, parser.parse_env(env={'APP_GT1__A__LE4': '1.5'}).gt1.a.le4)
-        self.assertEqual(4.0, parser.parse_env(env={'APP_GT1__A__LE4': '4.0'}).gt1.a.le4)
-        self.assertRaises(ParserError, lambda: parser.parse_env(env={'APP_GT1__A__LE4': '1.0'}))
-        self.assertRaises(ParserError, lambda: parser.parse_env(env={'APP_GT1__A__LE4': '5.5'}))
+        self.assertEqual(1.5, parser.parse_env({'APP_GT1__A__LE4': '1.5'}).gt1.a.le4)
+        self.assertEqual(4.0, parser.parse_env({'APP_GT1__A__LE4': '4.0'}).gt1.a.le4)
+        self.assertRaises(ParserError, lambda: parser.parse_env({'APP_GT1__A__LE4': '1.0'}))
+        self.assertRaises(ParserError, lambda: parser.parse_env({'APP_GT1__A__LE4': '5.5'}))
 
         self.assertEqual(2, parser.parse_args(['--lt5.o.ge10.o.eq7', '2']).lt5.o.ge10.o.eq7)
         self.assertEqual(7, parser.parse_args(['--lt5.o.ge10.o.eq7', '7']).lt5.o.ge10.o.eq7)

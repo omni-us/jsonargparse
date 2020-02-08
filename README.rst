@@ -526,9 +526,10 @@ clear what are the requirements for different use cases, all the requirements of
 the project are stored in the file :code:`setup.cfg`. The basic runtime
 requirements are defined in section :code:`[options]` in the
 :code:`install_requires` entry. All optional requirements are stored in section
-:code:`[options.extras_require]` in the :code:`all` entry. And finally there are
-:code:`dev` and :code:`doc` entries in the same :code:`[options.extras_require]`
-section which lists requirements for development and documentation building.
+:code:`[options.extras_require]` in the :code:`all` entry. Also there are
+:code:`test`, :code:`dev` and :code:`doc` entries in the same
+:code:`[options.extras_require]` section which lists requirements for testing,
+development and documentation building.
 
 The recommended way to work with the source code is the following. First clone
 the repository, then create a virtual environment, activate it and finally
@@ -545,4 +546,4 @@ The crucial step is installing the requirements which would be done by running:
 
 .. code-block:: bash
 
-    pip install --editable .[dev,doc,all]
+    pip install --editable .[test,dev,doc,all]

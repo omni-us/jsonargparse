@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.23.1+2commits/2020.02.05 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.23.1+3commits/2020.02.08 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.23.1+2commits/2020.02.05
+                master/v2.23.1+3commits/2020.02.08
               </div>
             
           
@@ -588,9 +588,10 @@ clear what are the requirements for different use cases, all the requirements of
 the project are stored in the file <code class="code docutils literal notranslate"><span class="pre">setup.cfg</span></code>. The basic runtime
 requirements are defined in section <code class="code docutils literal notranslate"><span class="pre">[options]</span></code> in the
 <code class="code docutils literal notranslate"><span class="pre">install_requires</span></code> entry. All optional requirements are stored in section
-<code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code> in the <code class="code docutils literal notranslate"><span class="pre">all</span></code> entry. And finally there are
-<code class="code docutils literal notranslate"><span class="pre">dev</span></code> and <code class="code docutils literal notranslate"><span class="pre">doc</span></code> entries in the same <code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code>
-section which lists requirements for development and documentation building.</p>
+<code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code> in the <code class="code docutils literal notranslate"><span class="pre">all</span></code> entry. Also there are
+<code class="code docutils literal notranslate"><span class="pre">test</span></code>, <code class="code docutils literal notranslate"><span class="pre">dev</span></code> and <code class="code docutils literal notranslate"><span class="pre">doc</span></code> entries in the same
+<code class="code docutils literal notranslate"><span class="pre">[options.extras_require]</span></code> section which lists requirements for testing,
+development and documentation building.</p>
 <p>The recommended way to work with the source code is the following. First clone
 the repository, then create a virtual environment, activate it and finally
 install the development requirements. More precisely the steps would be:</p>
@@ -601,7 +602,7 @@ virtualenv -p python3 venv
 </pre></div>
 </div>
 <p>The crucial step is installing the requirements which would be done by running:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --editable .<span class="o">[</span>dev,doc,all<span class="o">]</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --editable .<span class="o">[</span>test,dev,doc,all<span class="o">]</span>
 </pre></div>
 </div>
 </div>
@@ -914,7 +915,7 @@ are supported. Additionally it accepts:</p>
 
 <dl class="method">
 <dt id="jsonargparse.ArgumentParser.parse_string">
-<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">cfg_path: str = ''</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em>, <em class="sig-param">log: bool = True</em>, <em class="sig-param">base=None</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">parse_string</code><span class="sig-paren">(</span><em class="sig-param">cfg_str: str</em>, <em class="sig-param">cfg_path: str = ''</em>, <em class="sig-param">ext_vars: dict = {}</em>, <em class="sig-param">env: bool = None</em>, <em class="sig-param">defaults: bool = True</em>, <em class="sig-param">nested: bool = True</em>, <em class="sig-param">with_meta: bool = None</em>, <em class="sig-param">log: bool = True</em>, <em class="sig-param">base=None</em>, <em class="sig-param">check=True</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.parse_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.parse_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses configuration (yaml or jsonnet) given as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
