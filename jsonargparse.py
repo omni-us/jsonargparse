@@ -263,12 +263,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
                 delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
             return namespace, args
-        except ArgumentError:
+        except (ArgumentError, ParserError):
             err = sys.exc_info()[1]
             self.error(str(err))
 
 
-    def parse_args(self, args=None, namespace=None, env:bool=None, nested:bool=True, with_meta:bool=None):
+    def parse_args(self, args=None, namespace=None, env:bool=None, defaults:bool=True, nested:bool=True, with_meta:bool=None):
         """Parses command line argument strings.
 
         All the arguments from `argparse.ArgumentParser.parse_args
@@ -277,6 +277,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         Args:
             env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
+            defaults (bool): Whether to merge with the parser's defaults.
             nested (bool): Whether the namespace should be nested.
             with_meta (bool): Whether to include metadata in config object.
 
@@ -298,9 +299,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             if nested:
                 cfg_dict = _flat_namespace_to_dict(dict_to_namespace(cfg_dict))
 
-            defaults = True
             if env or (env is None and self._default_env):
-                cfg_dict = self._merge_config(cfg_dict, self.parse_env(defaults=defaults, nested=nested))
+                cfg_dict = self._merge_config(cfg_dict, self.parse_env(defaults=defaults, nested=nested, check=False))
 
             elif defaults:
                 cfg_dict = self._merge_config(cfg_dict, self.get_defaults(nested=nested))
@@ -330,7 +330,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True,
-                  with_meta:bool=None, base=None) -> SimpleNamespace:
+                  with_meta:bool=None, base=None, check:bool=True) -> SimpleNamespace:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
@@ -355,7 +355,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         try:
             with open(os.path.basename(cfg_path), 'r') as f:
                 cfg_str = f.read()
-            parsed_cfg = self.parse_string(cfg_str, cfg_path, ext_vars, env, defaults, nested, with_meta=with_meta, log=False, base=base)
+            parsed_cfg = self.parse_string(cfg_str, cfg_path, ext_vars, env, defaults, nested, with_meta=with_meta, log=False, base=base, check=check)
             if with_meta or (with_meta is None and self._default_meta):
                 parsed_cfg.__path__ = fpath
         finally:
@@ -367,7 +367,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True,
-                     nested:bool=True, with_meta:bool=None, log:bool=True, base=None, check=True) -> SimpleNamespace:
+                     nested:bool=True, with_meta:bool=None, log:bool=True, base=None, check:bool=True) -> SimpleNamespace:
         """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
@@ -638,7 +638,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             setattr(self.formatter_class, '_env_prefix', env_prefix)
 
 
-    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True, with_meta:bool=None, log:bool=True) -> SimpleNamespace:
+    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True, with_meta:bool=None, log:bool=True, check:bool=True) -> SimpleNamespace:
         """Parses environment variables.
 
         Args:
@@ -661,7 +661,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 env_var = _get_env_var(self, action)
                 if env_var in env and isinstance(action, ActionConfigFile):
                     namespace = _dict_to_flat_namespace(cfg)
-                    ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var], check=False)
+                    ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
                     cfg = vars(namespace)
             for action in [a for a in self._actions if a.default != SUPPRESS]:
                 if isinstance(action, ActionParser):
@@ -691,7 +691,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = self.strip_meta(cfg)
 
             cfg_ns = dict_to_namespace(cfg)
-            self.check_config(cfg_ns)
+            if check:
+                self.check_config(cfg_ns)
 
             if with_meta or (with_meta is None and self._default_meta):
                 if hasattr(cfg_ns, '__cwd__'):
@@ -1132,7 +1133,7 @@ class ActionConfigFile(Action):
         self._apply_config(parser, namespace, self.dest, values)
 
     @staticmethod
-    def _apply_config(parser, namespace, dest, value, check=True):
+    def _apply_config(parser, namespace, dest, value):
         if not hasattr(namespace, dest) or not isinstance(getattr(namespace, dest), list):
             setattr(namespace, dest, [])
         try:
@@ -1146,9 +1147,7 @@ class ActionConfigFile(Action):
             except TypeError as ex_str:
                 raise TypeError('Parser key "'+dest+'": '+str(ex_str))
         else:
-            cfg_file = parser.parse_path(value, env=False, defaults=False)
-        if check:
-            parser.check_config(cfg_file)
+            cfg_file = parser.parse_path(value, env=False, defaults=False, check=False)
         cfg_file = _dict_to_flat_namespace(namespace_to_dict(cfg_file))
         getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():

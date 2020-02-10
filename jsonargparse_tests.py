@@ -247,7 +247,7 @@ class JsonargparseTests(unittest.TestCase):
 
 
     def test_required(self):
-        """Test the user of required arguments."""
+        """Test the usage of required arguments."""
         parser = ArgumentParser(env_prefix='APP')
         group = parser.add_argument_group('Group 1')
         group.add_argument('--req1', required=True)
@@ -265,6 +265,12 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_string('{"lev1":{"req2":"val4"}}'))
         self.assertRaises(ParserError, lambda: parser.parse_env({}))
 
+        parser = ArgumentParser(default_env=True)
+        parser.add_argument('--req1', required=True)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        cfg = parser.parse_args(['--cfg', '{"req1": "val1"}'])
+        self.assertEqual('val1', cfg.req1)
+
 
     def test_positionals(self):
         """Test parsing of positional arguments."""
@@ -281,6 +287,14 @@ class JsonargparseTests(unittest.TestCase):
         parser.add_argument('pos2', nargs='+')
         self.assertRaises(ParserError, lambda: parser.parse_args(['v1']).pos2)
         self.assertEqual(['v2', 'v3'], parser.parse_args(['v1', 'v2', 'v3']).pos2)
+
+        parser.add_argument('--opt')
+        parser.add_argument('--cfg',
+            action=ActionConfigFile)
+        cfg = parser.parse_args(['--cfg', '{"pos2": ["v2", "v3"], "opt": "v4"}', 'v1'])
+        self.assertEqual('v1', cfg.pos1)
+        self.assertEqual(['v2', 'v3'], cfg.pos2)
+        self.assertEqual('v4', cfg.opt)
 
 
     def test_default_config_files(self):
