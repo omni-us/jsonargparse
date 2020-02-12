@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.23.3 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.23.3+1commits/2020.02.12 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.23.3
+                master/v2.23.3+1commits/2020.02.12
               </div>
             
           
@@ -453,7 +453,7 @@
                 <span class="n">cfg_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">with_meta</span> <span class="ow">or</span> <span class="p">(</span><span class="n">with_meta</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_meta</span><span class="p">)):</span>
-                <span class="n">cfg_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">)</span>
+                <span class="n">cfg_dict</span> <span class="o">=</span> <span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">)</span>
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">)</span>
@@ -545,7 +545,7 @@
                 <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">with_meta</span> <span class="ow">or</span> <span class="p">(</span><span class="n">with_meta</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_meta</span><span class="p">)):</span>
-                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
@@ -621,7 +621,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">cfg</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
-        <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">skip_check</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
@@ -688,7 +688,7 @@
                 <span class="n">cfg</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">skip_check</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">),</span> <span class="n">branch</span><span class="o">=</span><span class="n">branch</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">),</span> <span class="n">branch</span><span class="o">=</span><span class="n">branch</span><span class="p">)</span>
 
             <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">())</span>
             <span class="n">save_kwargs</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">dump_kwargs</span><span class="p">)</span>
@@ -709,7 +709,7 @@
                                 <span class="n">action</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">val_path</span><span class="p">(),</span> <span class="n">branch</span><span class="o">=</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="o">**</span><span class="n">save_kwargs</span><span class="p">)</span>
                             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="p">(</span><span class="n">ActionJsonSchema</span><span class="p">,</span> <span class="n">ActionJsonnet</span><span class="p">)):</span>
                                 <span class="n">replace_keys</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val_path</span>
-                                <span class="n">val_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                                <span class="n">val_out</span> <span class="o">=</span> <span class="n">strip_meta</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                                 <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;json_indented&#39;</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionJsonnet</span><span class="p">):</span>
                                     <span class="n">val_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">val_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                                 <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;yaml&#39;</span><span class="p">:</span>
@@ -835,7 +835,7 @@
                 <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">with_meta</span> <span class="ow">or</span> <span class="p">(</span><span class="n">with_meta</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_meta</span><span class="p">)):</span>
-                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
@@ -1015,34 +1015,6 @@
 
         <span class="n">strip_keys</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="ArgumentParser.strip_meta"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.strip_meta">[docs]</a>    <span class="k">def</span> <span class="nf">strip_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Removes all metadata keys from a configuration object.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            cfg (types.SimpleNamespace or dict): The configuration object to strip.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            types.SimpleNamespace: The stripped configuration object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">cfg</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">cfg</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-
-        <span class="k">def</span> <span class="nf">strip_keys</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-            <span class="n">del_keys</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">kbase</span> <span class="o">=</span> <span class="n">key</span> <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                    <span class="n">strip_keys</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">meta_keys</span><span class="p">:</span>
-                    <span class="n">del_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">del_keys</span><span class="p">:</span>
-                <span class="k">del</span> <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-
-        <span class="n">strip_keys</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">cfg</span></div>
 
 
     <span class="k">def</span> <span class="nf">_get_config_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
@@ -1260,6 +1232,34 @@
     <span class="k">return</span> <span class="n">expand_namespace</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="strip_meta"><a class="viewcode-back" href="../index.html#jsonargparse.strip_meta">[docs]</a><span class="k">def</span> <span class="nf">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Removes all metadata keys from a configuration object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cfg (types.SimpleNamespace or dict): The configuration object to strip.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        types.SimpleNamespace: The stripped configuration object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">strip_keys</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">del_keys</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">kbase</span> <span class="o">=</span> <span class="n">key</span> <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">strip_keys</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">meta_keys</span><span class="p">:</span>
+                <span class="n">del_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">del_keys</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="n">strip_keys</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cfg</span></div>
+
+
 <div class="viewcode-block" id="ActionConfigFile"><a class="viewcode-back" href="../index.html#jsonargparse.ActionConfigFile">[docs]</a><span class="k">class</span> <span class="nc">ActionConfigFile</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to indicate that an argument is a configuration file or a configuration string.&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="ActionConfigFile.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionConfigFile.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1439,8 +1439,10 @@
                     <span class="k">except</span><span class="p">:</span>
                         <span class="k">pass</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">SimpleNamespace</span><span class="p">):</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">strip_meta</span><span class="p">(</span><span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">val</span><span class="p">)))</span>
                 <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="n">strip_meta</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">val</span><span class="p">[</span><span class="s1">&#39;__path__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fpath</span>

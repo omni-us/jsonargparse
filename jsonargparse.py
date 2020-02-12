@@ -306,7 +306,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg_dict = self._merge_config(cfg_dict, self.get_defaults(nested=nested))
 
             if not (with_meta or (with_meta is None and self._default_meta)):
-                cfg_dict = self.strip_meta(cfg_dict)
+                cfg_dict = strip_meta(cfg_dict)
 
             cfg_ns = dict_to_namespace(cfg_dict)
             self.check_config(cfg_ns)
@@ -398,7 +398,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
             if not (with_meta or (with_meta is None and self._default_meta)):
-                cfg = self.strip_meta(cfg)
+                cfg = strip_meta(cfg)
 
             cfg_ns = dict_to_namespace(cfg)
             if check:
@@ -474,7 +474,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if not isinstance(cfg, dict):
             cfg = namespace_to_dict(cfg)
 
-        cfg = self.strip_meta(cfg)
+        cfg = strip_meta(cfg)
 
         if not skip_check:
             self.check_config(cfg)
@@ -541,7 +541,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = namespace_to_dict(cfg)
 
             if not skip_check:
-                self.check_config(self.strip_meta(cfg), branch=branch)
+                self.check_config(strip_meta(cfg), branch=branch)
 
             dirname = os.path.dirname(path())
             save_kwargs = deepcopy(dump_kwargs)
@@ -562,7 +562,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                                 action._parser.save(val, val_path(), branch=action.dest, **save_kwargs)
                             elif isinstance(action, (ActionJsonSchema, ActionJsonnet)):
                                 replace_keys[key] = val_path
-                                val_out = self.strip_meta(val)
+                                val_out = strip_meta(val)
                                 if format == 'json_indented' or isinstance(action, ActionJsonnet):
                                     val_str = json.dumps(val_out, indent=2, sort_keys=True)
                                 elif format == 'yaml':
@@ -688,7 +688,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
 
             if not (with_meta or (with_meta is None and self._default_meta)):
-                cfg = self.strip_meta(cfg)
+                cfg = strip_meta(cfg)
 
             cfg_ns = dict_to_namespace(cfg)
             if check:
@@ -868,34 +868,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         strip_keys(cfg)
         return dict_to_namespace(cfg)
-
-
-    def strip_meta(self, cfg):
-        """Removes all metadata keys from a configuration object.
-
-        Args:
-            cfg (types.SimpleNamespace or dict): The configuration object to strip.
-
-        Returns:
-            types.SimpleNamespace: The stripped configuration object.
-        """
-        cfg = deepcopy(cfg)
-        if not isinstance(cfg, dict):
-            cfg = namespace_to_dict(cfg)
-
-        def strip_keys(cfg, base=None):
-            del_keys = []
-            for key, val in cfg.items():
-                kbase = key if base is None else base+'.'+key
-                if isinstance(val, dict):
-                    strip_keys(val, kbase)
-                elif key in meta_keys:
-                    del_keys.append(key)
-            for key in del_keys:
-                del cfg[key]
-
-        strip_keys(cfg)
-        return cfg
 
 
     def _get_config_files(self, cfg):
@@ -1113,6 +1085,34 @@ def namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
     return expand_namespace(cfg_ns)
 
 
+def strip_meta(cfg):
+    """Removes all metadata keys from a configuration object.
+
+    Args:
+        cfg (types.SimpleNamespace or dict): The configuration object to strip.
+
+    Returns:
+        types.SimpleNamespace: The stripped configuration object.
+    """
+    cfg = deepcopy(cfg)
+    if not isinstance(cfg, dict):
+        cfg = namespace_to_dict(cfg)
+
+    def strip_keys(cfg, base=None):
+        del_keys = []
+        for key, val in cfg.items():
+            kbase = key if base is None else base+'.'+key
+            if isinstance(val, dict):
+                strip_keys(val, kbase)
+            elif key in meta_keys:
+                del_keys.append(key)
+        for key in del_keys:
+            del cfg[key]
+
+    strip_keys(cfg)
+    return cfg
+
+
 class ActionConfigFile(Action):
     """Action to indicate that an argument is a configuration file or a configuration string."""
     def __init__(self, **kwargs):
@@ -1292,8 +1292,10 @@ class ActionJsonSchema(Action):
                     except:
                         pass
                 if isinstance(val, SimpleNamespace):
-                    self._validator.validate(namespace_to_dict(val))
+                    self._validator.validate(strip_meta(namespace_to_dict(val)))
                 else:
+                    if isinstance(val, dict):
+                        val = strip_meta(val)
                     self._validator.validate(val)
                 if isinstance(val, dict) and fpath is not None:
                     val['__path__'] = fpath

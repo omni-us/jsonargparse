@@ -652,7 +652,7 @@ class JsonargparseTests(unittest.TestCase):
             output_file.write(example_parser().dump(cfg1.parser))
 
         cfg2 = parser.parse_path(main_file, with_meta=True)
-        self.assertEqual(namespace_to_dict(cfg1), parser.strip_meta(cfg2))
+        self.assertEqual(namespace_to_dict(cfg1), strip_meta(cfg2))
 
         parser.save(cfg2, os.path.join(outdir, 'main.yaml'))
         self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))

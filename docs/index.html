@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.23.3 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.23.3+1commits/2020.02.12 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.23.3
+                master/v2.23.3+1commits/2020.02.12
               </div>
             
           
@@ -678,7 +678,10 @@ virtualenv -p python3 venv
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.namespace_to_dict" title="jsonargparse.namespace_to_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">namespace_to_dict</span></code></a>(cfg_ns)</p></td>
 <td><p>Converts a nested namespace into a nested dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.usage_and_exit_error_handler" title="jsonargparse.usage_and_exit_error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">usage_and_exit_error_handler</span></code></a>(self, message)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.strip_meta" title="jsonargparse.strip_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_meta</span></code></a>(cfg)</p></td>
+<td><p>Removes all metadata keys from a configuration object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.usage_and_exit_error_handler" title="jsonargparse.usage_and_exit_error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">usage_and_exit_error_handler</span></code></a>(self, message)</p></td>
 <td><p>Error handler to get the same behavior as in argparse.</p></td>
 </tr>
 </tbody>
@@ -796,10 +799,7 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.save" title="jsonargparse.ArgumentParser.save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code></a>(cfg, dict], path, format, skip_none, …)</p></td>
 <td><p>Generates a yaml or json string for the given configuration object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_meta" title="jsonargparse.ArgumentParser.strip_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_meta</span></code></a>(cfg)</p></td>
-<td><p>Removes all metadata keys from a configuration object.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
 <td><p>Removes all unknown keys from a configuration object.</p></td>
 </tr>
 </tbody>
@@ -1112,23 +1112,6 @@ are supported. Additionally it accepts:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="jsonargparse.ArgumentParser.strip_meta">
-<code class="sig-name descname">strip_meta</code><span class="sig-paren">(</span><em class="sig-param">cfg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.strip_meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.strip_meta" title="Permalink to this definition">¶</a></dt>
-<dd><p>Removes all metadata keys from a configuration object.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – The configuration object to strip.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The stripped configuration object.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)">types.SimpleNamespace</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
 <dt id="jsonargparse.ArgumentParser.merge_config">
 <em class="property">static </em><code class="sig-name descname">merge_config</code><span class="sig-paren">(</span><em class="sig-param">cfg_from: types.SimpleNamespace</em>, <em class="sig-param">cfg_to: types.SimpleNamespace</em><span class="sig-paren">)</span> &#x2192; types.SimpleNamespace<a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.merge_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.merge_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merges the first configuration into the second configuration.</p>
@@ -1180,6 +1163,23 @@ are supported. Additionally it accepts:</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="jsonargparse.strip_meta">
+<code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">strip_meta</code><span class="sig-paren">(</span><em class="sig-param">cfg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#strip_meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.strip_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes all metadata keys from a configuration object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – The configuration object to strip.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The stripped configuration object.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)">types.SimpleNamespace</a></p>
 </dd>
 </dl>
 </dd></dl>
