@@ -1292,11 +1292,11 @@ class ActionJsonSchema(Action):
                     except:
                         pass
                 if isinstance(val, SimpleNamespace):
-                    self._validator.validate(strip_meta(namespace_to_dict(val)))
-                else:
-                    if isinstance(val, dict):
-                        val = strip_meta(val)
-                    self._validator.validate(val)
+                    val = namespace_to_dict(val)
+                path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
+                self._validator.validate(val)
+                if path_meta is not None:
+                    val['__path__'] = path_meta
                 if isinstance(val, dict) and fpath is not None:
                     val['__path__'] = fpath
                 value[num] = val
