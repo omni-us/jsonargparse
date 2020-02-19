@@ -94,7 +94,8 @@ class LoggerProperty:
         """Sets a new logger.
 
         Args:
-            logger (logging.Logger or bool or str or None): A logger to use or True/str(logger name) to use the default logger or False/None for a null logger.
+            logger (logging.Logger or bool or int or str or None): A logger to use or True/int(log level)/str(logger name)
+                                                                   to use the default logger or False/None to disable logging.
 
         Raises:
             ValueError: If an invalid logger value is given.
@@ -102,15 +103,18 @@ class LoggerProperty:
         if logger is None or (isinstance(logger, bool) and not logger):
             self._logger = logging.Logger('null')
             self._logger.addHandler(logging.NullHandler())
-        elif isinstance(logger, (bool, str)) and logger:
-            logger = logging.getLogger(logger if isinstance(logger, str) else os.path.basename(__file__))
+        elif isinstance(logger, (bool, int, str)) and logger:
+            level = logging.INFO
+            if isinstance(logger, int) and logger in {logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG}:
+                level = logger
+            logger = logging.getLogger(logger if isinstance(logger, str) else type(self).__name__)
             handler = logging.StreamHandler()
             handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
             logger.addHandler(handler)
-            logger.setLevel(logging.INFO)
+            logger.setLevel(level)
             self._logger = logger
         elif not isinstance(logger, logging.Logger):
-            raise ValueError('Expected logger to be an instance of logging.Logger or bool or str or None.')
+            raise ValueError('Expected logger to be an instance of logging.Logger or bool or int or str or None.')
         else:
             self._logger = logger
 
@@ -178,7 +182,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             env_prefix (str): Prefix for environment variables.
             error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
             formatter_class (argparse.HelpFormatter or str): Class for printing help messages or one of {"default", "default_argparse"}.
-            logger (logging.Logger or bool or str or None): Option for logging events, see :class:`.LoggerProperty`.
+            logger (logging.Logger or bool or int or str or None): A logger to use or True/int(log level)/str(logger name)
+                                                                   to use the default logger or False/None to disable logging.
             version (str): Program version string to add --version argument.
             parser_mode (str): Mode for parsing configuration files, either "yaml" or "jsonnet".
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.

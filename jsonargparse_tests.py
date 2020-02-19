@@ -867,6 +867,28 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionOperators(expr='<')))
 
 
+    def test_logging_property(self):
+        """Test the use of LoggingProperty."""
+        log_message = 'Testing log message.'
+        parser = ArgumentParser(logger=True)
+        self.assertEqual(parser.logger.level, logging.INFO)
+        with self.assertLogs(level='WARNING') as log:
+            parser.logger.warning(log_message)
+            self.assertEqual(len(log.output), 1)
+            self.assertIn(log_message, log.output[0])
+        parser = ArgumentParser(logger=False)
+        try:
+            with self.assertLogs(level='WARNING') as log:
+                parser.logger.warning(log_message)
+        except AssertionError:
+            pass
+        parser = ArgumentParser(logger=logging.ERROR)
+        self.assertEqual(parser.logger.name, 'ArgumentParser')
+        self.assertEqual(parser.logger.level, logging.ERROR)
+        parser = ArgumentParser(logger='jsonargparse')
+        self.assertEqual(parser.logger.name, 'jsonargparse')
+
+
 def run_tests():
     tests = unittest.defaultTestLoader.loadTestsFromTestCase(JsonargparseTests)
     return unittest.TextTestRunner(verbosity=2).run(tests)
