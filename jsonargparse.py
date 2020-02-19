@@ -35,7 +35,7 @@ except Exception as ex:
     _jsonnet = ex
 
 
-__version__ = '2.23.4'
+__version__ = '2.23.5'
 
 
 meta_keys = {'__cwd__', '__path__'}
