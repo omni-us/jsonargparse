@@ -1500,6 +1500,8 @@ class ActionParser(Action):
         try:
             fpath = None
             if isinstance(value, str):
+                value = yaml.safe_load(value)
+            if isinstance(value, str):
                 fpath = Path(value, mode='fr')
                 value = self._parser.parse_path(fpath(), base=self.dest)
             else:

@@ -605,6 +605,10 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual('opt2_env', parser.parse_env({'LV1_INNER2__OPT2': 'opt2_env'}).inner2.opt2)
         self.assertEqual('opt3_env', parser.parse_env({'LV1_INNER2__INNER3__OPT3': 'opt3_env'}).inner2.inner3.opt3)
 
+        expected = {'opt2': 'opt2_str', 'inner3': {'opt3': 'opt3_str'}}
+        cfg = parser.parse_args(['--inner2', json.dumps(expected)], with_meta=False)
+        self.assertEqual(expected, namespace_to_dict(cfg)['inner2'])
+
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionParser))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionParser()))
 
