@@ -34,11 +34,22 @@ try:
 except Exception as ex:
     _jsonnet = ex
 
+try:
+    from validators.url import url as url_validator
+except Exception as ex:
+    url_validator = ex
+
+try:
+    import requests
+except Exception as ex:
+    requests = ex  # type: ignore
+
 
 __version__ = '2.23.5'
 
 
 meta_keys = {'__cwd__', '__path__'}
+config_read_mode = 'fr' if any([isinstance(x, Exception) for x in [url_validator, requests]]) else 'fur'
 
 
 class ParserError(Exception):
@@ -352,19 +363,18 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
-        fpath = Path(cfg_path)
-        if isinstance(cfg_path, Path):
-            cfg_path = cfg_path()
-        cwd = os.getcwd()
-        os.chdir(os.path.abspath(os.path.join(cfg_path, os.pardir)))
+        fpath = Path(cfg_path, mode=config_read_mode)
+        if not fpath.is_url:
+            cwd = os.getcwd()
+            os.chdir(os.path.abspath(os.path.join(fpath(absolute=False), os.pardir)))
         try:
-            with open(os.path.basename(cfg_path), 'r') as f:
-                cfg_str = f.read()
+            cfg_str = fpath.get_content()
             parsed_cfg = self.parse_string(cfg_str, cfg_path, ext_vars, env, defaults, nested, with_meta=with_meta, log=False, base=base, check=check)
             if with_meta or (with_meta is None and self._default_meta):
                 parsed_cfg.__path__ = fpath
         finally:
-            os.chdir(cwd)
+            if not fpath.is_url:
+                os.chdir(cwd)
 
         self._logger.info('Parsed %s from path: %s', self.parser_mode, cfg_path)
 
@@ -451,8 +461,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 value = self._check_value_key(action, cfg[action.dest], action.dest, cfg)
                 if isinstance(action, ActionParser):
                     value = namespace_to_dict(_dict_to_flat_namespace(namespace_to_dict(value)))
-                    value[action.dest+'.__path__'] = value['__path__']
-                    del value['__path__']
+                    if '__path__' in value:
+                        value[action.dest+'.__path__'] = value.pop('__path__')
                     del cfg[action.dest]
                     cfg.update(value)
                 else:
@@ -744,8 +754,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             for pattern in self._default_config_files:
                 default_config_files += glob.glob(os.path.expanduser(pattern))
             if len(default_config_files) > 0:
-                with open(default_config_files[0], 'r') as f:
-                    cfg_file = self._load_cfg(f.read())
+                default_config = Path(default_config_files[0], mode=config_read_mode).get_content()
+                cfg_file = self._load_cfg(default_config)
                 cfg = self._merge_config(cfg_file, cfg)
                 self._logger.info('Parsed configuration from default path: %s', default_config_files[0])
 
@@ -1142,7 +1152,7 @@ class ActionConfigFile(Action):
         if not hasattr(namespace, dest) or not isinstance(getattr(namespace, dest), list):
             setattr(namespace, dest, [])
         try:
-            cfg_path = Path(value, mode='fr')
+            cfg_path = Path(value, mode=config_read_mode)
         except TypeError as ex_path:
             if isinstance(yaml.safe_load(value), str):
                 raise ex_path
@@ -1291,9 +1301,8 @@ class ActionJsonSchema(Action):
                     val = yaml.safe_load(val)
                 if isinstance(val, str):
                     try:
-                        fpath = Path(val, mode='fr')
-                        with open(val) as f:
-                            val = yaml.safe_load(f.read())
+                        fpath = Path(val, mode=config_read_mode)
+                        val = yaml.safe_load(fpath.get_content())
                     except:
                         pass
                 if isinstance(val, SimpleNamespace):
@@ -1439,18 +1448,18 @@ class ActionJsonnet(Action):
         """
         ext_vars, ext_codes = self.split_ext_vars(ext_vars)
         fpath = None
+        fname = ''
+        snippet = jsonnet
         try:
-            fpath = Path(jsonnet, mode='fr')
-        except TypeError as ex:
-            try:
-                values = yaml.safe_load(_jsonnet.evaluate_snippet('', jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
-            except Exception as ex:
-                raise type(ex)('Problems evaluating jsonnet snippet :: '+str(ex))
-        else:
-            try:
-                values = yaml.safe_load(_jsonnet.evaluate_file(jsonnet, ext_vars=ext_vars, ext_codes=ext_codes))
-            except Exception as ex:
-                raise type(ex)('Problems evaluating jsonnet file :: '+str(ex))
+            fpath = Path(jsonnet, mode=config_read_mode)
+            fname = jsonnet
+            snippet = fpath.get_content()
+        except:
+            pass
+        try:
+            values = yaml.safe_load(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
+        except Exception as ex:
+            raise type(ex)('Problems evaluating jsonnet snippet :: '+str(ex))
         if self._validator is not None:
             self._validator.validate(values)
         if with_meta and isinstance(values, dict) and fpath is not None:
@@ -1502,8 +1511,8 @@ class ActionParser(Action):
             if isinstance(value, str):
                 value = yaml.safe_load(value)
             if isinstance(value, str):
-                fpath = Path(value, mode='fr')
-                value = self._parser.parse_path(fpath(), base=self.dest)
+                fpath = Path(value, mode=config_read_mode)
+                value = self._parser.parse_path(fpath, base=self.dest)
             else:
                 tmp = dict_to_namespace(_flat_namespace_to_dict(dict_to_namespace({self.dest: value})))
                 self._parser.check_config(tmp, skip_none=True)
@@ -1605,7 +1614,7 @@ class ActionPath(Action):
         """Initializer for ActionPath instance.
 
         Args:
-            mode (str): The required type and access permissions among [fdrwxcFDRWX] as a keyword argument, e.g. ActionPath(mode='drw').
+            mode (str): The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument, e.g. ActionPath(mode='drw').
             skip_check (bool): Whether to skip path checks (def.=False).
 
         Raises:
@@ -1664,7 +1673,7 @@ class ActionPathList(Action):
         """Initializer for ActionPathList instance.
 
         Args:
-            mode (str): The required type and access permissions among [fdrwxcFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
+            mode (str): The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
             skip_check (bool): Whether to skip path checks (def.=False).
             rel (str): Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list' (default='cwd').
 
@@ -1740,17 +1749,18 @@ class Path(object):
 
     When a Path instance is created it is checked that: the path exists, whether
     it is a file or directory and whether has the required access permissions
-    (f=file, d=directory, r=readable, w=writeable, x=executable, c=creatable, or
-    the same except creatable in uppercase meaning not, e.g. W=not_writeable).
-    The absolute path can be obtained without having to remember the working
-    directory from when the object was created.
+    (f=file, d=directory, r=readable, w=writeable, x=executable, c=creatable,
+    u=url or in uppercase meaning not, i.e., F=not-file, D=not-directory,
+    R=not-readable, W=not-writeable and X=not-executable). The absolute path can
+    be obtained without having to remember the working directory from when the
+    object was created.
     """
     def __init__(self, path, mode:str='fr', cwd:str=None, skip_check:bool=False):
         """Initializer for Path instance.
 
         Args:
             path (str or Path): The path to check and store.
-            mode (str): The required type and access permissions among [fdrwxcFDRWX].
+            mode (str): The required type and access permissions among [fdrwxcuFDRWX].
             cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
             skip_check (bool): Whether to skip path checks.
 
@@ -1765,16 +1775,26 @@ class Path(object):
         if isinstance(cwd, list):
             cwd = cwd[0]  # Temporal until multiple cwds is implemented.
 
+        is_url = False
         if isinstance(path, Path):
             cwd = path.cwd  # type: ignore
             abs_path = path.abs_path  # type: ignore
             path = path.path  # type: ignore
-        elif not isinstance(path, str):
-            raise TypeError('Expected path to be a string or a Path object.')
+        elif isinstance(path, str):
+            abs_path = path
+            if re.match('^file:///?', abs_path):
+                abs_path = re.sub('^file:///?', '/', abs_path)
+            if 'u' in mode and url_validator(abs_path):
+                is_url = True
+            elif 'f' in mode or 'd' in mode:
+                abs_path = abs_path if os.path.isabs(abs_path) else os.path.join(cwd, abs_path)
         else:
-            abs_path = path if os.path.isabs(path) else os.path.join(cwd, path)
+            raise TypeError('Expected path to be a string or a Path object.')
 
-        if not skip_check:
+        if not skip_check and is_url:
+            if 'r' in mode:
+                requests.head(abs_path).raise_for_status()
+        elif not skip_check:
             ptype = 'Directory' if 'd' in mode else 'File'
             if 'c' in mode:
                 pdir = os.path.realpath(os.path.join(abs_path, '..'))
@@ -1813,6 +1833,8 @@ class Path(object):
         self.path = path
         self.abs_path = abs_path
         self.cwd = cwd
+        self.mode = mode
+        self.is_url = is_url  # type: bool
 
     def __str__(self):
         return self.abs_path
@@ -1828,12 +1850,31 @@ class Path(object):
         """
         return self.abs_path if absolute else self.path
 
+    def get_content(self, mode='r'):
+        """Returns the contents of the file  or gets url."""
+        if not self.is_url:
+            with open(self.abs_path, mode) as input_file:
+                return input_file.read()
+        else:
+            if isinstance(requests, Exception):
+                raise ImportError('requests python package is required for URL support in Path.')
+            response = requests.get(self.abs_path)
+            response.raise_for_status()
+            return response.text
+
     @staticmethod
     def _check_mode(mode:str):
         if not isinstance(mode, str):
             raise ValueError('Expected mode to be a string.')
-        if len(set(mode)-set('fdrwxcFDRWX')) > 0:
-            raise ValueError('Expected mode to only include [fdrwxcFDRWX] flags.')
+        if len(set(mode)-set('fdrwxcuFDRWX')) > 0:
+            raise ValueError('Expected mode to only include [fdrwxcuFDRWX] flags.')
+        if 'f' in mode and 'd' in mode:
+            raise ValueError('Both modes "f" and "d" not possible.')
+        if 'u' in mode:
+            if isinstance(url_validator, Exception):
+                raise ImportError('validators python package is required for URL support in Path.')
+            if 'd' in mode:
+                raise ValueError('Both modes "d" and "u" not possible.')
 
 
 def usage_and_exit_error_handler(self, message):

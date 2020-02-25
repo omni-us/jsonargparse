@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.23.5+1commits/2020.02.24 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.23.5+2commits/2020.02.25 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.23.5+1commits/2020.02.24
+                master/v2.23.5+2commits/2020.02.25
               </div>
             
           
@@ -1539,7 +1539,7 @@ are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The required type and access permissions among [fdrwxcFDRWX] as a keyword argument, e.g. ActionPath(mode=’drw’).</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument, e.g. ActionPath(mode=’drw’).</p></li>
 <li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to skip path checks (def.=False).</p></li>
 </ul>
 </dd>
@@ -1589,7 +1589,7 @@ are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The required type and access permissions among [fdrwxcFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode=’fr’).</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode=’fr’).</p></li>
 <li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to skip path checks (def.=False).</p></li>
 <li><p><strong>rel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Whether relative paths are with respect to current working directory ‘cwd’ or the list’s parent directory ‘list’ (default=’cwd’).</p></li>
 </ul>
@@ -1620,10 +1620,11 @@ are supported. Additionally it accepts:</p>
 <p>Stores a (possibly relative) path and the corresponding absolute path.</p>
 <p>When a Path instance is created it is checked that: the path exists, whether
 it is a file or directory and whether has the required access permissions
-(f=file, d=directory, r=readable, w=writeable, x=executable, c=creatable, or
-the same except creatable in uppercase meaning not, e.g. W=not_writeable).
-The absolute path can be obtained without having to remember the working
-directory from when the object was created.</p>
+(f=file, d=directory, r=readable, w=writeable, x=executable, c=creatable,
+u=url or in uppercase meaning not, i.e., F=not-file, D=not-directory,
+R=not-readable, W=not-writeable and X=not-executable). The absolute path can
+be obtained without having to remember the working directory from when the
+object was created.</p>
 <p><strong>Methods</strong></p>
 <table class="longtable docutils align-default">
 <colgroup>
@@ -1637,6 +1638,9 @@ directory from when the object was created.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.Path.__init__" title="jsonargparse.Path.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Initializer for Path instance.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.Path.get_content" title="jsonargparse.Path.get_content"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_content</span></code></a>([mode])</p></td>
+<td><p>Returns the contents of the file  or gets url.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="method">
@@ -1647,7 +1651,7 @@ directory from when the object was created.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em> or </em><a class="reference internal" href="#jsonargparse.Path" title="jsonargparse.Path"><em>Path</em></a>) – The path to check and store.</p></li>
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The required type and access permissions among [fdrwxcFDRWX].</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The required type and access permissions among [fdrwxcuFDRWX].</p></li>
 <li><p><strong>cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Working directory for relative paths. If None, then os.getcwd() is used.</p></li>
 <li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to skip path checks.</p></li>
 </ul>
@@ -1670,6 +1674,12 @@ directory from when the object was created.</p>
 <dd class="field-odd"><p><strong>absolute</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – If false returns the original path given, otherwise the corresponding absolute path.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="jsonargparse.Path.get_content">
+<code class="sig-name descname">get_content</code><span class="sig-paren">(</span><em class="sig-param">mode='r'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#Path.get_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.Path.get_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of the file  or gets url.</p>
 </dd></dl>
 
 </dd></dl>
