@@ -8,8 +8,10 @@ import json
 import shutil
 import tempfile
 import pathlib
+import threading
 import unittest
 from collections import OrderedDict
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from jsonargparse import *
 from jsonargparse import _jsonnet
 
@@ -618,21 +620,23 @@ class JsonargparseTests(unittest.TestCase):
     def test_save(self):
         """Test the use of save."""
         parser = ArgumentParser()
-        schema = {
-            'type': 'object',
-            'properties': {
-                'a': {'type': 'number'},
-                'b': {'type': 'number'},
-            },
-        }
-        parser.add_argument('--schema',
-            default={'a': 1, 'b': 2},
-            action=ActionJsonSchema(schema=schema))
-        parser.add_argument('--jsonnet',
-            default={'c': 3, 'd': 4},
-            action=ActionJsonnet(ext_vars=None))
         parser.add_argument('--parser',
             action=ActionParser(parser=example_parser()))
+        if jsonschema_support:
+            schema = {
+                'type': 'object',
+                'properties': {
+                    'a': {'type': 'number'},
+                    'b': {'type': 'number'},
+                },
+            }
+            parser.add_argument('--schema',
+                default={'a': 1, 'b': 2},
+                action=ActionJsonSchema(schema=schema))
+        if jsonnet_support:
+            parser.add_argument('--jsonnet',
+                default={'c': 3, 'd': 4},
+                action=ActionJsonnet(ext_vars=None))
 
         tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
         indir = os.path.join(tmpdir, 'input')
@@ -640,28 +644,42 @@ class JsonargparseTests(unittest.TestCase):
         os.mkdir(outdir)
         os.mkdir(indir)
         main_file = os.path.join(indir, 'main.yaml')
+        parser_file = os.path.join(indir, 'parser.yaml')
         schema_file = os.path.join(indir, 'schema.yaml')
         jsonnet_file = os.path.join(indir, 'jsonnet.yaml')
-        parser_file = os.path.join(indir, 'parser.yaml')
 
         cfg1 = parser.get_defaults()
 
         with open(main_file, 'w') as output_file:
-            output_file.write('parser: parser.yaml\nschema: schema.yaml\njsonnet: jsonnet.yaml\n')
-        with open(schema_file, 'w') as output_file:
-            output_file.write(json.dumps(namespace_to_dict(cfg1.schema))+'\n')
-        with open(jsonnet_file, 'w') as output_file:
-            output_file.write(json.dumps(namespace_to_dict(cfg1.jsonnet))+'\n')
+            output_file.write('parser: parser.yaml\n')
+            if jsonschema_support:
+                output_file.write('schema: schema.yaml\n')
+            if jsonnet_support:
+                output_file.write('jsonnet: jsonnet.yaml\n')
         with open(parser_file, 'w') as output_file:
             output_file.write(example_parser().dump(cfg1.parser))
+        if jsonschema_support:
+            with open(schema_file, 'w') as output_file:
+                output_file.write(json.dumps(namespace_to_dict(cfg1.schema))+'\n')
+        if jsonnet_support:
+            with open(jsonnet_file, 'w') as output_file:
+                output_file.write(json.dumps(namespace_to_dict(cfg1.jsonnet))+'\n')
 
         cfg2 = parser.parse_path(main_file, with_meta=True)
         self.assertEqual(namespace_to_dict(cfg1), strip_meta(cfg2))
+        self.assertEqual(cfg2.__path__(), main_file)
+        self.assertEqual(cfg2.parser.__path__(), parser_file)
+        if jsonschema_support:
+            self.assertEqual(cfg2.schema.__path__(), schema_file)
+        if jsonnet_support:
+            self.assertEqual(cfg2.jsonnet.__path__(), jsonnet_file)
 
         parser.save(cfg2, os.path.join(outdir, 'main.yaml'))
-        self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))
-        self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.yaml')))
         self.assertTrue(os.path.isfile(os.path.join(outdir, 'parser.yaml')))
+        if jsonschema_support:
+            self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))
+        if jsonnet_support:
+            self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.yaml')))
 
         cfg3 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
         self.assertEqual(namespace_to_dict(cfg1), namespace_to_dict(cfg3))
@@ -675,7 +693,7 @@ class JsonargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
-    @unittest.skipIf(isinstance(jsonvalidator, Exception), 'jsonschema package is required :: '+str(jsonvalidator))
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required :: '+str(jsonvalidator))
     def test_jsonschema(self):
         """Test the use of ActionJsonSchema."""
 
@@ -767,7 +785,7 @@ class JsonargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
-    @unittest.skipIf(isinstance(_jsonnet, Exception), 'jsonnet package is required :: '+str(_jsonnet))
+    @unittest.skipIf(not jsonnet_support, 'jsonnet and jsonschema packages are required :: '+str(_jsonnet)+' :: '+str(jsonvalidator))
     def test_mode_jsonnet(self):
         """Test the use of parser_mode='jsonnet'."""
 
@@ -804,8 +822,7 @@ class JsonargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
-    @unittest.skipIf(isinstance(_jsonnet, Exception), 'jsonnet package is required :: '+str(_jsonnet))
-    @unittest.skipIf(isinstance(jsonvalidator, Exception), 'jsonschema package is required :: '+str(jsonvalidator))
+    @unittest.skipIf(not jsonnet_support, 'jsonnet and jsonschema packages are required :: '+str(_jsonnet)+' :: '+str(jsonvalidator))
     def test_actionjsonnet(self):
         """Test the use of ActionJsonnet."""
         parser = ArgumentParser()
@@ -869,6 +886,79 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionOperators))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionOperators()))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionOperators(expr='<')))
+
+
+    @unittest.skipIf(not url_support, 'validators and requests packages are required :: '+str(url_validator)+' :: '+str(requests))
+    def test_urls(self):
+        """Test the use of Path with URLs."""
+        parser = ArgumentParser()
+        parser.add_argument('--cfg',
+            action=ActionConfigFile)
+        parser.add_argument('--parser',
+            action=ActionParser(parser=example_parser()))
+        if jsonschema_support:
+            schema = {
+                'type': 'object',
+                'properties': {
+                    'a': {'type': 'number'},
+                    'b': {'type': 'number'},
+                },
+            }
+            parser.add_argument('--schema',
+                default={'a': 1, 'b': 2},
+                action=ActionJsonSchema(schema=schema))
+        if jsonnet_support:
+            parser.add_argument('--jsonnet',
+                default={'c': 3, 'd': 4},
+                action=ActionJsonnet(ext_vars=None))
+
+        server_port = 45678
+        server_base = 'http://localhost:'+str(server_port)+'/'
+        tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
+        main_file = os.path.join(tmpdir, 'main.yaml')
+        parser_file = os.path.join(tmpdir, 'parser.yaml')
+        schema_file = os.path.join(tmpdir, 'schema.yaml')
+        jsonnet_file = os.path.join(tmpdir, 'jsonnet.yaml')
+
+        cfg1 = namespace_to_dict(parser.get_defaults())
+
+        with open(main_file, 'w') as output_file:
+            output_file.write('parser: '+server_base+'parser.yaml\n')
+            if jsonschema_support:
+                output_file.write('schema: '+server_base+'schema.yaml\n')
+            if jsonnet_support:
+                output_file.write('jsonnet: '+server_base+'jsonnet.yaml\n')
+        with open(parser_file, 'w') as output_file:
+            output_file.write(example_parser().dump(cfg1['parser']))
+        if jsonschema_support:
+            with open(schema_file, 'w') as output_file:
+                output_file.write(json.dumps(cfg1['schema'])+'\n')
+        if jsonnet_support:
+            with open(jsonnet_file, 'w') as output_file:
+                output_file.write(json.dumps(cfg1['jsonnet'])+'\n')
+
+        cwd = os.getcwd()
+        os.chdir(tmpdir)
+        server = HTTPServer(('', server_port), SimpleHTTPRequestHandler)
+
+        try:
+            server_thread = threading.Thread(target=server.serve_forever)
+            server_thread.start()
+
+            cfg2 = parser.parse_args(['--cfg', server_base+'main.yaml'], with_meta=False)
+            cfg2 = namespace_to_dict(cfg2)
+            self.assertEqual(cfg1['parser'], cfg2['parser'])
+            if jsonschema_support:
+                self.assertEqual(cfg1['schema'], cfg2['schema'])
+            if jsonnet_support:
+                self.assertEqual(cfg1['jsonnet'], cfg2['jsonnet'])
+
+        finally:
+            server.shutdown()
+            server.server_close()
+
+        os.chdir(cwd)
+        shutil.rmtree(tmpdir)
 
 
     def test_logging_property(self):

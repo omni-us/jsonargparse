@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.23.5+2commits/2020.02.25 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse master/v2.23.5+3commits/2020.02.26 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.23.5+2commits/2020.02.25
+                master/v2.23.5+3commits/2020.02.26
               </div>
             
           
@@ -93,9 +93,11 @@
 <li><a class="reference internal" href="#json-schemas">Json schemas</a></li>
 <li><a class="reference internal" href="#jsonnet-files">Jsonnet files</a></li>
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
+<li><a class="reference internal" href="#parsing-urls">Parsing URLs</a></li>
 <li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
 <li><a class="reference internal" href="#boolean-arguments">Boolean arguments</a></li>
 <li><a class="reference internal" href="#parsers-as-arguments">Parsers as arguments</a></li>
+<li><a class="reference internal" href="#logging">Logging</a></li>
 <li><a class="reference internal" href="#contributing">Contributing</a></li>
 <li><a class="reference internal" href="#module-jsonargparse">API Reference</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
@@ -197,7 +199,7 @@ comparison operators, json schemas, …).</p></li>
 <li><p>Default behavior is not identical to argparse, though it is possible to
 configure it to be identical. The main differences are:</p>
 <ul>
-<li><p>When parsing fails <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, instead of printing usage
+<li><p>When parsing fails <a class="reference internal" href="#jsonargparse.ParserError" title="jsonargparse.ParserError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code></a> is raised, instead of printing usage
 and program exit.</p></li>
 <li><p>To modify the behavior for parsing errors (e.g. print usage) an error
 handler function can be provided.</p></li>
@@ -248,7 +250,7 @@ from above you would observe:</p>
 <span class="go">(2.3, &lt;class &#39;float&#39;&gt;)</span>
 </pre></div>
 </div>
-<p>If the parsing fails a <code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code> is raised, so depending on the use
+<p>If the parsing fails a <a class="reference internal" href="#jsonargparse.ParserError" title="jsonargparse.ParserError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParserError</span></code></a> is raised, so depending on the use
 case it might be necessary to catch it.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--opt2&#39;</span><span class="p">,</span> <span class="s1">&#39;four&#39;</span><span class="p">])</span>
@@ -425,10 +427,10 @@ config files to be in jsonnet format instead. Example:</p>
 <p>Jsonnet files are commonly parametrized, thus requiring external variables for
 parsing. For these cases, instead of changing the parser mode away from yaml,
 the <a class="reference internal" href="#jsonargparse.ActionJsonnet" title="jsonargparse.ActionJsonnet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonnet</span></code></a> class can be used. This action allows to define an
-argument which would be a path to a jsonnet file. Moreover, another argument can
-be specified as the source for any external variables required, which would be
-either a path to or a string containing a json dictionary of variables. Its use
-would be as follows:</p>
+argument which would be a jsonnet string or a path to a jsonnet file. Moreover,
+another argument can be specified as the source for any external variables
+required, which would be either a path to or a string containing a json
+dictionary of variables. Its use would be as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ActionJsonnet</span><span class="p">,</span> <span class="n">ActionJsonnetExtVars</span>
 <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--in_ext_vars&#39;</span><span class="p">,</span>
@@ -473,8 +475,9 @@ and is readable, the following could be done:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="s1">&#39;app/config.yaml&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>After parsing it is possible to get both the original relative path as included
-in the yaml file, or the corresponding absolute path:</p>
+<p>After parsing the value of <code class="code docutils literal notranslate"><span class="pre">databases.info</span></code> will be an instance of the
+<a class="reference internal" href="#jsonargparse.Path" title="jsonargparse.Path"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> class that allows to get both the original relative path as
+included in the yaml file, or the corresponding absolute path:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">databases</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">&#39;data/info.db&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span><span class="o">.</span><span class="n">databases</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
@@ -483,6 +486,9 @@ in the yaml file, or the corresponding absolute path:</p>
 </div>
 <p>Likewise directories can also be parsed by including in the mode the <code class="code docutils literal notranslate"><span class="pre">'d'</span></code>
 flag, e.g. <code class="code docutils literal notranslate"><span class="pre">ActionPath(mode='drw')</span></code>.</p>
+<p>The content of a file that a <a class="reference internal" href="#jsonargparse.Path" title="jsonargparse.Path"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> instance references can be read by using
+the <a class="reference internal" href="#jsonargparse.Path.get_content" title="jsonargparse.Path.get_content"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.Path.get_content()</span></code></a> method. For the previous example would be
+<code class="code docutils literal notranslate"><span class="pre">info_db</span> <span class="pre">=</span> <span class="pre">cfg.databases.info.get_content()</span></code>.</p>
 <p>An argument with <a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> can be given <code class="code docutils literal notranslate"><span class="pre">nargs='+'</span></code> to parse
 multiple paths. But it might also be wanted to parse a list of paths found in a
 plain text file or from stdin. For this the <a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> is used and
@@ -496,6 +502,33 @@ as argument either the path to a file listing the paths is given or the special
 </div>
 <p>If <code class="code docutils literal notranslate"><span class="pre">nargs='+'</span></code> is given to <code class="code docutils literal notranslate"><span class="pre">add_argument</span></code> then a single list is
 generated including all paths in all lists provided.</p>
+</div>
+<div class="section" id="parsing-urls">
+<h1>Parsing URLs<a class="headerlink" href="#parsing-urls" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPath</span></code></a> and <a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionPathList</span></code></a> classes also support URLs
+which after parsing the <a class="reference internal" href="#jsonargparse.Path.get_content" title="jsonargparse.Path.get_content"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.Path.get_content()</span></code></a> can be used to
+perform a GET request to the corresponding URL and retrieve its content. For this
+to work the <em>validators</em> and <em>requests</em> python packages are required which will
+be installed along with jsonargparse if the <em>all</em> extras requires is chosen:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip3 install jsonargparse<span class="o">[</span>all<span class="o">]</span>
+</pre></div>
+</div>
+<p>Then the <code class="code docutils literal notranslate"><span class="pre">'u'</span></code> flag can be used to parse URLs. For example if it is
+desired that an argument can be either a readable file or URL the action would
+be initialized as <code class="code docutils literal notranslate"><span class="pre">ActionPath(mode='fur')</span></code>. If the value appears to be a
+URL according to <code class="xref py py-func docutils literal notranslate"><span class="pre">validators.url.url()</span></code> then a HEAD request would be
+triggered to check if it is accessible, and if so, the parsing succeeds.</p>
+<p>There is also URL support for functions and classes that load from paths, namely
+<a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_path()</span></code></a>,
+<a class="reference internal" href="#jsonargparse.ArgumentParser.get_defaults" title="jsonargparse.ArgumentParser.get_defaults"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.get_defaults()</span></code></a> (<code class="code docutils literal notranslate"><span class="pre">default_config_files</span></code>
+argument), <a class="reference internal" href="#jsonargparse.ActionConfigFile" title="jsonargparse.ActionConfigFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a>, <a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a>,
+<a class="reference internal" href="#jsonargparse.ActionJsonnet" title="jsonargparse.ActionJsonnet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonnet</span></code></a> and <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a>. This means that for example
+that a tool that can receive a configuration file via <a class="reference internal" href="#jsonargparse.ActionConfigFile" title="jsonargparse.ActionConfigFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a>
+is able to get the config file from a URL, that is something like the following
+would work:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ my_tool.py --cfg http://example.com/config.yaml
+</pre></div>
+</div>
 </div>
 <div class="section" id="comparison-operators">
 <h1>Comparison operators<a class="headerlink" href="#comparison-operators" title="Permalink to this headline">¶</a></h1>
@@ -576,6 +609,15 @@ checked to populate <code class="code docutils literal notranslate"><span class=
 <p>An important detail to note is that the parsers that are given to
 <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> are internally modified. So they should be instantiated
 exclusively for the <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> and not used standalone.</p>
+</div>
+<div class="section" id="logging">
+<h1>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h1>
+<p>The parsers from jsonargparse log some basic events, though by default this is
+disabled. To enable it the <code class="code docutils literal notranslate"><span class="pre">logger</span></code> argument should be set when creating
+an <a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a> object. The intended use is to give as value an
+already existing logger object which is used for the whole application. Though
+for convenience to enable a default logger the <code class="code docutils literal notranslate"><span class="pre">logger</span></code> argument can also
+receive <code class="code docutils literal notranslate"><span class="pre">True</span></code> or a valid logging level.</p>
 </div>
 <div class="section" id="contributing">
 <h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
@@ -1639,7 +1681,7 @@ object was created.</p>
 <td><p>Initializer for Path instance.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.Path.get_content" title="jsonargparse.Path.get_content"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_content</span></code></a>([mode])</p></td>
-<td><p>Returns the contents of the file  or gets url.</p></td>
+<td><p>Returns the contents of the file or the response of a GET request to the URL.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1679,7 +1721,7 @@ object was created.</p>
 <dl class="method">
 <dt id="jsonargparse.Path.get_content">
 <code class="sig-name descname">get_content</code><span class="sig-paren">(</span><em class="sig-param">mode='r'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#Path.get_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.Path.get_content" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the contents of the file  or gets url.</p>
+<dd><p>Returns the contents of the file or the response of a GET request to the URL.</p>
 </dd></dl>
 
 </dd></dl>

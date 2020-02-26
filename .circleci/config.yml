@@ -26,6 +26,10 @@ jobs:
             python3 -m subunit.run jsonargparse_tests | $HOME/.local/bin/subunit2junitxml > tests_report/unittest.xml
       - store_test_results:
           path: ./tests_report
+  test-py38:
+    <<: *test-py37
+    docker:
+      - image: circleci/python:3.8
   test-py36:
     <<: *test-py37
     docker:
@@ -67,6 +71,8 @@ workflows:
           <<: *buildreq
           requires:
             - build
+      - test-py38:
+          <<: *testreq
       - test-py36:
           <<: *testreq
       - test-py35:
@@ -80,6 +86,7 @@ workflows:
             <<: *tagfilter
           context: pypi-upload-context
           requires:
+            - test-py38
             - test-py37
             - test-py36
             - test-py35

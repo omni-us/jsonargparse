@@ -51,7 +51,7 @@ Features
 - Default behavior is not identical to argparse, though it is possible to
   configure it to be identical. The main differences are:
 
-  - When parsing fails :class:`ParserError` is raised, instead of printing usage
+  - When parsing fails :class:`.ParserError` is raised, instead of printing usage
     and program exit.
   - To modify the behavior for parsing errors (e.g. print usage) an error
     handler function can be provided.
@@ -105,7 +105,7 @@ from above you would observe:
     >>> cfg.opt2, type(cfg.opt2)
     (2.3, <class 'float'>)
 
-If the parsing fails a :class:`ParserError` is raised, so depending on the use
+If the parsing fails a :class:`.ParserError` is raised, so depending on the use
 case it might be necessary to catch it.
 
 .. code-block:: python
@@ -325,10 +325,10 @@ config files to be in jsonnet format instead. Example:
 Jsonnet files are commonly parametrized, thus requiring external variables for
 parsing. For these cases, instead of changing the parser mode away from yaml,
 the :class:`.ActionJsonnet` class can be used. This action allows to define an
-argument which would be a path to a jsonnet file. Moreover, another argument can
-be specified as the source for any external variables required, which would be
-either a path to or a string containing a json dictionary of variables. Its use
-would be as follows:
+argument which would be a jsonnet string or a path to a jsonnet file. Moreover,
+another argument can be specified as the source for any external variables
+required, which would be either a path to or a string containing a json
+dictionary of variables. Its use would be as follows:
 
 .. code-block:: python
 
@@ -385,8 +385,9 @@ and is readable, the following could be done:
     >>> parser.add_argument('--databases.info', action=ActionPath(mode='fr'))
     >>> cfg = parser.parse_path('app/config.yaml')
 
-After parsing it is possible to get both the original relative path as included
-in the yaml file, or the corresponding absolute path:
+After parsing the value of :code:`databases.info` will be an instance of the
+:class:`.Path` class that allows to get both the original relative path as
+included in the yaml file, or the corresponding absolute path:
 
 .. code-block:: python
 
@@ -397,6 +398,10 @@ in the yaml file, or the corresponding absolute path:
 
 Likewise directories can also be parsed by including in the mode the :code:`'d'`
 flag, e.g. :code:`ActionPath(mode='drw')`.
+
+The content of a file that a :class:`.Path` instance references can be read by using
+the :func:`jsonargparse.Path.get_content` method. For the previous example would be
+:code:`info_db = cfg.databases.info.get_content()`.
 
 An argument with :class:`.ActionPath` can be given :code:`nargs='+'` to parse
 multiple paths. But it might also be wanted to parse a list of paths found in a
@@ -413,6 +418,39 @@ as argument either the path to a file listing the paths is given or the special
 
 If :code:`nargs='+'` is given to :code:`add_argument` then a single list is
 generated including all paths in all lists provided.
+
+
+Parsing URLs
+============
+
+The :class:`.ActionPath` and :class:`.ActionPathList` classes also support URLs
+which after parsing the :func:`jsonargparse.Path.get_content` can be used to
+perform a GET request to the corresponding URL and retrieve its content. For this
+to work the *validators* and *requests* python packages are required which will
+be installed along with jsonargparse if the *all* extras requires is chosen:
+
+.. code-block:: bash
+
+    $ pip3 install jsonargparse[all]
+
+Then the :code:`'u'` flag can be used to parse URLs. For example if it is
+desired that an argument can be either a readable file or URL the action would
+be initialized as :code:`ActionPath(mode='fur')`. If the value appears to be a
+URL according to :func:`validators.url.url` then a HEAD request would be
+triggered to check if it is accessible, and if so, the parsing succeeds.
+
+There is also URL support for functions and classes that load from paths, namely
+:func:`jsonargparse.ArgumentParser.parse_path`,
+:func:`jsonargparse.ArgumentParser.get_defaults` (:code:`default_config_files`
+argument), :class:`.ActionConfigFile`, :class:`.ActionJsonSchema`,
+:class:`.ActionJsonnet` and :class:`.ActionParser`. This means that for example
+that a tool that can receive a configuration file via :class:`.ActionConfigFile`
+is able to get the config file from a URL, that is something like the following
+would work:
+
+.. code-block:: bash
+
+    $ my_tool.py --cfg http://example.com/config.yaml
 
 
 Comparison operators
@@ -510,6 +548,17 @@ checked to populate :code:`inner.node.op1`.
 An important detail to note is that the parsers that are given to
 :class:`.ActionParser` are internally modified. So they should be instantiated
 exclusively for the :class:`.ActionParser` and not used standalone.
+
+
+Logging
+=======
+
+The parsers from jsonargparse log some basic events, though by default this is
+disabled. To enable it the :code:`logger` argument should be set when creating
+an :class:`.ArgumentParser` object. The intended use is to give as value an
+already existing logger object which is used for the whole application. Though
+for convenience to enable a default logger the :code:`logger` argument can also
+receive :code:`True` or a valid logging level.
 
 
 Contributing

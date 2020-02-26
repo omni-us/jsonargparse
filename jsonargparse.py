@@ -44,12 +44,16 @@ try:
 except Exception as ex:
     requests = ex  # type: ignore
 
+jsonschema_support = False if isinstance(jsonvalidator, Exception) else True
+jsonnet_support = False if isinstance(_jsonnet, Exception) or not jsonschema_support else True
+url_support = False if any([isinstance(x, Exception) for x in [url_validator, requests]]) else True
+
 
 __version__ = '2.23.5'
 
 
 meta_keys = {'__cwd__', '__path__'}
-config_read_mode = 'fr' if any([isinstance(x, Exception) for x in [url_validator, requests]]) else 'fur'
+config_read_mode = 'fur' if url_support else 'fr'
 
 
 class ParserError(Exception):
@@ -1777,6 +1781,7 @@ class Path(object):
 
         is_url = False
         if isinstance(path, Path):
+            is_url = path.is_url
             cwd = path.cwd  # type: ignore
             abs_path = path.abs_path  # type: ignore
             path = path.path  # type: ignore
@@ -1851,13 +1856,13 @@ class Path(object):
         return self.abs_path if absolute else self.path
 
     def get_content(self, mode='r'):
-        """Returns the contents of the file  or gets url."""
+        """Returns the contents of the file or the response of a GET request to the URL."""
         if not self.is_url:
             with open(self.abs_path, mode) as input_file:
                 return input_file.read()
         else:
             if isinstance(requests, Exception):
-                raise ImportError('requests python package is required for URL support in Path.')
+                raise ImportError('requests package is required for URL support in Path.')
             response = requests.get(self.abs_path)
             response.raise_for_status()
             return response.text
@@ -1872,7 +1877,7 @@ class Path(object):
             raise ValueError('Both modes "f" and "d" not possible.')
         if 'u' in mode:
             if isinstance(url_validator, Exception):
-                raise ImportError('validators python package is required for URL support in Path.')
+                raise ImportError('validators package is required for URL support in Path.')
             if 'd' in mode:
                 raise ValueError('Both modes "d" and "u" not possible.')
 
