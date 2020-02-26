@@ -49,7 +49,7 @@ jsonnet_support = False if isinstance(_jsonnet, Exception) or not jsonschema_sup
 url_support = False if any([isinstance(x, Exception) for x in [url_validator, requests]]) else True
 
 
-__version__ = '2.23.5'
+__version__ = '2.24.0'
 
 
 meta_keys = {'__cwd__', '__path__'}
