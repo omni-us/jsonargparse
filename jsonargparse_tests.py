@@ -668,11 +668,11 @@ class JsonargparseTests(unittest.TestCase):
         cfg2 = parser.parse_path(main_file, with_meta=True)
         self.assertEqual(namespace_to_dict(cfg1), strip_meta(cfg2))
         self.assertEqual(cfg2.__path__(), main_file)
-        self.assertEqual(cfg2.parser.__path__(), parser_file)
+        self.assertEqual(cfg2.parser.__path__(absolute=False), 'parser.yaml')
         if jsonschema_support:
-            self.assertEqual(cfg2.schema.__path__(), schema_file)
+            self.assertEqual(cfg2.schema.__path__(absolute=False), 'schema.yaml')
         if jsonnet_support:
-            self.assertEqual(cfg2.jsonnet.__path__(), jsonnet_file)
+            self.assertEqual(cfg2.jsonnet.__path__(absolute=False), 'jsonnet.yaml')
 
         parser.save(cfg2, os.path.join(outdir, 'main.yaml'))
         self.assertTrue(os.path.isfile(os.path.join(outdir, 'parser.yaml')))
