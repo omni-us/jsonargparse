@@ -69,15 +69,9 @@ if [ -n ${BUMPVERSION_NEW_VERSION+x} ]; then
 fi
 
 ## Update documentation ##
-if [ $(git rev-parse --abbrev-ref HEAD) = "master" ]; then
-  if [ -z ${BUMPVERSION_NEW_VERSION+x} ]; then
-    TAG=$(git describe --tags --abbrev=0);
-    NUM=$(( 1 + $(git rev-list --count $TAG..HEAD) ))"commits";
-    VERSION="$(git rev-parse --abbrev-ref HEAD)/$TAG+$NUM/$(date -u +%Y.%m.%d)";
-  else
-    VERSION="$BUMPVERSION_NEW_VERSION";
-  fi
-  ./setup.py build_sphinx --quiet --builder html --version $VERSION --release $VERSION &&
+if [ "${BUMPVERSION_NEW_VERSION+x}" != "" ]; then
+  ./setup.py build_sphinx --quiet --builder html \
+      --version $BUMPVERSION_NEW_VERSION --release $BUMPVERSION_NEW_VERSION &&
     rm -fr docs &&
     mv sphinx/_build/html docs &&
     touch docs/.nojekyll &&
