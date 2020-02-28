@@ -149,7 +149,7 @@ example you could do the following:
     'from default 2'
 
 
-.. _envionment-variables:
+.. _environment-variables:
 
 Environment variables
 =====================
