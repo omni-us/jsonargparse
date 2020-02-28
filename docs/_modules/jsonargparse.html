@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse master/v2.24.0+1commits/2020.02.27 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse master/v2.24.0+2commits/2020.02.28 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                master/v2.24.0+1commits/2020.02.27
+                master/v2.24.0+2commits/2020.02.28
               </div>
             
           
@@ -153,16 +153,16 @@
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">Action</span><span class="p">,</span> <span class="n">OPTIONAL</span><span class="p">,</span> <span class="n">REMAINDER</span><span class="p">,</span> <span class="n">SUPPRESS</span><span class="p">,</span> <span class="n">PARSER</span><span class="p">,</span> <span class="n">ONE_OR_MORE</span><span class="p">,</span> <span class="n">ZERO_OR_MORE</span>
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">ArgumentError</span><span class="p">,</span> <span class="n">_UNRECOGNIZED_ARGS_ATTR</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">types</span> <span class="k">import</span> <span class="n">SimpleNamespace</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Action</span><span class="p">,</span> <span class="n">OPTIONAL</span><span class="p">,</span> <span class="n">REMAINDER</span><span class="p">,</span> <span class="n">SUPPRESS</span><span class="p">,</span> <span class="n">PARSER</span><span class="p">,</span> <span class="n">ONE_OR_MORE</span><span class="p">,</span> <span class="n">ZERO_OR_MORE</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentError</span><span class="p">,</span> <span class="n">_UNRECOGNIZED_ARGS_ATTR</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">SimpleNamespace</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">contextlib</span> <span class="k">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>
+    <span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>
 <span class="k">except</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">contextlib2</span> <span class="k">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>  <span class="c1"># type: ignore</span>
+    <span class="kn">from</span> <span class="nn">contextlib2</span> <span class="kn">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>  <span class="c1"># type: ignore</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">yaml</span>
@@ -171,8 +171,7 @@
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">jsonschema</span>
-    <span class="kn">from</span> <span class="nn">jsonschema</span> <span class="k">import</span> <span class="n">validators</span>
-    <span class="kn">from</span> <span class="nn">jsonschema</span> <span class="k">import</span> <span class="n">Draft4Validator</span> <span class="k">as</span> <span class="n">jsonvalidator</span>
+    <span class="kn">from</span> <span class="nn">jsonschema</span> <span class="kn">import</span> <span class="n">Draft4Validator</span> <span class="k">as</span> <span class="n">jsonvalidator</span>
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
     <span class="n">jsonschema</span> <span class="o">=</span> <span class="n">jsonvalidator</span> <span class="o">=</span> <span class="n">ex</span>
 
@@ -182,7 +181,7 @@
     <span class="n">_jsonnet</span> <span class="o">=</span> <span class="n">ex</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">validators.url</span> <span class="k">import</span> <span class="n">url</span> <span class="k">as</span> <span class="n">url_validator</span>
+    <span class="kn">from</span> <span class="nn">validators.url</span> <span class="kn">import</span> <span class="n">url</span> <span class="k">as</span> <span class="n">url_validator</span>
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
     <span class="n">url_validator</span> <span class="o">=</span> <span class="n">ex</span>
 
@@ -239,7 +238,7 @@
 <div class="viewcode-block" id="LoggerProperty"><a class="viewcode-back" href="../index.html#jsonargparse.LoggerProperty">[docs]</a><span class="k">class</span> <span class="nc">LoggerProperty</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class designed to be inherited by other classes to add a logger property.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="LoggerProperty.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.LoggerProperty.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="LoggerProperty.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.LoggerProperty.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for LoggerProperty class.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_logger&#39;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="kc">None</span></div>
@@ -322,7 +321,7 @@
     <span class="n">groups</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: Dict[str, argparse._ArgumentGroup]</span>
 
 
-<div class="viewcode-block" id="ArgumentParser.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="ArgumentParser.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">*</span><span class="n">args</span><span class="p">,</span>
                  <span class="n">env_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">error_handler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -467,7 +466,7 @@
                 <span class="n">cfg_dict</span> <span class="o">=</span> <span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="n">env</span> <span class="ow">or</span> <span class="p">(</span><span class="n">env</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_env</span><span class="p">):</span>
-                <span class="n">cfg_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">defaults</span><span class="o">=</span><span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+                <span class="n">cfg_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">defaults</span><span class="o">=</span><span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">,</span> <span class="n">_skip_check</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
             <span class="k">elif</span> <span class="n">defaults</span><span class="p">:</span>
                 <span class="n">cfg_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
@@ -497,7 +496,7 @@
 
 
 <div class="viewcode-block" id="ArgumentParser.parse_path"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_path">[docs]</a>    <span class="k">def</span> <span class="nf">parse_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">:</span><span class="nb">dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                  <span class="n">with_meta</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
+                  <span class="n">with_meta</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_base</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Parses a configuration file (yaml or jsonnet) given its path.</span>
 
 <span class="sd">        Args:</span>
@@ -520,7 +519,8 @@
             <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fpath</span><span class="p">(</span><span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">pardir</span><span class="p">)))</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">cfg_str</span> <span class="o">=</span> <span class="n">fpath</span><span class="o">.</span><span class="n">get_content</span><span class="p">()</span>
-            <span class="n">parsed_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_string</span><span class="p">(</span><span class="n">cfg_str</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="p">,</span> <span class="n">with_meta</span><span class="o">=</span><span class="n">with_meta</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="n">check</span><span class="p">)</span>
+            <span class="n">parsed_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_string</span><span class="p">(</span><span class="n">cfg_str</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="p">,</span> <span class="n">with_meta</span><span class="o">=</span><span class="n">with_meta</span><span class="p">,</span>
+                                           <span class="n">_skip_logging</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">_skip_check</span><span class="o">=</span><span class="n">_skip_check</span><span class="p">,</span> <span class="n">_base</span><span class="o">=</span><span class="n">_base</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">with_meta</span> <span class="ow">or</span> <span class="p">(</span><span class="n">with_meta</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_meta</span><span class="p">):</span>
                 <span class="n">parsed_cfg</span><span class="o">.</span><span class="n">__path__</span> <span class="o">=</span> <span class="n">fpath</span>
         <span class="k">finally</span><span class="p">:</span>
@@ -532,8 +532,8 @@
         <span class="k">return</span> <span class="n">parsed_cfg</span></div>
 
 
-<div class="viewcode-block" id="ArgumentParser.parse_string"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_string">[docs]</a>    <span class="k">def</span> <span class="nf">parse_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg_str</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">:</span><span class="nb">dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                     <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">with_meta</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
+<div class="viewcode-block" id="ArgumentParser.parse_string"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_string">[docs]</a>    <span class="k">def</span> <span class="nf">parse_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg_str</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">:</span><span class="nb">dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">env</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">with_meta</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_skip_logging</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_base</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Parses configuration (yaml or jsonnet) given as a string.</span>
 
 <span class="sd">        Args:</span>
@@ -552,13 +552,13 @@
 <span class="sd">            ParserError: If there is a parsing error and error_handler=None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_cfg</span><span class="p">(</span><span class="n">cfg_str</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">,</span> <span class="n">base</span><span class="p">)</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_cfg</span><span class="p">(</span><span class="n">cfg_str</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">,</span> <span class="n">ext_vars</span><span class="p">,</span> <span class="n">_base</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">nested</span><span class="p">:</span>
                 <span class="n">cfg</span> <span class="o">=</span> <span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="n">env</span> <span class="ow">or</span> <span class="p">(</span><span class="n">env</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_env</span><span class="p">):</span>
-                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">defaults</span><span class="o">=</span><span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
+                <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">defaults</span><span class="o">=</span><span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">,</span> <span class="n">_skip_check</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
             <span class="k">elif</span> <span class="n">defaults</span><span class="p">:</span>
                 <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defaults</span><span class="p">(</span><span class="n">nested</span><span class="o">=</span><span class="n">nested</span><span class="p">))</span>
@@ -567,7 +567,7 @@
                 <span class="n">cfg</span> <span class="o">=</span> <span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_skip_check</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">with_meta</span> <span class="ow">or</span> <span class="p">(</span><span class="n">with_meta</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_meta</span><span class="p">):</span>
@@ -577,7 +577,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">cfg_ns</span><span class="o">.</span><span class="n">__cwd__</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()]</span>
 
-            <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_skip_logging</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Parsed </span><span class="si">%s</span><span class="s1"> string.&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser_mode</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
@@ -593,6 +593,7 @@
 <span class="sd">            cfg_str (str): The configuration content.</span>
 <span class="sd">            cfg_path (str): Optional path to original config path, just for error printing.</span>
 <span class="sd">            ext_vars (dict): Optional external variables used for parsing jsonnet.</span>
+<span class="sd">            base (str or None): Base key to prepend.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            TypeError: If there is an invalid value according to the parser.</span>
@@ -804,7 +805,8 @@
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">formatter_class</span><span class="p">,</span> <span class="s1">&#39;_env_prefix&#39;</span><span class="p">,</span> <span class="n">env_prefix</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="ArgumentParser.parse_env"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_env">[docs]</a>    <span class="k">def</span> <span class="nf">parse_env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">with_meta</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
+<div class="viewcode-block" id="ArgumentParser.parse_env"><a class="viewcode-back" href="../index.html#jsonargparse.ArgumentParser.parse_env">[docs]</a>    <span class="k">def</span> <span class="nf">parse_env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nested</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">with_meta</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">_skip_logging</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNamespace</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Parses environment variables.</span>
 
 <span class="sd">        Args:</span>
@@ -831,7 +833,7 @@
                     <span class="n">cfg</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="n">SUPPRESS</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionParser</span><span class="p">):</span>
-                    <span class="n">pcfg</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">with_meta</span><span class="o">=</span><span class="n">with_meta</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="n">pcfg</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">parse_env</span><span class="p">(</span><span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="n">defaults</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">with_meta</span><span class="o">=</span><span class="n">with_meta</span><span class="p">,</span> <span class="n">_skip_logging</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">_skip_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                     <span class="n">cfg</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">pcfg</span><span class="p">))</span>
                     <span class="k">continue</span>
                 <span class="n">env_var</span> <span class="o">=</span> <span class="n">_get_env_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
@@ -857,7 +859,7 @@
                 <span class="n">cfg</span> <span class="o">=</span> <span class="n">strip_meta</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
             <span class="n">cfg_ns</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_skip_check</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">cfg_ns</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">with_meta</span> <span class="ow">or</span> <span class="p">(</span><span class="n">with_meta</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_meta</span><span class="p">):</span>
@@ -867,7 +869,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">cfg_ns</span><span class="o">.</span><span class="n">__cwd__</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()]</span>
 
-            <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_skip_logging</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Parsed environment variables.&#39;</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
@@ -955,6 +957,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            cfg (types.SimpleNamespace or dict): The configuration object to check.</span>
 <span class="sd">            skip_none (bool): Whether to skip checking of values that are None.</span>
+<span class="sd">            branch (str or None): Base key in case cfg corresponds only to a branch.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            TypeError: If any of the values are not valid.</span>
@@ -1281,7 +1284,7 @@
 
 <div class="viewcode-block" id="ActionConfigFile"><a class="viewcode-back" href="../index.html#jsonargparse.ActionConfigFile">[docs]</a><span class="k">class</span> <span class="nc">ActionConfigFile</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to indicate that an argument is a configuration file or a configuration string.&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="ActionConfigFile.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionConfigFile.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionConfigFile.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionConfigFile.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionConfigFile instance.&quot;&quot;&quot;</span>
         <span class="n">opt_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">]</span>
         <span class="n">opt_name</span> <span class="o">=</span> <span class="n">opt_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt_name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">opt_name</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;--&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
@@ -1290,7 +1293,7 @@
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ActionConfigFile.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionConfigFile.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionConfigFile.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionConfigFile.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parses the given configuration and adds all the corresponding keys to the namespace.</span>
 
 <span class="sd">        Raises:</span>
@@ -1309,11 +1312,11 @@
                 <span class="k">raise</span> <span class="n">ex_path</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">cfg_path</span> <span class="o">=</span> <span class="kc">None</span>
-                <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_string</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_string</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_skip_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex_str</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex_str</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_skip_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">))</span>
         <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -1325,7 +1328,7 @@
 
 <div class="viewcode-block" id="ActionYesNo"><a class="viewcode-back" href="../index.html#jsonargparse.ActionYesNo">[docs]</a><span class="k">class</span> <span class="nc">ActionYesNo</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Paired options --{yes_prefix}opt, --{no_prefix}opt to set True or False respectively.&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="ActionYesNo.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionYesNo.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionYesNo.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionYesNo.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionYesNo instance.</span>
 
 <span class="sd">        Args:</span>
@@ -1373,7 +1376,7 @@
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boolean</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ActionYesNo.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionYesNo.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionYesNo.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionYesNo.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sets the corresponding key to True or False depending on the option string used.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_yes_prefix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span>
@@ -1396,7 +1399,7 @@
 
 <div class="viewcode-block" id="ActionJsonSchema"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonSchema">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonSchema</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to parse option as json validated by a jsonschema.&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="ActionJsonSchema.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonSchema.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionJsonSchema.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonSchema.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionJsonSchema instance.</span>
 
 <span class="sd">        Args:</span>
@@ -1426,7 +1429,7 @@
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ActionJsonSchema.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonSchema.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionJsonSchema.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonSchema.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parses an argument with the corresponding jsonschema.</span>
 
 <span class="sd">        Raises:</span>
@@ -1483,12 +1486,12 @@
             <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">validate_properties</span><span class="p">(</span><span class="n">validator</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">schema</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="n">error</span>
 
-        <span class="k">return</span> <span class="n">validators</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">validator_class</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="n">set_defaults</span><span class="p">})</span></div>
+        <span class="k">return</span> <span class="n">jsonschema</span><span class="o">.</span><span class="n">validators</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">validator_class</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="n">set_defaults</span><span class="p">})</span></div>
 
 
 <div class="viewcode-block" id="ActionJsonnet"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonnet</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to parse a jsonnet, optionally validating against a jsonschema.&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="ActionJsonnet.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionJsonnet.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionJsonnet instance.</span>
 
 <span class="sd">        Args:</span>
@@ -1528,7 +1531,7 @@
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ActionJsonnet.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionJsonnet.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parses an argument with the corresponding jsonschema.</span>
 
 <span class="sd">        Raises:</span>
@@ -1620,7 +1623,7 @@
 
 <div class="viewcode-block" id="ActionParser"><a class="viewcode-back" href="../index.html#jsonargparse.ActionParser">[docs]</a><span class="k">class</span> <span class="nc">ActionParser</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to parse option with a given parser optionally loading from file if string value.&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="ActionParser.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionParser.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionParser.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionParser.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionParser instance.</span>
 
 <span class="sd">        Args:</span>
@@ -1643,7 +1646,7 @@
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ActionParser.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionParser.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionParser.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionParser.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parses an argument with the corresponding parser and if valid, sets the parsed value to the corresponding key.</span>
 
 <span class="sd">        Raises:</span>
@@ -1663,7 +1666,7 @@
                 <span class="n">value</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="n">fpath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">config_read_mode</span><span class="p">)</span>
-                <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">_base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">tmp</span> <span class="o">=</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">_flat_namespace_to_dict</span><span class="p">(</span><span class="n">dict_to_namespace</span><span class="p">({</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">:</span> <span class="n">value</span><span class="p">})))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">check_config</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">skip_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1687,7 +1690,7 @@
     <span class="sd">&quot;&quot;&quot;Action to restrict a value with comparison operators.&quot;&quot;&quot;</span>
     <span class="n">_operators</span> <span class="o">=</span> <span class="p">{</span><span class="n">operator</span><span class="o">.</span><span class="n">gt</span><span class="p">:</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">ge</span><span class="p">:</span> <span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">:</span> <span class="s1">&#39;&lt;&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">le</span><span class="p">:</span> <span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">eq</span><span class="p">:</span> <span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">ne</span><span class="p">:</span> <span class="s1">&#39;!=&#39;</span><span class="p">}</span>
 
-<div class="viewcode-block" id="ActionOperators.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionOperators.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionOperators.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionOperators.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionOperators instance.</span>
 
 <span class="sd">        Args:</span>
@@ -1720,7 +1723,7 @@
                 <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ActionOperators.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionOperators.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionOperators.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionOperators.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.</span>
 
 <span class="sd">        Raises:</span>
@@ -1761,7 +1764,7 @@
 
 <div class="viewcode-block" id="ActionPath"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPath">[docs]</a><span class="k">class</span> <span class="nc">ActionPath</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to check and store a path.&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="ActionPath.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPath.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionPath.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPath.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionPath instance.</span>
 
 <span class="sd">        Args:</span>
@@ -1784,7 +1787,7 @@
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ActionPath.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPath.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionPath.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPath.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parses an argument as a Path and if valid sets the parsed value to the corresponding key.</span>
 
 <span class="sd">        Raises:</span>
@@ -1820,7 +1823,7 @@
 
 <div class="viewcode-block" id="ActionPathList"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPathList">[docs]</a><span class="k">class</span> <span class="nc">ActionPathList</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to check and store a list of file paths read from a plain text file or stream.&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="ActionPathList.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPathList.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionPathList.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPathList.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionPathList instance.</span>
 
 <span class="sd">        Args:</span>
@@ -1848,7 +1851,7 @@
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ActionPathList.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPathList.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionPathList.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionPathList.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parses an argument as a PathList and if valid sets the parsed value to the corresponding key.</span>
 
 <span class="sd">        Raises:</span>
@@ -1906,7 +1909,7 @@
 <span class="sd">    be obtained without having to remember the working directory from when the</span>
 <span class="sd">    object was created.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="Path.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.Path.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Path.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.Path.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for Path instance.</span>
 
 <span class="sd">        Args:</span>
@@ -1988,13 +1991,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_url</span> <span class="o">=</span> <span class="n">is_url</span>  <span class="c1"># type: bool</span></div>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;Path(path=&quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">+</span><span class="s1">&#39;&quot;, abs_path=&quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span><span class="o">+</span><span class="s1">&#39;&quot;, cwd=&quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">cwd</span><span class="o">+</span><span class="s1">&#39;&quot;)&#39;</span>
 
-<div class="viewcode-block" id="Path.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.Path.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Path.__call__"><a class="viewcode-back" href="../index.html#jsonargparse.Path.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the path as a string.</span>
 
 <span class="sd">        Args:</span>

@@ -24,7 +24,6 @@ except Exception as ex:
 
 try:
     import jsonschema
-    from jsonschema import validators
     from jsonschema import Draft4Validator as jsonvalidator
 except Exception as ex:
     jsonschema = jsonvalidator = ex
@@ -320,7 +319,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg_dict = _flat_namespace_to_dict(dict_to_namespace(cfg_dict))
 
             if env or (env is None and self._default_env):
-                cfg_dict = self._merge_config(cfg_dict, self.parse_env(defaults=defaults, nested=nested, check=False))
+                cfg_dict = self._merge_config(cfg_dict, self.parse_env(defaults=defaults, nested=nested, _skip_check=True))
 
             elif defaults:
                 cfg_dict = self._merge_config(cfg_dict, self.get_defaults(nested=nested))
@@ -350,7 +349,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True,
-                  with_meta:bool=None, base=None, check:bool=True) -> SimpleNamespace:
+                  with_meta:bool=None, _skip_check:bool=False, _base=None) -> SimpleNamespace:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
@@ -373,7 +372,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             os.chdir(os.path.abspath(os.path.join(fpath(absolute=False), os.pardir)))
         try:
             cfg_str = fpath.get_content()
-            parsed_cfg = self.parse_string(cfg_str, cfg_path, ext_vars, env, defaults, nested, with_meta=with_meta, log=False, base=base, check=check)
+            parsed_cfg = self.parse_string(cfg_str, cfg_path, ext_vars, env, defaults, nested, with_meta=with_meta,
+                                           _skip_logging=True, _skip_check=_skip_check, _base=_base)
             if with_meta or (with_meta is None and self._default_meta):
                 parsed_cfg.__path__ = fpath
         finally:
@@ -385,8 +385,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return parsed_cfg
 
 
-    def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True,
-                     nested:bool=True, with_meta:bool=None, log:bool=True, base=None, check:bool=True) -> SimpleNamespace:
+    def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True,
+                     with_meta:bool=None, _skip_logging:bool=False, _skip_check:bool=False, _base=None) -> SimpleNamespace:
         """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
@@ -405,13 +405,13 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            cfg = self._load_cfg(cfg_str, cfg_path, ext_vars, base)
+            cfg = self._load_cfg(cfg_str, cfg_path, ext_vars, _base)
 
             if nested:
                 cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
             if env or (env is None and self._default_env):
-                cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested))
+                cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested, _skip_check=True))
 
             elif defaults:
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
@@ -420,7 +420,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = strip_meta(cfg)
 
             cfg_ns = dict_to_namespace(cfg)
-            if check:
+            if not _skip_check:
                 self.check_config(cfg_ns)
 
             if with_meta or (with_meta is None and self._default_meta):
@@ -430,7 +430,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 else:
                     cfg_ns.__cwd__ = [os.getcwd()]
 
-            if log:
+            if not _skip_logging:
                 self._logger.info('Parsed %s string.', self.parser_mode)
 
         except (TypeError, KeyError) as ex:
@@ -446,6 +446,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             cfg_str (str): The configuration content.
             cfg_path (str): Optional path to original config path, just for error printing.
             ext_vars (dict): Optional external variables used for parsing jsonnet.
+            base (str or None): Base key to prepend.
 
         Raises:
             TypeError: If there is an invalid value according to the parser.
@@ -657,7 +658,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             setattr(self.formatter_class, '_env_prefix', env_prefix)
 
 
-    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True, with_meta:bool=None, log:bool=True, check:bool=True) -> SimpleNamespace:
+    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True, with_meta:bool=None,
+                  _skip_logging:bool=False, _skip_check:bool=False) -> SimpleNamespace:
         """Parses environment variables.
 
         Args:
@@ -684,7 +686,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     cfg = vars(namespace)
             for action in [a for a in self._actions if a.default != SUPPRESS]:
                 if isinstance(action, ActionParser):
-                    pcfg = action._parser.parse_env(env=env, defaults=defaults, nested=False, with_meta=with_meta, log=False)
+                    pcfg = action._parser.parse_env(env=env, defaults=defaults, nested=False, with_meta=with_meta, _skip_logging=True, _skip_check=True)
                     cfg.update(namespace_to_dict(pcfg))
                     continue
                 env_var = _get_env_var(self, action)
@@ -710,7 +712,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = strip_meta(cfg)
 
             cfg_ns = dict_to_namespace(cfg)
-            if check:
+            if not _skip_check:
                 self.check_config(cfg_ns)
 
             if with_meta or (with_meta is None and self._default_meta):
@@ -720,7 +722,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 else:
                     cfg_ns.__cwd__ = [os.getcwd()]
 
-            if log:
+            if not _skip_logging:
                 self._logger.info('Parsed environment variables.')
 
         except TypeError as ex:
@@ -808,6 +810,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Args:
             cfg (types.SimpleNamespace or dict): The configuration object to check.
             skip_none (bool): Whether to skip checking of values that are None.
+            branch (str or None): Base key in case cfg corresponds only to a branch.
 
         Raises:
             TypeError: If any of the values are not valid.
@@ -1162,11 +1165,11 @@ class ActionConfigFile(Action):
                 raise ex_path
             try:
                 cfg_path = None
-                cfg_file = parser.parse_string(value, env=False, defaults=False, check=False)
+                cfg_file = parser.parse_string(value, env=False, defaults=False, _skip_check=True)
             except TypeError as ex_str:
                 raise TypeError('Parser key "'+dest+'": '+str(ex_str))
         else:
-            cfg_file = parser.parse_path(value, env=False, defaults=False, check=False)
+            cfg_file = parser.parse_path(value, env=False, defaults=False, _skip_check=True)
         cfg_file = _dict_to_flat_namespace(namespace_to_dict(cfg_file))
         getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():
@@ -1336,7 +1339,7 @@ class ActionJsonSchema(Action):
             for error in validate_properties(validator, properties, instance, schema):
                 yield error
 
-        return validators.extend(validator_class, {'properties': set_defaults})
+        return jsonschema.validators.extend(validator_class, {'properties': set_defaults})
 
 
 class ActionJsonnet(Action):
@@ -1516,7 +1519,7 @@ class ActionParser(Action):
                 value = yaml.safe_load(value)
             if isinstance(value, str):
                 fpath = Path(value, mode=config_read_mode)
-                value = self._parser.parse_path(fpath, base=self.dest)
+                value = self._parser.parse_path(fpath, _base=self.dest)
             else:
                 tmp = dict_to_namespace(_flat_namespace_to_dict(dict_to_namespace({self.dest: value})))
                 self._parser.check_config(tmp, skip_none=True)
