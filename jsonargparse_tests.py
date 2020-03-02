@@ -108,6 +108,19 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val2', 'eight']))
 
 
+    def test_choices(self):
+        """Test the use of choices."""
+        parser = ArgumentParser()
+        parser.add_argument('--ch1',
+            choices='ABC')
+        parser.add_argument('--ch2',
+            choices=['v1', 'v2'])
+        cfg = parser.parse_args(['--ch1', 'C', '--ch2', 'v1'])
+        self.assertEqual(strip_meta(cfg), {'ch1': 'C', 'ch2': 'v1'})
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--ch1', 'D']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--ch2', 'v0']))
+
+
     def test_dump(self):
         """Test the dump method."""
         parser = example_parser()
@@ -297,6 +310,76 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual('v1', cfg.pos1)
         self.assertEqual(['v2', 'v3'], cfg.pos2)
         self.assertEqual('v4', cfg.opt)
+
+
+    def test_subcommands(self):
+        """Test the use of subcommands."""
+        parser_a = ArgumentParser()
+        parser_a.add_argument('ap1')
+        parser_a.add_argument('--ao1',
+            default='ao1_def')
+
+        parser = ArgumentParser(prog='app')
+        parser.add_argument('--o1',
+            default='o1_def')
+        subcommands = parser.add_subcommands()
+        subcommands.add_subcommand('a', parser_a)
+        subcommands.add_subcommand('b', example_parser(),
+            help='b help')
+
+        cfg = namespace_to_dict(parser.get_defaults())
+        self.assertEqual(cfg, {'o1': 'o1_def', 'subcommand': None})
+
+        cfg = namespace_to_dict(parser.parse_args(['--o1', 'o1_arg', 'a', 'ap1_arg']))
+        self.assertEqual(cfg['o1'], 'o1_arg')
+        self.assertEqual(cfg['subcommand'], 'a')
+        self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_arg', 'ao1': 'ao1_def'})
+        cfg = namespace_to_dict(parser.parse_args(['a', 'ap1_arg', '--ao1', 'ao1_arg'], with_meta=False))
+        self.assertEqual(cfg['a'], {'ap1': 'ap1_arg', 'ao1': 'ao1_arg'})
+        self.assertRaises(KeyError, lambda: cfg['b'])
+
+        cfg = namespace_to_dict(parser.parse_args(['b', '--lev1.lev2.opt2', 'opt2_arg']))
+        cfg_def = namespace_to_dict(example_parser().get_defaults())
+        cfg_def['lev1']['lev2']['opt2'] = 'opt2_arg'
+        self.assertEqual(cfg['o1'], 'o1_def')
+        self.assertEqual(cfg['subcommand'], 'b')
+        self.assertEqual(strip_meta(cfg['b']), cfg_def)
+        self.assertRaises(KeyError, lambda: cfg['a'])
+
+        self.assertRaises(ParserError, lambda: parser.parse_args())
+        self.assertRaises(ParserError, lambda: parser.parse_args(['a']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['b', '--unk']))
+
+        cfg = namespace_to_dict(parser.parse_string('{"a": {"ap1": "ap1_cfg"}}'))
+        self.assertEqual(cfg['subcommand'], 'a')
+        self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_cfg', 'ao1': 'ao1_def'})
+        self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'))
+        self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}'))
+
+        os.environ['APP_O1'] = 'o1_env'
+        os.environ['APP_A__AP1'] = 'ap1_env'
+        os.environ['APP_A__AO1'] = 'ao1_env'
+        os.environ['APP_B__LEV1__LEV2__OPT2'] = 'opt2_env'
+
+        cfg = namespace_to_dict(parser.parse_args(['a'], env=True))
+        self.assertEqual(cfg['o1'], 'o1_env')
+        self.assertEqual(cfg['subcommand'], 'a')
+        self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_env', 'ao1': 'ao1_env'})
+        parser.default_env = True
+        cfg = namespace_to_dict(parser.parse_args(['b']))
+        cfg_def['lev1']['lev2']['opt2'] = 'opt2_env'
+        self.assertEqual(cfg['subcommand'], 'b')
+        self.assertEqual(strip_meta(cfg['b']), cfg_def)
+
+        os.environ['APP_SUBCOMMAND'] = 'a'
+
+        cfg = namespace_to_dict(parser.parse_env())
+        self.assertEqual(cfg['o1'], 'o1_env')
+        self.assertEqual(cfg['subcommand'], 'a')
+        self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_env', 'ao1': 'ao1_env'})
+
+        for key in ['APP_O1', 'APP_A__AP1', 'APP_A__AO1', 'APP_B__LEV1__LEV2__OPT2', 'APP_SUBCOMMAND']:
+            del os.environ[key]
 
 
     def test_default_config_files(self):

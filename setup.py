@@ -2,6 +2,7 @@
 
 from setuptools import setup, Command
 import re
+import importlib
 
 
 NAME = next(filter(lambda x: x.startswith('name = '), open('setup.cfg').readlines())).strip().split()[-1]
@@ -22,6 +23,7 @@ try:
         def run(self):
             cov = coverage.Coverage()
             cov.start()
+            importlib.reload(__import__(NAME))
             __import__(NAME_TESTS).run_tests()
             cov.stop()
             cov.save()
