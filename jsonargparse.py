@@ -1278,13 +1278,9 @@ class ActionYesNo(Action):
             else:
                 kwargs['nargs'] = 0
                 kwargs['metavar'] = None
-            def boolean(x):
-                if isinstance(x, str) and x.lower() in {'true', 'yes', 'false', 'no'}:
-                    x = True if x.lower() in {'true', 'yes'} else False
-                elif not isinstance(x, bool):
-                    raise TypeError('Value not boolean: '+str(x)+'.')
-                return x
-            kwargs['type'] = boolean
+            if 'default' not in kwargs:
+                kwargs['default'] = False
+            kwargs['type'] = ActionYesNo._boolean_type
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -1306,6 +1302,23 @@ class ActionYesNo(Action):
             self.option_strings[-1] = re.sub('^--'+self._no_prefix, '--'+self._no_prefix+prefix+'.', self.option_strings[-1])
         for n in range(1, len(self.option_strings)-1):
             self.option_strings[n] = re.sub('^--', '--'+prefix+'.', self.option_strings[n])
+
+    def _check_type(self, value, cfg=None):
+        if isinstance(value, list):
+            value = [ActionYesNo._boolean_type(val) for val in value]
+        else:
+            value = ActionYesNo._boolean_type(value)
+        if isinstance(value, list) and (self.nargs == 0 or self.nargs):
+            return value[0]
+        return value
+
+    @staticmethod
+    def _boolean_type(x):
+        if isinstance(x, str) and x.lower() in {'true', 'yes', 'false', 'no'}:
+            x = True if x.lower() in {'true', 'yes'} else False
+        elif not isinstance(x, bool):
+            raise TypeError('Value not boolean: '+str(x)+'.')
+        return x
 
 
 class ActionJsonSchema(Action):

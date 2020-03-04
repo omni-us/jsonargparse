@@ -156,6 +156,12 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual(False, parser.parse_args(['--bools.def_false=no']).bools.def_false)
         self.assertEqual(True,  parser.parse_args(['--no_bools.def_true=no']).bools.def_true)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--bools.def_true nope']))
+
+        self.assertEqual(True,  parser.parse_env({'APP_BOOLS__DEF_FALSE': 'true'}).bools.def_false)
+        self.assertEqual(True,  parser.parse_env({'APP_BOOLS__DEF_FALSE': 'yes'}).bools.def_false)
+        self.assertEqual(False, parser.parse_env({'APP_BOOLS__DEF_TRUE': 'false'}).bools.def_true)
+        self.assertEqual(False, parser.parse_env({'APP_BOOLS__DEF_TRUE': 'no'}).bools.def_true)
+
         parser = ArgumentParser()
         parser.add_argument('--val', action=ActionYesNo)
         self.assertEqual(True,  parser.parse_args(['--val']).val)
@@ -170,14 +176,25 @@ class JsonargparseTests(unittest.TestCase):
 
     def test_bool_type(self):
         """Test the correct functioning of type=bool."""
-        parser = ArgumentParser()
+        parser = ArgumentParser(prog='app', default_env=True)
         parser.add_argument('--val', type=bool)
+        self.assertEqual(False, parser.get_defaults().val)
         self.assertEqual(True,  parser.parse_args(['--val', 'true']).val)
         self.assertEqual(True,  parser.parse_args(['--val', 'yes']).val)
         self.assertEqual(False, parser.parse_args(['--val', 'false']).val)
         self.assertEqual(False, parser.parse_args(['--val', 'no']).val)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--val', '1']))
         self.assertRaises(ValueError, lambda: parser.add_argument('--val2', type=bool, nargs='+'))
+
+        os.environ['APP_VAL'] = 'true'
+        self.assertEqual(True,  parser.parse_args([]).val)
+        os.environ['APP_VAL'] = 'yes'
+        self.assertEqual(True,  parser.parse_args([]).val)
+        os.environ['APP_VAL'] = 'false'
+        self.assertEqual(False, parser.parse_args([]).val)
+        os.environ['APP_VAL'] = 'no'
+        self.assertEqual(False, parser.parse_args([]).val)
+        del os.environ['APP_VAL']
 
 
     def test_nargs(self):
