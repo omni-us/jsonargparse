@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.25.1 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.25.2 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.25.1
+                2.25.2
               </div>
             
           
@@ -884,31 +884,34 @@ included preceded by ‘ENV:’.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.error" title="jsonargparse.ArgumentParser.error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error</span></code></a>(message)</p></td>
 <td><p>Logs error message if a logger is set, calls the error handler and raises a ParserError.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.get_defaults" title="jsonargparse.ArgumentParser.get_defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_defaults</span></code></a>(nested)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.get_config_files" title="jsonargparse.ArgumentParser.get_config_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_config_files</span></code></a>(cfg)</p></td>
+<td><p>Returns a list of loaded config file paths.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.get_defaults" title="jsonargparse.ArgumentParser.get_defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_defaults</span></code></a>(nested)</p></td>
 <td><p>Returns a namespace with all default values.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.merge_config" title="jsonargparse.ArgumentParser.merge_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_config</span></code></a>(cfg_from, cfg_to)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.merge_config" title="jsonargparse.ArgumentParser.merge_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_config</span></code></a>(cfg_from, cfg_to)</p></td>
 <td><p>Merges the first configuration into the second configuration.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_args" title="jsonargparse.ArgumentParser.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>([args, namespace])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_args" title="jsonargparse.ArgumentParser.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>([args, namespace])</p></td>
 <td><p>Parses command line argument strings.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_env" title="jsonargparse.ArgumentParser.parse_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_env</span></code></a>(env, str] = None, defaults, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_env" title="jsonargparse.ArgumentParser.parse_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_env</span></code></a>(env, str] = None, defaults, …)</p></td>
 <td><p>Parses environment variables.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_known_args" title="jsonargparse.ArgumentParser.parse_known_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_known_args</span></code></a>([args, namespace])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_known_args" title="jsonargparse.ArgumentParser.parse_known_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_known_args</span></code></a>([args, namespace])</p></td>
 <td><p>parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, ext_vars, env, …[, _base])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_path</span></code></a>(cfg_path, ext_vars, env, …[, _base])</p></td>
 <td><p>Parses a configuration file (yaml or jsonnet) given its path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, cfg_path, ext_vars, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.parse_string" title="jsonargparse.ArgumentParser.parse_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_string</span></code></a>(cfg_str, cfg_path, ext_vars, …)</p></td>
 <td><p>Parses configuration (yaml or jsonnet) given as a string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.save" title="jsonargparse.ArgumentParser.save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code></a>(cfg, dict], path, format, skip_none, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.save" title="jsonargparse.ArgumentParser.save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code></a>(cfg, dict], path, format, skip_none, …)</p></td>
 <td><p>Generates a yaml or json string for the given configuration object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser.strip_unknown" title="jsonargparse.ArgumentParser.strip_unknown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_unknown</span></code></a>(cfg)</p></td>
 <td><p>Removes all unknown keys from a configuration object.</p></td>
 </tr>
 </tbody>
@@ -1233,6 +1236,23 @@ are supported. Additionally it accepts:</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)">types.SimpleNamespace</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="jsonargparse.ArgumentParser.get_config_files">
+<code class="sig-name descname">get_config_files</code><span class="sig-paren">(</span><em class="sig-param">cfg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ArgumentParser.get_config_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ArgumentParser.get_config_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of loaded config file paths.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/types.html#types.SimpleNamespace" title="(in Python v3.8)"><em>types.SimpleNamespace</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – The configuration object.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Paths to loaded config files.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)">list</a></p>
 </dd>
 </dl>
 </dd></dl>
