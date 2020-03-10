@@ -478,6 +478,10 @@ class JsonargparseTests(unittest.TestCase):
         self.assertEqual('from arg', parser.parse_args(['--cfg', input1_config_file, '--op1', 'from arg']).op1)
         self.assertEqual('from input config file', parser.parse_args(['--op1', 'from arg', '--cfg', input1_config_file]).op1)
 
+        cfg = parser.parse_args(['--cfg', input1_config_file])
+        cfg_list = parser.get_config_files(cfg)
+        self.assertEqual(input1_config_file, cfg_list[0](absolute=False))
+
         for key in ['APP_CFG', 'APP_OP1']:
             del os.environ[key]
         shutil.rmtree(tmpdir)

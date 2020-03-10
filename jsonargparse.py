@@ -942,15 +942,22 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return dict_to_namespace(cfg)
 
 
-    #def _get_config_files(self, cfg):
-    #    """Returns a list of loaded config file paths."""
-    #    if not isinstance(cfg, dict):
-    #        cfg = vars(cfg)
-    #    cfg_files = []
-    #    for action in self._actions:
-    #        if isinstance(action, ActionConfigFile) and action.dest in cfg:
-    #            cfg_files = [p for p in cfg[action.dest] if p is not None]
-    #    return cfg_files
+    def get_config_files(self, cfg):
+        """Returns a list of loaded config file paths.
+
+        Args:
+            cfg (types.SimpleNamespace or dict): The configuration object.
+
+        Returns:
+            list: Paths to loaded config files.
+        """
+        if not isinstance(cfg, dict):
+            cfg = vars(cfg)
+        cfg_files = []
+        for action in self._actions:
+            if isinstance(action, ActionConfigFile) and action.dest in cfg:
+                cfg_files = [p for p in cfg[action.dest] if p is not None]
+        return cfg_files
 
 
     @staticmethod
