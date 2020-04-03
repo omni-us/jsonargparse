@@ -1588,7 +1588,11 @@ class ActionParser(Action):
             kwargs['_parser'] = self._parser
             return ActionParser(**kwargs)
         ## Runs when parsing a value ##
-        setattr(args[1], self.dest, self._check_type(args[2]))
+        value = _dict_to_flat_namespace(namespace_to_dict(self._check_type(args[2])))
+        for key, val in vars(value).items():
+            setattr(args[1], key, val)
+        if hasattr(value, '__path__'):
+            setattr(args[1], self.dest+'.__path__', getattr(value, '__path__'))
 
     def _check_type(self, value, cfg=None):
         try:
@@ -1599,8 +1603,8 @@ class ActionParser(Action):
                 fpath = Path(value, mode=config_read_mode)
                 value = self._parser.parse_path(fpath, _base=self.dest)
             else:
-                tmp = dict_to_namespace(_flat_namespace_to_dict(dict_to_namespace({self.dest: value})))
-                self._parser.check_config(tmp, skip_none=True)
+                value = dict_to_namespace(_flat_namespace_to_dict(dict_to_namespace({self.dest: value})))
+                self._parser.check_config(value, skip_none=True)
             if fpath is not None:
                 value.__path__ = fpath
         except TypeError as ex:
