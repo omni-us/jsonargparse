@@ -1105,8 +1105,8 @@ class JsonargparseTests(unittest.TestCase):
                 parser.logger.warning(log_message)
         except AssertionError:
             pass
-        parser = ArgumentParser(logger=logging.ERROR)
-        self.assertEqual(parser.logger.name, 'ArgumentParser')
+        parser = ArgumentParser(logger={'name': 'tool', 'level': 'ERROR'})
+        self.assertEqual(parser.logger.name, 'tool')
         self.assertEqual(parser.logger.level, logging.ERROR)
         parser = ArgumentParser(logger='jsonargparse')
         self.assertEqual(parser.logger.name, 'jsonargparse')

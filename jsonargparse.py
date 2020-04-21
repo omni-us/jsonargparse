@@ -108,8 +108,9 @@ class LoggerProperty:
         """Sets a new logger.
 
         Args:
-            logger (logging.Logger or bool or int or str or None): A logger to use or True/int(log level)/str(logger name)
-                                                                   to use the default logger or False/None to disable logging.
+            logger (logging.Logger or bool or str or dict or None): A logger
+                object to use, or True/str(logger name)/dict(name, level) to use the
+                default logger, or False/None to disable logging.
 
         Raises:
             ValueError: If an invalid logger value is given.
@@ -117,18 +118,24 @@ class LoggerProperty:
         if logger is None or (isinstance(logger, bool) and not logger):
             self._logger = logging.Logger('null')
             self._logger.addHandler(logging.NullHandler())
-        elif isinstance(logger, (bool, int, str)) and logger:
+        elif isinstance(logger, (bool, int, str, dict)) and logger:
+            levels = {'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'}
             level = logging.INFO
-            if isinstance(logger, int) and logger in {logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG}:
-                level = logger
-            logger = logging.getLogger(logger if isinstance(logger, str) else type(self).__name__)
+            if isinstance(logger, dict) and 'level' in logger and logger['level'] in levels:
+                level = getattr(logging, logger['level'])
+            name = type(self).__name__
+            if isinstance(logger, str):
+                name = logger
+            elif isinstance(logger, dict) and 'name' in logger:
+                name = logger['name']
+            logger = logging.getLogger(name)
             handler = logging.StreamHandler()
             handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
             logger.addHandler(handler)
             logger.setLevel(level)
             self._logger = logger
         elif not isinstance(logger, logging.Logger):
-            raise ValueError('Expected logger to be an instance of logging.Logger or bool or int or str or None.')
+            raise ValueError('Expected logger to be an instance of logging.Logger or bool or str or dict or None.')
         else:
             self._logger = logger
 
@@ -1537,7 +1544,7 @@ class ActionJsonnet(Action):
         snippet = jsonnet
         try:
             fpath = Path(jsonnet, mode=config_read_mode)
-            fname = jsonnet
+            fname = jsonnet(absolute=False) if isinstance(jsonnet, Path) else jsonnet
             snippet = fpath.get_content()
         except:
             pass

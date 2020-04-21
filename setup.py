@@ -2,6 +2,7 @@
 
 from setuptools import setup, Command
 import re
+import sys
 import importlib
 
 
@@ -24,7 +25,9 @@ try:
             cov = coverage.Coverage()
             cov.start()
             importlib.reload(__import__(NAME))
-            __import__(NAME_TESTS).run_tests()
+            rc = __import__(NAME_TESTS).run_tests().wasSuccessful()
+            if not rc:
+                sys.exit(not rc)
             cov.stop()
             cov.save()
             cov.report()
