@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.25.4 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.26.0 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.25.4
+                2.26.0
               </div>
             
           
@@ -724,34 +724,37 @@ virtualenv -p python3 venv
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnet" title="jsonargparse.ActionJsonnet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonnet</span></code></a>(**kwargs)</p></td>
 <td><p>Action to parse a jsonnet, optionally validating against a jsonschema.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionOperators" title="jsonargparse.ActionOperators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnetExtVars" title="jsonargparse.ActionJsonnetExtVars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonnetExtVars</span></code></a>(**kwargs)</p></td>
+<td><p>Action to be used for jsonnet ext_vars.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionOperators" title="jsonargparse.ActionOperators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>(**kwargs)</p></td>
 <td><p>Action to restrict a value with comparison operators.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code></a>(**kwargs)</p></td>
 <td><p>Action to parse option with a given parser optionally loading from file if string value.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPath</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionPath" title="jsonargparse.ActionPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPath</span></code></a>(**kwargs)</p></td>
 <td><p>Action to check and store a path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPathList</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionPathList" title="jsonargparse.ActionPathList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionPathList</span></code></a>(**kwargs)</p></td>
 <td><p>Action to check and store a list of file paths read from a plain text file or stream.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionSubCommands" title="jsonargparse.ActionSubCommands"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionSubCommands</span></code></a>(option_strings, prog, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionSubCommands" title="jsonargparse.ActionSubCommands"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionSubCommands</span></code></a>(option_strings, prog, …)</p></td>
 <td><p>Extension of argparse._SubParsersAction to modify sub-commands functionality.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ActionYesNo" title="jsonargparse.ActionYesNo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code></a>(**kwargs)</p></td>
 <td><p>Paired options –{yes_prefix}opt, –{no_prefix}opt to set True or False respectively.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args[, env_prefix, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args[, env_prefix, …])</p></td>
 <td><p>Parser for command line, yaml/jsonnet files and environment variables.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.DefaultHelpFormatter" title="jsonargparse.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.DefaultHelpFormatter" title="jsonargparse.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
 <td><p>Help message formatter with namespace key, env var and default values in argument help.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.LoggerProperty" title="jsonargparse.LoggerProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoggerProperty</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.LoggerProperty" title="jsonargparse.LoggerProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoggerProperty</span></code></a>()</p></td>
 <td><p>Class designed to be inherited by other classes to add a logger property.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.Path" title="jsonargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.Path" title="jsonargparse.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
 </tbody>
@@ -778,6 +781,18 @@ virtualenv -p python3 venv
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.dict_to_namespace" title="jsonargparse.dict_to_namespace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict_to_namespace</span></code></a>(cfg_dict, Any])</p></td>
 <td><p>Converts a nested dictionary into a nested namespace.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.import_jsonnet" title="jsonargparse.import_jsonnet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_jsonnet</span></code></a>(importer)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.import_jsonschema" title="jsonargparse.import_jsonschema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_jsonschema</span></code></a>(importer)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.import_requests" title="jsonargparse.import_requests"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_requests</span></code></a>(importer)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.import_url_validator" title="jsonargparse.import_url_validator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_url_validator</span></code></a>(importer)</p></td>
+<td><p></p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.namespace_to_dict" title="jsonargparse.namespace_to_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">namespace_to_dict</span></code></a>(cfg_ns)</p></td>
 <td><p>Converts a nested namespace into a nested dictionary.</p></td>
 </tr>
@@ -789,6 +804,26 @@ virtualenv -p python3 venv
 </tr>
 </tbody>
 </table>
+<dl class="function">
+<dt id="jsonargparse.import_jsonschema">
+<code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">import_jsonschema</code><span class="sig-paren">(</span><em class="sig-param">importer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#import_jsonschema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.import_jsonschema" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="jsonargparse.import_jsonnet">
+<code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">import_jsonnet</code><span class="sig-paren">(</span><em class="sig-param">importer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#import_jsonnet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.import_jsonnet" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="jsonargparse.import_url_validator">
+<code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">import_url_validator</code><span class="sig-paren">(</span><em class="sig-param">importer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#import_url_validator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.import_url_validator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="jsonargparse.import_requests">
+<code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">import_requests</code><span class="sig-paren">(</span><em class="sig-param">importer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#import_requests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.import_requests" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="exception">
 <dt id="jsonargparse.ParserError">
 <em class="property">exception </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ParserError</code><a class="reference internal" href="_modules/jsonargparse.html#ParserError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ParserError" title="Permalink to this definition">¶</a></dt>
@@ -1444,7 +1479,6 @@ are supported. Additionally it accepts:</p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.8)"><strong>ImportError</strong></a> – If jsonschema package is not available.</p></li>
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – If a parameter is invalid.</p></li>
 <li><p><strong>jsonschema.exceptions.SchemaError</strong> – If the schema is invalid.</p></li>
 </ul>
@@ -1459,6 +1493,42 @@ are supported. Additionally it accepts:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.8)"><strong>TypeError</strong></a> – If the argument is not valid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="jsonargparse.ActionJsonnetExtVars">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">ActionJsonnetExtVars</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnetExtVars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnetExtVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.ActionJsonSchema</span></code></a></p>
+<p>Action to be used for jsonnet ext_vars.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.ActionJsonnetExtVars.__init__" title="jsonargparse.ActionJsonnetExtVars.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initializer for ActionJsonSchema instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="jsonargparse.ActionJsonnetExtVars.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#ActionJsonnetExtVars.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.ActionJsonnetExtVars.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer for ActionJsonSchema instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>schema</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.8)"><em>object</em></a>) – Schema to validate values against.</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – If a parameter is invalid.</p></li>
+<li><p><strong>jsonschema.exceptions.SchemaError</strong> – If the schema is invalid.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1504,7 +1574,6 @@ are supported. Additionally it accepts:</p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.8)"><strong>ImportError</strong></a> – If jsonnet or jsonschema packages are not available.</p></li>
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – If a parameter is invalid.</p></li>
 <li><p><strong>jsonschema.exceptions.SchemaError</strong> – If the schema is invalid.</p></li>
 </ul>

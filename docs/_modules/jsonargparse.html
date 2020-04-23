@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.25.4 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse 2.26.0 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.25.4
+                2.26.0
               </div>
             
           
@@ -150,9 +150,11 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">importlib.util</span>
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Action</span><span class="p">,</span> <span class="n">OPTIONAL</span><span class="p">,</span> <span class="n">REMAINDER</span><span class="p">,</span> <span class="n">SUPPRESS</span><span class="p">,</span> <span class="n">PARSER</span><span class="p">,</span> <span class="n">ONE_OR_MORE</span><span class="p">,</span> <span class="n">ZERO_OR_MORE</span>
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentError</span><span class="p">,</span> <span class="n">_UNRECOGNIZED_ARGS_ATTR</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
@@ -164,38 +166,51 @@
 <span class="k">except</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">contextlib2</span> <span class="kn">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>  <span class="c1"># type: ignore</span>
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">yaml</span>
-<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-    <span class="n">yaml</span> <span class="o">=</span> <span class="n">ex</span>  <span class="c1"># type: ignore</span>
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">jsonschema</span>
-    <span class="kn">from</span> <span class="nn">jsonschema</span> <span class="kn">import</span> <span class="n">Draft4Validator</span> <span class="k">as</span> <span class="n">jsonvalidator</span>
-<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-    <span class="n">jsonschema</span> <span class="o">=</span> <span class="n">jsonvalidator</span> <span class="o">=</span> <span class="n">ex</span>
+<span class="n">jsonschema</span> <span class="o">=</span> <span class="n">jsonvalidator</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_spec</span><span class="p">(</span><span class="s1">&#39;jsonschema&#39;</span><span class="p">)</span>
+<span class="n">_jsonnet</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_spec</span><span class="p">(</span><span class="s1">&#39;_jsonnet&#39;</span><span class="p">)</span>
+<span class="n">url_validator</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_spec</span><span class="p">(</span><span class="s1">&#39;validators.url&#39;</span><span class="p">)</span>
+<span class="n">requests</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_spec</span><span class="p">(</span><span class="s1">&#39;requests&#39;</span><span class="p">)</span>
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">_jsonnet</span>
-<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-    <span class="n">_jsonnet</span> <span class="o">=</span> <span class="n">ex</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">validators.url</span> <span class="kn">import</span> <span class="n">url</span> <span class="k">as</span> <span class="n">url_validator</span>
-<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-    <span class="n">url_validator</span> <span class="o">=</span> <span class="n">ex</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">requests</span>
-<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-    <span class="n">requests</span> <span class="o">=</span> <span class="n">ex</span>  <span class="c1"># type: ignore</span>
-
-<span class="n">jsonschema_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">else</span> <span class="kc">True</span>
-<span class="n">jsonnet_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_jsonnet</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">jsonschema_support</span> <span class="k">else</span> <span class="kc">True</span>
-<span class="n">url_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">url_validator</span><span class="p">,</span> <span class="n">requests</span><span class="p">]])</span> <span class="k">else</span> <span class="kc">True</span>
+<span class="n">jsonschema_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">jsonschema</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">True</span>
+<span class="n">jsonnet_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_jsonnet</span><span class="p">,</span> <span class="n">jsonschema</span><span class="p">])</span> <span class="k">else</span> <span class="kc">True</span>
+<span class="n">url_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">url_validator</span><span class="p">,</span> <span class="n">requests</span><span class="p">])</span> <span class="k">else</span> <span class="kc">True</span>
 
 
-<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;2.25.4&#39;</span>
+<div class="viewcode-block" id="import_jsonschema"><a class="viewcode-back" href="../index.html#jsonargparse.import_jsonschema">[docs]</a><span class="k">def</span> <span class="nf">import_jsonschema</span><span class="p">(</span><span class="n">importer</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">jsonschema</span><span class="p">,</span> <span class="n">jsonvalidator</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">jsonschema</span>
+        <span class="kn">from</span> <span class="nn">jsonschema</span> <span class="kn">import</span> <span class="n">Draft4Validator</span> <span class="k">as</span> <span class="n">jsonvalidator</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;jsonschema package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="import_jsonnet"><a class="viewcode-back" href="../index.html#jsonargparse.import_jsonnet">[docs]</a><span class="k">def</span> <span class="nf">import_jsonnet</span><span class="p">(</span><span class="n">importer</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">_jsonnet</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">_jsonnet</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;jsonnet package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="import_url_validator"><a class="viewcode-back" href="../index.html#jsonargparse.import_url_validator">[docs]</a><span class="k">def</span> <span class="nf">import_url_validator</span><span class="p">(</span><span class="n">importer</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">url_validator</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">validators.url</span> <span class="kn">import</span> <span class="n">url</span> <span class="k">as</span> <span class="n">url_validator</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;validators package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="import_requests"><a class="viewcode-back" href="../index.html#jsonargparse.import_requests">[docs]</a><span class="k">def</span> <span class="nf">import_requests</span><span class="p">(</span><span class="n">importer</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">requests</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">requests</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;requests package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span></div>
+
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;2.26.0&#39;</span>
 
 
 <span class="n">meta_keys</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;__cwd__&#39;</span><span class="p">,</span> <span class="s1">&#39;__path__&#39;</span><span class="p">}</span>
@@ -363,8 +378,6 @@
 <span class="sd">            default_env (bool): Set the default value on whether to parse environment variables.</span>
 <span class="sd">            default_meta (bool): Set the default value on whether to include metadata in config objects.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">yaml</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;PyYAML package is required :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">yaml</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formatter_class</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">formatter_class</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;default_argparse&#39;</span><span class="p">}:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The only accepted values for formatter_class are {&quot;default&quot;, &quot;default_argparse&quot;} or a HelpFormatter class.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">formatter_class</span> <span class="o">==</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span>
@@ -390,8 +403,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--version&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;version&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(prog)s</span><span class="s1"> &#39;</span><span class="o">+</span><span class="n">version</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">parser_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;jsonnet&#39;</span><span class="p">}:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The only accepted values for parser_mode are {&quot;yaml&quot;, &quot;jsonnet&quot;}.&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">parser_mode</span> <span class="o">==</span> <span class="s1">&#39;jsonnet&#39;</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_jsonnet</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;jsonnet package is required for parser_mode=jsonnet :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">_jsonnet</span><span class="p">))</span></div>
+        <span class="k">if</span> <span class="n">parser_mode</span> <span class="o">==</span> <span class="s1">&#39;jsonnet&#39;</span><span class="p">:</span>
+            <span class="n">import_jsonnet</span><span class="p">(</span><span class="s1">&#39;parser_mode=jsonnet&#39;</span><span class="p">)</span></div>
 
 
     <span class="nd">@property</span>
@@ -643,7 +656,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser_mode</span> <span class="o">==</span> <span class="s1">&#39;jsonnet&#39;</span><span class="p">:</span>
             <span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span> <span class="o">=</span> <span class="n">ActionJsonnet</span><span class="o">.</span><span class="n">split_ext_vars</span><span class="p">(</span><span class="n">ext_vars</span><span class="p">)</span>
-            <span class="n">cfg_str</span> <span class="o">=</span> <span class="n">_jsonnet</span><span class="o">.</span><span class="n">evaluate_snippet</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">,</span> <span class="n">cfg_str</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span><span class="o">=</span><span class="n">ext_codes</span><span class="p">)</span>
+            <span class="n">cfg_str</span> <span class="o">=</span> <span class="n">_jsonnet</span><span class="o">.</span><span class="n">evaluate_snippet</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">,</span> <span class="n">cfg_str</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span><span class="o">=</span><span class="n">ext_codes</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">cfg</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">cfg_str</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
@@ -1491,13 +1504,11 @@
 <span class="sd">            schema (str or object): Schema to validate values against.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            ImportError: If jsonschema package is not available.</span>
 <span class="sd">            ValueError: If a parameter is invalid.</span>
 <span class="sd">            jsonschema.exceptions.SchemaError: If the schema is invalid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;schema&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;jsonschema is required by ActionJsonSchema :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">))</span>
+            <span class="n">import_jsonschema</span><span class="p">(</span><span class="s1">&#39;ActionJsonSchema&#39;</span><span class="p">)</span>
             <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;schema&#39;</span><span class="p">})</span>
             <span class="n">schema</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -1574,6 +1585,12 @@
         <span class="k">return</span> <span class="n">jsonschema</span><span class="o">.</span><span class="n">validators</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">validator_class</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="n">set_defaults</span><span class="p">})</span></div>
 
 
+<div class="viewcode-block" id="ActionJsonnetExtVars"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnetExtVars">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonnetExtVars</span><span class="p">(</span><span class="n">ActionJsonSchema</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Action to be used for jsonnet ext_vars.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ActionJsonnetExtVars.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnetExtVars.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;object&#39;</span><span class="p">})</span></div></div>
+
+
 <div class="viewcode-block" id="ActionJsonnet"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonnet</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to parse a jsonnet, optionally validating against a jsonschema.&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="ActionJsonnet.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1584,21 +1601,18 @@
 <span class="sd">            schema (str or object or None): Schema to validate values against. Keyword argument required even if schema=None.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            ImportError: If jsonnet or jsonschema packages are not available.</span>
 <span class="sd">            ValueError: If a parameter is invalid.</span>
 <span class="sd">            jsonschema.exceptions.SchemaError: If the schema is invalid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;ext_vars&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="s1">&#39;schema&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_jsonnet</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;jsonnet is required by ActionJsonnet :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">_jsonnet</span><span class="p">))</span>
+            <span class="n">import_jsonnet</span><span class="p">(</span><span class="s1">&#39;ActionJsonnet&#39;</span><span class="p">)</span>
             <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;schema&#39;</span><span class="p">,</span> <span class="s1">&#39;ext_vars&#39;</span><span class="p">})</span>
             <span class="k">if</span> <span class="s1">&#39;ext_vars&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ext_vars&#39;</span><span class="p">],</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ext_vars has to be either None or a string.&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_ext_vars</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ext_vars&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;ext_vars&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="n">schema</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;schema&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;jsonschema is required by ActionJsonnet :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">))</span>
+                <span class="n">import_jsonschema</span><span class="p">(</span><span class="s1">&#39;ActionJsonnet&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">schema</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
@@ -2126,7 +2140,7 @@
             <span class="n">abs_path</span> <span class="o">=</span> <span class="n">path</span>
             <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;^file:///?&#39;</span><span class="p">,</span> <span class="n">abs_path</span><span class="p">):</span>
                 <span class="n">abs_path</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^file:///?&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="n">abs_path</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s1">&#39;u&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="n">url_validator</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;u&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="n">url_validator</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
                 <span class="n">is_url</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">elif</span> <span class="s1">&#39;f&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">or</span> <span class="s1">&#39;d&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">:</span>
                 <span class="n">abs_path</span> <span class="o">=</span> <span class="n">abs_path</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="n">abs_path</span><span class="p">)</span>
@@ -2135,7 +2149,8 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">skip_check</span> <span class="ow">and</span> <span class="n">is_url</span><span class="p">:</span>
             <span class="k">if</span> <span class="s1">&#39;r&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">:</span>
-                <span class="n">requests</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+                <span class="n">import_requests</span><span class="p">(</span><span class="s1">&#39;Path with URL support&#39;</span><span class="p">)</span>
+                <span class="n">requests</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="n">skip_check</span><span class="p">:</span>
             <span class="n">ptype</span> <span class="o">=</span> <span class="s1">&#39;Directory&#39;</span> <span class="k">if</span> <span class="s1">&#39;d&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="k">else</span> <span class="s1">&#39;File&#39;</span>
             <span class="k">if</span> <span class="s1">&#39;c&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">:</span>
@@ -2198,8 +2213,7 @@
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span> <span class="k">as</span> <span class="n">input_file</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">input_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;requests package is required for URL support in Path.&#39;</span><span class="p">)</span>
+            <span class="n">import_requests</span><span class="p">(</span><span class="s1">&#39;Path with URL support&#39;</span><span class="p">)</span>
             <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span><span class="p">)</span>
             <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
             <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span></div>
@@ -2213,8 +2227,7 @@
         <span class="k">if</span> <span class="s1">&#39;f&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="s1">&#39;d&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Both modes &quot;f&quot; and &quot;d&quot; not possible.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="s1">&#39;u&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">url_validator</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;validators package is required for URL support in Path.&#39;</span><span class="p">)</span>
+            <span class="n">import_url_validator</span><span class="p">(</span><span class="s1">&#39;Path with URL support&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="s1">&#39;d&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Both modes &quot;d&quot; and &quot;u&quot; not possible.&#39;</span><span class="p">)</span></div>
 
@@ -2319,12 +2332,6 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">-</span><span class="n">keys</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected keyword arguments: &#39;</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">-</span><span class="n">keys</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
-
-
-<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_jsonnet</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-    <span class="n">ActionJsonnetExtVars</span> <span class="o">=</span> <span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;object&#39;</span><span class="p">})</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">ActionJsonnetExtVars</span> <span class="o">=</span> <span class="n">_jsonnet</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_jsonnet</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">else</span> <span class="n">jsonvalidator</span>
 </pre></div>
 
            </div>
