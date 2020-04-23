@@ -340,7 +340,7 @@ dictionary of variables. Its use would be as follows:
     from jsonargparse import ArgumentParser, ActionJsonnet, ActionJsonnetExtVars
     parser = ArgumentParser()
     parser.add_argument('--in_ext_vars',
-        action=ActionJsonnetExtVars)
+        action=ActionJsonnetExtVars())
     parser.add_argument('--in_jsonnet',
         action=ActionJsonnet(ext_vars='in_ext_vars'))
 
