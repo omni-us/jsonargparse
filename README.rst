@@ -627,7 +627,9 @@ disabled. To enable it the :code:`logger` argument should be set when creating
 an :class:`.ArgumentParser` object. The intended use is to give as value an
 already existing logger object which is used for the whole application. Though
 for convenience to enable a default logger the :code:`logger` argument can also
-receive :code:`True` or a valid logging level.
+receive :code:`True` or a string which sets the name of the logger or a
+dictionary that can include the name and the level, e.g. :code:`{"name":
+"myapp", "level": "ERROR"}`.
 
 
 Contributing
