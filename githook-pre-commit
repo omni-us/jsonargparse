@@ -58,7 +58,7 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
 done
 
 ## Run unit tests ##
-./setup.py test;
+./setup.py test_coverage;
 [ "$?" != "0" ] && exit 1;
 
 ## If bumping version, check wheel ok for pypi ##

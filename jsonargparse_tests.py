@@ -822,7 +822,7 @@ class JsonargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required :: '+str(jsonvalidator))
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     def test_jsonschema(self):
         """Test the use of ActionJsonSchema."""
 
@@ -914,7 +914,7 @@ class JsonargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
-    @unittest.skipIf(not jsonnet_support, 'jsonnet and jsonschema packages are required :: '+str(_jsonnet)+' :: '+str(jsonvalidator))
+    @unittest.skipIf(not jsonnet_support, 'jsonnet and jsonschema packages are required')
     def test_mode_jsonnet(self):
         """Test the use of parser_mode='jsonnet'."""
 
@@ -951,12 +951,12 @@ class JsonargparseTests(unittest.TestCase):
         shutil.rmtree(tmpdir)
 
 
-    @unittest.skipIf(not jsonnet_support, 'jsonnet and jsonschema packages are required :: '+str(_jsonnet)+' :: '+str(jsonvalidator))
+    @unittest.skipIf(not jsonnet_support, 'jsonnet and jsonschema packages are required')
     def test_actionjsonnet(self):
         """Test the use of ActionJsonnet."""
         parser = ArgumentParser()
         parser.add_argument('--input.ext_vars',
-            action=ActionJsonnetExtVars)
+            action=ActionJsonnetExtVars())
         parser.add_argument('--input.jsonnet',
             action=ActionJsonnet(ext_vars='input.ext_vars'))
 
@@ -1017,7 +1017,7 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionOperators(expr='<')))
 
 
-    @unittest.skipIf(not url_support, 'validators and requests packages are required :: '+str(url_validator)+' :: '+str(requests))
+    @unittest.skipIf(not url_support, 'validators and requests packages are required')
     def test_urls(self):
         """Test the use of Path with URLs."""
         parser = ArgumentParser()

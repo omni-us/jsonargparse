@@ -32,7 +32,7 @@ try:
             cov.save()
             cov.report()
             cov.html_report(directory='htmlcov')
-            print('\nSaved html report to directory htmlcov')
+            print('\nSaved html report to htmlcov directory.')
 
     CMDCLASS['test_coverage'] = CoverageCommand
 
@@ -50,6 +50,5 @@ except Exception:
 
 
 ## Run setuptools setup ##
-setup(version=__import__(NAME).__version__,  # type: ignore
-      long_description=LONG_DESCRIPTION,
+setup(long_description=LONG_DESCRIPTION,
       cmdclass=CMDCLASS)

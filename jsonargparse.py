@@ -3,9 +3,11 @@ import re
 import sys
 import glob
 import json
+import yaml
 import logging
 import operator
 import argparse
+import importlib.util
 from argparse import Action, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE
 from argparse import ArgumentError, _UNRECOGNIZED_ARGS_ATTR
 from copy import deepcopy
@@ -17,35 +19,48 @@ try:
 except:
     from contextlib2 import contextmanager, redirect_stderr  # type: ignore
 
-try:
-    import yaml
-except Exception as ex:
-    yaml = ex  # type: ignore
 
-try:
-    import jsonschema
-    from jsonschema import Draft4Validator as jsonvalidator
-except Exception as ex:
-    jsonschema = jsonvalidator = ex
+jsonschema = jsonvalidator = importlib.util.find_spec('jsonschema')
+_jsonnet = importlib.util.find_spec('_jsonnet')
+url_validator = importlib.util.find_spec('validators.url')
+requests = importlib.util.find_spec('requests')
 
-try:
-    import _jsonnet
-except Exception as ex:
-    _jsonnet = ex
+jsonschema_support = False if jsonschema is None else True
+jsonnet_support = False if any(x is None for x in [_jsonnet, jsonschema]) else True
+url_support = False if any(x is None for x in [url_validator, requests]) else True
 
-try:
-    from validators.url import url as url_validator
-except Exception as ex:
-    url_validator = ex
 
-try:
-    import requests
-except Exception as ex:
-    requests = ex  # type: ignore
+def import_jsonschema(importer):
+    global jsonschema, jsonvalidator
+    try:
+        import jsonschema
+        from jsonschema import Draft4Validator as jsonvalidator
+    except Exception as ex:
+        raise ImportError('jsonschema package is required by '+importer+' :: '+str(ex))
 
-jsonschema_support = False if isinstance(jsonvalidator, Exception) else True
-jsonnet_support = False if isinstance(_jsonnet, Exception) or not jsonschema_support else True
-url_support = False if any([isinstance(x, Exception) for x in [url_validator, requests]]) else True
+
+def import_jsonnet(importer):
+    global _jsonnet
+    try:
+        import _jsonnet
+    except Exception as ex:
+        raise ImportError('jsonnet package is required by '+importer+' :: '+str(ex))
+
+
+def import_url_validator(importer):
+    global url_validator
+    try:
+        from validators.url import url as url_validator
+    except Exception as ex:
+        raise ImportError('validators package is required by '+importer+' :: '+str(ex))
+
+
+def import_requests(importer):
+    global requests
+    try:
+        import requests
+    except Exception as ex:
+        raise ImportError('requests package is required by '+importer+' :: '+str(ex))
 
 
 __version__ = '2.25.4'
@@ -216,8 +231,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             default_env (bool): Set the default value on whether to parse environment variables.
             default_meta (bool): Set the default value on whether to include metadata in config objects.
         """
-        if isinstance(yaml, Exception):
-            raise ImportError('PyYAML package is required :: '+str(yaml))
         if isinstance(formatter_class, str) and formatter_class not in {'default', 'default_argparse'}:
             raise ValueError('The only accepted values for formatter_class are {"default", "default_argparse"} or a HelpFormatter class.')
         if formatter_class == 'default':
@@ -243,8 +256,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             self.add_argument('--version', action='version', version='%(prog)s '+version)
         if parser_mode not in {'yaml', 'jsonnet'}:
             raise ValueError('The only accepted values for parser_mode are {"yaml", "jsonnet"}.')
-        if parser_mode == 'jsonnet' and isinstance(_jsonnet, Exception):
-            raise ImportError('jsonnet package is required for parser_mode=jsonnet :: '+str(_jsonnet))
+        if parser_mode == 'jsonnet':
+            import_jsonnet('parser_mode=jsonnet')
 
 
     @property
@@ -496,7 +509,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         """
         if self.parser_mode == 'jsonnet':
             ext_vars, ext_codes = ActionJsonnet.split_ext_vars(ext_vars)
-            cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)
+            cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)  # type: ignore
         try:
             cfg = yaml.safe_load(cfg_str)
         except Exception as ex:
@@ -1344,13 +1357,11 @@ class ActionJsonSchema(Action):
             schema (str or object): Schema to validate values against.
 
         Raises:
-            ImportError: If jsonschema package is not available.
             ValueError: If a parameter is invalid.
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
         if 'schema' in kwargs:
-            if isinstance(jsonvalidator, Exception):
-                raise ImportError('jsonschema is required by ActionJsonSchema :: '+str(jsonvalidator))
+            import_jsonschema('ActionJsonSchema')
             _check_unknown_kwargs(kwargs, {'schema'})
             schema = kwargs['schema']
             if isinstance(schema, str):
@@ -1427,6 +1438,12 @@ class ActionJsonSchema(Action):
         return jsonschema.validators.extend(validator_class, {'properties': set_defaults})
 
 
+class ActionJsonnetExtVars(ActionJsonSchema):
+    """Action to be used for jsonnet ext_vars."""
+    def __init__(self, **kwargs):
+        super().__init__(schema={'type': 'object'})
+
+
 class ActionJsonnet(Action):
     """Action to parse a jsonnet, optionally validating against a jsonschema."""
     def __init__(self, **kwargs):
@@ -1437,21 +1454,18 @@ class ActionJsonnet(Action):
             schema (str or object or None): Schema to validate values against. Keyword argument required even if schema=None.
 
         Raises:
-            ImportError: If jsonnet or jsonschema packages are not available.
             ValueError: If a parameter is invalid.
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
         if 'ext_vars' in kwargs or 'schema' in kwargs:
-            if isinstance(_jsonnet, Exception):
-                raise ImportError('jsonnet is required by ActionJsonnet :: '+str(_jsonnet))
+            import_jsonnet('ActionJsonnet')
             _check_unknown_kwargs(kwargs, {'schema', 'ext_vars'})
             if 'ext_vars' in kwargs and not isinstance(kwargs['ext_vars'], (str, type(None))):
                 raise ValueError('ext_vars has to be either None or a string.')
             self._ext_vars = kwargs['ext_vars'] if 'ext_vars' in kwargs else None
             schema = kwargs['schema'] if 'schema' in kwargs else None
             if schema is not None:
-                if isinstance(jsonvalidator, Exception):
-                    raise ImportError('jsonschema is required by ActionJsonnet :: '+str(jsonvalidator))
+                import_jsonschema('ActionJsonnet')
                 if isinstance(schema, str):
                     try:
                         schema = yaml.safe_load(schema)
@@ -1979,7 +1993,7 @@ class Path(object):
             abs_path = path
             if re.match('^file:///?', abs_path):
                 abs_path = re.sub('^file:///?', '/', abs_path)
-            if 'u' in mode and url_validator(abs_path):
+            if 'u' in mode and url_validator(abs_path):  # type: ignore
                 is_url = True
             elif 'f' in mode or 'd' in mode:
                 abs_path = abs_path if os.path.isabs(abs_path) else os.path.join(cwd, abs_path)
@@ -1988,7 +2002,8 @@ class Path(object):
 
         if not skip_check and is_url:
             if 'r' in mode:
-                requests.head(abs_path).raise_for_status()
+                import_requests('Path with URL support')
+                requests.head(abs_path).raise_for_status()  # type: ignore
         elif not skip_check:
             ptype = 'Directory' if 'd' in mode else 'File'
             if 'c' in mode:
@@ -2051,8 +2066,7 @@ class Path(object):
             with open(self.abs_path, mode) as input_file:
                 return input_file.read()
         else:
-            if isinstance(requests, Exception):
-                raise ImportError('requests package is required for URL support in Path.')
+            import_requests('Path with URL support')
             response = requests.get(self.abs_path)
             response.raise_for_status()
             return response.text
@@ -2066,8 +2080,7 @@ class Path(object):
         if 'f' in mode and 'd' in mode:
             raise ValueError('Both modes "f" and "d" not possible.')
         if 'u' in mode:
-            if isinstance(url_validator, Exception):
-                raise ImportError('validators package is required for URL support in Path.')
+            import_url_validator('Path with URL support')
             if 'd' in mode:
                 raise ValueError('Both modes "d" and "u" not possible.')
 
@@ -2172,9 +2185,3 @@ def _check_unknown_kwargs(kwargs:Dict[str, Any], keys:Set[str]):
     """
     if len(set(kwargs.keys())-keys) > 0:
         raise ValueError('Unexpected keyword arguments: '+', '.join(set(kwargs.keys())-keys)+'.')
-
-
-if not isinstance(_jsonnet, Exception) and not isinstance(jsonvalidator, Exception):
-    ActionJsonnetExtVars = ActionJsonSchema(schema={'type': 'object'})
-else:
-    ActionJsonnetExtVars = _jsonnet if isinstance(_jsonnet, Exception) else jsonvalidator
