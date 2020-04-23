@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.26.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.26.1 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.26.0
+                2.26.1
               </div>
             
           
@@ -437,7 +437,7 @@ dictionary of variables. Its use would be as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ActionJsonnet</span><span class="p">,</span> <span class="n">ActionJsonnetExtVars</span>
 <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--in_ext_vars&#39;</span><span class="p">,</span>
-    <span class="n">action</span><span class="o">=</span><span class="n">ActionJsonnetExtVars</span><span class="p">)</span>
+    <span class="n">action</span><span class="o">=</span><span class="n">ActionJsonnetExtVars</span><span class="p">())</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--in_jsonnet&#39;</span><span class="p">,</span>
     <span class="n">action</span><span class="o">=</span><span class="n">ActionJsonnet</span><span class="p">(</span><span class="n">ext_vars</span><span class="o">=</span><span class="s1">&#39;in_ext_vars&#39;</span><span class="p">))</span>
 </pre></div>
@@ -675,7 +675,9 @@ disabled. To enable it the <code class="code docutils literal notranslate"><span
 an <a class="reference internal" href="#jsonargparse.ArgumentParser" title="jsonargparse.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a> object. The intended use is to give as value an
 already existing logger object which is used for the whole application. Though
 for convenience to enable a default logger the <code class="code docutils literal notranslate"><span class="pre">logger</span></code> argument can also
-receive <code class="code docutils literal notranslate"><span class="pre">True</span></code> or a valid logging level.</p>
+receive <code class="code docutils literal notranslate"><span class="pre">True</span></code> or a string which sets the name of the logger or a
+dictionary that can include the name and the level, e.g. <code class="code docutils literal notranslate"><span class="pre">{&quot;name&quot;:</span>
+<span class="pre">&quot;myapp&quot;,</span> <span class="pre">&quot;level&quot;:</span> <span class="pre">&quot;ERROR&quot;}</span></code>.</p>
 </div>
 <div class="section" id="contributing">
 <h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
