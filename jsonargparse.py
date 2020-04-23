@@ -22,7 +22,7 @@ except:
 
 jsonschema = jsonvalidator = importlib.util.find_spec('jsonschema')
 _jsonnet = importlib.util.find_spec('_jsonnet')
-url_validator = importlib.util.find_spec('validators.url')
+url_validator = importlib.util.find_spec('validators')
 requests = importlib.util.find_spec('requests')
 
 jsonschema_support = False if jsonschema is None else True

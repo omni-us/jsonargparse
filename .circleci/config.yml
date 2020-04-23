@@ -21,6 +21,8 @@ jobs:
       - run:
           name: Run unit tests
           command: |
+            pip3 install --user $(ls ./dist/*.whl)[test]
+            python3 -m jsonargparse_tests
             pip3 install --user $(ls ./dist/*.whl)[all,test]
             mkdir tests_report
             python3 -m subunit.run jsonargparse_tests | $HOME/.local/bin/subunit2junitxml > tests_report/unittest.xml
