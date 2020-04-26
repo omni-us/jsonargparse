@@ -34,7 +34,7 @@ def import_jsonschema(importer):
     global jsonschema, jsonvalidator
     try:
         import jsonschema
-        from jsonschema import Draft4Validator as jsonvalidator
+        from jsonschema import Draft7Validator as jsonvalidator
     except Exception as ex:
         raise ImportError('jsonschema package is required by '+importer+' :: '+str(ex))
 
@@ -133,10 +133,12 @@ class LoggerProperty:
         if logger is None or (isinstance(logger, bool) and not logger):
             self._logger = logging.Logger('null')
             self._logger.addHandler(logging.NullHandler())
-        elif isinstance(logger, (bool, int, str, dict)) and logger:
+        elif isinstance(logger, (bool, str, dict)) and logger:
             levels = {'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'}
             level = logging.INFO
-            if isinstance(logger, dict) and 'level' in logger and logger['level'] in levels:
+            if isinstance(logger, dict) and 'level' in logger:
+                if logger['level'] not in levels:
+                    raise ValueError('Logger level must be one of '+str(levels)+'.')
                 level = getattr(logging, logger['level'])
             name = type(self).__name__
             if isinstance(logger, str):
@@ -1554,7 +1556,7 @@ class ActionJsonnet(Action):
         """
         ext_vars, ext_codes = self.split_ext_vars(ext_vars)
         fpath = None
-        fname = ''
+        fname = 'snippet'
         snippet = jsonnet
         try:
             fpath = Path(jsonnet, mode=config_read_mode)
@@ -1565,7 +1567,7 @@ class ActionJsonnet(Action):
         try:
             values = yaml.safe_load(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
         except Exception as ex:
-            raise type(ex)('Problems evaluating jsonnet snippet :: '+str(ex))
+            raise ParserError('Problems evaluating jsonnet "'+fname+'" :: '+str(ex))
         if self._validator is not None:
             self._validator.validate(values)
         if with_meta and isinstance(values, dict) and fpath is not None:
