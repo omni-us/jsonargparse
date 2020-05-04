@@ -402,7 +402,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True,
-                  with_meta:bool=None, _skip_check:bool=False, _base=None) -> SimpleNamespace:
+                   with_meta:bool=None, _skip_check:bool=False, _base=None) -> SimpleNamespace:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
@@ -531,6 +531,65 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 else:
                     cfg[action.dest] = value
         return cfg
+
+
+    def parse_object(self, cfg_obj:dict, cfg_base=None, env:bool=None, defaults:bool=True, nested:bool=True,
+                     with_meta:bool=None, _skip_check:bool=False) -> SimpleNamespace:
+        """Parses configuration given as an object.
+
+        Args:
+            cfg_obj (dict): The configuration object.
+            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
+            defaults (bool): Whether to merge with the parser's defaults.
+            nested (bool): Whether the namespace should be nested.
+            with_meta (bool): Whether to include metadata in config object.
+
+        Returns:
+            types.SimpleNamespace: An object with all parsed values as attributes.
+
+        Raises:
+            ParserError: If there is a parsing error and error_handler=None.
+        """
+        if env is None and self._default_env:
+            env = True
+
+        try:
+            cfg = vars(_dict_to_flat_namespace(cfg_obj))
+
+            ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults)
+
+            if nested:
+                cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
+
+            if cfg_base is not None:
+                if isinstance(cfg_base, SimpleNamespace):
+                    cfg_base = namespace_to_dict(cfg_base)
+                cfg = self._merge_config(cfg, cfg_base)
+
+            if env:
+                cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested, _skip_check=True))
+
+            elif defaults:
+                cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
+
+            if not (with_meta or (with_meta is None and self._default_meta)):
+                cfg = strip_meta(cfg)
+
+            cfg_ns = dict_to_namespace(cfg)
+            if not _skip_check:
+                self.check_config(cfg_ns)
+
+            if with_meta or (with_meta is None and self._default_meta):
+                if hasattr(cfg_ns, '__cwd__'):
+                    if os.getcwd() not in cfg_ns.__cwd__:
+                        cfg_ns.__cwd__.insert(0, os.getcwd())
+                else:
+                    cfg_ns.__cwd__ = [os.getcwd()]
+
+        except (TypeError, KeyError) as ex:
+            self.error(str(ex))
+
+        return cfg_ns
 
 
     def dump(self, cfg:Union[SimpleNamespace, dict], format:str='parser_mode', skip_none:bool=True, skip_check:bool=False) -> str:
@@ -1855,7 +1914,10 @@ class ActionPath(Action):
             kwargs['_mode'] = self._mode
             kwargs['_skip_check'] = self._skip_check
             return ActionPath(**kwargs)
-        setattr(args[1], self.dest, self._check_type(args[2]))
+        if hasattr(self, 'nargs') and self.nargs == '?' and args[2] is None:
+            setattr(args[1], self.dest, args[2])
+        else:
+            setattr(args[1], self.dest, self._check_type(args[2]))
 
     def _check_type(self, value, cfg=None, islist=None):
         islist = _is_action_value_list(self) if islist is None else islist
