@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import stat
 import glob
 import json
 import yaml
@@ -1416,6 +1417,7 @@ class ActionJsonSchema(Action):
 
         Args:
             schema (str or object): Schema to validate values against.
+            with_meta (bool): Whether to include metadata (def.=True).
 
         Raises:
             ValueError: If a parameter is invalid.
@@ -1423,7 +1425,7 @@ class ActionJsonSchema(Action):
         """
         if 'schema' in kwargs:
             import_jsonschema('ActionJsonSchema')
-            _check_unknown_kwargs(kwargs, {'schema'})
+            _check_unknown_kwargs(kwargs, {'schema', 'with_meta'})
             schema = kwargs['schema']
             if isinstance(schema, str):
                 try:
@@ -1432,10 +1434,12 @@ class ActionJsonSchema(Action):
                     raise type(ex)('Problems parsing schema :: '+str(ex))
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
+            self._with_meta = kwargs['with_meta'] if 'with_meta' in kwargs else True
         elif '_validator' not in kwargs:
             raise ValueError('Expected schema keyword argument.')
         else:
             self._validator = kwargs.pop('_validator')
+            self._with_meta = kwargs.pop('_with_meta')
             kwargs['type'] = str
             super().__init__(**kwargs)
 
@@ -1447,10 +1451,14 @@ class ActionJsonSchema(Action):
         """
         if len(args) == 0:
             kwargs['_validator'] = self._validator
+            kwargs['_with_meta'] = self._with_meta
             if 'help' in kwargs and '%s' in kwargs['help']:
                 kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, indent=2, sort_keys=True)
             return ActionJsonSchema(**kwargs)
-        setattr(args[1], self.dest, self._check_type(args[2]))
+        val = self._check_type(args[2])
+        if not self._with_meta:
+            val = strip_meta(val)
+        setattr(args[1], self.dest, val)
 
     def _check_type(self, value, cfg=None):
         islist = _is_action_value_list(self)
@@ -1502,7 +1510,7 @@ class ActionJsonSchema(Action):
 class ActionJsonnetExtVars(ActionJsonSchema):
     """Action to be used for jsonnet ext_vars."""
     def __init__(self, **kwargs):
-        super().__init__(schema={'type': 'object'})
+        super().__init__(schema={'type': 'object'}, with_meta=False)
 
 
 class ActionJsonnet(Action):
@@ -2085,7 +2093,7 @@ class Path(object):
                     raise TypeError(ptype+' does not exist: '+abs_path)
                 if 'd' in mode and not os.path.isdir(abs_path):
                     raise TypeError('Path is not a directory: '+abs_path)
-                if 'f' in mode and not os.path.isfile(abs_path):
+                if 'f' in mode and not (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
                     raise TypeError('Path is not a file: '+abs_path)
             if 'r' in mode and not os.access(abs_path, os.R_OK):
                 raise TypeError(ptype+' is not readable: '+abs_path)
@@ -2095,7 +2103,7 @@ class Path(object):
                 raise TypeError(ptype+' is not executable: '+abs_path)
             if 'D' in mode and os.path.isdir(abs_path):
                 raise TypeError('Path is a directory: '+abs_path)
-            if 'F' in mode and os.path.isfile(abs_path):
+            if 'F' in mode and (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
                 raise TypeError('Path is a file: '+abs_path)
             if 'R' in mode and os.access(abs_path, os.R_OK):
                 raise TypeError(ptype+' is readable: '+abs_path)
