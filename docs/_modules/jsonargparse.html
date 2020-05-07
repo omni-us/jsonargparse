@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.28.0 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse 2.29.0 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.28.0
+                2.29.0
               </div>
             
           
@@ -148,6 +148,7 @@
 <span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">stat</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">yaml</span>
@@ -210,7 +211,7 @@
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;requests package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span></div>
 
 
-<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;2.28.0&#39;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;2.29.0&#39;</span>
 
 
 <span class="n">meta_keys</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;__cwd__&#39;</span><span class="p">,</span> <span class="s1">&#39;__path__&#39;</span><span class="p">}</span>
@@ -1563,6 +1564,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            schema (str or object): Schema to validate values against.</span>
+<span class="sd">            with_meta (bool): Whether to include metadata (def.=True).</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If a parameter is invalid.</span>
@@ -1570,7 +1572,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;schema&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">import_jsonschema</span><span class="p">(</span><span class="s1">&#39;ActionJsonSchema&#39;</span><span class="p">)</span>
-            <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;schema&#39;</span><span class="p">})</span>
+            <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;schema&#39;</span><span class="p">,</span> <span class="s1">&#39;with_meta&#39;</span><span class="p">})</span>
             <span class="n">schema</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
@@ -1579,10 +1581,12 @@
                     <span class="k">raise</span> <span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="p">)(</span><span class="s1">&#39;Problems parsing schema :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
             <span class="n">jsonvalidator</span><span class="o">.</span><span class="n">check_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extend_jsonvalidator_with_default</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">)(</span><span class="n">schema</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_with_meta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;with_meta&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;with_meta&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">True</span>
         <span class="k">elif</span> <span class="s1">&#39;_validator&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected schema keyword argument.&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_validator&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_with_meta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_with_meta&#39;</span><span class="p">)</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
@@ -1594,10 +1598,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_validator&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_with_meta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_with_meta</span>
             <span class="k">if</span> <span class="s1">&#39;help&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;help&#39;</span><span class="p">]:</span>
                 <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;help&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;help&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">ActionJsonSchema</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span></div>
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_with_meta</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">strip_meta</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">islist</span> <span class="o">=</span> <span class="n">_is_action_value_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -1649,7 +1657,7 @@
 <div class="viewcode-block" id="ActionJsonnetExtVars"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnetExtVars">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonnetExtVars</span><span class="p">(</span><span class="n">ActionJsonSchema</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to be used for jsonnet ext_vars.&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="ActionJsonnetExtVars.__init__"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnetExtVars.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;object&#39;</span><span class="p">})</span></div></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;object&#39;</span><span class="p">},</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="ActionJsonnet"><a class="viewcode-back" href="../index.html#jsonargparse.ActionJsonnet">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonnet</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
@@ -2232,7 +2240,7 @@
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; does not exist: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
                 <span class="k">if</span> <span class="s1">&#39;d&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path is not a directory: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
-                <span class="k">if</span> <span class="s1">&#39;f&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s1">&#39;f&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span> <span class="ow">or</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_ISFIFO</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span><span class="o">.</span><span class="n">st_mode</span><span class="p">)):</span>
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path is not a file: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
             <span class="k">if</span> <span class="s1">&#39;r&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; is not readable: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
@@ -2242,7 +2250,7 @@
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; is not executable: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
             <span class="k">if</span> <span class="s1">&#39;D&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path is a directory: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s1">&#39;F&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">abs_path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;F&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span> <span class="ow">or</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_ISFIFO</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">abs_path</span><span class="p">)</span><span class="o">.</span><span class="n">st_mode</span><span class="p">)):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path is a file: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
             <span class="k">if</span> <span class="s1">&#39;R&#39;</span> <span class="ow">in</span> <span class="n">mode</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">ptype</span><span class="o">+</span><span class="s1">&#39; is readable: &#39;</span><span class="o">+</span><span class="n">abs_path</span><span class="p">)</span>
