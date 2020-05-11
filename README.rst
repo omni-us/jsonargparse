@@ -442,15 +442,19 @@ Then the :code:`'u'` flag can be used to parse URLs. For example if it is
 desired that an argument can be either a readable file or URL the action would
 be initialized as :code:`ActionPath(mode='fur')`. If the value appears to be a
 URL according to :func:`validators.url.url` then a HEAD request would be
-triggered to check if it is accessible, and if so, the parsing succeeds.
+triggered to check if it is accessible, and if so, the parsing succeeds. To get
+the content of the parsed path, without needing to care if it is a local file or
+a URL, the :func:`jsonargparse.Path.get_content` can be used.
 
-There is also URL support for functions and classes that load from paths, namely
+If after importing jsonargparse you run
+:code:`jsonargparse.set_url_support(True)`, the following functions and classes
+will also support loading from URLs:
 :func:`jsonargparse.ArgumentParser.parse_path`,
 :func:`jsonargparse.ArgumentParser.get_defaults` (:code:`default_config_files`
 argument), :class:`.ActionConfigFile`, :class:`.ActionJsonSchema`,
-:class:`.ActionJsonnet` and :class:`.ActionParser`. This means that for example
-that a tool that can receive a configuration file via :class:`.ActionConfigFile`
-is able to get the config file from a URL, that is something like the following
+:class:`.ActionJsonnet` and :class:`.ActionParser`. This means for example that
+a tool that can receive a configuration file via :class:`.ActionConfigFile` is
+able to get the config file from a URL, that is something like the following
 would work:
 
 .. code-block:: bash

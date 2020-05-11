@@ -68,7 +68,17 @@ __version__ = '2.29.0'
 
 
 meta_keys = {'__cwd__', '__path__'}
-config_read_mode = 'fur' if url_support else 'fr'
+config_read_mode = 'fr'
+
+
+def set_url_support(enabled):
+    """Enables/disables URL support for config read mode."""
+    if enabled and not url_support:
+        pkg = ['validators', 'requests']
+        missing = {pkg[n] for n, x in enumerate([url_validator, requests]) if x is None}
+        raise ImportError('Missing packages for URL support: '+str(missing))
+    global config_read_mode
+    config_read_mode = 'fur' if enabled else 'fr'
 
 
 class ParserError(Exception):

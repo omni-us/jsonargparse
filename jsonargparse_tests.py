@@ -1020,6 +1020,7 @@ class JsonargparseTests(unittest.TestCase):
     @unittest.skipIf(not url_support, 'validators and requests packages are required')
     def test_urls(self):
         """Test the use of Path with URLs."""
+        set_url_support(True)
         parser = ArgumentParser()
         parser.add_argument('--cfg',
             action=ActionConfigFile)
