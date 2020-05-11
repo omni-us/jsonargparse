@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.29.0 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 2.30.0 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.29.0
+                2.30.0
               </div>
             
           
@@ -520,14 +520,18 @@ be installed along with jsonargparse if the <em>all</em> extras requires is chos
 desired that an argument can be either a readable file or URL the action would
 be initialized as <code class="code docutils literal notranslate"><span class="pre">ActionPath(mode='fur')</span></code>. If the value appears to be a
 URL according to <code class="xref py py-func docutils literal notranslate"><span class="pre">validators.url.url()</span></code> then a HEAD request would be
-triggered to check if it is accessible, and if so, the parsing succeeds.</p>
-<p>There is also URL support for functions and classes that load from paths, namely
+triggered to check if it is accessible, and if so, the parsing succeeds. To get
+the content of the parsed path, without needing to care if it is a local file or
+a URL, the <a class="reference internal" href="#jsonargparse.Path.get_content" title="jsonargparse.Path.get_content"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.Path.get_content()</span></code></a> can be used.</p>
+<p>If after importing jsonargparse you run
+<code class="code docutils literal notranslate"><span class="pre">jsonargparse.set_url_support(True)</span></code>, the following functions and classes
+will also support loading from URLs:
 <a class="reference internal" href="#jsonargparse.ArgumentParser.parse_path" title="jsonargparse.ArgumentParser.parse_path"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.parse_path()</span></code></a>,
 <a class="reference internal" href="#jsonargparse.ArgumentParser.get_defaults" title="jsonargparse.ArgumentParser.get_defaults"><code class="xref py py-func docutils literal notranslate"><span class="pre">jsonargparse.ArgumentParser.get_defaults()</span></code></a> (<code class="code docutils literal notranslate"><span class="pre">default_config_files</span></code>
 argument), <a class="reference internal" href="#jsonargparse.ActionConfigFile" title="jsonargparse.ActionConfigFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a>, <a class="reference internal" href="#jsonargparse.ActionJsonSchema" title="jsonargparse.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a>,
-<a class="reference internal" href="#jsonargparse.ActionJsonnet" title="jsonargparse.ActionJsonnet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonnet</span></code></a> and <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a>. This means that for example
-that a tool that can receive a configuration file via <a class="reference internal" href="#jsonargparse.ActionConfigFile" title="jsonargparse.ActionConfigFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a>
-is able to get the config file from a URL, that is something like the following
+<a class="reference internal" href="#jsonargparse.ActionJsonnet" title="jsonargparse.ActionJsonnet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonnet</span></code></a> and <a class="reference internal" href="#jsonargparse.ActionParser" title="jsonargparse.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a>. This means for example that
+a tool that can receive a configuration file via <a class="reference internal" href="#jsonargparse.ActionConfigFile" title="jsonargparse.ActionConfigFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionConfigFile</span></code></a> is
+able to get the config file from a URL, that is something like the following
 would work:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ my_tool.py --cfg http://example.com/config.yaml
 </pre></div>
@@ -798,10 +802,13 @@ virtualenv -p python3 venv
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.namespace_to_dict" title="jsonargparse.namespace_to_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">namespace_to_dict</span></code></a>(cfg_ns)</p></td>
 <td><p>Converts a nested namespace into a nested dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.strip_meta" title="jsonargparse.strip_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_meta</span></code></a>(cfg)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.set_url_support" title="jsonargparse.set_url_support"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_url_support</span></code></a>(enabled)</p></td>
+<td><p>Enables/disables URL support for config read mode.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.strip_meta" title="jsonargparse.strip_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_meta</span></code></a>(cfg)</p></td>
 <td><p>Removes all metadata keys from a configuration object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.usage_and_exit_error_handler" title="jsonargparse.usage_and_exit_error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">usage_and_exit_error_handler</span></code></a>(self, message)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.usage_and_exit_error_handler" title="jsonargparse.usage_and_exit_error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">usage_and_exit_error_handler</span></code></a>(self, message)</p></td>
 <td><p>Error handler to get the same behavior as in argparse.</p></td>
 </tr>
 </tbody>
@@ -825,6 +832,12 @@ virtualenv -p python3 venv
 <dt id="jsonargparse.import_requests">
 <code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">import_requests</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">importer</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#import_requests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.import_requests" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt id="jsonargparse.set_url_support">
+<code class="sig-prename descclassname">jsonargparse.</code><code class="sig-name descname">set_url_support</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">enabled</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse.html#set_url_support"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.set_url_support" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables/disables URL support for config read mode.</p>
+</dd></dl>
 
 <dl class="py exception">
 <dt id="jsonargparse.ParserError">

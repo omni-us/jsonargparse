@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 2.29.0 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse 2.30.0 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                2.29.0
+                2.30.0
               </div>
             
           
@@ -211,11 +211,21 @@
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;requests package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span></div>
 
 
-<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;2.29.0&#39;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;2.30.0&#39;</span>
 
 
 <span class="n">meta_keys</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;__cwd__&#39;</span><span class="p">,</span> <span class="s1">&#39;__path__&#39;</span><span class="p">}</span>
-<span class="n">config_read_mode</span> <span class="o">=</span> <span class="s1">&#39;fur&#39;</span> <span class="k">if</span> <span class="n">url_support</span> <span class="k">else</span> <span class="s1">&#39;fr&#39;</span>
+<span class="n">config_read_mode</span> <span class="o">=</span> <span class="s1">&#39;fr&#39;</span>
+
+
+<div class="viewcode-block" id="set_url_support"><a class="viewcode-back" href="../index.html#jsonargparse.set_url_support">[docs]</a><span class="k">def</span> <span class="nf">set_url_support</span><span class="p">(</span><span class="n">enabled</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Enables/disables URL support for config read mode.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">enabled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">url_support</span><span class="p">:</span>
+        <span class="n">pkg</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;validators&#39;</span><span class="p">,</span> <span class="s1">&#39;requests&#39;</span><span class="p">]</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">{</span><span class="n">pkg</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="n">url_validator</span><span class="p">,</span> <span class="n">requests</span><span class="p">])</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;Missing packages for URL support: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">missing</span><span class="p">))</span>
+    <span class="k">global</span> <span class="n">config_read_mode</span>
+    <span class="n">config_read_mode</span> <span class="o">=</span> <span class="s1">&#39;fur&#39;</span> <span class="k">if</span> <span class="n">enabled</span> <span class="k">else</span> <span class="s1">&#39;fr&#39;</span></div>
 
 
 <div class="viewcode-block" id="ParserError"><a class="viewcode-back" href="../index.html#jsonargparse.ParserError">[docs]</a><span class="k">class</span> <span class="nc">ParserError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
