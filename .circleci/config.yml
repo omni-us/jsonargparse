@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python:3.8
     steps:
       - checkout
       - run:
@@ -12,45 +12,49 @@ jobs:
       - persist_to_workspace:
           root: .
           paths: ./dist/*.whl
-  test-py37: &test-py37
+  test-py38: &test-py38
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python:3.8
     steps:
       - attach_workspace:
           at: .
       - run:
           name: Run unit tests
           command: |
+            py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             pip3 install --user $(ls ./dist/*.whl)[test]
             python3 -m jsonargparse_tests
             pip3 install --user $(ls ./dist/*.whl)[all,test]
-            mkdir tests_report
-            python3 -m subunit.run jsonargparse_tests | $HOME/.local/bin/subunit2junitxml > tests_report/unittest.xml
-      - store_test_results:
-          path: ./tests_report
-  test-py38:
-    <<: *test-py37
+            python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./coverage_*.xml
+  test-py37:
+    <<: *test-py38
     docker:
-      - image: circleci/python:3.8
+      - image: circleci/python:3.7
   test-py36:
-    <<: *test-py37
+    <<: *test-py38
     docker:
       - image: circleci/python:3.6
   test-py35:
-    <<: *test-py37
+    <<: *test-py38
     docker:
       - image: circleci/python:3.5
-  coverage-py37:
+  codecov:
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python:3.8
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - run:
           name: Code coverage
           command: |
-            pip3 install --user -e .[all,test]
-            python3 -m coverage run -m jsonargparse_tests
-            codecov -t $CODECOV_TOKEN_JSONARGPARSE
+            mv coverage_py3.8.xml coverage.xml
+            rm -f coverage_*.xml
+            bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN_JSONARGPARSE
   publish-pypi:
     docker:
       - image: mauvilsa/docker-twine:1.11.0
@@ -69,18 +73,20 @@ workflows:
           filters: &tagfilter
             tags:
               only: /^v\d+\.\d+\.\d+$/
-      - test-py37: &testreq
+      - test-py38: &testreq
           <<: *buildreq
           requires:
             - build
-      - test-py38:
+      - test-py37:
           <<: *testreq
       - test-py36:
           <<: *testreq
       - test-py35:
           <<: *testreq
-      - coverage-py37:
+      - codecov:
           <<: *testreq
+          requires:
+            - test-py38
       - publish-pypi:
           filters:
             branches:
@@ -92,4 +98,4 @@ workflows:
             - test-py37
             - test-py36
             - test-py35
-            - coverage-py37
+            - codecov
