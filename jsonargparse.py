@@ -1361,6 +1361,8 @@ class ActionYesNo(Action):
         else:
             self._yes_prefix = kwargs.pop('_yes_prefix') if '_yes_prefix' in kwargs else ''
             self._no_prefix = kwargs.pop('_no_prefix') if '_no_prefix' in kwargs else 'no_'
+            if len(kwargs['option_strings']) == 0:
+                raise ValueError(type(self).__name__+' not intended for positional arguments  ('+kwargs['dest']+').')
             opt_name = kwargs['option_strings'][0]
             if not opt_name.startswith('--'+self._yes_prefix):
                 raise ValueError('Expected option string to start with "--'+self._yes_prefix+'".')
@@ -1484,9 +1486,10 @@ class ActionJsonSchema(Action):
                 if isinstance(val, str):
                     try:
                         fpath = Path(val, mode=config_read_mode)
-                        val = yaml.safe_load(fpath.get_content())
                     except:
                         pass
+                    else:
+                        val = yaml.safe_load(fpath.get_content())
                 if isinstance(val, SimpleNamespace):
                     val = namespace_to_dict(val)
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
@@ -1637,10 +1640,11 @@ class ActionJsonnet(Action):
         snippet = jsonnet
         try:
             fpath = Path(jsonnet, mode=config_read_mode)
-            fname = jsonnet(absolute=False) if isinstance(jsonnet, Path) else jsonnet
-            snippet = fpath.get_content()
         except:
             pass
+        else:
+            fname = jsonnet(absolute=False) if isinstance(jsonnet, Path) else jsonnet
+            snippet = fpath.get_content()
         try:
             values = yaml.safe_load(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
         except Exception as ex:

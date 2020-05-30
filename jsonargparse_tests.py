@@ -5,6 +5,9 @@ import os
 import sys
 import stat
 import json
+import yaml
+import logging
+import _jsonnet
 import shutil
 import tempfile
 import pathlib
@@ -14,7 +17,6 @@ import unittest
 from collections import OrderedDict
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from jsonargparse import *
-from jsonargparse import _jsonnet
 
 
 def example_parser():
