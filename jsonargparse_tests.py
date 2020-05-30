@@ -7,7 +7,6 @@ import stat
 import json
 import yaml
 import logging
-import _jsonnet
 import shutil
 import tempfile
 import pathlib
