@@ -114,6 +114,10 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
         return 'ARG:   ' + super()._format_action_invocation(action) + extr
 
 
+null_logger = logging.Logger('null')
+null_logger.addHandler(logging.NullHandler())
+
+
 class LoggerProperty:
     """Class designed to be inherited by other classes to add a logger property."""
 
@@ -142,8 +146,7 @@ class LoggerProperty:
             ValueError: If an invalid logger value is given.
         """
         if logger is None or (isinstance(logger, bool) and not logger):
-            self._logger = logging.Logger('null')
-            self._logger.addHandler(logging.NullHandler())
+            self._logger = null_logger
         elif isinstance(logger, (bool, str, dict)) and logger:
             levels = {'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'}
             level = logging.INFO
@@ -603,7 +606,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return cfg_ns
 
 
-    def dump(self, cfg:Union[SimpleNamespace, dict], format:str='parser_mode', skip_none:bool=True, skip_check:bool=False) -> str:
+    def dump(self, cfg:Union[SimpleNamespace, dict], format:str='parser_mode', skip_none:bool=True, skip_check:bool=False) -> Union[str, bytes]:
         """Generates a yaml or json string for the given configuration object.
 
         Args:
@@ -646,9 +649,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if format == 'yaml':
             return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
         elif format == 'json_indented':
-            return json.dumps(cfg, indent=2, sort_keys=True)
+            return json.dumps(cfg, indent=2, sort_keys=True, ensure_ascii=False).encode('utf8')
         elif format == 'json':
-            return json.dumps(cfg, sort_keys=True)
+            return json.dumps(cfg, sort_keys=True, ensure_ascii=False).encode('utf8')
         else:
             raise ValueError('Unknown output format '+str(format))
 
