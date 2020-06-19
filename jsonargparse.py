@@ -1050,7 +1050,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             cfg = vars(cfg)
         cfg_files = []
         for action in self._actions:
-            if isinstance(action, ActionConfigFile) and action.dest in cfg:
+            if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not None:
                 cfg_files = [p for p in cfg[action.dest] if p is not None]
         return cfg_files
 
