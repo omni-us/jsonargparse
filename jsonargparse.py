@@ -606,7 +606,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return cfg_ns
 
 
-    def dump(self, cfg:Union[SimpleNamespace, dict], format:str='parser_mode', skip_none:bool=True, skip_check:bool=False) -> Union[str, bytes]:
+    def dump(self, cfg:Union[SimpleNamespace, dict], format:str='parser_mode', skip_none:bool=True, skip_check:bool=False) -> str:
         """Generates a yaml or json string for the given configuration object.
 
         Args:
@@ -649,9 +649,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if format == 'yaml':
             return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
         elif format == 'json_indented':
-            return json.dumps(cfg, indent=2, sort_keys=True, ensure_ascii=False).encode('utf8')
+            return json.dumps(cfg, indent=2, sort_keys=True, ensure_ascii=False)
         elif format == 'json':
-            return json.dumps(cfg, sort_keys=True, ensure_ascii=False).encode('utf8')
+            return json.dumps(cfg, sort_keys=True, ensure_ascii=False)
         else:
             raise ValueError('Unknown output format '+str(format))
 
