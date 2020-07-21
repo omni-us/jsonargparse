@@ -718,6 +718,10 @@ class JsonargparseTests(unittest.TestCase):
         ## Check ActionParser inner environment variables
         self.assertEqual('opt2_env', parser.parse_env({'LV1_INNER2__OPT2': 'opt2_env'}).inner2.opt2)
         self.assertEqual('opt3_env', parser.parse_env({'LV1_INNER2__INNER3__OPT3': 'opt3_env'}).inner2.inner3.opt3)
+        expected = {'opt1': 'opt1_def', 'inner2': {'opt2': 'opt2_def', 'inner3': {'opt3': 'opt3_yaml'}}}
+        cfg = parser.parse_env({'LV1_INNER2__INNER3': yaml_inner3_file}, with_meta=False)
+        self.assertEqual(expected, namespace_to_dict(cfg))
+        self.assertEqual('opt2_yaml', parser.parse_env({'LV1_INNER2': yaml_inner2_file}).inner2.opt2)
 
         ## Check ActionParser as argument path
         expected = {'opt1': 'opt1_arg', 'inner2': {'opt2': 'opt2_yaml', 'inner3': {'opt3': 'opt3_yaml'}}}

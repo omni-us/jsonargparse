@@ -826,8 +826,16 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                             cfg[subcommand+'.'+k] = v
             for action in [a for a in self._actions if a.default != SUPPRESS]:
                 if isinstance(action, ActionParser):
-                    pcfg = action._parser.parse_env(env=env, defaults=defaults, nested=False, with_meta=with_meta, _skip_logging=True, _skip_check=True)
-                    cfg.update(namespace_to_dict(pcfg))
+                    subparser_cfg = {}
+                    if defaults:
+                        subparser_cfg = vars(action._parser.get_defaults(nested=False))
+                    env_var = _get_env_var(self, action)
+                    if env_var in env:
+                        pcfg = self._check_value_key(action, env[env_var], action.dest, cfg)
+                        subparser_cfg.update(vars(_dict_to_flat_namespace(namespace_to_dict(pcfg))))
+                    pcfg = action._parser.parse_env(env=env, defaults=False, nested=False, with_meta=with_meta, _skip_logging=True, _skip_check=True)
+                    subparser_cfg.update(namespace_to_dict(pcfg))
+                    cfg.update(subparser_cfg)
                     continue
                 env_var = _get_env_var(self, action)
                 if env_var in env and not isinstance(action, ActionConfigFile):
