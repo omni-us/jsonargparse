@@ -8,6 +8,7 @@ import yaml
 import logging
 import operator
 import argparse
+import traceback
 import importlib.util
 from argparse import Action, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE
 from argparse import ArgumentError, _UNRECOGNIZED_ARGS_ATTR
@@ -630,18 +631,23 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if not skip_check:
             self.check_config(cfg)
 
+        def cleanup_actions(cfg, actions):
+            for action in actions:
+                if skip_none and action.dest in cfg and cfg[action.dest] is None:
+                    del cfg[action.dest]
+                elif isinstance(action, ActionPath):
+                    if cfg[action.dest] is not None:
+                        if isinstance(cfg[action.dest], list):
+                            cfg[action.dest] = [p(absolute=False) for p in cfg[action.dest]]
+                        else:
+                            cfg[action.dest] = cfg[action.dest](absolute=False)
+                elif isinstance(action, ActionConfigFile):
+                    del cfg[action.dest]
+                elif isinstance(action, ActionParser):
+                    cleanup_actions(cfg, action._parser._actions)
+
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
-        for action in self._actions:
-            if skip_none and action.dest in cfg and cfg[action.dest] is None:
-                del cfg[action.dest]
-            elif isinstance(action, ActionPath):
-                if cfg[action.dest] is not None:
-                    if isinstance(cfg[action.dest], list):
-                        cfg[action.dest] = [p(absolute=False) for p in cfg[action.dest]]
-                    else:
-                        cfg[action.dest] = cfg[action.dest](absolute=False)
-            elif isinstance(action, ActionConfigFile):
-                del cfg[action.dest]
+        cleanup_actions(cfg, self._actions)
         cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
         if format == 'parser_mode':
@@ -1009,7 +1015,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             check_required(cfg)
             check_values(cfg)
         except Exception as ex:
-            self.error('Config checking failed :: '+str(ex))
+            trace = traceback.format_exc()
+            self.error('Config checking failed :: '+str(ex)+' :: '+str(trace))
 
 
     def strip_unknown(self, cfg):
