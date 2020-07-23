@@ -65,7 +65,7 @@ def import_requests(importer):
         raise ImportError('requests package is required by '+importer+' :: '+str(ex))
 
 
-__version__ = '2.32.1'
+__version__ = '2.32.2'
 
 
 meta_keys = {'__cwd__', '__path__'}
