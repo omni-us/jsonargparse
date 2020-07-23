@@ -512,6 +512,23 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return cfg_ns
 
 
+    def _apply_actions(self, cfg, actions):
+        """Runs _check_value_key on actions present in flat config dict."""
+        for action in actions:
+            if isinstance(action, ActionParser):
+                self._apply_actions(cfg, action._parser._actions)
+            if action.dest in cfg:
+                value = self._check_value_key(action, cfg[action.dest], action.dest, cfg)
+                if isinstance(action, ActionParser):
+                    value = namespace_to_dict(_dict_to_flat_namespace(namespace_to_dict(value)))
+                    if '__path__' in value:
+                        value[action.dest+'.__path__'] = value.pop('__path__')
+                    del cfg[action.dest]
+                    cfg.update(value)
+                else:
+                    cfg[action.dest] = value
+
+
     def _load_cfg(self, cfg_str:str, cfg_path:str='', ext_vars:dict=None, base=None) -> Dict[str, Any]:
         """Loads a configuration string (yaml or jsonnet) into a namespace checking all values against the parser.
 
@@ -534,17 +551,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         if base is not None:
             cfg = {base+'.'+k: v for k, v in cfg.items()}
-        for action in self._actions:
-            if action.dest in cfg:
-                value = self._check_value_key(action, cfg[action.dest], action.dest, cfg)
-                if isinstance(action, ActionParser):
-                    value = namespace_to_dict(_dict_to_flat_namespace(namespace_to_dict(value)))
-                    if '__path__' in value:
-                        value[action.dest+'.__path__'] = value.pop('__path__')
-                    del cfg[action.dest]
-                    cfg.update(value)
-                else:
-                    cfg[action.dest] = value
+
+        self._apply_actions(cfg, self._actions)
+
         return cfg
 
 
@@ -570,6 +579,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         try:
             cfg = vars(_dict_to_flat_namespace(cfg_obj))
+            self._apply_actions(cfg, self._actions)
 
             ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults)
 
