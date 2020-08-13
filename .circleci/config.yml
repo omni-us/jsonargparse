@@ -11,7 +11,9 @@ jobs:
           command: ./setup.py bdist_wheel
       - persist_to_workspace:
           root: .
-          paths: ./dist/*.whl
+          paths:
+            - ./dist/*.whl
+            - ./dist/*.tar.gz
   test-py38: &test-py38
     docker:
       - image: circleci/python:3.8
@@ -63,7 +65,7 @@ jobs:
           at: .
       - run:
           name: Publish Release on PyPI
-          command: twine upload --username "${PYPI_USER}" --password "${PYPI_PASS}" ./dist/*.whl
+          command: twine upload --username "${PYPI_USER}" --password "${PYPI_PASS}" ./dist/*.whl ./dist/*.tar.gz
 
 workflows:
   version: 2
