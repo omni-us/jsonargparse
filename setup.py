@@ -3,10 +3,8 @@
 from setuptools import setup, Command
 import re
 import sys
-import importlib
 
 
-NAME = next(filter(lambda x: x.startswith('name = '), open('setup.cfg').readlines())).strip().split()[-1]
 NAME_TESTS = next(filter(lambda x: x.startswith('test_suite = '), open('setup.cfg').readlines())).strip().split()[-1]
 LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:', '', open('README.rst').read())
 CMDCLASS = {}

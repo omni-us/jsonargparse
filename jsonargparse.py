@@ -10,10 +10,9 @@ import operator
 import argparse
 import traceback
 import importlib.util
-from argparse import Action, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE
-from argparse import ArgumentError, _UNRECOGNIZED_ARGS_ATTR
+from argparse import (Action, Namespace, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE,
+                      ArgumentError, _UNRECOGNIZED_ARGS_ATTR)
 from copy import deepcopy
-from types import SimpleNamespace
 from typing import Any, List, Dict, Set, Union
 
 try:
@@ -311,7 +310,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             args = list(args)
 
         try:
-            namespace, args = super()._parse_known_args(args, SimpleNamespace())
+            namespace, args = super()._parse_known_args(args, Namespace())
             if len(args) > 0:
                 for action in self._actions:
                     if isinstance(action, ActionParser):
@@ -364,7 +363,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta (bool): Whether to include metadata in config object.
 
         Returns:
-            types.SimpleNamespace: An object with all parsed values as nested attributes.
+            types.Namespace: An object with all parsed values as nested attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -417,7 +416,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True,
-                   with_meta:bool=None, _skip_check:bool=False, _base=None) -> SimpleNamespace:
+                   with_meta:bool=None, _skip_check:bool=False, _base=None) -> Namespace:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
@@ -429,7 +428,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta (bool): Whether to include metadata in config object.
 
         Returns:
-            types.SimpleNamespace: An object with all parsed values as nested attributes.
+            types.Namespace: An object with all parsed values as nested attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -454,7 +453,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True,
-                     with_meta:bool=None, _skip_logging:bool=False, _skip_check:bool=False, _base=None) -> SimpleNamespace:
+                     with_meta:bool=None, _skip_logging:bool=False, _skip_check:bool=False, _base=None) -> Namespace:
         """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
@@ -467,7 +466,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta (bool): Whether to include metadata in config object.
 
         Returns:
-            types.SimpleNamespace: An object with all parsed values as attributes.
+            types.Namespace: An object with all parsed values as attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -558,7 +557,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_object(self, cfg_obj:dict, cfg_base=None, env:bool=None, defaults:bool=True, nested:bool=True,
-                     with_meta:bool=None, _skip_check:bool=False) -> SimpleNamespace:
+                     with_meta:bool=None, _skip_check:bool=False) -> Namespace:
         """Parses configuration given as an object.
 
         Args:
@@ -569,7 +568,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta (bool): Whether to include metadata in config object.
 
         Returns:
-            types.SimpleNamespace: An object with all parsed values as attributes.
+            types.Namespace: An object with all parsed values as attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -587,7 +586,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
             if cfg_base is not None:
-                if isinstance(cfg_base, SimpleNamespace):
+                if isinstance(cfg_base, Namespace):
                     cfg_base = namespace_to_dict(cfg_base)
                 cfg = self._merge_config(cfg, cfg_base)
 
@@ -617,11 +616,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return cfg_ns
 
 
-    def dump(self, cfg:Union[SimpleNamespace, dict], format:str='parser_mode', skip_none:bool=True, skip_check:bool=False) -> str:
+    def dump(self, cfg:Union[Namespace, dict], format:str='parser_mode', skip_none:bool=True, skip_check:bool=False) -> str:
         """Generates a yaml or json string for the given configuration object.
 
         Args:
-            cfg (types.SimpleNamespace or dict): The configuration object to dump.
+            cfg (types.Namespace or dict): The configuration object to dump.
             format (str): The output format: "yaml", "json", "json_indented" or "parser_mode".
             skip_none (bool): Whether to exclude checking values that are None.
             skip_check (bool): Whether to skip parser checking.
@@ -672,12 +671,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             raise ValueError('Unknown output format '+str(format))
 
 
-    def save(self, cfg:Union[SimpleNamespace, dict], path:str, format:str='parser_mode', skip_none:bool=True,
+    def save(self, cfg:Union[Namespace, dict], path:str, format:str='parser_mode', skip_none:bool=True,
              skip_check:bool=False, overwrite:bool=False, multifile:bool=True, branch=None) -> None:
         """Generates a yaml or json string for the given configuration object.
 
         Args:
-            cfg (types.SimpleNamespace or dict): The configuration object to save.
+            cfg (types.Namespace or dict): The configuration object to save.
             path (str): Path to the location where to save config.
             format (str): The output format: "yaml", "json", "json_indented" or "parser_mode".
             skip_none (bool): Whether to exclude checking values that are None.
@@ -806,7 +805,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True, with_meta:bool=None,
-                  _skip_logging:bool=False, _skip_check:bool=False) -> SimpleNamespace:
+                  _skip_logging:bool=False, _skip_check:bool=False) -> Namespace:
         """Parses environment variables.
 
         Args:
@@ -816,7 +815,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta (bool): Whether to include metadata in config object.
 
         Returns:
-            types.SimpleNamespace: An object with all parsed values as attributes.
+            types.Namespace: An object with all parsed values as attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -867,7 +866,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     cfg[action.dest] = self._check_value_key(action, env_val, action.dest, cfg)
 
             if nested:
-                cfg = _flat_namespace_to_dict(SimpleNamespace(**cfg))
+                cfg = _flat_namespace_to_dict(Namespace(**cfg))
 
             if defaults:
                 cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
@@ -895,14 +894,54 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return cfg_ns
 
 
-    def get_defaults(self, nested:bool=True) -> SimpleNamespace:
+    def set_defaults(self, *args, **kwargs):
+        """Sets default values from dictionary or keyword arguments.
+
+        Args:
+            *args (dict): Dictionary defining the default values to set.
+            **kwargs: Sets default values based on keyword arguments.
+
+        Raises:
+            KeyError: If key not defined in the parser.
+        """
+        if len(args) > 0:
+            for n in range(len(args)):
+                self._defaults.update(args[n])
+
+                for dest in args[n].keys():
+                    action = _find_action(self, dest)
+                    if action is None:
+                        raise KeyError('No action for destination key "'+dest+'" to set its default.')
+                    action.default = args[n][dest]
+        if kwargs:
+            self.set_defaults(kwargs)
+
+
+    def get_default(self, dest):
+        """Gets a single default value for the given destination key.
+
+        Args:
+            dest (str): Destination key from which to get the default.
+
+        Raises:
+            KeyError: If key not defined in the parser.
+        """
+        action = _find_action(self, dest)
+        if action is None:
+            raise KeyError('No action for destination key "'+dest+'" to get its default.')
+        if action.default is not None:
+            return action.default
+        return self._defaults.get(dest, None)
+
+
+    def get_defaults(self, nested:bool=True) -> Namespace:
         """Returns a namespace with all default values.
 
         Args:
             nested (bool): Whether the namespace should be nested.
 
         Returns:
-            types.SimpleNamespace: An object with all default values as attributes.
+            types.Namespace: An object with all default values as attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -930,7 +969,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 self._logger.info('Parsed configuration from default path: %s', default_config_files[0])
 
             if nested:
-                cfg = _flat_namespace_to_dict(SimpleNamespace(**cfg))
+                cfg = _flat_namespace_to_dict(Namespace(**cfg))
 
         except TypeError as ex:
             self.error(str(ex))
@@ -968,11 +1007,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return group
 
 
-    def check_config(self, cfg:Union[SimpleNamespace, dict], skip_none:bool=True, branch=None):
+    def check_config(self, cfg:Union[Namespace, dict], skip_none:bool=True, branch=None):
         """Checks that the content of a given configuration object conforms with the parser.
 
         Args:
-            cfg (types.SimpleNamespace or dict): The configuration object to check.
+            cfg (types.Namespace or dict): The configuration object to check.
             skip_none (bool): Whether to skip checking of values that are None.
             branch (str or None): Base key in case cfg corresponds only to a branch.
 
@@ -1033,10 +1072,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         """Removes all unknown keys from a configuration object.
 
         Args:
-            cfg (types.SimpleNamespace or dict): The configuration object to strip.
+            cfg (types.Namespace or dict): The configuration object to strip.
 
         Returns:
-            types.SimpleNamespace: The stripped configuration object.
+            types.Namespace: The stripped configuration object.
         """
         cfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
@@ -1066,7 +1105,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         """Returns a list of loaded config file paths.
 
         Args:
-            cfg (types.SimpleNamespace or dict): The configuration object.
+            cfg (types.Namespace or dict): The configuration object.
 
         Returns:
             list: Paths to loaded config files.
@@ -1081,26 +1120,26 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     @staticmethod
-    def merge_config(cfg_from:SimpleNamespace, cfg_to:SimpleNamespace) -> SimpleNamespace:
+    def merge_config(cfg_from:Namespace, cfg_to:Namespace) -> Namespace:
         """Merges the first configuration into the second configuration.
 
         Args:
-            cfg_from (types.SimpleNamespace): The configuration from which to merge.
-            cfg_to (types.SimpleNamespace): The configuration into which to merge.
+            cfg_from (types.Namespace): The configuration from which to merge.
+            cfg_to (types.Namespace): The configuration into which to merge.
 
         Returns:
-            types.SimpleNamespace: The merged configuration.
+            types.Namespace: The merged configuration.
         """
         return dict_to_namespace(ArgumentParser._merge_config(cfg_from, cfg_to))
 
 
     @staticmethod
-    def _merge_config(cfg_from:Union[SimpleNamespace, Dict[str, Any]], cfg_to:Union[SimpleNamespace, Dict[str, Any]]) -> Dict[str, Any]:
+    def _merge_config(cfg_from:Union[Namespace, Dict[str, Any]], cfg_to:Union[Namespace, Dict[str, Any]]) -> Dict[str, Any]:
         """Merges the first configuration into the second configuration.
 
         Args:
-            cfg_from (types.SimpleNamespace or dict): The configuration from which to merge.
-            cfg_to (types.SimpleNamespace or dict): The configuration into which to merge.
+            cfg_from (types.Namespace or dict): The configuration from which to merge.
+            cfg_to (types.Namespace or dict): The configuration into which to merge.
 
         Returns:
             dict: The merged configuration.
@@ -1168,9 +1207,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
 def _get_key_value(cfg, key):
-    """Gets the value for a given key in a config object (dict, SimpleNamespace or argparse.Namespace)."""
+    """Gets the value for a given key in a config object (dict, Namespace or argparse.Namespace)."""
     def key_in_cfg(cfg, key):
-        if isinstance(cfg, (SimpleNamespace, argparse.Namespace)) and hasattr(cfg, key):
+        if isinstance(cfg, (Namespace, argparse.Namespace)) and hasattr(cfg, key):
             return True
         elif isinstance(cfg, dict) and key in cfg:
             return True
@@ -1185,11 +1224,11 @@ def _get_key_value(cfg, key):
     return c[k] if isinstance(c, dict) else getattr(c, k)
 
 
-def _flat_namespace_to_dict(cfg_ns:Union[SimpleNamespace, argparse.Namespace]) -> Dict[str, Any]:
+def _flat_namespace_to_dict(cfg_ns:Union[Namespace, argparse.Namespace]) -> Dict[str, Any]:
     """Converts a flat namespace into a nested dictionary.
 
     Args:
-        cfg_ns (types.SimpleNamespace): The configuration to process.
+        cfg_ns (types.Namespace): The configuration to process.
 
     Returns:
         dict: The nested configuration dictionary.
@@ -1199,9 +1238,9 @@ def _flat_namespace_to_dict(cfg_ns:Union[SimpleNamespace, argparse.Namespace]) -
     for k, v in vars(cfg_ns).items():
         ksplit = k.split('.')
         if len(ksplit) == 1:
-            if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
+            if isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
                 cfg_dict[k] = [namespace_to_dict(x) for x in v]
-            elif isinstance(v, SimpleNamespace):
+            elif isinstance(v, Namespace):
                 cfg_dict[k] = vars(v)  # type: ignore
             elif not (v is None and k in cfg_dict):
                 cfg_dict[k] = v
@@ -1215,21 +1254,21 @@ def _flat_namespace_to_dict(cfg_ns:Union[SimpleNamespace, argparse.Namespace]) -
                 kdict = kdict[kk]  # type: ignore
             if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None:
                 raise ParserError('Conflicting namespace base: '+k)
-            if isinstance(v, list) and any([isinstance(x, SimpleNamespace) for x in v]):
+            if isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
                 kdict[ksplit[-1]] = [namespace_to_dict(x) for x in v]
             elif not (v is None and ksplit[-1] in kdict):
                 kdict[ksplit[-1]] = v
     return cfg_dict
 
 
-def _dict_to_flat_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
+def _dict_to_flat_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
     """Converts a nested dictionary into a flat namespace.
 
     Args:
         cfg_dict (dict): The configuration to process.
 
     Returns:
-        types.SimpleNamespace: The configuration namespace.
+        types.Namespace: The configuration namespace.
     """
     cfg_dict = deepcopy(cfg_dict)
     cfg_ns = {}
@@ -1244,17 +1283,17 @@ def _dict_to_flat_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
 
     flatten_dict(cfg_dict)
 
-    return SimpleNamespace(**cfg_ns)
+    return Namespace(**cfg_ns)
 
 
-def dict_to_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
+def dict_to_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
     """Converts a nested dictionary into a nested namespace.
 
     Args:
         cfg_dict (dict): The configuration to process.
 
     Returns:
-        types.SimpleNamespace: The nested configuration namespace.
+        types.Namespace: The nested configuration namespace.
     """
     cfg_dict = deepcopy(cfg_dict)
     def expand_dict(cfg):
@@ -1265,15 +1304,15 @@ def dict_to_namespace(cfg_dict:Dict[str, Any]) -> SimpleNamespace:
                 for nn, vv in enumerate(v):
                     if isinstance(vv, dict):
                         cfg[k][nn] = expand_dict(vv)
-        return SimpleNamespace(**cfg)
+        return Namespace(**cfg)
     return expand_dict(cfg_dict)
 
 
-def namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
+def namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
     """Converts a nested namespace into a nested dictionary.
 
     Args:
-        cfg_ns (types.SimpleNamespace): The configuration to process.
+        cfg_ns (types.Namespace): The configuration to process.
 
     Returns:
         dict: The nested configuration dictionary.
@@ -1282,11 +1321,11 @@ def namespace_to_dict(cfg_ns:SimpleNamespace) -> Dict[str, Any]:
     def expand_namespace(cfg):
         cfg = dict(vars(cfg))
         for k, v in cfg.items():
-            if isinstance(v, SimpleNamespace):
+            if isinstance(v, Namespace):
                 cfg[k] = expand_namespace(v)
             elif isinstance(v, list):
                 for nn, vv in enumerate(v):
-                    if isinstance(vv, SimpleNamespace):
+                    if isinstance(vv, Namespace):
                         cfg[k][nn] = expand_namespace(vv)
         return cfg
     return expand_namespace(cfg_ns)
@@ -1296,10 +1335,10 @@ def strip_meta(cfg):
     """Removes all metadata keys from a configuration object.
 
     Args:
-        cfg (types.SimpleNamespace or dict): The configuration object to strip.
+        cfg (types.Namespace or dict): The configuration object to strip.
 
     Returns:
-        types.SimpleNamespace: The stripped configuration object.
+        types.Namespace: The stripped configuration object.
     """
     cfg = deepcopy(cfg)
     if not isinstance(cfg, dict):
@@ -1518,7 +1557,7 @@ class ActionJsonSchema(Action):
                         pass
                     else:
                         val = yaml.safe_load(fpath.get_content())
-                if isinstance(val, SimpleNamespace):
+                if isinstance(val, Namespace):
                     val = namespace_to_dict(val)
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 self._validator.validate(val)
@@ -1624,7 +1663,7 @@ class ActionJsonnet(Action):
                 if isinstance(val, str):
                     val = self.parse(val, ext_vars=ext_vars, with_meta=True)
                 elif self._validator is not None:
-                    if isinstance(val, SimpleNamespace):
+                    if isinstance(val, Namespace):
                         self._validator.validate(namespace_to_dict(val))
                     else:
                         self._validator.validate(val)
@@ -1643,7 +1682,7 @@ class ActionJsonnet(Action):
         """
         if ext_vars is None:
             ext_vars = {}
-        elif isinstance(ext_vars, SimpleNamespace):
+        elif isinstance(ext_vars, Namespace):
             ext_vars = namespace_to_dict(ext_vars)
         ext_codes = {k: json.dumps(v) for k, v in ext_vars.items() if not isinstance(v, str)}
         ext_vars = {k: v for k, v in ext_vars.items() if isinstance(v, str)}
@@ -1657,7 +1696,7 @@ class ActionJsonnet(Action):
             ext_vars (dict): External variables. Values can be strings or any other basic type.
 
         Returns:
-            SimpleNamespace: The parsed jsonnet object.
+            Namespace: The parsed jsonnet object.
 
         Raises:
             TypeError: If the input is neither a path to an existent file nor a jsonnet.
@@ -1813,7 +1852,7 @@ class ActionSubCommands(argparse._SubParsersAction):
         if parser._subparsers is None:
             return
 
-        cfg_dict = cfg.__dict__ if isinstance(cfg, SimpleNamespace) else cfg
+        cfg_dict = cfg.__dict__ if isinstance(cfg, Namespace) else cfg
 
         # Get subcommands action
         for action in parser._actions:
@@ -1945,7 +1984,7 @@ class ActionPath(Action):
             self._mode = kwargs['mode']
             self._skip_check = kwargs['skip_check'] if 'skip_check' in kwargs else False
         elif '_mode' not in kwargs:
-            raise ValueError('Expected mode keyword argument.')
+            raise ValueError('ActionPath expects mode keyword argument.')
         else:
             self._mode = kwargs.pop('_mode')
             self._skip_check = kwargs.pop('_skip_check')

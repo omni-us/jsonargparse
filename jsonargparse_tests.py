@@ -94,10 +94,27 @@ local make_record(num) = {
 class JsonargparseTests(unittest.TestCase):
     """Tests for jsonargparse."""
 
-    def test_groups(self):
-        """Test storage of named groups."""
+    def test_named_groups(self):
         parser = example_parser()
-        self.assertEqual(['group1', 'group2'], list(sorted(parser.groups.keys())))
+        self.assertEqual({'group1', 'group2'}, set(parser.groups.keys()))
+
+
+    def test_set_get_defaults(self):
+        parser = ArgumentParser(default_meta=False)
+        parser.add_argument('--v1', default='1')
+        parser.add_argument('--g1.v2', default='2')
+        nested_parser = ArgumentParser()
+        nested_parser.add_argument('--g2.v3', default='3')
+        parser.add_argument('--n', action=ActionParser(parser=nested_parser))
+        parser.set_defaults({'g1.v2': 'b', 'n.g2.v3': 'c'}, v1='a')
+        cfg = parser.get_defaults()
+        self.assertEqual(namespace_to_dict(cfg), {'v1': 'a', 'g1': {'v2': 'b'}, 'n': {'g2': {'v3': 'c'}}})
+        self.assertEqual(parser.get_default('v1'), cfg.v1)
+        self.assertEqual(parser.get_default('g1.v2'), cfg.g1.v2)
+        self.assertEqual(parser.get_default('n.g2.v3'), cfg.n.g2.v3)
+
+        self.assertRaises(KeyError, lambda: parser.set_defaults(v4='d'))
+        self.assertRaises(KeyError, lambda: parser.get_default('v4'))
 
 
     def test_parse_args(self):
