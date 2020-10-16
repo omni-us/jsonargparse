@@ -5,6 +5,8 @@ import stat
 import glob
 import json
 import yaml
+import typing
+import inspect
 import logging
 import operator
 import argparse
@@ -25,6 +27,7 @@ jsonschema = jsonvalidator = importlib.util.find_spec('jsonschema')
 _jsonnet = importlib.util.find_spec('_jsonnet')
 url_validator = importlib.util.find_spec('validators')
 requests = importlib.util.find_spec('requests')
+docstring_parser = importlib.util.find_spec('docstring_parser')
 
 jsonschema_support = False if jsonschema is None else True
 jsonnet_support = False if any(x is None for x in [_jsonnet, jsonschema]) else True
@@ -64,7 +67,7 @@ def import_requests(importer):
         raise ImportError('requests package is required by '+importer+' :: '+str(ex))
 
 
-__version__ = '2.32.2'
+__version__ = '3.0.0.dev0'
 
 
 meta_keys = {'__cwd__', '__path__'}
@@ -204,6 +207,58 @@ class _ActionsContainer(argparse._ActionsContainer):
         elif isinstance(action, ActionParser):
             _set_inner_parser_prefix(self, action.dest, action)
         return action
+
+
+    def add_class_arguments(self, start_class, parent=None, stop_class=None, as_group=False):
+        """Adds arguments from a class based on its type hints and docstrings.
+
+        Args:
+            start_class (class): Parent class from which to add arguments.
+            parent (str or None): Parent key for nested namespace.
+            as_group (bool): Whether arguments should be added to a new argument group.
+
+        Returns:
+            If as_group==True the group object, otherwise the parser.
+        """
+        doc_group = None
+        doc_params = {}
+        if docstring_parser:
+            from docstring_parser import parse as docstring_parse
+            for base in inspect.getmro(start_class):
+                docstring = docstring_parse(base.__init__.__doc__)
+                if docstring.short_description and not doc_group:
+                    doc_group = docstring.short_description
+                for param in docstring.params:
+                    if param.arg_name not in doc_params:
+                        doc_params[param.arg_name] = param.description
+
+        group = self
+        if as_group:
+            if not doc_group:
+                doc_group = str(start_class)
+            group = self.add_argument_group(doc_group, name=parent)
+
+        for base in inspect.getmro(start_class):
+            parameters = inspect.signature(base).parameters
+            for param in parameters.values():
+                if not param.annotation:
+                    continue
+                arg = '--' + (parent+'.' if parent else '') + param.name
+                kwargs = {
+                    'default': param.default,
+                    'required': param.default == inspect._empty,
+                    'help': doc_params.get(param.name),
+                }
+                if param.annotation in {str, int, float, bool}:
+                    kwargs['type'] = param.annotation
+                else:
+                    schema = ActionJsonSchema.typing_schema(param.annotation)
+                    if schema is not None:
+                        kwargs['action'] = ActionJsonSchema(schema=schema)
+                if 'type' in kwargs or 'action' in kwargs:
+                    group.add_argument(arg, **kwargs)
+
+        return group
 
 
 class _ArgumentGroup(_ActionsContainer, argparse._ArgumentGroup):
@@ -1585,6 +1640,39 @@ class ActionJsonSchema(Action):
                 yield error
 
         return jsonschema.validators.extend(validator_class, {'properties': set_defaults})
+
+    @staticmethod
+    def typing_schema(annotation):
+        """Generates a schema based on typing annotation."""
+        typesmap = {
+            str: 'string',
+            int: 'integer',
+            float: 'number',
+            bool: 'boolean',
+            type(None): 'null',
+        }
+
+        if annotation in typesmap:
+            return {'type': typesmap[annotation]}
+
+        elif not hasattr(annotation, '__origin__'):
+            return
+
+        elif annotation.__origin__ == typing.Union:
+            members = []
+            for arg in annotation.__args__:
+                schema = ActionJsonSchema.typing_schema(arg)
+                if schema is not None:
+                    members.append(schema)
+            if len(members) == 1:
+                return members[0]
+            elif len(members) > 1:
+                return {'anyOf': members}
+
+        elif annotation.__origin__ == typing.List:
+            items = ActionJsonSchema.typing_schema(annotation.__args__[0])
+            if items is not None:
+                return {'type': 'array', 'items': items}
 
 
 class ActionJsonnetExtVars(ActionJsonSchema):
