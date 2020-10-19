@@ -1770,18 +1770,18 @@ class ActionJsonSchema(Action):
             elif len(members) > 1:
                 return {'anyOf': members}
 
-        elif annotation.__origin__ == Tuple:
+        elif annotation.__origin__ in {Tuple, tuple}:
             items = [ActionJsonSchema.typing_schema(a) for a in annotation.__args__]
             if any(a is None for a in items):
                 return
             return {'type': 'array', 'items': items}
 
-        elif annotation.__origin__ == List:
+        elif annotation.__origin__ in {List, list}:
             items = ActionJsonSchema.typing_schema(annotation.__args__[0])
             if items is not None:
                 return {'type': 'array', 'items': items}
 
-        elif annotation.__origin__ == Dict and annotation.__args__[0] == str:
+        elif annotation.__origin__ in {Dict, dict} and annotation.__args__[0] == str:
             schema = ActionJsonSchema.typing_schema(annotation.__args__[1])
             if schema is not None:
                 return {'type': 'object', 'patternProperties': {'.*': schema}}
