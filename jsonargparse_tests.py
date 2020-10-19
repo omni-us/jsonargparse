@@ -1007,6 +1007,7 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--input.jsonnet', example_jsonnet_2]))
 
 
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     def test_add_class_arguments(self):
 
         class Class0:
