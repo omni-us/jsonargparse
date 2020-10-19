@@ -8,7 +8,7 @@ jobs:
       - checkout
       - run:
           name: Build wheel package
-          command: ./setup.py bdist_wheel
+          command: ./setup.py bdist_wheel sdist
       - persist_to_workspace:
           root: .
           paths:
@@ -74,7 +74,7 @@ workflows:
       - build: &buildreq
           filters: &tagfilter
             tags:
-              only: /^v\d+\.\d+\.\d+$/
+              only: /^v\d+\.\d+\.\d+.*$/
       - test-py38: &testreq
           <<: *buildreq
           requires:

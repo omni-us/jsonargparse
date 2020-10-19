@@ -63,7 +63,7 @@ done
 [ "$?" != "0" ] && exit 1;
 
 ## If bumping version, check wheel ok for pypi ##
-if [ -n ${BUMPVERSION_NEW_VERSION+x} ]; then
+if [ "${BUMPVERSION_NEW_VERSION+x}" != "" ]; then
   ./setup.py bdist_wheel;
   twine check dist/*.whl;
   [ "$?" != "0" ] && exit 1;

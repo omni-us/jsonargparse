@@ -66,7 +66,7 @@ def _import_requests(importer):
         raise ImportError('requests package is required by '+importer+' :: '+str(ex))
 
 
-__version__ = '3.0.0.dev0'
+__version__ = '3.0.0.dev1'
 
 
 meta_keys = {'__cwd__', '__path__'}
@@ -1640,6 +1640,7 @@ class ActionJsonSchema(Action):
 
         Args:
             schema (str or object): Schema to validate values against.
+            annotation (type): Type object from which to generate schema.
             with_meta (bool): Whether to include metadata (def.=True).
 
         Raises:
