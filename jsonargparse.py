@@ -5,7 +5,6 @@ import stat
 import glob
 import json
 import yaml
-import typing
 import inspect
 import logging
 import operator
@@ -15,7 +14,7 @@ import importlib.util
 from argparse import (Action, Namespace, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE,
                       ArgumentError, _UNRECOGNIZED_ARGS_ATTR)
 from copy import deepcopy
-from typing import Any, List, Dict, Set, Union
+from typing import Any, Tuple, List, Dict, Set, Union
 
 try:
     from contextlib import contextmanager, redirect_stderr
@@ -34,7 +33,7 @@ jsonnet_support = False if any(x is None for x in [_jsonnet, jsonschema]) else T
 url_support = False if any(x is None for x in [url_validator, requests]) else True
 
 
-def import_jsonschema(importer):
+def _import_jsonschema(importer):
     global jsonschema, jsonvalidator
     try:
         import jsonschema
@@ -43,7 +42,7 @@ def import_jsonschema(importer):
         raise ImportError('jsonschema package is required by '+importer+' :: '+str(ex))
 
 
-def import_jsonnet(importer):
+def _import_jsonnet(importer):
     global _jsonnet
     try:
         import _jsonnet
@@ -51,7 +50,7 @@ def import_jsonnet(importer):
         raise ImportError('jsonnet package is required by '+importer+' :: '+str(ex))
 
 
-def import_url_validator(importer):
+def _import_url_validator(importer):
     global url_validator
     try:
         from validators.url import url as url_validator
@@ -59,7 +58,7 @@ def import_url_validator(importer):
         raise ImportError('validators package is required by '+importer+' :: '+str(ex))
 
 
-def import_requests(importer):
+def _import_requests(importer):
     global requests
     try:
         import requests
@@ -198,67 +197,15 @@ class _ActionsContainer(argparse._ActionsContainer):
         for key in meta_keys:
             if key in action.dest:
                 raise ValueError('Argument with destination name "'+key+'" not allowed.')
-        parser = self.parser if hasattr(self, 'parser') else self  # pylint: disable=no-member
+        parser = self.parser if hasattr(self, 'parser') else self
         if action.required:
-            parser.required_args.add(action.dest)  # pylint: disable=no-member
+            parser.required_args.add(action.dest)
             action.required = False
-        if isinstance(action, ActionConfigFile) and parser.formatter_class == DefaultHelpFormatter:  # pylint: disable=no-member
-            setattr(parser.formatter_class, '_conf_file', True)  # pylint: disable=no-member
+        if isinstance(action, ActionConfigFile) and parser.formatter_class == DefaultHelpFormatter:
+            setattr(parser.formatter_class, '_conf_file', True)
         elif isinstance(action, ActionParser):
             _set_inner_parser_prefix(self, action.dest, action)
         return action
-
-
-    def add_class_arguments(self, start_class, parent=None, stop_class=None, as_group=False):
-        """Adds arguments from a class based on its type hints and docstrings.
-
-        Args:
-            start_class (class): Parent class from which to add arguments.
-            parent (str or None): Parent key for nested namespace.
-            as_group (bool): Whether arguments should be added to a new argument group.
-
-        Returns:
-            If as_group==True the group object, otherwise the parser.
-        """
-        doc_group = None
-        doc_params = {}
-        if docstring_parser:
-            from docstring_parser import parse as docstring_parse
-            for base in inspect.getmro(start_class):
-                docstring = docstring_parse(base.__init__.__doc__)
-                if docstring.short_description and not doc_group:
-                    doc_group = docstring.short_description
-                for param in docstring.params:
-                    if param.arg_name not in doc_params:
-                        doc_params[param.arg_name] = param.description
-
-        group = self
-        if as_group:
-            if not doc_group:
-                doc_group = str(start_class)
-            group = self.add_argument_group(doc_group, name=parent)
-
-        for base in inspect.getmro(start_class):
-            parameters = inspect.signature(base).parameters
-            for param in parameters.values():
-                if not param.annotation:
-                    continue
-                arg = '--' + (parent+'.' if parent else '') + param.name
-                kwargs = {
-                    'default': param.default,
-                    'required': param.default == inspect._empty,
-                    'help': doc_params.get(param.name),
-                }
-                if param.annotation in {str, int, float, bool}:
-                    kwargs['type'] = param.annotation
-                else:
-                    schema = ActionJsonSchema.typing_schema(param.annotation)
-                    if schema is not None:
-                        kwargs['action'] = ActionJsonSchema(schema=schema)
-                if 'type' in kwargs or 'action' in kwargs:
-                    group.add_argument(arg, **kwargs)
-
-        return group
 
 
 class _ArgumentGroup(_ActionsContainer, argparse._ArgumentGroup):
@@ -328,7 +275,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if parser_mode not in {'yaml', 'jsonnet'}:
             raise ValueError('The only accepted values for parser_mode are {"yaml", "jsonnet"}.')
         if parser_mode == 'jsonnet':
-            import_jsonnet('parser_mode=jsonnet')
+            _import_jsonnet('parser_mode=jsonnet')
 
 
     @property
@@ -402,6 +349,146 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         subcommands.required = required
         _find_action(self, dest)._env_prefix = self.env_prefix
         return subcommands
+
+
+    def add_class_arguments(self, theclass, nested_key=None, as_group=True):
+        """Adds arguments from a class based on its type hints and docstrings.
+
+        Note: Keyword arguments without at least one valid type are ignored.
+
+        Args:
+            theclass (class): Class from which to add arguments.
+            nested_key (str or None): Key for nested namespace.
+            as_group (bool): Whether arguments should be added to a new argument group.
+
+        Raises:
+            ValueError: When not given a class.
+            ValueError: When zero arguments can be added.
+            ValueError: When there are positional arguments without at least one valid type.
+        """
+        if not inspect.isclass(theclass):
+            raise ValueError('Expected a class object.')
+
+        def docs_func(base):
+            return [base.__init__.__doc__, base.__doc__]
+
+        self._add_signature_arguments(inspect.getmro(theclass), nested_key, as_group, docs_func)
+
+
+    def add_function_arguments(self, function, nested_key=None, as_group=True):
+        """Adds arguments from a function based on its type hints and docstrings.
+
+        Note: Keyword arguments without at least one valid type are ignored.
+
+        Args:
+            function (callable): Function from which to add arguments.
+            nested_key (str or None): Key for nested namespace.
+            as_group (bool): Whether arguments should be added to a new argument group.
+
+        Raises:
+            ValueError: When not given a callable.
+            ValueError: When zero arguments can be added.
+            ValueError: When there are positional arguments without at least one valid type.
+        """
+        if not callable(function):
+            raise ValueError('Expected a callable object.')
+
+        def docs_func(base):
+            return [base.__doc__]
+
+        self._add_signature_arguments([function], nested_key, as_group, docs_func)
+
+
+    def _add_signature_arguments(self, objects, nested_key, as_group, docs_func):
+        """Adds arguments from arguments of objects based on signatures and docstrings.
+
+        Args:
+            objects (tuple or list): Objects from which to add signatures.
+            nested_key (str or None): Key for nested namespace.
+            as_group (bool): Whether arguments should be added to a new argument group.
+            docs_func (callable): Function that returns docstrings for a given object.
+
+        Returns:
+            If as_group==True the group object, otherwise the parser.
+
+        Raises:
+            ValueError: When zero arguments can be added.
+            ValueError: When there are positional arguments without at least one valid type.
+        """
+        kinds = inspect._ParameterKind
+
+        def update_has_args_kwargs(base, has_args=True, has_kwargs=True):
+            params = list(inspect.signature(base).parameters.values())
+            has_args &= any(p._kind == kinds.VAR_POSITIONAL for p in params)
+            has_kwargs &= any(p._kind == kinds.VAR_KEYWORD for p in params)
+            return has_args, has_kwargs
+
+        ## Determine propagation of arguments ##
+        add_types = [(True, True)]
+        has_args, has_kwargs = update_has_args_kwargs(objects[0])
+        for num in range(1, len(objects)):
+            if not (has_args or has_kwargs):
+                objects = objects[:num]
+                break
+            add_types.append((has_args, has_kwargs))
+            has_args, has_kwargs = update_has_args_kwargs(objects[num], has_args, has_kwargs)
+
+        ## Gather docstrings ##
+        doc_group = None
+        doc_params = {}
+        if docstring_parser:
+            from docstring_parser import parse as docstring_parse
+            for base in objects:
+                for doc in docs_func(base):
+                    docstring = docstring_parse(doc)
+                    if docstring.short_description and not doc_group:
+                        doc_group = docstring.short_description
+                    for param in docstring.params:
+                        if param.arg_name not in doc_params:
+                            doc_params[param.arg_name] = param.description
+
+        ## Create group if requested ##
+        group = self
+        if as_group:
+            if doc_group is None:
+                doc_group = str(objects[0])
+            name = objects[0].__name__ if nested_key is None else nested_key
+            group = self.add_argument_group(doc_group, name=name)
+
+        ## Add objects arguments ##
+        num_added = 0
+        for obj, (add_args, add_kwargs) in zip(objects, add_types):
+            for param in inspect.signature(obj).parameters.values():
+                annotation = param.annotation
+                default = param.default
+                is_positional = default == inspect._empty
+                if param._kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
+                   (is_positional and not add_args) or \
+                   (not is_positional and not add_kwargs):
+                    continue
+                if annotation == inspect._empty and not is_positional:
+                    annotation = type(default)
+                kwargs = {'help': doc_params.get(param.name)}
+                if is_positional:
+                    kwargs['required'] = True
+                else:
+                    kwargs['default'] = default
+                if annotation in {str, int, float, bool}:
+                    kwargs['type'] = annotation
+                else:
+                    try:
+                        kwargs['action'] = ActionJsonSchema(annotation=annotation)
+                    except:
+                        pass
+                if 'type' in kwargs or 'action' in kwargs:
+                    arg = '--' + (nested_key+'.' if nested_key else '') + param.name
+                    group.add_argument(arg, **kwargs)
+                    num_added += 1
+                elif is_positional:
+                    raise ValueError('Positional argument without a type for '+obj.__name__+' argument '+param.name+'.')
+
+        if num_added == 0:
+            raise ValueError('Zero arguments added from '+', '.join(x.__name__ for x in objects)+'.')
 
 
     def parse_args(self, args=None, namespace=None, env:bool=None, defaults:bool=True, nested:bool=True, with_meta:bool=None):
@@ -1203,7 +1290,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             for k, v in cfg_from.items():
                 if v is None:
                     continue
-                if k not in cfg_to or not isinstance(v, dict):
+                if k not in cfg_to or \
+                   not isinstance(v, dict) or \
+                   (isinstance(v, dict) and not isinstance(cfg_to[k], dict)):
                     cfg_to[k] = v
                 elif k in cfg_to and cfg_to[k] is None:
                     cfg_to[k] = cfg_from[k]
@@ -1557,10 +1646,17 @@ class ActionJsonSchema(Action):
             ValueError: If a parameter is invalid.
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
-        if 'schema' in kwargs:
-            import_jsonschema('ActionJsonSchema')
-            _check_unknown_kwargs(kwargs, {'schema', 'with_meta'})
-            schema = kwargs['schema']
+        if 'schema' in kwargs or 'annotation' in kwargs:
+            _import_jsonschema('ActionJsonSchema')
+            _check_unknown_kwargs(kwargs, {'schema', 'annotation', 'with_meta'})
+            if 'annotation' in kwargs:
+                if 'schema' in kwargs:
+                    raise ValueError('Only one of schema or annotation is accepted.')
+                schema = ActionJsonSchema.typing_schema(kwargs['annotation'])
+                if schema is None or schema == {'type': 'null'}:
+                    raise ValueError('Unable to generate schema from annotation '+str(kwargs['annotation']))
+            else:
+                schema = kwargs['schema']
             if isinstance(schema, str):
                 try:
                     schema = yaml.safe_load(schema)
@@ -1570,7 +1666,7 @@ class ActionJsonSchema(Action):
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             self._with_meta = kwargs['with_meta'] if 'with_meta' in kwargs else True
         elif '_validator' not in kwargs:
-            raise ValueError('Expected schema keyword argument.')
+            raise ValueError('Expected schema or annotation keyword arguments.')
         else:
             self._validator = kwargs.pop('_validator')
             self._with_meta = kwargs.pop('_with_meta')
@@ -1586,7 +1682,7 @@ class ActionJsonSchema(Action):
         if len(args) == 0:
             kwargs['_validator'] = self._validator
             kwargs['_with_meta'] = self._with_meta
-            if 'help' in kwargs and '%s' in kwargs['help']:
+            if 'help' in kwargs and isinstance(kwargs['help'], str) and '%s' in kwargs['help']:
                 kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, indent=2, sort_keys=True)
             return ActionJsonSchema(**kwargs)
         val = self._check_type(args[2])
@@ -1614,6 +1710,8 @@ class ActionJsonSchema(Action):
                         val = yaml.safe_load(fpath.get_content())
                 if isinstance(val, Namespace):
                     val = namespace_to_dict(val)
+                if isinstance(val, tuple):
+                    val = list(val)
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 self._validator.validate(val)
                 if path_meta is not None:
@@ -1652,13 +1750,16 @@ class ActionJsonSchema(Action):
             type(None): 'null',
         }
 
-        if annotation in typesmap:
+        if annotation == Any:
+            return {}
+
+        elif annotation in typesmap:
             return {'type': typesmap[annotation]}
 
         elif not hasattr(annotation, '__origin__'):
             return
 
-        elif annotation.__origin__ == typing.Union:
+        elif annotation.__origin__ == Union:
             members = []
             for arg in annotation.__args__:
                 schema = ActionJsonSchema.typing_schema(arg)
@@ -1669,10 +1770,21 @@ class ActionJsonSchema(Action):
             elif len(members) > 1:
                 return {'anyOf': members}
 
-        elif annotation.__origin__ == typing.List:
+        elif annotation.__origin__ == Tuple:
+            items = [ActionJsonSchema.typing_schema(a) for a in annotation.__args__]
+            if any(a is None for a in items):
+                return
+            return {'type': 'array', 'items': items}
+
+        elif annotation.__origin__ == List:
             items = ActionJsonSchema.typing_schema(annotation.__args__[0])
             if items is not None:
                 return {'type': 'array', 'items': items}
+
+        elif annotation.__origin__ == Dict and annotation.__args__[0] == str:
+            schema = ActionJsonSchema.typing_schema(annotation.__args__[1])
+            if schema is not None:
+                return {'type': 'object', 'patternProperties': {'.*': schema}}
 
 
 class ActionJsonnetExtVars(ActionJsonSchema):
@@ -1695,14 +1807,14 @@ class ActionJsonnet(Action):
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
         if 'ext_vars' in kwargs or 'schema' in kwargs:
-            import_jsonnet('ActionJsonnet')
+            _import_jsonnet('ActionJsonnet')
             _check_unknown_kwargs(kwargs, {'schema', 'ext_vars'})
             if 'ext_vars' in kwargs and not isinstance(kwargs['ext_vars'], (str, type(None))):
                 raise ValueError('ext_vars has to be either None or a string.')
             self._ext_vars = kwargs['ext_vars'] if 'ext_vars' in kwargs else None
             schema = kwargs['schema'] if 'schema' in kwargs else None
             if schema is not None:
-                import_jsonschema('ActionJsonnet')
+                _import_jsonschema('ActionJsonnet')
                 if isinstance(schema, str):
                     try:
                         schema = yaml.safe_load(schema)
@@ -2243,7 +2355,7 @@ class Path(object):
 
         if not skip_check and is_url:
             if 'r' in mode:
-                import_requests('Path with URL support')
+                _import_requests('Path with URL support')
                 requests.head(abs_path).raise_for_status()  # type: ignore
         elif not skip_check:
             ptype = 'Directory' if 'd' in mode else 'File'
@@ -2307,7 +2419,7 @@ class Path(object):
             with open(self.abs_path, mode) as input_file:
                 return input_file.read()
         else:
-            import_requests('Path with URL support')
+            _import_requests('Path with URL support')
             response = requests.get(self.abs_path)
             response.raise_for_status()
             return response.text
@@ -2321,7 +2433,7 @@ class Path(object):
         if 'f' in mode and 'd' in mode:
             raise ValueError('Both modes "f" and "d" not possible.')
         if 'u' in mode:
-            import_url_validator('Path with URL support')
+            _import_url_validator('Path with URL support')
             if 'd' in mode:
                 raise ValueError('Both modes "d" and "u" not possible.')
 

@@ -260,6 +260,75 @@ arguments. The functions for this are
 config contained in a string respectively.
 
 
+Class and function arguments
+============================
+
+It is good practice to write python classes and functions in which the arguments
+have type hints and are described in the docstrings. To make this well written
+code configurable it wouldn't make sense to duplicate information of types and
+argument descriptions. To avoid this duplication, jsonargparse parsers include
+methods to automatically add their arguments,
+:func:`jsonargparse.ArgumentParser.add_class_arguments` and
+:func:`jsonargparse.ArgumentParser.add_function_arguments`.
+
+Take for example that there is a class with its init and one function with
+docstrings as follows:
+
+.. code-block:: python
+
+    from typing import Dict, Union, List
+
+    class MyClass(MyBaseClass):
+        def __init__(self, items: Dict[str, Union[int, List[int]]], **kwargs):
+            """Initializer for MyClass.
+
+            Args:
+                items: Description for items.
+            """
+            pass
+
+    def myfunc( value: float, flag: bool = False):
+        """Description for myfunc.
+
+        Args:
+            value: Description for value.
+            flag: Description for flag.
+        """
+        pass
+
+Both :code:`MyClass` and :code:`myfunc` can easily be made configurable, the
+class initialized and the function executed as follows:
+
+.. code-block:: python
+
+    from jsonargparse import ArgumentParser, namespace_to_dict
+
+    parser = ArgumentParser()
+    parser.add_class_arguments(MyClass, 'myclass')
+    parser.add_function_arguments(myfunc, 'myfunc')
+
+    cfg = parser.parse_args()
+    myclass = MyClass(**namespace_to_dict(cfg.myclass))
+    myfunc(**namespace_to_dict(cfg.myfunc))
+
+The :func:`add_class_arguments` call adds to the *myclass* key the :code:`items`
+argument with description as in the docstring, it is set as required since it
+does not have a default value, and when parsed it is validated according its
+type hint, i.e., a dict with values ints or list of ints. Also since the init
+has the :code:`**kwargs` argument, the keyword arguments from
+:code:`MyBaseClass` are also added to the parser. Similarly the
+:func:`add_function_arguments` call adds to the *myfunc* key the arguments
+:code:`value` as a required float and :code:`flag` as an optional boolean with
+default value false.
+
+For all features described above to work, two optional packages are required:
+`jsonschema <https://pypi.org/project/jsonschema/>`__ to support validation of
+complex type hints and `docstring-parser
+<https://pypi.org/project/docstring-parser/>`__ to get the argument descriptions
+from the docstrings. Both these packages are included when jsonargparse is
+installed using the *all* extras requires.
+
+
 Json schemas
 ============
 
