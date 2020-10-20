@@ -1165,6 +1165,32 @@ class JsonargparseTests(unittest.TestCase):
             self.assertIsNone(_find_action(parser, 'a3').help, 'expected help for a3 to be None')
 
 
+    def test_enum(self):
+
+        class MyEnum(enum.Enum):
+            A = 1
+            B = 2
+            C = 3
+
+        parser = ArgumentParser()
+        parser.add_argument('--enum', action=ActionEnum(enum=MyEnum))
+        for val in ['A', 'B', 'C']:
+            self.assertEqual(MyEnum[val], parser.parse_args(['--enum='+val]).enum)
+        for val in ['X', 'b', 2]:
+            self.assertRaises(ParserError, lambda: parser.parse_args(['--enum='+str(val)]))
+
+        cfg = parser.parse_args(['--enum=C'], with_meta=False)
+        self.assertEqual('enum: C\n', parser.dump(cfg))
+
+        def func(a1: MyEnum = MyEnum['A']):
+            return a1
+
+        parser = ArgumentParser()
+        parser.add_function_arguments(func)
+        self.assertEqual(MyEnum['A'], parser.get_defaults().a1)
+        self.assertEqual(MyEnum['B'], parser.parse_args(['--a1=B']).a1)
+
+
     def test_operators(self):
         """Test the use of ActionOperators."""
         parser = ArgumentParser(prog='app')

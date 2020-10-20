@@ -5,6 +5,7 @@ import stat
 import glob
 import json
 import yaml
+import enum
 import inspect
 import logging
 import operator
@@ -270,6 +271,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         self.parser_mode = parser_mode
         self.logger = logger
         self.error_handler = error_handler
+        self.add_argument('--print-config', action=_ActionPrintConfig)
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version)
         if parser_mode not in {'yaml', 'jsonnet'}:
@@ -475,6 +477,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     kwargs['default'] = default
                 if annotation in {str, int, float, bool}:
                     kwargs['type'] = annotation
+                elif inspect.isclass(annotation) and issubclass(annotation, enum.Enum):
+                    kwargs['action'] = ActionEnum(enum=annotation)
                 else:
                     try:
                         kwargs['action'] = ActionJsonSchema(annotation=annotation)
@@ -545,6 +549,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                         cfg_ns.__cwd__.insert(0, os.getcwd())
                 else:
                     cfg_ns.__cwd__ = [os.getcwd()]
+
+            if hasattr(self, '_print_config') and self._print_config:  # type: ignore
+                sys.stdout.write(self.dump(cfg_ns, skip_none=False))
+                self.exit()
 
             self._logger.info('Parsed arguments.')
 
@@ -786,6 +794,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             for action in actions:
                 if skip_none and action.dest in cfg and cfg[action.dest] is None:
                     del cfg[action.dest]
+                elif isinstance(action, ActionEnum):
+                    cfg[action.dest] = cfg[action.dest].name
                 elif isinstance(action, ActionPath):
                     if cfg[action.dest] is not None:
                         if isinstance(cfg[action.dest], list):
@@ -1547,6 +1557,22 @@ class ActionConfigFile(Action):
                 setattr(namespace, key, val)
 
 
+class _ActionPrintConfig(Action):
+    def __init__(self,
+                 option_strings,
+                 dest=SUPPRESS,
+                 default=SUPPRESS,
+                 help='Print config and exit.'):
+        super().__init__(option_strings=option_strings,
+                         dest=dest,
+                         default=default,
+                         nargs=0,
+                         help=help)
+
+    def __call__(self, parser, *args, **kwargs):
+        parser._print_config = True
+
+
 class ActionYesNo(Action):
     """Paired options --{yes_prefix}opt, --{no_prefix}opt to set True or False respectively."""
     def __init__(self, **kwargs):
@@ -1631,6 +1657,59 @@ class ActionYesNo(Action):
         elif not isinstance(x, bool):
             raise TypeError('Value not boolean: '+str(x)+'.')
         return x
+
+
+class ActionEnum(Action):
+    """An action based on an Enum that maps to-from strings and enum values."""
+    def __init__(self, **kwargs):
+        """Initializer for ActionEnum instance.
+
+        Args:
+            enum (Enum): Enum instance.
+
+        Raises:
+            ValueError: If a parameter is invalid.
+        """
+        if 'enum' in kwargs:
+            _check_unknown_kwargs(kwargs, {'enum'})
+            if not issubclass(kwargs['enum'], enum.Enum):
+                raise ValueError('Expected enum to be an instance of Enum.')
+            self._enum = kwargs['enum']
+        elif '_enum' not in kwargs:
+            raise ValueError('Expected enum keyword argument.')
+        else:
+            self._enum = kwargs.pop('_enum')
+            kwargs['type'] = str
+            kwargs['metavar'] = '{'+','.join(self._enum.__members__.keys())+'}'
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        """Parses an argument mapping a string to its Enum value.
+
+        Raises:
+            TypeError: If value not present in the Enum.
+        """
+        if len(args) == 0:
+            kwargs['_enum'] = self._enum
+            return ActionEnum(**kwargs)
+        setattr(args[1], self.dest, self._check_type(args[2]))
+
+    def _check_type(self, value, cfg=None):
+        islist = _is_action_value_list(self)
+        if not islist:
+            value = [value]
+        elif not isinstance(value, list):
+            raise TypeError('For ActionEnum with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
+        for num, val in enumerate(value):
+            try:
+                if isinstance(val, str):
+                    value[num] = self._enum[val]
+                else:
+                    self._enum(val)
+            except KeyError as ex:
+                elem = '' if not islist else ' element '+str(num+1)
+                raise TypeError('Parser key "'+self.dest+'"'+elem+': value '+str(val)+' not in '+self._enum.__name__+'.')
+        return value if islist else value[0]
 
 
 class ActionJsonSchema(Action):
