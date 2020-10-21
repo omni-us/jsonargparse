@@ -164,6 +164,7 @@ class JsonargparseTests(unittest.TestCase):
         parser2.add_argument('--v3')
         parser.add_argument('--g2', action=ActionParser(parser=parser2))
 
+        os.environ['COLUMNS'] = '150'
         out = StringIO()
         with redirect_stdout(out):
             parser.print_help()
