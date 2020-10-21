@@ -13,6 +13,8 @@ import pathlib
 import threading
 import importlib
 import unittest
+from io import StringIO
+from contextlib import redirect_stdout
 from collections import OrderedDict
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from typing import Dict, List, Optional, Union, Any
@@ -99,6 +101,7 @@ class JsonargparseTests(unittest.TestCase):
     def test_named_groups(self):
         parser = example_parser()
         self.assertEqual({'group1', 'group2'}, set(parser.groups.keys()))
+        self.assertRaises(ValueError, lambda: parser.add_argument_group('Bad', name='group1'))
 
 
     def test_set_get_defaults(self):
@@ -152,12 +155,36 @@ class JsonargparseTests(unittest.TestCase):
         parser.dump(cfg2)
 
 
+    def test_default_help_formatter(self):
+        parser = ArgumentParser(prog='app', default_env=True)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        parser.add_argument('--v1', help='Option v1.', default='1', required=True)
+        parser.add_argument('--g1.v2', help='Option v2.', default='2')
+        parser2 = ArgumentParser()
+        parser2.add_argument('--v3')
+        parser.add_argument('--g2', action=ActionParser(parser=parser2))
+
+        out = StringIO()
+        with redirect_stdout(out):
+            parser.print_help()
+
+        outval = out.getvalue()
+        self.assertIn('--print-config', outval)
+        self.assertIn('--cfg CFG', outval)
+        self.assertIn('APP_CFG', outval)
+        self.assertIn('--v1 V1', outval)
+        self.assertIn('APP_V1', outval)
+        self.assertIn('--g1.v2 V2', outval)
+        self.assertIn('APP_G1__V2', outval)
+        self.assertIn('Option v1. (required, default: 1)', outval)
+        self.assertIn('Option v2. (default: 2)', outval)
+        self.assertIn('--g2.help', outval)
+
+
     def test_usage_and_exit_error_handler(self):
-        """Test the usage_and_exit_error_handler error handler."""
         parser = ArgumentParser(prog='app', error_handler='usage_and_exit_error_handler')
         parser.add_argument('--val', type=int)
         self.assertEqual(8, parser.parse_args(['--val', '8']).val)
-        sys.stderr.write('\n')
         self.assertRaises(SystemExit, lambda: parser.parse_args(['--val', 'eight']))
 
 

@@ -204,14 +204,14 @@ An important feature of this module is the parsing of yaml/json files. The dot
 notation hierarchy of the arguments (see :ref:`nested-namespaces`) are used for
 the expected structure in the config files.
 
-When creating the :class:`.ArgumentParser` the :code:`default_config_files`
-argument can be given to specify patterns to search for configuration files.
-Only the first matched config file is parsed.
+The :class:`.ArgumentParser` class accepts a :code:`default_config_files`
+argument that can be given to specify patterns to search for configuration
+files. Only the first matched config file is parsed.
 
 When parsing command line arguments, it is possible to add a configuration file
 path argument. The config file would be read and parsed in the specific position
 among the command line arguments, so the arguments after would override the
-values from the configuration file. If the config argument can be given multiple
+values from the configuration file. The config argument can be given multiple
 times, each overriding the values of the previous. Again using the parser from
 the :ref:`nested-namespaces` section above, for example we could have the
 following config file in yaml format:
@@ -248,7 +248,11 @@ configuration content can also be provided.
     >>> cfg.lev1.opt1
     'from string 1'
 
-The config file could also be provided as an environment variable as explained
+All parsers include a :code:`--print-config` option. This is useful particularly
+for command line tools with a large set of options to create an initial config
+file including all default values.
+
+The config file can also be provided as an environment variable as explained
 in section :ref:`environment-variables`. The configuration file environment
 variable is the first one to be parsed. So any other argument provided through
 environment variables would override the config file one.

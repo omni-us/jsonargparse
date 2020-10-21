@@ -89,7 +89,7 @@ class ParserError(Exception):
     pass
 
 
-class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
+class DefaultHelpFormatter(argparse.HelpFormatter):
     """Help message formatter with namespace key, env var and default values in argument help.
 
     This class is an extension of `argparse.ArgumentDefaultsHelpFormatter
@@ -104,6 +104,15 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     _default_env = True
     _conf_file = True
 
+    def _get_help_string(self, action):
+        help = ''
+        if hasattr(action, '_required') and action._required:
+            help = 'required'
+        if '%(default)' not in action.help and action.default is not SUPPRESS:
+            if action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}:
+                help += (', ' if help else '') + 'default: %(default)s'
+        return action.help + (' ('+help+')' if help else '')
+
     def _format_action_invocation(self, action):
         if action.option_strings == [] or action.default == SUPPRESS or (not self._conf_file and not self._default_env):
             return super()._format_action_invocation(action)
@@ -115,6 +124,9 @@ class DefaultHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
         if isinstance(action, ActionParser):
             extr += '\n                        For more details run command with --'+action.dest+'.help.'
         return 'ARG:   ' + super()._format_action_invocation(action) + extr
+
+    def _get_default_metavar_for_optional(self, action):
+        return action.dest.rsplit('.')[-1].upper()
 
 
 null_logger = logging.Logger('null')
@@ -201,6 +213,7 @@ class _ActionsContainer(argparse._ActionsContainer):
         parser = self.parser if hasattr(self, 'parser') else self
         if action.required:
             parser.required_args.add(action.dest)
+            action._required = True
             action.required = False
         if isinstance(action, ActionConfigFile) and parser.formatter_class == DefaultHelpFormatter:
             setattr(parser.formatter_class, '_conf_file', True)
@@ -1150,7 +1163,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         Returns:
             The group object.
+
+        Raises:
+            ValueError: If group with the same name already exists.
         """
+        if name is not None and name in self.groups:
+            raise ValueError('Group with name '+name+' already exists.')
         group = _ArgumentGroup(self, *args, **kwargs)
         group.parser = self
         self._action_groups.append(group)
