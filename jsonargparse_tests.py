@@ -155,6 +155,23 @@ class JsonargparseTests(unittest.TestCase):
         parser.dump(cfg2)
 
 
+    def test_print_config(self):
+        parser = ArgumentParser()
+        parser.add_argument('--v0', help=SUPPRESS, default='0')
+        parser.add_argument('--v1', help='Option v1.', default=1)
+        parser.add_argument('--g1.v2', help='Option v2.', default='2')
+        parser2 = ArgumentParser()
+        parser2.add_argument('--v3')
+        parser.add_argument('--g2', action=ActionParser(parser=parser2))
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--print-config'])
+
+        outval = yaml.safe_load(out.getvalue())
+        self.assertEqual(outval, {'g1': {'v2': '2'}, 'g2': {'v3': None}, 'v1': 1})
+
+
     def test_default_help_formatter(self):
         parser = ArgumentParser(prog='app', default_env=True)
         parser.add_argument('--cfg', action=ActionConfigFile)
@@ -1099,6 +1116,8 @@ class JsonargparseTests(unittest.TestCase):
         parser = ArgumentParser()
         parser.add_class_arguments(Class3)
 
+        self.assertRaises(ValueError, lambda: parser.add_class_arguments('Class3'))
+
         self.assertIn('Class3', parser.groups)
 
         for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4']:
@@ -1118,11 +1137,12 @@ class JsonargparseTests(unittest.TestCase):
                                                   'c3_a7': ('7', 7, 7.0)})
         self.assertEqual([1, 2], parser.parse_args(['--c3_a0=0', '--c3_a5=[1,2]']).c3_a5)
         self.assertEqual({'k': 5.0}, namespace_to_dict(parser.parse_args(['--c3_a0=0', '--c3_a5={"k": 5.0}']).c3_a5))
-        class3 = Class3(**namespace_to_dict(cfg))
-        self.assertEqual('a', class3())
+        self.assertEqual(('3', 3, 3.0), parser.parse_args(['--c3_a0=0', '--c3_a7=["3", 3, 3.0]']).c3_a7)
+        self.assertEqual('a', Class3(**namespace_to_dict(cfg))())
 
         self.assertRaises(ParserError, lambda: parser.parse_args([]))  # c3_a0 is required
         self.assertRaises(ParserError, lambda: parser.parse_args(['--c3_a0=0', '--c3_a4=4.0']))  # c3_a4 is str or None
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--c3_a0=0', '--c3_a7=["3", "3", 3.0]']))  # tuple[1] is int
 
         if docstring_parser:
             self.assertEqual('Class3 short description', parser.groups['Class3'].title)
@@ -1158,6 +1178,102 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_class_arguments(NoValidArgs))
 
 
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+    def test_add_method_arguments(self):
+
+        class Class0:
+            def mymethod(self,
+                         c0_a0: Optional[str] = '0'):
+                pass
+
+        class Class1(Class0):
+            def mymethod(self,  # type: ignore
+                         c1_a1: str,
+                         c1_a2: Any = 2.0,
+                         c1_a3 = None,
+                         c1_a4: int = 4):
+                """mymethod1 short description
+
+                Args:
+                    c1_a3: c1_a3 description
+                """
+                super().mymethod()
+                return c1_a1
+
+        class Class2(Class1):
+            def mymethod(self,
+                         c2_a0,
+                         c3_a4,
+                         *args,
+                         **kwargs):
+                """mymethod2 short description
+
+                Args:
+                    c1_a2: c1_a2 description
+                """
+                return super().mymethod(c3_a4, *args, **kwargs)
+
+        class Class3(Class2):
+            def mymethod(self,  # type: ignore
+                         c3_a0: Any,
+                         c3_a1 = '1',
+                         c3_a2: float = 2.0,
+                         c3_a3: bool = False,
+                         c3_a4: Optional[str] = None,
+                         c3_a5: Union[int, float, str, List[int], Dict[str, float]] = 5,
+                         c3_a6: Optional[Class1] = None,
+                         c3_a7: Tuple[str, int, float] = ('7', 7, 7.0),
+                         **kwargs):
+                """mymethod3 short description
+
+                Args:
+                    c3_a0: c3_a0 description
+                    c3_a1: c3_a1 description
+                    c3_a2: c3_a2 description
+                    c3_a4: c3_a4 description
+                    c3_a5: c3_a5 description
+                """
+                return super().mymethod(None, c3_a4, **kwargs)
+
+        ## Test without nesting ##
+        parser = ArgumentParser()
+        parser.add_method_arguments(Class3, 'mymethod')
+
+        self.assertRaises(ValueError, lambda: parser.add_method_arguments('Class3', 'mymethod'))
+        self.assertRaises(ValueError, lambda: parser.add_method_arguments(Class3, 'mymethod3'))
+
+        self.assertIn('mymethod', parser.groups)
+
+        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4']:
+            self.assertIsNotNone(_find_action(parser, key), key+' should be in parser but is not')
+        for key in ['c3_a6', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
+            self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
+
+        cfg = parser.parse_args(['--c3_a0=0', '--c3_a3=true', '--c3_a4=a'], with_meta=False)
+        self.assertEqual(namespace_to_dict(cfg), {'c1_a2': 2.0,
+                                                  'c1_a4': 4,
+                                                  'c3_a0': 0,
+                                                  'c3_a1': '1',
+                                                  'c3_a2': 2.0,
+                                                  'c3_a3': True,
+                                                  'c3_a4': 'a',
+                                                  'c3_a5': 5,
+                                                  'c3_a7': ('7', 7, 7.0)})
+        self.assertEqual([1, 2], parser.parse_args(['--c3_a0=0', '--c3_a5=[1,2]']).c3_a5)
+        self.assertEqual({'k': 5.0}, namespace_to_dict(parser.parse_args(['--c3_a0=0', '--c3_a5={"k": 5.0}']).c3_a5))
+        self.assertEqual('a', Class3().mymethod(**namespace_to_dict(cfg)))
+
+        self.assertRaises(ParserError, lambda: parser.parse_args([]))  # c3_a0 is required
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--c3_a0=0', '--c3_a4=4.0']))  # c3_a4 is str or None
+
+        if docstring_parser:
+            self.assertEqual('mymethod3 short description', parser.groups['mymethod'].title)
+            for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a4', 'c3_a5', 'c1_a2']:
+                self.assertEqual(key+' description', _find_action(parser, key).help)
+            for key in ['c3_a3', 'c3_a7', 'c1_a4']:
+                self.assertIsNone(_find_action(parser, key).help, 'expected help for '+key+' to be None')
+
+
     def test_add_function_arguments(self):
 
         def func(a1 = '1',
@@ -1175,6 +1291,8 @@ class JsonargparseTests(unittest.TestCase):
 
         parser = ArgumentParser()
         parser.add_function_arguments(func)
+
+        self.assertRaises(ValueError, lambda: parser.add_function_arguments('func'))
 
         self.assertIn('func', parser.groups)
 

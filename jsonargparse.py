@@ -390,6 +390,40 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         self._add_signature_arguments(inspect.getmro(theclass), nested_key, as_group, docs_func)
 
 
+    def add_method_arguments(self, theclass, themethod, nested_key=None, as_group=True):
+        """Adds arguments from a class based on its type hints and docstrings.
+
+        Note: Keyword arguments without at least one valid type are ignored.
+
+        Args:
+            theclass (class): Class which defines the method.
+            themethod (str): Name of the method for which to add arguments.
+            nested_key (str or None): Key for nested namespace.
+            as_group (bool): Whether arguments should be added to a new argument group.
+
+        Raises:
+            ValueError: When not given a class or a method of the class.
+            ValueError: When zero arguments can be added.
+            ValueError: When there are positional arguments without at least one valid type.
+        """
+        if not inspect.isclass(theclass):
+            raise ValueError('Expected a class object.')
+
+        def is_method_in_class(theclass):
+            return hasattr(theclass, themethod) and inspect.isfunction(getattr(theclass, themethod))
+
+        if not is_method_in_class(theclass):
+            raise ValueError('Expected the method to be present in the class.')
+
+        def docs_func(base):
+            return [base.__doc__]
+
+        classes = inspect.getmro(theclass)
+        methods = [getattr(c, themethod) for c in classes if is_method_in_class(c)]
+
+        self._add_signature_arguments(methods, nested_key, as_group, docs_func, skip_first=True)
+
+
     def add_function_arguments(self, function, nested_key=None, as_group=True):
         """Adds arguments from a function based on its type hints and docstrings.
 
@@ -414,7 +448,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         self._add_signature_arguments([function], nested_key, as_group, docs_func)
 
 
-    def _add_signature_arguments(self, objects, nested_key, as_group, docs_func):
+    def _add_signature_arguments(self, objects, nested_key, as_group, docs_func, skip_first=False):
         """Adds arguments from arguments of objects based on signatures and docstrings.
 
         Args:
@@ -422,6 +456,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             nested_key (str or None): Key for nested namespace.
             as_group (bool): Whether arguments should be added to a new argument group.
             docs_func (callable): Function that returns docstrings for a given object.
+            skip_first (bool): Whether to skip first argument, i.e., skip self of class methods.
 
         Returns:
             If as_group==True the group object, otherwise the parser.
@@ -473,13 +508,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         ## Add objects arguments ##
         num_added = 0
         for obj, (add_args, add_kwargs) in zip(objects, add_types):
-            for param in inspect.signature(obj).parameters.values():
+            for num, param in enumerate(inspect.signature(obj).parameters.values()):
                 annotation = param.annotation
                 default = param.default
                 is_positional = default == inspect._empty
                 if param._kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
                    (is_positional and not add_args) or \
-                   (not is_positional and not add_kwargs):
+                   (not is_positional and not add_kwargs) or \
+                   (is_positional and skip_first and num == 0):
                     continue
                 if annotation == inspect._empty and not is_positional:
                     annotation = type(default)
@@ -554,6 +590,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 cfg_dict = strip_meta(cfg_dict)
 
             cfg_ns = dict_to_namespace(cfg_dict)
+
+            if hasattr(self, '_print_config') and self._print_config:  # type: ignore
+                sys.stdout.write(self.dump(cfg_ns, skip_none=False, skip_check=True))
+                self.exit()
+
             self.check_config(cfg_ns)
 
             if with_meta or (with_meta is None and self._default_meta):
@@ -562,10 +603,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                         cfg_ns.__cwd__.insert(0, os.getcwd())
                 else:
                     cfg_ns.__cwd__ = [os.getcwd()]
-
-            if hasattr(self, '_print_config') and self._print_config:  # type: ignore
-                sys.stdout.write(self.dump(cfg_ns, skip_none=False))
-                self.exit()
 
             self._logger.info('Parsed arguments.')
 
@@ -806,6 +843,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         def cleanup_actions(cfg, actions):
             for action in actions:
                 if skip_none and action.dest in cfg and cfg[action.dest] is None:
+                    del cfg[action.dest]
+                elif action.help == SUPPRESS:
                     del cfg[action.dest]
                 elif isinstance(action, ActionEnum):
                     cfg[action.dest] = cfg[action.dest].name
@@ -1580,7 +1619,7 @@ class _ActionPrintConfig(Action):
                  option_strings,
                  dest=SUPPRESS,
                  default=SUPPRESS,
-                 help='Print config and exit.'):
+                 help='print configuration and exit'):
         super().__init__(option_strings=option_strings,
                          dest=dest,
                          default=default,
@@ -1750,10 +1789,12 @@ class ActionJsonSchema(Action):
             if 'annotation' in kwargs:
                 if 'schema' in kwargs:
                     raise ValueError('Only one of schema or annotation is accepted.')
+                self._annotation = kwargs['annotation']
                 schema = ActionJsonSchema.typing_schema(kwargs['annotation'])
                 if schema is None or schema == {'type': 'null'}:
                     raise ValueError('Unable to generate schema from annotation '+str(kwargs['annotation']))
             else:
+                self._annotation = None
                 schema = kwargs['schema']
             if isinstance(schema, str):
                 try:
@@ -1766,6 +1807,7 @@ class ActionJsonSchema(Action):
         elif '_validator' not in kwargs:
             raise ValueError('Expected schema or annotation keyword arguments.')
         else:
+            self._annotation = kwargs.pop('_annotation')
             self._validator = kwargs.pop('_validator')
             self._with_meta = kwargs.pop('_with_meta')
             kwargs['type'] = str
@@ -1778,6 +1820,7 @@ class ActionJsonSchema(Action):
             TypeError: If the argument is not valid.
         """
         if len(args) == 0:
+            kwargs['_annotation'] = self._annotation
             kwargs['_validator'] = self._validator
             kwargs['_with_meta'] = self._with_meta
             if 'help' in kwargs and isinstance(kwargs['help'], str) and '%s' in kwargs['help']:
@@ -1812,6 +1855,8 @@ class ActionJsonSchema(Action):
                     val = list(val)
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 self._validator.validate(val)
+                if hasattr(self._annotation, '__origin__') and self._annotation.__origin__ in {Tuple, tuple} and isinstance(val, list):
+                    val = tuple(val)
                 if path_meta is not None:
                     val['__path__'] = path_meta
                 if isinstance(val, dict) and fpath is not None:

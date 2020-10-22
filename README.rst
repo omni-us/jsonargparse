@@ -40,6 +40,9 @@ Features
 - Support for nested namespaces which makes it possible to parse config files
   with non-flat hierarchies.
 
+- Automatic adding of arguments from classes, methods and functions that include
+  type hints and docstrings.
+
 - Support for two popular supersets of json, making config files more versatile
   and powerful.
 
@@ -264,18 +267,19 @@ arguments. The functions for this are
 config contained in a string respectively.
 
 
-Class and function arguments
-============================
+Classes, methods and function
+=============================
 
-It is good practice to write python classes and functions in which the arguments
+It is good practice to write python code in which arguments
 have type hints and are described in the docstrings. To make this well written
 code configurable it wouldn't make sense to duplicate information of types and
 argument descriptions. To avoid this duplication, jsonargparse parsers include
-methods to automatically add their arguments,
-:func:`jsonargparse.ArgumentParser.add_class_arguments` and
+methods to automatically add their arguments:
+:func:`jsonargparse.ArgumentParser.add_class_arguments`,
+:func:`jsonargparse.ArgumentParser.add_method_arguments` and
 :func:`jsonargparse.ArgumentParser.add_function_arguments`.
 
-Take for example that there is a class with its init and one function with
+Take for example that there is a class with its init and a method with
 docstrings as follows:
 
 .. code-block:: python
@@ -291,39 +295,62 @@ docstrings as follows:
             """
             pass
 
-    def myfunc( value: float, flag: bool = False):
-        """Description for myfunc.
+        def mymethod(self, value: float, flag: bool = False):
+            """Description for mymethod.
 
-        Args:
-            value: Description for value.
-            flag: Description for flag.
-        """
-        pass
+            Args:
+                value: Description for value.
+                flag: Description for flag.
+            """
+            pass
 
-Both :code:`MyClass` and :code:`myfunc` can easily be made configurable, the
-class initialized and the function executed as follows:
+Both :code:`MyClass` and :code:`mymethod` can easily be made configurable, the
+class initialized and the method executed as follows:
 
 .. code-block:: python
 
     from jsonargparse import ArgumentParser, namespace_to_dict
 
     parser = ArgumentParser()
-    parser.add_class_arguments(MyClass, 'myclass')
-    parser.add_function_arguments(myfunc, 'myfunc')
+    parser.add_class_arguments(MyClass, 'myclass.init')
+    parser.add_method_arguments(MyClass, 'mymethod', 'myclass.method')
 
     cfg = parser.parse_args()
-    myclass = MyClass(**namespace_to_dict(cfg.myclass))
-    myfunc(**namespace_to_dict(cfg.myfunc))
+    myclass = MyClass(**namespace_to_dict(cfg.myclass.init))
+    myclass.mymethod(**namespace_to_dict(cfg.myclass.method))
 
-The :func:`add_class_arguments` call adds to the *myclass* key the :code:`items`
-argument with description as in the docstring, it is set as required since it
-does not have a default value, and when parsed it is validated according its
-type hint, i.e., a dict with values ints or list of ints. Also since the init
-has the :code:`**kwargs` argument, the keyword arguments from
+The :func:`add_class_arguments` call adds to the *myclass.init* key the
+:code:`items` argument with description as in the docstring, it is set as
+required since it does not have a default value, and when parsed it is validated
+according its type hint, i.e., a dict with values ints or list of ints. Also
+since the init has the :code:`**kwargs` argument, the keyword arguments from
 :code:`MyBaseClass` are also added to the parser. Similarly the
-:func:`add_function_arguments` call adds to the *myfunc* key the arguments
+:func:`add_method_arguments` call adds to the *myclass.method* key the arguments
 :code:`value` as a required float and :code:`flag` as an optional boolean with
 default value false.
+
+Some notes about the support for automatic adding of arguments are:
+
+- The supported type hints are: :code:`str`, :code:`bool`, :code:`int`,
+  :code:`float`, :code:`list`, :code:`dict` (only with :code:`str` keys),
+  :code:`Any`, :code:`Union`, :code:`Enum` and :code:`Optional`. Nested
+  types are supported as long as the child types are supported.
+
+- There is partial support for :code:`tuple` even though they can't be
+  represented in json distinguishable from a list. Tuples are only supported
+  without nesting and for fixed number of elements. Each element position can
+  have its own type and will be validated as such. In command line arguments,
+  config files and environment variables tuples are represented as a list.
+
+- All positional arguments must have a type, otherwise the add arguments
+  functions raise an exception.
+
+- Keyword arguments are ignored if they don't have at least one type that is
+  supported.
+
+- Recursive adding of arguments from base classes only considers the presence
+  of :code:`*args` and :code:`**kwargs`. It does not check the code to identify
+  if :code:`super()` is called or with which arguments.
 
 For all features described above to work, two optional packages are required:
 `jsonschema <https://pypi.org/project/jsonschema/>`__ to support validation of
