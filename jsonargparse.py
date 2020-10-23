@@ -396,7 +396,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Note: Keyword arguments without at least one valid type are ignored.
 
         Args:
-            theclass (class): Class which defines the method.
+            theclass (class): Class which includes the method.
             themethod (str): Name of the method for which to add arguments.
             nested_key (str or None): Key for nested namespace.
             as_group (bool): Whether arguments should be added to a new argument group.
@@ -408,20 +408,16 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         """
         if not inspect.isclass(theclass):
             raise ValueError('Expected a class object.')
-
-        def is_method_in_class(theclass):
-            return hasattr(theclass, themethod) and inspect.isfunction(getattr(theclass, themethod))
-
-        if not is_method_in_class(theclass):
-            raise ValueError('Expected the method to be present in the class.')
+        if not hasattr(theclass, themethod) or not callable(getattr(theclass, themethod)):
+            raise ValueError('Expected the method to a callable member of the class.')
 
         def docs_func(base):
             return [base.__doc__]
 
-        classes = inspect.getmro(theclass)
-        methods = [getattr(c, themethod) for c in classes if is_method_in_class(c)]
+        skip_first = False if isinstance(theclass.__dict__[themethod], staticmethod) else True
+        themethod = getattr(theclass, themethod)
 
-        self._add_signature_arguments(methods, nested_key, as_group, docs_func, skip_first=True)
+        self._add_signature_arguments([themethod], nested_key, as_group, docs_func, skip_first=skip_first)
 
 
     def add_function_arguments(self, function, nested_key=None, as_group=True):
@@ -842,9 +838,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         def cleanup_actions(cfg, actions):
             for action in actions:
-                if skip_none and action.dest in cfg and cfg[action.dest] is None:
-                    del cfg[action.dest]
-                elif action.help == SUPPRESS:
+                if action.help == SUPPRESS or \
+                   isinstance(action, ActionConfigFile) or \
+                   (skip_none and action.dest in cfg and cfg[action.dest] is None):
                     del cfg[action.dest]
                 elif isinstance(action, ActionEnum):
                     cfg[action.dest] = cfg[action.dest].name
@@ -854,8 +850,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                             cfg[action.dest] = [p(absolute=False) for p in cfg[action.dest]]
                         else:
                             cfg[action.dest] = cfg[action.dest](absolute=False)
-                elif isinstance(action, ActionConfigFile):
-                    del cfg[action.dest]
                 elif isinstance(action, ActionParser):
                     cleanup_actions(cfg, action._parser._actions)
 

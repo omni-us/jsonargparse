@@ -1178,99 +1178,55 @@ class JsonargparseTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_class_arguments(NoValidArgs))
 
 
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     def test_add_method_arguments(self):
 
-        class Class0:
+        class MyClass:
             def mymethod(self,
-                         c0_a0: Optional[str] = '0'):
-                pass
-
-        class Class1(Class0):
-            def mymethod(self,  # type: ignore
-                         c1_a1: str,
-                         c1_a2: Any = 2.0,
-                         c1_a3 = None,
-                         c1_a4: int = 4):
-                """mymethod1 short description
+                         a1 = '1',
+                         a2: float = 2.0,
+                         a3: bool = False,
+                         a4 = None):
+                """mymethod short description
 
                 Args:
-                    c1_a3: c1_a3 description
+                    a1: a1 description
+                    a2: a2 description
+                    a4: a4 description
                 """
-                super().mymethod()
-                return c1_a1
+                return a1
 
-        class Class2(Class1):
-            def mymethod(self,
-                         c2_a0,
-                         c3_a4,
-                         *args,
-                         **kwargs):
-                """mymethod2 short description
+            @staticmethod
+            def mystaticmethod(a1: str,
+                               a2: float = 2.0,
+                               a3 = None):
+                return a1
 
-                Args:
-                    c1_a2: c1_a2 description
-                """
-                return super().mymethod(c3_a4, *args, **kwargs)
-
-        class Class3(Class2):
-            def mymethod(self,  # type: ignore
-                         c3_a0: Any,
-                         c3_a1 = '1',
-                         c3_a2: float = 2.0,
-                         c3_a3: bool = False,
-                         c3_a4: Optional[str] = None,
-                         c3_a5: Union[int, float, str, List[int], Dict[str, float]] = 5,
-                         c3_a6: Optional[Class1] = None,
-                         c3_a7: Tuple[str, int, float] = ('7', 7, 7.0),
-                         **kwargs):
-                """mymethod3 short description
-
-                Args:
-                    c3_a0: c3_a0 description
-                    c3_a1: c3_a1 description
-                    c3_a2: c3_a2 description
-                    c3_a4: c3_a4 description
-                    c3_a5: c3_a5 description
-                """
-                return super().mymethod(None, c3_a4, **kwargs)
-
-        ## Test without nesting ##
         parser = ArgumentParser()
-        parser.add_method_arguments(Class3, 'mymethod')
+        parser.add_method_arguments(MyClass, 'mymethod', 'm')
+        parser.add_method_arguments(MyClass, 'mystaticmethod', 's')
 
-        self.assertRaises(ValueError, lambda: parser.add_method_arguments('Class3', 'mymethod'))
-        self.assertRaises(ValueError, lambda: parser.add_method_arguments(Class3, 'mymethod3'))
+        self.assertRaises(ValueError, lambda: parser.add_method_arguments('MyClass', 'mymethod'))
+        self.assertRaises(ValueError, lambda: parser.add_method_arguments(MyClass, 'mymethod3'))
 
-        self.assertIn('mymethod', parser.groups)
+        self.assertIn('m', parser.groups)
+        self.assertIn('s', parser.groups)
 
-        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4']:
+        for key in ['m.a1', 'm.a2', 'm.a3', 's.a1', 's.a2']:
             self.assertIsNotNone(_find_action(parser, key), key+' should be in parser but is not')
-        for key in ['c3_a6', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
+        for key in ['m.a4', 's.a3']:
             self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
 
-        cfg = parser.parse_args(['--c3_a0=0', '--c3_a3=true', '--c3_a4=a'], with_meta=False)
-        self.assertEqual(namespace_to_dict(cfg), {'c1_a2': 2.0,
-                                                  'c1_a4': 4,
-                                                  'c3_a0': 0,
-                                                  'c3_a1': '1',
-                                                  'c3_a2': 2.0,
-                                                  'c3_a3': True,
-                                                  'c3_a4': 'a',
-                                                  'c3_a5': 5,
-                                                  'c3_a7': ('7', 7, 7.0)})
-        self.assertEqual([1, 2], parser.parse_args(['--c3_a0=0', '--c3_a5=[1,2]']).c3_a5)
-        self.assertEqual({'k': 5.0}, namespace_to_dict(parser.parse_args(['--c3_a0=0', '--c3_a5={"k": 5.0}']).c3_a5))
-        self.assertEqual('a', Class3().mymethod(**namespace_to_dict(cfg)))
-
-        self.assertRaises(ParserError, lambda: parser.parse_args([]))  # c3_a0 is required
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--c3_a0=0', '--c3_a4=4.0']))  # c3_a4 is str or None
+        cfg = namespace_to_dict(parser.parse_args(['--m.a1=x', '--s.a1=y'], with_meta=False))
+        self.assertEqual(cfg, {'m': {'a1': 'x', 'a2': 2.0, 'a3': False}, 's': {'a1': 'y', 'a2': 2.0}})
+        self.assertEqual('x', MyClass().mymethod(**cfg['m']))
+        self.assertEqual('y', MyClass.mystaticmethod(**cfg['s']))
 
         if docstring_parser:
-            self.assertEqual('mymethod3 short description', parser.groups['mymethod'].title)
-            for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a4', 'c3_a5', 'c1_a2']:
-                self.assertEqual(key+' description', _find_action(parser, key).help)
-            for key in ['c3_a3', 'c3_a7', 'c1_a4']:
+            self.assertEqual('mymethod short description', parser.groups['m'].title)
+            self.assertEqual(str(MyClass.mystaticmethod), parser.groups['s'].title)
+            for key in ['m.a1', 'm.a2']:
+                self.assertEqual(key.split('.')[1]+' description', _find_action(parser, key).help)
+            for key in ['m.a3', 's.a1', 's.a2']:
                 self.assertIsNone(_find_action(parser, key).help, 'expected help for '+key+' to be None')
 
 

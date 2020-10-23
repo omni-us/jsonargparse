@@ -2,6 +2,8 @@
     :target: https://circleci.com/gh/omni-us/jsonargparse
 .. image:: https://codecov.io/gh/omni-us/jsonargparse/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/omni-us/jsonargparse
+.. image:: https://sonarcloud.io/api/project_badges/measure?project=omni-us_jsonargparse&metric=alert_status
+    :target: https://sonarcloud.io/dashboard?id=omni-us_jsonargparse
 .. image:: https://badge.fury.io/py/jsonargparse.svg
     :target: https://badge.fury.io/py/jsonargparse
 .. image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg
@@ -270,17 +272,15 @@ config contained in a string respectively.
 Classes, methods and function
 =============================
 
-It is good practice to write python code in which arguments
-have type hints and are described in the docstrings. To make this well written
-code configurable it wouldn't make sense to duplicate information of types and
-argument descriptions. To avoid this duplication, jsonargparse parsers include
-methods to automatically add their arguments:
-:func:`jsonargparse.ArgumentParser.add_class_arguments`,
+It is good practice to write python code in which arguments have type hints and
+are described in the docstrings. To make this well written code configurable it
+wouldn't make sense to duplicate information of types and argument descriptions.
+To avoid this duplication, jsonargparse parsers include methods to automatically
+add their arguments: :func:`jsonargparse.ArgumentParser.add_class_arguments`,
 :func:`jsonargparse.ArgumentParser.add_method_arguments` and
 :func:`jsonargparse.ArgumentParser.add_function_arguments`.
 
-Take for example that there is a class with its init and a method with
-docstrings as follows:
+Take for example a class with its init and a method with docstrings as follows:
 
 .. code-block:: python
 
@@ -333,14 +333,15 @@ Some notes about the support for automatic adding of arguments are:
 
 - The supported type hints are: :code:`str`, :code:`bool`, :code:`int`,
   :code:`float`, :code:`list`, :code:`dict` (only with :code:`str` keys),
-  :code:`Any`, :code:`Union`, :code:`Enum` and :code:`Optional`. Nested
-  types are supported as long as the child types are supported.
+  :code:`Any`, :code:`Union`, :code:`Enum` and :code:`Optional`.
 
 - There is partial support for :code:`tuple` even though they can't be
   represented in json distinguishable from a list. Tuples are only supported
   without nesting and for fixed number of elements. Each element position can
   have its own type and will be validated as such. In command line arguments,
   config files and environment variables tuples are represented as a list.
+
+- Nested types are supported as long as at least one child type is supported.
 
 - All positional arguments must have a type, otherwise the add arguments
   functions raise an exception.
@@ -350,7 +351,7 @@ Some notes about the support for automatic adding of arguments are:
 
 - Recursive adding of arguments from base classes only considers the presence
   of :code:`*args` and :code:`**kwargs`. It does not check the code to identify
-  if :code:`super()` is called or with which arguments.
+  if :code:`super().__init__` is called or with which arguments.
 
 For all features described above to work, two optional packages are required:
 `jsonschema <https://pypi.org/project/jsonschema/>`__ to support validation of
