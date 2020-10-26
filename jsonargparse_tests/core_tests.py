@@ -6,7 +6,6 @@ import yaml
 import shutil
 import tempfile
 import unittest
-import responses
 from io import StringIO
 from contextlib import redirect_stdout
 from collections import OrderedDict
@@ -14,7 +13,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from jsonargparse import *
 from jsonargparse import _suppress_stderr
 from jsonargparse.optionals import jsonschema_support, jsonnet_support
-from jsonargparse_tests.util_tests import TempDirTestCase
+from jsonargparse_tests.util_tests import responses, responses_activate, TempDirTestCase
 from jsonargparse_tests.examples import example_parser, example_yaml, example_env
 
 
@@ -345,8 +344,8 @@ class AdvancedFeaturesTests(unittest.TestCase):
             del os.environ[key]
 
 
-    @unittest.skipIf(not url_support, 'validators and requests packages are required')
-    @responses.activate
+    @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
+    @responses_activate
     def test_urls(self):
         set_url_support(True)
         parser = ArgumentParser()

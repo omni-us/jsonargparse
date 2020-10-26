@@ -7,9 +7,17 @@ import pathlib
 import logging
 import tempfile
 import unittest
-import responses
 from jsonargparse.util import *
 from jsonargparse.util import _check_unknown_kwargs, _suppress_stderr
+
+try:
+    import responses
+    responses_activate = responses.activate
+except:
+    def nothing_decorator(func):
+        return func
+    responses = False
+    responses_activate = nothing_decorator
 
 
 class TempDirTestCase(unittest.TestCase):
@@ -141,8 +149,8 @@ class PathTests(TempDirTestCase):
         self.assertTrue(path.__repr__().startswith('Path('))
 
 
-    @unittest.skipIf(not url_support, 'validators and requests packages are required')
-    @responses.activate
+    @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
+    @responses_activate
     def test_urls(self):
         existing = 'http://example.com/existing-url'
         existing_body = 'url contents'
