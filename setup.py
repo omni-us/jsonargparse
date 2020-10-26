@@ -17,7 +17,7 @@ class CoverageCommand(Command):
     def initialize_options(self): pass
     def finalize_options(self): pass
     def run(self):
-        __import__(NAME_TESTS).run_test_coverage()
+        __import__(NAME_TESTS+'.__main__').__main__.run_test_coverage()
 
 CMDCLASS['test_coverage'] = CoverageCommand
 

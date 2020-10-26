@@ -25,13 +25,17 @@ jobs:
           command: |
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             pip3 install --user $(ls ./dist/*.whl)[test]
-            python3 -m jsonargparse_tests
-            pip3 install --user $(ls ./dist/*.whl)[all,test]
             python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
+            pip3 install --user $(ls ./dist/*.whl)[test,all]
+            python3 -m jsonargparse_tests coverage xml coverage_all_py$py.xml
       - persist_to_workspace:
           root: .
           paths:
             - ./coverage_*.xml
+  test-py39:
+    <<: *test-py38
+    docker:
+      - image: circleci/python:3.9
   test-py37:
     <<: *test-py38
     docker:
@@ -54,9 +58,16 @@ jobs:
       - run:
           name: Code coverage
           command: |
-            mv coverage_py3.8.xml coverage.xml
-            rm -f coverage_*.xml
-            bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN_JSONARGPARSE
+            for py in 3.5 3.6 3.7 3.8 3.9; do
+              bash <(curl -s https://codecov.io/bash) \
+                -t $CODECOV_TOKEN_JSONARGPARSE \
+                -F python$py \
+                -f coverage_py$py.xml
+              bash <(curl -s https://codecov.io/bash) \
+                -t $CODECOV_TOKEN_JSONARGPARSE \
+                -F python${py}_extras_require_all \
+                -f coverage_all_py$py.xml
+            done
   publish-pypi:
     docker:
       - image: mauvilsa/docker-twine:1.11.0
@@ -79,6 +90,8 @@ workflows:
           <<: *buildreq
           requires:
             - build
+      - test-py39:
+          <<: *testreq
       - test-py37:
           <<: *testreq
       - test-py36:
@@ -88,7 +101,11 @@ workflows:
       - codecov:
           <<: *testreq
           requires:
+            - test-py39
             - test-py38
+            - test-py37
+            - test-py36
+            - test-py35
       - publish-pypi:
           filters:
             branches:
@@ -96,8 +113,4 @@ workflows:
             <<: *tagfilter
           context: pypi-upload-context
           requires:
-            - test-py38
-            - test-py37
-            - test-py36
-            - test-py35
             - codecov
