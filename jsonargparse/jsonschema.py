@@ -1,3 +1,5 @@
+"""Jsonschema functionalities."""
+
 import json
 import yaml
 from argparse import Namespace, Action
@@ -43,7 +45,7 @@ class ActionJsonSchema(Action):
                     raise ValueError('Problems parsing schema :: '+str(ex))
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
-            self._with_meta = kwargs['with_meta'] if 'with_meta' in kwargs else True
+            self._with_meta = kwargs.get('with_meta', True)
         elif '_validator' not in kwargs:
             raise ValueError('Expected schema or annotation keyword arguments.')
         else:
@@ -65,7 +67,7 @@ class ActionJsonSchema(Action):
             kwargs['_validator'] = self._validator
             kwargs['_with_meta'] = self._with_meta
             if 'help' in kwargs and isinstance(kwargs['help'], str) and '%s' in kwargs['help']:
-                kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, indent=2, sort_keys=True)
+                kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, sort_keys=True)
             return ActionJsonSchema(**kwargs)
         val = self._check_type(args[2])
         if not self._with_meta:

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import unittest
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Tuple, Optional, Union, Any
 from jsonargparse import *
-from jsonargparse import _find_action
+from jsonargparse.actions import _find_action
 from jsonargparse.optionals import jsonschema_support, docstring_parser_support
 from jsonargparse_tests.util_tests import TempDirTestCase
 

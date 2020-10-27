@@ -1,3 +1,5 @@
+"""Jsonnet functionalities."""
+
 import json
 import yaml
 from argparse import Action, Namespace
@@ -11,7 +13,9 @@ from .jsonschema import ActionJsonSchema
 
 class ActionJsonnetExtVars(ActionJsonSchema):
     """Action to be used for jsonnet ext_vars."""
+
     def __init__(self, **kwargs):
+        """Initializer for ActionJsonnetExtVars instance."""
         super().__init__(schema={'type': 'object'}, with_meta=False)
 
 
@@ -34,15 +38,15 @@ class ActionJsonnet(Action):
             _check_unknown_kwargs(kwargs, {'schema', 'ext_vars'})
             if 'ext_vars' in kwargs and not isinstance(kwargs['ext_vars'], (str, type(None))):
                 raise ValueError('ext_vars has to be either None or a string.')
-            self._ext_vars = kwargs['ext_vars'] if 'ext_vars' in kwargs else None
-            schema = kwargs['schema'] if 'schema' in kwargs else None
+            self._ext_vars = kwargs.get('ext_vars', None)
+            schema = kwargs.get('schema', None)
             if schema is not None:
                 jsonvalidator = _import_jsonschema('ActionJsonnet')[1]
                 if isinstance(schema, str):
                     try:
                         schema = yaml.safe_load(schema)
                     except Exception as ex:
-                        raise type(ex)('Problems parsing schema :: '+str(ex))
+                        raise ValueError('Problems parsing schema :: '+str(ex))
                 jsonvalidator.check_schema(schema)
                 self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             else:
@@ -66,7 +70,7 @@ class ActionJsonnet(Action):
             kwargs['_ext_vars'] = self._ext_vars
             kwargs['_validator'] = self._validator
             if 'help' in kwargs and '%s' in kwargs['help'] and self._validator is not None:
-                kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, indent=2, sort_keys=True)
+                kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, sort_keys=True)
             return ActionJsonnet(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2], cfg=args[1]))
 
@@ -78,8 +82,8 @@ class ActionJsonnet(Action):
         if self._ext_vars is not None:
             try:
                 ext_vars = _get_key_value(cfg, self._ext_vars)
-            except Exception as ex:
-                raise ValueError('Unable to find key "'+self._ext_vars+'" in config object :: '+str(ex))
+            except:
+                pass
         if not islist:
             value = [value]
         elif not isinstance(value, list):
@@ -107,9 +111,7 @@ class ActionJsonnet(Action):
         Args:
             ext_vars (dict): External variables. Values can be strings or any other basic type.
         """
-        if ext_vars is None:
-            ext_vars = {}
-        elif isinstance(ext_vars, Namespace):
+        if isinstance(ext_vars, Namespace):
             ext_vars = namespace_to_dict(ext_vars)
         ext_codes = {k: json.dumps(v) for k, v in ext_vars.items() if not isinstance(v, str)}
         ext_vars = {k: v for k, v in ext_vars.items() if isinstance(v, str)}

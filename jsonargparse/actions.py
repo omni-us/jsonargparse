@@ -1,3 +1,5 @@
+"""Collection of useful actions to define arguments."""
+
 import os
 import re
 import sys
@@ -27,35 +29,9 @@ def _find_action(parser, dest):
             return action
         elif isinstance(action, ActionParser) and dest.startswith(action.dest+'.'):
             return _find_action(action._parser, dest)
-        elif isinstance(action, ActionSubCommands) and dest in action._name_parser_map:
+        elif isinstance(action, _ActionSubCommands) and dest in action._name_parser_map:
             return action
     return None
-
-
-def _set_inner_parser_prefix(parser, prefix, action):
-    """Sets the value of env_prefix to an ActionParser and all sub ActionParsers it contains.
-
-    Args:
-        parser (ArgumentParser): The parser to which the action belongs.
-        action (ActionParser): The action to set its env_prefix.
-    """
-    if not isinstance(action, ActionParser):
-        raise ValueError('Expected action to be an ActionParser.')
-    action._parser.env_prefix = parser.env_prefix
-    action._parser.default_env = parser.default_env
-    option_string_actions = {}
-    for key, val in action._parser._option_string_actions.items():
-        option_string_actions[re.sub('^--', '--'+prefix+'.', key)] = val
-    action._parser._option_string_actions = option_string_actions
-    for subaction in action._parser._actions:
-        if isinstance(subaction, ActionYesNo):
-            subaction._add_dest_prefix(prefix)
-        else:
-            subaction.dest = prefix+'.'+subaction.dest
-            for n in range(len(subaction.option_strings)):
-                subaction.option_strings[n] = re.sub('^--', '--'+prefix+'.', subaction.option_strings[n])
-        if isinstance(subaction, ActionParser):
-            _set_inner_parser_prefix(action._parser, prefix, subaction)
 
 
 def _is_action_value_list(action:Action):
@@ -74,6 +50,7 @@ def _is_action_value_list(action:Action):
 
 class ActionConfigFile(Action):
     """Action to indicate that an argument is a configuration file or a configuration string."""
+
     def __init__(self, **kwargs):
         """Initializer for ActionConfigFile instance."""
         opt_name = kwargs['option_strings']
@@ -134,6 +111,7 @@ class _ActionPrintConfig(Action):
 
 class ActionYesNo(Action):
     """Paired options --{yes_prefix}opt, --{no_prefix}opt to set True or False respectively."""
+
     def __init__(self, **kwargs):
         """Initializer for ActionYesNo instance.
 
@@ -220,6 +198,7 @@ class ActionYesNo(Action):
 
 class ActionEnum(Action):
     """An action based on an Enum that maps to-from strings and enum values."""
+
     def __init__(self, **kwargs):
         """Initializer for ActionEnum instance.
 
@@ -273,6 +252,7 @@ class ActionEnum(Action):
 
 class ActionParser(Action):
     """Action to parse option with a given parser optionally loading from file if string value."""
+
     def __init__(self, **kwargs):
         """Initializer for ActionParser instance.
 
@@ -331,6 +311,31 @@ class ActionParser(Action):
         return value
 
     @staticmethod
+    def _set_inner_parser_prefix(parser, prefix, action):
+        """Sets the value of env_prefix to an ActionParser and all sub ActionParsers it contains.
+
+        Args:
+            parser (ArgumentParser): The parser to which the action belongs.
+            action (ActionParser): The action to set its env_prefix.
+        """
+        assert isinstance(action, ActionParser)
+        action._parser.env_prefix = parser.env_prefix
+        action._parser.default_env = parser.default_env
+        option_string_actions = {}
+        for key, val in action._parser._option_string_actions.items():
+            option_string_actions[re.sub('^--', '--'+prefix+'.', key)] = val
+        action._parser._option_string_actions = option_string_actions
+        for subaction in action._parser._actions:
+            if isinstance(subaction, ActionYesNo):
+                subaction._add_dest_prefix(prefix)
+            else:
+                subaction.dest = prefix+'.'+subaction.dest
+                for n in range(len(subaction.option_strings)):
+                    subaction.option_strings[n] = re.sub('^--', '--'+prefix+'.', subaction.option_strings[n])
+            if isinstance(subaction, ActionParser):
+                ActionParser._set_inner_parser_prefix(action._parser, prefix, subaction)
+
+    @staticmethod
     def _fix_conflicts(parser, cfg):
         cfg_dict = namespace_to_dict(cfg)
         for action in parser._actions:
@@ -340,7 +345,7 @@ class ActionParser(Action):
                     delattr(cfg, action.dest)
 
 
-class ActionSubCommands(argparse._SubParsersAction):
+class _ActionSubCommands(argparse._SubParsersAction):
     """Extension of argparse._SubParsersAction to modify sub-commands functionality."""
 
     _env_prefix = None
@@ -404,7 +409,7 @@ class ActionSubCommands(argparse._SubParsersAction):
 
         # Get subcommands action
         for action in parser._actions:
-            if isinstance(action, ActionSubCommands):
+            if isinstance(action, _ActionSubCommands):
                 break
 
         # Get sub-command parser
@@ -412,17 +417,14 @@ class ActionSubCommands(argparse._SubParsersAction):
         if action.dest in cfg_dict and cfg_dict[action.dest] is not None:
             subcommand = cfg_dict[action.dest]
         else:
-            #for key in action._name_parser_map.keys():
             for key in action.choices.keys():
                 if any([v.startswith(key+'.') for v in cfg_dict.keys()]):
                     subcommand = key
                     break
             cfg_dict[action.dest] = subcommand
 
-        if subcommand in action._name_parser_map:
-            subparser = action._name_parser_map[subcommand]
-        else:
-            raise ParserError('Unknown sub-commad '+subcommand+' (choices: '+', '.join(action.choices)+')')
+        assert subcommand in action._name_parser_map
+        subparser = action._name_parser_map[subcommand]
 
         # merge environment variable values and default values
         subnamespace = None
@@ -440,7 +442,9 @@ class ActionSubCommands(argparse._SubParsersAction):
 
 class ActionOperators(Action):
     """Action to restrict a value with comparison operators."""
+
     _operators = {operator.gt: '>', operator.ge: '>=', operator.lt: '<', operator.le: '<=', operator.eq: '==', operator.ne: '!='}
+
 
     def __init__(self, **kwargs):
         """Initializer for ActionOperators instance.
@@ -455,10 +459,10 @@ class ActionOperators(Action):
         """
         if 'expr' in kwargs:
             _check_unknown_kwargs(kwargs, {'expr', 'join', 'type'})
-            self._type = kwargs['type'] if 'type' in kwargs else int
-            self._join = kwargs['join'] if 'join' in kwargs else 'and'
+            self._type = kwargs.get('type', int)
+            self._join = kwargs.get('join', 'and')
             if self._join not in {'or', 'and'}:
-                raise ValueError("Expected join to be either 'or' or 'and'.")
+                raise ValueError("Expected join to be one of {'or', 'and'}.")
             _operators = {v: k for k, v in self._operators.items()}
             expr = [kwargs['expr']] if isinstance(kwargs['expr'], tuple) else kwargs['expr']
             if not isinstance(expr, list) or not all([all([len(x) == 2, x[0] in _operators, x[1] == self._type(x[1])]) for x in expr]):
@@ -471,8 +475,6 @@ class ActionOperators(Action):
             self._expr = kwargs.pop('_expr')
             self._join = kwargs.pop('_join')
             self._type = kwargs.pop('_type')
-            if 'type' in kwargs:
-                del kwargs['type']
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -482,6 +484,8 @@ class ActionOperators(Action):
             TypeError: If the argument is not valid.
         """
         if len(args) == 0:
+            if 'type' in kwargs:
+                raise ValueError('ActionOperators does not allow type given to add_argument.')
             if 'nargs' in kwargs and kwargs['nargs'] == 0:
                 raise ValueError('Invalid nargs='+str(kwargs['nargs'])+' for ActionOperators.')
             kwargs['_expr'] = self._expr
@@ -516,6 +520,7 @@ class ActionOperators(Action):
 
 class ActionPath(Action):
     """Action to check and store a path."""
+
     def __init__(self, **kwargs):
         """Initializer for ActionPath instance.
 
@@ -530,7 +535,7 @@ class ActionPath(Action):
             _check_unknown_kwargs(kwargs, {'mode', 'skip_check'})
             Path._check_mode(kwargs['mode'])
             self._mode = kwargs['mode']
-            self._skip_check = kwargs['skip_check'] if 'skip_check' in kwargs else False
+            self._skip_check = kwargs.get('skip_check', False)
         elif '_mode' not in kwargs:
             raise ValueError('ActionPath expects mode keyword argument.')
         else:
@@ -578,6 +583,7 @@ class ActionPath(Action):
 
 class ActionPathList(Action):
     """Action to check and store a list of file paths read from a plain text file or stream."""
+
     def __init__(self, **kwargs):
         """Initializer for ActionPathList instance.
 
@@ -593,8 +599,8 @@ class ActionPathList(Action):
             _check_unknown_kwargs(kwargs, {'mode', 'skip_check', 'rel'})
             Path._check_mode(kwargs['mode'])
             self._mode = kwargs['mode']
-            self._skip_check = kwargs['skip_check'] if 'skip_check' in kwargs else False
-            self._rel = kwargs['rel'] if 'rel' in kwargs else 'cwd'
+            self._skip_check = kwargs.get('skip_check', False)
+            self._rel = kwargs.get('rel', 'cwd')
             if self._rel not in {'cwd', 'list'}:
                 raise ValueError('rel must be either "cwd" or "list", got '+str(self._rel)+'.')
         elif '_mode' not in kwargs:
@@ -634,8 +640,8 @@ class ActionPathList(Action):
                 try:
                     with sys.stdin if path_list_file == '-' else open(path_list_file, 'r') as f:
                         path_list = [x.strip() for x in f.readlines()]
-                except:
-                    raise TypeError('Problems reading path list: '+path_list_file)
+                except Exception as ex:
+                    raise TypeError('Problems reading path list: '+path_list_file+' :: '+str(ex))
                 cwd = os.getcwd()
                 if self._rel == 'list' and path_list_file != '-':
                     os.chdir(os.path.abspath(os.path.join(path_list_file, os.pardir)))

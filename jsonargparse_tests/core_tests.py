@@ -9,10 +9,9 @@ import unittest
 from io import StringIO
 from contextlib import redirect_stdout
 from collections import OrderedDict
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 from jsonargparse import *
-from jsonargparse import _suppress_stderr
-from jsonargparse.optionals import jsonschema_support, jsonnet_support
+from jsonargparse.util import _suppress_stderr
+from jsonargparse.optionals import url_support, jsonschema_support, jsonnet_support
 from jsonargparse_tests.util_tests import responses, responses_activate, TempDirTestCase
 from jsonargparse_tests.examples import example_parser, example_yaml, example_env
 
@@ -287,7 +286,10 @@ class AdvancedFeaturesTests(unittest.TestCase):
         subcommands = parser.add_subcommands()
         subcommands.add_subcommand('a', parser_a)
         subcommands.add_subcommand('b', example_parser(),
+            aliases=['B'],
             help='b help')
+
+        self.assertRaises(NotImplementedError, lambda: parser.add_subparsers())
 
         cfg = namespace_to_dict(parser.get_defaults())
         self.assertEqual(cfg, {'o1': 'o1_def', 'subcommand': None})
@@ -308,9 +310,13 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(strip_meta(cfg['b']), cfg_def)
         self.assertRaises(KeyError, lambda: cfg['a'])
 
+        parser.parse_args(['B'])
+        self.assertRaises(ParserError, lambda: parser.parse_args(['A']))
+
         self.assertRaises(ParserError, lambda: parser.parse_args())
         self.assertRaises(ParserError, lambda: parser.parse_args(['a']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['b', '--unk']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['c']))
 
         cfg = namespace_to_dict(parser.parse_string('{"a": {"ap1": "ap1_cfg"}}'))
         self.assertEqual(cfg['subcommand'], 'a')

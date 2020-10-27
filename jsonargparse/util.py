@@ -1,3 +1,5 @@
+"""Collection of general functions and classes."""
+
 import os
 import re
 import sys
@@ -92,9 +94,7 @@ def _dict_to_flat_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
     def flatten_dict(cfg, base=None):
         for key, val in cfg.items():
             kbase = key if base is None else base+'.'+key
-            #kbase = str(key) if base is None else base+'.'+str(key)
-            #if isinstance(val, dict):
-            if isinstance(val, dict) and all(isinstance(k, str) for k in val.keys()):
+            if isinstance(val, dict) and val != {} and all(isinstance(k, str) for k in val.keys()):
                 flatten_dict(val, kbase)
             else:
                 cfg_ns[kbase] = val

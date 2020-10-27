@@ -24,10 +24,12 @@ jobs:
           name: Run unit tests
           command: |
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
-            pip3 install --user $(ls ./dist/*.whl)[test_no_urls]
+            virtualenv -p python3 venv$py
+            . venv$py/bin/activate
+            pip3 install $(ls ./dist/*.whl)[test_no_urls]
             python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
-            pip3 install --user $(ls ./dist/*.whl)[test,all]
-            python3 -m jsonargparse_tests coverage xml coverage_all_py$py.xml
+            pip3 install $(ls ./dist/*.whl)[test,all]
+            python3 -m jsonargparse_tests coverage xml coverage_py${py}_all.xml
       - persist_to_workspace:
           root: .
           paths:
@@ -66,7 +68,7 @@ jobs:
               bash <(curl -s https://codecov.io/bash) \
                 -t $CODECOV_TOKEN_JSONARGPARSE \
                 -F py${py}_all \
-                -f coverage_all_py$py.xml
+                -f coverage_py${py}_all.xml
             done
   publish-pypi:
     docker:

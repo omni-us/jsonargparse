@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import enum
 import json
 import shutil
 import tempfile
@@ -42,6 +43,7 @@ class ActionsTests(unittest.TestCase):
         self.assertEqual(False, parser.parse_args(['--without-val']).with_val)
         parser = ArgumentParser()
         self.assertRaises(ValueError, lambda: parser.add_argument('--val', action=ActionYesNo(yes_prefix='yes_')))
+        self.assertRaises(ValueError, lambda: parser.add_argument('pos', action=ActionYesNo))
 
 
     def test_ActionPathList(self):
@@ -53,10 +55,15 @@ class ActionsTests(unittest.TestCase):
         pathlib.Path(os.path.join(tmpdir, 'file5')).touch()
         list_file = os.path.join(tmpdir, 'files.lst')
         list_file2 = os.path.join(tmpdir, 'files2.lst')
+        list_file3 = os.path.join(tmpdir, 'files3.lst')
+        list_file4 = os.path.join(tmpdir, 'files4.lst')
         with open(list_file, 'w') as output_file:
             output_file.write('file1\nfile2\nfile3\nfile4\n')
         with open(list_file2, 'w') as output_file:
             output_file.write('file5\n')
+        pathlib.Path(list_file3).touch()
+        with open(list_file4, 'w') as output_file:
+            output_file.write('file1\nfile2\nfile6\n')
 
         parser = ArgumentParser(prog='app')
         parser.add_argument('--list',
@@ -73,12 +80,18 @@ class ActionsTests(unittest.TestCase):
         self.assertEqual(5, len(cfg.list))
         self.assertEqual(['file1', 'file2', 'file3', 'file4', 'file5'], [x(absolute=False) for x in cfg.list])
 
+        self.assertEqual(0, len(parser.parse_args(['--list', list_file3]).list))
+
         cwd = os.getcwd()
         os.chdir(tmpdir)
         cfg = parser.parse_args(['--list_cwd', list_file])
         self.assertEqual(4, len(cfg.list_cwd))
         self.assertEqual(['file1', 'file2', 'file3', 'file4'], [x(absolute=False) for x in cfg.list_cwd])
         os.chdir(cwd)
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--list']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--list', list_file4]))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--list', 'no-such-file']))
 
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPathList))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPathList(mode='fr'), nargs='*'))
@@ -111,6 +124,9 @@ class ActionsTests(unittest.TestCase):
         parser.add_function_arguments(func)
         self.assertEqual(MyEnum['A'], parser.get_defaults().a1)
         self.assertEqual(MyEnum['B'], parser.parse_args(['--a1=B']).a1)
+
+        self.assertRaises(ValueError, lambda: ActionEnum())
+        self.assertRaises(ValueError, lambda: ActionEnum(enum=object))
 
 
     def test_ActionOperators(self):
@@ -156,8 +172,12 @@ class ActionsTests(unittest.TestCase):
         self.assertEqual([0, 1, 2], parser.parse_args(['--ge0', '0', '1', '2']).ge0)
 
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionOperators))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionOperators()))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionOperators(expr='<')))
+        action = ActionOperators(expr=('<', 0))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', type=float, action=action))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', nargs=0, action=action))
+        self.assertRaises(ValueError, lambda: ActionOperators())
+        self.assertRaises(ValueError, lambda: ActionOperators(expr='<'))
+        self.assertRaises(ValueError, lambda: ActionOperators(expr=[('<', 5), ('>=', 10)], join='xor'))
 
 
     def test_ActionParser(self):
@@ -248,7 +268,8 @@ class ActionsTests(unittest.TestCase):
 
         ## Check invalid initializations
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionParser))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionParser()))
+        self.assertRaises(ValueError, lambda: ActionParser())
+        self.assertRaises(ValueError, lambda: ActionParser(parser=object))
 
         shutil.rmtree(tmpdir)
 

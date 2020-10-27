@@ -1,3 +1,5 @@
+"""Functions related to optional dependencies."""
+
 from importlib.util import find_spec
 
 

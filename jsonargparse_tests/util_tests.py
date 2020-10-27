@@ -24,7 +24,7 @@ class TempDirTestCase(unittest.TestCase):
 
     def setUp(self):
         self.cwd = os.getcwd()
-        self.tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_test_')
+        self.tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
         os.chdir(self.tmpdir)
 
 

@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
 import os
+import json
 import unittest
+from io import StringIO
+from contextlib import redirect_stdout
 from jsonargparse import *
 from jsonargparse.optionals import jsonnet_support
 from jsonargparse_tests.util_tests import TempDirTestCase
 
 
-example_jsonnet_1 = '''
+example_1_jsonnet = '''
 local make_record(num) = {
     'ref': '#'+(num+1),
     'val': 3*(num/2)+5,
@@ -19,7 +22,7 @@ local make_record(num) = {
 }
 '''
 
-example_jsonnet_2 = '''
+example_2_jsonnet = '''
 local param = std.extVar('param');
 
 local make_record(num) = {
@@ -33,33 +36,41 @@ local make_record(num) = {
 }
 '''
 
+records_schema = {
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'properties': {
+            'ref': {'type': 'string'},
+            'val': {'type': 'number'},
+        },
+    },
+}
+
+example_schema = {
+    'type': 'object',
+    'properties': {
+        'param': {'type': 'integer'},
+        'records': records_schema,
+    },
+}
+
 
 @unittest.skipIf(not jsonnet_support, 'jsonnet and jsonschema packages are required')
 class JsonnetTests(TempDirTestCase):
 
     def test_parser_mode_jsonnet(self):
-        schema = {
-            'type': 'array',
-            'items': {
-                'type': 'object',
-                'properties': {
-                    'ref': {'type': 'string'},
-                    'val': {'type': 'number'},
-                },
-            },
-        }
-
         parser = ArgumentParser(parser_mode='jsonnet')
         parser.add_argument('--cfg',
             action=ActionConfigFile)
         parser.add_argument('--param',
             type=int)
         parser.add_argument('--records',
-            action=ActionJsonSchema(schema=schema))
+            action=ActionJsonSchema(schema=records_schema))
 
         jsonnet_file = os.path.join(self.tmpdir, 'example.jsonnet')
         with open(jsonnet_file, 'w') as output_file:
-            output_file.write(example_jsonnet_1)
+            output_file.write(example_1_jsonnet)
 
         cfg = parser.parse_args(['--cfg', jsonnet_file])
         self.assertEqual(654, cfg.param)
@@ -69,19 +80,43 @@ class JsonnetTests(TempDirTestCase):
 
 
     def test_ActionJsonnet(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(default_meta=False)
         parser.add_argument('--input.ext_vars',
             action=ActionJsonnetExtVars())
         parser.add_argument('--input.jsonnet',
-            action=ActionJsonnet(ext_vars='input.ext_vars'))
+            action=ActionJsonnet(ext_vars='input.ext_vars', schema=json.dumps(example_schema)))
 
-        cfg = parser.parse_args(['--input.ext_vars', '{"param": 123}', '--input.jsonnet', example_jsonnet_2])
-        self.assertEqual(123, cfg.input.jsonnet.param)
-        self.assertEqual(9, len(cfg.input.jsonnet.records))
-        self.assertEqual('#8', cfg.input.jsonnet.records[-2].ref)
-        self.assertEqual(15.5, cfg.input.jsonnet.records[-2].val)
+        cfg2 = parser.parse_args(['--input.ext_vars', '{"param": 123}', '--input.jsonnet', example_2_jsonnet])
+        self.assertEqual(123, cfg2.input.jsonnet.param)
+        self.assertEqual(9, len(cfg2.input.jsonnet.records))
+        self.assertEqual('#8', cfg2.input.jsonnet.records[-2].ref)
+        self.assertEqual(15.5, cfg2.input.jsonnet.records[-2].val)
 
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--input.jsonnet', example_jsonnet_2]))
+        cfg1 = parser.parse_args(['--input.jsonnet', example_1_jsonnet])
+        self.assertEqual(cfg1.input.jsonnet.records, cfg2.input.jsonnet.records)
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--input.ext_vars', '{"param": "a"}', '--input.jsonnet', example_2_jsonnet]))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--input.jsonnet', example_2_jsonnet]))
+
+        self.assertRaises(ValueError, lambda: ActionJsonnet())
+        self.assertRaises(ValueError, lambda: ActionJsonnet(ext_vars=2))
+        self.assertRaises(ValueError, lambda: ActionJsonnet(schema='.'+json.dumps(example_schema)))
+
+
+    def test_ActionJsonnet_help(self):
+        parser = ArgumentParser()
+        parser.add_argument('--jsonnet',
+            action=ActionJsonnet(schema=example_schema),
+            help='schema: %s')
+
+        os.environ['COLUMNS'] = '150'
+        out = StringIO()
+        with redirect_stdout(out):
+            parser.print_help()
+
+        outval = out.getvalue()
+        schema = re.sub('^.*schema:([^()]+)[^{}]*$', r'\1', outval.replace('\n', ' '))
+        self.assertEqual(example_schema, json.loads(schema))
 
 
 if __name__ == '__main__':
