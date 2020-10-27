@@ -1,0 +1,353 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jsonargparse.jsonnet &mdash; jsonargparse 3.0.0.dev2 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> jsonargparse
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.0.dev2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">jsonargparse</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>jsonargparse.jsonnet</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for jsonargparse.jsonnet</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Jsonnet functionalities.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Action</span><span class="p">,</span> <span class="n">Namespace</span>
+
+<span class="kn">from</span> <span class="nn">.optionals</span> <span class="kn">import</span> <span class="n">_import_jsonschema</span><span class="p">,</span> <span class="n">_import_jsonnet</span><span class="p">,</span> <span class="n">get_config_read_mode</span>
+<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="p">(</span><span class="n">ParserError</span><span class="p">,</span> <span class="n">namespace_to_dict</span><span class="p">,</span> <span class="n">dict_to_namespace</span><span class="p">,</span> <span class="n">Path</span><span class="p">,</span> <span class="n">_check_unknown_kwargs</span><span class="p">,</span>
+                   <span class="n">_get_key_value</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.actions</span> <span class="kn">import</span> <span class="n">_is_action_value_list</span>
+<span class="kn">from</span> <span class="nn">.jsonschema</span> <span class="kn">import</span> <span class="n">ActionJsonSchema</span>
+
+
+<div class="viewcode-block" id="ActionJsonnetExtVars"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnetExtVars">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonnetExtVars</span><span class="p">(</span><span class="n">ActionJsonSchema</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Action to be used for jsonnet ext_vars.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ActionJsonnetExtVars.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnetExtVars.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for ActionJsonnetExtVars instance.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;object&#39;</span><span class="p">},</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ActionJsonnet"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnet">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonnet</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Action to parse a jsonnet, optionally validating against a jsonschema.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ActionJsonnet.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnet.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer for ActionJsonnet instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ext_vars (str or None): Key where to find the external variables required to parse the jsonnet.</span>
+<span class="sd">            schema (str or object or None): Schema to validate values against. Keyword argument required even if schema=None.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If a parameter is invalid.</span>
+<span class="sd">            jsonschema.exceptions.SchemaError: If the schema is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;ext_vars&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="s1">&#39;schema&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">_import_jsonnet</span><span class="p">(</span><span class="s1">&#39;ActionJsonnet&#39;</span><span class="p">)</span>
+            <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;schema&#39;</span><span class="p">,</span> <span class="s1">&#39;ext_vars&#39;</span><span class="p">})</span>
+            <span class="k">if</span> <span class="s1">&#39;ext_vars&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ext_vars&#39;</span><span class="p">],</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ext_vars has to be either None or a string.&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ext_vars</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ext_vars&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">schema</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;schema&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">jsonvalidator</span> <span class="o">=</span> <span class="n">_import_jsonschema</span><span class="p">(</span><span class="s1">&#39;ActionJsonnet&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">schema</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Problems parsing schema :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+                <span class="n">jsonvalidator</span><span class="o">.</span><span class="n">check_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="o">=</span> <span class="n">ActionJsonSchema</span><span class="o">.</span><span class="n">_extend_jsonvalidator_with_default</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">)(</span><span class="n">schema</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="s1">&#39;_ext_vars&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="s1">&#39;_validator&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected ext_vars and/or schema keyword arguments.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ext_vars</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_ext_vars&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_validator&#39;</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ActionJsonnet.__call__"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnet.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parses an argument as jsonnet using ext_vars if defined.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If the argument is not valid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_ext_vars&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ext_vars</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_validator&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span>
+            <span class="k">if</span> <span class="s1">&#39;help&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;help&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;help&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;help&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ActionJsonnet</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">cfg</span><span class="o">=</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
+        <span class="n">jsonschema</span> <span class="o">=</span> <span class="n">_import_jsonschema</span><span class="p">(</span><span class="s1">&#39;ActionJsonnet&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">islist</span> <span class="o">=</span> <span class="n">_is_action_value_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">ext_vars</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ext_vars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ext_vars</span> <span class="o">=</span> <span class="n">_get_key_value</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ext_vars</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">islist</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;For ActionJsonnet with nargs=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nargs</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; expected value to be list, received: value=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="n">ext_vars</span><span class="p">,</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Namespace</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                <span class="n">value</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">yaml</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">ParserError</span><span class="p">,</span> <span class="n">jsonschema</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ValidationError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="n">elem</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">islist</span> <span class="k">else</span> <span class="s1">&#39; element &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;&#39;</span><span class="o">+</span><span class="n">elem</span><span class="o">+</span><span class="s1">&#39;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="k">if</span> <span class="n">islist</span> <span class="k">else</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="ActionJsonnet.split_ext_vars"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnet.split_ext_vars">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">split_ext_vars</span><span class="p">(</span><span class="n">ext_vars</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Splits an ext_vars dict into the ext_codes and ext_vars required by jsonnet.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ext_vars (dict): External variables. Values can be strings or any other basic type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ext_vars</span><span class="p">,</span> <span class="n">Namespace</span><span class="p">):</span>
+            <span class="n">ext_vars</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">ext_vars</span><span class="p">)</span>
+        <span class="n">ext_codes</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ext_vars</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">)}</span>
+        <span class="n">ext_vars</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ext_vars</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span></div>
+
+
+<div class="viewcode-block" id="ActionJsonnet.parse"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnet.parse">[docs]</a>    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jsonnet</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="p">{},</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method that can be used to parse jsonnet independent from an ArgumentParser.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            jsonnet (str): Either a path to a jsonnet file or the jsonnet content.</span>
+<span class="sd">            ext_vars (dict): External variables. Values can be strings or any other basic type.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            argparse.Namespace: The parsed jsonnet object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If the input is neither a path to an existent file nor a jsonnet.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_jsonnet</span> <span class="o">=</span> <span class="n">_import_jsonnet</span><span class="p">(</span><span class="s1">&#39;ActionJsonnet&#39;</span><span class="p">)</span>
+        <span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_ext_vars</span><span class="p">(</span><span class="n">ext_vars</span><span class="p">)</span>
+        <span class="n">fpath</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;snippet&#39;</span>
+        <span class="n">snippet</span> <span class="o">=</span> <span class="n">jsonnet</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fpath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">jsonnet</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">get_config_read_mode</span><span class="p">())</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">jsonnet</span><span class="p">(</span><span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jsonnet</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="k">else</span> <span class="n">jsonnet</span>
+            <span class="n">snippet</span> <span class="o">=</span> <span class="n">fpath</span><span class="o">.</span><span class="n">get_content</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">_jsonnet</span><span class="o">.</span><span class="n">evaluate_snippet</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">snippet</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span><span class="o">=</span><span class="n">ext_codes</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParserError</span><span class="p">(</span><span class="s1">&#39;Problems evaluating jsonnet &quot;&#39;</span><span class="o">+</span><span class="n">fname</span><span class="o">+</span><span class="s1">&#39;&quot; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">with_meta</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">values</span><span class="p">[</span><span class="s1">&#39;__path__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fpath</span>
+        <span class="k">return</span> <span class="n">dict_to_namespace</span><span class="p">(</span><span class="n">values</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2019-present, Mauricio Villegas
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
