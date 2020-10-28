@@ -12,11 +12,17 @@ from .jsonschema import ActionJsonSchema
 
 
 class ActionJsonnetExtVars(ActionJsonSchema):
-    """Action to be used for jsonnet ext_vars."""
+    """Action to add argument to provide ext_vars for jsonnet parsing."""
 
     def __init__(self, **kwargs):
         """Initializer for ActionJsonnetExtVars instance."""
         super().__init__(schema={'type': 'object'}, with_meta=False)
+
+
+    def __call__(self, *args, **kwargs):
+        if len(args) == 0 and 'default' not in kwargs:
+            kwargs['default'] = {}
+        return super().__call__(*args, **kwargs)
 
 
 class ActionJsonnet(Action):
