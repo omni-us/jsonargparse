@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 3.0.0.dev2 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 3.0.0.dev3 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0.dev2
+                3.0.0.dev3
               </div>
             
           
@@ -1538,7 +1538,7 @@ included preceded by ‘ENV:’.</p>
 <td><p>Action to parse a jsonnet, optionally validating against a jsonschema.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.jsonnet.ActionJsonnetExtVars" title="jsonargparse.jsonnet.ActionJsonnetExtVars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonnetExtVars</span></code></a>(**kwargs)</p></td>
-<td><p>Action to be used for jsonnet ext_vars.</p></td>
+<td><p>Action to add argument to provide ext_vars for jsonnet parsing.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1546,7 +1546,7 @@ included preceded by ‘ENV:’.</p>
 <dt id="jsonargparse.jsonnet.ActionJsonnetExtVars">
 <em class="property">class </em><code class="sig-prename descclassname">jsonargparse.jsonnet.</code><code class="sig-name descname">ActionJsonnetExtVars</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/jsonnet.html#ActionJsonnetExtVars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.jsonnet.ActionJsonnetExtVars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#jsonargparse.jsonschema.ActionJsonSchema" title="jsonargparse.jsonschema.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.jsonschema.ActionJsonSchema</span></code></a></p>
-<p>Action to be used for jsonnet ext_vars.</p>
+<p>Action to add argument to provide ext_vars for jsonnet parsing.</p>
 <p><strong>Methods</strong></p>
 <table class="longtable docutils align-default">
 <colgroup>
@@ -1554,7 +1554,10 @@ included preceded by ‘ENV:’.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.jsonnet.ActionJsonnetExtVars.__init__" title="jsonargparse.jsonnet.ActionJsonnetExtVars.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.jsonnet.ActionJsonnetExtVars.__call__" title="jsonargparse.jsonnet.ActionJsonnetExtVars.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Parses an argument validating against the corresponding jsonschema.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.jsonnet.ActionJsonnetExtVars.__init__" title="jsonargparse.jsonnet.ActionJsonnetExtVars.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionJsonnetExtVars instance.</p></td>
 </tr>
 </tbody>
@@ -1563,6 +1566,17 @@ included preceded by ‘ENV:’.</p>
 <dt id="jsonargparse.jsonnet.ActionJsonnetExtVars.__init__">
 <code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/jsonnet.html#ActionJsonnetExtVars.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.jsonnet.ActionJsonnetExtVars.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ActionJsonnetExtVars instance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonargparse.jsonnet.ActionJsonnetExtVars.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/jsonnet.html#ActionJsonnetExtVars.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.jsonnet.ActionJsonnetExtVars.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses an argument validating against the corresponding jsonschema.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.9)"><strong>TypeError</strong></a> – If the argument is not valid.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

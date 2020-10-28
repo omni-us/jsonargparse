@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.jsonnet &mdash; jsonargparse 3.0.0.dev2 documentation</title>
+  <title>jsonargparse.jsonnet &mdash; jsonargparse 3.0.0.dev3 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0.dev2
+                3.0.0.dev3
               </div>
             
           
@@ -162,11 +162,17 @@
 
 
 <div class="viewcode-block" id="ActionJsonnetExtVars"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnetExtVars">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonnetExtVars</span><span class="p">(</span><span class="n">ActionJsonSchema</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Action to be used for jsonnet ext_vars.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Action to add argument to provide ext_vars for jsonnet parsing.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="ActionJsonnetExtVars.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnetExtVars.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionJsonnetExtVars instance.&quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;object&#39;</span><span class="p">},</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;object&#39;</span><span class="p">},</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ActionJsonnetExtVars.__call__"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnetExtVars.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="s1">&#39;default&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="ActionJsonnet"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonnet.ActionJsonnet">[docs]</a><span class="k">class</span> <span class="nc">ActionJsonnet</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
