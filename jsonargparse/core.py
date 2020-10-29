@@ -52,9 +52,7 @@ class _ActionsContainer(argparse._ActionsContainer):
             parser.required_args.add(action.dest)
             action._required = True
             action.required = False
-        if isinstance(action, ActionConfigFile) and parser.formatter_class == DefaultHelpFormatter:
-            setattr(parser.formatter_class, '_conf_file', True)
-        elif isinstance(action, ActionParser):
+        if isinstance(action, ActionParser):
             ActionParser._set_inner_parser_prefix(self, action.dest, action)
         return action
 
@@ -101,15 +99,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             default_env (bool): Set the default value on whether to parse environment variables.
             default_meta (bool): Set the default value on whether to include metadata in config objects.
         """
-        if isinstance(formatter_class, str) and formatter_class not in {'default', 'default_argparse'}:
-            raise ValueError('The only accepted values for formatter_class are {"default", "default_argparse"} or a HelpFormatter class.')
+        if isinstance(formatter_class, str) and formatter_class != 'default':
+            raise ValueError('The only accepted values for formatter_class is "default" or a HelpFormatter class.')
         if formatter_class == 'default':
             formatter_class = DefaultHelpFormatter
-        elif formatter_class == 'default_argparse':
-            formatter_class = argparse.ArgumentDefaultsHelpFormatter
         kwargs['formatter_class'] = formatter_class
-        if formatter_class == DefaultHelpFormatter:
-            setattr(formatter_class, '_conf_file', False)
         if self.groups is None:
             self.groups = {}
         super().__init__(*args, **kwargs)
@@ -1102,19 +1096,17 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
 
 class DefaultHelpFormatter(argparse.HelpFormatter):
-    """Help message formatter with namespace key, env var and default values in argument help.
+    """Help message formatter that includes default values and env var names.
 
-    This class is an extension of `argparse.ArgumentDefaultsHelpFormatter
-    <https://docs.python.org/3/library/argparse.html#argparse.ArgumentDefaultsHelpFormatter>`_.
-    The main difference is that optional arguments are preceded by 'ARG:', the
-    nested namespace key in dot notation is included preceded by 'NSKEY:', and
-    if the ArgumentParser's default_env=True, the environment variable name is
-    included preceded by 'ENV:'.
+    This class is an extension of `argparse.HelpFormatter
+    <https://docs.python.org/3/library/argparse.html#argparse.HelpFormatter>`_.
+    Default values are always included. Furthermore, if the parser is configured
+    with :code:`default_env=True` command line options are preceded by 'ARG:' and
+    the respective environment variable name is included preceded by 'ENV:'.
     """
 
     _env_prefix = None
     _default_env = True
-    _conf_file = True
 
     def _get_help_string(self, action):
         help = ''
@@ -1126,11 +1118,9 @@ class DefaultHelpFormatter(argparse.HelpFormatter):
         return action.help + (' ('+help+')' if help else '')
 
     def _format_action_invocation(self, action):
-        if action.option_strings == [] or action.default == SUPPRESS or (not self._conf_file and not self._default_env):
+        if action.option_strings == [] or action.default == SUPPRESS or not self._default_env:
             return super()._format_action_invocation(action)
         extr = ''
-        if not isinstance(action, ActionConfigFile):
-            extr += '\n  NSKEY: ' + action.dest
         if self._default_env:
             extr += '\n  ENV:   ' + _get_env_var(self, action)
         if isinstance(action, ActionParser):
