@@ -4,6 +4,7 @@ import sys
 import glob
 import json
 import yaml
+import inspect
 import argparse
 import traceback
 from copy import deepcopy
@@ -130,22 +131,26 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
     def parse_known_args(self, args=None, namespace=None):
         """Raises NotImplementedError to dissuade its use, since typos in configs would go unnoticed."""
-        raise NotImplementedError('parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.')
-
-
-    def _parse_known_args(self, args=None):
-        """Parses known arguments for internal use only."""
+        caller = inspect.getmodule(inspect.stack()[1][0]).__package__
+        if caller not in {'jsonargparse', 'argcomplete'}:
+            raise NotImplementedError('parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.')
         if args is None:
             args = sys.argv[1:]
         else:
             args = list(args)
 
+        if namespace is None:
+            namespace = Namespace()
+
+        if caller == 'argcomplete':
+            namespace = _dict_to_flat_namespace(self._merge_config(self.get_defaults(nested=False), namespace))
+
         try:
-            namespace, args = super()._parse_known_args(args, Namespace())
+            namespace, args = self._parse_known_args(args, namespace)
             if len(args) > 0:
                 for action in self._actions:
                     if isinstance(action, ActionParser):
-                        ns, args = action._parser._parse_known_args(args)
+                        ns, args = action._parser.parse_known_args(args)
                         for key, val in vars(ns).items():
                             setattr(namespace, key, val)
                         if len(args) == 0:
@@ -183,7 +188,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
         try:
             with _suppress_stderr():
-                cfg, unk = self._parse_known_args(args=args)
+                cfg, unk = self.parse_known_args(args=args)
                 if unk:
                     self.error('Unrecognized arguments: %s' % ' '.join(unk))
 

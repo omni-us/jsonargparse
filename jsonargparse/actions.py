@@ -392,7 +392,7 @@ class _ActionSubCommands(argparse._SubParsersAction):
         # parse arguments
         if subcommand in self._name_parser_map:
             subparser = self._name_parser_map[subcommand]
-            subnamespace, unk = subparser._parse_known_args(arg_strings)
+            subnamespace, unk = subparser.parse_known_args(arg_strings)
             if unk:
                 raise ParserError('Unrecognized arguments: %s' % ' '.join(unk))
             for key, value in vars(subnamespace).items():
