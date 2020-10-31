@@ -2,11 +2,10 @@
 
 from setuptools import setup, Command
 import re
-import sys
 
 
 NAME_TESTS = next(filter(lambda x: x.startswith('test_suite = '), open('setup.cfg').readlines())).strip().split()[-1]
-LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:', '', open('README.rst').read())
+LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:', '', open('README.rst').read())
 CMDCLASS = {}
 
 
@@ -26,8 +25,7 @@ CMDCLASS['test_coverage'] = CoverageCommand
 try:
     from sphinx.setup_command import BuildDoc
     CMDCLASS['build_sphinx'] = BuildDoc  # type: ignore
-
-except Exception:
+except:
     print('warning: sphinx package not found, build_sphinx target will not be available.')
 
 

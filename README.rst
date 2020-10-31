@@ -102,7 +102,7 @@ create a parser object and then add arguments to it. A simple example would be:
 
 
 After creating the parser, you can use it to parse command line arguments with
-the :func:`jsonargparse.ArgumentParser.parse_args` function, after which you get
+the :py:meth:`.ArgumentParser.parse_args` function, after which you get
 an object with the parsed values or defaults available as attributes. For
 illustrative purposes giving to :func:`parse_args` a list of arguments (instead
 of automatically getting them from the command line arguments), with the parser
@@ -193,12 +193,12 @@ command line arguments, that is:
     'from env 2'
 
 Note that when creating the parser, :code:`default_env=True` was given as
-argument. By default :func:`jsonargparse.ArgumentParser.parse_args` does not
-check environment variables, so it has to be enabled explicitly.
+argument. By default :py:meth:`.ArgumentParser.parse_args` does not check
+environment variables, so it has to be enabled explicitly.
 
-There is also the :func:`jsonargparse.ArgumentParser.parse_env` function to only
-parse environment variables, which might be useful for some use cases in which
-there is no command line call involved.
+There is also the :py:meth:`.ArgumentParser.parse_env` function to only parse
+environment variables, which might be useful for some use cases in which there
+is no command line call involved.
 
 If a parser includes an :class:`.ActionConfigFile` argument, then the
 environment variable for this config file will be checked before all the other
@@ -266,10 +266,9 @@ variable is the first one to be parsed. So any other argument provided through
 environment variables would override the config file one.
 
 A configuration file or string can also be parsed without parsing command line
-arguments. The functions for this are
-:func:`jsonargparse.ArgumentParser.parse_path` and
-:func:`jsonargparse.ArgumentParser.parse_string` to parse a config file or a
-config contained in a string respectively.
+arguments. The functions for this are :py:meth:`.ArgumentParser.parse_path` and
+:py:meth:`.ArgumentParser.parse_string` to parse a config file or a config
+contained in a string respectively.
 
 
 Classes, methods and function
@@ -279,9 +278,9 @@ It is good practice to write python code in which arguments have type hints and
 are described in the docstrings. To make this well written code configurable it
 wouldn't make sense to duplicate information of types and argument descriptions.
 To avoid this duplication, jsonargparse parsers include methods to automatically
-add their arguments: :func:`jsonargparse.ArgumentParser.add_class_arguments`,
-:func:`jsonargparse.ArgumentParser.add_method_arguments` and
-:func:`jsonargparse.ArgumentParser.add_function_arguments`.
+add their arguments: :py:meth:`.SignatureArguments.add_class_arguments`,
+:py:meth:`.SignatureArguments.add_method_arguments` and
+:py:meth:`.SignatureArguments.add_function_arguments`.
 
 Take for example a class with its init and a method with docstrings as follows:
 
@@ -379,7 +378,7 @@ this functionality install the module with the *all* extras requires as:
 
 Check out the `jsonschema documentation
 <https://python-jsonschema.readthedocs.io/>`__ to learn how to write a schema.
-The current version of jsonargparse uses Draft4Validator. Parsing an argument
+The current version of jsonargparse uses Draft7Validator. Parsing an argument
 using a json schema is done like in the following example:
 
 .. code-block:: python
@@ -508,8 +507,8 @@ included in the yaml file, or the corresponding absolute path:
 Likewise directories can also be parsed by including in the mode the :code:`'d'`
 flag, e.g. :code:`ActionPath(mode='drw')`.
 
-The content of a file that a :class:`.Path` instance references can be read by using
-the :func:`jsonargparse.Path.get_content` method. For the previous example would be
+The content of a file that a :class:`.Path` instance references can be read by
+using the :py:meth:`.Path.get_content` method. For the previous example would be
 :code:`info_db = cfg.databases.info.get_content()`.
 
 An argument with :class:`.ActionPath` can be given :code:`nargs='+'` to parse
@@ -533,10 +532,10 @@ Parsing URLs
 ============
 
 The :class:`.ActionPath` and :class:`.ActionPathList` classes also support URLs
-which after parsing the :func:`jsonargparse.Path.get_content` can be used to
-perform a GET request to the corresponding URL and retrieve its content. For this
-to work the *validators* and *requests* python packages are required which will
-be installed along with jsonargparse if the *all* extras requires is chosen:
+which after parsing the :py:meth:`.Path.get_content` can be used to perform a
+GET request to the corresponding URL and retrieve its content. For this to work
+the *validators* and *requests* python packages are required which will be
+installed along with jsonargparse if the *all* extras requires is chosen:
 
 .. code-block:: bash
 
@@ -548,18 +547,16 @@ be initialized as :code:`ActionPath(mode='fur')`. If the value appears to be a
 URL according to :func:`validators.url.url` then a HEAD request would be
 triggered to check if it is accessible, and if so, the parsing succeeds. To get
 the content of the parsed path, without needing to care if it is a local file or
-a URL, the :func:`jsonargparse.Path.get_content` can be used.
+a URL, the :py:meth:`.Path.get_content` can be used.
 
 If after importing jsonargparse you run
 :code:`jsonargparse.set_url_support(True)`, the following functions and classes
-will also support loading from URLs:
-:func:`jsonargparse.ArgumentParser.parse_path`,
-:func:`jsonargparse.ArgumentParser.get_defaults` (:code:`default_config_files`
-argument), :class:`.ActionConfigFile`, :class:`.ActionJsonSchema`,
-:class:`.ActionJsonnet` and :class:`.ActionParser`. This means for example that
-a tool that can receive a configuration file via :class:`.ActionConfigFile` is
-able to get the config file from a URL, that is something like the following
-would work:
+will also support loading from URLs: :py:meth:`.ArgumentParser.parse_path`,
+:py:meth:`.ArgumentParser.get_defaults` (:code:`default_config_files` argument),
+:class:`.ActionConfigFile`, :class:`.ActionJsonSchema`, :class:`.ActionJsonnet`
+and :class:`.ActionParser`. This means for example that a tool that can receive
+a configuration file via :class:`.ActionConfigFile` is able to get the config
+file from a URL, that is something like the following would work:
 
 .. code-block:: bash
 
@@ -674,13 +671,12 @@ A second way to define parsers in a modular way is what in argparse is known as
 `sub-commands <https://docs.python.org/3/library/argparse.html#sub-commands>`_.
 However, to promote modularity, in jsonargparse sub-commands work a bit
 different than in argparse. To add sub-commands to a parser, the
-:func:`jsonargparse.ArgumentParser.add_subcommands` method is used. Then an
-existing parser is added as a sub-command using
-:func:`jsonargparse.ActionSubCommands.add_subcommand`. In a parsed config object
-the sub-command will be stored in the :code:`subcommand` entry (or whatever
-:code:`dest` was set to), and the values of the sub-command will be in an entry
-with the same name as the respective sub-command. An example of defining a
-parser with sub-commands is the following:
+:py:meth:`.ArgumentParser.add_subcommands` method is used. Then an existing
+parser is added as a sub-command using :func:`.add_subcommand`. In a parsed
+config object the sub-command will be stored in the :code:`subcommand` entry (or
+whatever :code:`dest` was set to), and the values of the sub-command will be in
+an entry with the same name as the respective sub-command. An example of
+defining a parser with sub-commands is the following:
 
 .. code-block:: python
 
@@ -707,10 +703,10 @@ Then some examples of parsing are the following:
     >>> parser.parse_args(['--op0', 'val0', 'subcomm2', '--op2', 'val2'])
     namespace(op0='val0', subcomm2=namespace(op2='val2'), subcommand='subcomm2')
 
-Parsing config files with :func:`jsonargparse.ArgumentParser.parse_path` or
-:func:`jsonargparse.ArgumentParser.parse_string` is also possible. Though there
-can only be values for one of the sub-commands. The config file is not required
-to specify a value for :code:`subcommand`. For the example parser above a valid
+Parsing config files with :py:meth:`.ArgumentParser.parse_path` or
+:py:meth:`.ArgumentParser.parse_string` is also possible. Though there can only
+be values for one of the sub-commands. The config file is not required to
+specify a value for :code:`subcommand`. For the example parser above a valid
 yaml would be:
 
 .. code-block:: yaml
