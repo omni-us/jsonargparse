@@ -527,6 +527,8 @@ as argument either the path to a file listing the paths is given or the special
 If :code:`nargs='+'` is given to :code:`add_argument` then a single list is
 generated including all paths in all lists provided.
 
+Note: the :class:`.Path` class is currently not supported in windows.
+
 
 Parsing URLs
 ============

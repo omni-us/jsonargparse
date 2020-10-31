@@ -33,6 +33,7 @@ class TempDirTestCase(unittest.TestCase):
         shutil.rmtree(self.tmpdir)
 
 
+@unittest.skipIf(os.name == 'nt', 'Path class currently not supported in windows')
 class PathTests(TempDirTestCase):
 
     def setUp(self):
