@@ -5,6 +5,8 @@ __pycache__
 .coverage
 coverage.xml
 .mypy_cache
+.tox
+venv*
 sphinx/_build
 build
 dist

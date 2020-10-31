@@ -56,6 +56,9 @@ Features
 - Two mechanisms to define parsers in a modular way: parsers as arguments and
   sub-commands.
 
+- Support for command line tab argument completion using `argcomplete
+  <https://pypi.org/project/argcomplete/>`__.
+
 - Default behavior is not identical to argparse, though it is possible to
   configure it to be identical. The main differences are:
 
