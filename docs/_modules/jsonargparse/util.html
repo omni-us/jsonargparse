@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.util &mdash; jsonargparse 3.0.0.dev3 documentation</title>
+  <title>jsonargparse.util &mdash; jsonargparse 3.0.0.dev4 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0.dev3
+                3.0.0.dev4
               </div>
             
           
@@ -155,12 +155,12 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">stat</span>
 <span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Set</span>
-<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">Namespace</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Set</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="k">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">redirect_stderr</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">Namespace</span>
 
-<span class="kn">from</span> <span class="nn">.optionals</span> <span class="kn">import</span> <span class="n">url_support</span><span class="p">,</span> <span class="n">_import_requests</span><span class="p">,</span> <span class="n">_import_url_validator</span>
+<span class="kn">from</span> <span class="nn">.optionals</span> <span class="k">import</span> <span class="n">url_support</span><span class="p">,</span> <span class="n">_import_requests</span><span class="p">,</span> <span class="n">_import_url_validator</span>
 
 
 <span class="n">null_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">(</span><span class="s1">&#39;null&#39;</span><span class="p">)</span>
@@ -315,7 +315,7 @@
     <span class="k">def</span> <span class="nf">strip_keys</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">del_keys</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">kbase</span> <span class="o">=</span> <span class="n">key</span> <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
+            <span class="n">kbase</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="n">strip_keys</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">kbase</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">meta_keys</span><span class="p">:</span>
@@ -351,7 +351,7 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">print_usage</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;prog&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">prog</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">message</span><span class="p">}</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%(prog)s</span><span class="s1">: error: </span><span class="si">%(message)s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">args</span><span class="p">)</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span></div>
+    <span class="bp">self</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">_get_env_var</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -380,7 +380,7 @@
 <span class="sd">    be obtained without having to remember the working directory from when the</span>
 <span class="sd">    object was created.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="Path.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.util.Path.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Path.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.util.Path.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s1">&#39;fr&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_check</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for Path instance.</span>
 
 <span class="sd">        Args:</span>
@@ -466,13 +466,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_url</span> <span class="o">=</span> <span class="n">is_url</span>  <span class="c1"># type: bool</span></div>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;Path(path=&quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">+</span><span class="s1">&#39;&quot;, abs_path=&quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">abs_path</span><span class="o">+</span><span class="s1">&#39;&quot;, cwd=&quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">cwd</span><span class="o">+</span><span class="s1">&#39;&quot;)&#39;</span>
 
-<div class="viewcode-block" id="Path.__call__"><a class="viewcode-back" href="../../index.html#jsonargparse.util.Path.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Path.__call__"><a class="viewcode-back" href="../../index.html#jsonargparse.util.Path.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the path as a string.</span>
 
 <span class="sd">        Args:</span>
@@ -506,7 +506,7 @@
 <div class="viewcode-block" id="LoggerProperty"><a class="viewcode-back" href="../../index.html#jsonargparse.util.LoggerProperty">[docs]</a><span class="k">class</span> <span class="nc">LoggerProperty</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Class designed to be inherited by other classes to add a logger property.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="LoggerProperty.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.util.LoggerProperty.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="LoggerProperty.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.util.LoggerProperty.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for LoggerProperty class.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_logger&#39;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="kc">None</span></div>
@@ -514,22 +514,21 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">logger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The current logger.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;The logger property for the class.</span>
+
+<span class="sd">        :getter: Returns the current logger.</span>
+<span class="sd">        :setter: Sets the given logging.Logger as logger or sets the default logger</span>
+<span class="sd">                 if given True/str(logger name)/dict(name, level), or disables logging</span>
+<span class="sd">                 if given False/None.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If an invalid logger value is given.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span>
 
 
     <span class="nd">@logger</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">logger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sets a new logger.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            logger (logging.Logger or bool or str or dict or None): A logger</span>
-<span class="sd">                object to use, or True/str(logger name)/dict(name, level) to use the</span>
-<span class="sd">                default logger, or False/None to disable logging.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If an invalid logger value is given.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">logger</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">null_logger</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">))</span> <span class="ow">and</span> <span class="n">logger</span><span class="p">:</span>
