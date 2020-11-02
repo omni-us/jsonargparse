@@ -5,6 +5,7 @@ from jsonargparse.optionals import (jsonschema_support, _import_jsonschema,
                                     jsonnet_support, _import_jsonnet,
                                     url_support, _import_url_validator, _import_requests, _url_validator, _requests,
                                     docstring_parser_support, _import_docstring_parse,
+                                    argcomplete_support, _import_argcomplete,
                                     set_url_support, get_config_read_mode)
 
 
@@ -13,7 +14,6 @@ class JsonSchemaSupportTests(unittest.TestCase):
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     def test_jsonschema_support_true(self):
         _import_jsonschema('test_jsonschema_support_true')
-
 
 
     @unittest.skipIf(jsonschema_support, 'jsonschema package should not be installed')
@@ -69,6 +69,20 @@ class DocstringParserSupportTests(unittest.TestCase):
         with self.assertRaises(ImportError) as context:
             _import_docstring_parse('test_docstring_parser_support_false')
             self.assertIn('test_docstring_parser_support_false', context.msg)
+
+
+class ArgcompleteSupportTests(unittest.TestCase):
+
+    @unittest.skipIf(not argcomplete_support, 'argcomplete package is required')
+    def test_argcomplete_support_true(self):
+        _import_argcomplete('test_argcomplete_support_true')
+
+
+    @unittest.skipIf(argcomplete_support, 'argcomplete package should not be installed')
+    def test_argcomplete_support_false(self):
+        with self.assertRaises(ImportError) as context:
+            _import_argcomplete('test_argcomplete_support_false')
+            self.assertIn('test_argcomplete_support_false', context.msg)
 
 
 class ConfigReadModeTests(unittest.TestCase):

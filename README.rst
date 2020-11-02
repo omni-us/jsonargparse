@@ -15,18 +15,18 @@ jsonargparse (former yamlargparse)
 
 https://omni-us.github.io/jsonargparse/
 
-This module is an extension to python's argparse which simplifies parsing of
-configuration options from command line arguments, json supersets (`yaml
-<https://yaml.org/>`__ or `jsonnet <https://jsonnet.org/>`__) configuration
-files, environment variables and hard-coded defaults.
+This package is an extension to python's argparse which simplifies parsing of
+configuration options from command line arguments, json  configuration files
+(`yaml <https://yaml.org/>`__ or `jsonnet <https://jsonnet.org/>`__ supersets),
+environment variables and hard-coded defaults.
 
 The aim is similar to other projects such as `configargparse
 <https://pypi.org/project/ConfigArgParse/>`__, `yconf
 <https://pypi.org/project/yconf/>`__ and `confuse
 <https://pypi.org/project/confuse/>`__. The obvious question is, why yet another
-module similar to many already existing ones? The answer is simply that none of
+package similar to many already existing ones? The answer is simply that none of
 the existing projects had the exact features we wanted and after analyzing the
-alternatives it seemed simpler to create a new module.
+alternatives it seemed simpler to start a new project.
 
 
 Features
@@ -36,36 +36,26 @@ Features
   learning curve.
 
 - Not exclusively intended for parsing command line arguments. The main focus is
-  parsing yaml or jsonnet configuration files and not necessarily from a command
-  line tool.
+  parsing configuration files and not necessarily from a command line tool.
+
+- Support for two popular supersets of json: yaml and jsonnet.
 
 - Support for nested namespaces which makes it possible to parse config files
   with non-flat hierarchies.
 
-- Automatic adding of arguments from classes, methods and functions that include
+- Easy adding of arguments from classes, methods and functions that include
   type hints and docstrings.
-
-- Support for two popular supersets of json, making config files more versatile
-  and powerful.
 
 - Parsing of relative paths within config files and path lists.
 
 - Several convenient action classes to ease common parsing use cases (paths,
-  comparison operators, json schemas, ...).
+  comparison operators, json schemas, enums ...).
 
 - Two mechanisms to define parsers in a modular way: parsers as arguments and
   sub-commands.
 
 - Support for command line tab argument completion using `argcomplete
   <https://pypi.org/project/argcomplete/>`__.
-
-- Default behavior is not identical to argparse, though it is possible to
-  configure it to be identical. The main differences are:
-
-  - When parsing fails :class:`.ParserError` is raised, instead of printing usage
-    and program exit.
-  - To modify the behavior for parsing errors (e.g. print usage) an error
-    handler function can be provided.
 
 - Configuration values are overridden based on the following precedence.
 
@@ -75,6 +65,31 @@ Features
     > defaults.
   - **Parsing environment:** environment variables > default config file >
     defaults.
+
+
+.. _installation:
+
+Installation
+============
+
+You can install using `pip <https://pypi.org/project/jsonargparse/>`__ as:
+
+.. code-block:: python
+
+    pip install jsonargparse
+
+Installed like this, the only dependency that jsonargparse installs is `PyYAML
+<https://pypi.org/project/PyYAML/>`__. However, jsonargparse has several
+optional features that can be enabled by installing specifying any of the
+following extras requires: :code:`signatures`, :code:`jsonschema`,
+:code:`jsonnet`, :code:`urls` and :code:`argcomplete`. There is also the
+:code:`all` extras require that can be used to enable all optional features.
+Installing jsonargparse with extras require is as follows:
+
+.. code-block:: python
+
+    pip install "jsonargparse[signatures]"    # Enable only signatures feature
+    pip install "jsonargparse[all]"           # Enable all optional features
 
 
 Basic usage
@@ -116,27 +131,9 @@ from above you would observe:
     >>> cfg.opt2, type(cfg.opt2)
     (2.3, <class 'float'>)
 
-If the parsing fails a :class:`.ParserError` is raised, so depending on the use
-case it might be necessary to catch it.
-
-.. code-block:: python
-
-    >>> try:
-    ...     cfg = parser.parse_args(['--opt2', 'four'])
-    ... except jsonargparse.ParserError as ex:
-    ...     print('parser error: '+str(ex))
-    ...
-    parser error: argument --opt2: invalid float value: 'four'
-
-To get the default behavior of argparse the ArgumentParser can be initialized as
-follows:
-
-.. code-block:: python
-
-    parser = ArgumentParser(
-        prog='app',
-        error_handler='usage_and_exit_error_handler',
-        description='Description for my app.')
+If the parsing fails the standard behavior is that the usage is printed and the
+program is terminated. Alternatively you can initialize the parser with
+:code:`error_handler=None` in which case a :class:`.ParserError` is raised.
 
 
 .. _nested-namespaces:
@@ -208,7 +205,7 @@ environment variables.
 Configuration files
 ===================
 
-An important feature of this module is the parsing of yaml/json files. The dot
+An important feature of jsonargparse is the parsing of yaml/json files. The dot
 notation hierarchy of the arguments (see :ref:`nested-namespaces`) are used for
 the expected structure in the config files.
 
@@ -241,7 +238,9 @@ the following would be observed:
     >>> parser.add_argument('--lev1.opt1', default='from default 1')
     >>> parser.add_argument('--lev1.opt2', default='from default 2')
     >>> parser.add_argument('--cfg', action=ActionConfigFile)
-    >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1', '--cfg', 'example.yaml', '--lev1.opt2', 'from arg 2'])
+    >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1',
+                                 '--cfg', 'example.yaml',
+                                 '--lev1.opt2', 'from arg 2'])
     >>> cfg.lev1.opt1
     'from yaml 1'
     >>> cfg.lev1.opt2
@@ -360,7 +359,8 @@ For all features described above to work, two optional packages are required:
 complex type hints and `docstring-parser
 <https://pypi.org/project/docstring-parser/>`__ to get the argument descriptions
 from the docstrings. Both these packages are included when jsonargparse is
-installed using the *all* extras requires.
+installed using the :code:`signatures` extras require as explained in section
+:ref:`installation`.
 
 
 Json schemas
@@ -370,11 +370,8 @@ The :class:`.ActionJsonSchema` class is provided to allow parsing and validation
 of values using a json schema. This class requires the `jsonschema
 <https://pypi.org/project/jsonschema/>`__ python package. Though note that
 jsonschema is not a requirement of the minimal jsonargparse install. To enable
-this functionality install the module with the *all* extras requires as:
-
-.. code-block:: bash
-
-    $ pip3 install jsonargparse[all]
+this functionality install with the :code:`jsonschema` extras require as
+explained in section :ref:`installation`.
 
 Check out the `jsonschema documentation
 <https://python-jsonschema.readthedocs.io/>`__ to learn how to write a schema.
@@ -412,11 +409,8 @@ The Jsonnet support requires `jsonschema
 <https://pypi.org/project/jsonschema/>`__ and `jsonnet
 <https://pypi.org/project/jsonnet/>`__ python packages which are not included
 with minimal jsonargparse install. To enable this functionality install
-jsonargparse with the *all* extras requires as:
-
-.. code-block:: bash
-
-    $ pip3 install jsonargparse[all]
+jsonargparse with the :code:`jsonnet` extras require as explained in section
+:ref:`installation`.
 
 By default an :class:`.ArgumentParser` parses configuration files as yaml.
 However, if instantiated giving as argument :code:`parser_mode='jsonnet'`, then
@@ -452,7 +446,8 @@ then the jsonnet and the external variable could be given as:
 
 .. code-block:: python
 
-        cfg = parser.parse_args(['--in_ext_vars', '{"param": 123}', '--in_jsonnet', 'path_to_jsonnet'])
+        cfg = parser.parse_args(['--in_ext_vars', '{"param": 123}',
+                                 '--in_jsonnet', 'path_to_jsonnet'])
 
 Note that the external variables argument must be provided before the jsonnet
 path so that this dictionary already exists when parsing the jsonnet.
@@ -537,11 +532,8 @@ The :class:`.ActionPath` and :class:`.ActionPathList` classes also support URLs
 which after parsing the :py:meth:`.Path.get_content` can be used to perform a
 GET request to the corresponding URL and retrieve its content. For this to work
 the *validators* and *requests* python packages are required which will be
-installed along with jsonargparse if the *all* extras requires is chosen:
-
-.. code-block:: bash
-
-    $ pip3 install jsonargparse[all]
+installed along with jsonargparse if installed with the :code:`urls` extras
+require as explained in section :ref:`installation`.
 
 Then the :code:`'u'` flag can be used to parse URLs. For example if it is
 desired that an argument can be either a readable file or URL the action would
@@ -751,15 +743,15 @@ include any :code:`requirements.txt` file. This is by intention. To make it very
 clear what are the requirements for different use cases, all the requirements of
 the project are stored in the file :code:`setup.cfg`. The basic runtime
 requirements are defined in section :code:`[options]` in the
-:code:`install_requires` entry. All optional requirements are stored in section
-:code:`[options.extras_require]` in the :code:`all` entry. Also there are
-:code:`test`, :code:`dev` and :code:`doc` entries in the same
-:code:`[options.extras_require]` section which lists requirements for testing,
-development and documentation building.
+:code:`install_requires` entry. All extras requires for optional features listed
+in :ref:`installation` are stored in section :code:`[options.extras_require]`.
+Also there are :code:`test`, :code:`test_no_urls`, :code:`dev` and :code:`doc`
+entries in the same :code:`[options.extras_require]` section which lists
+requirements for testing, development and documentation building.
 
 The recommended way to work with the source code is the following. First clone
 the repository, then create a virtual environment, activate it and finally
-install the development requirements. More precisely the steps would be:
+install the development requirements. More precisely the steps are:
 
 .. code-block:: bash
 
@@ -772,4 +764,15 @@ The crucial step is installing the requirements which would be done by running:
 
 .. code-block:: bash
 
-    pip install --editable .[test,dev,doc,all]
+    pip install -e ".[dev,all]"
+
+Running the unit tests can be done either using using `tox
+<https://tox.readthedocs.io/en/stable/>`__ or the :code:`setup.py` script. The
+unit tests are also installed with the package, thus can be used to in a
+production system.
+
+.. code-block:: bash
+
+    tox  # Run tests using tox
+    ./setup.py test_coverage  # Run tests and generate coverage report
+    python3 -m jsonargparse_tests  # Run tests for installed package

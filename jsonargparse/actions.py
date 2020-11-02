@@ -244,7 +244,7 @@ class ActionEnum(Action):
                     value[num] = self._enum[val]
                 else:
                     self._enum(val)
-            except KeyError as ex:
+            except KeyError:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError('Parser key "'+self.dest+'"'+elem+': value '+str(val)+' not in '+self._enum.__name__+'.')
         return value if islist else value[0]

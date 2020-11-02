@@ -50,7 +50,7 @@ schema3 = {
 class JsonSchemaTests(TempDirTestCase):
 
     def test_ActionJsonSchema(self):
-        parser = ArgumentParser(prog='app', default_meta=False)
+        parser = ArgumentParser(prog='app', default_meta=False, error_handler=None)
         parser.add_argument('--op1',
             action=ActionJsonSchema(schema=schema1))
         parser.add_argument('--op2',

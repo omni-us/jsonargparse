@@ -80,7 +80,7 @@ class JsonnetTests(TempDirTestCase):
 
 
     def test_ActionJsonnet(self):
-        parser = ArgumentParser(default_meta=False)
+        parser = ArgumentParser(default_meta=False, error_handler=None)
         parser.add_argument('--input.ext_vars',
             action=ActionJsonnetExtVars())
         parser.add_argument('--input.jsonnet',

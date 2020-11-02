@@ -168,7 +168,7 @@ class ParsersTests(TempDirTestCase):
 class ArgumentFeaturesTests(unittest.TestCase):
 
     def test_positionals(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('pos1')
         parser.add_argument('pos2', nargs='?')
         self.assertRaises(ParserError, lambda: parser.parse_args([]))
@@ -176,7 +176,7 @@ class ArgumentFeaturesTests(unittest.TestCase):
         self.assertEqual('v1', parser.parse_args(['v1']).pos1)
         self.assertEqual('v2', parser.parse_args(['v1', 'v2']).pos2)
 
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('pos1')
         parser.add_argument('pos2', nargs='+')
         self.assertRaises(ParserError, lambda: parser.parse_args(['v1']).pos2)
@@ -192,7 +192,7 @@ class ArgumentFeaturesTests(unittest.TestCase):
 
 
     def test_required(self):
-        parser = ArgumentParser(env_prefix='APP')
+        parser = ArgumentParser(env_prefix='APP', error_handler=None)
         group = parser.add_argument_group('Group 1')
         group.add_argument('--req1', required=True)
         parser.add_argument('--lev1.req2', required=True)
@@ -217,7 +217,7 @@ class ArgumentFeaturesTests(unittest.TestCase):
 
 
     def test_bool_type(self):
-        parser = ArgumentParser(prog='app', default_env=True)
+        parser = ArgumentParser(prog='app', default_env=True, error_handler=None)
         parser.add_argument('--val', type=bool)
         self.assertEqual(False, parser.get_defaults().val)
         self.assertEqual(True,  parser.parse_args(['--val', 'true']).val)
@@ -239,7 +239,7 @@ class ArgumentFeaturesTests(unittest.TestCase):
 
 
     def test_choices(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--ch1',
             choices='ABC')
         parser.add_argument('--ch2',
@@ -251,7 +251,7 @@ class ArgumentFeaturesTests(unittest.TestCase):
 
 
     def test_nargs(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--val', nargs='+', type=int)
         self.assertEqual([9],        parser.parse_args(['--val', '9']).val)
         self.assertEqual([3, 6, 2],  parser.parse_args(['--val', '3', '6', '2']).val)
@@ -275,12 +275,12 @@ class ArgumentFeaturesTests(unittest.TestCase):
 class AdvancedFeaturesTests(unittest.TestCase):
 
     def test_subcommands(self):
-        parser_a = ArgumentParser()
+        parser_a = ArgumentParser(error_handler=None)
         parser_a.add_argument('ap1')
         parser_a.add_argument('--ao1',
             default='ao1_def')
 
-        parser = ArgumentParser(prog='app')
+        parser = ArgumentParser(prog='app', error_handler=None)
         parser.add_argument('--o1',
             default='o1_def')
         subcommands = parser.add_subcommands()
@@ -571,7 +571,7 @@ class ConfigFilesTests(unittest.TestCase):
         with open(abs_yaml_file, 'w') as output_file:
             output_file.write('file: '+rel_yaml_file+'\ndir: '+tmpdir+'\n')
 
-        parser = ArgumentParser(prog='app')
+        parser = ArgumentParser(prog='app', error_handler=None)
         parser.add_argument('--cfg',
             action=ActionConfigFile)
         parser.add_argument('--file',

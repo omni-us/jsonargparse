@@ -8,11 +8,13 @@ _jsonnet = find_spec('_jsonnet')
 _url_validator = find_spec('validators')
 _requests = find_spec('requests')
 _docstring_parser = find_spec('docstring_parser')
+_argcomplete = find_spec('argcomplete')
 
 jsonschema_support = False if _jsonschema is None else True
 jsonnet_support = False if any(x is None for x in [_jsonnet, _jsonschema]) else True
 url_support = False if any(x is None for x in [_url_validator, _requests]) else True
 docstring_parser_support = False if _docstring_parser is None else True
+argcomplete_support = False if _argcomplete is None else True
 
 _config_read_mode = 'fr'
 
@@ -56,6 +58,14 @@ def _import_docstring_parse(importer):
         return docstring_parse
     except Exception as ex:
         raise ImportError('docstring-parser package is required by '+importer+' :: '+str(ex))
+
+
+def _import_argcomplete(importer):
+    try:
+        import argcomplete
+        return argcomplete
+    except Exception as ex:
+        raise ImportError('argcomplete package is required by '+importer+' :: '+str(ex))
 
 
 def set_url_support(enabled):

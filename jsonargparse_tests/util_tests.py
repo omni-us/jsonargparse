@@ -6,6 +6,7 @@ import shutil
 import pathlib
 import logging
 import tempfile
+import platform
 import unittest
 from jsonargparse.util import *
 from jsonargparse.util import _check_unknown_kwargs, _suppress_stderr
@@ -33,7 +34,8 @@ class TempDirTestCase(unittest.TestCase):
         shutil.rmtree(self.tmpdir)
 
 
-@unittest.skipIf(os.name == 'nt', 'Path class currently not supported in windows')
+@unittest.skipIf(os.name != 'posix' or platform.python_implementation() != 'CPython',
+                 'Path class currently only supported in posix systems and CPython')
 class PathTests(TempDirTestCase):
 
     def setUp(self):

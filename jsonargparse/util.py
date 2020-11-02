@@ -165,7 +165,7 @@ def strip_meta(cfg):
     def strip_keys(cfg, base=None):
         del_keys = []
         for key, val in cfg.items():
-            kbase = key if base is None else base+'.'+key
+            kbase = str(key) if base is None else base+'.'+str(key)
             if isinstance(val, dict):
                 strip_keys(val, kbase)
             elif key in meta_keys:
@@ -201,7 +201,7 @@ def usage_and_exit_error_handler(self, message):
     self.print_usage(sys.stderr)
     args = {'prog': self.prog, 'message': message}
     sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
-    sys.exit(2)
+    self.exit(2)
 
 
 def _get_env_var(parser, action) -> str:
@@ -364,22 +364,21 @@ class LoggerProperty:
 
     @property
     def logger(self):
-        """The current logger."""
+        """The logger property for the class.
+
+        :getter: Returns the current logger.
+        :setter: Sets the given logging.Logger as logger or sets the default logger
+                 if given True/str(logger name)/dict(name, level), or disables logging
+                 if given False/None.
+
+        Raises:
+            ValueError: If an invalid logger value is given.
+        """
         return self._logger
 
 
     @logger.setter
     def logger(self, logger):
-        """Sets a new logger.
-
-        Args:
-            logger (logging.Logger or bool or str or dict or None): A logger
-                object to use, or True/str(logger name)/dict(name, level) to use the
-                default logger, or False/None to disable logging.
-
-        Raises:
-            ValueError: If an invalid logger value is given.
-        """
         if logger is None or (isinstance(logger, bool) and not logger):
             self._logger = null_logger
         elif isinstance(logger, (bool, str, dict)) and logger:

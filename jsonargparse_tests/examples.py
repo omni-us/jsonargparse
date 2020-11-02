@@ -4,7 +4,7 @@ from jsonargparse import ArgumentParser, ActionYesNo
 
 def example_parser():
     """Creates a simple parser for doing tests."""
-    parser = ArgumentParser(prog='app', default_meta=False)
+    parser = ArgumentParser(prog='app', default_meta=False, error_handler=None)
 
     group_one = parser.add_argument_group('Group 1', name='group1')
     group_one.add_argument('--bools.def_false',

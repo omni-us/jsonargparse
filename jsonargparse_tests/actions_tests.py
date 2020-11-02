@@ -65,7 +65,7 @@ class ActionsTests(unittest.TestCase):
         with open(list_file4, 'w') as output_file:
             output_file.write('file1\nfile2\nfile6\n')
 
-        parser = ArgumentParser(prog='app')
+        parser = ArgumentParser(prog='app', error_handler=None)
         parser.add_argument('--list',
             nargs='+',
             action=ActionPathList(mode='fr', rel='list'))
@@ -107,7 +107,7 @@ class ActionsTests(unittest.TestCase):
             B = 2
             C = 3
 
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--enum', action=ActionEnum(enum=MyEnum))
         for val in ['A', 'B', 'C']:
             self.assertEqual(MyEnum[val], parser.parse_args(['--enum='+val]).enum)
@@ -130,7 +130,7 @@ class ActionsTests(unittest.TestCase):
 
 
     def test_ActionOperators(self):
-        parser = ArgumentParser(prog='app')
+        parser = ArgumentParser(prog='app', error_handler=None)
         parser.add_argument('--le0',
             action=ActionOperators(expr=('<', 0)))
         parser.add_argument('--gt1.a.le4',

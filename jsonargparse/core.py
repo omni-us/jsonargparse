@@ -14,7 +14,7 @@ from argparse import (Action, Namespace, OPTIONAL, REMAINDER, SUPPRESS, PARSER, 
                       ArgumentError, _UNRECOGNIZED_ARGS_ATTR)
 
 from .signatures import SignatureArguments
-from .optionals import _import_jsonnet, set_url_support, get_config_read_mode
+from .optionals import _import_jsonnet, argcomplete_support, _import_argcomplete, set_url_support, get_config_read_mode
 from .actions import (ActionConfigFile, ActionParser, _ActionSubCommands, ActionYesNo, ActionEnum, ActionPath,
                       ActionPathList, ActionOperators, _ActionPrintConfig, _find_action, _is_action_value_list)
 from .jsonschema import ActionJsonSchema
@@ -72,7 +72,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
     def __init__(self,
                  *args,
                  env_prefix=None,
-                 error_handler=None,
+                 error_handler=usage_and_exit_error_handler,
                  formatter_class='default',
                  logger=None,
                  version=None,
@@ -90,12 +90,12 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
         Args:
             env_prefix (str): Prefix for environment variables.
-            error_handler (Callable): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
-            formatter_class (argparse.HelpFormatter or str): Class for printing help messages or one of {"default", "default_argparse"}.
-            logger (logging.Logger or bool or int or str or None): A logger to use or True/int(log level)/str(logger name)
-                                                                   to use the default logger or False/None to disable logging.
+            error_handler (Callable): Handler for parsing errors, set to None to simply raise exception.
+            formatter_class (argparse.HelpFormatter or str): Class for printing help messages or "default".
+            logger: Configures the logger, see :class:`.LoggerProperty`.
             version (str): Program version string to add --version argument.
             parser_mode (str): Mode for parsing configuration files, either "yaml" or "jsonnet".
+            parse_as_dict (bool): Whether to parse as dict instead of Namespace.
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
             default_env (bool): Set the default value on whether to parse environment variables.
             default_meta (bool): Set the default value on whether to include metadata in config objects.
@@ -183,6 +183,10 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
+        if argcomplete_support:
+            argcomplete = _import_argcomplete('parse_args')
+            argcomplete.autocomplete(self)
+
         if env is None and self._default_env:
             env = True
 
@@ -961,9 +965,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         """
         def merge_values(cfg_from, cfg_to):
             for k, v in cfg_from.items():
-                if v is None:
-                    continue
-                if k not in cfg_to or \
+                if v is None or \
+                   k not in cfg_to or \
                    not isinstance(v, dict) or \
                    (isinstance(v, dict) and not isinstance(cfg_to[k], dict)):
                     cfg_to[k] = v

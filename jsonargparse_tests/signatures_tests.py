@@ -71,7 +71,7 @@ class SignaturesTests(unittest.TestCase):
                 super().__init__(None, c3_a4, **kwargs)
 
         ## Test without nesting ##
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_class_arguments(Class3)
 
         self.assertRaises(ValueError, lambda: parser.add_class_arguments('Class3'))
