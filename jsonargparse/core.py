@@ -189,7 +189,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             with_meta (bool): Whether to include metadata in config object.
 
         Returns:
-            Namespace: An object with all parsed values as nested attributes.
+            Namespace or Dict: An object with all parsed values as nested attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
