@@ -9,7 +9,7 @@ import argparse
 import traceback
 from copy import deepcopy
 from contextlib import redirect_stderr
-from typing import Any, List, Dict, Set, Union
+from typing import Any, List, Dict, Set, Union, Optional
 from argparse import (Action, Namespace, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE,
                       ArgumentError, _UNRECOGNIZED_ARGS_ATTR)
 
@@ -71,16 +71,17 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
     def __init__(self,
                  *args,
-                 env_prefix=None,
-                 error_handler=usage_and_exit_error_handler,
-                 formatter_class='default',
-                 logger=None,
-                 version=None,
-                 parser_mode='yaml',
-                 parse_as_dict=False,
-                 default_config_files:List[str]=[],
-                 default_env:bool=False,
-                 default_meta:bool=True,
+                 env_prefix: Optional[str] = None,
+                 error_handler = usage_and_exit_error_handler,
+                 formatter_class = 'default',
+                 logger = None,
+                 version: Optional[str] = None,
+                 print_config: Optional[str] = '--print-config',
+                 parser_mode: str = 'yaml',
+                 parse_as_dict: bool = False,
+                 default_config_files: List[str] = [],
+                 default_env: bool = False,
+                 default_meta: bool = True,
                  **kwargs):
         """Initializer for ArgumentParser instance.
 
@@ -93,7 +94,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             error_handler (Callable): Handler for parsing errors, set to None to simply raise exception.
             formatter_class (argparse.HelpFormatter or str): Class for printing help messages or "default".
             logger: Configures the logger, see :class:`.LoggerProperty`.
-            version (str): Program version string to add --version argument.
+            version (str or None): Program version string to add --version argument.
+            print_config (str or None): Add this as argument to print config, set None to disable.
             parser_mode (str): Mode for parsing configuration files, either "yaml" or "jsonnet".
             parse_as_dict (bool): Whether to parse as dict instead of Namespace.
             default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
@@ -118,7 +120,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         self.parser_mode = parser_mode
         self.logger = logger
         self.error_handler = error_handler
-        self.add_argument('--print-config', action=_ActionPrintConfig)
+        if print_config is not None:
+            self.add_argument('--print-config', action=_ActionPrintConfig)
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version)
         if parser_mode not in {'yaml', 'jsonnet'}:

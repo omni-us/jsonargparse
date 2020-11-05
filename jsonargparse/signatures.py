@@ -170,7 +170,8 @@ class SignatureArguments:
                     kwargs['required'] = True
                 else:
                     kwargs['default'] = default
-                if annotation in {str, int, float, bool}:
+                if annotation in {str, int, float, bool} or \
+                   (inspect.isclass(annotation) and issubclass(annotation, (str, int, float))):
                     kwargs['type'] = annotation
                 elif inspect.isclass(annotation) and issubclass(annotation, enum.Enum):
                     kwargs['action'] = ActionEnum(enum=annotation)

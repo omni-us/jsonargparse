@@ -3,6 +3,7 @@
 import unittest
 from typing import Dict, List, Tuple, Optional, Union, Any
 from jsonargparse import *
+from jsonargparse.typing import PositiveFloat
 from jsonargparse.actions import _find_action
 from jsonargparse.optionals import jsonschema_support, docstring_parser_support
 from jsonargparse_tests.util_tests import TempDirTestCase
@@ -232,6 +233,18 @@ class SignaturesTests(unittest.TestCase):
             for key in ['a1', 'a2']:
                 self.assertEqual(key+' description', _find_action(parser, key).help)
             self.assertIsNone(_find_action(parser, 'a3').help, 'expected help for a3 to be None')
+
+
+    def test_basic_subtypes(self):
+
+        def func(a1: PositiveFloat = PositiveFloat(1)):
+            return a1
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_function_arguments(func)
+
+        self.assertEqual(1.0, parser.parse_args(['--a1=1']).a1)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--a1=-1']))
 
 
 if __name__ == '__main__':
