@@ -6,7 +6,6 @@ from jsonargparse import *
 from jsonargparse.typing import PositiveFloat
 from jsonargparse.actions import _find_action
 from jsonargparse.optionals import jsonschema_support, docstring_parser_support
-from jsonargparse_tests.util_tests import TempDirTestCase
 
 
 class SignaturesTests(unittest.TestCase):
@@ -233,6 +232,23 @@ class SignaturesTests(unittest.TestCase):
             for key in ['a1', 'a2']:
                 self.assertEqual(key+' description', _find_action(parser, key).help)
             self.assertIsNone(_find_action(parser, 'a3').help, 'expected help for a3 to be None')
+
+
+    def test_skip(self):
+
+        def func(a1 = '1',
+                 a2: float = 2.0,
+                 a3: bool = False,
+                 a4: int = 4):
+            return a1
+
+        parser = ArgumentParser()
+        parser.add_function_arguments(func, skip={'a2', 'a4'})
+
+        for key in ['a1', 'a3']:
+            self.assertIsNotNone(_find_action(parser, key), key+' should be in parser but is not')
+        for key in ['a2', 'a4']:
+            self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
 
 
     def test_basic_subtypes(self):

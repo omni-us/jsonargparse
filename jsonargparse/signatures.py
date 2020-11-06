@@ -5,13 +5,13 @@ import inspect
 
 from .actions import ActionEnum
 from .jsonschema import ActionJsonSchema
-from .optionals import docstring_parser_support, _import_docstring_parse
+from .optionals import docstring_parser_support, _import_docstring_parse, dataclasses_support, _import_dataclasses
 
 
 class SignatureArguments:
     """Methods to add arguments based on signatures to an ArgumentParser instance."""
 
-    def add_class_arguments(self, theclass, nested_key=None, as_group=True):
+    def add_class_arguments(self, theclass, nested_key=None, as_group=True, skip=None):
         """Adds arguments from a class based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
@@ -20,6 +20,7 @@ class SignatureArguments:
             theclass (class): Class from which to add arguments.
             nested_key (str or None): Key for nested namespace.
             as_group (bool): Whether arguments should be added to a new argument group.
+            skip (set[str] or None): Names of arguments that should be skipped.
 
         Returns:
             int: Number of arguments added.
@@ -34,10 +35,10 @@ class SignatureArguments:
         def docs_func(base):
             return [base.__init__.__doc__, base.__doc__]
 
-        return self._add_signature_arguments(inspect.getmro(theclass), nested_key, as_group, docs_func)
+        return self._add_signature_arguments(inspect.getmro(theclass), nested_key, as_group, docs_func, skip)
 
 
-    def add_method_arguments(self, theclass, themethod, nested_key=None, as_group=True):
+    def add_method_arguments(self, theclass, themethod, nested_key=None, as_group=True, skip=None):
         """Adds arguments from a class based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
@@ -47,6 +48,7 @@ class SignatureArguments:
             themethod (str): Name of the method for which to add arguments.
             nested_key (str or None): Key for nested namespace.
             as_group (bool): Whether arguments should be added to a new argument group.
+            skip (set[str] or None): Names of arguments that should be skipped.
 
         Returns:
             int: Number of arguments added.
@@ -66,10 +68,10 @@ class SignatureArguments:
         skip_first = False if isinstance(theclass.__dict__[themethod], staticmethod) else True
         themethod = getattr(theclass, themethod)
 
-        return self._add_signature_arguments([themethod], nested_key, as_group, docs_func, skip_first=skip_first)
+        return self._add_signature_arguments([themethod], nested_key, as_group, docs_func, skip, skip_first=skip_first)
 
 
-    def add_function_arguments(self, function, nested_key=None, as_group=True):
+    def add_function_arguments(self, function, nested_key=None, as_group=True, skip=None):
         """Adds arguments from a function based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
@@ -78,6 +80,7 @@ class SignatureArguments:
             function (callable): Function from which to add arguments.
             nested_key (str or None): Key for nested namespace.
             as_group (bool): Whether arguments should be added to a new argument group.
+            skip (set[str] or None): Names of arguments that should be skipped.
 
         Returns:
             int: Number of arguments added.
@@ -92,10 +95,10 @@ class SignatureArguments:
         def docs_func(base):
             return [base.__doc__]
 
-        return self._add_signature_arguments([function], nested_key, as_group, docs_func)
+        return self._add_signature_arguments([function], nested_key, as_group, docs_func, skip)
 
 
-    def _add_signature_arguments(self, objects, nested_key, as_group, docs_func, skip_first=False):
+    def _add_signature_arguments(self, objects, nested_key, as_group, docs_func, skip=None, skip_first=False):
         """Adds arguments from arguments of objects based on signatures and docstrings.
 
         Args:
@@ -103,6 +106,7 @@ class SignatureArguments:
             nested_key (str or None): Key for nested namespace.
             as_group (bool): Whether arguments should be added to a new argument group.
             docs_func (callable): Function that returns docstrings for a given object.
+            skip (set[str] or None): Names of arguments that should be skipped.
             skip_first (bool): Whether to skip first argument, i.e., skip self of class methods.
 
         Returns:
@@ -153,19 +157,27 @@ class SignatureArguments:
 
         ## Add objects arguments ##
         num_added = 0
+        if skip is None:
+            skip = set()
+        if dataclasses_support:
+            dataclasses = _import_dataclasses('_add_signature_arguments')
         for obj, (add_args, add_kwargs) in zip(objects, add_types):
             for num, param in enumerate(inspect.signature(obj).parameters.values()):
+                name = param.name
                 annotation = param.annotation
                 default = param.default
                 is_positional = default == inspect._empty
                 if param._kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
                    (is_positional and not add_args) or \
                    (not is_positional and not add_kwargs) or \
-                   (is_positional and skip_first and num == 0):
+                   (is_positional and skip_first and num == 0) or \
+                   name in skip:
                     continue
+                if dataclasses_support and default.__class__ == dataclasses._HAS_DEFAULT_FACTORY_CLASS:
+                    default = obj.__dataclass_fields__[name].default_factory()
                 if annotation == inspect._empty and not is_positional:
                     annotation = type(default)
-                kwargs = {'help': doc_params.get(param.name)}
+                kwargs = {'help': doc_params.get(name)}
                 if is_positional:
                     kwargs['required'] = True
                 else:
@@ -177,14 +189,14 @@ class SignatureArguments:
                     kwargs['action'] = ActionEnum(enum=annotation)
                 else:
                     try:
-                        kwargs['action'] = ActionJsonSchema(annotation=annotation)
+                        kwargs['action'] = ActionJsonSchema(annotation=annotation, enable_path=False)
                     except:
                         pass
                 if 'type' in kwargs or 'action' in kwargs:
-                    arg = '--' + (nested_key+'.' if nested_key else '') + param.name
+                    arg = '--' + (nested_key+'.' if nested_key else '') + name
                     group.add_argument(arg, **kwargs)
                     num_added += 1
                 elif is_positional:
-                    raise ValueError('Positional argument without a type for '+obj.__name__+' argument '+param.name+'.')
+                    raise ValueError('Positional argument without a type for '+obj.__name__+' argument '+name+'.')
 
         return num_added

@@ -19,6 +19,7 @@ class ActionJsonSchema(Action):
         Args:
             schema (str or object): Schema to validate values against.
             annotation (type): Type object from which to generate schema.
+            enable_path (bool): Whether to try to load json from path (def.=True).
             with_meta (bool): Whether to include metadata (def.=True).
 
         Raises:
@@ -27,7 +28,7 @@ class ActionJsonSchema(Action):
         """
         if 'schema' in kwargs or 'annotation' in kwargs:
             jsonvalidator = _import_jsonschema('ActionJsonSchema')[1]
-            _check_unknown_kwargs(kwargs, {'schema', 'annotation', 'with_meta'})
+            _check_unknown_kwargs(kwargs, {'schema', 'annotation', 'enable_path', 'with_meta'})
             if 'annotation' in kwargs:
                 if 'schema' in kwargs:
                     raise ValueError('Only one of schema or annotation is accepted.')
@@ -45,12 +46,14 @@ class ActionJsonSchema(Action):
                     raise ValueError('Problems parsing schema :: '+str(ex))
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
+            self._enable_path = kwargs.get('enable_path', True)
             self._with_meta = kwargs.get('with_meta', True)
         elif '_validator' not in kwargs:
             raise ValueError('Expected schema or annotation keyword arguments.')
         else:
             self._annotation = kwargs.pop('_annotation')
             self._validator = kwargs.pop('_validator')
+            self._enable_path = kwargs.pop('_enable_path')
             self._with_meta = kwargs.pop('_with_meta')
             kwargs['type'] = str
             super().__init__(**kwargs)
@@ -65,6 +68,7 @@ class ActionJsonSchema(Action):
         if len(args) == 0:
             kwargs['_annotation'] = self._annotation
             kwargs['_validator'] = self._validator
+            kwargs['_enable_path'] = self._enable_path
             kwargs['_with_meta'] = self._with_meta
             if 'help' in kwargs and isinstance(kwargs['help'], str) and '%s' in kwargs['help']:
                 kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, sort_keys=True)
@@ -87,7 +91,7 @@ class ActionJsonSchema(Action):
                 fpath = None
                 if isinstance(val, str):
                     val = yaml.safe_load(val)
-                if isinstance(val, str):
+                if self._enable_path and isinstance(val, str):
                     try:
                         fpath = Path(val, mode=get_config_read_mode())
                     except:

@@ -9,7 +9,8 @@ testing_package = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
 
 
 def run_tests():
-    tests = unittest.defaultTestLoader.discover(testing_package, pattern='*_tests.py')
+    pattern = '*_tests.py' if sys.version_info.minor < 6 else '*_tests*.py'
+    tests = unittest.defaultTestLoader.discover(testing_package, pattern=pattern)
     if not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful():
         sys.exit(True)
 

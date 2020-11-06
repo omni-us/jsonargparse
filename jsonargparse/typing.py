@@ -33,7 +33,8 @@ def restricted_number_type(name, base_type, restrictions, join='and'):
 
     restrictions = [restrictions] if isinstance(restrictions, tuple) else restrictions
     if not isinstance(restrictions, list) or \
-       not all([all([len(x) == 2, x[0] in _operators2, x[1] == base_type(x[1])]) for x in restrictions]):
+       not all(isinstance(x, tuple) and len(x) == 2 for x in restrictions) or \
+       not all(x[0] in _operators2 and x[1] == base_type(x[1]) for x in restrictions):
         raise ValueError('Expected restrictions to be a list of tuples each with a comparison operator '
                          '(> >= < <= == !=) and a reference value of type '+base_type.__name__+'.')
 
@@ -55,22 +56,17 @@ def restricted_number_type(name, base_type, restrictions, join='and'):
         _join = join
 
         def __new__(self, v):
+            def within_restriction(self, v):
+                check = [comparison(v, ref) for comparison, ref in self._restrictions]
+                if (self._join == 'and' and not all(check)) or \
+                   (self._join == 'or' and not any(check)):
+                    return False
+                return True
+
             v = self._type(v)
-            if not self._within_restriction(self, v):
+            if not within_restriction(self, v):
                 raise ValueError('invalid value, '+str(v)+' does not conform to restriction '+self._expression)
             return super().__new__(self, v)
-
-        def _within_restriction(self, v):
-            def test_comparison(operation, val, ref):
-                try:
-                    return operation(val, ref)
-                except TypeError:
-                    return False
-            check = [test_comparison(op, v, ref) for op, ref in self._restrictions]
-            if (self._join == 'and' and not all(check)) or \
-               (self._join == 'or' and not any(check)):
-                return False
-            return True
 
     RestrictedNumberType.__name__ = name
     registered_types[register_key] = RestrictedNumberType

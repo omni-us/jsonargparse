@@ -9,12 +9,14 @@ _url_validator = find_spec('validators')
 _requests = find_spec('requests')
 _docstring_parser = find_spec('docstring_parser')
 _argcomplete = find_spec('argcomplete')
+_dataclasses = find_spec('dataclasses')
 
 jsonschema_support = False if _jsonschema is None else True
 jsonnet_support = False if any(x is None for x in [_jsonnet, _jsonschema]) else True
 url_support = False if any(x is None for x in [_url_validator, _requests]) else True
 docstring_parser_support = False if _docstring_parser is None else True
 argcomplete_support = False if _argcomplete is None else True
+dataclasses_support = False if _dataclasses is None else True
 
 _config_read_mode = 'fr'
 
@@ -66,6 +68,14 @@ def _import_argcomplete(importer):
         return argcomplete
     except Exception as ex:
         raise ImportError('argcomplete package is required by '+importer+' :: '+str(ex))
+
+
+def _import_dataclasses(importer):
+    try:
+        import dataclasses
+        return dataclasses
+    except Exception as ex:
+        raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex))
 
 
 def set_url_support(enabled):

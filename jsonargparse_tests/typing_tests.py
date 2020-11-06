@@ -55,6 +55,12 @@ class RestrictedNumberTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: OpenUnitInterval('1.0'))
 
 
+    def test_invalid_type(self):
+        self.assertRaises(ValueError, lambda: restricted_number_type('Invalid', str, ('<', 0)))
+        self.assertRaises(ValueError, lambda: restricted_number_type('Invalid', int, ('<', 0), join='xor'))
+        self.assertRaises(ValueError, lambda: restricted_number_type('Invalid', int, ['<', 0]))
+
+
     def test_already_registered(self):
         NewClosedUnitInterval = restricted_number_type('ClosedUnitInterval', float, [('<=', 1), ('>=', 0)])
         self.assertEqual(ClosedUnitInterval, NewClosedUnitInterval)
