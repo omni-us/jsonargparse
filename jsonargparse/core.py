@@ -4,6 +4,7 @@ import sys
 import glob
 import json
 import yaml
+import enum
 import inspect
 import argparse
 import traceback
@@ -20,7 +21,7 @@ from .actions import (ActionConfigFile, ActionParser, _ActionSubCommands, Action
 from .jsonschema import ActionJsonSchema
 from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
 from .util import (ParserError, _flat_namespace_to_dict, _dict_to_flat_namespace, dict_to_namespace, namespace_to_dict,
-                   strip_meta, meta_keys, Path, LoggerProperty, null_logger, _get_env_var,
+                   strip_meta, meta_keys, Path, LoggerProperty, null_logger, _get_env_var, _issubclass,
                    _suppress_stderr, usage_and_exit_error_handler)
 
 
@@ -39,11 +40,16 @@ class _ActionsContainer(argparse._ActionsContainer):
         <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument>`_
         are supported.
         """
-        if 'type' in kwargs and kwargs['type'] == bool:
-            if 'nargs' in kwargs:
-                raise ValueError('Argument with type=bool does not support nargs.')
-            kwargs['nargs'] = 1
-            kwargs['action'] = ActionYesNo(no_prefix=None)
+        if 'type' in kwargs:
+            if kwargs['type'] == bool:
+                if 'nargs' in kwargs:
+                    raise ValueError('Argument with type=bool does not support nargs.')
+                kwargs['nargs'] = 1
+                kwargs['action'] = ActionYesNo(no_prefix=None)
+            elif _issubclass(kwargs['type'], enum.Enum):
+                kwargs['action'] = ActionEnum(enum=kwargs['type'])
+            elif hasattr(kwargs['type'], '__origin__') and kwargs['type'].__origin__ in {Union, Dict, List}:
+                kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=False)
         action = super().add_argument(*args, **kwargs)
         for key in meta_keys:
             if key in action.dest:

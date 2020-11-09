@@ -2,12 +2,14 @@
 
 import json
 import yaml
+import inspect
 from argparse import Namespace, Action
 from typing import Any, Union, Tuple, List, Set, Dict
 
-from .util import namespace_to_dict, Path, strip_meta, _check_unknown_kwargs
+from .util import namespace_to_dict, Path, strip_meta, _check_unknown_kwargs, _issubclass
 from .optionals import _import_jsonschema, get_config_read_mode
 from .actions import _is_action_value_list
+from .typing import _annotation_to_schema
 
 
 class ActionJsonSchema(Action):
@@ -167,6 +169,9 @@ class ActionJsonSchema(Action):
 
         elif annotation in typesmap:
             return {'type': typesmap[annotation]}
+
+        elif _issubclass(annotation, (str, int, float)):
+            return _annotation_to_schema(annotation)
 
         elif not hasattr(annotation, '__origin__'):
             return

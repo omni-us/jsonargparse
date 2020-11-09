@@ -7,11 +7,12 @@ import yaml
 import enum
 import operator
 import argparse
-from argparse import ArgumentParser, Namespace, Action, SUPPRESS
+from argparse import ArgumentParser, Namespace, Action, SUPPRESS, _StoreAction
 
 from .optionals import get_config_read_mode
+from .typing import restricted_number_type
 from .util import (ParserError, _flat_namespace_to_dict, _dict_to_flat_namespace, namespace_to_dict, 
-                   dict_to_namespace, Path, _check_unknown_kwargs)
+                   dict_to_namespace, Path, _check_unknown_kwargs, _issubclass)
 
 
 def _find_action(parser, dest):
@@ -195,6 +196,10 @@ class ActionYesNo(Action):
             raise TypeError('Value not boolean: '+str(x)+'.')
         return x
 
+    def completer(self, **kwargs):
+        """Used by argcomplete to support tab completion of arguments."""
+        return ['true', 'false']
+
 
 class ActionEnum(Action):
     """An action based on an Enum that maps to-from strings and enum values."""
@@ -210,7 +215,7 @@ class ActionEnum(Action):
         """
         if 'enum' in kwargs:
             _check_unknown_kwargs(kwargs, {'enum'})
-            if not issubclass(kwargs['enum'], enum.Enum):
+            if not _issubclass(kwargs['enum'], enum.Enum):
                 raise ValueError('Expected enum to be an instance of Enum.')
             self._enum = kwargs['enum']
         elif '_enum' not in kwargs:
@@ -248,6 +253,30 @@ class ActionEnum(Action):
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError('Parser key "'+self.dest+'"'+elem+': value '+str(val)+' not in '+self._enum.__name__+'.')
         return value if islist else value[0]
+
+    def completer(self, **kwargs):
+        """Used by argcomplete to support tab completion of arguments."""
+        return list(self._enum.__members__.keys())
+
+
+class ActionOperators:
+    """DEPRECATED: Action to restrict a value with comparison operators.
+
+    The new alternative is explained in :ref:`restricted-numbers`.
+    """
+
+    def __init__(self, **kwargs):
+        if 'expr' in kwargs:
+            _check_unknown_kwargs(kwargs, {'expr', 'join', 'type'})
+            self._type = restricted_number_type(None, kwargs.get('type', int), kwargs['expr'], kwargs.get('join', 'and'))
+        else:
+            raise ValueError('Expected expr keyword argument.')
+
+    def __call__(self, *args, **kwargs):
+        if 'type' in kwargs:
+            raise ValueError('ActionOperators does not allow type given to add_argument.')
+        kwargs['type'] = self._type
+        return _StoreAction(**kwargs)
 
 
 class ActionParser(Action):
@@ -351,7 +380,7 @@ class _ActionSubCommands(argparse._SubParsersAction):
     _env_prefix = None
 
 
-    def add_parser(self, **kwargs):
+    def add_parser(self, name, **kwargs):
         """Raises a NotImplementedError."""
         raise NotImplementedError('In jsonargparse sub-commands are added using the add_subcommand method.')
 
@@ -369,8 +398,8 @@ class _ActionSubCommands(argparse._SubParsersAction):
         # create a pseudo-action to hold the choice help
         aliases = kwargs.pop('aliases', ())
         if 'help' in kwargs:
-            help = kwargs.pop('help')
-            choice_action = self._ChoicesPseudoAction(name, aliases, help)
+            help_arg = kwargs.pop('help')
+            choice_action = self._ChoicesPseudoAction(name, aliases, help_arg)
             self._choices_actions.append(choice_action)
 
         # add the parser to the name-parser map
@@ -438,84 +467,6 @@ class _ActionSubCommands(argparse._SubParsersAction):
                 key = subcommand+'.'+key
                 if key not in cfg_dict:
                     cfg_dict[key] = value
-
-
-class ActionOperators(Action):
-    """Action to restrict a value with comparison operators."""
-
-    _operators = {operator.gt: '>', operator.ge: '>=', operator.lt: '<', operator.le: '<=', operator.eq: '==', operator.ne: '!='}
-
-
-    def __init__(self, **kwargs):
-        """Initializer for ActionOperators instance.
-
-        Args:
-            expr (tuple or list[tuple]): Pairs of operators (> >= < <= == !=) and reference values, e.g. [('>=', 1),...].
-            join (str): How to combine multiple comparisons, must be 'or' or 'and' (default='and').
-            type (type): The value type (default=int).
-
-        Raises:
-            ValueError: If any of the parameters (expr, join or type) are invalid.
-        """
-        if 'expr' in kwargs:
-            _check_unknown_kwargs(kwargs, {'expr', 'join', 'type'})
-            self._type = kwargs.get('type', int)
-            self._join = kwargs.get('join', 'and')
-            if self._join not in {'or', 'and'}:
-                raise ValueError("Expected join to be one of {'or', 'and'}.")
-            _operators = {v: k for k, v in self._operators.items()}
-            expr = [kwargs['expr']] if isinstance(kwargs['expr'], tuple) else kwargs['expr']
-            if not isinstance(expr, list) or not all([all([len(x) == 2, x[0] in _operators, x[1] == self._type(x[1])]) for x in expr]):
-                raise ValueError('Expected expr to be a list of tuples each with a comparison operator (> >= < <= == !=)'
-                                 ' and a reference value of type '+self._type.__name__+'.')
-            self._expr = [(_operators[x[0]], x[1]) for x in expr]
-        elif '_expr' not in kwargs:
-            raise ValueError('Expected expr keyword argument.')
-        else:
-            self._expr = kwargs.pop('_expr')
-            self._join = kwargs.pop('_join')
-            self._type = kwargs.pop('_type')
-            super().__init__(**kwargs)
-
-    def __call__(self, *args, **kwargs):
-        """Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.
-
-        Raises:
-            TypeError: If the argument is not valid.
-        """
-        if len(args) == 0:
-            if 'type' in kwargs:
-                raise ValueError('ActionOperators does not allow type given to add_argument.')
-            if 'nargs' in kwargs and kwargs['nargs'] == 0:
-                raise ValueError('Invalid nargs='+str(kwargs['nargs'])+' for ActionOperators.')
-            kwargs['_expr'] = self._expr
-            kwargs['_join'] = self._join
-            kwargs['_type'] = self._type
-            return ActionOperators(**kwargs)
-        setattr(args[1], self.dest, self._check_type(args[2]))
-
-    def _check_type(self, value, cfg=None):
-        islist = _is_action_value_list(self)
-        if not islist:
-            value = [value]
-        elif not isinstance(value, list):
-            raise TypeError('For ActionOperators with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
-        def test_op(op, val, ref):
-            try:
-                return op(val, ref)
-            except TypeError:
-                return False
-        for num, val in enumerate(value):
-            try:
-                val = self._type(val)
-            except:
-                raise TypeError('Parser key "'+self.dest+'": invalid value, expected type to be '+self._type.__name__+' but got as value '+str(val)+'.')
-            check = [test_op(op, val, ref) for op, ref in self._expr]
-            if (self._join == 'and' and not all(check)) or (self._join == 'or' and not any(check)):
-                expr = (' '+self._join+' ').join(['v'+self._operators[op]+str(ref) for op, ref in self._expr])
-                raise TypeError('Parser key "'+self.dest+'": invalid value, for v='+str(val)+' it is false that '+expr+'.')
-            value[num] = val
-        return value if islist else value[0]
 
 
 class ActionPath(Action):

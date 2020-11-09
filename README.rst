@@ -270,8 +270,10 @@ arguments. The functions for this are :py:meth:`.ArgumentParser.parse_path` and
 contained in a string respectively.
 
 
-Classes, methods and function
-=============================
+.. _classes-methods-functions:
+
+Classes, methods and functions
+==============================
 
 It is good practice to write python code in which arguments have type hints and
 are described in the docstrings. To make this well written code configurable it
@@ -392,7 +394,7 @@ using a json schema is done like in the following example:
     >>> parser.add_argument('--op', action=ActionJsonSchema(schema=schema))
 
     >>> parser.parse_args(['--op', '{"price": 1.5, "name": "cookie"}'])
-    namespace(op=namespace(name='cookie', price=1.5))
+    Namespace(op=Namespace(name='cookie', price=1.5))
 
 Instead of giving a json string as argument value, it is also possible to
 provide a path to a json/yaml file, which would be loaded and validated against
@@ -557,23 +559,65 @@ file from a URL, that is something like the following would work:
     $ my_tool.py --cfg http://example.com/config.yaml
 
 
-Comparison operators
-====================
+.. _restricted-numbers:
+
+Restricted numbers
+==================
 
 It is quite common that when parsing a number, its range should be limited. To
-ease these cases the module includes the :class:`.ActionOperators`. Some
-examples of arguments that can be added using this action are the following:
+ease these cases the module :code:`jsonargparse.typing` includes some predefined
+types and a function :func:`.restricted_number_type` to define new types. The
+predefined types are: :code:`PositiveInt`, :code:`NonNegativeInt`,
+:code:`PositiveFloat`, :code:`NonNegativeFloat`, :code:`ClosedUnitInterval` and
+:code:`OpenUnitInterval`. Examples of usage are:
 
 .. code-block:: python
 
-    from jsonargparse import ActionOperators
-    # Larger than zero
-    parser.add_argument('--op1', action=ActionOperators(expr=('>', 0)))
-    # Between 0 and 10
-    parser.add_argument('--op2', action=ActionOperators(expr=[('>=', 0), ('<=', 10)]))
-    # Either larger than zero or 'off' string
-    def int_or_off(x): return x if x == 'off' else int(x)
-    parser.add_argument('--op3', action=ActionOperators(expr=[('>', 0), ('==', 'off')], join='or', type=int_or_off))
+    from jsonargparse.typing import PositiveInt, PositiveFloat, restricted_number_type
+    # float larger than zero
+    parser.add_argument('--op1', type=PositiveFloat)
+    # between 0 and 10
+    from_0_to_10 = restricted_number_type('from_0_to_10', int, [('>=', 0), ('<=', 10)])
+    parser.add_argument('--op2', type=from_0_to_10)
+    # either int larger than zero or 'off' string
+    def int_or_off(x): return x if x == 'off' else PositiveInt(x)
+    parser.add_argument('--op3', type=int_or_off))
+
+
+Type hints
+==========
+
+As explained in section :ref:`classes-methods-functions` type hints are required
+to automatically add arguments from signatures to a parser. Additional to this
+feature, a type hint can also be used independently when adding a single
+argument to the parser. For example, an argument that can be :code:`None` or a
+float in the range :code:`(0, 1)` or a positive int could be added using type
+hints as follows:
+
+.. code-block:: python
+
+    from typing import Optional, Union
+    from jsonargparse.typing import PositiveInt, OpenUnitInterval
+    parser.add_argument('--op', type=Optional[Union[PositiveInt, OpenUnitInterval]])
+
+
+Enum arguments
+==============
+
+Another case of restricted values is string choices. In addition to the common
+:code:`choices` given as a list of strings, it is also possible to provide as
+type an :code:`Enum` class. This has the added benefit that strings are mapped
+to some desired values. For example:
+
+.. code-block:: python
+
+    >>> class MyEnum(enum.Enum):
+    ...     choice1 = -1
+    ...     choice2 = 0
+    ...     choice3 = 1
+    >>> parser.add_argument('--op', type=MyEnum)
+    >>> parser.parse_args(['--op=choice1'])
+    Namespace(op=<MyEnum.choice1: -1>)
 
 
 Boolean arguments
@@ -594,7 +638,7 @@ is implemented. If given as values :code:`{'yes', 'true'}` or :code:`{'no',
     >>> parser.add_argument('--op1', type=bool, default=False)
     >>> parser.add_argument('--op2', type=bool, default=True)
     >>> parser.parse_args(['--op1', 'yes', '--op2', 'false'])
-    namespace(op1=True, op2=False)
+    Namespace(op1=True, op2=False)
 
 Sometimes it is also useful to define two paired options, one to set
 :code:`True` and the other to set :code:`False`. The :class:`.ActionYesNo` class
@@ -693,9 +737,9 @@ Then some examples of parsing are the following:
 .. code-block:: python
 
     >>> parser.parse_args(['subcomm1', '--op1', 'val1'])
-    namespace(op0=None, subcomm1=namespace(op1='val1'), subcommand='subcomm1')
+    Namespace(op0=None, subcomm1=Namespace(op1='val1'), subcommand='subcomm1')
     >>> parser.parse_args(['--op0', 'val0', 'subcomm2', '--op2', 'val2'])
-    namespace(op0='val0', subcomm2=namespace(op2='val2'), subcommand='subcomm2')
+    Namespace(op0='val0', subcomm2=Namespace(op2='val2'), subcommand='subcomm2')
 
 Parsing config files with :py:meth:`.ArgumentParser.parse_path` or
 :py:meth:`.ArgumentParser.parse_string` is also possible. Though there can only

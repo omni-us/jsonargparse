@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+import pickle
 import unittest
+import jsonargparse.typing
+from jsonargparse import ArgumentParser, ParserError
 from jsonargparse.typing import (restricted_number_type, PositiveInt, NonNegativeInt, PositiveFloat,
                                  NonNegativeFloat, ClosedUnitInterval, OpenUnitInterval)
 
@@ -77,6 +80,40 @@ class RestrictedNumberTests(unittest.TestCase):
         self.assertEqual(-1.0, PositiveOrMinusOne('-1.0'))
         self.assertRaises(ValueError, lambda: PositiveOrMinusOne(-0.5))
         self.assertRaises(ValueError, lambda: PositiveOrMinusOne('-2'))
+
+
+    def test_pickle_module_types(self):
+        for otype in jsonargparse.typing.registered_types.values():
+            if hasattr(jsonargparse.typing, otype.__name__):
+                with self.subTest(otype.__name__):
+                    utype = pickle.loads(pickle.dumps(otype))
+                    self.assertEqual(otype, utype)
+
+
+    def test_add_argument_type(self):
+        TenToTwenty = restricted_number_type('TenToTwenty', int, [('>=', 10), ('<=', 20)])
+
+        def gt0_or_off(x):
+            return x if x == 'off' else PositiveInt(x)
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--le0', type=NonNegativeFloat)
+        parser.add_argument('--f10t20', type=TenToTwenty, nargs='+')
+        parser.add_argument('--gt0_or_off', type=gt0_or_off)
+
+        self.assertEqual(0.0, parser.parse_args(['--le0', '0']).le0)
+        self.assertEqual(5.6, parser.parse_args(['--le0', '5.6']).le0)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--le0', '-2.1']))
+
+        self.assertEqual([11, 14, 16], parser.parse_args(['--f10t20', '11', '14', '16']).f10t20)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--f10t20', '9']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--f10t20', '21']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--f10t20', '10.5']))
+
+        self.assertEqual(1, parser.parse_args(['--gt0_or_off', '1']).gt0_or_off)
+        self.assertEqual('off', parser.parse_args(['--gt0_or_off', 'off']).gt0_or_off)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--gt0_or_off', '0']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--gt0_or_off', 'on']))
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@
 import enum
 import inspect
 
+from .util import _issubclass
 from .actions import ActionEnum
 from .jsonschema import ActionJsonSchema
 from .optionals import docstring_parser_support, _import_docstring_parse, dataclasses_support, _import_dataclasses
@@ -183,9 +184,9 @@ class SignatureArguments:
                 else:
                     kwargs['default'] = default
                 if annotation in {str, int, float, bool} or \
-                   (inspect.isclass(annotation) and issubclass(annotation, (str, int, float))):
+                   _issubclass(annotation, (str, int, float)):
                     kwargs['type'] = annotation
-                elif inspect.isclass(annotation) and issubclass(annotation, enum.Enum):
+                elif _issubclass(annotation, enum.Enum):
                     kwargs['action'] = ActionEnum(enum=annotation)
                 else:
                     try:

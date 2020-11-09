@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import stat
+import inspect
 import logging
 from copy import deepcopy
 from typing import Dict, Any, Set
@@ -209,6 +210,11 @@ def _get_env_var(parser, action) -> str:
     env_var = (parser._env_prefix+'_' if parser._env_prefix else '') + action.dest
     env_var = env_var.replace('.', '__').upper()
     return env_var
+
+
+def _issubclass(cls, class_or_tuple):
+    """Extension of issubclass that supports non-class argument."""
+    return inspect.isclass(cls) and issubclass(cls, class_or_tuple)
 
 
 @contextmanager

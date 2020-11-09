@@ -5,8 +5,10 @@ import json
 import unittest
 from io import StringIO
 from contextlib import redirect_stdout
+from typing import Optional, Union
 from jsonargparse import *
 from jsonargparse.optionals import jsonschema_support
+from jsonargparse.typing import PositiveInt, OpenUnitInterval
 from jsonargparse_tests.util_tests import TempDirTestCase
 
 
@@ -120,6 +122,18 @@ class JsonSchemaTests(TempDirTestCase):
         outval = out.getvalue()
         schema = re.sub('^.*schema:([^()]+)[^{}]*$', r'\1', outval.replace('\n', ' '))
         self.assertEqual(schema1, json.loads(schema))
+
+
+    def test_add_argument_type_hint(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--op', type=Optional[Union[PositiveInt, OpenUnitInterval]])
+
+        self.assertEqual(0.1, parser.parse_args(['--op', '0.1']).op)
+        self.assertEqual(0.9, parser.parse_args(['--op', '0.9']).op)
+        self.assertEqual(1, parser.parse_args(['--op', '1']).op)
+        self.assertEqual(12, parser.parse_args(['--op', '12']).op)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', '0.0']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', '4.5']))
 
 
 if __name__ == '__main__':

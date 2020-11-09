@@ -2,6 +2,7 @@
 
 import os
 import sys
+import enum
 import unittest
 from io import BytesIO
 from contextlib import redirect_stdout
@@ -30,14 +31,16 @@ class ArgcompleteTests(unittest.TestCase):
         os.environ['_ARGCOMPLETE'] = '1'
         os.environ['_ARGCOMPLETE_SUPPRESS_SPACE'] = '1'
         os.environ['_ARGCOMPLETE_COMP_WORDBREAKS'] = " \t\n\"'><=;|&(:"
-        os.environ['COMP_TYPE'] = '9'
-        self.parser = ArgumentParser()
+        #os.environ['COMP_TYPE'] = str(ord('\t'))  # '9'
+        #os.environ['COMP_TYPE'] = str(ord('?'))   # '63'
+        self.parser = ArgumentParser(error_handler=lambda x: x.exit(2))
 
 
     def test_complete_nested_one_option(self):
-        os.environ['COMP_POINT'] = '16'
-        os.environ['COMP_LINE'] = 'tool.py --group1'
         self.parser.add_argument('--group1.op')
+
+        os.environ['COMP_LINE'] = 'tool.py --group1'
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
         out = BytesIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
@@ -46,15 +49,53 @@ class ArgcompleteTests(unittest.TestCase):
 
 
     def test_complete_nested_two_options(self):
-        os.environ['COMP_POINT'] = '16'
-        os.environ['COMP_LINE'] = 'tool.py --group2'
         self.parser.add_argument('--group2.op1')
         self.parser.add_argument('--group2.op2')
+
+        os.environ['COMP_LINE'] = 'tool.py --group2'
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
         out = BytesIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
         self.assertEqual(out.getvalue(), b'--group2.op1\x0b--group2.op2')
+
+
+    def test_ActionYesNo(self):
+        self.parser.add_argument('--op1', type=bool)
+        self.parser.add_argument('--op2', action=ActionYesNo)
+        self.parser.add_argument('--with-op3', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
+
+        for arg, expected in [('--op1=', b'true\x0bfalse'),
+                              ('--op2', b'--op2'),
+                              ('--no_op2', b'--no_op2'),
+                              ('--with-op3', b'--with-op3'),
+                              ('--without-op3', b'--without-op3')]:
+            os.environ['COMP_LINE'] = 'tool.py '+arg
+            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+            with self.subTest(os.environ['COMP_LINE']):
+                out = BytesIO()
+                with redirect_stdout(out), self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                self.assertEqual(expected, out.getvalue())
+
+
+    def test_ActionEnum(self):
+        class MyEnum(enum.Enum):
+            abc = 1
+            xyz = 2
+            abd = 3
+
+        self.parser.add_argument('--enum', type=MyEnum)
+
+        os.environ['COMP_LINE'] = 'tool.py --enum=ab'
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+        out = BytesIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        self.assertEqual(out.getvalue(), b'abc\x0babd')
 
 
 if __name__ == '__main__':
