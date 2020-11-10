@@ -276,10 +276,10 @@ Classes, methods and functions
 ==============================
 
 It is good practice to write python code in which arguments have type hints and
-are described in the docstrings. To make this well written code configurable it
+are described in the docstrings. To make this well written code configurable, it
 wouldn't make sense to duplicate information of types and argument descriptions.
-To avoid this duplication, jsonargparse parsers include methods to automatically
-add their arguments: :py:meth:`.SignatureArguments.add_class_arguments`,
+To avoid this duplication, jsonargparse includes methods to automatically add
+their arguments: :py:meth:`.SignatureArguments.add_class_arguments`,
 :py:meth:`.SignatureArguments.add_method_arguments` and
 :py:meth:`.SignatureArguments.add_function_arguments`.
 
@@ -325,7 +325,7 @@ class initialized and the method executed as follows:
 The :func:`add_class_arguments` call adds to the *myclass.init* key the
 :code:`items` argument with description as in the docstring, it is set as
 required since it does not have a default value, and when parsed it is validated
-according its type hint, i.e., a dict with values ints or list of ints. Also
+according to its type hint, i.e., a dict with values ints or list of ints. Also
 since the init has the :code:`**kwargs` argument, the keyword arguments from
 :code:`MyBaseClass` are also added to the parser. Similarly the
 :func:`add_method_arguments` call adds to the *myclass.method* key the arguments
@@ -334,17 +334,22 @@ default value false.
 
 Some notes about the support for automatic adding of arguments are:
 
-- The supported type hints are: :code:`str`, :code:`bool`, :code:`int`,
-  :code:`float`, :code:`list`, :code:`dict` (only with :code:`str` keys),
-  :code:`Any`, :code:`Union`, :code:`Enum` and :code:`Optional`.
-
-- There is partial support for :code:`tuple` even though they can't be
-  represented in json distinguishable from a list. Tuples are only supported
-  without nesting and for fixed number of elements. Each element position can
-  have its own type and will be validated as such. In command line arguments,
-  config files and environment variables tuples are represented as a list.
-
 - Nested types are supported as long as at least one child type is supported.
+
+- The supported types are: :code:`str`, :code:`bool`, :code:`int`,
+  :code:`float`, :code:`list`, :code:`Any`, :code:`Union` and :code:`Optional`.
+
+- :code:`dict` with :code:`str` keys is supported for any level of nesting.
+  :code:`int` keys are also supported but only up to the first level of nesting.
+
+- :code:`Enum` is supported but only up to the first level of nesting.
+
+- There is partial support for :code:`tuple` and :code:`set` even though they
+  can't be represented in json distinguishable from a list. They are only
+  supported without nesting and in the case of tuple for a fixed number of
+  elements. Each element position can have its own type and will be validated as
+  such. In command line arguments, config files and environment variables tuples
+  and sets are represented as a list.
 
 - All positional arguments must have a type, otherwise the add arguments
   functions raise an exception.
@@ -355,6 +360,12 @@ Some notes about the support for automatic adding of arguments are:
 - Recursive adding of arguments from base classes only considers the presence
   of :code:`*args` and :code:`**kwargs`. It does not check the code to identify
   if :code:`super().__init__` is called or with which arguments.
+
+Since keyword arguments with unsupported types are ignored, during development
+it might be desired to know which arguments are ignored and the specific reason.
+This can be done by initializing :class:`.ArgumentParser` with
+:code:`logger={'level': 'DEBUG'}`. For more details about logging go to section
+:ref:`logging`.
 
 For all features described above to work, two optional packages are required:
 `jsonschema <https://pypi.org/project/jsonschema/>`__ to support validation of
@@ -761,6 +772,8 @@ have as prefix :code:`APP_SUBCOMM1_` and likewise for :code:`subcomm2` as prefix
 environment variable :code:`APP_SUBCOMMAND`.
 
 
+.. _logging:
+
 Logging
 =======
 
@@ -771,7 +784,10 @@ already existing logger object which is used for the whole application. Though
 for convenience to enable a default logger the :code:`logger` argument can also
 receive :code:`True` or a string which sets the name of the logger or a
 dictionary that can include the name and the level, e.g. :code:`{"name":
-"myapp", "level": "ERROR"}`.
+"myapp", "level": "ERROR"}`. If `reconplogger
+<https://pypi.org/project/reconplogger/>`__ is installed, setting :code:`logger`
+to :code:`True` or a dictionary without specifying a name, then the reconplogger
+is used.
 
 
 Contributing

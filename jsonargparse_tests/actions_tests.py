@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import pathlib
 import unittest
+from io import StringIO
 from jsonargparse import *
 from jsonargparse_tests.examples import example_parser
 
@@ -108,7 +109,11 @@ class ActionsTests(unittest.TestCase):
             C = 3
 
         parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--enum', action=ActionEnum(enum=MyEnum))
+        parser.add_argument('--enum',
+            action=ActionEnum(enum=MyEnum),
+            default=MyEnum.C,
+            help='MyEnum')
+
         for val in ['A', 'B', 'C']:
             self.assertEqual(MyEnum[val], parser.parse_args(['--enum='+val]).enum)
         for val in ['X', 'b', 2]:
@@ -116,6 +121,11 @@ class ActionsTests(unittest.TestCase):
 
         cfg = parser.parse_args(['--enum=C'], with_meta=False)
         self.assertEqual('enum: C\n', parser.dump(cfg))
+
+        os.environ['COLUMNS'] = '150'
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertIn('MyEnum (default: C)', help_str.getvalue())
 
         def func(a1: MyEnum = MyEnum['A']):
             return a1

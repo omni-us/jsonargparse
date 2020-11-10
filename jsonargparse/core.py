@@ -85,7 +85,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                  print_config: Optional[str] = '--print-config',
                  parser_mode: str = 'yaml',
                  parse_as_dict: bool = False,
-                 default_config_files: List[str] = [],
+                 default_config_files: Optional[List[str]] = None,
                  default_env: bool = False,
                  default_meta: bool = True,
                  **kwargs):
@@ -115,6 +115,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         kwargs['formatter_class'] = formatter_class
         if self.groups is None:
             self.groups = {}
+        if default_config_files is None:
+            default_config_files = []
         super().__init__(*args, **kwargs)
         self.required_args = set()  # type: Set[str]
         self._stderr = sys.stderr
@@ -1072,7 +1074,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             default_env (bool): Whether default environment parsing is enabled or not.
         """
         self._default_env = default_env
-        if self.formatter_class == DefaultHelpFormatter:
+        if issubclass(self.formatter_class, DefaultHelpFormatter):
             setattr(self.formatter_class, '_default_env', default_env)
 
 
@@ -1108,7 +1110,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if env_prefix is None:
             env_prefix = os.path.splitext(self.prog)[0]
         self._env_prefix = env_prefix
-        if self.formatter_class == DefaultHelpFormatter:
+        if issubclass(self.formatter_class, DefaultHelpFormatter):
             setattr(self.formatter_class, '_env_prefix', env_prefix)
 
 
@@ -1126,13 +1128,14 @@ class DefaultHelpFormatter(argparse.HelpFormatter):
     _default_env = True
 
     def _get_help_string(self, action):
-        help = ''
+        help_str = ''
         if hasattr(action, '_required') and action._required:
-            help = 'required'
+            help_str = 'required'
         if '%(default)' not in action.help and action.default is not SUPPRESS:
             if action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}:
-                help += (', ' if help else '') + 'default: %(default)s'
-        return action.help + (' ('+help+')' if help else '')
+                default = action.default.name if isinstance(action, ActionEnum) else action.default
+                help_str += (', ' if help_str else '') + 'default: '+str(default)
+        return action.help + (' ('+help_str+')' if help_str else '')
 
     def _format_action_invocation(self, action):
         if action.option_strings == [] or action.default == SUPPRESS or not self._default_env:

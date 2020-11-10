@@ -389,22 +389,29 @@ class LoggerProperty:
             self._logger = null_logger
         elif isinstance(logger, (bool, str, dict)) and logger:
             levels = {'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'}
-            level = logging.INFO
+            level = logging.WARNING
             if isinstance(logger, dict) and 'level' in logger:
                 if logger['level'] not in levels:
                     raise ValueError('Logger level must be one of '+str(levels)+'.')
                 level = getattr(logging, logger['level'])
-            name = type(self).__name__
-            if isinstance(logger, str):
-                name = logger
-            elif isinstance(logger, dict) and 'name' in logger:
-                name = logger['name']
-            logger = logging.getLogger(name)
-            if len(logger.handlers) == 0:
-                handler = logging.StreamHandler()
-                handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-                logger.addHandler(handler)
-            logger.setLevel(level)
+            if isinstance(logger, bool) or (isinstance(logger, dict) and 'name' not in logger):
+                try:
+                    import reconplogger
+                    logger = reconplogger.logger_setup(level=level)
+                except:
+                    pass
+            if not isinstance(logger, logging.Logger):
+                name = type(self).__name__
+                if isinstance(logger, str):
+                    name = logger
+                elif isinstance(logger, dict) and 'name' in logger:
+                    name = logger['name']
+                logger = logging.getLogger(name)
+                if len(logger.handlers) == 0:
+                    handler = logging.StreamHandler()
+                    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+                    logger.addHandler(handler)
+                logger.setLevel(level)
             self._logger = logger
         elif not isinstance(logger, logging.Logger):
             raise ValueError('Expected logger to be an instance of logging.Logger or bool or str or dict or None.')

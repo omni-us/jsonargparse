@@ -186,7 +186,7 @@ class LoggingPropertyTests(unittest.TestCase):
 
     def test_logger_true(self):
         test = self.TestClass(logger=True)
-        self.assertEqual(test.logger.level, logging.INFO)
+        self.assertEqual(test.logger.level, logging.WARNING)
         self.assertEqual(test.logger.name, 'TestClass')
 
 

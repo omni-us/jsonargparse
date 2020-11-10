@@ -168,11 +168,19 @@ class SignatureArguments:
                 annotation = param.annotation
                 default = param.default
                 is_positional = default == inspect._empty
+                skip_message = 'Skipping argument "'+name+'" from "'+obj.__name__+'" because of: '
                 if param._kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
-                   (is_positional and not add_args) or \
-                   (not is_positional and not add_kwargs) or \
                    (is_positional and skip_first and num == 0) or \
-                   name in skip:
+                   (annotation == inspect._empty and not is_positional and default is None):
+                    continue
+                elif is_positional and not add_args:
+                    self.logger.debug(skip_message+'Positional argument but *args not propagated.')
+                    continue
+                elif not is_positional and not add_kwargs:
+                    self.logger.debug(skip_message+'Keyword argument but **kwargs not propagated.')
+                    continue
+                elif name in skip:
+                    self.logger.debug(skip_message+'Argument requested to be skipped.')
                     continue
                 if dataclasses_support and default.__class__ == dataclasses._HAS_DEFAULT_FACTORY_CLASS:
                     default = obj.__dataclass_fields__[name].default_factory()
@@ -191,8 +199,8 @@ class SignatureArguments:
                 else:
                     try:
                         kwargs['action'] = ActionJsonSchema(annotation=annotation, enable_path=False)
-                    except:
-                        pass
+                    except ValueError as ex:
+                        self.logger.debug(skip_message+str(ex))
                 if 'type' in kwargs or 'action' in kwargs:
                     arg = '--' + (nested_key+'.' if nested_key else '') + name
                     group.add_argument(arg, **kwargs)

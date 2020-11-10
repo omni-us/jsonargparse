@@ -2,6 +2,7 @@
 
 import json
 import yaml
+import enum
 import inspect
 from argparse import Namespace, Action
 from typing import Any, Union, Tuple, List, Set, Dict
@@ -104,6 +105,8 @@ class ActionJsonSchema(Action):
                     val = namespace_to_dict(val)
                 if isinstance(val, (tuple, set)):
                     val = list(val)
+                elif _issubclass(type(val), enum.Enum):
+                    val = val.name
                 elif hasattr(self._annotation, '__origin__') and isinstance(val, dict):
                     val = self._adapt_dict(val, str)
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
@@ -111,6 +114,8 @@ class ActionJsonSchema(Action):
                 if hasattr(self._annotation, '__origin__'):
                     if isinstance(val, dict):
                         val = self._adapt_dict(val, int)
+                    elif self._annotation.__origin__ == Union and isinstance(val, str):
+                        val = self._adapt_enum(val)
                     elif self._annotation.__origin__ in {Tuple, tuple, Set, set} and isinstance(val, list):
                         val = tuple(val) if self._annotation.__origin__ in {Tuple, tuple} else set(val)
                 if path_meta is not None:
@@ -133,6 +138,14 @@ class ActionJsonSchema(Action):
                 val = {cast(k): v for k, v in val.items()}
             except ValueError:
                 pass
+        return val
+
+
+    def _adapt_enum(self, val):
+        for arg in self._annotation.__args__:
+            if _issubclass(arg, enum.Enum) and val in arg.__members__:
+                val = arg[val]
+                break
         return val
 
 
@@ -172,6 +185,9 @@ class ActionJsonSchema(Action):
 
         elif _issubclass(annotation, (str, int, float)):
             return _annotation_to_schema(annotation)
+
+        elif _issubclass(annotation, enum.Enum):
+            return {'type': 'string', 'enum': list(annotation.__members__.keys())}
 
         elif not hasattr(annotation, '__origin__'):
             return

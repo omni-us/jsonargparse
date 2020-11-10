@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+import enum
 import unittest
 from typing import Dict, List, Tuple, Optional, Union, Any
 from jsonargparse import *
 from jsonargparse.typing import PositiveInt, PositiveFloat, OpenUnitInterval
 from jsonargparse.actions import _find_action
 from jsonargparse.optionals import jsonschema_support, docstring_parser_support
+from jsonargparse.util import _suppress_stderr
 
 
 class SignaturesTests(unittest.TestCase):
@@ -234,6 +236,23 @@ class SignaturesTests(unittest.TestCase):
             self.assertIsNone(_find_action(parser, 'a3').help, 'expected help for a3 to be None')
 
 
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+    def test_optional_enum(self):
+
+        class MyEnum(enum.Enum):
+            A = 1
+            B = 2
+            C = 3
+
+        def func(a1: Optional[MyEnum] = None):
+            return a1
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_function_arguments(func)
+        self.assertEqual(MyEnum.B, parser.parse_args(['--a1=B']).a1)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--a1=D']))
+
+
     def test_skip(self):
 
         def func(a1 = '1',
@@ -270,6 +289,58 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=0']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=1.5']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=-1']))
+
+
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+    def test_logger_debug(self):
+
+        with _suppress_stderr():
+
+            class Class1:
+                def __init__(self,
+                            c1_a1: float,
+                            c1_a2: int = 1):
+                    pass
+
+            class Class2(Class1):
+                def __init__(self,
+                            *args,
+                            c2_a1: int = 2,
+                            c2_a2: float = 0.2,
+                            c2_a3: Optional[Class1] = None,
+                            **kwargs):
+                    pass
+
+            parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+            with self.assertLogs(level='DEBUG') as log:
+                parser.add_class_arguments(Class2, skip={'c2_a2'})
+                self.assertEqual(2, len(log.output))
+                self.assertIn('"c2_a2" from "Class2"', log.output[0])
+                self.assertIn('Argument requested to be skipped', log.output[0])
+                self.assertIn('"c2_a3" from "Class2"', log.output[1])
+                self.assertIn('Unable to generate schema', log.output[1])
+
+            class Class3(Class1):
+                def __init__(self, *args):
+                    pass
+
+            parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+            with self.assertLogs(level='DEBUG') as log:
+                parser.add_class_arguments(Class3)
+                self.assertEqual(1, len(log.output))
+                self.assertIn('"c1_a2" from "Class1"', log.output[0])
+                self.assertIn('Keyword argument but **kwargs not propagated', log.output[0])
+
+            class Class4(Class1):
+                def __init__(self, **kwargs):
+                    pass
+
+            parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+            with self.assertLogs(level='DEBUG') as log:
+                parser.add_class_arguments(Class4)
+                self.assertEqual(1, len(log.output))
+                self.assertIn('"c1_a1" from "Class1"', log.output[0])
+                self.assertIn('Positional argument but *args not propagated', log.output[0])
 
 
 if __name__ == '__main__':
