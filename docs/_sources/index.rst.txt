@@ -16,6 +16,12 @@ API Reference
     :show-inheritance:
     :autosummary:
 
+.. automodule:: jsonargparse.typing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :autosummary:
+
 .. automodule:: jsonargparse.jsonschema
     :members:
     :undoc-members:

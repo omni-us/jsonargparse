@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.optionals &mdash; jsonargparse 3.0.0.dev4 documentation</title>
+  <title>jsonargparse.optionals &mdash; jsonargparse 3.0.0.dev5 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0.dev4
+                3.0.0.dev5
               </div>
             
           
@@ -159,12 +159,14 @@
 <span class="n">_requests</span> <span class="o">=</span> <span class="n">find_spec</span><span class="p">(</span><span class="s1">&#39;requests&#39;</span><span class="p">)</span>
 <span class="n">_docstring_parser</span> <span class="o">=</span> <span class="n">find_spec</span><span class="p">(</span><span class="s1">&#39;docstring_parser&#39;</span><span class="p">)</span>
 <span class="n">_argcomplete</span> <span class="o">=</span> <span class="n">find_spec</span><span class="p">(</span><span class="s1">&#39;argcomplete&#39;</span><span class="p">)</span>
+<span class="n">_dataclasses</span> <span class="o">=</span> <span class="n">find_spec</span><span class="p">(</span><span class="s1">&#39;dataclasses&#39;</span><span class="p">)</span>
 
 <span class="n">jsonschema_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">_jsonschema</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">True</span>
 <span class="n">jsonnet_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_jsonnet</span><span class="p">,</span> <span class="n">_jsonschema</span><span class="p">])</span> <span class="k">else</span> <span class="kc">True</span>
 <span class="n">url_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_url_validator</span><span class="p">,</span> <span class="n">_requests</span><span class="p">])</span> <span class="k">else</span> <span class="kc">True</span>
 <span class="n">docstring_parser_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">_docstring_parser</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">True</span>
 <span class="n">argcomplete_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">_argcomplete</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">True</span>
+<span class="n">dataclasses_support</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">_dataclasses</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">True</span>
 
 <span class="n">_config_read_mode</span> <span class="o">=</span> <span class="s1">&#39;fr&#39;</span>
 
@@ -216,6 +218,14 @@
         <span class="k">return</span> <span class="n">argcomplete</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;argcomplete package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_import_dataclasses</span><span class="p">(</span><span class="n">importer</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">dataclasses</span>
+        <span class="k">return</span> <span class="n">dataclasses</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;dataclasses package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="set_url_support"><a class="viewcode-back" href="../../index.html#jsonargparse.optionals.set_url_support">[docs]</a><span class="k">def</span> <span class="nf">set_url_support</span><span class="p">(</span><span class="n">enabled</span><span class="p">):</span>

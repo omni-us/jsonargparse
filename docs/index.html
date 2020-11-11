@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 3.0.0.dev4 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 3.0.0.dev5 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0.dev4
+                3.0.0.dev5
               </div>
             
           
@@ -93,12 +93,14 @@
 <li><a class="reference internal" href="#nested-namespaces">Nested namespaces</a></li>
 <li><a class="reference internal" href="#environment-variables">Environment variables</a></li>
 <li><a class="reference internal" href="#configuration-files">Configuration files</a></li>
-<li><a class="reference internal" href="#classes-methods-and-function">Classes, methods and function</a></li>
+<li><a class="reference internal" href="#classes-methods-and-functions">Classes, methods and functions</a></li>
 <li><a class="reference internal" href="#json-schemas">Json schemas</a></li>
 <li><a class="reference internal" href="#jsonnet-files">Jsonnet files</a></li>
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
 <li><a class="reference internal" href="#parsing-urls">Parsing URLs</a></li>
-<li><a class="reference internal" href="#comparison-operators">Comparison operators</a></li>
+<li><a class="reference internal" href="#restricted-numbers">Restricted numbers</a></li>
+<li><a class="reference internal" href="#type-hints">Type hints</a></li>
+<li><a class="reference internal" href="#enum-arguments">Enum arguments</a></li>
 <li><a class="reference internal" href="#boolean-arguments">Boolean arguments</a></li>
 <li><a class="reference internal" href="#parsers-as-arguments">Parsers as arguments</a></li>
 <li><a class="reference internal" href="#sub-commands">Sub-commands</a></li>
@@ -380,13 +382,13 @@ arguments. The functions for this are <a class="reference internal" href="#jsona
 <a class="reference internal" href="#jsonargparse.core.ArgumentParser.parse_string" title="jsonargparse.core.ArgumentParser.parse_string"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.parse_string()</span></code></a> to parse a config file or a config
 contained in a string respectively.</p>
 </div>
-<div class="section" id="classes-methods-and-function">
-<h1>Classes, methods and function<a class="headerlink" href="#classes-methods-and-function" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="classes-methods-and-functions">
+<span id="classes-methods-functions"></span><h1>Classes, methods and functions<a class="headerlink" href="#classes-methods-and-functions" title="Permalink to this headline">¶</a></h1>
 <p>It is good practice to write python code in which arguments have type hints and
-are described in the docstrings. To make this well written code configurable it
+are described in the docstrings. To make this well written code configurable, it
 wouldn’t make sense to duplicate information of types and argument descriptions.
-To avoid this duplication, jsonargparse parsers include methods to automatically
-add their arguments: <a class="reference internal" href="#jsonargparse.signatures.SignatureArguments.add_class_arguments" title="jsonargparse.signatures.SignatureArguments.add_class_arguments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">SignatureArguments.add_class_arguments()</span></code></a>,
+To avoid this duplication, jsonargparse includes methods to automatically add
+their arguments: <a class="reference internal" href="#jsonargparse.signatures.SignatureArguments.add_class_arguments" title="jsonargparse.signatures.SignatureArguments.add_class_arguments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">SignatureArguments.add_class_arguments()</span></code></a>,
 <a class="reference internal" href="#jsonargparse.signatures.SignatureArguments.add_method_arguments" title="jsonargparse.signatures.SignatureArguments.add_method_arguments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">SignatureArguments.add_method_arguments()</span></code></a> and
 <a class="reference internal" href="#jsonargparse.signatures.SignatureArguments.add_function_arguments" title="jsonargparse.signatures.SignatureArguments.add_function_arguments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">SignatureArguments.add_function_arguments()</span></code></a>.</p>
 <p>Take for example a class with its init and a method with docstrings as follows:</p>
@@ -427,7 +429,7 @@ class initialized and the method executed as follows:</p>
 <p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">add_class_arguments()</span></code> call adds to the <em>myclass.init</em> key the
 <code class="code docutils literal notranslate"><span class="pre">items</span></code> argument with description as in the docstring, it is set as
 required since it does not have a default value, and when parsed it is validated
-according its type hint, i.e., a dict with values ints or list of ints. Also
+according to its type hint, i.e., a dict with values ints or list of ints. Also
 since the init has the <code class="code docutils literal notranslate"><span class="pre">**kwargs</span></code> argument, the keyword arguments from
 <code class="code docutils literal notranslate"><span class="pre">MyBaseClass</span></code> are also added to the parser. Similarly the
 <code class="xref py py-func docutils literal notranslate"><span class="pre">add_method_arguments()</span></code> call adds to the <em>myclass.method</em> key the arguments
@@ -435,15 +437,18 @@ since the init has the <code class="code docutils literal notranslate"><span cla
 default value false.</p>
 <p>Some notes about the support for automatic adding of arguments are:</p>
 <ul class="simple">
-<li><p>The supported type hints are: <code class="code docutils literal notranslate"><span class="pre">str</span></code>, <code class="code docutils literal notranslate"><span class="pre">bool</span></code>, <code class="code docutils literal notranslate"><span class="pre">int</span></code>,
-<code class="code docutils literal notranslate"><span class="pre">float</span></code>, <code class="code docutils literal notranslate"><span class="pre">list</span></code>, <code class="code docutils literal notranslate"><span class="pre">dict</span></code> (only with <code class="code docutils literal notranslate"><span class="pre">str</span></code> keys),
-<code class="code docutils literal notranslate"><span class="pre">Any</span></code>, <code class="code docutils literal notranslate"><span class="pre">Union</span></code>, <code class="code docutils literal notranslate"><span class="pre">Enum</span></code> and <code class="code docutils literal notranslate"><span class="pre">Optional</span></code>.</p></li>
-<li><p>There is partial support for <code class="code docutils literal notranslate"><span class="pre">tuple</span></code> even though they can’t be
-represented in json distinguishable from a list. Tuples are only supported
-without nesting and for fixed number of elements. Each element position can
-have its own type and will be validated as such. In command line arguments,
-config files and environment variables tuples are represented as a list.</p></li>
 <li><p>Nested types are supported as long as at least one child type is supported.</p></li>
+<li><p>The supported types are: <code class="code docutils literal notranslate"><span class="pre">str</span></code>, <code class="code docutils literal notranslate"><span class="pre">bool</span></code>, <code class="code docutils literal notranslate"><span class="pre">int</span></code>,
+<code class="code docutils literal notranslate"><span class="pre">float</span></code>, <code class="code docutils literal notranslate"><span class="pre">list</span></code>, <code class="code docutils literal notranslate"><span class="pre">Any</span></code>, <code class="code docutils literal notranslate"><span class="pre">Union</span></code> and <code class="code docutils literal notranslate"><span class="pre">Optional</span></code>.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">dict</span></code> with <code class="code docutils literal notranslate"><span class="pre">str</span></code> keys is supported for any level of nesting.
+<code class="code docutils literal notranslate"><span class="pre">int</span></code> keys are also supported but only up to the first level of nesting.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Enum</span></code> is supported but only up to the first level of nesting.</p></li>
+<li><p>There is partial support for <code class="code docutils literal notranslate"><span class="pre">tuple</span></code> and <code class="code docutils literal notranslate"><span class="pre">set</span></code> even though they
+can’t be represented in json distinguishable from a list. They are only
+supported without nesting and in the case of tuple for a fixed number of
+elements. Each element position can have its own type and will be validated as
+such. In command line arguments, config files and environment variables tuples
+and sets are represented as a list.</p></li>
 <li><p>All positional arguments must have a type, otherwise the add arguments
 functions raise an exception.</p></li>
 <li><p>Keyword arguments are ignored if they don’t have at least one type that is
@@ -452,6 +457,11 @@ supported.</p></li>
 of <code class="code docutils literal notranslate"><span class="pre">*args</span></code> and <code class="code docutils literal notranslate"><span class="pre">**kwargs</span></code>. It does not check the code to identify
 if <code class="code docutils literal notranslate"><span class="pre">super().__init__</span></code> is called or with which arguments.</p></li>
 </ul>
+<p>Since keyword arguments with unsupported types are ignored, during development
+it might be desired to know which arguments are ignored and the specific reason.
+This can be done by initializing <a class="reference internal" href="#jsonargparse.core.ArgumentParser" title="jsonargparse.core.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a> with
+<code class="code docutils literal notranslate"><span class="pre">logger={'level':</span> <span class="pre">'DEBUG'}</span></code>. For more details about logging go to section
+<a class="reference internal" href="#logging"><span class="std std-ref">Logging</span></a>.</p>
 <p>For all features described above to work, two optional packages are required:
 <a class="reference external" href="https://pypi.org/project/jsonschema/">jsonschema</a> to support validation of
 complex type hints and <a class="reference external" href="https://pypi.org/project/docstring-parser/">docstring-parser</a> to get the argument descriptions
@@ -481,7 +491,7 @@ using a json schema is done like in the following example:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">))</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="s1">&#39;{&quot;price&quot;: 1.5, &quot;name&quot;: &quot;cookie&quot;}&#39;</span><span class="p">])</span>
-<span class="go">namespace(op=namespace(name=&#39;cookie&#39;, price=1.5))</span>
+<span class="go">Namespace(op=Namespace(name=&#39;cookie&#39;, price=1.5))</span>
 </pre></div>
 </div>
 <p>Instead of giving a json string as argument value, it is also possible to
@@ -615,19 +625,53 @@ file from a URL, that is something like the following would work:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="comparison-operators">
-<h1>Comparison operators<a class="headerlink" href="#comparison-operators" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="restricted-numbers">
+<span id="id4"></span><h1>Restricted numbers<a class="headerlink" href="#restricted-numbers" title="Permalink to this headline">¶</a></h1>
 <p>It is quite common that when parsing a number, its range should be limited. To
-ease these cases the module includes the <a class="reference internal" href="#jsonargparse.actions.ActionOperators" title="jsonargparse.actions.ActionOperators"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>. Some
-examples of arguments that can be added using this action are the following:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ActionOperators</span>
-<span class="c1"># Larger than zero</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
-<span class="c1"># Between 0 and 10</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]))</span>
-<span class="c1"># Either larger than zero or &#39;off&#39; string</span>
-<span class="k">def</span> <span class="nf">int_or_off</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;off&#39;</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op3&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionOperators</span><span class="p">(</span><span class="n">expr</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="s1">&#39;off&#39;</span><span class="p">)],</span> <span class="n">join</span><span class="o">=</span><span class="s1">&#39;or&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">int_or_off</span><span class="p">))</span>
+ease these cases the module <code class="code docutils literal notranslate"><span class="pre">jsonargparse.typing</span></code> includes some predefined
+types and a function <a class="reference internal" href="#jsonargparse.typing.restricted_number_type" title="jsonargparse.typing.restricted_number_type"><code class="xref py py-func docutils literal notranslate"><span class="pre">restricted_number_type()</span></code></a> to define new types. The
+predefined types are: <code class="code docutils literal notranslate"><span class="pre">PositiveInt</span></code>, <code class="code docutils literal notranslate"><span class="pre">NonNegativeInt</span></code>,
+<code class="code docutils literal notranslate"><span class="pre">PositiveFloat</span></code>, <code class="code docutils literal notranslate"><span class="pre">NonNegativeFloat</span></code>, <code class="code docutils literal notranslate"><span class="pre">ClosedUnitInterval</span></code> and
+<code class="code docutils literal notranslate"><span class="pre">OpenUnitInterval</span></code>. Examples of usage are:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse.typing</span> <span class="kn">import</span> <span class="n">PositiveInt</span><span class="p">,</span> <span class="n">PositiveFloat</span><span class="p">,</span> <span class="n">restricted_number_type</span>
+<span class="c1"># float larger than zero</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">PositiveFloat</span><span class="p">)</span>
+<span class="c1"># between 0 and 10</span>
+<span class="n">from_0_to_10</span> <span class="o">=</span> <span class="n">restricted_number_type</span><span class="p">(</span><span class="s1">&#39;from_0_to_10&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">from_0_to_10</span><span class="p">)</span>
+<span class="c1"># either int larger than zero or &#39;off&#39; string</span>
+<span class="k">def</span> <span class="nf">int_or_off</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;off&#39;</span> <span class="k">else</span> <span class="n">PositiveInt</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op3&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">int_or_off</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="type-hints">
+<h1>Type hints<a class="headerlink" href="#type-hints" title="Permalink to this headline">¶</a></h1>
+<p>As explained in section <a class="reference internal" href="#classes-methods-functions"><span class="std std-ref">Classes, methods and functions</span></a> type hints are required
+to automatically add arguments from signatures to a parser. Additional to this
+feature, a type hint can also be used independently when adding a single
+argument to the parser. For example, an argument that can be <code class="code docutils literal notranslate"><span class="pre">None</span></code> or a
+float in the range <code class="code docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">1)</span></code> or a positive int could be added using type
+hints as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">jsonargparse.typing</span> <span class="kn">import</span> <span class="n">PositiveInt</span><span class="p">,</span> <span class="n">OpenUnitInterval</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">PositiveInt</span><span class="p">,</span> <span class="n">OpenUnitInterval</span><span class="p">]])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="enum-arguments">
+<h1>Enum arguments<a class="headerlink" href="#enum-arguments" title="Permalink to this headline">¶</a></h1>
+<p>Another case of restricted values is string choices. In addition to the common
+<code class="code docutils literal notranslate"><span class="pre">choices</span></code> given as a list of strings, it is also possible to provide as
+type an <code class="code docutils literal notranslate"><span class="pre">Enum</span></code> class. This has the added benefit that strings are mapped
+to some desired values. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyEnum</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">choice1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="gp">... </span>    <span class="n">choice2</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">... </span>    <span class="n">choice3</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">MyEnum</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op=choice1&#39;</span><span class="p">])</span>
+<span class="go">Namespace(op=&lt;MyEnum.choice1: -1&gt;)</span>
 </pre></div>
 </div>
 </div>
@@ -644,7 +688,7 @@ is implemented. If given as values <code class="code docutils literal notranslat
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="s1">&#39;yes&#39;</span><span class="p">,</span> <span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="s1">&#39;false&#39;</span><span class="p">])</span>
-<span class="go">namespace(op1=True, op2=False)</span>
+<span class="go">Namespace(op1=True, op2=False)</span>
 </pre></div>
 </div>
 <p>Sometimes it is also useful to define two paired options, one to set
@@ -727,9 +771,9 @@ defining a parser with sub-commands is the following:</p>
 </div>
 <p>Then some examples of parsing are the following:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;subcomm1&#39;</span><span class="p">,</span> <span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="s1">&#39;val1&#39;</span><span class="p">])</span>
-<span class="go">namespace(op0=None, subcomm1=namespace(op1=&#39;val1&#39;), subcommand=&#39;subcomm1&#39;)</span>
+<span class="go">Namespace(op0=None, subcomm1=Namespace(op1=&#39;val1&#39;), subcommand=&#39;subcomm1&#39;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op0&#39;</span><span class="p">,</span> <span class="s1">&#39;val0&#39;</span><span class="p">,</span> <span class="s1">&#39;subcomm2&#39;</span><span class="p">,</span> <span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="s1">&#39;val2&#39;</span><span class="p">])</span>
-<span class="go">namespace(op0=&#39;val0&#39;, subcomm2=namespace(op2=&#39;val2&#39;), subcommand=&#39;subcomm2&#39;)</span>
+<span class="go">Namespace(op0=&#39;val0&#39;, subcomm2=Namespace(op2=&#39;val2&#39;), subcommand=&#39;subcomm2&#39;)</span>
 </pre></div>
 </div>
 <p>Parsing config files with <a class="reference internal" href="#jsonargparse.core.ArgumentParser.parse_path" title="jsonargparse.core.ArgumentParser.parse_path"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.parse_path()</span></code></a> or
@@ -750,7 +794,7 @@ have as prefix <code class="code docutils literal notranslate"><span class="pre"
 environment variable <code class="code docutils literal notranslate"><span class="pre">APP_SUBCOMMAND</span></code>.</p>
 </div>
 <div class="section" id="logging">
-<h1>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h1>
+<span id="id6"></span><h1>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h1>
 <p>The parsers from jsonargparse log some basic events, though by default this is
 disabled. To enable it the <code class="code docutils literal notranslate"><span class="pre">logger</span></code> argument should be set when creating
 an <a class="reference internal" href="#jsonargparse.core.ArgumentParser" title="jsonargparse.core.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a> object. The intended use is to give as value an
@@ -758,7 +802,9 @@ already existing logger object which is used for the whole application. Though
 for convenience to enable a default logger the <code class="code docutils literal notranslate"><span class="pre">logger</span></code> argument can also
 receive <code class="code docutils literal notranslate"><span class="pre">True</span></code> or a string which sets the name of the logger or a
 dictionary that can include the name and the level, e.g. <code class="code docutils literal notranslate"><span class="pre">{&quot;name&quot;:</span>
-<span class="pre">&quot;myapp&quot;,</span> <span class="pre">&quot;level&quot;:</span> <span class="pre">&quot;ERROR&quot;}</span></code>.</p>
+<span class="pre">&quot;myapp&quot;,</span> <span class="pre">&quot;level&quot;:</span> <span class="pre">&quot;ERROR&quot;}</span></code>. If <a class="reference external" href="https://pypi.org/project/reconplogger/">reconplogger</a> is installed, setting <code class="code docutils literal notranslate"><span class="pre">logger</span></code>
+to <code class="code docutils literal notranslate"><span class="pre">True</span></code> or a dictionary without specifying a name, then the reconplogger
+is used.</p>
 </div>
 <div class="section" id="contributing">
 <h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
@@ -825,7 +871,7 @@ python3 -m jsonargparse_tests  <span class="c1"># Run tests for installed packag
 <td><p>Action to add argument to provide ext_vars for jsonnet parsing.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code>(**kwargs)</p></td>
-<td><p>Action to restrict a value with comparison operators.</p></td>
+<td><p>DEPRECATED: Action to restrict a value with comparison operators.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code>(**kwargs)</p></td>
 <td><p>Action to parse option with a given parser optionally loading from file if string value.</p></td>
@@ -839,34 +885,37 @@ python3 -m jsonargparse_tests  <span class="c1"># Run tests for installed packag
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionYesNo</span></code>(**kwargs)</p></td>
 <td><p>Paired options –{yes_prefix}opt, –{no_prefix}opt to set True or False respectively.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.core.ArgumentParser" title="jsonargparse.core.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args[, env_prefix, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.core.ArgumentParser" title="jsonargparse.core.ArgumentParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>(*args, env_prefix[, …])</p></td>
 <td><p>Parser for command line, yaml/jsonnet files and environment variables.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.core.DefaultHelpFormatter" title="jsonargparse.core.DefaultHelpFormatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code></a>(prog[, …])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultHelpFormatter</span></code>(prog[, …])</p></td>
 <td><p>Help message formatter that includes default values and env var names.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dict</span></code>(*args, **kwds)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">List</span></code>(*args, **kwds)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Enum</span></code>(value)</p></td>
+<td><p>Generic enumeration.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">List</span></code>(*args, **kwds)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoggerProperty</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoggerProperty</span></code>()</p></td>
 <td><p>Class designed to be inherited by other classes to add a logger property.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespace</span></code>(**kwargs)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespace</span></code>(**kwargs)</p></td>
 <td><p>Simple object for storing attributes.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Set</span></code>(*args, **kwds)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Set</span></code>(*args, **kwds)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SignatureArguments</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SignatureArguments</span></code>()</p></td>
 <td><p>Methods to add arguments based on signatures to an ArgumentParser instance.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">redirect_stderr</span></code>(new_target)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">redirect_stderr</span></code>(new_target)</p></td>
 <td><p>Context manager for temporarily redirecting stderr to another file.</p></td>
 </tr>
 </tbody>
@@ -918,7 +967,7 @@ python3 -m jsonargparse_tests  <span class="c1"># Run tests for installed packag
 </table>
 <dl class="py class">
 <dt id="jsonargparse.core.ArgumentParser">
-<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.core.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=&lt;function usage_and_exit_error_handler&gt;</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">parse_as_dict=False</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">default_meta: bool = True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/core.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.core.ArgumentParser" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.core.</code><code class="sig-name descname">ArgumentParser</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix: Optional[str] = None</em>, <em class="sig-param">error_handler=&lt;function usage_and_exit_error_handler&gt;</em>, <em class="sig-param">formatter_class=&lt;class 'jsonargparse.formatters.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version: Optional[str] = None</em>, <em class="sig-param">print_config: Optional[str] = '--print-config'</em>, <em class="sig-param">parser_mode: str = 'yaml'</em>, <em class="sig-param">parse_as_dict: bool = False</em>, <em class="sig-param">default_config_files: Optional[List[str]] = None</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">default_meta: bool = True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/core.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.core.ArgumentParser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#jsonargparse.signatures.SignatureArguments" title="jsonargparse.signatures.SignatureArguments"><code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.signatures.SignatureArguments</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.core._ActionsContainer</span></code>, <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code></a>, <a class="reference internal" href="#jsonargparse.util.LoggerProperty" title="jsonargparse.util.LoggerProperty"><code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.util.LoggerProperty</span></code></a></p>
 <p>Parser for command line, yaml/jsonnet files and environment variables.</p>
 <p><strong>Methods:</strong></p>
@@ -1013,7 +1062,7 @@ python3 -m jsonargparse_tests  <span class="c1"># Run tests for installed packag
 </table>
 <dl class="py method">
 <dt id="jsonargparse.core.ArgumentParser.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix=None</em>, <em class="sig-param">error_handler=&lt;function usage_and_exit_error_handler&gt;</em>, <em class="sig-param">formatter_class='default'</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">parser_mode='yaml'</em>, <em class="sig-param">parse_as_dict=False</em>, <em class="sig-param">default_config_files: List[str] = []</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">default_meta: bool = True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/core.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.core.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">env_prefix: Optional[str] = None</em>, <em class="sig-param">error_handler=&lt;function usage_and_exit_error_handler&gt;</em>, <em class="sig-param">formatter_class=&lt;class 'jsonargparse.formatters.DefaultHelpFormatter'&gt;</em>, <em class="sig-param">logger=None</em>, <em class="sig-param">version: Optional[str] = None</em>, <em class="sig-param">print_config: Optional[str] = '--print-config'</em>, <em class="sig-param">parser_mode: str = 'yaml'</em>, <em class="sig-param">parse_as_dict: bool = False</em>, <em class="sig-param">default_config_files: Optional[List[str]] = None</em>, <em class="sig-param">default_env: bool = False</em>, <em class="sig-param">default_meta: bool = True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/core.html#ArgumentParser.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.core.ArgumentParser.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializer for ArgumentParser instance.</p>
 <p>All the arguments from the initializer of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser">argparse.ArgumentParser</a>
 are supported. Additionally it accepts:</p>
@@ -1022,9 +1071,10 @@ are supported. Additionally it accepts:</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – Prefix for environment variables.</p></li>
 <li><p><strong>error_handler</strong> (<em>Callable</em>) – Handler for parsing errors, set to None to simply raise exception.</p></li>
-<li><p><strong>formatter_class</strong> (<em>argparse.HelpFormatter</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – Class for printing help messages or “default”.</p></li>
+<li><p><strong>formatter_class</strong> (<em>argparse.HelpFormatter</em>) – Class for printing help messages.</p></li>
 <li><p><strong>logger</strong> – Configures the logger, see <a class="reference internal" href="#jsonargparse.util.LoggerProperty" title="jsonargparse.util.LoggerProperty"><code class="xref py py-class docutils literal notranslate"><span class="pre">LoggerProperty</span></code></a>.</p></li>
-<li><p><strong>version</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – Program version string to add –version argument.</p></li>
+<li><p><strong>version</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Program version string to add –version argument.</p></li>
+<li><p><strong>print_config</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Add this as argument to print config, set None to disable.</p></li>
 <li><p><strong>parser_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – Mode for parsing configuration files, either “yaml” or “jsonnet”.</p></li>
 <li><p><strong>parse_as_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – Whether to parse as dict instead of Namespace.</p></li>
 <li><p><strong>default_config_files</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>]</em>) – List of strings defining default config file locations. For example: <code class="code docutils literal notranslate"><span class="pre">['~/.config/myapp/*.yaml']</span></code>.</p></li>
@@ -1060,7 +1110,7 @@ are supported. Additionally it accepts:</p>
 <dd class="field-even"><p>An object with all parsed values as nested attributes.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Namespace</p>
+<dd class="field-odd"><p>Namespace or Dict</p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><p><a class="reference internal" href="#jsonargparse.util.ParserError" title="jsonargparse.util.ParserError"><strong>ParserError</strong></a> – If there is a parsing error and error_handler=None.</p>
@@ -1414,17 +1464,6 @@ sub-command’s name as base key.</p>
 
 </dd></dl>
 
-<dl class="py class">
-<dt id="jsonargparse.core.DefaultHelpFormatter">
-<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.core.</code><code class="sig-name descname">DefaultHelpFormatter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prog</span></em>, <em class="sig-param"><span class="n">indent_increment</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">max_help_position</span><span class="o">=</span><span class="default_value">24</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/core.html#DefaultHelpFormatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.core.DefaultHelpFormatter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.HelpFormatter</span></code></p>
-<p>Help message formatter that includes default values and env var names.</p>
-<p>This class is an extension of <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.HelpFormatter">argparse.HelpFormatter</a>.
-Default values are always included. Furthermore, if the parser is configured
-with <code class="code docutils literal notranslate"><span class="pre">default_env=True</span></code> command line options are preceded by ‘ARG:’ and
-the respective environment variable name is included preceded by ‘ENV:’.</p>
-</dd></dl>
-
 <span class="target" id="module-jsonargparse.signatures"></span><p>Add arguments based on signatures.</p>
 <p><strong>Classes:</strong></p>
 <table class="longtable docutils align-default">
@@ -1439,7 +1478,10 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code>(**kwargs)</p></td>
 <td><p>Action to parse option as json validated by a jsonschema.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.signatures.SignatureArguments" title="jsonargparse.signatures.SignatureArguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SignatureArguments</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Enum</span></code>(value)</p></td>
+<td><p>Generic enumeration.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.signatures.SignatureArguments" title="jsonargparse.signatures.SignatureArguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SignatureArguments</span></code></a>()</p></td>
 <td><p>Methods to add arguments based on signatures to an ArgumentParser instance.</p></td>
 </tr>
 </tbody>
@@ -1469,7 +1511,7 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 </table>
 <dl class="py method">
 <dt id="jsonargparse.signatures.SignatureArguments.add_class_arguments">
-<code class="sig-name descname">add_class_arguments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">theclass</span></em>, <em class="sig-param"><span class="n">nested_key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">as_group</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/signatures.html#SignatureArguments.add_class_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.signatures.SignatureArguments.add_class_arguments" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_class_arguments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">theclass</span></em>, <em class="sig-param"><span class="n">nested_key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">as_group</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">skip</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/signatures.html#SignatureArguments.add_class_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.signatures.SignatureArguments.add_class_arguments" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds arguments from a class based on its type hints and docstrings.</p>
 <p>Note: Keyword arguments without at least one valid type are ignored.</p>
 <dl class="field-list simple">
@@ -1478,6 +1520,7 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <li><p><strong>theclass</strong> (<em>class</em>) – Class from which to add arguments.</p></li>
 <li><p><strong>nested_key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Key for nested namespace.</p></li>
 <li><p><strong>as_group</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – Whether arguments should be added to a new argument group.</p></li>
+<li><p><strong>skip</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.9)"><em>set</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Names of arguments that should be skipped.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1497,7 +1540,7 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 
 <dl class="py method">
 <dt id="jsonargparse.signatures.SignatureArguments.add_method_arguments">
-<code class="sig-name descname">add_method_arguments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">theclass</span></em>, <em class="sig-param"><span class="n">themethod</span></em>, <em class="sig-param"><span class="n">nested_key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">as_group</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/signatures.html#SignatureArguments.add_method_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.signatures.SignatureArguments.add_method_arguments" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_method_arguments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">theclass</span></em>, <em class="sig-param"><span class="n">themethod</span></em>, <em class="sig-param"><span class="n">nested_key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">as_group</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">skip</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/signatures.html#SignatureArguments.add_method_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.signatures.SignatureArguments.add_method_arguments" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds arguments from a class based on its type hints and docstrings.</p>
 <p>Note: Keyword arguments without at least one valid type are ignored.</p>
 <dl class="field-list simple">
@@ -1507,6 +1550,7 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <li><p><strong>themethod</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – Name of the method for which to add arguments.</p></li>
 <li><p><strong>nested_key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Key for nested namespace.</p></li>
 <li><p><strong>as_group</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – Whether arguments should be added to a new argument group.</p></li>
+<li><p><strong>skip</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.9)"><em>set</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Names of arguments that should be skipped.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1526,7 +1570,7 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 
 <dl class="py method">
 <dt id="jsonargparse.signatures.SignatureArguments.add_function_arguments">
-<code class="sig-name descname">add_function_arguments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">function</span></em>, <em class="sig-param"><span class="n">nested_key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">as_group</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/signatures.html#SignatureArguments.add_function_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.signatures.SignatureArguments.add_function_arguments" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_function_arguments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">function</span></em>, <em class="sig-param"><span class="n">nested_key</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">as_group</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">skip</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/signatures.html#SignatureArguments.add_function_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.signatures.SignatureArguments.add_function_arguments" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds arguments from a function based on its type hints and docstrings.</p>
 <p>Note: Keyword arguments without at least one valid type are ignored.</p>
 <dl class="field-list simple">
@@ -1535,6 +1579,7 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <li><p><strong>function</strong> (<em>callable</em>) – Function from which to add arguments.</p></li>
 <li><p><strong>nested_key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Key for nested namespace.</p></li>
 <li><p><strong>as_group</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – Whether arguments should be added to a new argument group.</p></li>
+<li><p><strong>skip</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.9)"><em>set</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Names of arguments that should be skipped.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1554,6 +1599,107 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 
 </dd></dl>
 
+<span class="target" id="module-jsonargparse.typing"></span><p>Collection of types and type generators.</p>
+<p><strong>Classes:</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.typing.ClosedUnitInterval" title="jsonargparse.typing.ClosedUnitInterval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosedUnitInterval</span></code></a>(v)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dict</span></code>(*args, **kwds)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.typing.NonNegativeFloat" title="jsonargparse.typing.NonNegativeFloat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NonNegativeFloat</span></code></a>(v)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.typing.NonNegativeInt" title="jsonargparse.typing.NonNegativeInt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NonNegativeInt</span></code></a>(v)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.typing.OpenUnitInterval" title="jsonargparse.typing.OpenUnitInterval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenUnitInterval</span></code></a>(v)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.typing.PositiveFloat" title="jsonargparse.typing.PositiveFloat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PositiveFloat</span></code></a>(v)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.typing.PositiveInt" title="jsonargparse.typing.PositiveInt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PositiveInt</span></code></a>(v)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tuple</span></code>(*args, **kwds)</p></td>
+<td><p>Tuple type; Tuple[X, Y] is the cross-product type of X and Y.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Functions:</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.typing.restricted_number_type" title="jsonargparse.typing.restricted_number_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restricted_number_type</span></code></a>(name, base_type, …)</p></td>
+<td><p>Creates or returns an already registered restricted number type class.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt id="jsonargparse.typing.restricted_number_type">
+<code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">restricted_number_type</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">base_type</span></em>, <em class="sig-param"><span class="n">restrictions</span></em>, <em class="sig-param"><span class="n">join</span><span class="o">=</span><span class="default_value">'and'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/typing.html#restricted_number_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.typing.restricted_number_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates or returns an already registered restricted number type class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Name for the type or None for an automatic name.</p></li>
+<li><p><strong>base_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.9)"><em>type</em></a>) – One of {int, float}.</p></li>
+<li><p><strong>restrictions</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>]</em>) – Tuples of pairs (comparison, reference), e.g. (‘&gt;’, 0).</p></li>
+<li><p><strong>join</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – How to combine multiple comparisons, one of {‘or’, ‘and’}</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The type class.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonargparse.typing.PositiveInt">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">PositiveInt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.PositiveInt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.restricted_number_type.&lt;locals&gt;.RestrictedNumber</span></code>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonargparse.typing.NonNegativeInt">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">NonNegativeInt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.NonNegativeInt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.restricted_number_type.&lt;locals&gt;.RestrictedNumber</span></code>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonargparse.typing.PositiveFloat">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">PositiveFloat</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.PositiveFloat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.restricted_number_type.&lt;locals&gt;.RestrictedNumber</span></code>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonargparse.typing.NonNegativeFloat">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">NonNegativeFloat</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.NonNegativeFloat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.restricted_number_type.&lt;locals&gt;.RestrictedNumber</span></code>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonargparse.typing.ClosedUnitInterval">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">ClosedUnitInterval</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.ClosedUnitInterval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.restricted_number_type.&lt;locals&gt;.RestrictedNumber</span></code>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonargparse.typing.OpenUnitInterval">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">OpenUnitInterval</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.OpenUnitInterval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.restricted_number_type.&lt;locals&gt;.RestrictedNumber</span></code>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></p>
+</dd></dl>
+
 <span class="target" id="module-jsonargparse.jsonschema"></span><p>Jsonschema functionalities.</p>
 <p><strong>Classes:</strong></p>
 <table class="longtable docutils align-default">
@@ -1571,19 +1717,22 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dict</span></code>(*args, **kwds)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">List</span></code>(*args, **kwds)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Enum</span></code>(value)</p></td>
+<td><p>Generic enumeration.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">List</span></code>(*args, **kwds)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespace</span></code>(**kwargs)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespace</span></code>(**kwargs)</p></td>
 <td><p>Simple object for storing attributes.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Set</span></code>(*args, **kwds)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Set</span></code>(*args, **kwds)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tuple</span></code>(*args, **kwds)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tuple</span></code>(*args, **kwds)</p></td>
 <td><p>Tuple type; Tuple[X, Y] is the cross-product type of X and Y.</p></td>
 </tr>
 </tbody>
@@ -1624,7 +1773,10 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.jsonschema.ActionJsonSchema.__init__" title="jsonargparse.jsonschema.ActionJsonSchema.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionJsonSchema instance.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.jsonschema.ActionJsonSchema.typing_schema" title="jsonargparse.jsonschema.ActionJsonSchema.typing_schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">typing_schema</span></code></a>(annotation)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.jsonschema.ActionJsonSchema.completer" title="jsonargparse.jsonschema.ActionJsonSchema.completer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">completer</span></code></a>(prefix, **kwargs)</p></td>
+<td><p>Used by argcomplete, validates value and shows expected type.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.jsonschema.ActionJsonSchema.typing_schema" title="jsonargparse.jsonschema.ActionJsonSchema.typing_schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">typing_schema</span></code></a>(annotation)</p></td>
 <td><p>Generates a schema based on typing annotation.</p></td>
 </tr>
 </tbody>
@@ -1638,6 +1790,7 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>schema</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><em>object</em></a>) – Schema to validate values against.</p></li>
 <li><p><strong>annotation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.9)"><em>type</em></a>) – Type object from which to generate schema.</p></li>
+<li><p><strong>enable_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – Whether to try to load json from path (def.=True).</p></li>
 <li><p><strong>with_meta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – Whether to include metadata (def.=True).</p></li>
 </ul>
 </dd>
@@ -1665,6 +1818,12 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <dt id="jsonargparse.jsonschema.ActionJsonSchema.typing_schema">
 <em class="property">static </em><code class="sig-name descname">typing_schema</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">annotation</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/jsonschema.html#ActionJsonSchema.typing_schema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.jsonschema.ActionJsonSchema.typing_schema" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a schema based on typing annotation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonargparse.jsonschema.ActionJsonSchema.completer">
+<code class="sig-name descname">completer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/jsonschema.html#ActionJsonSchema.completer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.jsonschema.ActionJsonSchema.completer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used by argcomplete, validates value and shows expected type.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1877,7 +2036,7 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <td><p>An action based on an Enum that maps to-from strings and enum values.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionOperators" title="jsonargparse.actions.ActionOperators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionOperators</span></code></a>(**kwargs)</p></td>
-<td><p>Action to restrict a value with comparison operators.</p></td>
+<td><p>DEPRECATED: Action to restrict a value with comparison operators.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionParser" title="jsonargparse.actions.ActionParser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ActionParser</span></code></a>(**kwargs)</p></td>
 <td><p>Action to parse option with a given parser optionally loading from file if string value.</p></td>
@@ -1894,10 +2053,13 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ArgumentParser</span></code>([prog, usage, description, …])</p></td>
 <td><p>Object for parsing command line strings into Python objects.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespace</span></code>(**kwargs)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Enum</span></code>(value)</p></td>
+<td><p>Generic enumeration.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespace</span></code>(**kwargs)</p></td>
 <td><p>Simple object for storing attributes.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code>(path, mode, cwd, skip_check)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code>(path, mode, cwd, skip_check)</p></td>
 <td><p>Stores a (possibly relative) path and the corresponding absolute path.</p></td>
 </tr>
 </tbody>
@@ -1929,6 +2091,9 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">namespace_to_dict</span></code>(cfg_ns)</p></td>
 <td><p>Converts a nested namespace into a nested dictionary.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">restricted_number_type</span></code>(name, base_type, …)</p></td>
+<td><p>Creates or returns an already registered restricted number type class.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1989,6 +2154,9 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionYesNo.__init__" title="jsonargparse.actions.ActionYesNo.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionYesNo instance.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionYesNo.completer" title="jsonargparse.actions.ActionYesNo.completer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">completer</span></code></a>(**kwargs)</p></td>
+<td><p>Used by argcomplete to support tab completion of arguments.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py method">
@@ -1999,7 +2167,7 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>yes_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – Prefix for yes option (default=’’).</p></li>
-<li><p><strong>no_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Prefix for no option (default=’<a href="#id5"><span class="problematic" id="id6">no_</span></a>’).</p></li>
+<li><p><strong>no_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – Prefix for no option (default=’<a href="#id7"><span class="problematic" id="id8">no_</span></a>’).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises</dt>
@@ -2012,6 +2180,12 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <dt id="jsonargparse.actions.ActionYesNo.__call__">
 <code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionYesNo.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionYesNo.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the corresponding key to True or False depending on the option string used.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonargparse.actions.ActionYesNo.completer">
+<code class="sig-name descname">completer</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionYesNo.completer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionYesNo.completer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used by argcomplete to support tab completion of arguments.</p>
 </dd></dl>
 
 </dd></dl>
@@ -2033,6 +2207,9 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionEnum.__init__" title="jsonargparse.actions.ActionEnum.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
 <td><p>Initializer for ActionEnum instance.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionEnum.completer" title="jsonargparse.actions.ActionEnum.completer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">completer</span></code></a>(**kwargs)</p></td>
+<td><p>Used by argcomplete to support tab completion of arguments.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2059,6 +2236,47 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.9)"><strong>TypeError</strong></a> – If value not present in the Enum.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonargparse.actions.ActionEnum.completer">
+<code class="sig-name descname">completer</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionEnum.completer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionEnum.completer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used by argcomplete to support tab completion of arguments.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonargparse.actions.ActionOperators">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.actions.</code><code class="sig-name descname">ActionOperators</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionOperators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionOperators" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>DEPRECATED: Action to restrict a value with comparison operators.</p>
+<p>The new alternative is explained in <a class="reference internal" href="#restricted-numbers"><span class="std std-ref">Restricted numbers</span></a>.</p>
+<p><strong>Methods:</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionOperators.__call__" title="jsonargparse.actions.ActionOperators.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Call self as a function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionOperators.__init__" title="jsonargparse.actions.ActionOperators.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
+<td><p>Initialize self.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt id="jsonargparse.actions.ActionOperators.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionOperators.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionOperators.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonargparse.actions.ActionOperators.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionOperators.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionOperators.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call self as a function.</p>
 </dd></dl>
 
 </dd></dl>
@@ -2101,57 +2319,6 @@ the respective environment variable name is included preceded by ‘ENV:’.</p>
 <dt id="jsonargparse.actions.ActionParser.__call__">
 <code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionParser.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionParser.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses an argument with the corresponding parser and if valid, sets the parsed value to the corresponding key.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Raises</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.9)"><strong>TypeError</strong></a> – If the argument is not valid.</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt id="jsonargparse.actions.ActionOperators">
-<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.actions.</code><code class="sig-name descname">ActionOperators</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionOperators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionOperators" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
-<p>Action to restrict a value with comparison operators.</p>
-<p><strong>Methods:</strong></p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionOperators.__call__" title="jsonargparse.actions.ActionOperators.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.actions.ActionOperators.__init__" title="jsonargparse.actions.ActionOperators.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**kwargs)</p></td>
-<td><p>Initializer for ActionOperators instance.</p></td>
-</tr>
-</tbody>
-</table>
-<dl class="py method">
-<dt id="jsonargparse.actions.ActionOperators.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionOperators.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionOperators.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initializer for ActionOperators instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>expr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>]</em>) – Pairs of operators (&gt; &gt;= &lt; &lt;= == !=) and reference values, e.g. [(‘&gt;=’, 1),…].</p></li>
-<li><p><strong>join</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – How to combine multiple comparisons, must be ‘or’ or ‘and’ (default=’and’).</p></li>
-<li><p><strong>type</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.9)"><em>type</em></a>) – The value type (default=int).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.9)"><strong>ValueError</strong></a> – If any of the parameters (expr, join or type) are invalid.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="jsonargparse.actions.ActionOperators.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/actions.html#ActionOperators.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.actions.ActionOperators.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parses an argument restricted by the operators and if valid sets the parsed value to the corresponding key.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.9)"><strong>TypeError</strong></a> – If the argument is not valid.</p>
