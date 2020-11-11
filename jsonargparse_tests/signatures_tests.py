@@ -252,6 +252,18 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(MyEnum.B, parser.parse_args(['--a1=B']).a1)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a1=D']))
 
+        class MyEnum2(str, enum.Enum):
+            A = 'A'
+            B = 'B'
+
+        def func2(a1: Optional[MyEnum2] = None):
+            return a1
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_function_arguments(func2)
+        self.assertEqual(MyEnum2.B, parser.parse_args(['--a1=B']).a1)
+        self.assertEqual('B', parser.parse_args(['--a1=B']).a1)
+
 
     def test_skip(self):
 

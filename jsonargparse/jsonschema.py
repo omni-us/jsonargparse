@@ -1,14 +1,15 @@
 """Jsonschema functionalities."""
 
+import os
 import json
 import yaml
-import enum
 import inspect
+from enum import Enum
 from argparse import Namespace, Action
 from typing import Any, Union, Tuple, List, Set, Dict
 
 from .util import namespace_to_dict, Path, strip_meta, _check_unknown_kwargs, _issubclass
-from .optionals import _import_jsonschema, get_config_read_mode
+from .optionals import _import_jsonschema, get_config_read_mode, _import_argcomplete
 from .actions import _is_action_value_list
 from .typing import _annotation_to_schema
 
@@ -59,6 +60,9 @@ class ActionJsonSchema(Action):
             self._enable_path = kwargs.pop('_enable_path')
             self._with_meta = kwargs.pop('_with_meta')
             kwargs['type'] = str
+            metavar = self._annotation_metavar()
+            if metavar is not None:
+                kwargs['metavar'] = metavar
             super().__init__(**kwargs)
 
 
@@ -105,7 +109,7 @@ class ActionJsonSchema(Action):
                     val = namespace_to_dict(val)
                 if isinstance(val, (tuple, set)):
                     val = list(val)
-                elif _issubclass(type(val), enum.Enum):
+                elif _issubclass(type(val), Enum):
                     val = val.name
                 elif hasattr(self._annotation, '__origin__') and isinstance(val, dict):
                     val = self._adapt_dict(val, str)
@@ -143,7 +147,7 @@ class ActionJsonSchema(Action):
 
     def _adapt_enum(self, val):
         for arg in self._annotation.__args__:
-            if _issubclass(arg, enum.Enum) and val in arg.__members__:
+            if _issubclass(arg, Enum) and val in arg.__members__:
                 val = arg[val]
                 break
         return val
@@ -183,11 +187,11 @@ class ActionJsonSchema(Action):
         elif annotation in typesmap:
             return {'type': typesmap[annotation]}
 
+        elif _issubclass(annotation, Enum):
+            return {'type': 'string', 'enum': list(annotation.__members__.keys())}
+
         elif _issubclass(annotation, (str, int, float)):
             return _annotation_to_schema(annotation)
-
-        elif _issubclass(annotation, enum.Enum):
-            return {'type': 'string', 'enum': list(annotation.__members__.keys())}
 
         elif not hasattr(annotation, '__origin__'):
             return
@@ -219,3 +223,41 @@ class ActionJsonSchema(Action):
             schema = ActionJsonSchema.typing_schema(annotation.__args__[1])
             if schema is not None:
                 return {'type': 'object', 'patternProperties': {pattern: schema}}
+
+
+    def _annotation_metavar(self):
+        """Generates a metavar for some types."""
+        metavar = None
+        if self._annotation is not None and hasattr(self._annotation, '__origin__'):
+            if self._annotation.__origin__ == Union and \
+               len(self._annotation.__args__) == 2 and \
+               _issubclass(self._annotation.__args__[0], Enum) and \
+               isinstance(self._annotation.__args__[1], type(None)):
+                enum = self._annotation.__args__[0]
+                metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
+        return metavar
+
+
+    def completer(self, prefix, **kwargs):
+        """Used by argcomplete, validates value and shows expected type."""
+        jsonschema = _import_jsonschema('ActionJsonSchema')[0]
+        argcomplete = _import_argcomplete('ActionJsonSchema')
+        try:
+            self._validator.validate(yaml.safe_load(prefix))
+            msg = 'value already valid, '
+        except (yaml.parser.ParserError, jsonschema.exceptions.ValidationError):
+            msg = 'value not yet valid, '
+        if self._annotation is not None:
+            annotation = str(self._annotation).replace('jsonargparse.typing.', '').replace('typing.', '')
+            msg += 'expected type '+annotation
+        else:
+            schema = json.dumps(self._validator.schema, indent=2, sort_keys=True).replace('\n', '\n  ')
+            msg += 'required to be valid according to schema:\n  '+schema+'\n'
+        if chr(int(os.environ['COMP_TYPE'])) == '?':
+            argcomplete.warn(msg)
+            try:
+                import psutil
+                os.kill(psutil.Process(os.getppid()).ppid(), 28)
+            except:
+                pass
+        return [(' '+msg).replace(' ', u'\u00A0'), '']

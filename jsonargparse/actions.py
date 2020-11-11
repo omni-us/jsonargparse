@@ -4,9 +4,9 @@ import os
 import re
 import sys
 import yaml
-import enum
 import operator
 import argparse
+from enum import Enum
 from argparse import ArgumentParser, Namespace, Action, SUPPRESS, _StoreAction
 
 from .optionals import get_config_read_mode
@@ -215,7 +215,7 @@ class ActionEnum(Action):
         """
         if 'enum' in kwargs:
             _check_unknown_kwargs(kwargs, {'enum'})
-            if not _issubclass(kwargs['enum'], enum.Enum):
+            if not _issubclass(kwargs['enum'], Enum):
                 raise ValueError('Expected enum to be an instance of Enum.')
             self._enum = kwargs['enum']
         elif '_enum' not in kwargs:

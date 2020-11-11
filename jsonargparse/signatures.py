@@ -1,7 +1,7 @@
 """Add arguments based on signatures."""
 
-import enum
 import inspect
+from enum import Enum
 
 from .util import _issubclass
 from .actions import ActionEnum
@@ -194,7 +194,7 @@ class SignatureArguments:
                 if annotation in {str, int, float, bool} or \
                    _issubclass(annotation, (str, int, float)):
                     kwargs['type'] = annotation
-                elif _issubclass(annotation, enum.Enum):
+                elif _issubclass(annotation, Enum):
                     kwargs['action'] = ActionEnum(enum=annotation)
                 else:
                     try:

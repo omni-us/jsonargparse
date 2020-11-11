@@ -4,16 +4,17 @@ import sys
 import glob
 import json
 import yaml
-import enum
 import inspect
 import argparse
 import traceback
+from enum import Enum
 from copy import deepcopy
 from contextlib import redirect_stderr
 from typing import Any, List, Dict, Set, Union, Optional
 from argparse import (Action, Namespace, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE,
                       ArgumentError, _UNRECOGNIZED_ARGS_ATTR)
 
+from .formatters import DefaultHelpFormatter
 from .signatures import SignatureArguments
 from .optionals import _import_jsonnet, argcomplete_support, _import_argcomplete, set_url_support, get_config_read_mode
 from .actions import (ActionConfigFile, ActionParser, _ActionSubCommands, ActionYesNo, ActionEnum, ActionPath,
@@ -46,9 +47,9 @@ class _ActionsContainer(argparse._ActionsContainer):
                     raise ValueError('Argument with type=bool does not support nargs.')
                 kwargs['nargs'] = 1
                 kwargs['action'] = ActionYesNo(no_prefix=None)
-            elif _issubclass(kwargs['type'], enum.Enum):
+            elif _issubclass(kwargs['type'], Enum):
                 kwargs['action'] = ActionEnum(enum=kwargs['type'])
-            elif hasattr(kwargs['type'], '__origin__') and kwargs['type'].__origin__ in {Union, Dict, List}:
+            elif hasattr(kwargs['type'], '__origin__') and kwargs['type'].__origin__ in {Union, Dict, dict, List, list}:
                 kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=False)
         action = super().add_argument(*args, **kwargs)
         for key in meta_keys:
@@ -79,7 +80,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                  *args,
                  env_prefix: Optional[str] = None,
                  error_handler = usage_and_exit_error_handler,
-                 formatter_class = 'default',
+                 formatter_class = DefaultHelpFormatter,
                  logger = None,
                  version: Optional[str] = None,
                  print_config: Optional[str] = '--print-config',
@@ -98,7 +99,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         Args:
             env_prefix (str): Prefix for environment variables.
             error_handler (Callable): Handler for parsing errors, set to None to simply raise exception.
-            formatter_class (argparse.HelpFormatter or str): Class for printing help messages or "default".
+            formatter_class (argparse.HelpFormatter): Class for printing help messages.
             logger: Configures the logger, see :class:`.LoggerProperty`.
             version (str or None): Program version string to add --version argument.
             print_config (str or None): Add this as argument to print config, set None to disable.
@@ -108,16 +109,12 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             default_env (bool): Set the default value on whether to parse environment variables.
             default_meta (bool): Set the default value on whether to include metadata in config objects.
         """
-        if isinstance(formatter_class, str) and formatter_class != 'default':
-            raise ValueError('The only accepted values for formatter_class is "default" or a HelpFormatter class.')
-        if formatter_class == 'default':
-            formatter_class = DefaultHelpFormatter
         kwargs['formatter_class'] = formatter_class
+        super().__init__(*args, **kwargs)
         if self.groups is None:
             self.groups = {}
         if default_config_files is None:
             default_config_files = []
-        super().__init__(*args, **kwargs)
         self.required_args = set()  # type: Set[str]
         self._stderr = sys.stderr
         self._default_config_files = default_config_files
@@ -1112,40 +1109,3 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         self._env_prefix = env_prefix
         if issubclass(self.formatter_class, DefaultHelpFormatter):
             setattr(self.formatter_class, '_env_prefix', env_prefix)
-
-
-class DefaultHelpFormatter(argparse.HelpFormatter):
-    """Help message formatter that includes default values and env var names.
-
-    This class is an extension of `argparse.HelpFormatter
-    <https://docs.python.org/3/library/argparse.html#argparse.HelpFormatter>`_.
-    Default values are always included. Furthermore, if the parser is configured
-    with :code:`default_env=True` command line options are preceded by 'ARG:' and
-    the respective environment variable name is included preceded by 'ENV:'.
-    """
-
-    _env_prefix = None
-    _default_env = True
-
-    def _get_help_string(self, action):
-        help_str = ''
-        if hasattr(action, '_required') and action._required:
-            help_str = 'required'
-        if '%(default)' not in action.help and action.default is not SUPPRESS:
-            if action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}:
-                default = action.default.name if isinstance(action, ActionEnum) else action.default
-                help_str += (', ' if help_str else '') + 'default: '+str(default)
-        return action.help + (' ('+help_str+')' if help_str else '')
-
-    def _format_action_invocation(self, action):
-        if action.option_strings == [] or action.default == SUPPRESS or not self._default_env:
-            return super()._format_action_invocation(action)
-        extr = ''
-        if self._default_env:
-            extr += '\n  ENV:   ' + _get_env_var(self, action)
-        if isinstance(action, ActionParser):
-            extr += '\n                        For more details run command with --'+action.dest+'.help.'
-        return 'ARG:   ' + super()._format_action_invocation(action) + extr
-
-    def _get_default_metavar_for_optional(self, action):
-        return action.dest.rsplit('.')[-1].upper()

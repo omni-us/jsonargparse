@@ -4,10 +4,11 @@ import os
 import sys
 import enum
 import unittest
-from io import BytesIO
-from contextlib import redirect_stdout
+from typing import List
+from io import BytesIO, StringIO
+from contextlib import redirect_stdout, redirect_stderr
 from jsonargparse import *
-from jsonargparse.optionals import argcomplete_support, _import_argcomplete
+from jsonargparse.optionals import argcomplete_support, _import_argcomplete, jsonschema_support
 
 
 @unittest.skipIf(not argcomplete_support, 'argcomplete package is required')
@@ -31,8 +32,7 @@ class ArgcompleteTests(unittest.TestCase):
         os.environ['_ARGCOMPLETE'] = '1'
         os.environ['_ARGCOMPLETE_SUPPRESS_SPACE'] = '1'
         os.environ['_ARGCOMPLETE_COMP_WORDBREAKS'] = " \t\n\"'><=;|&(:"
-        #os.environ['COMP_TYPE'] = str(ord('\t'))  # '9'
-        #os.environ['COMP_TYPE'] = str(ord('?'))   # '63'
+        os.environ['COMP_TYPE'] = str(ord('?'))   # ='63'  str(ord('\t'))='9'
         self.parser = ArgumentParser(error_handler=lambda x: x.exit(2))
 
 
@@ -96,6 +96,39 @@ class ArgcompleteTests(unittest.TestCase):
         with redirect_stdout(out), self.assertRaises(SystemExit):
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
         self.assertEqual(out.getvalue(), b'abc\x0babd')
+
+
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+    def test_ActionJsonSchema(self):
+        self.parser.add_argument('--json', action=ActionJsonSchema(schema={'type': 'object'}))
+        self.parser.add_argument('--list', type=List[int])
+
+        os.environ['COMP_LINE'] = "tool.py --json=1"
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+        out, err = BytesIO(), StringIO()
+        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        self.assertEqual(out.getvalue(), b'')
+        self.assertIn('value not yet valid', err.getvalue())
+
+        os.environ['COMP_LINE'] = "tool.py --json='{\"a\": 1}'"
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+        out, err = BytesIO(), StringIO()
+        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        self.assertEqual(out.getvalue(), b'')
+        self.assertIn('value already valid', err.getvalue())
+
+        os.environ['COMP_LINE'] = "tool.py --list='[1, 2, 3]'"
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+        out, err = BytesIO(), StringIO()
+        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        self.assertEqual(out.getvalue(), b'')
+        self.assertIn('value already valid, expected type List[int]', err.getvalue())
 
 
 if __name__ == '__main__':
