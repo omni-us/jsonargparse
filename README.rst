@@ -78,13 +78,13 @@ You can install using `pip <https://pypi.org/project/jsonargparse/>`__ as:
 
     pip install jsonargparse
 
-Installed like this, the only dependency that jsonargparse installs is `PyYAML
+By default the only dependency that jsonargparse installs is `PyYAML
 <https://pypi.org/project/PyYAML/>`__. However, jsonargparse has several
-optional features that can be enabled by installing specifying any of the
-following extras requires: :code:`signatures`, :code:`jsonschema`,
-:code:`jsonnet`, :code:`urls` and :code:`argcomplete`. There is also the
-:code:`all` extras require that can be used to enable all optional features.
-Installing jsonargparse with extras require is as follows:
+optional features that can be enabled by specifying any of the following extras
+requires: :code:`signatures`, :code:`jsonschema`, :code:`jsonnet`, :code:`urls`,
+:code:`argcomplete` and :code:`reconplogger`. There is also the :code:`all`
+extras require that can be used to enable all optional features. Installing
+jsonargparse with extras require is as follows:
 
 .. code-block:: python
 
@@ -650,6 +650,9 @@ is implemented. If given as values :code:`{'yes', 'true'}` or :code:`{'no',
     >>> parser.add_argument('--op2', type=bool, default=True)
     >>> parser.parse_args(['--op1', 'yes', '--op2', 'false'])
     Namespace(op1=True, op2=False)
+
+To use :code:`type=bool` jsonargparse needs to be installed with the
+:code:`jsonschema` extras require as explained in section :ref:`installation`.
 
 Sometimes it is also useful to define two paired options, one to set
 :code:`True` and the other to set :code:`False`. The :class:`.ActionYesNo` class

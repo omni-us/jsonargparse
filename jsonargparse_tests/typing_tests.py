@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
+# pylint: disable=unexpected-keyword-arg
 
 import pickle
-import unittest
 import jsonargparse.typing
-from jsonargparse import ArgumentParser, ParserError
-from jsonargparse.typing import (restricted_number_type, PositiveInt, NonNegativeInt, PositiveFloat,
-                                 NonNegativeFloat, ClosedUnitInterval, OpenUnitInterval)
+from jsonargparse_tests.base import *
 
 
 class RestrictedNumberTests(unittest.TestCase):

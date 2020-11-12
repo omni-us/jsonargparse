@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
+# pylint: disable=unexpected-keyword-arg,too-many-function-args
 
-import os
 import json
 import yaml
-import shutil
-import tempfile
-import unittest
 from io import StringIO
 from contextlib import redirect_stdout
 from collections import OrderedDict
-from jsonargparse import *
+from jsonargparse_tests.base import *
 from jsonargparse.util import _suppress_stderr
-from jsonargparse.optionals import url_support, jsonschema_support, jsonnet_support
-from jsonargparse_tests.util_tests import responses, responses_activate, TempDirTestCase
-from jsonargparse_tests.examples import example_parser, example_yaml, example_env
 
 
 class ParsersTests(TempDirTestCase):
@@ -214,28 +208,6 @@ class ArgumentFeaturesTests(unittest.TestCase):
         parser.add_argument('--cfg', action=ActionConfigFile)
         cfg = parser.parse_args(['--cfg', '{"req1": "val1"}'])
         self.assertEqual('val1', cfg.req1)
-
-
-    def test_bool_type(self):
-        parser = ArgumentParser(prog='app', default_env=True, error_handler=None)
-        parser.add_argument('--val', type=bool)
-        self.assertEqual(False, parser.get_defaults().val)
-        self.assertEqual(True,  parser.parse_args(['--val', 'true']).val)
-        self.assertEqual(True,  parser.parse_args(['--val', 'yes']).val)
-        self.assertEqual(False, parser.parse_args(['--val', 'false']).val)
-        self.assertEqual(False, parser.parse_args(['--val', 'no']).val)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--val', '1']))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--val2', type=bool, nargs='+'))
-
-        os.environ['APP_VAL'] = 'true'
-        self.assertEqual(True,  parser.parse_args([]).val)
-        os.environ['APP_VAL'] = 'yes'
-        self.assertEqual(True,  parser.parse_args([]).val)
-        os.environ['APP_VAL'] = 'false'
-        self.assertEqual(False, parser.parse_args([]).val)
-        os.environ['APP_VAL'] = 'no'
-        self.assertEqual(False, parser.parse_args([]).val)
-        del os.environ['APP_VAL']
 
 
     def test_choices(self):

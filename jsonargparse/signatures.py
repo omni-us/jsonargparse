@@ -1,30 +1,40 @@
-"""Add arguments based on signatures."""
+"""Metods to add arguments based on class/method/function signatures."""
 
 import inspect
 from enum import Enum
+from typing import Union, Optional, List, Set, Type, Callable
 
 from .util import _issubclass
 from .actions import ActionEnum
 from .jsonschema import ActionJsonSchema
-from .optionals import docstring_parser_support, _import_docstring_parse, dataclasses_support, _import_dataclasses
+from .optionals import docstring_parser_support, import_docstring_parse, dataclasses_support, import_dataclasses
+
+
+__all__ = ['SignatureArguments']
 
 
 class SignatureArguments:
     """Methods to add arguments based on signatures to an ArgumentParser instance."""
 
-    def add_class_arguments(self, theclass, nested_key=None, as_group=True, skip=None):
+    def add_class_arguments(
+        self,
+        theclass: Type,
+        nested_key: Optional[str] = None,
+        as_group: bool = True,
+        skip: Optional[Set[str]] = None,
+    ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
 
         Args:
-            theclass (class): Class from which to add arguments.
-            nested_key (str or None): Key for nested namespace.
-            as_group (bool): Whether arguments should be added to a new argument group.
-            skip (set[str] or None): Names of arguments that should be skipped.
+            theclass: Class from which to add arguments.
+            nested_key: Key for nested namespace.
+            as_group: Whether arguments should be added to a new argument group.
+            skip: Names of arguments that should be skipped.
 
         Returns:
-            int: Number of arguments added.
+            Number of arguments added.
 
         Raises:
             ValueError: When not given a class.
@@ -39,20 +49,27 @@ class SignatureArguments:
         return self._add_signature_arguments(inspect.getmro(theclass), nested_key, as_group, docs_func, skip)
 
 
-    def add_method_arguments(self, theclass, themethod, nested_key=None, as_group=True, skip=None):
+    def add_method_arguments(
+        self,
+        theclass: Type,
+        themethod: str,
+        nested_key: Optional[str] = None,
+        as_group: bool = True,
+        skip: Optional[Set[str]] = None,
+    ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
 
         Args:
-            theclass (class): Class which includes the method.
-            themethod (str): Name of the method for which to add arguments.
-            nested_key (str or None): Key for nested namespace.
-            as_group (bool): Whether arguments should be added to a new argument group.
-            skip (set[str] or None): Names of arguments that should be skipped.
+            theclass: Class which includes the method.
+            themethod: Name of the method for which to add arguments.
+            nested_key: Key for nested namespace.
+            as_group: Whether arguments should be added to a new argument group.
+            skip: Names of arguments that should be skipped.
 
         Returns:
-            int: Number of arguments added.
+            Number of arguments added.
 
         Raises:
             ValueError: When not given a class or the name of a method of the class.
@@ -72,19 +89,25 @@ class SignatureArguments:
         return self._add_signature_arguments([themethod], nested_key, as_group, docs_func, skip, skip_first=skip_first)
 
 
-    def add_function_arguments(self, function, nested_key=None, as_group=True, skip=None):
+    def add_function_arguments(
+        self,
+        function: Callable,
+        nested_key: Optional[str] = None,
+        as_group: bool = True,
+        skip: Optional[Set[str]] = None,
+    ) -> int:
         """Adds arguments from a function based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
 
         Args:
-            function (callable): Function from which to add arguments.
-            nested_key (str or None): Key for nested namespace.
-            as_group (bool): Whether arguments should be added to a new argument group.
-            skip (set[str] or None): Names of arguments that should be skipped.
+            function: Function from which to add arguments.
+            nested_key: Key for nested namespace.
+            as_group: Whether arguments should be added to a new argument group.
+            skip: Names of arguments that should be skipped.
 
         Returns:
-            int: Number of arguments added.
+            Number of arguments added.
 
         Raises:
             ValueError: When not given a callable.
@@ -99,19 +122,27 @@ class SignatureArguments:
         return self._add_signature_arguments([function], nested_key, as_group, docs_func, skip)
 
 
-    def _add_signature_arguments(self, objects, nested_key, as_group, docs_func, skip=None, skip_first=False):
+    def _add_signature_arguments(
+        self,
+        objects,
+        nested_key: Optional[str],
+        as_group: bool,
+        docs_func: Callable,
+        skip: Optional[Set[str]] = None,
+        skip_first: bool = False,
+    ) -> int:
         """Adds arguments from arguments of objects based on signatures and docstrings.
 
         Args:
-            objects (tuple or list): Objects from which to add signatures.
-            nested_key (str or None): Key for nested namespace.
-            as_group (bool): Whether arguments should be added to a new argument group.
-            docs_func (callable): Function that returns docstrings for a given object.
-            skip (set[str] or None): Names of arguments that should be skipped.
-            skip_first (bool): Whether to skip first argument, i.e., skip self of class methods.
+            objects: Objects from which to add signatures.
+            nested_key: Key for nested namespace.
+            as_group: Whether arguments should be added to a new argument group.
+            docs_func: Function that returns docstrings for a given object.
+            skip: Names of arguments that should be skipped.
+            skip_first: Whether to skip first argument, i.e., skip self of class methods.
 
         Returns:
-            int: Number of arguments added.
+            Number of arguments added.
 
         Raises:
             ValueError: When there are positional arguments without at least one valid type.
@@ -138,7 +169,7 @@ class SignatureArguments:
         doc_group = None
         doc_params = {}
         if docstring_parser_support:
-            docstring_parse = _import_docstring_parse('_add_signature_arguments')
+            docstring_parse = import_docstring_parse('_add_signature_arguments')
             for base in objects:
                 for doc in docs_func(base):
                     docstring = docstring_parse(doc)
@@ -154,37 +185,37 @@ class SignatureArguments:
             if doc_group is None:
                 doc_group = str(objects[0])
             name = objects[0].__name__ if nested_key is None else nested_key
-            group = self.add_argument_group(doc_group, name=name)
+            group = self.add_argument_group(doc_group, name=name)  # type: ignore
 
         ## Add objects arguments ##
         num_added = 0
         if skip is None:
             skip = set()
         if dataclasses_support:
-            dataclasses = _import_dataclasses('_add_signature_arguments')
+            dataclasses = import_dataclasses('_add_signature_arguments')
         for obj, (add_args, add_kwargs) in zip(objects, add_types):
             for num, param in enumerate(inspect.signature(obj).parameters.values()):
                 name = param.name
                 annotation = param.annotation
                 default = param.default
-                is_positional = default == inspect._empty
+                is_positional = default == inspect._empty  # type: ignore
                 skip_message = 'Skipping argument "'+name+'" from "'+obj.__name__+'" because of: '
                 if param._kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
                    (is_positional and skip_first and num == 0) or \
-                   (annotation == inspect._empty and not is_positional and default is None):
+                   (annotation == inspect._empty and not is_positional and default is None):  # type: ignore
                     continue
                 elif is_positional and not add_args:
-                    self.logger.debug(skip_message+'Positional argument but *args not propagated.')
+                    self.logger.debug(skip_message+'Positional argument but *args not propagated.')  # type: ignore
                     continue
                 elif not is_positional and not add_kwargs:
-                    self.logger.debug(skip_message+'Keyword argument but **kwargs not propagated.')
+                    self.logger.debug(skip_message+'Keyword argument but **kwargs not propagated.')  # type: ignore
                     continue
                 elif name in skip:
-                    self.logger.debug(skip_message+'Argument requested to be skipped.')
+                    self.logger.debug(skip_message+'Argument requested to be skipped.')  # type: ignore
                     continue
                 if dataclasses_support and default.__class__ == dataclasses._HAS_DEFAULT_FACTORY_CLASS:
                     default = obj.__dataclass_fields__[name].default_factory()
-                if annotation == inspect._empty and not is_positional:
+                if annotation == inspect._empty and not is_positional:  # type: ignore
                     annotation = type(default)
                 kwargs = {'help': doc_params.get(name)}
                 if is_positional:
@@ -200,10 +231,10 @@ class SignatureArguments:
                     try:
                         kwargs['action'] = ActionJsonSchema(annotation=annotation, enable_path=False)
                     except ValueError as ex:
-                        self.logger.debug(skip_message+str(ex))
+                        self.logger.debug(skip_message+str(ex))  # type: ignore
                 if 'type' in kwargs or 'action' in kwargs:
                     arg = '--' + (nested_key+'.' if nested_key else '') + name
-                    group.add_argument(arg, **kwargs)
+                    group.add_argument(arg, **kwargs)  # type: ignore
                     num_added += 1
                 elif is_positional:
                     raise ValueError('Positional argument without a type for '+obj.__name__+' argument '+name+'.')

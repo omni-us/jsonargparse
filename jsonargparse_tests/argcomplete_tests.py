@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
+# pylint: disable=unexpected-keyword-arg
 
-import os
 import sys
-import enum
-import unittest
+from enum import Enum
 from typing import List
 from io import BytesIO, StringIO
 from contextlib import redirect_stdout, redirect_stderr
-from jsonargparse import *
-from jsonargparse.optionals import argcomplete_support, _import_argcomplete, jsonschema_support
+from jsonargparse_tests.base import *
 
 
 @unittest.skipIf(not argcomplete_support, 'argcomplete package is required')
@@ -17,7 +15,7 @@ class ArgcompleteTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.orig_environ = os.environ.copy()
-        self.argcomplete = _import_argcomplete('ArgcompleteTests')
+        self.argcomplete = import_argcomplete('ArgcompleteTests')
 
 
     @classmethod
@@ -82,7 +80,7 @@ class ArgcompleteTests(unittest.TestCase):
 
 
     def test_ActionEnum(self):
-        class MyEnum(enum.Enum):
+        class MyEnum(Enum):
             abc = 1
             xyz = 2
             abd = 3

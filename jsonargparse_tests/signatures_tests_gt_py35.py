@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 
-import unittest
 from typing import Dict, List
-from jsonargparse import *
-from jsonargparse.optionals import jsonschema_support, dataclasses_support, _import_dataclasses
+from jsonargparse_tests.base import *
 
 
 @unittest.skipIf(not jsonschema_support or not dataclasses_support, 'jsonschema and dataclasses packages are required')
 class SignaturesTests(unittest.TestCase):
 
     def test_dataclass_field_default_factory(self):
-        dataclasses = _import_dataclasses('test_dataclass_field_default_factory')
+        dataclasses = import_dataclasses('test_dataclass_field_default_factory')
 
         @dataclasses.dataclass
         class MyClass:

@@ -1,6 +1,12 @@
-"""Functions related to optional dependencies."""
+"""Code related to optional dependencies."""
 
 from importlib.util import find_spec
+
+
+__all__ = [
+    'set_url_support',
+    'get_config_read_mode',
+]
 
 
 _jsonschema = jsonvalidator = find_spec('jsonschema')
@@ -21,7 +27,7 @@ dataclasses_support = False if _dataclasses is None else True
 _config_read_mode = 'fr'
 
 
-def _import_jsonschema(importer):
+def import_jsonschema(importer):
     try:
         import jsonschema
         from jsonschema import Draft7Validator as jsonvalidator
@@ -30,7 +36,7 @@ def _import_jsonschema(importer):
         raise ImportError('jsonschema package is required by '+importer+' :: '+str(ex))
 
 
-def _import_jsonnet(importer):
+def import_jsonnet(importer):
     try:
         import _jsonnet
         return _jsonnet
@@ -38,7 +44,7 @@ def _import_jsonnet(importer):
         raise ImportError('jsonnet package is required by '+importer+' :: '+str(ex))
 
 
-def _import_url_validator(importer):
+def import_url_validator(importer):
     try:
         from validators.url import url as url_validator
         return url_validator
@@ -46,7 +52,7 @@ def _import_url_validator(importer):
         raise ImportError('validators package is required by '+importer+' :: '+str(ex))
 
 
-def _import_requests(importer):
+def import_requests(importer):
     try:
         import requests
         return requests
@@ -54,7 +60,7 @@ def _import_requests(importer):
         raise ImportError('requests package is required by '+importer+' :: '+str(ex))
 
 
-def _import_docstring_parse(importer):
+def import_docstring_parse(importer):
     try:
         from docstring_parser import parse as docstring_parse
         return docstring_parse
@@ -62,7 +68,7 @@ def _import_docstring_parse(importer):
         raise ImportError('docstring-parser package is required by '+importer+' :: '+str(ex))
 
 
-def _import_argcomplete(importer):
+def import_argcomplete(importer):
     try:
         import argcomplete
         return argcomplete
@@ -70,7 +76,7 @@ def _import_argcomplete(importer):
         raise ImportError('argcomplete package is required by '+importer+' :: '+str(ex))
 
 
-def _import_dataclasses(importer):
+def import_dataclasses(importer):
     try:
         import dataclasses
         return dataclasses
@@ -78,7 +84,7 @@ def _import_dataclasses(importer):
         raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex))
 
 
-def set_url_support(enabled):
+def set_url_support(enabled:bool):
     """Enables/disables URL support for config read mode."""
     if enabled and not url_support:
         pkg = ['validators', 'requests']
@@ -88,6 +94,6 @@ def set_url_support(enabled):
     _config_read_mode = 'fur' if enabled else 'fr'
 
 
-def get_config_read_mode():
+def get_config_read_mode() -> str:
     """Returns the current config reading mode."""
     return _config_read_mode

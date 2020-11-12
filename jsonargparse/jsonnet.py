@@ -1,14 +1,27 @@
-"""Jsonnet functionalities."""
+"""Actions to support jsonnet."""
 
 import json
 import yaml
+from typing import Optional, Union, Dict, Tuple, Any
 from argparse import Action, Namespace
 
-from .optionals import _import_jsonschema, _import_jsonnet, get_config_read_mode
-from .util import (ParserError, namespace_to_dict, dict_to_namespace, Path, _check_unknown_kwargs,
-                   _get_key_value)
+from .optionals import import_jsonschema, import_jsonnet, get_config_read_mode
 from .actions import _is_action_value_list
 from .jsonschema import ActionJsonSchema
+from .util import (
+    dict_to_namespace,
+    namespace_to_dict,
+    ParserError,
+    Path,
+    _check_unknown_kwargs,
+    _get_key_value,
+)
+
+
+__all__ = [
+    'ActionJsonnetExtVars',
+    'ActionJsonnet',
+]
 
 
 class ActionJsonnetExtVars(ActionJsonSchema):
@@ -40,14 +53,14 @@ class ActionJsonnet(Action):
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
         if 'ext_vars' in kwargs or 'schema' in kwargs:
-            _import_jsonnet('ActionJsonnet')
+            import_jsonnet('ActionJsonnet')
             _check_unknown_kwargs(kwargs, {'schema', 'ext_vars'})
             if 'ext_vars' in kwargs and not isinstance(kwargs['ext_vars'], (str, type(None))):
                 raise ValueError('ext_vars has to be either None or a string.')
             self._ext_vars = kwargs.get('ext_vars', None)
             schema = kwargs.get('schema', None)
             if schema is not None:
-                jsonvalidator = _import_jsonschema('ActionJsonnet')[1]
+                jsonvalidator = import_jsonschema('ActionJsonnet')[1]
                 if isinstance(schema, str):
                     try:
                         schema = yaml.safe_load(schema)
@@ -82,7 +95,7 @@ class ActionJsonnet(Action):
 
 
     def _check_type(self, value, cfg):
-        jsonschema = _import_jsonschema('ActionJsonnet')[0]
+        jsonschema = import_jsonschema('ActionJsonnet')[0]
         islist = _is_action_value_list(self)
         ext_vars = {}
         if self._ext_vars is not None:
@@ -111,33 +124,43 @@ class ActionJsonnet(Action):
 
 
     @staticmethod
-    def split_ext_vars(ext_vars):
+    def split_ext_vars(
+        ext_vars: Optional[Union[Dict[str, Any], Namespace]],
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """Splits an ext_vars dict into the ext_codes and ext_vars required by jsonnet.
 
         Args:
-            ext_vars (dict): External variables. Values can be strings or any other basic type.
+            ext_vars: External variables. Values can be strings or any other basic type.
         """
-        if isinstance(ext_vars, Namespace):
+        if ext_vars is None:
+            ext_vars = {}
+        elif isinstance(ext_vars, Namespace):
             ext_vars = namespace_to_dict(ext_vars)
         ext_codes = {k: json.dumps(v) for k, v in ext_vars.items() if not isinstance(v, str)}
         ext_vars = {k: v for k, v in ext_vars.items() if isinstance(v, str)}
         return ext_vars, ext_codes
 
 
-    def parse(self, jsonnet, ext_vars={}, with_meta=False):
+    def parse(
+        self,
+        jsonnet: Union[str, Path],
+        ext_vars: Union[Dict[str, Any], Namespace] = None,
+        with_meta: bool = False,
+    ) -> Namespace:
         """Method that can be used to parse jsonnet independent from an ArgumentParser.
 
         Args:
-            jsonnet (str): Either a path to a jsonnet file or the jsonnet content.
-            ext_vars (dict): External variables. Values can be strings or any other basic type.
+            jsonnet: Either a path to a jsonnet file or the jsonnet content.
+            ext_vars: External variables. Values can be strings or any other basic type.
+            with_meta: Whether to include metadata in config object.
 
         Returns:
-            argparse.Namespace: The parsed jsonnet object.
+            The parsed jsonnet object.
 
         Raises:
             TypeError: If the input is neither a path to an existent file nor a jsonnet.
         """
-        _jsonnet = _import_jsonnet('ActionJsonnet')
+        _jsonnet = import_jsonnet('ActionJsonnet')
         ext_vars, ext_codes = self.split_ext_vars(ext_vars)
         fpath = None
         fname = 'snippet'

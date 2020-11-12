@@ -1,13 +1,15 @@
 """Formatter classes."""
 
-import argparse
-from argparse import OPTIONAL, SUPPRESS, ZERO_OR_MORE
+from argparse import HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 
 from .util import _get_env_var
 from .actions import ActionParser, ActionEnum
 
 
-class DefaultHelpFormatter(argparse.HelpFormatter):
+__all__ = ['DefaultHelpFormatter']
+
+
+class DefaultHelpFormatter(HelpFormatter):
     """Help message formatter that includes default values and env var names.
 
     This class is an extension of `argparse.HelpFormatter
@@ -58,4 +60,6 @@ class DefaultHelpFormatter(argparse.HelpFormatter):
             params['choices'] = choices_str
         if isinstance(action, ActionEnum) and hasattr(action.default, 'name'):
             params['default'] = action.default.name
+        elif 'default' in params and params['default'] is None:
+            params['default'] = 'null'
         return self._get_help_string(action) % params

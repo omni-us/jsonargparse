@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
+# pylint: disable=unexpected-keyword-arg
 
-import enum
 import json
-import shutil
-import tempfile
 import pathlib
-import unittest
+from enum import Enum
 from io import StringIO
-from jsonargparse import *
-from jsonargparse_tests.examples import example_parser
+from jsonargparse_tests.base import *
+from jsonargparse import ArgumentParser
 
 
 class ActionsTests(unittest.TestCase):
@@ -103,7 +101,7 @@ class ActionsTests(unittest.TestCase):
 
     def test_ActionEnum(self):
 
-        class MyEnum(enum.Enum):
+        class MyEnum(Enum):
             A = 1
             B = 2
             C = 3

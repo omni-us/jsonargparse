@@ -4,26 +4,56 @@ import sys
 import glob
 import json
 import yaml
+import logging
 import inspect
 import argparse
 import traceback
 from enum import Enum
 from copy import deepcopy
 from contextlib import redirect_stderr
-from typing import Any, List, Dict, Set, Union, Optional
-from argparse import (Action, Namespace, OPTIONAL, REMAINDER, SUPPRESS, PARSER, ONE_OR_MORE, ZERO_OR_MORE,
-                      ArgumentError, _UNRECOGNIZED_ARGS_ATTR)
+from typing import Any, List, Dict, Set, Union, Optional, Type, Callable
+from argparse import ArgumentError, Action, Namespace, SUPPRESS, _UNRECOGNIZED_ARGS_ATTR
 
 from .formatters import DefaultHelpFormatter
 from .signatures import SignatureArguments
-from .optionals import _import_jsonnet, argcomplete_support, _import_argcomplete, set_url_support, get_config_read_mode
-from .actions import (ActionConfigFile, ActionParser, _ActionSubCommands, ActionYesNo, ActionEnum, ActionPath,
-                      ActionPathList, ActionOperators, _ActionPrintConfig, _find_action, _is_action_value_list)
-from .jsonschema import ActionJsonSchema
+from .jsonschema import ActionJsonSchema, hint_in
 from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
-from .util import (ParserError, _flat_namespace_to_dict, _dict_to_flat_namespace, dict_to_namespace, namespace_to_dict,
-                   strip_meta, meta_keys, Path, LoggerProperty, null_logger, _get_env_var, _issubclass,
-                   _suppress_stderr, usage_and_exit_error_handler)
+from .optionals import (
+    import_jsonnet,
+    jsonschema_support,
+    argcomplete_support,
+    import_argcomplete,
+    get_config_read_mode,
+)
+from .actions import (
+    ActionYesNo,
+    ActionEnum,
+    ActionParser,
+    ActionConfigFile,
+    ActionPath,
+    _ActionSubCommands,
+    _ActionPrintConfig,
+    _find_action,
+    _is_action_value_list,
+)
+from .util import (
+    namespace_to_dict,
+    dict_to_namespace,
+    _flat_namespace_to_dict,
+    _dict_to_flat_namespace,
+    ParserError,
+    meta_keys,
+    strip_meta,
+    usage_and_exit_error_handler,
+    Path,
+    LoggerProperty,
+    _get_env_var,
+    _issubclass,
+    _suppress_stderr,
+)
+
+
+__all__ = ['ArgumentParser']
 
 
 class _ActionsContainer(argparse._ActionsContainer):
@@ -42,15 +72,10 @@ class _ActionsContainer(argparse._ActionsContainer):
         are supported.
         """
         if 'type' in kwargs:
-            if kwargs['type'] == bool:
-                if 'nargs' in kwargs:
-                    raise ValueError('Argument with type=bool does not support nargs.')
-                kwargs['nargs'] = 1
-                kwargs['action'] = ActionYesNo(no_prefix=None)
+            if kwargs['type'] == bool or hint_in(kwargs['type'], {Union, Dict, dict, List, list}):
+                kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=False)
             elif _issubclass(kwargs['type'], Enum):
                 kwargs['action'] = ActionEnum(enum=kwargs['type'])
-            elif hasattr(kwargs['type'], '__origin__') and kwargs['type'].__origin__ in {Union, Dict, dict, List, list}:
-                kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=False)
         action = super().add_argument(*args, **kwargs)
         for key in meta_keys:
             if key in action.dest:
@@ -76,20 +101,22 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
     groups = None  # type: Dict[str, argparse._ArgumentGroup]
 
 
-    def __init__(self,
-                 *args,
-                 env_prefix: Optional[str] = None,
-                 error_handler = usage_and_exit_error_handler,
-                 formatter_class = DefaultHelpFormatter,
-                 logger = None,
-                 version: Optional[str] = None,
-                 print_config: Optional[str] = '--print-config',
-                 parser_mode: str = 'yaml',
-                 parse_as_dict: bool = False,
-                 default_config_files: Optional[List[str]] = None,
-                 default_env: bool = False,
-                 default_meta: bool = True,
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        env_prefix: str = None,
+        error_handler: Optional[Callable[[Type, str], None]] = usage_and_exit_error_handler,
+        formatter_class: Type[argparse.HelpFormatter] = DefaultHelpFormatter,
+        logger: Union[bool, Dict[str, str], logging.Logger] = None,
+        version: str = None,
+        print_config: Optional[str] = '--print-config',
+        parser_mode: str = 'yaml',
+        parse_as_dict: bool = False,
+        default_config_files: List[str] = None,
+        default_env: bool = False,
+        default_meta: bool = True,
+        **kwargs
+    ):
         """Initializer for ArgumentParser instance.
 
         All the arguments from the initializer of `argparse.ArgumentParser
@@ -97,17 +124,17 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         are supported. Additionally it accepts:
 
         Args:
-            env_prefix (str): Prefix for environment variables.
-            error_handler (Callable): Handler for parsing errors, set to None to simply raise exception.
-            formatter_class (argparse.HelpFormatter): Class for printing help messages.
+            env_prefix: Prefix for environment variables.
+            error_handler: Handler for parsing errors, set to None to simply raise exception.
+            formatter_class: Class for printing help messages.
             logger: Configures the logger, see :class:`.LoggerProperty`.
-            version (str or None): Program version string to add --version argument.
-            print_config (str or None): Add this as argument to print config, set None to disable.
-            parser_mode (str): Mode for parsing configuration files, either "yaml" or "jsonnet".
-            parse_as_dict (bool): Whether to parse as dict instead of Namespace.
-            default_config_files (list[str]): List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
-            default_env (bool): Set the default value on whether to parse environment variables.
-            default_meta (bool): Set the default value on whether to include metadata in config objects.
+            version: Program version string to add --version argument.
+            print_config: Add this as argument to print config, set None to disable.
+            parser_mode: Mode for parsing configuration files, either "yaml" or "jsonnet".
+            parse_as_dict: Whether to parse as dict instead of Namespace.
+            default_config_files: List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
+            default_env: Set the default value on whether to parse environment variables.
+            default_meta: Set the default value on whether to include metadata in config objects.
         """
         kwargs['formatter_class'] = formatter_class
         super().__init__(*args, **kwargs)
@@ -132,7 +159,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if parser_mode not in {'yaml', 'jsonnet'}:
             raise ValueError('The only accepted values for parser_mode are {"yaml", "jsonnet"}.')
         if parser_mode == 'jsonnet':
-            _import_jsonnet('parser_mode=jsonnet')
+            import_jsonnet('parser_mode=jsonnet')
 
 
     ## Parsing methods ##
@@ -172,7 +199,15 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self.error(str(err))
 
 
-    def parse_args(self, args=None, namespace=None, env:bool=None, defaults:bool=True, nested:bool=True, with_meta:bool=None):
+    def parse_args(  # type: ignore[override]
+        self,
+        args: List[str] = None,
+        namespace: Namespace = None,
+        env: bool = None,
+        defaults: bool = True,
+        nested: bool = True,
+        with_meta: bool = None,
+    ) -> Union[Namespace, Dict[str, Any]]:
         """Parses command line argument strings.
 
         All the arguments from `argparse.ArgumentParser.parse_args
@@ -180,19 +215,20 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         are supported. Additionally it accepts:
 
         Args:
-            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
-            defaults (bool): Whether to merge with the parser's defaults.
-            nested (bool): Whether the namespace should be nested.
-            with_meta (bool): Whether to include metadata in config object.
+            args: List of arguments to parse or None to use sys.argv.
+            env: Whether to merge with the parsed environment, None to use parser's default.
+            defaults: Whether to merge with the parser's defaults.
+            nested: Whether the namespace should be nested.
+            with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            Namespace or Dict: An object with all parsed values as nested attributes.
+            An object with all parsed values as nested attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
         if argcomplete_support:
-            argcomplete = _import_argcomplete('parse_args')
+            argcomplete = import_argcomplete('parse_args')
             argcomplete.autocomplete(self)
 
         if env is None and self._default_env:
@@ -249,19 +285,27 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         return cfg_ns
 
 
-    def parse_object(self, cfg_obj:dict, cfg_base=None, env:bool=None, defaults:bool=True, nested:bool=True,
-                     with_meta:bool=None, _skip_check:bool=False) -> Union[Namespace, Dict[str, Any]]:
+    def parse_object(
+        self,
+        cfg_obj: Dict[str, Any],
+        cfg_base = None,
+        env: bool = None,
+        defaults: bool = True,
+        nested: bool = True,
+        with_meta: bool = None,
+        _skip_check: bool = False,
+    ) -> Union[Namespace, Dict[str, Any]]:
         """Parses configuration given as an object.
 
         Args:
-            cfg_obj (dict): The configuration object.
-            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
-            defaults (bool): Whether to merge with the parser's defaults.
-            nested (bool): Whether the namespace should be nested.
-            with_meta (bool): Whether to include metadata in config object.
+            cfg_obj: The configuration object.
+            env: Whether to merge with the parsed environment, None to use parser's default.
+            defaults: Whether to merge with the parser's defaults.
+            nested: Whether the namespace should be nested.
+            with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            Namespace or dict: An object with all parsed values as attributes.
+            An object with all parsed values as attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -311,18 +355,25 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         return cfg_ns
 
 
-    def parse_env(self, env:Dict[str, str]=None, defaults:bool=True, nested:bool=True, with_meta:bool=None,
-                  _skip_logging:bool=False, _skip_check:bool=False) -> Union[Namespace, Dict[str, Any]]:
+    def parse_env(
+        self,
+        env: Dict[str, str] = None,
+        defaults: bool = True,
+        nested: bool = True,
+        with_meta: bool = None,
+        _skip_logging: bool = False,
+        _skip_check: bool = False,
+    ) -> Union[Namespace, Dict[str, Any]]:
         """Parses environment variables.
 
         Args:
-            env (dict[str, str]): The environment object to use, if None `os.environ` is used.
-            defaults (bool): Whether to merge with the parser's defaults.
-            nested (bool): Whether the namespace should be nested.
-            with_meta (bool): Whether to include metadata in config object.
+            env: The environment object to use, if None `os.environ` is used.
+            defaults: Whether to merge with the parser's defaults.
+            nested: Whether the namespace should be nested.
+            with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            Namespace or dict: An object with all parsed values as attributes.
+            An object with all parsed values as attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -403,20 +454,29 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         return cfg_ns
 
 
-    def parse_path(self, cfg_path:str, ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True,
-                   with_meta:bool=None, _skip_check:bool=False, _base=None) -> Union[Namespace, Dict[str, Any]]:
+    def parse_path(
+        self,
+        cfg_path: str,
+        ext_vars: dict = None,
+        env: bool = None,
+        defaults: bool = True,
+        nested: bool = True,
+        with_meta: bool = None,
+        _skip_check: bool = False,
+        _base = None,
+    ) -> Union[Namespace, Dict[str, Any]]:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
-            cfg_path (str or Path): Path to the configuration file to parse.
-            ext_vars (dict): Optional external variables used for parsing jsonnet.
-            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
-            defaults (bool): Whether to merge with the parser's defaults.
-            nested (bool): Whether the namespace should be nested.
-            with_meta (bool): Whether to include metadata in config object.
+            cfg_path: Path to the configuration file to parse.
+            ext_vars: Optional external variables used for parsing jsonnet.
+            env: Whether to merge with the parsed environment, None to use parser's default.
+            defaults: Whether to merge with the parser's defaults.
+            nested: Whether the namespace should be nested.
+            with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            Namespace or dict: An object with all parsed values as nested attributes.
+            An object with all parsed values as nested attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -443,21 +503,32 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         return parsed_cfg
 
 
-    def parse_string(self, cfg_str:str, cfg_path:str='', ext_vars:dict={}, env:bool=None, defaults:bool=True, nested:bool=True,
-                     with_meta:bool=None, _skip_logging:bool=False, _skip_check:bool=False, _base=None) -> Union[Namespace, Dict[str, Any]]:
+    def parse_string(
+        self,
+        cfg_str: str,
+        cfg_path: str = '',
+        ext_vars: dict = None,
+        env: bool = None,
+        defaults: bool = True,
+        nested: bool = True,
+        with_meta: bool = None,
+        _skip_logging: bool = False,
+        _skip_check: bool = False,
+        _base = None,
+    ) -> Union[Namespace, Dict[str, Any]]:
         """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
-            cfg_str (str): The configuration content.
-            cfg_path (str): Optional path to original config path, just for error printing.
-            ext_vars (dict): Optional external variables used for parsing jsonnet.
-            env (bool or None): Whether to merge with the parsed environment. None means use the ArgumentParser's default.
-            defaults (bool): Whether to merge with the parser's defaults.
-            nested (bool): Whether the namespace should be nested.
-            with_meta (bool): Whether to include metadata in config object.
+            cfg_str: The configuration content.
+            cfg_path: Optional path to original config path, just for error printing.
+            ext_vars: Optional external variables used for parsing jsonnet.
+            env: Whether to merge with the parsed environment, None to use parser's default.
+            defaults: Whether to merge with the parser's defaults.
+            nested: Whether the namespace should be nested.
+            with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            Namespace or dict: An object with all parsed values as attributes.
+            An object with all parsed values as attributes.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -504,22 +575,28 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         return cfg_ns
 
 
-    def _load_cfg(self, cfg_str:str, cfg_path:str='', ext_vars:dict=None, base=None) -> Dict[str, Any]:
+    def _load_cfg(
+        self,
+        cfg_str: str,
+        cfg_path: str = '',
+        ext_vars: dict = None,
+        base: str = None,
+    ) -> Dict[str, Any]:
         """Loads a configuration string (yaml or jsonnet) into a namespace checking all values against the parser.
 
         Args:
-            cfg_str (str): The configuration content.
-            cfg_path (str): Optional path to original config path, just for error printing.
-            ext_vars (dict): Optional external variables used for parsing jsonnet.
-            base (str or None): Base key to prepend.
+            cfg_str: The configuration content.
+            cfg_path: Optional path to original config path, just for error printing.
+            ext_vars: Optional external variables used for parsing jsonnet.
+            base: Base key to prepend.
 
         Raises:
             TypeError: If there is an invalid value according to the parser.
         """
         if self.parser_mode == 'jsonnet':
             ext_vars, ext_codes = ActionJsonnet.split_ext_vars(ext_vars)
-            _jsonnet = _import_jsonnet('_load_cfg')
-            cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)  # type: ignore
+            _jsonnet = import_jsonnet('_load_cfg')
+            cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)
         try:
             cfg = yaml.safe_load(cfg_str)
         except Exception as ex:
@@ -543,7 +620,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         are supported. Additionally it accepts:
 
         Args:
-            name (str): Name of the group. If set the group object will be included in the parser.groups dict.
+            name: Name of the group. If set the group object will be included in the parser.groups dict.
 
         Returns:
             The group object.
@@ -566,7 +643,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         raise NotImplementedError('In jsonargparse sub-commands are added using the add_subcommands method.')
 
 
-    def add_subcommands(self, required=True, dest='subcommand', **kwargs):
+    def add_subcommands(self, required:bool=True, dest:str='subcommand', **kwargs):
         """Adds sub-command parsers to the ArgumentParser.
 
         In contrast to `argparse.ArgumentParser.add_subparsers
@@ -585,17 +662,23 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
     ## Methods for serializing config objects ##
 
-    def dump(self, cfg:Union[Namespace, dict], format:str='parser_mode', skip_none:bool=True, skip_check:bool=False) -> str:
+    def dump(
+        self,
+        cfg: Union[Namespace, Dict[str, Any]],
+        format: str = 'parser_mode',
+        skip_none: bool = True,
+        skip_check: bool = False,
+    ) -> str:
         """Generates a yaml or json string for the given configuration object.
 
         Args:
-            cfg (Namespace or dict): The configuration object to dump.
-            format (str): The output format: "yaml", "json", "json_indented" or "parser_mode".
-            skip_none (bool): Whether to exclude checking values that are None.
-            skip_check (bool): Whether to skip parser checking.
+            cfg: The configuration object to dump.
+            format: The output format: "yaml", "json", "json_indented" or "parser_mode".
+            skip_none: Whether to exclude checking values that are None.
+            skip_check: Whether to skip parser checking.
 
         Returns:
-            str: The configuration in yaml or json format.
+            The configuration in yaml or json format.
 
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
@@ -642,18 +725,27 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             raise ValueError('Unknown output format '+str(format))
 
 
-    def save(self, cfg:Union[Namespace, dict], path:str, format:str='parser_mode', skip_none:bool=True,
-             skip_check:bool=False, overwrite:bool=False, multifile:bool=True, branch=None) -> None:
+    def save(
+        self,
+        cfg: Union[Namespace, Dict[str, Any]],
+        path: str,
+        format: str = 'parser_mode',
+        skip_none: bool = True,
+        skip_check: bool = False,
+        overwrite: bool = False,
+        multifile: bool = True,
+        branch: str = None,
+    ):
         """Generates a yaml or json string for the given configuration object.
 
         Args:
-            cfg (Namespace or dict): The configuration object to save.
-            path (str): Path to the location where to save config.
-            format (str): The output format: "yaml", "json", "json_indented" or "parser_mode".
-            skip_none (bool): Whether to exclude checking values that are None.
-            skip_check (bool): Whether to skip parser checking.
-            overwrite (bool): Whether to overwrite existing files.
-            multifile (bool): Whether to save multiple config files by using the __path__ metas.
+            cfg: The configuration object to save.
+            path: Path to the location where to save config.
+            format: The output format: "yaml", "json", "json_indented" or "parser_mode".
+            skip_none: Whether to exclude checking values that are None.
+            skip_check: Whether to skip parser checking.
+            overwrite: Whether to overwrite existing files.
+            multifile: Whether to save multiple config files by using the __path__ metas.
 
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
@@ -746,11 +838,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self.set_defaults(kwargs)
 
 
-    def get_default(self, dest):
+    def get_default(self, dest:str):
         """Gets a single default value for the given destination key.
 
         Args:
-            dest (str): Destination key from which to get the default.
+            dest: Destination key from which to get the default.
 
         Raises:
             KeyError: If key not defined in the parser.
@@ -767,7 +859,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         """Returns a namespace with all default values.
 
         Args:
-            nested (bool): Whether the namespace should be nested.
+            nested: Whether the namespace should be nested.
 
         Returns:
             Namespace: An object with all default values as attributes.
@@ -808,7 +900,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
     ## Other methods ##
 
-    def error(self, message):
+    def error(self, message:str):
         """Logs error message if a logger is set, calls the error handler and raises a ParserError."""
         self._logger.error(message)
         if self._error_handler is not None:
@@ -817,13 +909,17 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         raise ParserError(message)
 
 
-    def check_config(self, cfg:Union[Namespace, dict], skip_none:bool=True, branch=None):
+    def check_config(
+        self, cfg: Union[Namespace, Dict[str, Any]],
+        skip_none: bool = True,
+        branch: str = None,
+    ):
         """Checks that the content of a given configuration object conforms with the parser.
 
         Args:
-            cfg (Namespace or dict): The configuration object to check.
-            skip_none (bool): Whether to skip checking of values that are None.
-            branch (str or None): Base key in case cfg corresponds only to a branch.
+            cfg: The configuration object to check.
+            skip_none: Whether to skip checking of values that are None.
+            branch: Base key in case cfg corresponds only to a branch.
 
         Raises:
             TypeError: If any of the values are not valid.
@@ -878,14 +974,14 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self.error('Config checking failed :: '+str(ex)+' :: '+str(trace))
 
 
-    def strip_unknown(self, cfg):
+    def strip_unknown(self, cfg:Union[Namespace, Dict[str, Any]]) -> Namespace:
         """Removes all unknown keys from a configuration object.
 
         Args:
-            cfg (Namespace or dict): The configuration object to strip.
+            cfg: The configuration object to strip.
 
         Returns:
-            Namespace: The stripped configuration object.
+            The stripped configuration object.
         """
         cfg = deepcopy(cfg)
         if not isinstance(cfg, dict):
@@ -911,14 +1007,14 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         return dict_to_namespace(cfg)
 
 
-    def get_config_files(self, cfg):
+    def get_config_files(self, cfg:Union[Namespace, Dict[str, Any]]) -> List[str]:
         """Returns a list of loaded config file paths.
 
         Args:
-            cfg (Namespace or dict): The configuration object.
+            cfg: The configuration object.
 
         Returns:
-            list: Paths to loaded config files.
+            Paths to loaded config files.
         """
         if not isinstance(cfg, dict):
             cfg = vars(cfg)
@@ -951,11 +1047,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         """Merges the first configuration into the second configuration.
 
         Args:
-            cfg_from (Namespace): The configuration from which to merge.
-            cfg_to (Namespace): The configuration into which to merge.
+            cfg_from: The configuration from which to merge.
+            cfg_to: The configuration into which to merge.
 
         Returns:
-            Namespace: The merged configuration.
+            The merged configuration.
         """
         return dict_to_namespace(ArgumentParser._merge_config(cfg_from, cfg_to))
 
@@ -965,11 +1061,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         """Merges the first configuration into the second configuration.
 
         Args:
-            cfg_from (Namespace or dict): The configuration from which to merge.
-            cfg_to (Namespace or dict): The configuration into which to merge.
+            cfg_from: The configuration from which to merge.
+            cfg_to: The configuration into which to merge.
 
         Returns:
-            dict: The merged configuration.
+            The merged configuration.
         """
         def merge_values(cfg_from, cfg_to):
             for k, v in cfg_from.items():
@@ -994,9 +1090,9 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         """Checks the value for a given action.
 
         Args:
-            action (Action): The action used for parsing.
-            value (Any): The value to parse.
-            key (str): The configuration key.
+            action: The action used for parsing.
+            value: The value to parse.
+            key: The configuration key.
 
         Raises:
             TypeError: If the value is not valid.
@@ -1047,7 +1143,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         """Sets a new value to the error_handler property.
 
         Args:
-            error_handler (Callable or str or None): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
+            error_handler (Callable or None): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
         """
         if error_handler == 'usage_and_exit_error_handler':
             self._error_handler = usage_and_exit_error_handler
@@ -1064,14 +1160,14 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
 
     @default_env.setter
-    def default_env(self, default_env):
+    def default_env(self, default_env:bool):
         """Sets a new value to the default_env property.
 
         Args:
-            default_env (bool): Whether default environment parsing is enabled or not.
+            default_env: Whether default environment parsing is enabled or not.
         """
         self._default_env = default_env
-        if issubclass(self.formatter_class, DefaultHelpFormatter):
+        if _issubclass(self.formatter_class, DefaultHelpFormatter):
             setattr(self.formatter_class, '_default_env', default_env)
 
 
@@ -1082,11 +1178,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
 
     @default_meta.setter
-    def default_meta(self, default_meta):
+    def default_meta(self, default_meta:bool):
         """Sets a new value to the default_meta property.
 
         Args:
-            default_meta (bool): Whether by default metadata is included in config objects.
+            default_meta: Whether by default metadata is included in config objects.
         """
         self._default_meta = default_meta
 
@@ -1098,14 +1194,14 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
 
     @env_prefix.setter
-    def env_prefix(self, env_prefix):
+    def env_prefix(self, env_prefix:Optional[str]):
         """Sets a new value to the env_prefix property.
 
         Args:
-            env_prefix (str or None): Set prefix for environment variables, use None to derive it from prog.
+            env_prefix: Set prefix for environment variables, use None to derive it from prog.
         """
         if env_prefix is None:
             env_prefix = os.path.splitext(self.prog)[0]
         self._env_prefix = env_prefix
-        if issubclass(self.formatter_class, DefaultHelpFormatter):
+        if _issubclass(self.formatter_class, DefaultHelpFormatter):
             setattr(self.formatter_class, '_env_prefix', env_prefix)

@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'autodocsumm',
+    'sphinx_autodoc_typehints',
     #'sphinxarg.ext',
 ]
 

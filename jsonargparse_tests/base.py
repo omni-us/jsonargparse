@@ -1,5 +1,42 @@
+# pylint: disable=unexpected-keyword-arg
 
-from jsonargparse import ArgumentParser, ActionYesNo
+import os
+import shutil
+import tempfile
+import unittest
+from jsonargparse import *
+from jsonargparse.optionals import (
+    jsonschema_support, import_jsonschema,
+    jsonnet_support, import_jsonnet,
+    url_support, import_url_validator, import_requests,
+    docstring_parser_support, import_docstring_parse,
+    argcomplete_support, import_argcomplete,
+    dataclasses_support, import_dataclasses,
+    set_url_support, get_config_read_mode,
+)
+
+
+try:
+    import responses
+    responses_activate = responses.activate
+except:
+    def nothing_decorator(func):
+        return func
+    responses = False
+    responses_activate = nothing_decorator
+
+
+class TempDirTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.cwd = os.getcwd()
+        self.tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
+        os.chdir(self.tmpdir)
+
+
+    def tearDown(self):
+        os.chdir(self.cwd)
+        shutil.rmtree(self.tmpdir)
 
 
 def example_parser():

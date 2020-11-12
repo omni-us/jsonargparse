@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
+# pylint: disable=unexpected-keyword-arg
 
-import os
+import re
 import json
-import unittest
 from io import StringIO
 from contextlib import redirect_stdout
-from jsonargparse import *
-from jsonargparse.optionals import jsonnet_support
-from jsonargparse_tests.util_tests import TempDirTestCase
+from jsonargparse_tests.base import *
 
 
 example_1_jsonnet = '''

@@ -4,10 +4,8 @@ import os
 import re
 import sys
 import yaml
-import operator
-import argparse
 from enum import Enum
-from argparse import ArgumentParser, Namespace, Action, SUPPRESS, _StoreAction
+from argparse import ArgumentParser, Namespace, Action, SUPPRESS, _StoreAction, _SubParsersAction
 
 from .optionals import get_config_read_mode
 from .typing import restricted_number_type
@@ -15,12 +13,23 @@ from .util import (ParserError, _flat_namespace_to_dict, _dict_to_flat_namespace
                    dict_to_namespace, Path, _check_unknown_kwargs, _issubclass)
 
 
-def _find_action(parser, dest):
+__all__ = [
+    'ActionConfigFile',
+    'ActionYesNo',
+    'ActionEnum',
+    'ActionOperators',
+    'ActionParser',
+    'ActionPath',
+    'ActionPathList',
+]
+
+
+def _find_action(parser, dest:str):
     """Finds an action in a parser given its dest.
 
     Args:
         parser (ArgumentParser): A parser where to search.
-        dest (str): The dest string to search with.
+        dest: The dest string to search with.
 
     Returns:
         Action or None: The action if found, otherwise None.
@@ -39,7 +48,7 @@ def _is_action_value_list(action:Action):
     """Checks whether an action produces a list value.
 
     Args:
-        action (Action): An argparse action to check.
+        action: An argparse action to check.
 
     Returns:
         bool: True if produces list otherwise False.
@@ -198,7 +207,7 @@ class ActionYesNo(Action):
 
     def completer(self, **kwargs):
         """Used by argcomplete to support tab completion of arguments."""
-        return ['true', 'false']
+        return ['true', 'false', 'yes', 'no']
 
 
 class ActionEnum(Action):
@@ -208,7 +217,7 @@ class ActionEnum(Action):
         """Initializer for ActionEnum instance.
 
         Args:
-            enum (Enum): Enum instance.
+            enum (Enum): An Enum class.
 
         Raises:
             ValueError: If a parameter is invalid.
@@ -374,7 +383,7 @@ class ActionParser(Action):
                     delattr(cfg, action.dest)
 
 
-class _ActionSubCommands(argparse._SubParsersAction):
+class _ActionSubCommands(_SubParsersAction):
     """Extension of argparse._SubParsersAction to modify sub-commands functionality."""
 
     _env_prefix = None

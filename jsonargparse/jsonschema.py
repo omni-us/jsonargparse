@@ -1,4 +1,4 @@
-"""Jsonschema functionalities."""
+"""Action to support jsonschema and type hint annotations."""
 
 import os
 import json
@@ -9,9 +9,16 @@ from argparse import Namespace, Action
 from typing import Any, Union, Tuple, List, Set, Dict
 
 from .util import namespace_to_dict, Path, strip_meta, _check_unknown_kwargs, _issubclass
-from .optionals import _import_jsonschema, get_config_read_mode, _import_argcomplete
+from .optionals import import_jsonschema, get_config_read_mode, import_argcomplete
 from .actions import _is_action_value_list
 from .typing import _annotation_to_schema
+
+
+__all__ = ['ActionJsonSchema']
+
+
+def hint_in(obj, hints_set):
+    return hasattr(obj, '__origin__') and obj.__origin__ in hints_set
 
 
 class ActionJsonSchema(Action):
@@ -21,7 +28,7 @@ class ActionJsonSchema(Action):
         """Initializer for ActionJsonSchema instance.
 
         Args:
-            schema (str or object): Schema to validate values against.
+            schema (str or dict): Schema to validate values against.
             annotation (type): Type object from which to generate schema.
             enable_path (bool): Whether to try to load json from path (def.=True).
             with_meta (bool): Whether to include metadata (def.=True).
@@ -31,7 +38,7 @@ class ActionJsonSchema(Action):
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
         if 'schema' in kwargs or 'annotation' in kwargs:
-            jsonvalidator = _import_jsonschema('ActionJsonSchema')[1]
+            jsonvalidator = import_jsonschema('ActionJsonSchema')[1]
             _check_unknown_kwargs(kwargs, {'schema', 'annotation', 'enable_path', 'with_meta'})
             if 'annotation' in kwargs:
                 if 'schema' in kwargs:
@@ -88,7 +95,7 @@ class ActionJsonSchema(Action):
 
     def _check_type(self, value, cfg=None):
         islist = _is_action_value_list(self)
-        jsonschema = _import_jsonschema('ActionJsonSchema')[0]
+        jsonschema = import_jsonschema('ActionJsonSchema')[0]
         if not islist:
             value = [value]
         elif not isinstance(value, list):
@@ -118,10 +125,10 @@ class ActionJsonSchema(Action):
                 if hasattr(self._annotation, '__origin__'):
                     if isinstance(val, dict):
                         val = self._adapt_dict(val, int)
-                    elif self._annotation.__origin__ == Union and isinstance(val, str):
+                    elif hint_in(self._annotation, {Union}) and isinstance(val, str):
                         val = self._adapt_enum(val)
-                    elif self._annotation.__origin__ in {Tuple, tuple, Set, set} and isinstance(val, list):
-                        val = tuple(val) if self._annotation.__origin__ in {Tuple, tuple} else set(val)
+                    elif hint_in(self._annotation, {Tuple, tuple, Set, set}) and isinstance(val, list):
+                        val = tuple(val) if hint_in(self._annotation, {Tuple, tuple}) else set(val)
                 if path_meta is not None:
                     val['__path__'] = path_meta
                 if isinstance(val, dict) and fpath is not None:
@@ -135,9 +142,9 @@ class ActionJsonSchema(Action):
 
     def _adapt_dict(self, val, cast):
         def is_int_key(a):
-            return hasattr(a, '__origin__') and a.__origin__ in {Dict, dict} and a.__args__[0] == int
+            return hint_in(a, {Dict, dict}) and a.__args__[0] == int
         if is_int_key(self._annotation) or \
-           (self._annotation.__origin__ == Union and any(is_int_key(a) for a in self._annotation.__args__)):
+           (hint_in(self._annotation, {Union}) and any(is_int_key(a) for a in self._annotation.__args__)):
             try:
                 val = {cast(k): v for k, v in val.items()}
             except ValueError:
@@ -166,7 +173,7 @@ class ActionJsonSchema(Action):
             for error in validate_properties(validator, properties, instance, schema):
                 yield error
 
-        jsonschema = _import_jsonschema('ActionJsonSchema')[0]
+        jsonschema = import_jsonschema('ActionJsonSchema')[0]
         return jsonschema.validators.extend(validator_class, {'properties': set_defaults})
 
 
@@ -232,7 +239,7 @@ class ActionJsonSchema(Action):
             if self._annotation.__origin__ == Union and \
                len(self._annotation.__args__) == 2 and \
                _issubclass(self._annotation.__args__[0], Enum) and \
-               isinstance(self._annotation.__args__[1], type(None)):
+               isinstance(None, self._annotation.__args__[1]):
                 enum = self._annotation.__args__[0]
                 metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
         return metavar
@@ -240,8 +247,10 @@ class ActionJsonSchema(Action):
 
     def completer(self, prefix, **kwargs):
         """Used by argcomplete, validates value and shows expected type."""
-        jsonschema = _import_jsonschema('ActionJsonSchema')[0]
-        argcomplete = _import_argcomplete('ActionJsonSchema')
+        if self._annotation == bool:
+            return ['true', 'false']
+        jsonschema = import_jsonschema('ActionJsonSchema')[0]
+        argcomplete = import_argcomplete('ActionJsonSchema')
         try:
             self._validator.validate(yaml.safe_load(prefix))
             msg = 'value already valid, '

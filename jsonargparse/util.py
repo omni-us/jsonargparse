@@ -7,14 +7,27 @@ import stat
 import inspect
 import logging
 from copy import deepcopy
-from typing import Dict, Any, Set
+from typing import Dict, Any, Set, Optional, Union
 from contextlib import contextmanager, redirect_stderr
 from argparse import Namespace
 
-from .optionals import url_support, _import_requests, _import_url_validator
+from .optionals import url_support, import_requests, import_url_validator
 
 
-null_logger = logging.Logger('null')
+__all__ = [
+    'ParserError',
+    'null_logger',
+    'dict_to_namespace',
+    'namespace_to_dict',
+    'meta_keys',
+    'strip_meta',
+    'usage_and_exit_error_handler',
+    'Path',
+    'LoggerProperty',
+]
+
+
+null_logger = logging.Logger('jsonargparse_null_logger')
 null_logger.addHandler(logging.NullHandler())
 
 meta_keys = {'__cwd__', '__path__'}
@@ -47,10 +60,10 @@ def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
     """Converts a flat namespace into a nested dictionary.
 
     Args:
-        cfg_ns (argparse.Namespace): The configuration to process.
+        cfg_ns: The configuration to process.
 
     Returns:
-        dict: The nested configuration dictionary.
+        The nested configuration dictionary.
     """
     cfg_ns = deepcopy(cfg_ns)
     cfg_dict = {}
@@ -84,10 +97,10 @@ def _dict_to_flat_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
     """Converts a nested dictionary into a flat namespace.
 
     Args:
-        cfg_dict (dict): The configuration to process.
+        cfg_dict: The configuration to process.
 
     Returns:
-        argparse.Namespace: The configuration namespace.
+        The configuration namespace.
     """
     cfg_dict = deepcopy(cfg_dict)
     cfg_ns = {}
@@ -109,10 +122,10 @@ def dict_to_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
     """Converts a nested dictionary into a nested namespace.
 
     Args:
-        cfg_dict (dict): The configuration to process.
+        cfg_dict: The configuration to process.
 
     Returns:
-        argparse.Namespace: The nested configuration namespace.
+        The nested configuration namespace.
     """
     cfg_dict = deepcopy(cfg_dict)
     def expand_dict(cfg):
@@ -131,14 +144,15 @@ def namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
     """Converts a nested namespace into a nested dictionary.
 
     Args:
-        cfg_ns (argparse.Namespace): The configuration to process.
+        cfg_ns: The configuration to process.
 
     Returns:
-        dict: The nested configuration dictionary.
+        The nested configuration dictionary.
     """
     cfg_ns = deepcopy(cfg_ns)
     def expand_namespace(cfg):
-        cfg = dict(vars(cfg))
+        if not isinstance(cfg, dict):
+            cfg = dict(vars(cfg))
         for k, v in cfg.items():
             if isinstance(v, Namespace):
                 cfg[k] = expand_namespace(v)
@@ -150,11 +164,11 @@ def namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
     return expand_namespace(cfg_ns)
 
 
-def strip_meta(cfg):
+def strip_meta(cfg:Union[Namespace, Dict]):
     """Removes all metadata keys from a configuration object.
 
     Args:
-        cfg (argparse.Namespace or dict): The configuration object to strip.
+        cfg: The configuration object to strip.
 
     Returns:
         argparse.Namespace: The stripped configuration object.
@@ -192,12 +206,12 @@ def _check_unknown_kwargs(kwargs:Dict[str, Any], keys:Set[str]):
         raise ValueError('Unexpected keyword arguments: '+', '.join(set(kwargs.keys())-keys)+'.')
 
 
-def usage_and_exit_error_handler(self, message):
+def usage_and_exit_error_handler(self, message:str):
     """Error handler to get the same behavior as in argparse.
 
     Args:
         self (ArgumentParser): The ArgumentParser object.
-        message (str): The message describing the error being handled.
+        message: The message describing the error being handled.
     """
     self.print_usage(sys.stderr)
     args = {'prog': self.prog, 'message': message}
@@ -236,14 +250,20 @@ class Path:
     be obtained without having to remember the working directory from when the
     object was created.
     """
-    def __init__(self, path, mode:str='fr', cwd:str=None, skip_check:bool=False):
+    def __init__(
+        self,
+        path: Union[str, 'Path'],
+        mode: str = 'fr',
+        cwd: Optional[str] = None,
+        skip_check: bool = False,
+    ):
         """Initializer for Path instance.
 
         Args:
-            path (str or Path): The path to check and store.
-            mode (str): The required type and access permissions among [fdrwxcuFDRWX].
-            cwd (str): Working directory for relative paths. If None, then os.getcwd() is used.
-            skip_check (bool): Whether to skip path checks.
+            path: The path to check and store.
+            mode: The required type and access permissions among [fdrwxcuFDRWX].
+            cwd: Working directory for relative paths. If None, then os.getcwd() is used.
+            skip_check: Whether to skip path checks.
 
         Raises:
             ValueError: If the provided mode is invalid.
@@ -266,7 +286,7 @@ class Path:
             abs_path = path
             if re.match('^file:///?', abs_path):
                 abs_path = re.sub('^file:///?', '/', abs_path)
-            if 'u' in mode and url_support and _import_url_validator('Path')(abs_path):  # type: ignore
+            if 'u' in mode and url_support and import_url_validator('Path')(abs_path):
                 is_url = True
             elif 'f' in mode or 'd' in mode:
                 abs_path = abs_path if os.path.isabs(abs_path) else os.path.join(cwd, abs_path)
@@ -275,9 +295,9 @@ class Path:
 
         if not skip_check and is_url:
             if 'r' in mode:
-                requests = _import_requests('Path with URL support')
+                requests = import_requests('Path with URL support')
                 try:
-                    requests.head(abs_path).raise_for_status()  # type: ignore
+                    requests.head(abs_path).raise_for_status()
                 except requests.HTTPError as ex:
                     raise TypeError(abs_path+' HEAD not accessible :: '+str(ex))
         elif not skip_check:
@@ -328,21 +348,21 @@ class Path:
     def __repr__(self):
         return 'Path(path="'+self.path+'", abs_path="'+self.abs_path+'", cwd="'+self.cwd+'")'
 
-    def __call__(self, absolute=True):
+    def __call__(self, absolute:bool=True) -> str:
         """Returns the path as a string.
 
         Args:
-            absolute (bool): If false returns the original path given, otherwise the corresponding absolute path.
+            absolute: If false returns the original path given, otherwise the corresponding absolute path.
         """
         return self.abs_path if absolute else self.path
 
-    def get_content(self, mode='r'):
+    def get_content(self, mode:str='r') -> str:
         """Returns the contents of the file or the response of a GET request to the URL."""
         if not self.is_url:
             with open(self.abs_path, mode) as input_file:
                 return input_file.read()
         else:
-            requests = _import_requests('Path with URL support')
+            requests = import_requests('Path with URL support')
             response = requests.get(self.abs_path)
             response.raise_for_status()
             return response.text

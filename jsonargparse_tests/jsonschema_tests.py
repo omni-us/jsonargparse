@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
+# pylint: disable=unexpected-keyword-arg
 
 import re
 import json
-import unittest
 from io import StringIO
 from contextlib import redirect_stdout
 from typing import Optional, Union
-from jsonargparse import *
-from jsonargparse.optionals import jsonschema_support
-from jsonargparse.typing import PositiveInt, OpenUnitInterval
-from jsonargparse_tests.util_tests import TempDirTestCase
+from jsonargparse_tests.base import *
 
 
 schema1 = {
@@ -50,6 +47,29 @@ schema3 = {
 
 @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
 class JsonSchemaTests(TempDirTestCase):
+
+    def test_bool_type(self):
+        parser = ArgumentParser(prog='app', default_env=True, error_handler=None)
+        parser.add_argument('--val', type=bool)
+        self.assertEqual(None,  parser.get_defaults().val)
+        self.assertEqual(True,  parser.parse_args(['--val', 'true']).val)
+        self.assertEqual(True,  parser.parse_args(['--val', 'TRUE']).val)
+        self.assertEqual(False, parser.parse_args(['--val', 'false']).val)
+        self.assertEqual(False, parser.parse_args(['--val', 'FALSE']).val)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--val', '1']))
+
+        os.environ['APP_VAL'] = 'true'
+        self.assertEqual(True,  parser.parse_args([]).val)
+        os.environ['APP_VAL'] = 'True'
+        self.assertEqual(True,  parser.parse_args([]).val)
+        os.environ['APP_VAL'] = 'false'
+        self.assertEqual(False, parser.parse_args([]).val)
+        os.environ['APP_VAL'] = 'False'
+        self.assertEqual(False, parser.parse_args([]).val)
+        os.environ['APP_VAL'] = '2'
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--val', 'a']))
+        del os.environ['APP_VAL']
+
 
     def test_ActionJsonSchema(self):
         parser = ArgumentParser(prog='app', default_meta=False, error_handler=None)

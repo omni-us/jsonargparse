@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
+# pylint: disable=unexpected-keyword-arg
 
-import enum
-import unittest
+from enum import Enum
+from io import StringIO
 from typing import Dict, List, Tuple, Optional, Union, Any
-from jsonargparse import *
-from jsonargparse.typing import PositiveInt, PositiveFloat, OpenUnitInterval
+from jsonargparse_tests.base import *
 from jsonargparse.actions import _find_action
-from jsonargparse.optionals import jsonschema_support, docstring_parser_support
 from jsonargparse.util import _suppress_stderr
 
 
+@unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
 class SignaturesTests(unittest.TestCase):
 
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     def test_add_class_arguments(self):
 
         class Class0:
@@ -239,7 +238,7 @@ class SignaturesTests(unittest.TestCase):
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     def test_optional_enum(self):
 
-        class MyEnum(enum.Enum):
+        class MyEnum(Enum):
             A = 1
             B = 2
             C = 3
@@ -252,7 +251,12 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(MyEnum.B, parser.parse_args(['--a1=B']).a1)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a1=D']))
 
-        class MyEnum2(str, enum.Enum):
+        os.environ['COLUMNS'] = '150'
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertIn('--a1 {A,B,C,null}', help_str.getvalue())
+
+        class MyEnum2(str, Enum):
             A = 'A'
             B = 'B'
 
@@ -282,7 +286,6 @@ class SignaturesTests(unittest.TestCase):
             self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
 
 
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     def test_basic_subtypes(self):
 
         def func(a1: PositiveFloat = PositiveFloat(1),
@@ -303,7 +306,6 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=-1']))
 
 
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     def test_logger_debug(self):
 
         with _suppress_stderr():

@@ -1,37 +1,20 @@
 #!/usr/bin/env python3
 
-import os
 import stat
-import shutil
 import pathlib
 import logging
-import tempfile
 import platform
-import unittest
-from jsonargparse.util import *
+from jsonargparse_tests.base import *
 from jsonargparse.util import _check_unknown_kwargs, _suppress_stderr
 
-try:
-    import responses
-    responses_activate = responses.activate
-except:
-    def nothing_decorator(func):
-        return func
-    responses = False
-    responses_activate = nothing_decorator
 
+class NamespaceDictConversionTests(unittest.TestCase):
 
-class TempDirTestCase(unittest.TestCase):
-
-    def setUp(self):
-        self.cwd = os.getcwd()
-        self.tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
-        os.chdir(self.tmpdir)
-
-
-    def tearDown(self):
-        os.chdir(self.cwd)
-        shutil.rmtree(self.tmpdir)
+    def test_empty_config_dict(self):
+        cfg_dict = {}
+        cfg_ns = dict_to_namespace(cfg_dict)
+        self.assertEqual({}, namespace_to_dict(cfg_ns))
+        self.assertEqual({}, namespace_to_dict(cfg_dict))
 
 
 @unittest.skipIf(os.name != 'posix' or platform.python_implementation() != 'CPython',

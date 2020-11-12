@@ -1,7 +1,19 @@
 """Collection of types and type generators."""
 
 import operator
-from typing import Dict, Tuple, Any
+from typing import Dict, List, Tuple, Any, Union, Optional, Type
+
+
+__all__ = [
+    'registered_types',
+    'restricted_number_type',
+    'PositiveInt',
+    'NonNegativeInt',
+    'PositiveFloat',
+    'NonNegativeFloat',
+    'ClosedUnitInterval',
+    'OpenUnitInterval',
+]
 
 
 _operators1 = {
@@ -23,17 +35,24 @@ _schema_operator_map = {
 registered_types = {}  # type: Dict[Tuple, Any]
 
 
-def restricted_number_type(name, base_type, restrictions, join='and'):
+def restricted_number_type(
+    name: Optional[str],
+    base_type: Type,
+    restrictions: Union[Tuple, List[Tuple]],
+    join: str = 'and',
+    docstring: Optional[str] = None,
+) -> Type:
     """Creates or returns an already registered restricted number type class.
 
     Args:
-        name (str or None): Name for the type or None for an automatic name.
-        base_type (type): One of {int, float}.
-        restrictions (tuple or list[tuple]): Tuples of pairs (comparison, reference), e.g. ('>', 0).
-        join (str): How to combine multiple comparisons, one of {'or', 'and'}
+        name: Name for the type or None for an automatic name.
+        base_type: One of {int, float}.
+        restrictions: Tuples of pairs (comparison, reference), e.g. ('>', 0).
+        join: How to combine multiple comparisons, one of {'or', 'and'}.
+        docstring: Docstring for the type class.
 
     Returns:
-        The type class.
+        The created or retrieved type class.
     """
     if base_type not in {int, float}:
         raise ValueError('Expected base_type to be one of {int, float}.')
@@ -83,19 +102,30 @@ def restricted_number_type(name, base_type, restrictions, join='and'):
             name += '_'+join+'_' if num > 0 else '_'
             name += comparison.__name__ + str(ref).replace('.', '')
 
-    registered_types[register_key] = type(name, (RestrictedNumber, base_type), {})
-    return registered_types[register_key]
+
+    restricted_type = type(name, (RestrictedNumber, base_type), {})
+    if docstring is not None:
+        restricted_type.__doc__ = docstring
+    registered_types[register_key] = restricted_type
+
+    return restricted_type
 
 
-PositiveInt        = restricted_number_type('PositiveInt',        int, ('>', 0))
-NonNegativeInt     = restricted_number_type('NonNegativeInt',     int, ('>=', 0))
-PositiveFloat      = restricted_number_type('PositiveFloat',      float, ('>', 0))
-NonNegativeFloat   = restricted_number_type('NonNegativeFloat',   float, ('>=', 0))
-ClosedUnitInterval = restricted_number_type('ClosedUnitInterval', float, [('>=', 0), ('<=', 1)])
-OpenUnitInterval   = restricted_number_type('OpenUnitInterval',   float, [('>', 0), ('<', 1)])
+PositiveInt        = restricted_number_type('PositiveInt',        int, ('>', 0),
+                                            docstring='int restricted to be >0')
+NonNegativeInt     = restricted_number_type('NonNegativeInt',     int, ('>=', 0),
+                                            docstring='int restricted to be ≥0')
+PositiveFloat      = restricted_number_type('PositiveFloat',      float, ('>', 0),
+                                            docstring='float restricted to be >0')
+NonNegativeFloat   = restricted_number_type('NonNegativeFloat',   float, ('>=', 0),
+                                            docstring='float restricted to be ≥0')
+ClosedUnitInterval = restricted_number_type('ClosedUnitInterval', float, [('>=', 0), ('<=', 1)],
+                                            docstring='float restricted to be ≥0 and ≤1')
+OpenUnitInterval   = restricted_number_type('OpenUnitInterval',   float, [('>', 0), ('<', 1)],
+                                            docstring='float restricted to be >0 and <1')
 
 
-def _annotation_to_schema(annotation):
+def _annotation_to_schema(annotation) -> Optional[Dict[str, str]]:
     """Generates a json schema from a type annotation if possible.
 
     Args:
