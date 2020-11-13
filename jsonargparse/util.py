@@ -41,9 +41,8 @@ class ParserError(Exception):
 def _get_key_value(cfg, key):
     """Gets the value for a given key in a config object (dict or argparse.Namespace)."""
     def key_in_cfg(cfg, key):
-        if isinstance(cfg, Namespace) and hasattr(cfg, key):
-            return True
-        elif isinstance(cfg, dict) and key in cfg:
+        if (isinstance(cfg, Namespace) and hasattr(cfg, key)) or \
+           (isinstance(cfg, dict) and key in cfg):
             return True
         return False
 

@@ -1,16 +1,18 @@
 """Formatter classes."""
 
+from enum import Enum
 from argparse import HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 
 from .util import _get_env_var
 from .actions import ActionParser, ActionEnum
+from .jsonschema import type_to_str, ActionJsonSchema
 
 
 __all__ = ['DefaultHelpFormatter']
 
 
 class DefaultHelpFormatter(HelpFormatter):
-    """Help message formatter that includes default values and env var names.
+    """Help message formatter that includes types, default values and env var names.
 
     This class is an extension of `argparse.HelpFormatter
     <https://docs.python.org/3/library/argparse.html#argparse.HelpFormatter>`_.
@@ -26,9 +28,11 @@ class DefaultHelpFormatter(HelpFormatter):
         help_str = ''
         if hasattr(action, '_required') and action._required:
             help_str = 'required'
-        if '%(default)' not in action.help and action.default is not SUPPRESS:
-            if action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}:
-                help_str += (', ' if help_str else '') + 'default: %(default)s'
+        if '%(type)' not in action.help and self._get_type_str(action) is not None:
+            help_str += (', ' if help_str else '') + 'type: %(type)s'
+        if '%(default)' not in action.help and action.default is not SUPPRESS and \
+           (action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}):
+            help_str += (', ' if help_str else '') + 'default: %(default)s'
         return action.help + (' ('+help_str+')' if help_str else '')
 
 
@@ -58,8 +62,23 @@ class DefaultHelpFormatter(HelpFormatter):
         if params.get('choices') is not None:
             choices_str = ', '.join([str(c) for c in params['choices']])
             params['choices'] = choices_str
-        if isinstance(action, ActionEnum) and hasattr(action.default, 'name'):
-            params['default'] = action.default.name
-        elif 'default' in params and params['default'] is None:
-            params['default'] = 'null'
+        type_str = self._get_type_str(action)
+        if type_str is not None:
+            params['type'] = type_str
+        if 'default' in params:
+            if params['default'] is None:
+                params['default'] = 'null'
+            elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):
+                params['default'] = action.default.name
         return self._get_help_string(action) % params
+
+
+    def _get_type_str(self, action):
+        type_str = None
+        if action.type is not None:
+            type_str = type_to_str(action.type)
+        elif isinstance(action, ActionEnum):
+            type_str = type_to_str(action._enum)
+        elif isinstance(action, ActionJsonSchema):
+            type_str = type_to_str(action._annotation)
+        return type_str

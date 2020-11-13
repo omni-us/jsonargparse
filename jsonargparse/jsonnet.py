@@ -75,7 +75,6 @@ class ActionJsonnet(Action):
         else:
             self._ext_vars = kwargs.pop('_ext_vars')
             self._validator = kwargs.pop('_validator')
-            kwargs['type'] = str
             super().__init__(**kwargs)
 
 

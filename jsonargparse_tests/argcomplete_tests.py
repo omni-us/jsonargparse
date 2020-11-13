@@ -3,7 +3,7 @@
 
 import sys
 from enum import Enum
-from typing import List
+from typing import List, Optional
 from io import BytesIO, StringIO
 from contextlib import redirect_stdout, redirect_stderr
 from jsonargparse_tests.base import *
@@ -94,6 +94,23 @@ class ArgcompleteTests(unittest.TestCase):
         with redirect_stdout(out), self.assertRaises(SystemExit):
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
         self.assertEqual(out.getvalue(), b'abc\x0babd')
+
+
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+    def test_optional_enum(self):
+        class MyEnum(Enum):
+            A = 1
+            B = 2
+
+        self.parser.add_argument('--enum', type=Optional[MyEnum])
+
+        os.environ['COMP_LINE'] = 'tool.py --enum='
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+        out = BytesIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        self.assertEqual(out.getvalue(), b'A\x0bB\x0bnull')
 
 
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')

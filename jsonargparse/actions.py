@@ -67,7 +67,6 @@ class ActionConfigFile(Action):
         opt_name = opt_name[0] if len(opt_name) == 1 else [x for x in opt_name if x[0:2] == '--'][0]
         if '.' in opt_name:
             raise ValueError('ActionConfigFile must be a top level option.')
-        kwargs['type'] = str
         super().__init__(**kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -231,7 +230,6 @@ class ActionEnum(Action):
             raise ValueError('Expected enum keyword argument.')
         else:
             self._enum = kwargs.pop('_enum')
-            kwargs['type'] = str
             kwargs['metavar'] = '{'+','.join(self._enum.__members__.keys())+'}'
             super().__init__(**kwargs)
 
@@ -311,7 +309,6 @@ class ActionParser(Action):
         else:
             ## Runs when initialied from the __call__ method below ##
             self._parser = kwargs.pop('_parser')
-            kwargs['type'] = str
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -501,7 +498,6 @@ class ActionPath(Action):
         else:
             self._mode = kwargs.pop('_mode')
             self._skip_check = kwargs.pop('_skip_check')
-            kwargs['type'] = str
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -569,7 +565,6 @@ class ActionPathList(Action):
             self._mode = kwargs.pop('_mode')
             self._skip_check = kwargs.pop('_skip_check')
             self._rel = kwargs.pop('_rel')
-            kwargs['type'] = str
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):

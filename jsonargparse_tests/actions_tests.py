@@ -110,7 +110,7 @@ class ActionsTests(unittest.TestCase):
         parser.add_argument('--enum',
             action=ActionEnum(enum=MyEnum),
             default=MyEnum.C,
-            help='MyEnum')
+            help='Description')
 
         for val in ['A', 'B', 'C']:
             self.assertEqual(MyEnum[val], parser.parse_args(['--enum='+val]).enum)
@@ -123,7 +123,7 @@ class ActionsTests(unittest.TestCase):
         os.environ['COLUMNS'] = '150'
         help_str = StringIO()
         parser.print_help(help_str)
-        self.assertIn('MyEnum (default: C)', help_str.getvalue())
+        self.assertIn('Description (type: MyEnum, default: C)', help_str.getvalue())
 
         def func(a1: MyEnum = MyEnum['A']):
             return a1

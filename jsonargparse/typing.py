@@ -125,7 +125,7 @@ OpenUnitInterval   = restricted_number_type('OpenUnitInterval',   float, [('>', 
                                             docstring='float restricted to be >0 and <1')
 
 
-def _annotation_to_schema(annotation) -> Optional[Dict[str, str]]:
+def annotation_to_schema(annotation) -> Optional[Dict[str, str]]:
     """Generates a json schema from a type annotation if possible.
 
     Args:

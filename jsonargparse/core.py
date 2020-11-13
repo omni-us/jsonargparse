@@ -16,7 +16,7 @@ from argparse import ArgumentError, Action, Namespace, SUPPRESS, _UNRECOGNIZED_A
 
 from .formatters import DefaultHelpFormatter
 from .signatures import SignatureArguments
-from .jsonschema import ActionJsonSchema, hint_in
+from .jsonschema import ActionJsonSchema, type_in
 from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
 from .optionals import (
     import_jsonnet,
@@ -72,7 +72,7 @@ class _ActionsContainer(argparse._ActionsContainer):
         are supported.
         """
         if 'type' in kwargs:
-            if kwargs['type'] == bool or hint_in(kwargs['type'], {Union, Dict, dict, List, list}):
+            if kwargs['type'] == bool or type_in(kwargs['type'], {Union, Dict, dict, List, list}):
                 kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=False)
             elif _issubclass(kwargs['type'], Enum):
                 kwargs['action'] = ActionEnum(enum=kwargs['type'])
@@ -153,7 +153,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         self.logger = logger
         self.error_handler = error_handler
         if print_config is not None:
-            self.add_argument('--print-config', action=_ActionPrintConfig)
+            self.add_argument(print_config, action=_ActionPrintConfig)
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version)
         if parser_mode not in {'yaml', 'jsonnet'}:
@@ -417,7 +417,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                         if re.match('^ *\\[.+,.+] *$', env_val):
                             try:
                                 env_val = yaml.safe_load(env_val)
-                            except:
+                            except yaml.parser.ParserError:
                                 env_val = [env_val]  # type: ignore
                         else:
                             env_val = [env_val]  # type: ignore
