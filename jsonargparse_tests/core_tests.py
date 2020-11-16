@@ -7,7 +7,7 @@ from io import StringIO
 from contextlib import redirect_stdout
 from collections import OrderedDict
 from jsonargparse_tests.base import *
-from jsonargparse.util import _suppress_stderr
+from jsonargparse.util import meta_keys, _suppress_stderr
 
 
 class ParsersTests(TempDirTestCase):
@@ -19,6 +19,7 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual(6.4, parser.parse_args(['--nums.val2', '6.4']).nums.val2)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val1', '7.5']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val2', 'eight']))
+        self.assertEqual(9, vars(parser.parse_args(['--nums.val1', '9'], nested=False))['nums.val1'])
 
 
     def test_parse_object(self):
@@ -50,6 +51,10 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual(['abc'], parser.parse_env(env).req)
         env['APP_REQ'] = '["abc", "xyz"]'
         self.assertEqual(['abc', 'xyz'], parser.parse_env(env).req)
+        with self.assertRaises(ValueError):
+            parser.default_env = 'invalid'
+        with self.assertRaises(ValueError):
+            parser.env_prefix = lambda: 'invalid'
 
 
     def test_parse_string(self):
@@ -66,6 +71,8 @@ class ParsersTests(TempDirTestCase):
         cfg2 = parser.parse_string(example_yaml, defaults=False)
         self.assertFalse(hasattr(cfg2, 'bools'))
         self.assertTrue(hasattr(cfg2, 'nums'))
+
+        self.assertRaises(ParserError, lambda: parser.parse_string('"""'))
 
 
     def test_parse_path(self):
@@ -157,6 +164,14 @@ class ParsersTests(TempDirTestCase):
 
         for key in ['APP_CFG', 'APP_OP1']:
             del os.environ[key]
+
+
+    def test_parse_as_dict(self):
+        parser = ArgumentParser(parse_as_dict=True, default_meta=False)
+        self.assertEqual({}, parser.parse_args([]))
+        self.assertEqual({}, parser.parse_env([]))
+        self.assertEqual({}, parser.parse_string('{}'))
+        self.assertEqual({}, parser.parse_object({}))
 
 
 class ArgumentFeaturesTests(unittest.TestCase):
@@ -399,6 +414,28 @@ class OutputTests(TempDirTestCase):
         delattr(cfg2, 'lev1')
         parser.dump(cfg2)
 
+        parser = ArgumentParser()
+        parser.add_argument('--path', action=ActionPath(mode='fc'))
+        cfg = parser.parse_string('path: path')
+        self.assertEqual(parser.dump(cfg), 'path: path\n')
+
+        parser = ArgumentParser()
+        parser.add_argument('--paths', nargs='+', action=ActionPath(mode='fc'))
+        cfg = parser.parse_args(['--paths', 'path1', 'path2'])
+        self.assertEqual(parser.dump(cfg), 'paths:\n- path1\n- path2\n')
+
+
+    def test_dump_formats(self):
+        parser = ArgumentParser()
+        parser.add_argument('--op1', default=123)
+        parser.add_argument('--op2', default='abc')
+        cfg = parser.get_defaults()
+        self.assertEqual(parser.dump(cfg), 'op1: 123\nop2: abc\n')
+        self.assertEqual(parser.dump(cfg, format='yaml'), parser.dump(cfg))
+        self.assertEqual(parser.dump(cfg, format='json'), '{"op1":123,"op2":"abc"}')
+        self.assertEqual(parser.dump(cfg, format='json_indented'), '{\n  "op1": 123,\n  "op2": "abc"\n}\n')
+        self.assertRaises(ValueError, lambda: parser.dump(cfg, format='invalid'))
+
 
     def test_save(self):
         parser = ArgumentParser()
@@ -465,11 +502,26 @@ class OutputTests(TempDirTestCase):
         cfg3 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
         self.assertEqual(namespace_to_dict(cfg1), namespace_to_dict(cfg3))
 
-        self.assertRaises(ValueError, lambda: parser.save(cfg2, os.path.join(outdir, 'main.yaml')))
-
         parser.save(cfg2, os.path.join(outdir, 'main.yaml'), multifile=False, overwrite=True)
         cfg4 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
         self.assertEqual(namespace_to_dict(cfg1), namespace_to_dict(cfg4))
+
+
+    def test_save_failures(self):
+        parser = ArgumentParser()
+        with open('existing.yaml', 'w') as output_file:
+            output_file.write('should not be overritten\n')
+        cfg = parser.get_defaults()
+        self.assertRaises(ValueError, lambda: parser.save(cfg, 'existing.yaml'))
+        self.assertRaises(ValueError, lambda: parser.save(cfg, 'invalid_format.yaml', format='invalid'))
+
+        parser.add_argument('--parser',
+            action=ActionParser(parser=example_parser()))
+        cfg = parser.get_defaults()
+        with open('parser.yaml', 'w') as output_file:
+            output_file.write(example_parser().dump(cfg.parser))
+        cfg.parser.__path__ = Path('parser.yaml')
+        self.assertRaises(ValueError, lambda: parser.save(cfg, 'main.yaml'))
 
 
     def test_print_config(self):
@@ -516,11 +568,10 @@ class OutputTests(TempDirTestCase):
         self.assertIn('--g2.help', outval)
 
 
-class ConfigFilesTests(unittest.TestCase):
+class ConfigFilesTests(TempDirTestCase):
 
     def test_default_config_files(self):
-        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
-        default_config_file = os.path.realpath(os.path.join(tmpdir, 'example.yaml'))
+        default_config_file = os.path.realpath(os.path.join(self.tmpdir, 'example.yaml'))
         with open(default_config_file, 'w') as output_file:
             output_file.write('op1: from default config file\n')
 
@@ -532,16 +583,13 @@ class ConfigFilesTests(unittest.TestCase):
         self.assertEqual('from default config file', cfg.op1)
         self.assertEqual('from parser default', cfg.op2)
 
-        shutil.rmtree(tmpdir)
-
 
     def test_ActionConfigFile_and_ActionPath(self):
-        tmpdir = os.path.realpath(tempfile.mkdtemp(prefix='_jsonargparse_test_'))
-        os.mkdir(os.path.join(tmpdir, 'example'))
+        os.mkdir(os.path.join(self.tmpdir, 'example'))
         rel_yaml_file = os.path.join('..', 'example', 'example.yaml')
-        abs_yaml_file = os.path.realpath(os.path.join(tmpdir, 'example', rel_yaml_file))
+        abs_yaml_file = os.path.realpath(os.path.join(self.tmpdir, 'example', rel_yaml_file))
         with open(abs_yaml_file, 'w') as output_file:
-            output_file.write('file: '+rel_yaml_file+'\ndir: '+tmpdir+'\n')
+            output_file.write('file: '+rel_yaml_file+'\ndir: '+self.tmpdir+'\n')
 
         parser = ArgumentParser(prog='app', error_handler=None)
         parser.add_argument('--cfg',
@@ -555,24 +603,24 @@ class ConfigFilesTests(unittest.TestCase):
             action=ActionPath(mode='fr'))
 
         cfg = parser.parse_args(['--cfg', abs_yaml_file])
-        self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))
+        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=False)))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=True)))
         self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', abs_yaml_file+'~']))
 
-        cfg = parser.parse_args(['--cfg', 'file: '+abs_yaml_file+'\ndir: '+tmpdir+'\n'])
-        self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))
+        cfg = parser.parse_args(['--cfg', 'file: '+abs_yaml_file+'\ndir: '+self.tmpdir+'\n'])
+        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(None, cfg.cfg[0])
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '{"k":"v"}']))
 
-        cfg = parser.parse_args(['--file', abs_yaml_file, '--dir', tmpdir])
-        self.assertEqual(tmpdir, os.path.realpath(cfg.dir(absolute=True)))
+        cfg = parser.parse_args(['--file', abs_yaml_file, '--dir', self.tmpdir])
+        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--dir', abs_yaml_file]))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--file', tmpdir]))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--file', self.tmpdir]))
 
         cfg = parser.parse_args(['--files', abs_yaml_file, abs_yaml_file])
         self.assertTrue(isinstance(cfg.files, list))
@@ -582,8 +630,7 @@ class ConfigFilesTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPath))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPath()))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPath(mode='+')))
-
-        shutil.rmtree(tmpdir)
+        self.assertRaises(ValueError, lambda: parser.add_argument('--nested.cfg', action=ActionConfigFile))
 
 
 class OtherTests(unittest.TestCase):
@@ -604,6 +651,11 @@ class OtherTests(unittest.TestCase):
 
         self.assertRaises(KeyError, lambda: parser.set_defaults(v4='d'))
         self.assertRaises(KeyError, lambda: parser.get_default('v4'))
+
+        parser = ArgumentParser()
+        parser.add_argument('--v1')
+        parser.set_defaults(v1=1)
+        self.assertEqual(parser.get_default('v1'), 1)
 
 
     def test_named_groups(self):
@@ -626,10 +678,56 @@ class OtherTests(unittest.TestCase):
 
     def test_usage_and_exit_error_handler(self):
         with _suppress_stderr():
-            parser = ArgumentParser(prog='app', error_handler='usage_and_exit_error_handler')
+            parser = ArgumentParser()
             parser.add_argument('--val', type=int)
             self.assertEqual(8, parser.parse_args(['--val', '8']).val)
             self.assertRaises(SystemExit, lambda: parser.parse_args(['--val', 'eight']))
+
+
+    def test_error_handler_property(self):
+        parser = ArgumentParser()
+        self.assertEqual(parser.error_handler, usage_and_exit_error_handler)
+
+        def custom_error_handler(self, message):
+            print('custom_error_handler')
+            self.exit(2)
+
+        parser.error_handler = custom_error_handler
+        self.assertEqual(parser.error_handler, custom_error_handler)
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--invalid'])
+        self.assertEqual(out.getvalue(), 'custom_error_handler\n')
+
+        with self.assertRaises(ValueError):
+            parser.error_handler = 'invalid'
+
+
+    def test_version_print(self):
+        parser = ArgumentParser(prog='app', version='1.2.3')
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--version'])
+        self.assertEqual(out.getvalue(), 'app 1.2.3\n')
+
+
+    def test_meta_key_failures(self):
+        parser = ArgumentParser()
+        for meta_key in meta_keys:
+            self.assertRaises(ValueError, lambda: parser.add_argument(meta_key))
+        self.assertEqual(parser.default_meta, True)
+        with self.assertRaises(ValueError):
+            parser.default_meta = 'invalid'
+
+
+    def test_invalid_parser_mode(self):
+        self.assertRaises(ValueError, lambda: ArgumentParser(parser_mode='invalid'))
+
+
+    def test_parse_known_args(self):
+        parser = ArgumentParser()
+        self.assertRaises(NotImplementedError, lambda: parser.parse_known_args([]))
 
 
 if __name__ == '__main__':

@@ -7,12 +7,11 @@ import yaml
 import logging
 import inspect
 import argparse
-import traceback
 from enum import Enum
 from copy import deepcopy
 from contextlib import redirect_stderr
 from typing import Any, List, Dict, Set, Union, Optional, Type, Callable
-from argparse import ArgumentError, Action, Namespace, SUPPRESS, _UNRECOGNIZED_ARGS_ATTR
+from argparse import ArgumentError, Action, Namespace, SUPPRESS
 
 from .formatters import DefaultHelpFormatter
 from .signatures import SignatureArguments
@@ -190,13 +189,86 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                             setattr(namespace, key, val)
                         if len(args) == 0:
                             break
-            if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
-                args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
-                delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
+            #if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
+            #    args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
+            #    delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
             return namespace, args
         except (ArgumentError, ParserError):
             err = sys.exc_info()[1]
             self.error(str(err))
+
+
+    def _parse_common(
+        self,
+        cfg: Dict[str, Any],
+        env: Optional[bool],
+        defaults: bool,
+        nested: bool,
+        with_meta: Optional[bool],
+        skip_check: bool,
+        skip_subcommands: bool = False,
+        cfg_base: Union[Namespace, Dict[str, Any]] = None,
+        log_message: str = None,
+    ) -> Union[Namespace, Dict[str, Any]]:
+        """Common parsing code used by other parse methods.
+
+        Args:
+            cfg: The configuration object.
+            env: Whether to merge with the parsed environment, None to use parser's default.
+            defaults: Whether to merge with the parser's defaults.
+            nested: Whether the namespace should be nested.
+            with_meta: Whether to include metadata in config object, None to use parser's default.
+            skip_check: Whether to skip check if configuration is valid.
+            cfg_base: A base configuration object.
+            log_message: Message to log at INFO level after parsing.
+
+        Returns:
+            A dict object with all parsed values.
+        """
+        if env is None and self._default_env:
+            env = True
+
+        if not skip_subcommands:
+            _ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults)
+
+        if nested:
+            cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
+
+        if cfg_base is not None:
+            if isinstance(cfg_base, Namespace):
+                cfg_base = namespace_to_dict(cfg_base)
+            cfg = self._merge_config(cfg, cfg_base)
+
+        if env:
+            cfg_env = self.parse_env(defaults=defaults, nested=nested, _skip_check=True, _skip_subcommands=True)
+            cfg = self._merge_config(cfg, cfg_env)
+
+        elif defaults:
+            cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
+
+        if not (with_meta or (with_meta is None and self._default_meta)):
+            cfg = strip_meta(cfg)
+
+        cfg_ns = dict_to_namespace(cfg)
+
+        if hasattr(self, '_print_config') and self._print_config:  # type: ignore
+            sys.stdout.write(self.dump(cfg_ns, skip_none=False, skip_check=True))
+            self.exit()
+
+        if not skip_check:
+            self.check_config(cfg_ns)
+
+        if with_meta or (with_meta is None and self._default_meta):
+            if hasattr(cfg_ns, '__cwd__'):
+                if os.getcwd() not in cfg_ns.__cwd__:
+                    cfg_ns.__cwd__.insert(0, os.getcwd())
+            else:
+                cfg_ns.__cwd__ = [os.getcwd()]
+
+        if log_message is not None:
+            self._logger.info(log_message)
+
+        return namespace_to_dict(cfg_ns) if self._parse_as_dict else cfg_ns
 
 
     def parse_args(  # type: ignore[override]
@@ -231,58 +303,29 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             argcomplete = import_argcomplete('parse_args')
             argcomplete.autocomplete(self)
 
-        if env is None and self._default_env:
-            env = True
-
         try:
             with _suppress_stderr():
                 cfg, unk = self.parse_known_args(args=args)
                 if unk:
                     self.error('Unrecognized arguments: %s' % ' '.join(unk))
 
-            _ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults)
+            #ActionParser._fix_conflicts(self, cfg)
 
-            ActionParser._fix_conflicts(self, cfg)
-            cfg_dict = namespace_to_dict(cfg)
+            parsed_cfg = self._parse_common(
+                cfg=namespace_to_dict(cfg),
+                env=env,
+                defaults=defaults,
+                nested=nested,
+                with_meta=with_meta,
+                skip_check=False,
+                cfg_base=namespace,
+                log_message='Parsed command line arguments.',
+            )
 
-            if nested:
-                cfg_dict = _flat_namespace_to_dict(dict_to_namespace(cfg_dict))
-
-            if env:
-                cfg_dict = self._merge_config(cfg_dict, self.parse_env(defaults=defaults, nested=nested, _skip_check=True))
-
-            elif defaults:
-                cfg_dict = self._merge_config(cfg_dict, self.get_defaults(nested=nested))
-
-            if not (with_meta or (with_meta is None and self._default_meta)):
-                cfg_dict = strip_meta(cfg_dict)
-
-            cfg_ns = dict_to_namespace(cfg_dict)
-
-            if hasattr(self, '_print_config') and self._print_config:  # type: ignore
-                sys.stdout.write(self.dump(cfg_ns, skip_none=False, skip_check=True))
-                self.exit()
-
-            self.check_config(cfg_ns)
-
-            if with_meta or (with_meta is None and self._default_meta):
-                if hasattr(cfg_ns, '__cwd__'):
-                    if os.getcwd() not in cfg_ns.__cwd__:
-                        cfg_ns.__cwd__.insert(0, os.getcwd())
-                else:
-                    cfg_ns.__cwd__ = [os.getcwd()]
-
-            self._logger.info('Parsed arguments.')
-
-            if not nested:
-                return _dict_to_flat_namespace(namespace_to_dict(cfg_ns))
-
-        except (TypeError, KeyError, ValueError) as ex:
+        except (TypeError, KeyError) as ex:
             self.error(str(ex))
 
-        if self._parse_as_dict:
-            return namespace_to_dict(cfg_ns)
-        return cfg_ns
+        return parsed_cfg
 
 
     def parse_object(
@@ -310,49 +353,25 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
-        if env is None and self._default_env:
-            env = True
-
         try:
             cfg = vars(_dict_to_flat_namespace(cfg_obj))
             self._apply_actions(cfg, self._actions)
 
-            _ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults)
-
-            if nested:
-                cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
-
-            if cfg_base is not None:
-                if isinstance(cfg_base, Namespace):
-                    cfg_base = namespace_to_dict(cfg_base)
-                cfg = self._merge_config(cfg, cfg_base)
-
-            if env:
-                cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested, _skip_check=True))
-
-            elif defaults:
-                cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
-
-            if not (with_meta or (with_meta is None and self._default_meta)):
-                cfg = strip_meta(cfg)
-
-            cfg_ns = dict_to_namespace(cfg)
-            if not _skip_check:
-                self.check_config(cfg_ns)
-
-            if with_meta or (with_meta is None and self._default_meta):
-                if hasattr(cfg_ns, '__cwd__'):
-                    if os.getcwd() not in cfg_ns.__cwd__:
-                        cfg_ns.__cwd__.insert(0, os.getcwd())
-                else:
-                    cfg_ns.__cwd__ = [os.getcwd()]
+            parsed_cfg = self._parse_common(
+                cfg=cfg,
+                env=env,
+                defaults=defaults,
+                nested=nested,
+                with_meta=with_meta,
+                skip_check=_skip_check,
+                cfg_base=cfg_base,
+                log_message='Parsed object.',
+            )
 
         except (TypeError, KeyError) as ex:
             self.error(str(ex))
 
-        if self._parse_as_dict:
-            return namespace_to_dict(cfg_ns)
-        return cfg_ns
+        return parsed_cfg
 
 
     def parse_env(
@@ -363,6 +382,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         with_meta: bool = None,
         _skip_logging: bool = False,
         _skip_check: bool = False,
+        _skip_subcommands: bool = False,
     ) -> Union[Namespace, Dict[str, Any]]:
         """Parses environment variables.
 
@@ -417,41 +437,27 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                         if re.match('^ *\\[.+,.+] *$', env_val):
                             try:
                                 env_val = yaml.safe_load(env_val)
-                            except yaml.parser.ParserError:
+                            except (yaml.parser.ParserError, yaml.scanner.ScannerError):
                                 env_val = [env_val]  # type: ignore
                         else:
                             env_val = [env_val]  # type: ignore
                     cfg[action.dest] = self._check_value_key(action, env_val, action.dest, cfg)
 
-            if nested:
-                cfg = _flat_namespace_to_dict(Namespace(**cfg))
+            parsed_cfg = self._parse_common(
+                cfg=cfg,
+                env=False,
+                defaults=defaults,
+                nested=nested,
+                with_meta=with_meta,
+                skip_check=_skip_check,
+                skip_subcommands=_skip_subcommands,
+                log_message='Parsed environment variables.',
+            )
 
-            if defaults:
-                cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
-
-            if not (with_meta or (with_meta is None and self._default_meta)):
-                cfg = strip_meta(cfg)
-
-            cfg_ns = dict_to_namespace(cfg)
-            if not _skip_check:
-                self.check_config(cfg_ns)
-
-            if with_meta or (with_meta is None and self._default_meta):
-                if hasattr(cfg_ns, '__cwd__'):
-                    if os.getcwd() not in cfg_ns.__cwd__:
-                        cfg_ns.__cwd__.insert(0, os.getcwd())
-                else:
-                    cfg_ns.__cwd__ = [os.getcwd()]
-
-            if not _skip_logging:
-                self._logger.info('Parsed environment variables.')
-
-        except TypeError as ex:
+        except (TypeError, KeyError) as ex:
             self.error(str(ex))
 
-        if self._parse_as_dict:
-            return namespace_to_dict(cfg_ns)
-        return cfg_ns
+        return parsed_cfg
 
 
     def parse_path(
@@ -533,46 +539,23 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
-        if env is None and self._default_env:
-            env = True
-
         try:
             cfg = self._load_cfg(cfg_str, cfg_path, ext_vars, _base)
 
-            _ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults)
-
-            if nested:
-                cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
-
-            if env:
-                cfg = self._merge_config(cfg, self.parse_env(defaults=defaults, nested=nested, _skip_check=True))
-
-            elif defaults:
-                cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
-
-            if not (with_meta or (with_meta is None and self._default_meta)):
-                cfg = strip_meta(cfg)
-
-            cfg_ns = dict_to_namespace(cfg)
-            if not _skip_check:
-                self.check_config(cfg_ns)
-
-            if with_meta or (with_meta is None and self._default_meta):
-                if hasattr(cfg_ns, '__cwd__'):
-                    if os.getcwd() not in cfg_ns.__cwd__:
-                        cfg_ns.__cwd__.insert(0, os.getcwd())
-                else:
-                    cfg_ns.__cwd__ = [os.getcwd()]
-
-            if not _skip_logging:
-                self._logger.info('Parsed %s string.', self.parser_mode)
+            parsed_cfg = self._parse_common(
+                cfg=cfg,
+                env=env,
+                defaults=defaults,
+                nested=nested,
+                with_meta=with_meta,
+                skip_check=_skip_check,
+                log_message=('Parsed %s string.' % self.parser_mode),
+            )
 
         except (TypeError, KeyError) as ex:
             self.error(str(ex))
 
-        if self._parse_as_dict:
-            return namespace_to_dict(cfg_ns)
-        return cfg_ns
+        return parsed_cfg
 
 
     def _load_cfg(
@@ -599,8 +582,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)
         try:
             cfg = yaml.safe_load(cfg_str)
-        except Exception as ex:
-            raise type(ex)('Problems parsing config :: '+str(ex))
+        except (yaml.parser.ParserError, yaml.scanner.ScannerError) as ex:
+            raise TypeError('Problems parsing config :: '+str(ex))
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         if base is not None:
             cfg = {base+'.'+k: v for k, v in cfg.items()}
@@ -718,11 +701,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if format == 'yaml':
             return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
         elif format == 'json_indented':
-            return json.dumps(cfg, indent=2, sort_keys=True, ensure_ascii=False)
+            return json.dumps(cfg, indent=2, sort_keys=True, ensure_ascii=False)+'\n'
         elif format == 'json':
-            return json.dumps(cfg, sort_keys=True, ensure_ascii=False)
+            return json.dumps(cfg, separators=(',', ':'), sort_keys=True, ensure_ascii=False)
         else:
-            raise ValueError('Unknown output format '+str(format))
+            raise ValueError('Unknown output format "'+str(format)+'".')
 
 
     def save(
@@ -754,7 +737,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             raise ValueError('Refusing to overwrite existing file: '+path)
         path = Path(path, mode='fc')
         if format not in {'parser_mode', 'yaml', 'json_indented', 'json'}:
-            raise ValueError('Unknown output format '+str(format))
+            raise ValueError('Unknown output format "'+str(format)+'".')
         if format == 'parser_mode':
             format = 'yaml' if self.parser_mode == 'yaml' else 'json_indented'
 
@@ -784,7 +767,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                         if '__path__' in val:
                             val_path = Path(os.path.join(dirname, os.path.basename(val['__path__']())), mode='fc')
                             if not overwrite and os.path.isfile(val_path()):
-                                raise ValueError('Refusing to overwrite existing file: '+val_path)
+                                raise ValueError('Refusing to overwrite existing file: '+val_path(absolute=False))
                             action = _find_action(self, kbase)
                             if isinstance(action, ActionParser):
                                 replace_keys[key] = val_path
@@ -792,12 +775,10 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                             elif isinstance(action, (ActionJsonSchema, ActionJsonnet)):
                                 replace_keys[key] = val_path
                                 val_out = strip_meta(val)
-                                if format == 'json_indented' or isinstance(action, ActionJsonnet):
-                                    val_str = json.dumps(val_out, indent=2, sort_keys=True)
-                                elif format == 'yaml':
+                                if format.startswith('json') or isinstance(action, ActionJsonnet):
+                                    val_str = json.dumps(val_out, indent=2, sort_keys=True, ensure_ascii=False)+'\n'
+                                else:
                                     val_str = yaml.dump(val_out, default_flow_style=False, allow_unicode=True)
-                                elif format == 'json':
-                                    val_str = json.dumps(val_out, sort_keys=True)
                                 with open(val_path(), 'w') as f:
                                     f.write(val_str)
                             else:
@@ -862,38 +843,31 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             nested: Whether the namespace should be nested.
 
         Returns:
-            Namespace: An object with all default values as attributes.
-
-        Raises:
-            ParserError: If there is a parsing error and error_handler=None.
+            An object with all default values as attributes.
         """
-        try:
-            cfg = {}
-            for action in self._actions:
-                if action.default != SUPPRESS and action.dest != SUPPRESS:
-                    if isinstance(action, ActionParser):
-                        cfg.update(namespace_to_dict(action._parser.get_defaults(nested=False)))
-                    else:
-                        cfg[action.dest] = action.default
+        cfg = {}
+        for action in self._actions:
+            if action.default != SUPPRESS and action.dest != SUPPRESS:
+                if isinstance(action, ActionParser):
+                    cfg.update(namespace_to_dict(action._parser.get_defaults(nested=False)))
+                else:
+                    cfg[action.dest] = action.default
 
-            cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
+        cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
 
-            self._logger.info('Loaded default values from parser.')
+        self._logger.info('Loaded default values from parser.')
 
-            default_config_files = []  # type: List[str]
-            for pattern in self._default_config_files:
-                default_config_files += glob.glob(os.path.expanduser(pattern))
-            if len(default_config_files) > 0:
-                default_config = Path(default_config_files[0], mode=get_config_read_mode()).get_content()
-                cfg_file = self._load_cfg(default_config)
-                cfg = self._merge_config(cfg_file, cfg)
-                self._logger.info('Parsed configuration from default path: %s', default_config_files[0])
+        default_config_files = []  # type: List[str]
+        for pattern in self._default_config_files:
+            default_config_files += glob.glob(os.path.expanduser(pattern))
+        if len(default_config_files) > 0:
+            default_config = Path(default_config_files[0], mode=get_config_read_mode()).get_content()
+            cfg_file = self._load_cfg(default_config)
+            cfg = self._merge_config(cfg_file, cfg)
+            self._logger.info('Parsed configuration from default path: %s', default_config_files[0])
 
-            if nested:
-                cfg = _flat_namespace_to_dict(Namespace(**cfg))
-
-        except TypeError as ex:
-            self.error(str(ex))
+        if nested:
+            cfg = _flat_namespace_to_dict(Namespace(**cfg))
 
         return dict_to_namespace(cfg)
 
@@ -942,9 +916,9 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                 try:
                     val = get_key_value(cfg, reqkey)
                     if val is None:
-                        raise TypeError('Key "'+reqkey+'" is required but its value is None.')
+                        raise TypeError()
                 except:
-                    raise TypeError('Key "'+reqkey+'" is required but not included in config object.')
+                    raise TypeError('Key "'+reqkey+'" is required but not included in config object or its value is None.')
 
         def check_values(cfg, base=None):
             subcommand = None
@@ -970,8 +944,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             check_required(cfg)
             check_values(cfg)
         except Exception as ex:
-            trace = traceback.format_exc()
-            self.error('Config checking failed :: '+str(ex)+' :: '+str(trace))
+            raise type(ex)('Config checking failed :: '+str(ex))
 
 
     def strip_unknown(self, cfg:Union[Namespace, Dict[str, Any]]) -> Namespace:
@@ -1097,8 +1070,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         Raises:
             TypeError: If the value is not valid.
         """
-        if action is None:
-            raise ValueError('Parser key "'+str(key)+'": received action==None.')
         if action.choices is not None:
             if isinstance(action, _ActionSubCommands):
                 if key == action.dest:
@@ -1120,7 +1091,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             try:
                 if action.nargs in {None, '?'} or action.nargs == 0:
                     value = action.type(value)
-                else:
+                elif value is not None:
                     for k, v in enumerate(value):
                         value[k] = action.type(v)
             except (TypeError, ValueError) as ex:
@@ -1134,74 +1105,89 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
     @property
     def error_handler(self):
-        """The current error_handler."""
+        """Property for the error_handler function that is called when there are parsing errors.
+
+        :getter: Returns the current error_handler function.
+        :setter: Sets a new error_handler function (Callable[self, message:str] or None).
+
+        Raises:
+            ValueError: If an invalid value is given.
+        """
         return self._error_handler
 
 
     @error_handler.setter
     def error_handler(self, error_handler):
-        """Sets a new value to the error_handler property.
-
-        Args:
-            error_handler (Callable or None): Handler for parsing errors (default=None). For same behavior as argparse use :func:`usage_and_exit_error_handler`.
-        """
-        if error_handler == 'usage_and_exit_error_handler':
-            self._error_handler = usage_and_exit_error_handler
-        elif callable(error_handler) or error_handler is None:
+        if callable(error_handler) or error_handler is None:
             self._error_handler = error_handler
         else:
-            raise ValueError('error_handler can be either a Callable or the "usage_and_exit_error_handler" string or None.')
+            raise ValueError('error_handler can be either a Callable or None.')
 
 
     @property
     def default_env(self):
-        """The current value of the default_env."""
+        """Whether by default environment variables parsing is enabled.
+
+        :getter: Returns the current default environment variables parsing setting.
+        :setter: Sets the default environment variables parsing setting.
+
+        Raises:
+            ValueError: If an invalid value is given.
+        """
         return self._default_env
 
 
     @default_env.setter
     def default_env(self, default_env:bool):
-        """Sets a new value to the default_env property.
-
-        Args:
-            default_env: Whether default environment parsing is enabled or not.
-        """
-        self._default_env = default_env
+        if isinstance(default_env, bool):
+            self._default_env = default_env
+        else:
+            raise ValueError('default_env has to be a boolean.')
         if _issubclass(self.formatter_class, DefaultHelpFormatter):
             setattr(self.formatter_class, '_default_env', default_env)
 
 
     @property
     def default_meta(self):
-        """The current value of the default_meta."""
+        """Whether by default metadata is included in config objects.
+
+        :getter: Returns the current default metadata setting.
+        :setter: Sets the default metadata setting.
+
+        Raises:
+            ValueError: If an invalid value is given.
+        """
         return self._default_meta
 
 
     @default_meta.setter
     def default_meta(self, default_meta:bool):
-        """Sets a new value to the default_meta property.
-
-        Args:
-            default_meta: Whether by default metadata is included in config objects.
-        """
-        self._default_meta = default_meta
+        if isinstance(default_meta, bool):
+            self._default_meta = default_meta
+        else:
+            raise ValueError('default_meta has to be a boolean.')
 
 
     @property
     def env_prefix(self):
-        """The current value of the env_prefix."""
+        """The environment variables prefix property.
+
+        :getter: Returns the current environment variables prefix.
+        :setter: Sets the environment variables prefix.
+
+        Raises:
+            ValueError: If an invalid value is given.
+        """
         return self._env_prefix
 
 
     @env_prefix.setter
     def env_prefix(self, env_prefix:Optional[str]):
-        """Sets a new value to the env_prefix property.
-
-        Args:
-            env_prefix: Set prefix for environment variables, use None to derive it from prog.
-        """
         if env_prefix is None:
-            env_prefix = os.path.splitext(self.prog)[0]
-        self._env_prefix = env_prefix
+            self._env_prefix = os.path.splitext(self.prog)[0]
+        elif isinstance(env_prefix, str):
+            self._env_prefix = env_prefix
+        else:
+            raise ValueError('env_prefix has to be a string or None.')
         if _issubclass(self.formatter_class, DefaultHelpFormatter):
             setattr(self.formatter_class, '_env_prefix', env_prefix)

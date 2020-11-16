@@ -370,14 +370,14 @@ class ActionParser(Action):
             if isinstance(subaction, ActionParser):
                 ActionParser._set_inner_parser_prefix(action._parser, prefix, subaction)
 
-    @staticmethod
-    def _fix_conflicts(parser, cfg):
-        cfg_dict = namespace_to_dict(cfg)
-        for action in parser._actions:
-            if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
-                children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]
-                if len(children) > 0:
-                    delattr(cfg, action.dest)
+    #@staticmethod
+    #def _fix_conflicts(parser, cfg):
+    #    cfg_dict = namespace_to_dict(cfg)
+    #    for action in parser._actions:
+    #        if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
+    #            children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]
+    #            if len(children) > 0:
+    #                delattr(cfg, action.dest)
 
 
 class _ActionSubCommands(_SubParsersAction):
