@@ -85,6 +85,8 @@ class _ActionsContainer(argparse._ActionsContainer):
             action._required = True
             action.required = False
         if isinstance(action, ActionParser):
+            if action._parser == self:
+                raise ValueError('Parser cannot be added as a subparser of itself.')
             ActionParser._set_inner_parser_prefix(self, action.dest, action)
         return action
 

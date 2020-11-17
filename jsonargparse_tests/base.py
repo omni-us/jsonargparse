@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import unittest
 from jsonargparse import *
+from jsonargparse.typing import *
 from jsonargparse.optionals import (
     jsonschema_support, import_jsonschema,
     jsonnet_support, import_jsonnet,

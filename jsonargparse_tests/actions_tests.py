@@ -43,6 +43,7 @@ class ActionsTests(unittest.TestCase):
         parser = ArgumentParser()
         self.assertRaises(ValueError, lambda: parser.add_argument('--val', action=ActionYesNo(yes_prefix='yes_')))
         self.assertRaises(ValueError, lambda: parser.add_argument('pos', action=ActionYesNo))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--val', nargs='?', action=ActionYesNo(no_prefix=None)))
 
 
     def test_ActionPathList(self):
@@ -274,6 +275,15 @@ class ActionsTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: ActionParser(parser=object))
 
         shutil.rmtree(tmpdir)
+
+
+    def test_ActionParser_failures(self):
+        parser_lv2 = ArgumentParser()
+        parser_lv2.add_argument('--op')
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--inner', action=ActionParser(parser=parser_lv2))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--mistake', action=ActionParser(parser=parser)))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--inner=1']))
 
 
 if __name__ == '__main__':

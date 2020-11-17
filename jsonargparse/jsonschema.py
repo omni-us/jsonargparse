@@ -99,8 +99,10 @@ class ActionJsonSchema(Action):
         for num, val in enumerate(value):
             try:
                 fpath = None
-                if isinstance(val, str):
-                    val = yaml.safe_load(val)
+                if isinstance(val, str) and val.strip() != '':
+                    parsed_val = yaml.safe_load(val)
+                    if not isinstance(parsed_val, str):
+                        val = parsed_val
                 if self._enable_path and isinstance(val, str):
                     try:
                         fpath = Path(val, mode=get_config_read_mode())

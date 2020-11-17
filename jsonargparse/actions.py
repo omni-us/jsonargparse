@@ -139,8 +139,8 @@ class ActionYesNo(Action):
                 self._yes_prefix = kwargs['yes_prefix']
             if 'no_prefix' in kwargs:
                 self._no_prefix = kwargs['no_prefix']
-        elif 'option_strings' not in kwargs:
-            raise ValueError('Expected yes_prefix and/or no_prefix keyword arguments.')
+        #elif 'option_strings' not in kwargs:
+        #    raise ValueError('Expected yes_prefix and/or no_prefix keyword arguments.')
         else:
             self._yes_prefix = kwargs.pop('_yes_prefix') if '_yes_prefix' in kwargs else ''
             self._no_prefix = kwargs.pop('_no_prefix') if '_no_prefix' in kwargs else 'no_'
@@ -173,7 +173,9 @@ class ActionYesNo(Action):
             kwargs['_yes_prefix'] = self._yes_prefix
             kwargs['_no_prefix'] = self._no_prefix
             return ActionYesNo(**kwargs)
-        value = args[2][0] if isinstance(args[2], list) and len(args[2]) == 1 else args[2] if isinstance(args[2], bool) else True
+        value = args[2] if isinstance(args[2], bool) else True
+        if isinstance(args[2], list) and len(args[2]) == 1:
+            value = args[2][0]
         if self._no_prefix is not None and args[3].startswith('--'+self._no_prefix):
             setattr(args[1], self.dest, not value)
         else:
@@ -341,8 +343,8 @@ class ActionParser(Action):
                 self._parser.check_config(value, skip_none=True)
             if fpath is not None:
                 value.__path__ = fpath
-        except TypeError as ex:
-            raise TypeError(re.sub('^Parser key ([^:]+):', 'Parser key '+self.dest+'.\\1: ', str(ex)))
+        except KeyError as ex:
+            raise type(ex)(re.sub('^Parser key ([^:]+):', 'Parser key '+self.dest+'.\\1: ', str(ex)))
         return value
 
     @staticmethod

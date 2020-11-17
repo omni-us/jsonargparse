@@ -342,10 +342,11 @@ class Path:
         self.is_url = is_url  # type: bool
 
     def __str__(self):
-        return self.abs_path
+        return self.path
 
     def __repr__(self):
-        return 'Path(path="'+self.path+'", abs_path="'+self.abs_path+'", cwd="'+self.cwd+'")'
+        cwd = '' if self.path == self.abs_path else ', cwd='+self.cwd
+        return 'Path('+self.path+cwd+')'
 
     def __call__(self, absolute:bool=True) -> str:
         """Returns the path as a string.

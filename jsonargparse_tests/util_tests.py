@@ -131,7 +131,7 @@ class PathTests(TempDirTestCase):
         self.assertEqual(path(False), self.file_rw)
         self.assertEqual(path(True), os.path.join(self.tmpdir, self.file_rw))
         self.assertEqual(path(), os.path.join(self.tmpdir, self.file_rw))
-        self.assertEqual(str(path), os.path.join(self.tmpdir, self.file_rw))
+        self.assertEqual(str(path), self.file_rw)
         self.assertTrue(path.__repr__().startswith('Path('))
 
 

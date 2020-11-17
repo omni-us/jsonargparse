@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 # pylint: disable=unexpected-keyword-arg
 
+import os
 import pickle
+import pathlib
 import jsonargparse.typing
+from jsonargparse.typing import annotation_to_schema
 from jsonargparse_tests.base import *
 
 
@@ -80,14 +83,6 @@ class RestrictedNumberTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: PositiveOrMinusOne('-2'))
 
 
-    def test_pickle_module_types(self):
-        for otype in jsonargparse.typing.registered_types.values():
-            if hasattr(jsonargparse.typing, otype.__name__):
-                with self.subTest(otype.__name__):
-                    utype = pickle.loads(pickle.dumps(otype))
-                    self.assertEqual(otype, utype)
-
-
     def test_add_argument_type(self):
         TenToTwenty = restricted_number_type('TenToTwenty', int, [('>=', 10), ('<=', 20)])
 
@@ -112,6 +107,66 @@ class RestrictedNumberTests(unittest.TestCase):
         self.assertEqual('off', parser.parse_args(['--gt0_or_off', 'off']).gt0_or_off)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--gt0_or_off', '0']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--gt0_or_off', 'on']))
+
+
+class RestrictedStringTests(unittest.TestCase):
+
+    def test_Email(self):
+        self.assertEqual('name@eg.org', Email('name@eg.org'))
+        self.assertRaises(ValueError, lambda: Email(''))
+        self.assertRaises(ValueError, lambda: Email('name @ eg.org'))
+        self.assertRaises(ValueError, lambda: Email('name_at_eg.org'))
+
+
+    def test_already_registered(self):
+        NewEmail = restricted_string_type('Email', r'^[^@ ]+@[^@ ]+\.[^@ ]+$')
+        self.assertEqual(Email, NewEmail)
+        self.assertRaises(ValueError, lambda: restricted_string_type('NewName', r'^[^@ ]+@[^@ ]+\.[^@ ]+$'))
+
+
+    def test_add_argument_type(self):
+        FourDigits = restricted_string_type('FourDigits', '^[0-9]{4}$')
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--op', type=FourDigits)
+        self.assertEqual('1234', parser.parse_args(['--op', '1234']).op)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', '123']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', '12345']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', 'abcd']))
+
+
+class PathTypeTests(TempDirTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.file_fr = 'file_r'
+        pathlib.Path(self.file_fr).touch()
+
+
+    def test_Path_fr(self):
+        path = Path_fr(self.file_fr)
+        self.assertEqual(path, self.file_fr)
+        self.assertEqual(repr(path), self.file_fr)
+        self.assertEqual(path(), os.path.realpath(self.file_fr))
+        self.assertRaises(TypeError, lambda: Path_fr('does_not_exist'))
+
+
+    def test_already_registered(self):
+        NewPath_fr = path_type('fr')
+        self.assertEqual(Path_fr, NewPath_fr)
+
+
+    def test_annotation_to_schema_not_supported(self):
+        self.assertIsNone(annotation_to_schema(Path_fr))
+
+
+class OtherTests(unittest.TestCase):
+
+    def test_pickle_module_types(self):
+        for otype in registered_types.values():
+            if hasattr(jsonargparse.typing, otype.__name__):
+                with self.subTest(otype.__name__):
+                    utype = pickle.loads(pickle.dumps(otype))
+                    self.assertEqual(otype, utype)
 
 
 if __name__ == '__main__':

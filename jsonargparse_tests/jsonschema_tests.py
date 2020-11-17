@@ -146,14 +146,26 @@ class JsonSchemaTests(TempDirTestCase):
 
     def test_add_argument_type_hint(self):
         parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--op', type=Optional[Union[PositiveInt, OpenUnitInterval]])
+        parser.add_argument('--op1', type=Optional[Union[PositiveInt, OpenUnitInterval]])
+        self.assertEqual(0.1, parser.parse_args(['--op1', '0.1']).op1)
+        self.assertEqual(0.9, parser.parse_args(['--op1', '0.9']).op1)
+        self.assertEqual(1, parser.parse_args(['--op1', '1']).op1)
+        self.assertEqual(12, parser.parse_args(['--op1', '12']).op1)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '0.0']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '4.5']))
+        parser.add_argument('--op2', type=Optional[Email])
+        self.assertEqual('a@b.c', parser.parse_args(['--op2', 'a@b.c']).op2)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', 'abc']))
 
-        self.assertEqual(0.1, parser.parse_args(['--op', '0.1']).op)
-        self.assertEqual(0.9, parser.parse_args(['--op', '0.9']).op)
-        self.assertEqual(1, parser.parse_args(['--op', '1']).op)
-        self.assertEqual(12, parser.parse_args(['--op', '12']).op)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', '0.0']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', '4.5']))
+
+    def test_no_str_strip(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--op', type=Optional[str])
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        self.assertEqual('  ', parser.parse_args(['--op', '  ']).op)
+        self.assertEqual('', parser.parse_args(['--op', '']).op)
+        self.assertEqual(' abc ', parser.parse_args(['--op= abc ']).op)
+        self.assertEqual(' ', parser.parse_args(['--cfg={"op":" "}']).op)
 
 
 if __name__ == '__main__':
