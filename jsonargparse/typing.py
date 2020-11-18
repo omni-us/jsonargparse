@@ -19,6 +19,7 @@ __all__ = [
     'OpenUnitInterval',
     'Email',
     'Path_fr',
+    'Path_dw',
 ]
 
 
@@ -186,7 +187,11 @@ def path_type(
     class PathType(Path):
 
         _expression = expression
+        _mode = mode
         _type = str
+
+        def __init__(self, v):
+            super().__init__(v, mode=self._mode)
 
         def __repr__(self):
             return self.path
@@ -215,7 +220,10 @@ OpenUnitInterval   = restricted_number_type('OpenUnitInterval',   float, [('>', 
 Email = restricted_string_type('Email', r'^[^@ ]+@[^@ ]+\.[^@ ]+$',
                                docstring=r'str restricted to the email pattern ^[^@ ]+@[^@ ]+\.[^@ ]+$')
 
-Path_fr = path_type('fr', docstring='str pointing to a file that exists and is readable')
+Path_fr = path_type('fr',
+                    docstring='str pointing to a file that exists and is readable')
+Path_dw = path_type('dw',
+                    docstring='str pointing to a directory that exists and is writeable')
 
 
 def annotation_to_schema(annotation) -> Optional[Dict[str, str]]:

@@ -478,7 +478,8 @@ and access permissions, but not necessarily opening the file. Moreover, a file
 path could be included in a config file as relative with respect to the config
 file's location. After parsing it should be easy to access the parsed file path
 without having to consider the location of the config file. To help in these
-situations jsonargparse includes the :class:`.ActionPath` and the
+situations jsonargparse includes a type generator :func:`.path_type`, some
+predefined types (e.g. :class:`.Path_fr`) and the :class:`.ActionPath` and
 :class:`.ActionPathList` classes.
 
 For example suppose you have a directory with a configuration file
@@ -491,70 +492,83 @@ the yaml file is the following:
     databases:
       info: data/info.db
 
-To create a parser that checks that the value of :code:`databases.info` exists
-and is readable, the following could be done:
+To create a parser that checks that the value of :code:`databases.info` is a
+file that exists and is readable, the following could be done:
 
 .. code-block:: python
 
-    >>> from jsonargparse import ArgumentParser, ActionPath
-    >>> parser = ArgumentParser()
-    >>> parser.add_argument('--databases.info', action=ActionPath(mode='fr'))
-    >>> cfg = parser.parse_path('app/config.yaml')
+    from jsonargparse import ArgumentParser
+    from jsonargparse.typing import Path_fr
+    parser = ArgumentParser()
+    parser.add_argument('--databases.info', type=Path_fr)
+    cfg = parser.parse_path('app/config.yaml')
 
-After parsing the value of :code:`databases.info` will be an instance of the
-:class:`.Path` class that allows to get both the original relative path as
-included in the yaml file, or the corresponding absolute path:
+The :code:`fr` in the type are flags stand for file and readable. After parsing
+the value of :code:`databases.info` will be an instance of the :class:`.Path`
+class that allows to get both the original relative path as included in the yaml
+file, or the corresponding absolute path:
 
 .. code-block:: python
 
-    >>> cfg.databases.info(absolute=False)
+    >>> str(cfg.databases.info)
     'data/info.db'
     >>> cfg.databases.info()
     '/YOUR_CWD/app/data/info.db'
 
-Likewise directories can also be parsed by including in the mode the :code:`'d'`
-flag, e.g. :code:`ActionPath(mode='drw')`.
+Likewise directories can be parsed for example using as type the
+:class:`.Path_dw` type, would require a directory to exist and be writeable. New
+path types can be created using the :func:`.path_type` function. For example to
+create a type for files that must exist and be both readable and writeable, the
+command would be :code:`Path_frw = path_type('frw')`. If the file
+:code:`app/config.yaml` is not writeable, then usig the type to cast
+:code:`Path_frw('app/config.yaml')` would raise a *TypeError: File is not
+writeable* exception. For more information of all the mode flags supported,
+refer to the documentation of the :class:`.Path` class.
 
 The content of a file that a :class:`.Path` instance references can be read by
 using the :py:meth:`.Path.get_content` method. For the previous example would be
 :code:`info_db = cfg.databases.info.get_content()`.
 
-An argument with :class:`.ActionPath` can be given :code:`nargs='+'` to parse
-multiple paths. But it might also be wanted to parse a list of paths found in a
-plain text file or from stdin. For this the :class:`.ActionPathList` is used and
-as argument either the path to a file listing the paths is given or the special
+Adding arguments with path types is equivalent to adding using for example
+:code:`action=ActionPath(mode='fr')` instead of a :code:`type=Path_fr`. However,
+the type option is preferred.
+
+An argument with a path type can be given :code:`nargs='+'` to parse multiple
+paths. But it might also be wanted to parse a list of paths found in a plain
+text file or from stdin. For this the :class:`.ActionPathList` is used and as
+argument either the path to a file listing the paths is given or the special
 :code:`'-'` string for reading the list from stdin. For for example:
 
 .. code-block:: python
 
-    >>> from jsonargparse import ActionPathList
-    >>> parser.add_argument('--list', action=ActionPathList(mode='fr'))
-    >>> cfg = parser.parse_args(['--list', 'paths.lst')  # Text file with paths
-    >>> cfg = parser.parse_args(['--list', '-')          # List from stdin
+    from jsonargparse import ActionPathList
+    parser.add_argument('--list', action=ActionPathList(mode='fr'))
+    cfg = parser.parse_args(['--list', 'paths.lst')  # Text file with paths
+    cfg = parser.parse_args(['--list', '-')          # List from stdin
 
 If :code:`nargs='+'` is given to :code:`add_argument` then a single list is
-generated including all paths in all lists provided.
+generated including all paths in all lists is provided.
 
-Note: the :class:`.Path` class is currently not supported in windows.
+Note: the :class:`.Path` class is currently not fully supported in windows.
 
 
 Parsing URLs
 ============
 
-The :class:`.ActionPath` and :class:`.ActionPathList` classes also support URLs
-which after parsing the :py:meth:`.Path.get_content` can be used to perform a
-GET request to the corresponding URL and retrieve its content. For this to work
-the *validators* and *requests* python packages are required which will be
-installed along with jsonargparse if installed with the :code:`urls` extras
-require as explained in section :ref:`installation`.
+The :func:`.path_type` function also supports URLs which after parsing the
+:py:meth:`.Path.get_content` method can be used to perform a GET request to the
+corresponding URL and retrieve its content. For this to work the *validators*
+and *requests* python packages are required which will be installed along with
+jsonargparse if installed with the :code:`urls` extras require as explained in
+section :ref:`installation`.
 
-Then the :code:`'u'` flag can be used to parse URLs. For example if it is
-desired that an argument can be either a readable file or URL the action would
-be initialized as :code:`ActionPath(mode='fur')`. If the value appears to be a
-URL according to :func:`validators.url.url` then a HEAD request would be
-triggered to check if it is accessible, and if so, the parsing succeeds. To get
-the content of the parsed path, without needing to care if it is a local file or
-a URL, the :py:meth:`.Path.get_content` can be used.
+The :code:`'u'` flag is used to parse URLs. For example if it is desired that an
+argument can be either a readable file or URL, the type would be created as
+:code:`Path_fur = path_type('fur')`. If the value appears to be a URL according
+to :func:`validators.url.url` then a HEAD request would be triggered to check if
+it is accessible, and if so, the parsing succeeds. To get the content of the
+parsed path, without needing to care if it is a local file or a URL, the
+:py:meth:`.Path.get_content` can be used.
 
 If after importing jsonargparse you run
 :code:`jsonargparse.set_url_support(True)`, the following functions and classes
@@ -578,9 +592,10 @@ Restricted numbers
 It is quite common that when parsing a number, its range should be limited. To
 ease these cases the module :code:`jsonargparse.typing` includes some predefined
 types and a function :func:`.restricted_number_type` to define new types. The
-predefined types are: :code:`PositiveInt`, :code:`NonNegativeInt`,
-:code:`PositiveFloat`, :code:`NonNegativeFloat`, :code:`ClosedUnitInterval` and
-:code:`OpenUnitInterval`. Examples of usage are:
+predefined types are: :class:`.PositiveInt`, :class:`.NonNegativeInt`,
+:class:`.PositiveFloat`, :class:`.NonNegativeFloat`,
+:class:`.ClosedUnitInterval` and :class:`.OpenUnitInterval`. Examples of usage
+are:
 
 .. code-block:: python
 
@@ -593,6 +608,23 @@ predefined types are: :code:`PositiveInt`, :code:`NonNegativeInt`,
     # either int larger than zero or 'off' string
     def int_or_off(x): return x if x == 'off' else PositiveInt(x)
     parser.add_argument('--op3', type=int_or_off))
+
+
+Restricted strings
+==================
+
+Similar to the restricted numbers, there is a function to create string types
+that are restricted to match a given regular expression:
+:func:`.restricted_string_type`. A predefined type is :class:`.Email` which is
+restricted so that it follows the normal email pattern. For example to add an
+argument required to be exactly four uppercase letters:
+
+.. code-block:: python
+
+    from jsonargparse.typing import Email, restricted_string_type
+    CodeType = restricted_string_type('CodeType', '^[A-Z]{4}$')
+    parser.add_argument('--code', type=CodeType)
+    parser.add_argument('--email', type=Email)
 
 
 Type hints
