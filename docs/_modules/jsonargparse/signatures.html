@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.signatures &mdash; jsonargparse 3.0.0.dev5 documentation</title>
+  <title>jsonargparse.signatures &mdash; jsonargparse 3.0.0rc1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0.dev5
+                3.0.0rc1
               </div>
             
           
@@ -148,33 +148,43 @@
            <div itemprop="articleBody">
             
   <h1>Source code for jsonargparse.signatures</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Add arguments based on signatures.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Metods to add arguments based on class/method/function signatures.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span>
 
 <span class="kn">from</span> <span class="nn">.util</span> <span class="k">import</span> <span class="n">_issubclass</span>
 <span class="kn">from</span> <span class="nn">.actions</span> <span class="k">import</span> <span class="n">ActionEnum</span>
 <span class="kn">from</span> <span class="nn">.jsonschema</span> <span class="k">import</span> <span class="n">ActionJsonSchema</span>
-<span class="kn">from</span> <span class="nn">.optionals</span> <span class="k">import</span> <span class="n">docstring_parser_support</span><span class="p">,</span> <span class="n">_import_docstring_parse</span><span class="p">,</span> <span class="n">dataclasses_support</span><span class="p">,</span> <span class="n">_import_dataclasses</span>
+<span class="kn">from</span> <span class="nn">.optionals</span> <span class="k">import</span> <span class="n">docstring_parser_support</span><span class="p">,</span> <span class="n">import_docstring_parse</span><span class="p">,</span> <span class="n">dataclasses_support</span><span class="p">,</span> <span class="n">import_dataclasses</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SignatureArguments&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="SignatureArguments"><a class="viewcode-back" href="../../index.html#jsonargparse.signatures.SignatureArguments">[docs]</a><span class="k">class</span> <span class="nc">SignatureArguments</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Methods to add arguments based on signatures to an ArgumentParser instance.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="SignatureArguments.add_class_arguments"><a class="viewcode-back" href="../../index.html#jsonargparse.signatures.SignatureArguments.add_class_arguments">[docs]</a>    <span class="k">def</span> <span class="nf">add_class_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theclass</span><span class="p">,</span> <span class="n">nested_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">as_group</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="SignatureArguments.add_class_arguments"><a class="viewcode-back" href="../../index.html#jsonargparse.signatures.SignatureArguments.add_class_arguments">[docs]</a>    <span class="k">def</span> <span class="nf">add_class_arguments</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">theclass</span><span class="p">:</span> <span class="n">Type</span><span class="p">,</span>
+        <span class="n">nested_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">as_group</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Adds arguments from a class based on its type hints and docstrings.</span>
 
 <span class="sd">        Note: Keyword arguments without at least one valid type are ignored.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            theclass (class): Class from which to add arguments.</span>
-<span class="sd">            nested_key (str or None): Key for nested namespace.</span>
-<span class="sd">            as_group (bool): Whether arguments should be added to a new argument group.</span>
-<span class="sd">            skip (set[str] or None): Names of arguments that should be skipped.</span>
+<span class="sd">            theclass: Class from which to add arguments.</span>
+<span class="sd">            nested_key: Key for nested namespace.</span>
+<span class="sd">            as_group: Whether arguments should be added to a new argument group.</span>
+<span class="sd">            skip: Names of arguments that should be skipped.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            int: Number of arguments added.</span>
+<span class="sd">            Number of arguments added.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: When not given a class.</span>
@@ -189,20 +199,27 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getmro</span><span class="p">(</span><span class="n">theclass</span><span class="p">),</span> <span class="n">nested_key</span><span class="p">,</span> <span class="n">as_group</span><span class="p">,</span> <span class="n">docs_func</span><span class="p">,</span> <span class="n">skip</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SignatureArguments.add_method_arguments"><a class="viewcode-back" href="../../index.html#jsonargparse.signatures.SignatureArguments.add_method_arguments">[docs]</a>    <span class="k">def</span> <span class="nf">add_method_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">,</span> <span class="n">nested_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">as_group</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="SignatureArguments.add_method_arguments"><a class="viewcode-back" href="../../index.html#jsonargparse.signatures.SignatureArguments.add_method_arguments">[docs]</a>    <span class="k">def</span> <span class="nf">add_method_arguments</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">theclass</span><span class="p">:</span> <span class="n">Type</span><span class="p">,</span>
+        <span class="n">themethod</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">nested_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">as_group</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Adds arguments from a class based on its type hints and docstrings.</span>
 
 <span class="sd">        Note: Keyword arguments without at least one valid type are ignored.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            theclass (class): Class which includes the method.</span>
-<span class="sd">            themethod (str): Name of the method for which to add arguments.</span>
-<span class="sd">            nested_key (str or None): Key for nested namespace.</span>
-<span class="sd">            as_group (bool): Whether arguments should be added to a new argument group.</span>
-<span class="sd">            skip (set[str] or None): Names of arguments that should be skipped.</span>
+<span class="sd">            theclass: Class which includes the method.</span>
+<span class="sd">            themethod: Name of the method for which to add arguments.</span>
+<span class="sd">            nested_key: Key for nested namespace.</span>
+<span class="sd">            as_group: Whether arguments should be added to a new argument group.</span>
+<span class="sd">            skip: Names of arguments that should be skipped.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            int: Number of arguments added.</span>
+<span class="sd">            Number of arguments added.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: When not given a class or the name of a method of the class.</span>
@@ -222,19 +239,25 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">([</span><span class="n">themethod</span><span class="p">],</span> <span class="n">nested_key</span><span class="p">,</span> <span class="n">as_group</span><span class="p">,</span> <span class="n">docs_func</span><span class="p">,</span> <span class="n">skip</span><span class="p">,</span> <span class="n">skip_first</span><span class="o">=</span><span class="n">skip_first</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SignatureArguments.add_function_arguments"><a class="viewcode-back" href="../../index.html#jsonargparse.signatures.SignatureArguments.add_function_arguments">[docs]</a>    <span class="k">def</span> <span class="nf">add_function_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">nested_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">as_group</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="SignatureArguments.add_function_arguments"><a class="viewcode-back" href="../../index.html#jsonargparse.signatures.SignatureArguments.add_function_arguments">[docs]</a>    <span class="k">def</span> <span class="nf">add_function_arguments</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">nested_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">as_group</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Adds arguments from a function based on its type hints and docstrings.</span>
 
 <span class="sd">        Note: Keyword arguments without at least one valid type are ignored.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            function (callable): Function from which to add arguments.</span>
-<span class="sd">            nested_key (str or None): Key for nested namespace.</span>
-<span class="sd">            as_group (bool): Whether arguments should be added to a new argument group.</span>
-<span class="sd">            skip (set[str] or None): Names of arguments that should be skipped.</span>
+<span class="sd">            function: Function from which to add arguments.</span>
+<span class="sd">            nested_key: Key for nested namespace.</span>
+<span class="sd">            as_group: Whether arguments should be added to a new argument group.</span>
+<span class="sd">            skip: Names of arguments that should be skipped.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            int: Number of arguments added.</span>
+<span class="sd">            Number of arguments added.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: When not given a callable.</span>
@@ -249,19 +272,27 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">([</span><span class="n">function</span><span class="p">],</span> <span class="n">nested_key</span><span class="p">,</span> <span class="n">as_group</span><span class="p">,</span> <span class="n">docs_func</span><span class="p">,</span> <span class="n">skip</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_add_signature_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">objects</span><span class="p">,</span> <span class="n">nested_key</span><span class="p">,</span> <span class="n">as_group</span><span class="p">,</span> <span class="n">docs_func</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_first</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_add_signature_arguments</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">objects</span><span class="p">,</span>
+        <span class="n">nested_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">as_group</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">docs_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">skip_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Adds arguments from arguments of objects based on signatures and docstrings.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            objects (tuple or list): Objects from which to add signatures.</span>
-<span class="sd">            nested_key (str or None): Key for nested namespace.</span>
-<span class="sd">            as_group (bool): Whether arguments should be added to a new argument group.</span>
-<span class="sd">            docs_func (callable): Function that returns docstrings for a given object.</span>
-<span class="sd">            skip (set[str] or None): Names of arguments that should be skipped.</span>
-<span class="sd">            skip_first (bool): Whether to skip first argument, i.e., skip self of class methods.</span>
+<span class="sd">            objects: Objects from which to add signatures.</span>
+<span class="sd">            nested_key: Key for nested namespace.</span>
+<span class="sd">            as_group: Whether arguments should be added to a new argument group.</span>
+<span class="sd">            docs_func: Function that returns docstrings for a given object.</span>
+<span class="sd">            skip: Names of arguments that should be skipped.</span>
+<span class="sd">            skip_first: Whether to skip first argument, i.e., skip self of class methods.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            int: Number of arguments added.</span>
+<span class="sd">            Number of arguments added.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: When there are positional arguments without at least one valid type.</span>
@@ -288,7 +319,7 @@
         <span class="n">doc_group</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">doc_params</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">docstring_parser_support</span><span class="p">:</span>
-            <span class="n">docstring_parse</span> <span class="o">=</span> <span class="n">_import_docstring_parse</span><span class="p">(</span><span class="s1">&#39;_add_signature_arguments&#39;</span><span class="p">)</span>
+            <span class="n">docstring_parse</span> <span class="o">=</span> <span class="n">import_docstring_parse</span><span class="p">(</span><span class="s1">&#39;_add_signature_arguments&#39;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">objects</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">docs_func</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
                     <span class="n">docstring</span> <span class="o">=</span> <span class="n">docstring_parse</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
@@ -304,37 +335,37 @@
             <span class="k">if</span> <span class="n">doc_group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">doc_group</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">objects</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">objects</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">if</span> <span class="n">nested_key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">nested_key</span>
-            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">doc_group</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">doc_group</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
         <span class="c1">## Add objects arguments ##</span>
         <span class="n">num_added</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">skip</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">skip</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">dataclasses_support</span><span class="p">:</span>
-            <span class="n">dataclasses</span> <span class="o">=</span> <span class="n">_import_dataclasses</span><span class="p">(</span><span class="s1">&#39;_add_signature_arguments&#39;</span><span class="p">)</span>
+            <span class="n">dataclasses</span> <span class="o">=</span> <span class="n">import_dataclasses</span><span class="p">(</span><span class="s1">&#39;_add_signature_arguments&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="n">add_args</span><span class="p">,</span> <span class="n">add_kwargs</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">objects</span><span class="p">,</span> <span class="n">add_types</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
                 <span class="n">name</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">name</span>
                 <span class="n">annotation</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">annotation</span>
                 <span class="n">default</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">default</span>
-                <span class="n">is_positional</span> <span class="o">=</span> <span class="n">default</span> <span class="o">==</span> <span class="n">inspect</span><span class="o">.</span><span class="n">_empty</span>
+                <span class="n">is_positional</span> <span class="o">=</span> <span class="n">default</span> <span class="o">==</span> <span class="n">inspect</span><span class="o">.</span><span class="n">_empty</span>  <span class="c1"># type: ignore</span>
                 <span class="n">skip_message</span> <span class="o">=</span> <span class="s1">&#39;Skipping argument &quot;&#39;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;&quot; from &quot;&#39;</span><span class="o">+</span><span class="n">obj</span><span class="o">.</span><span class="vm">__name__</span><span class="o">+</span><span class="s1">&#39;&quot; because of: &#39;</span>
                 <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">_kind</span> <span class="ow">in</span> <span class="p">{</span><span class="n">kinds</span><span class="o">.</span><span class="n">VAR_POSITIONAL</span><span class="p">,</span> <span class="n">kinds</span><span class="o">.</span><span class="n">VAR_KEYWORD</span><span class="p">}</span> <span class="ow">or</span> \
                    <span class="p">(</span><span class="n">is_positional</span> <span class="ow">and</span> <span class="n">skip_first</span> <span class="ow">and</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> \
-                   <span class="p">(</span><span class="n">annotation</span> <span class="o">==</span> <span class="n">inspect</span><span class="o">.</span><span class="n">_empty</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_positional</span> <span class="ow">and</span> <span class="n">default</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                   <span class="p">(</span><span class="n">annotation</span> <span class="o">==</span> <span class="n">inspect</span><span class="o">.</span><span class="n">_empty</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_positional</span> <span class="ow">and</span> <span class="n">default</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
                     <span class="k">continue</span>
                 <span class="k">elif</span> <span class="n">is_positional</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">add_args</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="s1">&#39;Positional argument but *args not propagated.&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="s1">&#39;Positional argument but *args not propagated.&#39;</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
                     <span class="k">continue</span>
                 <span class="k">elif</span> <span class="ow">not</span> <span class="n">is_positional</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">add_kwargs</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="s1">&#39;Keyword argument but **kwargs not propagated.&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="s1">&#39;Keyword argument but **kwargs not propagated.&#39;</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
                     <span class="k">continue</span>
                 <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">skip</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="s1">&#39;Argument requested to be skipped.&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="s1">&#39;Argument requested to be skipped.&#39;</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
                     <span class="k">continue</span>
                 <span class="k">if</span> <span class="n">dataclasses_support</span> <span class="ow">and</span> <span class="n">default</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">==</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">_HAS_DEFAULT_FACTORY_CLASS</span><span class="p">:</span>
                     <span class="n">default</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">default_factory</span><span class="p">()</span>
-                <span class="k">if</span> <span class="n">annotation</span> <span class="o">==</span> <span class="n">inspect</span><span class="o">.</span><span class="n">_empty</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_positional</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">annotation</span> <span class="o">==</span> <span class="n">inspect</span><span class="o">.</span><span class="n">_empty</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_positional</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
                     <span class="n">annotation</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
                 <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;help&#39;</span><span class="p">:</span> <span class="n">doc_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)}</span>
                 <span class="k">if</span> <span class="n">is_positional</span><span class="p">:</span>
@@ -350,10 +381,10 @@
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;action&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ActionJsonSchema</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">enable_path</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
                 <span class="k">if</span> <span class="s1">&#39;type&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="s1">&#39;action&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                     <span class="n">arg</span> <span class="o">=</span> <span class="s1">&#39;--&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="n">nested_key</span><span class="o">+</span><span class="s1">&#39;.&#39;</span> <span class="k">if</span> <span class="n">nested_key</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">name</span>
-                    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
                     <span class="n">num_added</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">elif</span> <span class="n">is_positional</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Positional argument without a type for &#39;</span><span class="o">+</span><span class="n">obj</span><span class="o">.</span><span class="vm">__name__</span><span class="o">+</span><span class="s1">&#39; argument &#39;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
