@@ -4,7 +4,7 @@ from enum import Enum
 from argparse import HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 
 from .util import _get_env_var
-from .actions import ActionParser, ActionEnum
+from .actions import ActionParser, ActionEnum, ActionConfigFile
 from .jsonschema import type_to_str, ActionJsonSchema
 
 
@@ -25,6 +25,8 @@ class DefaultHelpFormatter(HelpFormatter):
     _default_env = True
 
     def _get_help_string(self, action):
+        if isinstance(action, ActionConfigFile):
+            return action.help
         help_str = ''
         if hasattr(action, '_required') and action._required:
             help_str = 'required'

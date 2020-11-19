@@ -4,6 +4,7 @@ import os
 import re
 import json
 import yaml
+import locale
 import inspect
 from enum import Enum
 from argparse import Namespace, Action
@@ -259,13 +260,17 @@ class ActionJsonSchema(Action):
             schema = json.dumps(self._validator.schema, indent=2, sort_keys=True).replace('\n', '\n  ')
             msg += 'required to be valid according to schema:\n  '+schema+'\n'
         if chr(int(os.environ['COMP_TYPE'])) == '?':
-            argcomplete.warn(msg)
-            try:
-                import psutil
-                os.kill(psutil.Process(os.getppid()).ppid(), 28)
-            except:
-                pass
-        return [(' '+msg).replace(' ', u'\u00A0'), '']
+            return warn_redraw_prompt(prefix, msg)
+
+
+def warn_redraw_prompt(prefix, message):
+    argcomplete = import_argcomplete('warn_redraw_prompt')
+    if prefix != '':
+        argcomplete.warn(message)
+        shell_pid = int(os.popen('ps -p %d -oppid=' % os.getppid()).read().strip())
+        os.kill(shell_pid, 28)
+    _ = '_' if locale.getlocale()[1] != 'UTF-8' else u'\u00A0'
+    return [_+message.replace(' ', _), '']
 
 
 def type_in(obj, types_set):

@@ -361,6 +361,11 @@ Some notes about the support for automatic adding of arguments are:
   of :code:`*args` and :code:`**kwargs`. It does not check the code to identify
   if :code:`super().__init__` is called or with which arguments.
 
+- To set a value to :code:`None` it is required to use :code:`null` since this
+  is how json/yaml require it. To avoid confusion in the help :code:`NoneType`
+  is displayed as :code:`null`. For example :code:`val: Optional[str] = None`
+  would be shown as :code:`type: Union[str, null], default: null`.
+
 Since keyword arguments with unsupported types are ignored, during development
 it might be desired to know which arguments are ignored and the specific reason.
 This can be done by initializing :class:`.ArgumentParser` with
