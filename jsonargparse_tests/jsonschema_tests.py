@@ -3,6 +3,7 @@
 
 import re
 import json
+import pathlib
 from io import StringIO
 from contextlib import redirect_stdout
 from typing import Optional, Union
@@ -156,6 +157,17 @@ class JsonSchemaTests(TempDirTestCase):
         parser.add_argument('--op2', type=Optional[Email])
         self.assertEqual('a@b.c', parser.parse_args(['--op2', 'a@b.c']).op2)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', 'abc']))
+
+
+    def test_optional_path(self):
+        pathlib.Path('file_fr').touch()
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--path', type=Optional[Path_fr])
+        self.assertIsNone(parser.parse_args(['--path=null']).path)
+        cfg = parser.parse_args(['--path=file_fr'])
+        self.assertEqual('file_fr', cfg.path)
+        self.assertIsInstance(cfg.path, Path)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--path=not_exist']))
 
 
     def test_no_str_strip(self):

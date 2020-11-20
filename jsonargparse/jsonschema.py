@@ -13,7 +13,7 @@ from typing import Any, Union, Tuple, List, Set, Dict
 from .util import namespace_to_dict, Path, strip_meta, _check_unknown_kwargs, _issubclass
 from .optionals import import_jsonschema, get_config_read_mode, import_argcomplete
 from .actions import _is_action_value_list
-from .typing import annotation_to_schema
+from .typing import is_optional, annotation_to_schema, type_in, type_to_str
 
 
 __all__ = ['ActionJsonSchema']
@@ -42,9 +42,10 @@ class ActionJsonSchema(Action):
                 if 'schema' in kwargs:
                     raise ValueError('Only one of schema or annotation is accepted.')
                 self._annotation = kwargs['annotation']
-                schema = ActionJsonSchema.typing_schema(kwargs['annotation'])
+                with_path = True if is_optional(self._annotation, Path) else False
+                schema = ActionJsonSchema.typing_schema(self._annotation, with_path=with_path)
                 if schema is None or schema == {'type': 'null'}:
-                    raise ValueError('Unable to generate schema from annotation '+str(kwargs['annotation']))
+                    raise ValueError('Unable to generate schema from annotation '+str(self._annotation))
             else:
                 self._annotation = None
                 schema = kwargs['schema']
@@ -115,6 +116,8 @@ class ActionJsonSchema(Action):
                     val = namespace_to_dict(val)
                 if isinstance(val, (tuple, set)):
                     val = list(val)
+                elif isinstance(val, Path):
+                    val = str(val)
                 elif _issubclass(type(val), Enum):
                     val = val.name
                 elif hasattr(self._annotation, '__origin__') and isinstance(val, dict):
@@ -125,7 +128,7 @@ class ActionJsonSchema(Action):
                     if isinstance(val, dict):
                         val = self._adapt_dict(val, int)
                     elif type_in(self._annotation, {Union}) and isinstance(val, str):
-                        val = self._adapt_enum(val)
+                        val = self._adapt_union_str(val)
                     elif type_in(self._annotation, {Tuple, tuple, Set, set}) and isinstance(val, list):
                         val = tuple(val) if type_in(self._annotation, {Tuple, tuple}) else set(val)
                 if path_meta is not None:
@@ -151,11 +154,15 @@ class ActionJsonSchema(Action):
         return val
 
 
-    def _adapt_enum(self, val):
-        for arg in self._annotation.__args__:
-            if _issubclass(arg, Enum) and val in arg.__members__:
-                val = arg[val]
-                break
+    def _adapt_union_str(self, val):
+        if is_optional(self._annotation, Path):
+            arg_type = [a for a in self._annotation.__args__ if _issubclass(a, Path)][0]
+            val = arg_type(val)
+        else:
+            for arg in self._annotation.__args__:
+                if _issubclass(arg, Enum) and val in arg.__members__:
+                    val = arg[val]
+                    break
         return val
 
 
@@ -177,7 +184,7 @@ class ActionJsonSchema(Action):
 
 
     @staticmethod
-    def typing_schema(annotation):
+    def typing_schema(annotation, with_path=False):
         """Generates a schema based on typing annotation."""
         typesmap = {
             str: 'string',
@@ -201,6 +208,9 @@ class ActionJsonSchema(Action):
 
         elif not hasattr(annotation, '__origin__'):
             return
+
+        elif with_path and is_optional(annotation, Path):
+            return {'type': ['string', 'null']}
 
         elif annotation.__origin__ == Union:
             members = []
@@ -234,7 +244,11 @@ class ActionJsonSchema(Action):
     def _annotation_metavar(self):
         """Generates a metavar for some types."""
         metavar = None
-        if is_optional_enum(self._annotation):
+        if self._annotation == bool:
+            metavar = '{true,false}'
+        elif is_optional(self._annotation, bool):
+            metavar = '{true,false,null}'
+        elif is_optional(self._annotation, Enum):
             enum = self._annotation.__args__[0]
             metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
         return metavar
@@ -244,22 +258,24 @@ class ActionJsonSchema(Action):
         """Used by argcomplete, validates value and shows expected type."""
         if self._annotation == bool:
             return ['true', 'false']
-        elif is_optional_enum(self._annotation):
+        elif is_optional(self._annotation, bool):
+            return ['true', 'false', 'null']
+        elif is_optional(self._annotation, Enum):
             enum = self._annotation.__args__[0]
             return list(enum.__members__.keys())+['null']
-        jsonschema = import_jsonschema('ActionJsonSchema')[0]
-        argcomplete = import_argcomplete('ActionJsonSchema')
-        try:
-            self._validator.validate(yaml.safe_load(prefix))
-            msg = 'value already valid, '
-        except (yaml.parser.ParserError, jsonschema.exceptions.ValidationError):
-            msg = 'value not yet valid, '
-        if self._annotation is not None:
-            msg += 'expected type '+type_to_str(self._annotation)
-        else:
-            schema = json.dumps(self._validator.schema, indent=2, sort_keys=True).replace('\n', '\n  ')
-            msg += 'required to be valid according to schema:\n  '+schema+'\n'
-        if chr(int(os.environ['COMP_TYPE'])) == '?':
+        elif chr(int(os.environ['COMP_TYPE'])) == '?':
+            jsonschema = import_jsonschema('ActionJsonSchema')[0]
+            argcomplete = import_argcomplete('ActionJsonSchema')
+            try:
+                self._validator.validate(yaml.safe_load(prefix))
+                msg = 'value already valid, '
+            except (yaml.parser.ParserError, jsonschema.exceptions.ValidationError):
+                msg = 'value not yet valid, '
+            if self._annotation is not None:
+                msg += 'expected type '+type_to_str(self._annotation)
+            else:
+                schema = json.dumps(self._validator.schema, indent=2, sort_keys=True).replace('\n', '\n  ')
+                msg += 'required to be valid according to schema:\n  '+schema+'\n'
             return warn_redraw_prompt(prefix, msg)
 
 
@@ -267,29 +283,7 @@ def warn_redraw_prompt(prefix, message):
     argcomplete = import_argcomplete('warn_redraw_prompt')
     if prefix != '':
         argcomplete.warn(message)
-        shell_pid = int(os.popen('ps -p %d -oppid=' % os.getppid()).read().strip())
+        shell_pid = int(os.popen('ps -p %s -oppid=' % os.getppid()).read().strip())
         os.kill(shell_pid, 28)
     _ = '_' if locale.getlocale()[1] != 'UTF-8' else u'\u00A0'
     return [_+message.replace(' ', _), '']
-
-
-def type_in(obj, types_set):
-    return hasattr(obj, '__origin__') and obj.__origin__ in types_set
-
-
-def is_optional_enum(annotation):
-    return hasattr(annotation, '__origin__') and \
-        annotation.__origin__ == Union and \
-        len(annotation.__args__) == 2 and \
-        _issubclass(annotation.__args__[0], Enum) and \
-        isinstance(None, annotation.__args__[1])
-
-
-def type_to_str(obj):
-    if _issubclass(obj, (bool, int, float, str, Enum)):
-        if hasattr(obj, '_expression'):
-            return obj._type.__name__ + ' ' + obj._expression
-        else:
-            return obj.__name__
-    elif obj is not None:
-        return re.sub(r'[a-z_.]+\.', '', str(obj)).replace('NoneType', 'null')

@@ -188,7 +188,7 @@ class SignatureArguments:
             group = self.add_argument_group(doc_group, name=name)  # type: ignore
 
         ## Add objects arguments ##
-        num_added = 0
+        added_args = set()
         if skip is None:
             skip = set()
         if dataclasses_support:
@@ -234,9 +234,12 @@ class SignatureArguments:
                         self.logger.debug(skip_message+str(ex))  # type: ignore
                 if 'type' in kwargs or 'action' in kwargs:
                     arg = '--' + (nested_key+'.' if nested_key else '') + name
-                    group.add_argument(arg, **kwargs)  # type: ignore
-                    num_added += 1
+                    if arg in added_args:
+                        self.logger.debug(skip_message+'Argument already added.')  # type: ignore
+                    else:
+                        group.add_argument(arg, **kwargs)  # type: ignore
+                        added_args.add(arg)
                 elif is_positional:
                     raise ValueError('Positional argument without a type for '+obj.__name__+' argument '+name+'.')
 
-        return num_added
+        return len(added_args)

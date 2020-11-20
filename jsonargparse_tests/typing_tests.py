@@ -5,7 +5,9 @@ import os
 import pickle
 import pathlib
 import jsonargparse.typing
-from jsonargparse.typing import annotation_to_schema
+from enum import Enum
+from typing import Optional, Union, Dict
+from jsonargparse.typing import is_optional, annotation_to_schema, type_to_str
 from jsonargparse_tests.base import *
 
 
@@ -148,6 +150,7 @@ class PathTypeTests(TempDirTestCase):
         self.assertEqual(repr(path), self.file_fr)
         self.assertEqual(path(), os.path.realpath(self.file_fr))
         self.assertRaises(TypeError, lambda: Path_fr('does_not_exist'))
+        self.assertEqual('str Path_fr', type_to_str(Path_fr))
 
 
     def test_already_registered(self):
@@ -167,6 +170,31 @@ class OtherTests(unittest.TestCase):
                 with self.subTest(otype.__name__):
                     utype = pickle.loads(pickle.dumps(otype))
                     self.assertEqual(otype, utype)
+
+
+    def test_name_clash(self):
+        self.assertRaises(ValueError, lambda: restricted_string_type('List', '^clash$'))
+
+
+    def test_is_optional(self):
+        class MyEnum(Enum):
+            A = 1
+
+        params = [
+            (Optional[bool],             bool, True),
+            (Union[type(None), bool],    bool, True),
+            (Dict[bool, type(None)],     bool, False),
+            (Optional[Path_fr],          Path, True),
+            (Union[type(None), Path_fr], Path, True),
+            (Dict[Path_fr, type(None)],  Path, False),
+            (Optional[MyEnum],           Enum, True),
+            (Union[type(None), MyEnum],  Enum, True),
+            (Dict[MyEnum, type(None)],   Enum, False),
+        ]
+
+        for annotation, ref_type, expected in params:
+            with self.subTest(str(annotation)):
+                self.assertEqual(expected, is_optional(annotation, ref_type))
 
 
 if __name__ == '__main__':

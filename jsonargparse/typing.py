@@ -2,8 +2,9 @@
 
 import re
 import operator
+from enum import Enum
 from typing import Dict, List, Tuple, Any, Union, Optional, Type, Pattern
-from .util import Path
+from .util import Path, _issubclass
 
 
 __all__ = [
@@ -17,8 +18,10 @@ __all__ = [
     'NonNegativeFloat',
     'ClosedUnitInterval',
     'OpenUnitInterval',
+    'NotEmptyStr',
     'Email',
     'Path_fr',
+    'Path_fc',
     'Path_dw',
 ]
 
@@ -109,11 +112,10 @@ def restricted_number_type(
             name += '_'+join+'_' if num > 0 else '_'
             name += comparison.__name__ + str(ref).replace('.', '')
 
-
     restricted_type = type(name, (RestrictedNumber, base_type), {})
     if docstring is not None:
         restricted_type.__doc__ = docstring
-    registered_types[register_key] = restricted_type
+    register_type(register_key, restricted_type)
 
     return restricted_type
 
@@ -159,7 +161,7 @@ def restricted_string_type(
     restricted_type = type(name, (RestrictedString, str), {})
     if docstring is not None:
         restricted_type.__doc__ = docstring
-    registered_types[register_key] = restricted_type
+    register_type(register_key, restricted_type)
 
     return restricted_type
 
@@ -177,7 +179,6 @@ def path_type(
     Returns:
         The created or retrieved type class.
     """
-    expression = 'path mode='+mode
     name = 'Path_'+mode
 
     register_key = ('path '+''.join(sorted(mode)), str)
@@ -186,7 +187,7 @@ def path_type(
 
     class PathType(Path):
 
-        _expression = expression
+        _expression = name
         _mode = mode
         _type = str
 
@@ -199,9 +200,17 @@ def path_type(
     restricted_type = type(name, (PathType, str), {})
     if docstring is not None:
         restricted_type.__doc__ = docstring
-    registered_types[register_key] = restricted_type
+    register_type(register_key, restricted_type)
 
     return restricted_type
+
+
+def register_type(register_key, new_type):
+    assert register_key not in registered_types
+    if new_type.__name__ in globals():
+        raise ValueError('Type name "'+new_type.__name__+'" clashes with name already defined in jsonargparse.typing.')
+    globals()[new_type.__name__] = new_type
+    registered_types[register_key] = new_type
 
 
 PositiveInt        = restricted_number_type('PositiveInt',        int, ('>', 0),
@@ -217,13 +226,26 @@ ClosedUnitInterval = restricted_number_type('ClosedUnitInterval', float, [('>=',
 OpenUnitInterval   = restricted_number_type('OpenUnitInterval',   float, [('>', 0), ('<', 1)],
                                             docstring='float restricted to be >0 and <1')
 
-Email = restricted_string_type('Email', r'^[^@ ]+@[^@ ]+\.[^@ ]+$',
-                               docstring=r'str restricted to the email pattern ^[^@ ]+@[^@ ]+\.[^@ ]+$')
+NotEmptyStr = restricted_string_type('NotEmptyStr', r'^.*[^ ].*$',
+                                     docstring=r'str restricted to not-empty pattern ^.*[^ ].*$')
+Email       = restricted_string_type('Email', r'^[^@ ]+@[^@ ]+\.[^@ ]+$',
+                                     docstring=r'str restricted to the email pattern ^[^@ ]+@[^@ ]+\.[^@ ]+$')
 
 Path_fr = path_type('fr',
                     docstring='str pointing to a file that exists and is readable')
+Path_fc = path_type('fc',
+                    docstring='str pointing to a file that can be created if it does not exist')
 Path_dw = path_type('dw',
                     docstring='str pointing to a directory that exists and is writeable')
+
+
+def is_optional(annotation, ref_type):
+    """Checks whether a type annotation is an optional for one type class."""
+    return hasattr(annotation, '__origin__') and \
+        annotation.__origin__ == Union and \
+        len(annotation.__args__) == 2 and \
+        any(type(None) == a for a in annotation.__args__) and \
+        any(_issubclass(a, ref_type) for a in annotation.__args__)
 
 
 def annotation_to_schema(annotation) -> Optional[Dict[str, str]]:
@@ -246,3 +268,17 @@ def annotation_to_schema(annotation) -> Optional[Dict[str, str]]:
     elif issubclass(annotation, str) and hasattr(annotation, '_regex'):
         schema = {'type': 'string', 'pattern': annotation._regex.pattern}
     return schema
+
+
+def type_in(obj, types_set):
+    return hasattr(obj, '__origin__') and obj.__origin__ in types_set
+
+
+def type_to_str(obj):
+    if _issubclass(obj, (bool, int, float, str, Enum)):
+        if hasattr(obj, '_expression'):
+            return obj._type.__name__ + ' ' + obj._expression
+        else:
+            return obj.__name__
+    elif obj is not None:
+        return re.sub(r'[a-z_.]+\.', '', str(obj)).replace('NoneType', 'null')

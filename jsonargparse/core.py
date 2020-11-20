@@ -133,7 +133,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             print_config: Add this as argument to print config, set None to disable.
             parser_mode: Mode for parsing configuration files, either "yaml" or "jsonnet".
             parse_as_dict: Whether to parse as dict instead of Namespace.
-            default_config_files: List of strings defining default config file locations. For example: :code:`['~/.config/myapp/*.yaml']`.
+            default_config_files: Default config file locations, e.g. :code:`['~/.config/myapp/*.yaml']`.
             default_env: Set the default value on whether to parse environment variables.
             default_meta: Set the default value on whether to include metadata in config objects.
         """
@@ -683,19 +683,32 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                    isinstance(action, ActionConfigFile) or \
                    (skip_none and action.dest in cfg and cfg[action.dest] is None):
                     del cfg[action.dest]
-                elif isinstance(action, ActionEnum):
-                    cfg[action.dest] = cfg[action.dest].name
                 elif isinstance(action, ActionPath):
                     if cfg[action.dest] is not None:
                         if isinstance(cfg[action.dest], list):
-                            cfg[action.dest] = [p(absolute=False) for p in cfg[action.dest]]
+                            cfg[action.dest] = [str(p) for p in cfg[action.dest]]
                         else:
-                            cfg[action.dest] = cfg[action.dest](absolute=False)
+                            cfg[action.dest] = str(cfg[action.dest])
                 elif isinstance(action, ActionParser):
                     cleanup_actions(cfg, action._parser._actions)
 
+        def cleanup_types(cfg):
+            for dest, val in cfg.items():
+                if isinstance(val, Enum):
+                    cfg[dest] = val.name
+                elif isinstance(val, Path):
+                    cfg[dest] = str(val)
+                elif 'jsonargparse.typing.' in str(type(val)):
+                    if isinstance(val, str):
+                        cfg[dest] = str(val)
+                    elif isinstance(val, int):
+                        cfg[dest] = int(val)
+                    elif isinstance(val, float):
+                        cfg[dest] = float(val)
+
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         cleanup_actions(cfg, self._actions)
+        cleanup_types(cfg)
         cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
         if format == 'parser_mode':

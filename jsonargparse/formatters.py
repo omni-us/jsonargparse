@@ -4,8 +4,9 @@ from enum import Enum
 from argparse import HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 
 from .util import _get_env_var
+from .typing import type_to_str
 from .actions import ActionParser, ActionEnum, ActionConfigFile
-from .jsonschema import type_to_str, ActionJsonSchema
+from .jsonschema import ActionJsonSchema
 
 
 __all__ = ['DefaultHelpFormatter']

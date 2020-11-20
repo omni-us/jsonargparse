@@ -97,20 +97,24 @@ class ArgcompleteTests(unittest.TestCase):
 
 
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
-    def test_optional_enum(self):
+    def test_optional(self):
         class MyEnum(Enum):
             A = 1
             B = 2
 
         self.parser.add_argument('--enum', type=Optional[MyEnum])
+        self.parser.add_argument('--bool', type=Optional[bool])
 
-        os.environ['COMP_LINE'] = 'tool.py --enum='
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+        for arg, expected in [('--enum=', b'A\x0bB\x0bnull'),
+                              ('--bool=', b'true\x0bfalse\x0bnull')]:
+            os.environ['COMP_LINE'] = 'tool.py '+arg
+            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out = BytesIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-        self.assertEqual(out.getvalue(), b'A\x0bB\x0bnull')
+            with self.subTest(os.environ['COMP_LINE']):
+                out = BytesIO()
+                with redirect_stdout(out), self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                self.assertEqual(expected, out.getvalue())
 
 
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')

@@ -24,7 +24,8 @@ class SignaturesTests(unittest.TestCase):
                          c1_a1: str,
                          c1_a2: Any = 2.0,
                          c1_a3 = None,
-                         c1_a4: int = 4):
+                         c1_a4: int = 4,
+                         c1_a5: str = '5'):
                 """Class1 short description
 
                 Args:
@@ -59,6 +60,7 @@ class SignaturesTests(unittest.TestCase):
                          c3_a5: Union[int, float, str, List[int], Dict[str, float]] = 5,
                          c3_a6: Optional[Class1] = None,
                          c3_a7: Tuple[str, int, float] = ('7', 7, 7.0),
+                         c1_a5: str = 'five',
                          **kwargs):
                 """Class3 short description
 
@@ -79,7 +81,7 @@ class SignaturesTests(unittest.TestCase):
 
         self.assertIn('Class3', parser.groups)
 
-        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4']:
+        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4', 'c1_a5']:
             self.assertIsNotNone(_find_action(parser, key), key+' should be in parser but is not')
         for key in ['c3_a6', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
             self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
@@ -87,6 +89,7 @@ class SignaturesTests(unittest.TestCase):
         cfg = parser.parse_args(['--c3_a0=0', '--c3_a3=true', '--c3_a4=a'], with_meta=False)
         self.assertEqual(namespace_to_dict(cfg), {'c1_a2': 2.0,
                                                   'c1_a4': 4,
+                                                  'c1_a5': 'five',
                                                   'c3_a0': 0,
                                                   'c3_a1': '1',
                                                   'c3_a2': 2.0,
@@ -116,7 +119,7 @@ class SignaturesTests(unittest.TestCase):
 
         self.assertNotIn('g', parser.groups)
 
-        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4']:
+        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4', 'c1_a5']:
             self.assertIsNotNone(_find_action(parser, 'g.'+key), key+' should be in parser but is not')
         for key in ['c3_a6', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
             self.assertIsNone(_find_action(parser, 'g.'+key), key+' should not be in parser but is')

@@ -414,6 +414,8 @@ class OutputTests(TempDirTestCase):
         delattr(cfg2, 'lev1')
         parser.dump(cfg2)
 
+
+    def test_dump_ActionPath(self):
         parser = ArgumentParser()
         parser.add_argument('--path', action=ActionPath(mode='fc'))
         cfg = parser.parse_string('path: path')
@@ -423,6 +425,34 @@ class OutputTests(TempDirTestCase):
         parser.add_argument('--paths', nargs='+', action=ActionPath(mode='fc'))
         cfg = parser.parse_args(['--paths', 'path1', 'path2'])
         self.assertEqual(parser.dump(cfg), 'paths:\n- path1\n- path2\n')
+
+
+    def test_dump_restricted_string_type(self):
+        parser = ArgumentParser()
+        parser.add_argument('--str', type=NotEmptyStr)
+        cfg = parser.parse_string('str: not-empty')
+        self.assertEqual(parser.dump(cfg), 'str: not-empty\n')
+
+
+    def test_dump_restricted_int_type(self):
+        parser = ArgumentParser()
+        parser.add_argument('--int', type=PositiveInt)
+        cfg = parser.parse_string('int: 1')
+        self.assertEqual(parser.dump(cfg), 'int: 1\n')
+
+
+    def test_dump_restricted_float_type(self):
+        parser = ArgumentParser()
+        parser.add_argument('--float', type=PositiveFloat)
+        cfg = parser.parse_string('float: 1.1')
+        self.assertEqual(parser.dump(cfg), 'float: 1.1\n')
+
+
+    def test_dump_path_type(self):
+        parser = ArgumentParser()
+        parser.add_argument('--path', type=Path_fc)
+        cfg = parser.parse_string('path: path')
+        self.assertEqual(parser.dump(cfg), 'path: path\n')
 
 
     def test_dump_formats(self):
@@ -539,33 +569,6 @@ class OutputTests(TempDirTestCase):
 
         outval = yaml.safe_load(out.getvalue())
         self.assertEqual(outval, {'g1': {'v2': '2'}, 'g2': {'v3': None}, 'v1': 1})
-
-
-    def test_default_help_formatter(self):
-        parser = ArgumentParser(prog='app', default_env=True)
-        parser.add_argument('--cfg', action=ActionConfigFile)
-        parser.add_argument('--v1', help='Option v1.', default='1', required=True)
-        parser.add_argument('--g1.v2', help='Option v2.', default='2')
-        parser2 = ArgumentParser()
-        parser2.add_argument('--v3')
-        parser.add_argument('--g2', action=ActionParser(parser=parser2))
-
-        os.environ['COLUMNS'] = '150'
-        out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
-
-        outval = out.getvalue()
-        self.assertIn('--print-config', outval)
-        self.assertIn('--cfg CFG', outval)
-        self.assertIn('APP_CFG', outval)
-        self.assertIn('--v1 V1', outval)
-        self.assertIn('APP_V1', outval)
-        self.assertIn('--g1.v2 V2', outval)
-        self.assertIn('APP_G1__V2', outval)
-        self.assertIn('Option v1. (required, default: 1)', outval)
-        self.assertIn('Option v2. (default: 2)', outval)
-        self.assertIn('--g2.help', outval)
 
 
 class ConfigFilesTests(TempDirTestCase):
