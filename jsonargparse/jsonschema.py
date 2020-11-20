@@ -283,7 +283,10 @@ def warn_redraw_prompt(prefix, message):
     argcomplete = import_argcomplete('warn_redraw_prompt')
     if prefix != '':
         argcomplete.warn(message)
-        shell_pid = int(os.popen('ps -p %s -oppid=' % os.getppid()).read().strip())
-        os.kill(shell_pid, 28)
+        try:
+            shell_pid = int(os.popen('ps -p %d -oppid=' % os.getppid()).read().strip())
+            os.kill(shell_pid, 28)
+        except ValueError:
+            pass
     _ = '_' if locale.getlocale()[1] != 'UTF-8' else u'\u00A0'
     return [_+message.replace(' ', _), '']
