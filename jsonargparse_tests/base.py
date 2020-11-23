@@ -1,9 +1,9 @@
-# pylint: disable=unexpected-keyword-arg
 
 import os
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 from jsonargparse import *
 from jsonargparse.typing import *
 from jsonargparse.optionals import (

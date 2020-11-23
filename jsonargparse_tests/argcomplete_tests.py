@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=unexpected-keyword-arg
 
 import sys
 from enum import Enum
@@ -60,13 +59,15 @@ class ArgcompleteTests(unittest.TestCase):
 
 
     def test_ActionYesNo(self):
-        self.parser.add_argument('--op1', type=bool)
-        self.parser.add_argument('--op2', action=ActionYesNo)
+        self.parser.add_argument('--op1', action=ActionYesNo)
+        self.parser.add_argument('--op2', nargs='?', action=ActionYesNo)
         self.parser.add_argument('--with-op3', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
 
-        for arg, expected in [('--op1=', b'true\x0bfalse'),
+        for arg, expected in [('--op1', b'--op1'),
+                              ('--no_op1', b'--no_op1'),
                               ('--op2', b'--op2'),
                               ('--no_op2', b'--no_op2'),
+                              ('--op2=', b'true\x0bfalse\x0byes\x0bno'),
                               ('--with-op3', b'--with-op3'),
                               ('--without-op3', b'--without-op3')]:
             os.environ['COMP_LINE'] = 'tool.py '+arg
@@ -121,33 +122,36 @@ class ArgcompleteTests(unittest.TestCase):
     def test_ActionJsonSchema(self):
         self.parser.add_argument('--json', action=ActionJsonSchema(schema={'type': 'object'}))
         self.parser.add_argument('--list', type=List[int])
+        self.parser.add_argument('--bool', type=bool)
 
-        os.environ['COMP_LINE'] = "tool.py --json=1"
+        for arg, expected in [('--json=1',            'value not yet valid'),
+                              ("--json='{\"a\": 1}'", 'value already valid'),
+                              ("--list='[1, 2, 3]'",  'value already valid, expected type List[int]')]:
+            os.environ['COMP_LINE'] = 'tool.py '+arg
+            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+            with self.subTest(os.environ['COMP_LINE']):
+                out, err = BytesIO(), StringIO()
+                with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                self.assertEqual(out.getvalue(), b'')
+                self.assertIn(expected, err.getvalue())
+
+                with mock.patch('os.popen') as popen_mock:
+                    popen_mock.side_effect = ValueError
+                    with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
+                        self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                    self.assertEqual(out.getvalue(), b'')
+                    self.assertIn(expected, err.getvalue())
+
+        os.environ['COMP_LINE'] = 'tool.py --bool='
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out, err = BytesIO(), StringIO()
-        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-        self.assertEqual(out.getvalue(), b'')
-        self.assertIn('value not yet valid', err.getvalue())
-
-        os.environ['COMP_LINE'] = "tool.py --json='{\"a\": 1}'"
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-        out, err = BytesIO(), StringIO()
-        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-        self.assertEqual(out.getvalue(), b'')
-        self.assertIn('value already valid', err.getvalue())
-
-        os.environ['COMP_LINE'] = "tool.py --list='[1, 2, 3]'"
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-        out, err = BytesIO(), StringIO()
-        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-        self.assertEqual(out.getvalue(), b'')
-        self.assertIn('value already valid, expected type List[int]', err.getvalue())
+        with self.subTest(os.environ['COMP_LINE']):
+            out = BytesIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+            self.assertEqual(b'true\x0bfalse', out.getvalue())
 
 
 if __name__ == '__main__':

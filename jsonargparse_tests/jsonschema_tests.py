@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=unexpected-keyword-arg
 
 import re
 import json
@@ -121,6 +120,9 @@ class JsonSchemaTests(TempDirTestCase):
         cfg = parser.parse_args(['--cfg', cfg3_file])
         self.assertEqual(op2_val, namespace_to_dict(cfg.op3.n1[0]))
         parser.check_config(cfg, skip_none=True)
+
+        os.chmod(op1_file, 0)
+        self.assertRaises(ParserError, lambda: parser.parse_path(cfg1_file))
 
 
     def test_ActionJsonSchema_failures(self):

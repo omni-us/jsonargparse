@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=unexpected-keyword-arg
 
 import re
 import json
@@ -115,6 +114,22 @@ class JsonnetTests(TempDirTestCase):
         outval = out.getvalue()
         schema = re.sub('^.*schema:([^()]+)[^{}]*$', r'\1', outval.replace('\n', ' '))
         self.assertEqual(example_schema, json.loads(schema))
+
+
+    def test_ActionJsonnet_parse(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--ext_vars',
+            action=ActionJsonnetExtVars())
+
+        cfg = parser.parse_args(['--ext_vars', '{"param": 123}'])
+        parsed = ActionJsonnet(schema=None).parse(example_2_jsonnet, ext_vars=cfg.ext_vars)
+        self.assertEqual(123, parsed.param)
+        self.assertEqual(9, len(parsed.records))
+        self.assertEqual('#8', parsed.records[-2].ref)
+        self.assertEqual(15.5, parsed.records[-2].val)
+
+        cfg2 = parser.parse_object({'ext_vars': Namespace(param=123)})
+        self.assertEqual(cfg.ext_vars, cfg2.ext_vars)
 
 
 if __name__ == '__main__':

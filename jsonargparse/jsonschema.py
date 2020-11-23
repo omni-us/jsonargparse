@@ -96,8 +96,6 @@ class ActionJsonSchema(Action):
         jsonschema = import_jsonschema('ActionJsonSchema')[0]
         if not islist:
             value = [value]
-        elif not isinstance(value, list):
-            raise TypeError('For ActionJsonSchema with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
         for num, val in enumerate(value):
             try:
                 fpath = None
@@ -147,10 +145,7 @@ class ActionJsonSchema(Action):
             return type_in(a, {Dict, dict}) and a.__args__[0] == int
         if is_int_key(self._annotation) or \
            (type_in(self._annotation, {Union}) and any(is_int_key(a) for a in self._annotation.__args__)):
-            try:
-                val = {cast(k): v for k, v in val.items()}
-            except ValueError:
-                pass
+            val = {cast(k): v for k, v in val.items()}
         return val
 
 

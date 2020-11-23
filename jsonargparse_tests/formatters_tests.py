@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=unexpected-keyword-arg
 
 from io import StringIO
 from contextlib import redirect_stdout

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=unexpected-keyword-arg,too-many-function-args
 
 import json
 import yaml
@@ -33,6 +32,8 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual(False, cfg.bools.def_false)
         self.assertEqual(True,  cfg.bools.def_true)
 
+        self.assertRaises(ParserError, lambda: parser.parse_object({'undefined': True}))
+
 
     def test_parse_env(self):
         parser = example_parser()
@@ -44,6 +45,9 @@ class ParsersTests(TempDirTestCase):
         self.assertTrue(hasattr(cfg, 'nums'))
         parser.add_argument('--cfg', action=ActionConfigFile)
         env = OrderedDict(example_env)
+        env['APP_NUMS__VAL1'] = '"""'
+        self.assertRaises(ParserError, lambda: parser.parse_env(env))
+        env = OrderedDict(example_env)
         env['APP_CFG'] = '{"nums": {"val1": 1}}'
         self.assertEqual(0, parser.parse_env(env).nums.val1)
         parser.add_argument('req', nargs='+')
@@ -51,6 +55,8 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual(['abc'], parser.parse_env(env).req)
         env['APP_REQ'] = '["abc", "xyz"]'
         self.assertEqual(['abc', 'xyz'], parser.parse_env(env).req)
+        env['APP_REQ'] = '[""","""]'
+        self.assertEqual(['[""","""]'], parser.parse_env(env).req)
         with self.assertRaises(ValueError):
             parser.default_env = 'invalid'
         with self.assertRaises(ValueError):
@@ -97,6 +103,15 @@ class ParsersTests(TempDirTestCase):
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml+'  val3: key_not_defined\n')
         self.assertRaises(ParserError, lambda: parser.parse_path(yaml_file))
+
+
+    def test_cfg_base(self):
+        parser = ArgumentParser()
+        parser.add_argument('--op1')
+        parser.add_argument('--op2')
+        cfg = parser.parse_args(['--op1=abc'], Namespace(op2='xyz'))
+        self.assertEqual('abc', cfg.op1)
+        self.assertEqual('xyz', cfg.op2)
 
 
     def test_precedence_of_sources(self):
@@ -172,6 +187,10 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual({}, parser.parse_env([]))
         self.assertEqual({}, parser.parse_string('{}'))
         self.assertEqual({}, parser.parse_object({}))
+        with open('config.json', 'w') as f:
+            f.write('{}')
+        parser = ArgumentParser(parse_as_dict=True, default_meta=True)
+        self.assertEqual({'__path__', '__cwd__'}, set(parser.parse_path('config.json').keys()))
 
 
 class ArgumentFeaturesTests(unittest.TestCase):
@@ -277,6 +296,8 @@ class AdvancedFeaturesTests(unittest.TestCase):
             help='b help')
 
         self.assertRaises(NotImplementedError, lambda: parser.add_subparsers())
+        self.assertRaises(NotImplementedError, lambda: subcommands.add_parser(''))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['c']))
 
         cfg = namespace_to_dict(parser.get_defaults())
         self.assertEqual(cfg, {'o1': 'o1_def', 'subcommand': None})
@@ -605,6 +626,8 @@ class ConfigFilesTests(TempDirTestCase):
             nargs='+',
             action=ActionPath(mode='fr'))
 
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '"""']))
+
         cfg = parser.parse_args(['--cfg', abs_yaml_file])
         self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=False)))
@@ -612,6 +635,9 @@ class ConfigFilesTests(TempDirTestCase):
         self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', abs_yaml_file+'~']))
+
+        cfg = parser.parse_args(['--cfg', abs_yaml_file, '--cfg', abs_yaml_file])
+        self.assertEqual(3, len(cfg.__cwd__))
 
         cfg = parser.parse_args(['--cfg', 'file: '+abs_yaml_file+'\ndir: '+self.tmpdir+'\n'])
         self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
@@ -670,13 +696,22 @@ class OtherTests(unittest.TestCase):
     def test_strip_unknown(self):
         base_parser = example_parser()
         ext_parser = example_parser()
-        ext_parser.add_argument('--val')
+        ext_parser.add_argument('--val', default='val_def')
         ext_parser.add_argument('--lev1.lev2.opt3', default='opt3_def')
         ext_parser.add_argument('--lev1.opt4', default='opt3_def')
         ext_parser.add_argument('--nums.val3', type=float, default=1.5)
         cfg = ext_parser.parse_args([])
+        cfg.__path__ = 'some path'
         cfg = base_parser.strip_unknown(cfg)
+        self.assertEqual(cfg.__path__, 'some path')
         base_parser.check_config(cfg, skip_none=False)
+
+
+    def test_merge_config(self):
+        cfg_from = Namespace(op1=1, op2=None)
+        cfg_to = Namespace(op1=None, op2=2, op3=3)
+        cfg = ArgumentParser.merge_config(cfg_from, cfg_to)
+        self.assertEqual(cfg, Namespace(op1=1, op2=None, op3=3))
 
 
     def test_usage_and_exit_error_handler(self):

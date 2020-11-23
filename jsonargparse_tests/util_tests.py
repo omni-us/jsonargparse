@@ -5,7 +5,7 @@ import pathlib
 import logging
 import platform
 from jsonargparse_tests.base import *
-from jsonargparse.util import _check_unknown_kwargs, _suppress_stderr
+from jsonargparse.util import _check_unknown_kwargs, _suppress_stderr, _flat_namespace_to_dict
 
 
 class NamespaceDictConversionTests(unittest.TestCase):
@@ -15,6 +15,21 @@ class NamespaceDictConversionTests(unittest.TestCase):
         cfg_ns = dict_to_namespace(cfg_dict)
         self.assertEqual({}, namespace_to_dict(cfg_ns))
         self.assertEqual({}, namespace_to_dict(cfg_dict))
+
+
+    def test_flat_namespace_to_dict_failures(self):
+        cfg_ns = Namespace()
+        setattr(cfg_ns, 'n1', 1)
+        setattr(cfg_ns, 'n1.v1', 2)
+        self.assertRaises(ParserError, lambda: _flat_namespace_to_dict(cfg_ns))
+        cfg_ns = Namespace()
+        setattr(cfg_ns, 'n1.v1', 2)
+        setattr(cfg_ns, 'n1', 1)
+        self.assertRaises(ParserError, lambda: _flat_namespace_to_dict(cfg_ns))
+        cfg_ns = Namespace()
+        setattr(cfg_ns, 'n1.n2.v1', 1)
+        setattr(cfg_ns, 'n1.n2', 2)
+        self.assertRaises(ParserError, lambda: _flat_namespace_to_dict(cfg_ns))
 
 
 @unittest.skipIf(os.name != 'posix' or platform.python_implementation() != 'CPython',

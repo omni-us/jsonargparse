@@ -80,6 +80,20 @@ class ArgcompleteSupportTests(unittest.TestCase):
             self.assertIn('test_argcomplete_support_false', context.msg)
 
 
+class DataclassesSupportTests(unittest.TestCase):
+
+    @unittest.skipIf(not dataclasses_support, 'dataclasses package is required')
+    def test_dataclasses_support_true(self):
+        import_dataclasses('test_dataclasses_support_true')
+
+
+    @unittest.skipIf(dataclasses_support, 'dataclasses package should not be installed')
+    def test_dataclasses_support_false(self):
+        with self.assertRaises(ImportError) as context:
+            import_dataclasses('test_dataclasses_support_false')
+            self.assertIn('test_dataclasses_support_false', context.msg)
+
+
 class ConfigReadModeTests(unittest.TestCase):
 
     @unittest.skipIf(not url_support, 'validators and requests packages are required')

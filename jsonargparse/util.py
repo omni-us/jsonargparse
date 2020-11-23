@@ -69,7 +69,9 @@ def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
     for k, v in vars(cfg_ns).items():
         ksplit = k.split('.')
         if len(ksplit) == 1:
-            if isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
+            if k in cfg_dict:
+                raise ParserError('Conflicting namespace base: '+k)
+            elif isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
                 cfg_dict[k] = [namespace_to_dict(x) for x in v]
             elif isinstance(v, Namespace):
                 cfg_dict[k] = vars(v)  # type: ignore

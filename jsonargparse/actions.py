@@ -4,8 +4,9 @@ import os
 import re
 import sys
 import yaml
+import argparse
 from enum import Enum
-from argparse import ArgumentParser, Namespace, Action, SUPPRESS, _StoreAction, _SubParsersAction
+from argparse import Namespace, Action, SUPPRESS, _StoreAction, _SubParsersAction
 
 from .optionals import get_config_read_mode
 from .typing import restricted_number_type
@@ -84,12 +85,12 @@ class ActionConfigFile(Action):
         try:
             cfg_path = Path(value, mode=get_config_read_mode())
         except TypeError as ex_path:
-            if isinstance(yaml.safe_load(value), str):
-                raise ex_path
             try:
+                if isinstance(yaml.safe_load(value), str):
+                    raise ex_path
                 cfg_path = None
                 cfg_file = parser.parse_string(value, env=False, defaults=False, _skip_check=True)
-            except TypeError as ex_str:
+            except (TypeError, yaml.parser.ParserError, yaml.scanner.ScannerError) as ex_str:
                 raise TypeError('Parser key "'+dest+'": '+str(ex_str))
         else:
             cfg_file = parser.parse_path(value, env=False, defaults=False, _skip_check=True)
@@ -149,14 +150,14 @@ class ActionYesNo(Action):
             opt_name = kwargs['option_strings'][0]
             if not opt_name.startswith('--'+self._yes_prefix):
                 raise ValueError('Expected option string to start with "--'+self._yes_prefix+'".')
-            if 'dest' not in kwargs:
-                kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
+            #if 'dest' not in kwargs:
+            #    kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
             if self._no_prefix is not None:
                 kwargs['option_strings'] += [re.sub('^--'+self._yes_prefix, '--'+self._no_prefix, opt_name)]
             if self._no_prefix is None and 'nargs' in kwargs and kwargs['nargs'] != 1:
                 raise ValueError('ActionYesNo with no_prefix=None only supports nargs=1.')
             if 'nargs' in kwargs and kwargs['nargs'] in {'?', 1}:
-                kwargs['metavar'] = 'true|yes|false|no'
+                kwargs['metavar'] = '{true,yes,false,no}'
                 if kwargs['nargs'] == 1:
                     kwargs['nargs'] = None
             else:
@@ -174,8 +175,8 @@ class ActionYesNo(Action):
             kwargs['_no_prefix'] = self._no_prefix
             return ActionYesNo(**kwargs)
         value = args[2] if isinstance(args[2], bool) else True
-        if isinstance(args[2], list) and len(args[2]) == 1:
-            value = args[2][0]
+        #if isinstance(args[2], list) and len(args[2]) == 1:
+        #    value = args[2][0]
         if self._no_prefix is not None and args[3].startswith('--'+self._no_prefix):
             setattr(args[1], self.dest, not value)
         else:
@@ -186,17 +187,18 @@ class ActionYesNo(Action):
         self.option_strings[0] = re.sub('^--'+self._yes_prefix, '--'+self._yes_prefix+prefix+'.', self.option_strings[0])
         if self._no_prefix is not None:
             self.option_strings[-1] = re.sub('^--'+self._no_prefix, '--'+self._no_prefix+prefix+'.', self.option_strings[-1])
-        for n in range(1, len(self.option_strings)-1):
-            self.option_strings[n] = re.sub('^--', '--'+prefix+'.', self.option_strings[n])
+        #for n in range(1, len(self.option_strings)-1):
+        #    self.option_strings[n] = re.sub('^--', '--'+prefix+'.', self.option_strings[n])
 
     def _check_type(self, value, cfg=None):
-        if isinstance(value, list):
-            value = [ActionYesNo._boolean_type(val) for val in value]
-        else:
-            value = ActionYesNo._boolean_type(value)
-        if isinstance(value, list) and (self.nargs == 0 or self.nargs):
-            return value[0]
-        return value
+        #if isinstance(value, list):
+        #    value = [ActionYesNo._boolean_type(val) for val in value]
+        #else:
+        #    value = ActionYesNo._boolean_type(value)
+        #if isinstance(value, list) and (self.nargs == 0 or self.nargs):
+        #    return value[0]
+        #return value
+        return ActionYesNo._boolean_type(value)
 
     @staticmethod
     def _boolean_type(x):
@@ -250,8 +252,6 @@ class ActionEnum(Action):
         islist = _is_action_value_list(self)
         if not islist:
             value = [value]
-        elif not isinstance(value, list):
-            raise TypeError('For ActionEnum with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
         for num, val in enumerate(value):
             try:
                 if isinstance(val, str):
@@ -304,7 +304,7 @@ class ActionParser(Action):
             ## Runs when first initializing class by external user ##
             _check_unknown_kwargs(kwargs, {'parser'})
             self._parser = kwargs['parser']
-            if not isinstance(self._parser, ArgumentParser):
+            if not isinstance(self._parser, argparse.ArgumentParser):
                 raise ValueError('Expected parser keyword argument to be an ArgumentParser.')
         elif '_parser' not in kwargs:
             raise ValueError('Expected parser keyword argument.')
@@ -509,8 +509,6 @@ class ActionPath(Action):
             TypeError: If the argument is not a valid Path.
         """
         if len(args) == 0:
-            if 'nargs' in kwargs and kwargs['nargs'] == 0:
-                raise ValueError('Invalid nargs='+str(kwargs['nargs'])+' for ActionPath.')
             kwargs['_mode'] = self._mode
             kwargs['_skip_check'] = self._skip_check
             return ActionPath(**kwargs)
@@ -523,16 +521,12 @@ class ActionPath(Action):
         islist = _is_action_value_list(self) if islist is None else islist
         if not islist:
             value = [value]
-        elif not isinstance(value, list):
-            raise TypeError('For ActionPath with nargs='+str(self.nargs)+' expected value to be list, received: value='+str(value)+'.')
         try:
             for num, val in enumerate(value):
-                if isinstance(val, str):
-                    val = Path(val, mode=self._mode, skip_check=self._skip_check)
-                elif isinstance(val, Path):
-                    val = Path(val(absolute=False), mode=self._mode, skip_check=self._skip_check, cwd=val.cwd)
+                if isinstance(val, Path):
+                    val = Path(str(val), mode=self._mode, skip_check=self._skip_check, cwd=val.cwd)
                 else:
-                    raise TypeError('expected either a string or a Path object, received: value='+str(val)+' type='+str(type(val))+'.')
+                    val = Path(val, mode=self._mode, skip_check=self._skip_check)
                 value[num] = val
         except TypeError as ex:
             raise TypeError('Parser key "'+self.dest+'": '+str(ex))

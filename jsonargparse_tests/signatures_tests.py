@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=unexpected-keyword-arg
 
 from enum import Enum
 from io import StringIO
@@ -60,6 +59,7 @@ class SignaturesTests(unittest.TestCase):
                          c3_a5: Union[int, float, str, List[int], Dict[str, float]] = 5,
                          c3_a6: Optional[Class1] = None,
                          c3_a7: Tuple[str, int, float] = ('7', 7, 7.0),
+                         c3_a8: Tuple[str, Class1] = None,
                          c1_a5: str = 'five',
                          **kwargs):
                 """Class3 short description
@@ -83,7 +83,7 @@ class SignaturesTests(unittest.TestCase):
 
         for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4', 'c1_a5']:
             self.assertIsNotNone(_find_action(parser, key), key+' should be in parser but is not')
-        for key in ['c3_a6', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
+        for key in ['c3_a6', 'c3_a8', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
             self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
 
         cfg = parser.parse_args(['--c3_a0=0', '--c3_a3=true', '--c3_a4=a'], with_meta=False)
@@ -121,7 +121,7 @@ class SignaturesTests(unittest.TestCase):
 
         for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4', 'c1_a5']:
             self.assertIsNotNone(_find_action(parser, 'g.'+key), key+' should be in parser but is not')
-        for key in ['c3_a6', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
+        for key in ['c3_a6', 'c3_a8', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
             self.assertIsNone(_find_action(parser, 'g.'+key), key+' should not be in parser but is')
 
         ## Test default group title ##

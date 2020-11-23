@@ -637,8 +637,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         values of the sub-command are stored in a nested namespace using the
         sub-command's name as base key.
         """
-        if 'required' in kwargs:
-            required = kwargs.pop('required')
         subcommands = super().add_subparsers(dest=dest, **kwargs)
         subcommands.required = required
         _find_action(self, dest)._env_prefix = self.env_prefix
@@ -796,8 +794,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                                     val_str = yaml.dump(val_out, default_flow_style=False, allow_unicode=True)
                                 with open(val_path(), 'w') as f:
                                     f.write(val_str)
-                            else:
-                                save_paths(val, kbase)
+                            #else:
+                            #    save_paths(val, kbase)
                         else:
                             save_paths(val, kbase)
                 for key, val in replace_keys.items():
@@ -824,7 +822,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if len(args) > 0:
             for n in range(len(args)):
                 self._defaults.update(args[n])
-
                 for dest in args[n].keys():
                     action = _find_action(self, dest)
                     if action is None:
@@ -846,9 +843,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         action = _find_action(self, dest)
         if action is None:
             raise KeyError('No action for destination key "'+dest+'" to get its default.')
-        if action.default is not None:
-            return action.default
-        return self._defaults.get(dest, None)
+        return action.default
 
 
     def get_defaults(self, nested:bool=True) -> Namespace:
@@ -979,15 +974,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             del_keys = []
             for key, val in cfg.items():
                 kbase = key if base is None else base+'.'+key
-                action = _find_action(self, kbase)
-                if action is not None:
-                    pass
-                elif isinstance(val, dict):
-                    strip_keys(val, kbase)
-                else:
-                    del_keys.append(key)
-            if base is None and any([k in del_keys for k in meta_keys]):
-                del_keys = [v for v in del_keys if v not in meta_keys]
+                if _find_action(self, kbase) is None:
+                    if isinstance(val, dict):
+                        strip_keys(val, kbase)
+                    elif key not in meta_keys:
+                        del_keys.append(key)
             for key in del_keys:
                 del cfg[key]
 
@@ -1062,8 +1053,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                    not isinstance(v, dict) or \
                    (isinstance(v, dict) and not isinstance(cfg_to[k], dict)):
                     cfg_to[k] = v
-                elif k in cfg_to and cfg_to[k] is None:
-                    cfg_to[k] = cfg_from[k]
+                #elif k in cfg_to and cfg_to[k] is None:
+                #    cfg_to[k] = cfg_from[k]
                 else:
                     cfg_to[k] = merge_values(cfg_from[k], cfg_to[k])
             return cfg_to
@@ -1088,18 +1079,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if action.choices is not None:
             if isinstance(action, _ActionSubCommands):
                 if key == action.dest:
-                    if value not in action.choices:
-                        raise KeyError('Unknown sub-command '+value+' (choices: '+', '.join(action.choices)+')')
                     return value
                 parser = action._name_parser_map[key]
                 parser.check_config(value)  # type: ignore
             else:
                 vals = value if _is_action_value_list(action) else [value]
-                if not all([v in action.choices for v in vals]):
-                    args = {'value': value,
-                            'choices': ', '.join(map(repr, action.choices))}
-                    msg = 'invalid choice: %(value)r (choose from %(choices)s).'
-                    raise TypeError('Parser key "'+str(key)+'": '+(msg % args))
         elif hasattr(action, '_check_type'):
             value = action._check_type(value, cfg=cfg)  # type: ignore
         elif action.type is not None:
@@ -1111,8 +1095,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                         value[k] = action.type(v)
             except (TypeError, ValueError) as ex:
                 raise TypeError('Parser key "'+str(key)+'": '+str(ex))
-        elif isinstance(action, argparse._StoreAction) and isinstance(value, dict):
-            raise TypeError('StoreAction (key='+key+') does not allow dict value ('+str(value)+'), consider using ActionJsonSchema or ActionParser instead.')
         return value
 
 
