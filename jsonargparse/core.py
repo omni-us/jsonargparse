@@ -1076,14 +1076,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         Raises:
             TypeError: If the value is not valid.
         """
-        if action.choices is not None:
-            if isinstance(action, _ActionSubCommands):
-                if key == action.dest:
-                    return value
-                parser = action._name_parser_map[key]
-                parser.check_config(value)  # type: ignore
-            else:
-                vals = value if _is_action_value_list(action) else [value]
+        if action.choices is not None and isinstance(action, _ActionSubCommands):
+            if key == action.dest:
+                return value
+            parser = action._name_parser_map[key]
+            parser.check_config(value)  # type: ignore
         elif hasattr(action, '_check_type'):
             value = action._check_type(value, cfg=cfg)  # type: ignore
         elif action.type is not None:

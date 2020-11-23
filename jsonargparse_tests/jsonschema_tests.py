@@ -3,6 +3,7 @@
 import re
 import json
 import pathlib
+import platform
 from io import StringIO
 from contextlib import redirect_stdout
 from typing import Optional, Union
@@ -121,8 +122,9 @@ class JsonSchemaTests(TempDirTestCase):
         self.assertEqual(op2_val, namespace_to_dict(cfg.op3.n1[0]))
         parser.check_config(cfg, skip_none=True)
 
-        os.chmod(op1_file, 0)
-        self.assertRaises(ParserError, lambda: parser.parse_path(cfg1_file))
+        if os.name == 'posix' and platform.python_implementation() == 'CPython':
+            os.chmod(op1_file, 0)
+            self.assertRaises(ParserError, lambda: parser.parse_path(cfg1_file))
 
 
     def test_ActionJsonSchema_failures(self):

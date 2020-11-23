@@ -260,7 +260,6 @@ class ActionJsonSchema(Action):
             return list(enum.__members__.keys())+['null']
         elif chr(int(os.environ['COMP_TYPE'])) == '?':
             jsonschema = import_jsonschema('ActionJsonSchema')[0]
-            argcomplete = import_argcomplete('ActionJsonSchema')
             try:
                 self._validator.validate(yaml.safe_load(prefix))
                 msg = 'value already valid, '
