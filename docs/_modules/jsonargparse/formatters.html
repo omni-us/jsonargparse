@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.formatters &mdash; jsonargparse 3.0.0rc1 documentation</title>
+  <title>jsonargparse.formatters &mdash; jsonargparse 3.0.0rc2 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc1
+                3.0.0rc2
               </div>
             
           
@@ -154,8 +154,9 @@
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">HelpFormatter</span><span class="p">,</span> <span class="n">OPTIONAL</span><span class="p">,</span> <span class="n">SUPPRESS</span><span class="p">,</span> <span class="n">ZERO_OR_MORE</span>
 
 <span class="kn">from</span> <span class="nn">.util</span> <span class="k">import</span> <span class="n">_get_env_var</span>
-<span class="kn">from</span> <span class="nn">.actions</span> <span class="k">import</span> <span class="n">ActionParser</span><span class="p">,</span> <span class="n">ActionEnum</span>
-<span class="kn">from</span> <span class="nn">.jsonschema</span> <span class="k">import</span> <span class="n">type_to_str</span><span class="p">,</span> <span class="n">ActionJsonSchema</span>
+<span class="kn">from</span> <span class="nn">.typing</span> <span class="k">import</span> <span class="n">type_to_str</span>
+<span class="kn">from</span> <span class="nn">.actions</span> <span class="k">import</span> <span class="n">ActionParser</span><span class="p">,</span> <span class="n">ActionEnum</span><span class="p">,</span> <span class="n">ActionConfigFile</span>
+<span class="kn">from</span> <span class="nn">.jsonschema</span> <span class="k">import</span> <span class="n">ActionJsonSchema</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DefaultHelpFormatter&#39;</span><span class="p">]</span>
@@ -175,6 +176,8 @@
     <span class="n">_default_env</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span> <span class="nf">_get_help_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionConfigFile</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">action</span><span class="o">.</span><span class="n">help</span>
         <span class="n">help_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="s1">&#39;_required&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">action</span><span class="o">.</span><span class="n">_required</span><span class="p">:</span>
             <span class="n">help_str</span> <span class="o">=</span> <span class="s1">&#39;required&#39;</span>

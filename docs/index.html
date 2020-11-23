@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 3.0.0rc1 documentation</title>
+  <title>jsonargparse (former yamlargparse) &mdash; jsonargparse 3.0.0rc2 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc1
+                3.0.0rc2
               </div>
             
           
@@ -468,6 +468,10 @@ supported.</p></li>
 <li><p>Recursive adding of arguments from base classes only considers the presence
 of <code class="code docutils literal notranslate"><span class="pre">*args</span></code> and <code class="code docutils literal notranslate"><span class="pre">**kwargs</span></code>. It does not check the code to identify
 if <code class="code docutils literal notranslate"><span class="pre">super().__init__</span></code> is called or with which arguments.</p></li>
+<li><p>To set a value to <code class="code docutils literal notranslate"><span class="pre">None</span></code> it is required to use <code class="code docutils literal notranslate"><span class="pre">null</span></code> since this
+is how json/yaml require it. To avoid confusion in the help <code class="code docutils literal notranslate"><span class="pre">NoneType</span></code>
+is displayed as <code class="code docutils literal notranslate"><span class="pre">null</span></code>. For example <code class="code docutils literal notranslate"><span class="pre">val:</span> <span class="pre">Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></code>
+would be shown as <code class="code docutils literal notranslate"><span class="pre">type:</span> <span class="pre">Union[str,</span> <span class="pre">null],</span> <span class="pre">default:</span> <span class="pre">null</span></code>.</p></li>
 </ul>
 <p>Since keyword arguments with unsupported types are ignored, during development
 it might be desired to know which arguments are ignored and the specific reason.
@@ -1013,7 +1017,7 @@ are supported. Additionally it accepts:</p>
 <li><p><strong>print_config</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]) – Add this as argument to print config, set None to disable.</p></li>
 <li><p><strong>parser_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Mode for parsing configuration files, either “yaml” or “jsonnet”.</p></li>
 <li><p><strong>parse_as_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to parse as dict instead of Namespace.</p></li>
-<li><p><strong>default_config_files</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]) – List of strings defining default config file locations. For example: <code class="code docutils literal notranslate"><span class="pre">['~/.config/myapp/*.yaml']</span></code>.</p></li>
+<li><p><strong>default_config_files</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]) – Default config file locations, e.g. <code class="code docutils literal notranslate"><span class="pre">['~/.config/myapp/*.yaml']</span></code>.</p></li>
 <li><p><strong>default_env</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Set the default value on whether to parse environment variables.</p></li>
 <li><p><strong>default_meta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Set the default value on whether to include metadata in config objects.</p></li>
 </ul>
@@ -1618,11 +1622,17 @@ sub-command’s name as base key.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.typing.OpenUnitInterval" title="jsonargparse.typing.OpenUnitInterval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenUnitInterval</span></code></a>(v)</p></td>
 <td><p>float restricted to be &gt;0 and &lt;1</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.typing.Email" title="jsonargparse.typing.Email"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Email</span></code></a>(v)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.typing.NotEmptyStr" title="jsonargparse.typing.NotEmptyStr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NotEmptyStr</span></code></a>(v)</p></td>
+<td><p>str restricted to not-empty pattern ^.*[^ ].*$</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.typing.Email" title="jsonargparse.typing.Email"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Email</span></code></a>(v)</p></td>
 <td><p>str restricted to the email pattern ^[^&#64; ]+&#64;[^&#64; ]+.[^&#64; ]+$</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.typing.Path_fr" title="jsonargparse.typing.Path_fr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path_fr</span></code></a>(v)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.typing.Path_fr" title="jsonargparse.typing.Path_fr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path_fr</span></code></a>(v)</p></td>
 <td><p>str pointing to a file that exists and is readable</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.typing.Path_fc" title="jsonargparse.typing.Path_fc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path_fc</span></code></a>(v)</p></td>
+<td><p>str pointing to a file that can be created if it does not exist</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.typing.Path_dw" title="jsonargparse.typing.Path_dw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path_dw</span></code></a>(v)</p></td>
 <td><p>str pointing to a directory that exists and is writeable</p></td>
@@ -1736,6 +1746,13 @@ sub-command’s name as base key.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt id="jsonargparse.typing.NotEmptyStr">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">NotEmptyStr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.NotEmptyStr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.restricted_string_type.&lt;locals&gt;.RestrictedString</span></code>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></p>
+<p>str restricted to not-empty pattern ^.*[^ ].*$</p>
+</dd></dl>
+
+<dl class="py class">
 <dt id="jsonargparse.typing.Email">
 <em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">Email</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.Email" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.restricted_string_type.&lt;locals&gt;.RestrictedString</span></code>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></p>
@@ -1747,6 +1764,13 @@ sub-command’s name as base key.</p>
 <em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">Path_fr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.Path_fr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.path_type.&lt;locals&gt;.PathType</span></code>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></p>
 <p>str pointing to a file that exists and is readable</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonargparse.typing.Path_fc">
+<em class="property">class </em><code class="sig-prename descclassname">jsonargparse.typing.</code><code class="sig-name descname">Path_fc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#jsonargparse.typing.Path_fc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">jsonargparse.typing.path_type.&lt;locals&gt;.PathType</span></code>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></p>
+<p>str pointing to a file that can be created if it does not exist</p>
 </dd></dl>
 
 <dl class="py class">
@@ -1793,7 +1817,7 @@ sub-command’s name as base key.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.jsonschema.ActionJsonSchema.completer" title="jsonargparse.jsonschema.ActionJsonSchema.completer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">completer</span></code></a>(prefix, **kwargs)</p></td>
 <td><p>Used by argcomplete, validates value and shows expected type.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.jsonschema.ActionJsonSchema.typing_schema" title="jsonargparse.jsonschema.ActionJsonSchema.typing_schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">typing_schema</span></code></a>(annotation)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.jsonschema.ActionJsonSchema.typing_schema" title="jsonargparse.jsonschema.ActionJsonSchema.typing_schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">typing_schema</span></code></a>(annotation[, with_path])</p></td>
 <td><p>Generates a schema based on typing annotation.</p></td>
 </tr>
 </tbody>
@@ -1833,7 +1857,7 @@ sub-command’s name as base key.</p>
 
 <dl class="py method">
 <dt id="jsonargparse.jsonschema.ActionJsonSchema.typing_schema">
-<em class="property">static </em><code class="sig-name descname">typing_schema</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">annotation</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/jsonschema.html#ActionJsonSchema.typing_schema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.jsonschema.ActionJsonSchema.typing_schema" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">typing_schema</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">annotation</span></em>, <em class="sig-param"><span class="n">with_path</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/jsonschema.html#ActionJsonSchema.typing_schema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.jsonschema.ActionJsonSchema.typing_schema" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a schema based on typing annotation.</p>
 </dd></dl>
 

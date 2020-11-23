@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.jsonschema &mdash; jsonargparse 3.0.0rc1 documentation</title>
+  <title>jsonargparse.jsonschema &mdash; jsonargparse 3.0.0rc2 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc1
+                3.0.0rc2
               </div>
             
           
@@ -154,6 +154,7 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">import</span> <span class="nn">locale</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">Namespace</span><span class="p">,</span> <span class="n">Action</span>
@@ -162,7 +163,7 @@
 <span class="kn">from</span> <span class="nn">.util</span> <span class="k">import</span> <span class="n">namespace_to_dict</span><span class="p">,</span> <span class="n">Path</span><span class="p">,</span> <span class="n">strip_meta</span><span class="p">,</span> <span class="n">_check_unknown_kwargs</span><span class="p">,</span> <span class="n">_issubclass</span>
 <span class="kn">from</span> <span class="nn">.optionals</span> <span class="k">import</span> <span class="n">import_jsonschema</span><span class="p">,</span> <span class="n">get_config_read_mode</span><span class="p">,</span> <span class="n">import_argcomplete</span>
 <span class="kn">from</span> <span class="nn">.actions</span> <span class="k">import</span> <span class="n">_is_action_value_list</span>
-<span class="kn">from</span> <span class="nn">.typing</span> <span class="k">import</span> <span class="n">annotation_to_schema</span>
+<span class="kn">from</span> <span class="nn">.typing</span> <span class="k">import</span> <span class="n">is_optional</span><span class="p">,</span> <span class="n">annotation_to_schema</span><span class="p">,</span> <span class="n">type_in</span><span class="p">,</span> <span class="n">type_to_str</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ActionJsonSchema&#39;</span><span class="p">]</span>
@@ -191,9 +192,10 @@
                 <span class="k">if</span> <span class="s1">&#39;schema&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Only one of schema or annotation is accepted.&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]</span>
-                <span class="n">schema</span> <span class="o">=</span> <span class="n">ActionJsonSchema</span><span class="o">.</span><span class="n">typing_schema</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">])</span>
+                <span class="n">with_path</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">is_optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+                <span class="n">schema</span> <span class="o">=</span> <span class="n">ActionJsonSchema</span><span class="o">.</span><span class="n">typing_schema</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="n">with_path</span><span class="o">=</span><span class="n">with_path</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">schema</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">schema</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;null&#39;</span><span class="p">}:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unable to generate schema from annotation &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">]))</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unable to generate schema from annotation &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="n">schema</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">]</span>
@@ -244,8 +246,6 @@
         <span class="n">jsonschema</span> <span class="o">=</span> <span class="n">import_jsonschema</span><span class="p">(</span><span class="s1">&#39;ActionJsonSchema&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">islist</span><span class="p">:</span>
             <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;For ActionJsonSchema with nargs=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nargs</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; expected value to be list, received: value=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">fpath</span> <span class="o">=</span> <span class="kc">None</span>
@@ -264,6 +264,8 @@
                     <span class="n">val</span> <span class="o">=</span> <span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
                     <span class="n">val</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">_issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">Enum</span><span class="p">):</span>
                     <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">name</span>
                 <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="s1">&#39;__origin__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
@@ -274,7 +276,7 @@
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_dict</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">type_in</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="p">{</span><span class="n">Union</span><span class="p">})</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_enum</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_union_str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">type_in</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="p">{</span><span class="n">Tuple</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="nb">set</span><span class="p">})</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">if</span> <span class="n">type_in</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="p">{</span><span class="n">Tuple</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">})</span> <span class="k">else</span> <span class="nb">set</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">path_meta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -293,18 +295,19 @@
             <span class="k">return</span> <span class="n">type_in</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">{</span><span class="n">Dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">})</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">__args__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span>
         <span class="k">if</span> <span class="n">is_int_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">)</span> <span class="ow">or</span> \
            <span class="p">(</span><span class="n">type_in</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="p">{</span><span class="n">Union</span><span class="p">})</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">is_int_key</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="o">.</span><span class="n">__args__</span><span class="p">)):</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">val</span> <span class="o">=</span> <span class="p">{</span><span class="n">cast</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="k">pass</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="p">{</span><span class="n">cast</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="k">return</span> <span class="n">val</span>
 
 
-    <span class="k">def</span> <span class="nf">_adapt_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="o">.</span><span class="n">__args__</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">_issubclass</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Enum</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">__members__</span><span class="p">:</span>
-                <span class="n">val</span> <span class="o">=</span> <span class="n">arg</span><span class="p">[</span><span class="n">val</span><span class="p">]</span>
-                <span class="k">break</span>
+    <span class="k">def</span> <span class="nf">_adapt_union_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">is_optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+            <span class="n">arg_type</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="o">.</span><span class="n">__args__</span> <span class="k">if</span> <span class="n">_issubclass</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Path</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">arg_type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="o">.</span><span class="n">__args__</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">_issubclass</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Enum</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">__members__</span><span class="p">:</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">arg</span><span class="p">[</span><span class="n">val</span><span class="p">]</span>
+                    <span class="k">break</span>
         <span class="k">return</span> <span class="n">val</span>
 
 
@@ -326,7 +329,7 @@
 
 
 <div class="viewcode-block" id="ActionJsonSchema.typing_schema"><a class="viewcode-back" href="../../index.html#jsonargparse.jsonschema.ActionJsonSchema.typing_schema">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">typing_schema</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">typing_schema</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="n">with_path</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates a schema based on typing annotation.&quot;&quot;&quot;</span>
         <span class="n">typesmap</span> <span class="o">=</span> <span class="p">{</span>
             <span class="nb">str</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">,</span>
@@ -350,6 +353,9 @@
 
         <span class="k">elif</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="s1">&#39;__origin__&#39;</span><span class="p">):</span>
             <span class="k">return</span>
+
+        <span class="k">elif</span> <span class="n">with_path</span> <span class="ow">and</span> <span class="n">is_optional</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="s1">&#39;null&#39;</span><span class="p">]}</span>
 
         <span class="k">elif</span> <span class="n">annotation</span><span class="o">.</span><span class="n">__origin__</span> <span class="o">==</span> <span class="n">Union</span><span class="p">:</span>
             <span class="n">members</span> <span class="o">=</span> <span class="p">[]</span>
@@ -383,7 +389,11 @@
     <span class="k">def</span> <span class="nf">_annotation_metavar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates a metavar for some types.&quot;&quot;&quot;</span>
         <span class="n">metavar</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">is_optional_enum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="n">metavar</span> <span class="o">=</span> <span class="s1">&#39;{true,false}&#39;</span>
+        <span class="k">elif</span> <span class="n">is_optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">metavar</span> <span class="o">=</span> <span class="s1">&#39;{true,false,null}&#39;</span>
+        <span class="k">elif</span> <span class="n">is_optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
             <span class="n">enum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="o">.</span><span class="n">__args__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">metavar</span> <span class="o">=</span> <span class="s1">&#39;{&#39;</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">__members__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">+</span><span class="p">[</span><span class="s1">&#39;null&#39;</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39;}&#39;</span>
         <span class="k">return</span> <span class="n">metavar</span>
@@ -393,51 +403,37 @@
         <span class="sd">&quot;&quot;&quot;Used by argcomplete, validates value and shows expected type.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;true&#39;</span><span class="p">,</span> <span class="s1">&#39;false&#39;</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="n">is_optional_enum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">is_optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;true&#39;</span><span class="p">,</span> <span class="s1">&#39;false&#39;</span><span class="p">,</span> <span class="s1">&#39;null&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">is_optional</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
             <span class="n">enum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="o">.</span><span class="n">__args__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">__members__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">+</span><span class="p">[</span><span class="s1">&#39;null&#39;</span><span class="p">]</span>
-        <span class="n">jsonschema</span> <span class="o">=</span> <span class="n">import_jsonschema</span><span class="p">(</span><span class="s1">&#39;ActionJsonSchema&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">argcomplete</span> <span class="o">=</span> <span class="n">import_argcomplete</span><span class="p">(</span><span class="s1">&#39;ActionJsonSchema&#39;</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">prefix</span><span class="p">))</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;value already valid, &#39;</span>
-        <span class="k">except</span> <span class="p">(</span><span class="n">yaml</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">ParserError</span><span class="p">,</span> <span class="n">jsonschema</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ValidationError</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;value not yet valid, &#39;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;expected type &#39;</span><span class="o">+</span><span class="n">type_to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">schema</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  &#39;</span><span class="p">)</span>
-            <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;required to be valid according to schema:</span><span class="se">\n</span><span class="s1">  &#39;</span><span class="o">+</span><span class="n">schema</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
-        <span class="k">if</span> <span class="nb">chr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;COMP_TYPE&#39;</span><span class="p">]))</span> <span class="o">==</span> <span class="s1">&#39;?&#39;</span><span class="p">:</span>
-            <span class="n">argcomplete</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">chr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;COMP_TYPE&#39;</span><span class="p">]))</span> <span class="o">==</span> <span class="s1">&#39;?&#39;</span><span class="p">:</span>
+            <span class="n">jsonschema</span> <span class="o">=</span> <span class="n">import_jsonschema</span><span class="p">(</span><span class="s1">&#39;ActionJsonSchema&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="kn">import</span> <span class="nn">psutil</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getppid</span><span class="p">())</span><span class="o">.</span><span class="n">ppid</span><span class="p">(),</span> <span class="mi">28</span><span class="p">)</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="k">pass</span>
-        <span class="k">return</span> <span class="p">[(</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">msg</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u00A0</span><span class="s1">&#39;</span><span class="p">),</span> <span class="s1">&#39;&#39;</span><span class="p">]</span></div></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">prefix</span><span class="p">))</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;value already valid, &#39;</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">yaml</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">ParserError</span><span class="p">,</span> <span class="n">jsonschema</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ValidationError</span><span class="p">):</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;value not yet valid, &#39;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;expected type &#39;</span><span class="o">+</span><span class="n">type_to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_annotation</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">schema</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  &#39;</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;required to be valid according to schema:</span><span class="se">\n</span><span class="s1">  &#39;</span><span class="o">+</span><span class="n">schema</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="k">return</span> <span class="n">warn_redraw_prompt</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div></div>
 
 
-<span class="k">def</span> <span class="nf">type_in</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">types_set</span><span class="p">):</span>
-    <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;__origin__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">__origin__</span> <span class="ow">in</span> <span class="n">types_set</span>
-
-
-<span class="k">def</span> <span class="nf">is_optional_enum</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
-    <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="s1">&#39;__origin__&#39;</span><span class="p">)</span> <span class="ow">and</span> \
-        <span class="n">annotation</span><span class="o">.</span><span class="n">__origin__</span> <span class="o">==</span> <span class="n">Union</span> <span class="ow">and</span> \
-        <span class="nb">len</span><span class="p">(</span><span class="n">annotation</span><span class="o">.</span><span class="n">__args__</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> \
-        <span class="n">_issubclass</span><span class="p">(</span><span class="n">annotation</span><span class="o">.</span><span class="n">__args__</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Enum</span><span class="p">)</span> <span class="ow">and</span> \
-        <span class="nb">isinstance</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">annotation</span><span class="o">.</span><span class="n">__args__</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-
-
-<span class="k">def</span> <span class="nf">type_to_str</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">_issubclass</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">)):</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;_expression&#39;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">_type</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">obj</span><span class="o">.</span><span class="n">_expression</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__name__</span>
-    <span class="k">elif</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[a-z_.]+\.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;NoneType&#39;</span><span class="p">,</span> <span class="s1">&#39;null&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">warn_redraw_prompt</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="n">argcomplete</span> <span class="o">=</span> <span class="n">import_argcomplete</span><span class="p">(</span><span class="s1">&#39;warn_redraw_prompt&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">prefix</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">argcomplete</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">shell_pid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">popen</span><span class="p">(</span><span class="s1">&#39;ps -p </span><span class="si">%d</span><span class="s1"> -oppid=&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getppid</span><span class="p">())</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="n">shell_pid</span><span class="p">,</span> <span class="mi">28</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span> <span class="k">if</span> <span class="n">locale</span><span class="o">.</span><span class="n">getlocale</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;UTF-8&#39;</span> <span class="k">else</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u00A0</span><span class="s1">&#39;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">_</span><span class="o">+</span><span class="n">message</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
 </pre></div>
 
            </div>

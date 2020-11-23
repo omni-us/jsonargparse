@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.signatures &mdash; jsonargparse 3.0.0rc1 documentation</title>
+  <title>jsonargparse.signatures &mdash; jsonargparse 3.0.0rc2 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc1
+                3.0.0rc2
               </div>
             
           
@@ -338,7 +338,7 @@
             <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">doc_group</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
         <span class="c1">## Add objects arguments ##</span>
-        <span class="n">num_added</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">added_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">skip</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">skip</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">dataclasses_support</span><span class="p">:</span>
@@ -384,12 +384,15 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
                 <span class="k">if</span> <span class="s1">&#39;type&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="s1">&#39;action&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                     <span class="n">arg</span> <span class="o">=</span> <span class="s1">&#39;--&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="n">nested_key</span><span class="o">+</span><span class="s1">&#39;.&#39;</span> <span class="k">if</span> <span class="n">nested_key</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">name</span>
-                    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-                    <span class="n">num_added</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">added_args</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">skip_message</span><span class="o">+</span><span class="s1">&#39;Argument already added.&#39;</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+                        <span class="n">added_args</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">is_positional</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Positional argument without a type for &#39;</span><span class="o">+</span><span class="n">obj</span><span class="o">.</span><span class="vm">__name__</span><span class="o">+</span><span class="s1">&#39; argument &#39;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">num_added</span></div>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">added_args</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
