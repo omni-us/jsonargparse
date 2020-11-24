@@ -22,8 +22,12 @@ environment variables and hard-coded defaults.
 
 The aim is similar to other projects such as `configargparse
 <https://pypi.org/project/ConfigArgParse/>`__, `yconf
-<https://pypi.org/project/yconf/>`__ and `confuse
-<https://pypi.org/project/confuse/>`__. The obvious question is, why yet another
+<https://pypi.org/project/yconf/>`__, `confuse
+<https://pypi.org/project/confuse/>`__, `typer
+<https://pypi.org/project/typer/>`__, `OmegaConf
+<https://pypi.org/project/omegaconf/>`__, `fire
+<https://pypi.org/project/fire/>`__ and `click
+<https://pypi.org/project/click/>`__. The obvious question is, why yet another
 package similar to many already existing ones? The answer is simply that none of
 the existing projects had the exact features we wanted and after analyzing the
 alternatives it seemed simpler to start a new project.
@@ -336,20 +340,24 @@ Some notes about the support for automatic adding of arguments are:
 
 - Nested types are supported as long as at least one child type is supported.
 
-- The supported types are: :code:`str`, :code:`bool`, :code:`int`,
-  :code:`float`, :code:`list`, :code:`Any`, :code:`Union` and :code:`Optional`.
+- Fully supported types at any nested depth are: :code:`str`, :code:`bool`,
+  :code:`int`, :code:`float`, :code:`list`, :code:`Any`, :code:`Union`,
+  :code:`Optional` and restricted types as explained in
+  :ref:`restricted-numbers` and :ref:`restricted-strings`.
 
-- :code:`dict` with :code:`str` keys is supported for any level of nesting.
-  :code:`int` keys are also supported but only up to the first level of nesting.
+- :code:`Dict` with :code:`str` keys is supported for any level of nesting.
+  :code:`int` keys are also supported but only without nesting.
 
-- :code:`Enum` is supported but only up to the first level of nesting.
+- :code:`Enum` and the path types explained in section :ref:`parsing-paths` are
+  supported but only without nesting or as :code:`Optional` or as member of a
+  first level :code:`Union`.
 
-- There is partial support for :code:`tuple` and :code:`set` even though they
+- There is partial support for :code:`Tuple` and :code:`Set` even though they
   can't be represented in json distinguishable from a list. They are only
-  supported without nesting and in the case of tuple for a fixed number of
-  elements. Each element position can have its own type and will be validated as
-  such. In command line arguments, config files and environment variables tuples
-  and sets are represented as a list.
+  supported without nesting and in the case of tuple only for a fixed number of
+  elements. Each :code:`Tuple` element position can have its own type and will
+  be validated as such. In command line arguments, config files and environment
+  variables tuples and sets are represented as a list.
 
 - All positional arguments must have a type, otherwise the add arguments
   functions raise an exception.
@@ -474,6 +482,8 @@ The :class:`.ActionJsonnet` class also accepts as argument a json schema, in
 which case the jsonnet would be validated against this schema right after
 parsing.
 
+
+.. _parsing-paths:
 
 Parsing paths
 =============
@@ -614,6 +624,8 @@ are:
     def int_or_off(x): return x if x == 'off' else PositiveInt(x)
     parser.add_argument('--op3', type=int_or_off))
 
+
+.. _restricted-strings:
 
 Restricted strings
 ==================

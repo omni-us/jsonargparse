@@ -157,6 +157,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self.add_argument(print_config, action=_ActionPrintConfig)
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version)
+        if default_config_files is not None:
+            group = _ArgumentGroup(self,
+                                   title='default config file locations',
+                                   description=str(default_config_files))
+            self._action_groups = [group] + self._action_groups  # type: ignore
         if parser_mode not in {'yaml', 'jsonnet'}:
             raise ValueError('The only accepted values for parser_mode are {"yaml", "jsonnet"}.')
         if parser_mode == 'jsonnet':
@@ -628,14 +633,19 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         raise NotImplementedError('In jsonargparse sub-commands are added using the add_subcommands method.')
 
 
-    def add_subcommands(self, required:bool=True, dest:str='subcommand', **kwargs):
+    def add_subcommands(self, required:bool=True, dest:str='subcommand', **kwargs) -> Action:
         """Adds sub-command parsers to the ArgumentParser.
 
-        In contrast to `argparse.ArgumentParser.add_subparsers
+        The aim is the same as `argparse.ArgumentParser.add_subparsers
         <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers>`_
-        a required argument is accepted, dest by default is 'subcommand' and the
+        the difference being that dest by default is 'subcommand' and the parsed
         values of the sub-command are stored in a nested namespace using the
         sub-command's name as base key.
+
+        Args:
+            required: Whether the subcommand must be provided.
+            dest: Destination key where the chosen subcommand name is stored.
+            **kwargs: All options that `argparse.ArgumentParser.add_subparsers` accepts.
         """
         subcommands = super().add_subparsers(dest=dest, **kwargs)
         subcommands.required = required
@@ -871,10 +881,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         for pattern in self._default_config_files:
             default_config_files += glob.glob(os.path.expanduser(pattern))
         if len(default_config_files) > 0:
-            default_config = Path(default_config_files[0], mode=get_config_read_mode()).get_content()
-            cfg_file = self._load_cfg(default_config)
+            default_config_file = Path(default_config_files[0], mode=get_config_read_mode())
+            cfg_file = self._load_cfg(default_config_file.get_content())
             cfg = self._merge_config(cfg_file, cfg)
-            self._logger.info('Parsed configuration from default path: %s', default_config_files[0])
+            cfg['__default_config__'] = default_config_file
+            self._logger.info('Parsed configuration from default path: %s', str(default_config_file))
 
         if nested:
             cfg = _flat_namespace_to_dict(Namespace(**cfg))
@@ -998,9 +1009,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if not isinstance(cfg, dict):
             cfg = vars(cfg)
         cfg_files = []
+        if '__default_config__' in cfg:
+            cfg_files.append(cfg['__default_config__'])
         for action in self._actions:
             if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not None:
-                cfg_files = [p for p in cfg[action.dest] if p is not None]
+                cfg_files.extend(p for p in cfg[action.dest] if p is not None)
         return cfg_files
 
 

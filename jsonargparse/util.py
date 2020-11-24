@@ -30,7 +30,7 @@ __all__ = [
 null_logger = logging.Logger('jsonargparse_null_logger')
 null_logger.addHandler(logging.NullHandler())
 
-meta_keys = {'__cwd__', '__path__'}
+meta_keys = {'__cwd__', '__path__', '__default_config__'}
 
 
 class ParserError(Exception):

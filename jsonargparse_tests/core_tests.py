@@ -175,7 +175,8 @@ class ParsersTests(TempDirTestCase):
 
         cfg = parser.parse_args(['--cfg', input1_config_file])
         cfg_list = parser.get_config_files(cfg)
-        self.assertEqual(input1_config_file, cfg_list[0](absolute=False))
+        self.assertEqual(default_config_file, str(cfg_list[0]))
+        self.assertEqual(input1_config_file, str(cfg_list[1]))
 
         for key in ['APP_CFG', 'APP_OP1']:
             del os.environ[key]
@@ -607,6 +608,12 @@ class ConfigFilesTests(TempDirTestCase):
         self.assertEqual('from default config file', cfg.op1)
         self.assertEqual('from parser default', cfg.op2)
 
+        out = StringIO()
+        with redirect_stdout(out):
+            parser.print_help()
+        self.assertIn('default config file locations', out.getvalue())
+        self.assertIn(default_config_file, out.getvalue())
+
 
     def test_ActionConfigFile_and_ActionPath(self):
         os.mkdir(os.path.join(self.tmpdir, 'example'))
@@ -659,6 +666,11 @@ class ConfigFilesTests(TempDirTestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPath))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPath()))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPath(mode='+')))
+
+
+    def test_ActionConfigFile_failures(self):
+        parser = ArgumentParser()
+        self.assertRaises(ValueError, lambda: parser.add_argument('--cfg', default='config.yaml', action=ActionConfigFile))
         self.assertRaises(ValueError, lambda: parser.add_argument('--nested.cfg', action=ActionConfigFile))
 
 

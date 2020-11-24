@@ -64,6 +64,8 @@ class ActionConfigFile(Action):
 
     def __init__(self, **kwargs):
         """Initializer for ActionConfigFile instance."""
+        if 'default' in kwargs:
+            raise ValueError('default not allowed for ActionConfigFile, use default_config_files.')
         opt_name = kwargs['option_strings']
         opt_name = opt_name[0] if len(opt_name) == 1 else [x for x in opt_name if x[0:2] == '--'][0]
         if '.' in opt_name:
