@@ -155,7 +155,7 @@ def restricted_string_type(
         def __new__(cls, v):
             v = str(v)
             if not cls._regex.match(v):
-                raise ValueError('invalid value, '+v+' does not match regular expression '+cls._expression)
+                raise ValueError('invalid value, "'+v+'" does not match regular expression '+cls._expression)
             return super().__new__(cls, v)
 
     restricted_type = type(name, (RestrictedString, str), {})

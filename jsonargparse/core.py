@@ -23,6 +23,8 @@ from .optionals import (
     argcomplete_support,
     import_argcomplete,
     get_config_read_mode,
+    FilesCompleterMethod,
+    TypeCastCompleterMethod,
 )
 from .actions import (
     ActionYesNo,
@@ -76,6 +78,14 @@ class _ActionsContainer(argparse._ActionsContainer):
             elif _issubclass(kwargs['type'], Enum):
                 kwargs['action'] = ActionEnum(enum=kwargs['type'])
         action = super().add_argument(*args, **kwargs)
+        if not hasattr(action, 'completer') and action.type is not None:
+            CompleterMethod = FilesCompleterMethod if isinstance(action.type, Path) else TypeCastCompleterMethod
+            action_class = action.__class__
+            action.__class__ = action_class.__class__(
+                action_class.__name__ + 'WithCompleter',
+                (action_class, CompleterMethod),
+                {}
+            )
         for key in meta_keys:
             if key in action.dest:
                 raise ValueError('Argument with destination name "'+key+'" not allowed.')

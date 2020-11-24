@@ -1,5 +1,7 @@
 """Code related to optional dependencies."""
 
+import os
+import locale
 from importlib.util import find_spec
 
 
@@ -97,3 +99,41 @@ def set_url_support(enabled:bool):
 def get_config_read_mode() -> str:
     """Returns the current config reading mode."""
     return _config_read_mode
+
+
+files_completer = None
+if argcomplete_support:
+    from argcomplete.completers import FilesCompleter
+    files_completer = FilesCompleter()
+
+
+class FilesCompleterMethod:
+    """Completer method for Action classes that should complete files."""
+    def completer(self, prefix, **kwargs):
+        return sorted(files_completer(prefix, **kwargs))
+
+
+class TypeCastCompleterMethod:
+    """Completer method for Action classes with a casting type."""
+    def completer(self, prefix, **kwargs):
+        if chr(int(os.environ['COMP_TYPE'])) == '?':
+            try:
+                self.type(prefix)  # pylint: disable=no-member
+                msg = 'value already valid, '
+            except ValueError:
+                msg = 'value not yet valid, '
+            msg += 'expected type '+self.type.__name__  # pylint: disable=no-member
+            return argcomplete_warn_redraw_prompt(prefix, msg)
+
+
+def argcomplete_warn_redraw_prompt(prefix, message):
+    argcomplete = import_argcomplete('argcomplete_warn_redraw_prompt')
+    if prefix != '':
+        argcomplete.warn(message)
+        try:
+            shell_pid = int(os.popen('ps -p %d -oppid=' % os.getppid()).read().strip())
+            os.kill(shell_pid, 28)
+        except ValueError:
+            pass
+    _ = '_' if locale.getlocale()[1] != 'UTF-8' else '\xa0'
+    return [_+message.replace(' ', _), '']

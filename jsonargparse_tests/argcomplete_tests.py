@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
+import pathlib
+import platform
 from enum import Enum
 from typing import List, Optional
 from io import BytesIO, StringIO
@@ -9,7 +11,7 @@ from jsonargparse_tests.base import *
 
 
 @unittest.skipIf(not argcomplete_support, 'argcomplete package is required')
-class ArgcompleteTests(unittest.TestCase):
+class ArgcompleteTests(TempDirTestCase):
 
     @classmethod
     def setUpClass(self):
@@ -56,6 +58,52 @@ class ArgcompleteTests(unittest.TestCase):
         with redirect_stdout(out), self.assertRaises(SystemExit):
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
         self.assertEqual(out.getvalue(), b'--group2.op1\x0b--group2.op2')
+
+
+    @unittest.skipIf(platform.python_implementation() != 'CPython', 'only CPython supported')
+    def test_TypeCastCompleterMethod(self):
+        self.parser.add_argument('--int', type=int)
+        self.parser.add_argument('--float', type=float)
+        self.parser.add_argument('--pint', type=PositiveInt)
+        self.parser.add_argument('--pfloat', type=PositiveFloat)
+        self.parser.add_argument('--email', type=Email)
+
+        for arg, expected in [('--int=a',       'value not yet valid, expected type int'),
+                              ('--int=1',       'value already valid, expected type int'),
+                              ('--float=a',     'value not yet valid, expected type float'),
+                              ('--float=1',     'value already valid, expected type float'),
+                              ('--pint=0',      'value not yet valid, expected type PositiveInt'),
+                              ('--pint=1',      'value already valid, expected type PositiveInt'),
+                              ('--pfloat=0',    'value not yet valid, expected type PositiveFloat'),
+                              ('--pfloat=1',    'value already valid, expected type PositiveFloat'),
+                              ('--email=a',     'value not yet valid, expected type Email'),
+                              ('--email=a@b.c', 'value already valid, expected type Email')]:
+            os.environ['COMP_LINE'] = 'tool.py '+arg
+            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+            with self.subTest(os.environ['COMP_LINE']):
+                out, err = BytesIO(), StringIO()
+                with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                self.assertEqual(out.getvalue(), b'')
+                self.assertIn(expected, err.getvalue())
+
+
+    def test_ActionConfigFile(self):
+        self.parser.add_argument('--cfg', action=ActionConfigFile)
+        pathlib.Path('file1').touch()
+        pathlib.Path('config.yaml').touch()
+
+        for arg, expected in [('--cfg=',  b'config.yaml\x0bfile1'),
+                              ('--cfg=c', b'config.yaml')]:
+            os.environ['COMP_LINE'] = 'tool.py '+arg
+            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+            with self.subTest(os.environ['COMP_LINE']):
+                out = BytesIO()
+                with redirect_stdout(out), self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                self.assertEqual(expected, out.getvalue())
 
 
     def test_ActionYesNo(self):
@@ -119,10 +167,10 @@ class ArgcompleteTests(unittest.TestCase):
 
 
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
-    def test_ActionJsonSchema(self):
+    @unittest.skipIf(platform.python_implementation() != 'CPython', 'only CPython supported')
+    def test_json(self):
         self.parser.add_argument('--json', action=ActionJsonSchema(schema={'type': 'object'}))
         self.parser.add_argument('--list', type=List[int])
-        self.parser.add_argument('--bool', type=bool)
 
         for arg, expected in [('--json=1',            'value not yet valid'),
                               ("--json='{\"a\": 1}'", 'value already valid'),
@@ -144,14 +192,45 @@ class ArgcompleteTests(unittest.TestCase):
                     self.assertEqual(out.getvalue(), b'')
                     self.assertIn(expected, err.getvalue())
 
+        os.environ['COMP_LINE'] = 'tool.py --json='
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+        out, err = BytesIO(), StringIO()
+        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        self.assertEqual(err.getvalue(), '')
+        self.assertIn('value not yet valid', out.getvalue().decode('utf-8').replace('\xa0', ' '))
+
+
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+    def test_bool(self):
+        self.parser.add_argument('--bool', type=bool)
         os.environ['COMP_LINE'] = 'tool.py --bool='
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        with self.subTest(os.environ['COMP_LINE']):
-            out = BytesIO()
-            with redirect_stdout(out), self.assertRaises(SystemExit):
-                self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-            self.assertEqual(b'true\x0bfalse', out.getvalue())
+        out = BytesIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        self.assertEqual(b'true\x0bfalse', out.getvalue())
+
+
+    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+    def test_optional_path(self):
+        self.parser.add_argument('--path', type=Optional[Path_fr])
+        pathlib.Path('file1').touch()
+        pathlib.Path('file2').touch()
+
+        for arg, expected in [('--path=',  b'null\x0bfile1\x0bfile2'),
+                              ('--path=n', b'null'),
+                              ('--path=f', b'file1\x0bfile2')]:
+            os.environ['COMP_LINE'] = 'tool.py '+arg
+            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+            with self.subTest(os.environ['COMP_LINE']):
+                out = BytesIO()
+                with redirect_stdout(out), self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                self.assertEqual(expected, out.getvalue())
 
 
 if __name__ == '__main__':

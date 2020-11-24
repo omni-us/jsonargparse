@@ -824,6 +824,47 @@ have as prefix :code:`APP_SUBCOMM1_` and likewise for :code:`subcomm2` as prefix
 environment variable :code:`APP_SUBCOMMAND`.
 
 
+Tab completion
+==============
+
+Tab completion is available for jsonargparse parsers by using the `argcomplete
+<https://pypi.org/project/argcomplete/>`__ package. There is no need to
+implement completer functions or to call :func:`argcomplete.autocomplete` since
+this is done automatically by :py:meth:`.ArgumentParser.parse_args`. The only
+requirement to enable tab completion is to install argcomplete either directly
+or by installing jsonargparse with the :code:`argcomplete` extras require as
+explained in section :ref:`installation`. Then the tab completion can be enabled
+`globally <https://kislyuk.github.io/argcomplete/#global-completion>`__ for all
+argcomplete compatible tools or for each `individual
+<https://kislyuk.github.io/argcomplete/#synopsis>`__ tool. A simple
+:code:`example.py` tool would be:
+
+.. code-block:: python
+
+    #!/usr/bin/env python3
+
+    from typing import Optional
+    from jsonargparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument('--bool', type=Optional[bool])
+
+    parser.parse_args()
+
+Then in a bash shell you can add the executable bit to the script, activate tab
+completion and use it as follows:
+
+.. code-block:: python
+
+    $ chmod +x example.py
+    $ eval "$(register-python-argcomplete example.py)"
+
+    $ ./example.py --bool <TAB><TAB>
+    false  null   true
+    $ ./example.py --bool f<TAB>
+    $ ./example.py --bool false
+
+
 .. _logging:
 
 Logging

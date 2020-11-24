@@ -8,10 +8,18 @@ import argparse
 from enum import Enum
 from argparse import Namespace, Action, SUPPRESS, _StoreAction, _SubParsersAction
 
-from .optionals import get_config_read_mode
+from .optionals import get_config_read_mode, FilesCompleterMethod
 from .typing import restricted_number_type
-from .util import (ParserError, _flat_namespace_to_dict, _dict_to_flat_namespace, namespace_to_dict, 
-                   dict_to_namespace, Path, _check_unknown_kwargs, _issubclass)
+from .util import (
+    ParserError,
+    namespace_to_dict,
+    dict_to_namespace,
+    Path,
+    _flat_namespace_to_dict,
+    _dict_to_flat_namespace,
+    _check_unknown_kwargs,
+    _issubclass
+)
 
 
 __all__ = [
@@ -59,7 +67,7 @@ def _is_action_value_list(action:Action):
     return False
 
 
-class ActionConfigFile(Action):
+class ActionConfigFile(Action, FilesCompleterMethod):
     """Action to indicate that an argument is a configuration file or a configuration string."""
 
     def __init__(self, **kwargs):
@@ -479,7 +487,7 @@ class _ActionSubCommands(_SubParsersAction):
                     cfg_dict[key] = value
 
 
-class ActionPath(Action):
+class ActionPath(Action, FilesCompleterMethod):
     """Action to check and store a path."""
 
     def __init__(self, **kwargs):
@@ -535,7 +543,7 @@ class ActionPath(Action):
         return value if islist else value[0]
 
 
-class ActionPathList(Action):
+class ActionPathList(Action, FilesCompleterMethod):
     """Action to check and store a list of file paths read from a plain text file or stream."""
 
     def __init__(self, **kwargs):

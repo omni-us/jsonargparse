@@ -1,19 +1,22 @@
 """Action to support jsonschema and type hint annotations."""
 
 import os
-import re
 import json
 import yaml
-import locale
 import inspect
 from enum import Enum
 from argparse import Namespace, Action
 from typing import Any, Union, Tuple, List, Set, Dict
 
 from .util import namespace_to_dict, Path, strip_meta, _check_unknown_kwargs, _issubclass
-from .optionals import import_jsonschema, get_config_read_mode, import_argcomplete
 from .actions import _is_action_value_list
 from .typing import is_optional, annotation_to_schema, type_in, type_to_str
+from .optionals import (
+    import_jsonschema,
+    get_config_read_mode,
+    files_completer,
+    argcomplete_warn_redraw_prompt,
+)
 
 
 __all__ = ['ActionJsonSchema']
@@ -258,29 +261,20 @@ class ActionJsonSchema(Action):
         elif is_optional(self._annotation, Enum):
             enum = self._annotation.__args__[0]
             return list(enum.__members__.keys())+['null']
+        elif is_optional(self._annotation, Path):
+            return ['null'] + sorted(files_completer(prefix, **kwargs))
         elif chr(int(os.environ['COMP_TYPE'])) == '?':
             jsonschema = import_jsonschema('ActionJsonSchema')[0]
             try:
+                if prefix.strip() == '':
+                    raise ValueError()
                 self._validator.validate(yaml.safe_load(prefix))
                 msg = 'value already valid, '
-            except (yaml.parser.ParserError, jsonschema.exceptions.ValidationError):
+            except (ValueError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError):
                 msg = 'value not yet valid, '
             if self._annotation is not None:
                 msg += 'expected type '+type_to_str(self._annotation)
             else:
                 schema = json.dumps(self._validator.schema, indent=2, sort_keys=True).replace('\n', '\n  ')
                 msg += 'required to be valid according to schema:\n  '+schema+'\n'
-            return warn_redraw_prompt(prefix, msg)
-
-
-def warn_redraw_prompt(prefix, message):
-    argcomplete = import_argcomplete('warn_redraw_prompt')
-    if prefix != '':
-        argcomplete.warn(message)
-        try:
-            shell_pid = int(os.popen('ps -p %d -oppid=' % os.getppid()).read().strip())
-            os.kill(shell_pid, 28)
-        except ValueError:
-            pass
-    _ = '_' if locale.getlocale()[1] != 'UTF-8' else u'\u00A0'
-    return [_+message.replace(' ', _), '']
+            return argcomplete_warn_redraw_prompt(prefix, msg)
