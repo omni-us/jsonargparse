@@ -89,6 +89,7 @@ class ArgcompleteTests(TempDirTestCase):
                 self.assertIn(expected, err.getvalue())
 
 
+    @unittest.skipIf(os.name != 'posix', 'Path class currently only supported in posix systems')
     def test_ActionConfigFile(self):
         self.parser.add_argument('--cfg', action=ActionConfigFile)
         pathlib.Path('file1').touch()
@@ -199,7 +200,7 @@ class ArgcompleteTests(TempDirTestCase):
         with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
         self.assertEqual(err.getvalue(), '')
-        self.assertIn('value not yet valid', out.getvalue().decode('utf-8').replace('\xa0', ' '))
+        self.assertIn('value not yet valid', out.getvalue().decode('utf-8').replace('\xa0', ' ').replace('_', ' '))
 
 
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
@@ -215,6 +216,7 @@ class ArgcompleteTests(TempDirTestCase):
 
 
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+    @unittest.skipIf(os.name != 'posix', 'Path class currently only supported in posix systems')
     def test_optional_path(self):
         self.parser.add_argument('--path', type=Optional[Path_fr])
         pathlib.Path('file1').touch()

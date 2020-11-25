@@ -613,7 +613,7 @@ class ConfigFilesTests(TempDirTestCase):
         with redirect_stdout(out):
             parser.print_help()
         self.assertIn('default config file locations', out.getvalue())
-        self.assertIn(os.path.sep.join(default_config_file.split('/')[-3:]), out.getvalue())
+        self.assertIn(os.path.basename(default_config_file), out.getvalue())
 
 
     def test_ActionConfigFile_and_ActionPath(self):
