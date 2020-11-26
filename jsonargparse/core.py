@@ -79,11 +79,11 @@ class _ActionsContainer(argparse._ActionsContainer):
                 kwargs['action'] = ActionEnum(enum=kwargs['type'])
         action = super().add_argument(*args, **kwargs)
         if not hasattr(action, 'completer') and action.type is not None:
-            CompleterMethod = FilesCompleterMethod if isinstance(action.type, Path) else TypeCastCompleterMethod
+            completer_method = FilesCompleterMethod if isinstance(action.type, Path) else TypeCastCompleterMethod
             action_class = action.__class__
             action.__class__ = action_class.__class__(
                 action_class.__name__ + 'WithCompleter',
-                (action_class, CompleterMethod),
+                (action_class, completer_method),
                 {}
             )
         for key in meta_keys:
@@ -120,7 +120,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         formatter_class: Type[argparse.HelpFormatter] = DefaultHelpFormatter,
         logger: Union[bool, Dict[str, str], logging.Logger] = None,
         version: str = None,
-        print_config: Optional[str] = '--print-config',
+        print_config: Optional[str] = '--print_config',
         parser_mode: str = 'yaml',
         parse_as_dict: bool = False,
         default_config_files: List[str] = None,
@@ -167,7 +167,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self.add_argument(print_config, action=_ActionPrintConfig)
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version)
-        if default_config_files is not None:
+        if len(default_config_files) > 0:
             group = _ArgumentGroup(self,
                                    title='default config file locations',
                                    description=str(default_config_files))

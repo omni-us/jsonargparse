@@ -24,7 +24,7 @@ class DefaultFormatterTests(unittest.TestCase):
             parser.print_help()
         outval = out.getvalue()
 
-        self.assertIn('--print-config', outval)
+        self.assertIn('--print_config', outval)
 
         self.assertIn('--cfg CFG', outval)
         self.assertIn('APP_CFG', outval)

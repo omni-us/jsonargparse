@@ -410,8 +410,16 @@ class _ActionSubCommands(_SubParsersAction):
         <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers>`_
         add_parser requires to be given a parser as argument.
         """
-        parser.prog = '%s %s' % (self._prog_prefix, name)
+        parser.prog = '%s [options] %s' % (self._prog_prefix, name)
         parser.env_prefix = self._env_prefix+'_'+name+'_'
+
+        def remove_print_config(actions):
+            print_config = [a for a in actions if isinstance(a, _ActionPrintConfig)]
+            if len(print_config) > 0:
+                actions.remove(print_config[0])
+
+        remove_print_config(parser._actions)
+        remove_print_config(parser._action_groups[1]._group_actions)
 
         # create a pseudo-action to hold the choice help
         aliases = kwargs.pop('aliases', ())

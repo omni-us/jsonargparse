@@ -587,7 +587,7 @@ class OutputTests(TempDirTestCase):
 
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(['--print-config'])
+            parser.parse_args(['--print_config'])
 
         outval = yaml.safe_load(out.getvalue())
         self.assertEqual(outval, {'g1': {'v2': '2'}, 'g2': {'v3': None}, 'v1': 1})
