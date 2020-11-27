@@ -7,7 +7,6 @@ import inspect
 from enum import Enum
 from argparse import Namespace, Action
 from typing import Any, Union, Tuple, List, Set, Dict
-from collections.abc import Iterable, Sequence
 
 from .util import namespace_to_dict, Path, strip_meta, _check_unknown_kwargs, _issubclass
 from .actions import _is_action_value_list
@@ -228,7 +227,7 @@ class ActionJsonSchema(Action):
                 return
             return {'type': 'array', 'items': items}
 
-        elif annotation.__origin__ in {List, list, Set, set, Iterable, Sequence}:
+        elif annotation.__origin__ in {List, list, Set, set}:
             items = ActionJsonSchema.typing_schema(annotation.__args__[0])
             if items is not None:
                 return {'type': 'array', 'items': items}

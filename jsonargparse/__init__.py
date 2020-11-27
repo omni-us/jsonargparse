@@ -1,4 +1,5 @@
 from .actions import *
+from .cli import *
 from .core import *
 from .formatters import *
 from .jsonnet import *

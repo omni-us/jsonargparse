@@ -206,9 +206,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                             setattr(namespace, key, val)
                         if len(args) == 0:
                             break
-            #if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
-            #    args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
-            #    delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
             return namespace, args
         except (ArgumentError, ParserError):
             err = sys.exc_info()[1]
@@ -325,8 +322,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                 cfg, unk = self.parse_known_args(args=args)
                 if unk:
                     self.error('Unrecognized arguments: %s' % ' '.join(unk))
-
-            #ActionParser._fix_conflicts(self, cfg)
 
             parsed_cfg = self._parse_common(
                 cfg=namespace_to_dict(cfg),
@@ -1076,8 +1071,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                    not isinstance(v, dict) or \
                    (isinstance(v, dict) and not isinstance(cfg_to[k], dict)):
                     cfg_to[k] = v
-                #elif k in cfg_to and cfg_to[k] is None:
-                #    cfg_to[k] = cfg_from[k]
                 else:
                     cfg_to[k] = merge_values(cfg_from[k], cfg_to[k])
             return cfg_to

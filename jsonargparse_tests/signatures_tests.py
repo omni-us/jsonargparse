@@ -333,7 +333,7 @@ class SignaturesTests(unittest.TestCase):
                 parser.add_class_arguments(Class2, skip={'c2_a2'})
                 self.assertEqual(2, len(log.output))
                 self.assertIn('"c2_a2" from "Class2"', log.output[0])
-                self.assertIn('Argument requested to be skipped', log.output[0])
+                self.assertIn('Parameter requested to be skipped', log.output[0])
                 self.assertIn('"c2_a3" from "Class2"', log.output[1])
                 self.assertIn('Unable to generate schema', log.output[1])
 
@@ -346,7 +346,7 @@ class SignaturesTests(unittest.TestCase):
                 parser.add_class_arguments(Class3)
                 self.assertEqual(1, len(log.output))
                 self.assertIn('"c1_a2" from "Class1"', log.output[0])
-                self.assertIn('Keyword argument but **kwargs not propagated', log.output[0])
+                self.assertIn('Keyword parameter but **kwargs not propagated', log.output[0])
 
             class Class4(Class1):
                 def __init__(self, **kwargs):
@@ -357,7 +357,7 @@ class SignaturesTests(unittest.TestCase):
                 parser.add_class_arguments(Class4)
                 self.assertEqual(1, len(log.output))
                 self.assertIn('"c1_a1" from "Class1"', log.output[0])
-                self.assertIn('Positional argument but *args not propagated', log.output[0])
+                self.assertIn('Positional parameter but *args not propagated', log.output[0])
 
 
 if __name__ == '__main__':

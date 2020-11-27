@@ -10,8 +10,8 @@
     :target: https://github.com/omni-us/jsonargparse
 
 
-jsonargparse (former yamlargparse)
-==================================
+jsonargparse
+============
 
 https://omni-us.github.io/jsonargparse/
 
@@ -25,7 +25,7 @@ The aim is similar to other projects such as `configargparse
 <https://pypi.org/project/yconf/>`__, `confuse
 <https://pypi.org/project/confuse/>`__, `typer
 <https://pypi.org/project/typer/>`__, `OmegaConf
-<https://pypi.org/project/omegaconf/>`__, `fire
+<https://pypi.org/project/omegaconf/>`__, `Fire
 <https://pypi.org/project/fire/>`__ and `click
 <https://pypi.org/project/click/>`__. The obvious question is, why yet another
 package similar to many already existing ones? The answer is simply that none of
@@ -47,16 +47,13 @@ Features
 - Support for nested namespaces which makes it possible to parse config files
   with non-flat hierarchies.
 
-- Easy adding of arguments from classes, methods and functions that include
-  type hints and docstrings.
+- Three mechanisms to define parsers in a modular way: arguments from classes,
+  methods and functions; sub-commands and parsers as arguments.
 
 - Parsing of relative paths within config files and path lists.
 
-- Several convenient action classes to ease common parsing use cases (paths,
-  comparison operators, json schemas, enums ...).
-
-- Two mechanisms to define parsers in a modular way: parsers as arguments and
-  sub-commands.
+- Several convenient action classes and types to ease common parsing use cases
+  (paths, comparison operators, json schemas, enums ...).
 
 - Support for command line tab argument completion using `argcomplete
   <https://pypi.org/project/argcomplete/>`__.
@@ -78,7 +75,7 @@ Installation
 
 You can install using `pip <https://pypi.org/project/jsonargparse/>`__ as:
 
-.. code-block:: python
+.. code-block:: bash
 
     pip install jsonargparse
 
@@ -90,7 +87,7 @@ requires: :code:`signatures`, :code:`jsonschema`, :code:`jsonnet`, :code:`urls`,
 extras require that can be used to enable all optional features. Installing
 jsonargparse with extras require is as follows:
 
-.. code-block:: python
+.. code-block:: bash
 
     pip install "jsonargparse[signatures]"    # Enable only signatures feature
     pip install "jsonargparse[all]"           # Enable all optional features
@@ -99,7 +96,60 @@ jsonargparse with extras require is as follows:
 Basic usage
 ===========
 
-A parser is created just like it is done with argparse. You import the module,
+There are multiple ways of using jsonargparse. The most simple way which
+requires to write the least amount of code is by using the :func:`.CLI`
+function, for example:
+
+.. code-block:: python
+
+    from jsonargparse import CLI
+
+    def command(
+        name: str,
+        prize: int = 100
+    ):
+        """
+        Args:
+            name: Name of winner.
+            prize: Amount won.
+        """
+        print(f'{name} won {prize}€!')
+
+    if __name__ == '__main__':
+        CLI()
+
+Then in a shell you could run:
+
+.. code-block:: bash
+
+    $ python example.py Lucky --prize=1000
+    Lucky won 1000€!
+
+:func:`.CLI` without arguments searches for functions defined in the same module
+and in the local context where :func:`.CLI` is called. If more than one function
+is found, then any of them can be executed via :ref:`sub-commands`, e.g.
+:code:`python example.py subcommand [arguments]`. Alternatively one or more
+functions can be given to :func:`.CLI` skipping the automatic search.
+
+This simple way of usage is similar and inspired by `Fire
+<https://pypi.org/project/fire/>`__. However, there are fundamental differences.
+First, the purpose is not allowing to call any python object from the command
+line. It is only intended for running functions specifically written for this
+purpose. Second, the arguments of the functions are required to have type hints,
+and the values will be validated according to these. Third, the return values of
+the functions are not automatically printed. :func:`.CLI` returns its value and
+it is up to the developer to decide what to do with it. Finally, jsonargparse
+has many features designed to help in creating convenient argument parsers such
+as: :ref:`nested-namespaces`, :ref:`configuration-files`, arguments from
+:ref:`classes-methods-functions`, additional type hints (:ref:`parsing-paths`,
+:ref:`restricted-numbers`, :ref:`restricted-strings`) and much more.
+
+
+Parsers
+=======
+
+An argument parser is created just like it is done with python's `argparse
+<https://docs.python.org/3/library/argparse.html>`__. You import the module,
 create a parser object and then add arguments to it. A simple example would be:
 
 .. code-block:: python
@@ -206,6 +256,8 @@ environment variable for this config file will be checked before all the other
 environment variables.
 
 
+.. _configuration-files:
+
 Configuration files
 ===================
 
@@ -279,9 +331,9 @@ contained in a string respectively.
 Classes, methods and functions
 ==============================
 
-It is good practice to write python code in which arguments have type hints and
+It is good practice to write python code in which parameters have type hints and
 are described in the docstrings. To make this well written code configurable, it
-wouldn't make sense to duplicate information of types and argument descriptions.
+wouldn't make sense to duplicate information of types and parameter descriptions.
 To avoid this duplication, jsonargparse includes methods to automatically add
 their arguments: :py:meth:`.SignatureArguments.add_class_arguments`,
 :py:meth:`.SignatureArguments.add_method_arguments` and
@@ -765,11 +817,13 @@ An important detail to note is that the parsers that are given to
 exclusively for the :class:`.ActionParser` and not used standalone.
 
 
+.. _sub-commands:
+
 Sub-commands
 ============
 
 A second way to define parsers in a modular way is what in argparse is known as
-`sub-commands <https://docs.python.org/3/library/argparse.html#sub-commands>`_.
+`sub-commands <https://docs.python.org/3/library/argparse.html#sub-commands>`__.
 However, to promote modularity, in jsonargparse sub-commands work a bit
 different than in argparse. To add sub-commands to a parser, the
 :py:meth:`.ArgumentParser.add_subcommands` method is used. Then an existing
@@ -854,7 +908,7 @@ argcomplete compatible tools or for each `individual
 Then in a bash shell you can add the executable bit to the script, activate tab
 completion and use it as follows:
 
-.. code-block:: python
+.. code-block:: bash
 
     $ chmod +x example.py
     $ eval "$(register-python-argcomplete example.py)"

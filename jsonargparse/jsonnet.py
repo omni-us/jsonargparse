@@ -109,9 +109,6 @@ class ActionJsonnet(Action):
                 if isinstance(val, str):
                     val = self.parse(val, ext_vars=ext_vars, with_meta=True)
                 elif self._validator is not None:
-                    #if isinstance(val, Namespace):
-                    #    self._validator.validate(namespace_to_dict(val))
-                    #else:
                     self._validator.validate(val)
                 value[num] = val
             except (TypeError, RuntimeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:

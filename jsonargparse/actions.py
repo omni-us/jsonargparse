@@ -150,8 +150,6 @@ class ActionYesNo(Action):
                 self._yes_prefix = kwargs['yes_prefix']
             if 'no_prefix' in kwargs:
                 self._no_prefix = kwargs['no_prefix']
-        #elif 'option_strings' not in kwargs:
-        #    raise ValueError('Expected yes_prefix and/or no_prefix keyword arguments.')
         else:
             self._yes_prefix = kwargs.pop('_yes_prefix') if '_yes_prefix' in kwargs else ''
             self._no_prefix = kwargs.pop('_no_prefix') if '_no_prefix' in kwargs else 'no_'
@@ -160,8 +158,6 @@ class ActionYesNo(Action):
             opt_name = kwargs['option_strings'][0]
             if not opt_name.startswith('--'+self._yes_prefix):
                 raise ValueError('Expected option string to start with "--'+self._yes_prefix+'".')
-            #if 'dest' not in kwargs:
-            #    kwargs['dest'] = re.sub('^--', '', opt_name).replace('-', '_')
             if self._no_prefix is not None:
                 kwargs['option_strings'] += [re.sub('^--'+self._yes_prefix, '--'+self._no_prefix, opt_name)]
             if self._no_prefix is None and 'nargs' in kwargs and kwargs['nargs'] != 1:
@@ -185,8 +181,6 @@ class ActionYesNo(Action):
             kwargs['_no_prefix'] = self._no_prefix
             return ActionYesNo(**kwargs)
         value = args[2] if isinstance(args[2], bool) else True
-        #if isinstance(args[2], list) and len(args[2]) == 1:
-        #    value = args[2][0]
         if self._no_prefix is not None and args[3].startswith('--'+self._no_prefix):
             setattr(args[1], self.dest, not value)
         else:
@@ -197,17 +191,8 @@ class ActionYesNo(Action):
         self.option_strings[0] = re.sub('^--'+self._yes_prefix, '--'+self._yes_prefix+prefix+'.', self.option_strings[0])
         if self._no_prefix is not None:
             self.option_strings[-1] = re.sub('^--'+self._no_prefix, '--'+self._no_prefix+prefix+'.', self.option_strings[-1])
-        #for n in range(1, len(self.option_strings)-1):
-        #    self.option_strings[n] = re.sub('^--', '--'+prefix+'.', self.option_strings[n])
 
     def _check_type(self, value, cfg=None):
-        #if isinstance(value, list):
-        #    value = [ActionYesNo._boolean_type(val) for val in value]
-        #else:
-        #    value = ActionYesNo._boolean_type(value)
-        #if isinstance(value, list) and (self.nargs == 0 or self.nargs):
-        #    return value[0]
-        #return value
         return ActionYesNo._boolean_type(value)
 
     @staticmethod
@@ -382,15 +367,6 @@ class ActionParser(Action):
             if isinstance(subaction, ActionParser):
                 ActionParser._set_inner_parser_prefix(action._parser, prefix, subaction)
 
-    #@staticmethod
-    #def _fix_conflicts(parser, cfg):
-    #    cfg_dict = namespace_to_dict(cfg)
-    #    for action in parser._actions:
-    #        if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:
-    #            children = [x for x in cfg_dict.keys() if x.startswith(action.dest+'.')]
-    #            if len(children) > 0:
-    #                delattr(cfg, action.dest)
-
 
 class _ActionSubCommands(_SubParsersAction):
     """Extension of argparse._SubParsersAction to modify sub-commands functionality."""
@@ -461,6 +437,7 @@ class _ActionSubCommands(_SubParsersAction):
             return
 
         cfg_dict = cfg.__dict__ if isinstance(cfg, Namespace) else cfg
+        cfg_keys = set(vars(_dict_to_flat_namespace(cfg)).keys())
 
         # Get subcommands action
         for action in parser._actions:
@@ -491,7 +468,7 @@ class _ActionSubCommands(_SubParsersAction):
         if subnamespace is not None:
             for key, value in vars(subnamespace).items():
                 key = subcommand+'.'+key
-                if key not in cfg_dict:
+                if key not in cfg_keys:
                     cfg_dict[key] = value
 
 
