@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.jsonnet &mdash; jsonargparse 3.0.0rc2 documentation</title>
+  <title>jsonargparse.jsonnet &mdash; jsonargparse 3.0.0rc3 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc2
+                3.0.0rc3
               </div>
             
           
@@ -259,9 +259,6 @@
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                     <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="n">ext_vars</span><span class="p">,</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="c1">#if isinstance(val, Namespace):</span>
-                    <span class="c1">#    self._validator.validate(namespace_to_dict(val))</span>
-                    <span class="c1">#else:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                 <span class="n">value</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">yaml</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">ParserError</span><span class="p">,</span> <span class="n">jsonschema</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ValidationError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.actions &mdash; jsonargparse 3.0.0rc2 documentation</title>
+  <title>jsonargparse.actions &mdash; jsonargparse 3.0.0rc3 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc2
+                3.0.0rc3
               </div>
             
           
@@ -158,10 +158,18 @@
 <span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">Namespace</span><span class="p">,</span> <span class="n">Action</span><span class="p">,</span> <span class="n">SUPPRESS</span><span class="p">,</span> <span class="n">_StoreAction</span><span class="p">,</span> <span class="n">_SubParsersAction</span>
 
-<span class="kn">from</span> <span class="nn">.optionals</span> <span class="k">import</span> <span class="n">get_config_read_mode</span>
+<span class="kn">from</span> <span class="nn">.optionals</span> <span class="k">import</span> <span class="n">get_config_read_mode</span><span class="p">,</span> <span class="n">FilesCompleterMethod</span>
 <span class="kn">from</span> <span class="nn">.typing</span> <span class="k">import</span> <span class="n">restricted_number_type</span>
-<span class="kn">from</span> <span class="nn">.util</span> <span class="k">import</span> <span class="p">(</span><span class="n">ParserError</span><span class="p">,</span> <span class="n">_flat_namespace_to_dict</span><span class="p">,</span> <span class="n">_dict_to_flat_namespace</span><span class="p">,</span> <span class="n">namespace_to_dict</span><span class="p">,</span> 
-                   <span class="n">dict_to_namespace</span><span class="p">,</span> <span class="n">Path</span><span class="p">,</span> <span class="n">_check_unknown_kwargs</span><span class="p">,</span> <span class="n">_issubclass</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.util</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">ParserError</span><span class="p">,</span>
+    <span class="n">namespace_to_dict</span><span class="p">,</span>
+    <span class="n">dict_to_namespace</span><span class="p">,</span>
+    <span class="n">Path</span><span class="p">,</span>
+    <span class="n">_flat_namespace_to_dict</span><span class="p">,</span>
+    <span class="n">_dict_to_flat_namespace</span><span class="p">,</span>
+    <span class="n">_check_unknown_kwargs</span><span class="p">,</span>
+    <span class="n">_issubclass</span>
+<span class="p">)</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -209,11 +217,13 @@
     <span class="k">return</span> <span class="kc">False</span>
 
 
-<div class="viewcode-block" id="ActionConfigFile"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionConfigFile">[docs]</a><span class="k">class</span> <span class="nc">ActionConfigFile</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionConfigFile"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionConfigFile">[docs]</a><span class="k">class</span> <span class="nc">ActionConfigFile</span><span class="p">(</span><span class="n">Action</span><span class="p">,</span> <span class="n">FilesCompleterMethod</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to indicate that an argument is a configuration file or a configuration string.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="ActionConfigFile.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionConfigFile.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializer for ActionConfigFile instance.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;default&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;default not allowed for ActionConfigFile, use default_config_files.&#39;</span><span class="p">)</span>
         <span class="n">opt_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">]</span>
         <span class="n">opt_name</span> <span class="o">=</span> <span class="n">opt_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt_name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">opt_name</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;--&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">opt_name</span><span class="p">:</span>
@@ -290,8 +300,6 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;yes_prefix&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="s1">&#39;no_prefix&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;no_prefix&#39;</span><span class="p">]</span>
-        <span class="c1">#elif &#39;option_strings&#39; not in kwargs:</span>
-        <span class="c1">#    raise ValueError(&#39;Expected yes_prefix and/or no_prefix keyword arguments.&#39;)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_yes_prefix&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;_yes_prefix&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_no_prefix&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;_no_prefix&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s1">&#39;no_&#39;</span>
@@ -300,8 +308,6 @@
             <span class="n">opt_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">opt_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected option string to start with &quot;--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span><span class="o">+</span><span class="s1">&#39;&quot;.&#39;</span><span class="p">)</span>
-            <span class="c1">#if &#39;dest&#39; not in kwargs:</span>
-            <span class="c1">#    kwargs[&#39;dest&#39;] = re.sub(&#39;^--&#39;, &#39;&#39;, opt_name).replace(&#39;-&#39;, &#39;_&#39;)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;option_strings&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span><span class="p">,</span> <span class="n">opt_name</span><span class="p">)]</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;nargs&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;nargs&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
@@ -325,8 +331,6 @@
             <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_no_prefix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span>
             <span class="k">return</span> <span class="n">ActionYesNo</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">value</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="nb">bool</span><span class="p">)</span> <span class="k">else</span> <span class="kc">True</span>
-        <span class="c1">#if isinstance(args[2], list) and len(args[2]) == 1:</span>
-        <span class="c1">#    value = args[2][0]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span><span class="p">):</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="ow">not</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -337,17 +341,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">option_strings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_yes_prefix</span><span class="o">+</span><span class="n">prefix</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">option_strings</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">option_strings</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_no_prefix</span><span class="o">+</span><span class="n">prefix</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">option_strings</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="c1">#for n in range(1, len(self.option_strings)-1):</span>
-        <span class="c1">#    self.option_strings[n] = re.sub(&#39;^--&#39;, &#39;--&#39;+prefix+&#39;.&#39;, self.option_strings[n])</span>
 
     <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="c1">#if isinstance(value, list):</span>
-        <span class="c1">#    value = [ActionYesNo._boolean_type(val) for val in value]</span>
-        <span class="c1">#else:</span>
-        <span class="c1">#    value = ActionYesNo._boolean_type(value)</span>
-        <span class="c1">#if isinstance(value, list) and (self.nargs == 0 or self.nargs):</span>
-        <span class="c1">#    return value[0]</span>
-        <span class="c1">#return value</span>
         <span class="k">return</span> <span class="n">ActionYesNo</span><span class="o">.</span><span class="n">_boolean_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
@@ -522,15 +517,6 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subaction</span><span class="p">,</span> <span class="n">ActionParser</span><span class="p">):</span>
                 <span class="n">ActionParser</span><span class="o">.</span><span class="n">_set_inner_parser_prefix</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">_parser</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">subaction</span><span class="p">)</span></div>
 
-    <span class="c1">#@staticmethod</span>
-    <span class="c1">#def _fix_conflicts(parser, cfg):</span>
-    <span class="c1">#    cfg_dict = namespace_to_dict(cfg)</span>
-    <span class="c1">#    for action in parser._actions:</span>
-    <span class="c1">#        if isinstance(action, ActionParser) and action.dest in cfg_dict and cfg_dict[action.dest] is None:</span>
-    <span class="c1">#            children = [x for x in cfg_dict.keys() if x.startswith(action.dest+&#39;.&#39;)]</span>
-    <span class="c1">#            if len(children) &gt; 0:</span>
-    <span class="c1">#                delattr(cfg, action.dest)</span>
-
 
 <span class="k">class</span> <span class="nc">_ActionSubCommands</span><span class="p">(</span><span class="n">_SubParsersAction</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Extension of argparse._SubParsersAction to modify sub-commands functionality.&quot;&quot;&quot;</span>
@@ -550,8 +536,16 @@
 <span class="sd">        &lt;https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers&gt;`_</span>
 <span class="sd">        add_parser requires to be given a parser as argument.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">parser</span><span class="o">.</span><span class="n">prog</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prog_prefix</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">prog</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> [options] </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prog_prefix</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="n">parser</span><span class="o">.</span><span class="n">env_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env_prefix</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_&#39;</span>
+
+        <span class="k">def</span> <span class="nf">remove_print_config</span><span class="p">(</span><span class="n">actions</span><span class="p">):</span>
+            <span class="n">print_config</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">actions</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">_ActionPrintConfig</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">print_config</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">actions</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">print_config</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">remove_print_config</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">)</span>
+        <span class="n">remove_print_config</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">_action_groups</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">_group_actions</span><span class="p">)</span>
 
         <span class="c1"># create a pseudo-action to hold the choice help</span>
         <span class="n">aliases</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;aliases&#39;</span><span class="p">,</span> <span class="p">())</span>
@@ -593,6 +587,7 @@
             <span class="k">return</span>
 
         <span class="n">cfg_dict</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="vm">__dict__</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">Namespace</span><span class="p">)</span> <span class="k">else</span> <span class="n">cfg</span>
+        <span class="n">cfg_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="n">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
         <span class="c1"># Get subcommands action</span>
         <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
@@ -623,11 +618,11 @@
         <span class="k">if</span> <span class="n">subnamespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">subnamespace</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="n">subcommand</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cfg_dict</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cfg_keys</span><span class="p">:</span>
                     <span class="n">cfg_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
 
-<div class="viewcode-block" id="ActionPath"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionPath">[docs]</a><span class="k">class</span> <span class="nc">ActionPath</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionPath"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionPath">[docs]</a><span class="k">class</span> <span class="nc">ActionPath</span><span class="p">(</span><span class="n">Action</span><span class="p">,</span> <span class="n">FilesCompleterMethod</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to check and store a path.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="ActionPath.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionPath.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -683,7 +678,7 @@
         <span class="k">return</span> <span class="n">value</span> <span class="k">if</span> <span class="n">islist</span> <span class="k">else</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="ActionPathList"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionPathList">[docs]</a><span class="k">class</span> <span class="nc">ActionPathList</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+<div class="viewcode-block" id="ActionPathList"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionPathList">[docs]</a><span class="k">class</span> <span class="nc">ActionPathList</span><span class="p">(</span><span class="n">Action</span><span class="p">,</span> <span class="n">FilesCompleterMethod</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Action to check and store a list of file paths read from a plain text file or stream.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="ActionPathList.__init__"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionPathList.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>

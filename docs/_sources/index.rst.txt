@@ -12,6 +12,14 @@ jsonargparse.core
     :show-inheritance:
     :autosummary:
 
+jsonargparse.cli
+-----------------------
+.. automodule:: jsonargparse.cli
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :autosummary:
+
 jsonargparse.signatures
 -----------------------
 .. automodule:: jsonargparse.signatures
@@ -83,7 +91,7 @@ License
 .. include:: ../LICENSE.rst
 
 
-Indices and tables
-==================
+Index
+=====
 
 * :ref:`genindex`
