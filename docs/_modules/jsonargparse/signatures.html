@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.signatures &mdash; jsonargparse 3.0.0rc3 documentation</title>
+  <title>jsonargparse.signatures &mdash; jsonargparse 3.0.0rc4 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc3
+                3.0.0rc4
               </div>
             
           
@@ -330,12 +330,16 @@
             <span class="n">docstring_parse</span> <span class="o">=</span> <span class="n">import_docstring_parse</span><span class="p">(</span><span class="s1">&#39;_add_signature_arguments&#39;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">objects</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">docs_func</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
-                    <span class="n">docstring</span> <span class="o">=</span> <span class="n">docstring_parse</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">docstring</span><span class="o">.</span><span class="n">short_description</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">doc_group</span><span class="p">:</span>
-                        <span class="n">doc_group</span> <span class="o">=</span> <span class="n">docstring</span><span class="o">.</span><span class="n">short_description</span>
-                    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">docstring</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">arg_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">doc_params</span><span class="p">:</span>
-                            <span class="n">doc_params</span><span class="p">[</span><span class="n">param</span><span class="o">.</span><span class="n">arg_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">description</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">docstring</span> <span class="o">=</span> <span class="n">docstring_parse</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Failed parsing docstring for &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">base</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">docstring</span><span class="o">.</span><span class="n">short_description</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">doc_group</span><span class="p">:</span>
+                            <span class="n">doc_group</span> <span class="o">=</span> <span class="n">docstring</span><span class="o">.</span><span class="n">short_description</span>
+                        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">docstring</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">arg_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">doc_params</span><span class="p">:</span>
+                                <span class="n">doc_params</span><span class="p">[</span><span class="n">param</span><span class="o">.</span><span class="n">arg_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">description</span>
 
         <span class="c1">## Create group if requested ##</span>
         <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span>

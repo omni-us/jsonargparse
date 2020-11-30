@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.optionals &mdash; jsonargparse 3.0.0rc3 documentation</title>
+  <title>jsonargparse.optionals &mdash; jsonargparse 3.0.0rc4 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc3
+                3.0.0rc4
               </div>
             
           
@@ -151,6 +151,7 @@
 <span></span><span class="sd">&quot;&quot;&quot;Code related to optional dependencies.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">locale</span>
 <span class="kn">from</span> <span class="nn">importlib.util</span> <span class="k">import</span> <span class="n">find_spec</span>
 
@@ -179,12 +180,25 @@
 <span class="n">_config_read_mode</span> <span class="o">=</span> <span class="s1">&#39;fr&#39;</span>
 
 
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">minor</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+    <span class="n">ModuleNotFound</span> <span class="o">=</span> <span class="n">ModuleNotFoundError</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">ModuleNotFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
+        <span class="k">pass</span>
+
+
+<span class="k">if</span> <span class="n">jsonschema_support</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">jsonschema.exceptions</span> <span class="k">import</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">jsonschemaValidationError</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">jsonschemaValidationError</span> <span class="o">=</span> <span class="kc">None</span>
+
+
 <span class="k">def</span> <span class="nf">import_jsonschema</span><span class="p">(</span><span class="n">importer</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span> <span class="nn">jsonschema</span>
         <span class="kn">from</span> <span class="nn">jsonschema</span> <span class="k">import</span> <span class="n">Draft7Validator</span> <span class="k">as</span> <span class="n">jsonvalidator</span>
         <span class="k">return</span> <span class="n">jsonschema</span><span class="p">,</span> <span class="n">jsonvalidator</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="n">ModuleNotFound</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;jsonschema package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
 
@@ -192,7 +206,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span> <span class="nn">_jsonnet</span>
         <span class="k">return</span> <span class="n">_jsonnet</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="n">ModuleNotFound</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;jsonnet package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
 
@@ -200,7 +214,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">from</span> <span class="nn">validators.url</span> <span class="k">import</span> <span class="n">url</span> <span class="k">as</span> <span class="n">url_validator</span>
         <span class="k">return</span> <span class="n">url_validator</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="n">ModuleNotFound</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;validators package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
 
@@ -208,7 +222,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span> <span class="nn">requests</span>
         <span class="k">return</span> <span class="n">requests</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="n">ModuleNotFound</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;requests package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
 
@@ -216,7 +230,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">from</span> <span class="nn">docstring_parser</span> <span class="k">import</span> <span class="n">parse</span> <span class="k">as</span> <span class="n">docstring_parse</span>
         <span class="k">return</span> <span class="n">docstring_parse</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="n">ModuleNotFound</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;docstring-parser package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
 
@@ -224,7 +238,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span> <span class="nn">argcomplete</span>
         <span class="k">return</span> <span class="n">argcomplete</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="n">ModuleNotFound</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;argcomplete package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
 
@@ -232,7 +246,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span> <span class="nn">dataclasses</span>
         <span class="k">return</span> <span class="n">dataclasses</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="n">ModuleNotFound</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;dataclasses package is required by &#39;</span><span class="o">+</span><span class="n">importer</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
 
 
