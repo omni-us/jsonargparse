@@ -101,7 +101,6 @@ class ActionJsonnet(Action):
 
 
     def _check_type(self, value, cfg):
-        jsonschema = import_jsonschema('ActionJsonnet')[0]
         islist = _is_action_value_list(self)
         ext_vars = {}
         if self._ext_vars is not None:

@@ -182,13 +182,14 @@ class SignatureArguments:
                 for doc in docs_func(base):
                     try:
                         docstring = docstring_parse(doc)
+                    except ValueError:
+                        self.logger.debug('Failed parsing docstring for '+str(base))  # type: ignore
+                    else:
                         if docstring.short_description and not doc_group:
                             doc_group = docstring.short_description
                         for param in docstring.params:
                             if param.arg_name not in doc_params:
                                 doc_params[param.arg_name] = param.description
-                    except:
-                        self.logger.debug('Failed parsing docstring for '+str(base))  # type: ignore
 
         ## Create group if requested ##
         group = self

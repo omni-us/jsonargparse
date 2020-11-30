@@ -13,7 +13,7 @@ from argparse import Namespace
 from yaml.parser import ParserError as yamlParserError
 from yaml.scanner import ScannerError as yamlScannerError
 
-from .optionals import url_support, import_requests, import_url_validator
+from .optionals import ModuleNotFound, url_support, import_requests, import_url_validator
 
 
 __all__ = [
@@ -430,7 +430,7 @@ class LoggerProperty:
                 try:
                     import reconplogger
                     logger = reconplogger.logger_setup(level=level)
-                except:
+                except (ImportError, ModuleNotFound, ValueError):
                     pass
             if not isinstance(logger, logging.Logger):
                 name = type(self).__name__
