@@ -10,6 +10,8 @@ from copy import deepcopy
 from typing import Dict, Any, Set, Optional, Union
 from contextlib import contextmanager, redirect_stderr
 from argparse import Namespace
+from yaml.parser import ParserError as yamlParserError
+from yaml.scanner import ScannerError as yamlScannerError
 
 from .optionals import url_support, import_requests, import_url_validator
 
@@ -38,7 +40,7 @@ class ParserError(Exception):
     pass
 
 
-def _get_key_value(cfg, key):
+def _get_key_value(cfg, key, parent=False):
     """Gets the value for a given key in a config object (dict or argparse.Namespace)."""
     def key_in_cfg(cfg, key):
         if (isinstance(cfg, Namespace) and hasattr(cfg, key)) or \
@@ -52,7 +54,8 @@ def _get_key_value(cfg, key):
         kp, k = k.split('.', 1)
         c = c[kp] if isinstance(c, dict) else getattr(c, kp)
 
-    return c[k] if isinstance(c, dict) else getattr(c, k)
+    v = c[k] if isinstance(c, dict) else getattr(c, k)
+    return (v, c, k) if parent else v
 
 
 def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
@@ -230,6 +233,13 @@ def _get_env_var(parser, action) -> str:
 def _issubclass(cls, class_or_tuple):
     """Extension of issubclass that supports non-class argument."""
     return inspect.isclass(cls) and issubclass(cls, class_or_tuple)
+
+
+def import_object(name):
+    """Returns an object in a module given its dot import path."""
+    name_module, name_object = name.rsplit('.', 1)
+    module = __import__(name_module, fromlist=[name_object])
+    return getattr(module, name_object)
 
 
 @contextmanager

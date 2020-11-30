@@ -180,12 +180,15 @@ class SignatureArguments:
             docstring_parse = import_docstring_parse('_add_signature_arguments')
             for base in objects:
                 for doc in docs_func(base):
-                    docstring = docstring_parse(doc)
-                    if docstring.short_description and not doc_group:
-                        doc_group = docstring.short_description
-                    for param in docstring.params:
-                        if param.arg_name not in doc_params:
-                            doc_params[param.arg_name] = param.description
+                    try:
+                        docstring = docstring_parse(doc)
+                        if docstring.short_description and not doc_group:
+                            doc_group = docstring.short_description
+                        for param in docstring.params:
+                            if param.arg_name not in doc_params:
+                                doc_params[param.arg_name] = param.description
+                    except:
+                        self.logger.debug('Failed parsing docstring for '+str(base))  # type: ignore
 
         ## Create group if requested ##
         group = self

@@ -11,6 +11,8 @@ from argparse import Namespace, Action, SUPPRESS, _StoreAction, _SubParsersActio
 from .optionals import get_config_read_mode, FilesCompleterMethod
 from .typing import restricted_number_type
 from .util import (
+    yamlParserError,
+    yamlScannerError,
     ParserError,
     namespace_to_dict,
     dict_to_namespace,
@@ -100,7 +102,7 @@ class ActionConfigFile(Action, FilesCompleterMethod):
                     raise ex_path
                 cfg_path = None
                 cfg_file = parser.parse_string(value, env=False, defaults=False, _skip_check=True)
-            except (TypeError, yaml.parser.ParserError, yaml.scanner.ScannerError) as ex_str:
+            except (TypeError, yamlParserError, yamlScannerError) as ex_str:
                 raise TypeError('Parser key "'+dest+'": '+str(ex_str))
         else:
             cfg_file = parser.parse_path(value, env=False, defaults=False, _skip_check=True)
@@ -438,6 +440,7 @@ class _ActionSubCommands(_SubParsersAction):
 
         cfg_dict = cfg.__dict__ if isinstance(cfg, Namespace) else cfg
         cfg_keys = set(vars(_dict_to_flat_namespace(cfg)).keys())
+        cfg_keys = cfg_keys.union(set(cfg_dict.keys()))
 
         # Get subcommands action
         for action in parser._actions:
@@ -586,7 +589,7 @@ class ActionPathList(Action, FilesCompleterMethod):
                 try:
                     with sys.stdin if path_list_file == '-' else open(path_list_file, 'r') as f:
                         path_list = [x.strip() for x in f.readlines()]
-                except Exception as ex:
+                except FileNotFoundError as ex:
                     raise TypeError('Problems reading path list: '+path_list_file+' :: '+str(ex))
                 cwd = os.getcwd()
                 if self._rel == 'list' and path_list_file != '-':

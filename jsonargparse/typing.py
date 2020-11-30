@@ -271,7 +271,7 @@ def annotation_to_schema(annotation) -> Optional[Dict[str, str]]:
 
 
 def type_in(obj, types_set):
-    return hasattr(obj, '__origin__') and obj.__origin__ in types_set
+    return obj in types_set or (hasattr(obj, '__origin__') and obj.__origin__ in types_set)
 
 
 def type_to_str(obj):

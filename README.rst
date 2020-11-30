@@ -311,7 +311,7 @@ configuration content can also be provided.
     >>> cfg.lev1.opt1
     'from string 1'
 
-All parsers include a :code:`--print-config` option. This is useful particularly
+All parsers include a :code:`--print_config` option. This is useful particularly
 for command line tools with a large set of options to create an initial config
 file including all default values.
 
@@ -388,28 +388,9 @@ since the init has the :code:`**kwargs` argument, the keyword arguments from
 :code:`value` as a required float and :code:`flag` as an optional boolean with
 default value false.
 
-Some notes about the support for automatic adding of arguments are:
-
-- Nested types are supported as long as at least one child type is supported.
-
-- Fully supported types at any nested depth are: :code:`str`, :code:`bool`,
-  :code:`int`, :code:`float`, :code:`list`, :code:`Any`, :code:`Union`,
-  :code:`Optional` and restricted types as explained in
-  :ref:`restricted-numbers` and :ref:`restricted-strings`.
-
-- :code:`Dict` with :code:`str` keys is supported for any level of nesting.
-  :code:`int` keys are also supported but only without nesting.
-
-- :code:`Enum` and the path types explained in section :ref:`parsing-paths` are
-  supported but only without nesting or as :code:`Optional` or as member of a
-  first level :code:`Union`.
-
-- There is partial support for :code:`Tuple` and :code:`Set` even though they
-  can't be represented in json distinguishable from a list. They are only
-  supported without nesting and in the case of tuple only for a fixed number of
-  elements. Each :code:`Tuple` element position can have its own type and will
-  be validated as such. In command line arguments, config files and environment
-  variables tuples and sets are represented as a list.
+A wide range of type hints are supported. For exact details go to section
+:ref:`type-hints`. Some notes about the support for automatic adding of
+arguments are:
 
 - All positional arguments must have a type, otherwise the add arguments
   functions raise an exception.
@@ -420,11 +401,6 @@ Some notes about the support for automatic adding of arguments are:
 - Recursive adding of arguments from base classes only considers the presence
   of :code:`*args` and :code:`**kwargs`. It does not check the code to identify
   if :code:`super().__init__` is called or with which arguments.
-
-- To set a value to :code:`None` it is required to use :code:`null` since this
-  is how json/yaml require it. To avoid confusion in the help :code:`NoneType`
-  is displayed as :code:`null`. For example :code:`val: Optional[str] = None`
-  would be shown as :code:`type: Union[str, null], default: null`.
 
 Since keyword arguments with unsupported types are ignored, during development
 it might be desired to know which arguments are ignored and the specific reason.
@@ -439,6 +415,100 @@ complex type hints and `docstring-parser
 from the docstrings. Both these packages are included when jsonargparse is
 installed using the :code:`signatures` extras require as explained in section
 :ref:`installation`.
+
+
+.. _type-hints:
+
+Type hints
+==========
+
+As explained in section :ref:`classes-methods-functions` type hints are required
+to automatically add arguments from signatures to a parser. Additional to this
+feature, a type hint can also be used independently when adding a single
+argument to the parser. For example, an argument that can be :code:`None` or a
+float in the range :code:`(0, 1)` or a positive int could be added using type
+hints as follows:
+
+.. code-block:: python
+
+    from typing import Optional, Union
+    from jsonargparse.typing import PositiveInt, OpenUnitInterval
+    parser.add_argument('--op', type=Optional[Union[PositiveInt, OpenUnitInterval]])
+
+The support of type hints is designed to not require developers to change their
+types or default values. In other words, the idea is to support type hints
+whatever they may be, as opposed to requiring to be changed some jsonargparse
+specific types for the parsers to work. The types included in
+:code:`jsonargparse.typing` are completely generic and could even be useful
+independent of the argument parsers.
+
+A wide range of type hints are supported and with arbitrary complexity/nesting.
+Some notes about this support are:
+
+- Nested types are supported as long as at least one child type is supported.
+
+- Fully supported types are: :code:`str`, :code:`bool`, :code:`int`,
+  :code:`float`, :code:`List`, :code:`Iterable`, :code:`Sequence`, :code:`Any`,
+  :code:`Union`, :code:`Optional`, :code:`Enum`, restricted types as explained
+  in sections :ref:`restricted-numbers` and :ref:`restricted-strings` and paths
+  and URLs as explained in sections :ref:`parsing-paths` and
+  :ref:`parsing-urls`.
+
+- :code:`Dict` is supported but only with :code:`str` or :code:`int` keys.
+
+- :code:`Tuple` and :code:`Set` are supported even though they can't be
+  represented in json distinguishable from a list. Each :code:`Tuple` element
+  position can have its own type and will be validated as such. In command line
+  arguments, config files and environment variables, tuples and sets are
+  represented as a list.
+
+- To set a value to :code:`None` it is required to use :code:`null` since this
+  is how json/yaml requires it. To avoid confusion in the help, :code:`NoneType`
+  is displayed as :code:`null`. For example :code:`Optional[str] = None` would
+  be shown as :code:`type: Union[str, null], default: null`.
+
+
+Classes as type
+===============
+
+Using an arbitrary class as a type is also possible, though it requires a bit
+explanation. In the config file or environment variable or command line
+argument, a class is represented by a dictionary with a :code:`class_path` entry
+indicating the dot notation expression to import the class, and optionally some
+:code:`init_args` that would be used to instantiate it. When parsing it will be
+checked that the class can be imported, that it is a subclass of the type and
+that :code:`init_args` values correspond to valid arguments to instantiate.
+After parsing, the config object will include the :code:`class_path` and
+:code:`init_args` entries. To get a config object with all subclasses
+instantiated, the :py:meth:`.ArgumentParser.instantiate_subclasses` method is
+used.
+
+A simple example would be having some config file :code:`config.yaml` as:
+
+.. code-block:: yaml
+
+    calendar:
+      class_path: calendar.Calendar
+      init_args:
+        firstweekday: 1
+
+Then in python:
+
+.. code-block:: python
+
+    >>> from calendar import Calendar
+    >>> parser = ArgumentParser(parse_as_dict=True)
+    >>> parser.add_argument('--calendar', type=Calendar)
+    >>> cfg = parser.parse_path('config.yaml')
+    >>> cfg['calendar']
+    {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
+    >>> cfg = parser.instantiate_subclasses(cfg)
+    >>> cfg['calendar']
+    <calendar.Calendar object at 0x7ffa559aa940>
+
+In the example the :code:`class_path` points to the same class used for the
+type. But a subclass of :code:`Calendar` with an extended list of init
+parameters would also work.
 
 
 Json schemas
@@ -619,6 +689,8 @@ generated including all paths in all lists is provided.
 Note: the :class:`.Path` class is currently not fully supported in windows.
 
 
+.. _parsing-urls:
+
 Parsing URLs
 ============
 
@@ -694,23 +766,6 @@ argument required to be exactly four uppercase letters:
     CodeType = restricted_string_type('CodeType', '^[A-Z]{4}$')
     parser.add_argument('--code', type=CodeType)
     parser.add_argument('--email', type=Email)
-
-
-Type hints
-==========
-
-As explained in section :ref:`classes-methods-functions` type hints are required
-to automatically add arguments from signatures to a parser. Additional to this
-feature, a type hint can also be used independently when adding a single
-argument to the parser. For example, an argument that can be :code:`None` or a
-float in the range :code:`(0, 1)` or a positive int could be added using type
-hints as follows:
-
-.. code-block:: python
-
-    from typing import Optional, Union
-    from jsonargparse.typing import PositiveInt, OpenUnitInterval
-    parser.add_argument('--op', type=Optional[Union[PositiveInt, OpenUnitInterval]])
 
 
 Enum arguments

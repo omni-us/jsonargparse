@@ -81,9 +81,9 @@ class SignaturesTests(unittest.TestCase):
 
         self.assertIn('Class3', parser.groups)
 
-        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4', 'c1_a5']:
+        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a6', 'c3_a7', 'c3_a8', 'c1_a2', 'c1_a4', 'c1_a5']:
             self.assertIsNotNone(_find_action(parser, key), key+' should be in parser but is not')
-        for key in ['c3_a6', 'c3_a8', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
+        for key in ['c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
             self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
 
         cfg = parser.parse_args(['--c3_a0=0', '--c3_a3=true', '--c3_a4=a'], with_meta=False)
@@ -96,7 +96,9 @@ class SignaturesTests(unittest.TestCase):
                                                   'c3_a3': True,
                                                   'c3_a4': 'a',
                                                   'c3_a5': 5,
-                                                  'c3_a7': ('7', 7, 7.0)})
+                                                  'c3_a6': None,
+                                                  'c3_a7': ('7', 7, 7.0),
+                                                  'c3_a8': None})
         self.assertEqual([1, 2], parser.parse_args(['--c3_a0=0', '--c3_a5=[1,2]']).c3_a5)
         self.assertEqual({'k': 5.0}, namespace_to_dict(parser.parse_args(['--c3_a0=0', '--c3_a5={"k": 5.0}']).c3_a5))
         self.assertEqual(('3', 3, 3.0), parser.parse_args(['--c3_a0=0', '--c3_a7=["3", 3, 3.0]']).c3_a7)
@@ -119,9 +121,9 @@ class SignaturesTests(unittest.TestCase):
 
         self.assertNotIn('g', parser.groups)
 
-        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a7', 'c1_a2', 'c1_a4', 'c1_a5']:
+        for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a6', 'c3_a7', 'c3_a8', 'c1_a2', 'c1_a4', 'c1_a5']:
             self.assertIsNotNone(_find_action(parser, 'g.'+key), key+' should be in parser but is not')
-        for key in ['c3_a6', 'c3_a8', 'c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
+        for key in ['c2_a0', 'c1_a1', 'c1_a3', 'c0_a0']:
             self.assertIsNone(_find_action(parser, 'g.'+key), key+' should not be in parser but is')
 
         ## Test default group title ##
@@ -134,7 +136,7 @@ class SignaturesTests(unittest.TestCase):
 
         ## Test no arguments added ##
         class NoValidArgs:
-            def __init__(self, a0=None, a1: Optional[Class1] = None):
+            def __init__(self, a0=None):
                 pass
 
         self.assertEqual(0, parser.add_class_arguments(NoValidArgs))
@@ -324,18 +326,15 @@ class SignaturesTests(unittest.TestCase):
                             *args,
                             c2_a1: int = 2,
                             c2_a2: float = 0.2,
-                            c2_a3: Optional[Class1] = None,
                             **kwargs):
                     pass
 
             parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
             with self.assertLogs(level='DEBUG') as log:
                 parser.add_class_arguments(Class2, skip={'c2_a2'})
-                self.assertEqual(2, len(log.output))
+                self.assertEqual(1, len(log.output))
                 self.assertIn('"c2_a2" from "Class2"', log.output[0])
                 self.assertIn('Parameter requested to be skipped', log.output[0])
-                self.assertIn('"c2_a3" from "Class2"', log.output[1])
-                self.assertIn('Unable to generate schema', log.output[1])
 
             class Class3(Class1):
                 def __init__(self, *args):
@@ -358,6 +357,56 @@ class SignaturesTests(unittest.TestCase):
                 self.assertEqual(1, len(log.output))
                 self.assertIn('"c1_a1" from "Class1"', log.output[0])
                 self.assertIn('Positional parameter but *args not propagated', log.output[0])
+
+
+    def test_instantiate_subclasses(self):
+        class Class1:
+            def __init__(self, a1: Optional[int] = 1, a2: Optional[float] = 2.3):
+                self.a1 = a1
+                self.a2 = a2
+
+        class Class2:
+            def __init__(self, c1: Optional[Class1]):
+                pass
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(Class2)
+
+        from jsonargparse_tests import signatures_tests
+        setattr(signatures_tests, 'Class1', Class1)
+
+        class_path = '"class_path": "jsonargparse_tests.signatures_tests.Class1"'
+        init_args = '"init_args": {"a1": 7}'
+        cfg = parser.parse_args(['--c1={'+class_path+', '+init_args+'}'])
+        self.assertEqual(cfg.c1.class_path, 'jsonargparse_tests.signatures_tests.Class1')
+        self.assertEqual(cfg.c1.init_args, Namespace(a1=7))
+        cfg = parser.instantiate_subclasses(cfg)
+        self.assertIsInstance(cfg.c1, Class1)
+        self.assertEqual(7, cfg.c1.a1)
+        self.assertEqual(2.3, cfg.c1.a2)
+
+
+    @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
+    def test_docstring_parse_fail(self):
+
+        class Class1:
+            def __init__(self, a1: int = 1):
+                """
+                Args:
+                    a1: a1 description
+                """
+                pass
+
+        with mock.patch('docstring_parser.parse') as docstring_parse:
+            docstring_parse.side_effect = ValueError
+            parser = ArgumentParser(error_handler=None)
+            parser.add_class_arguments(Class1)
+
+            os.environ['COLUMNS'] = '150'
+            help_str = StringIO()
+            parser.print_help(help_str)
+            self.assertIn('--a1 A1', help_str.getvalue())
+            self.assertNotIn('a1 description', help_str.getvalue())
 
 
 if __name__ == '__main__':

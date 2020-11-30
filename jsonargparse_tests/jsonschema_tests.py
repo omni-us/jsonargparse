@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
+# pylint: disable=unsubscriptable-object
 
 import re
 import json
 import pathlib
 import platform
+from enum import Enum
 from io import StringIO
 from contextlib import redirect_stdout
-from typing import Optional, Union
+from calendar import Calendar
+from typing import Optional, Union, List, Tuple, Dict, Generator
 from jsonargparse_tests.base import *
 
 
@@ -174,6 +177,105 @@ class JsonSchemaTests(TempDirTestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--path=not_exist']))
 
 
+    def test_list_path(self):
+        parser = ArgumentParser()
+        parser.add_argument('--paths', type=List[Path_fc])
+        cfg = parser.parse_args(['--paths=["file1", "file2"]'])
+        self.assertEqual(['file1', 'file2'], cfg.paths)
+        self.assertIsInstance(cfg.paths[0], Path)
+        self.assertIsInstance(cfg.paths[1], Path)
+
+
+    def test_list_enum(self):
+        class MyEnum(Enum):
+            ab = 0
+            xy = 1
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--list', type=List[MyEnum])
+        self.assertEqual([MyEnum.xy, MyEnum.ab], parser.parse_args(['--list=["xy", "ab"]']).list)
+
+
+    def test_list_union(self):
+        class MyEnum(Enum):
+            ab = 1
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--list1', type=List[Union[float, str, type(None)]])
+        parser.add_argument('--list2', type=List[Union[int, MyEnum]])
+        self.assertEqual([1.2, 'ab'], parser.parse_args(['--list1=[1.2, "ab"]']).list1)
+        self.assertEqual([3, MyEnum.ab], parser.parse_args(['--list2=[3, "ab"]']).list2)
+
+
+    def test_dict_union(self):
+        class MyEnum(Enum):
+            ab = 1
+
+        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser.add_argument('--dict1', type=Dict[int, Optional[Union[float, MyEnum]]])
+        parser.add_argument('--dict2', type=Dict[str, Union[bool, Path_fc]])
+        cfg = parser.parse_args(['--dict1={"2":4.5, "6":"ab"}', '--dict2={"a":true, "b":"f"}'])
+        self.assertEqual({2: 4.5, 6: MyEnum.ab}, cfg['dict1'])
+        self.assertEqual({'a': True, 'b': 'f'}, cfg['dict2'])
+        self.assertIsInstance(cfg['dict2']['b'], Path)
+        self.assertEqual({5: None}, parser.parse_args(['--dict1={"5":null}'])['dict1'])
+
+
+    def test_tuple(self):
+        class MyEnum(Enum):
+            ab = 1
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--tuple', type=Tuple[Union[int, MyEnum], Path_fc, NotEmptyStr])
+        cfg = parser.parse_args(['--tuple=[2, "a", "b"]'])
+        self.assertEqual((2, 'a', 'b'), cfg.tuple)
+        self.assertIsInstance(cfg.tuple[1], Path)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[2, "a", "b", 5]']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=["2", "a", "b"]']))
+
+
+    def test_class_type(self):
+        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser.add_argument('--op', type=Optional[List[Calendar]])
+
+        class_path = '"class_path": "calendar.Calendar"'
+        cfg = parser.parse_args(['--op=[{'+class_path+'}]'])
+        self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar'}])
+
+        with self.assertRaises(ParserError):
+            parser.parse_args(['--op=[{"class_path": "jsonargparse.ArgumentParser"}]'])
+        with self.assertRaises(ParserError):
+            parser.parse_args(['--op=[{"class_path": "jsonargparse.NotExist"}]'])
+        with self.assertRaises(ParserError):
+            parser.parse_args(['--op=[{"class_path": "jsonargparse0.IncorrectModule"}]'])
+
+        init_args = '"init_args": {"bad_arg": True}'
+        with self.assertRaises(ParserError):
+            parser.parse_args(['--op=[{'+class_path+', '+init_args+'}]'])
+
+        init_args = '"init_args": {"firstweekday": 3}'
+        cfg = parser.parse_args(['--op=[{'+class_path+', '+init_args+'}]'])
+        self.assertEqual(cfg['op'][0]['init_args'], {'firstweekday': 3})
+        cfg = parser.instantiate_subclasses(cfg)
+        self.assertIsInstance(cfg['op'][0], Calendar)
+        self.assertEqual(3, cfg['op'][0].firstweekday)
+
+        parser = ArgumentParser(parse_as_dict=True)
+        parser.add_argument('--n.op', type=Optional[Calendar])
+        cfg = parser.parse_args(['--n.op={'+class_path+', '+init_args+'}'])
+        cfg = parser.instantiate_subclasses(cfg)
+        self.assertIsInstance(cfg['n']['op'], Calendar)
+        self.assertEqual(3, cfg['n']['op'].firstweekday)
+
+        parser = ArgumentParser()
+        parser.add_argument('--op', type=Calendar)
+        cfg = parser.parse_args(['--op={'+class_path+', '+init_args+'}'])
+        cfg = parser.instantiate_subclasses(cfg)
+        self.assertIsInstance(cfg.op, Calendar)
+        self.assertEqual(3, cfg.op.firstweekday)
+
+
     def test_no_str_strip(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--op', type=Optional[str])
@@ -182,6 +284,11 @@ class JsonSchemaTests(TempDirTestCase):
         self.assertEqual('', parser.parse_args(['--op', '']).op)
         self.assertEqual(' abc ', parser.parse_args(['--op= abc ']).op)
         self.assertEqual(' ', parser.parse_args(['--cfg={"op":" "}']).op)
+
+
+    def test_unsupported_type(self):
+        parser = ArgumentParser(error_handler=None)
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op', type=Optional[Generator]))
 
 
 if __name__ == '__main__':

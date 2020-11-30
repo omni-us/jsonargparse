@@ -6,12 +6,25 @@ import yaml
 import inspect
 from enum import Enum
 from argparse import Namespace, Action
-from typing import Any, Union, Tuple, List, Set, Dict
+from typing import Any, Union, Tuple, List, Iterable, Sequence, Set, Dict
 
-from .util import namespace_to_dict, Path, strip_meta, _check_unknown_kwargs, _issubclass
 from .actions import _is_action_value_list
-from .typing import is_optional, annotation_to_schema, type_in, type_to_str
+from .typing import is_optional, annotation_to_schema, type_to_str
+from .util import (
+    namespace_to_dict,
+    Path,
+    yamlParserError,
+    yamlScannerError,
+    ParserError,
+    strip_meta,
+    import_object,
+    _check_unknown_kwargs,
+    _issubclass,
+)
 from .optionals import (
+    ModuleNotFound,
+    jsonschemaValidationError,
+    jsonschema_support,
     import_jsonschema,
     get_config_read_mode,
     files_completer,
@@ -20,6 +33,28 @@ from .optionals import (
 
 
 __all__ = ['ActionJsonSchema']
+
+
+typesmap = {
+    str: 'string',
+    int: 'integer',
+    float: 'number',
+    bool: 'boolean',
+    type(None): 'null',
+}
+
+supported_types = {
+    bool,
+    Any,
+    Union,
+    List, list, Iterable, Sequence,
+    Tuple, tuple,
+    Set, set,
+    Dict, dict,
+}
+
+if jsonschema_support:
+    jsonschema, jsonvalidator = import_jsonschema('jsonschema.py')
 
 
 class ActionJsonSchema(Action):
@@ -39,23 +74,22 @@ class ActionJsonSchema(Action):
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
         if 'schema' in kwargs or 'annotation' in kwargs:
-            jsonvalidator = import_jsonschema('ActionJsonSchema')[1]
             _check_unknown_kwargs(kwargs, {'schema', 'annotation', 'enable_path', 'with_meta'})
             if 'annotation' in kwargs:
                 if 'schema' in kwargs:
                     raise ValueError('Only one of schema or annotation is accepted.')
                 self._annotation = kwargs['annotation']
-                with_path = True if is_optional(self._annotation, Path) else False
-                schema = ActionJsonSchema.typing_schema(self._annotation, with_path=with_path)
+                schema, subschemas = ActionJsonSchema._typing_schema(self._annotation)
                 if schema is None or schema == {'type': 'null'}:
                     raise ValueError('Unable to generate schema from annotation '+str(self._annotation))
+                self._subschemas = subschemas
             else:
-                self._annotation = None
+                self._annotation = self._subschemas = None
                 schema = kwargs['schema']
             if isinstance(schema, str):
                 try:
                     schema = yaml.safe_load(schema)
-                except yaml.parser.ParserError as ex:
+                except (yamlParserError, yamlScannerError) as ex:
                     raise ValueError('Problems parsing schema :: '+str(ex))
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
@@ -65,6 +99,7 @@ class ActionJsonSchema(Action):
             raise ValueError('Expected schema or annotation keyword arguments.')
         else:
             self._annotation = kwargs.pop('_annotation')
+            self._subschemas = kwargs.pop('_subschemas')
             self._validator = kwargs.pop('_validator')
             self._enable_path = kwargs.pop('_enable_path')
             self._with_meta = kwargs.pop('_with_meta')
@@ -82,6 +117,7 @@ class ActionJsonSchema(Action):
         """
         if len(args) == 0:
             kwargs['_annotation'] = self._annotation
+            kwargs['_subschemas'] = self._subschemas
             kwargs['_validator'] = self._validator
             kwargs['_enable_path'] = self._enable_path
             kwargs['_with_meta'] = self._with_meta
@@ -96,7 +132,6 @@ class ActionJsonSchema(Action):
 
     def _check_type(self, value, cfg=None):
         islist = _is_action_value_list(self)
-        jsonschema = import_jsonschema('ActionJsonSchema')[0]
         if not islist:
             value = [value]
         for num, val in enumerate(value):
@@ -115,53 +150,19 @@ class ActionJsonSchema(Action):
                         val = yaml.safe_load(fpath.get_content())
                 if isinstance(val, Namespace):
                     val = namespace_to_dict(val)
-                if isinstance(val, (tuple, set)):
-                    val = list(val)
-                elif isinstance(val, Path):
-                    val = str(val)
-                elif _issubclass(type(val), Enum):
-                    val = val.name
-                elif hasattr(self._annotation, '__origin__') and isinstance(val, dict):
-                    val = self._adapt_dict(val, str)
+                val = self._adapt_types(val, self._annotation, self._subschemas, reverse=True)
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 self._validator.validate(val)
-                if hasattr(self._annotation, '__origin__'):
-                    if isinstance(val, dict):
-                        val = self._adapt_dict(val, int)
-                    elif type_in(self._annotation, {Union}) and isinstance(val, str):
-                        val = self._adapt_union_str(val)
-                    elif type_in(self._annotation, {Tuple, tuple, Set, set}) and isinstance(val, list):
-                        val = tuple(val) if type_in(self._annotation, {Tuple, tuple}) else set(val)
+                val = self._adapt_types(val, self._annotation, self._subschemas)
                 if path_meta is not None:
                     val['__path__'] = path_meta
                 if isinstance(val, dict) and fpath is not None:
                     val['__path__'] = fpath
                 value[num] = val
-            except (TypeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:
+            except (TypeError, yamlParserError, yamlScannerError, jsonschemaValidationError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex))
         return value if islist else value[0]
-
-
-    def _adapt_dict(self, val, cast):
-        def is_int_key(a):
-            return type_in(a, {Dict, dict}) and a.__args__[0] == int
-        if is_int_key(self._annotation) or \
-           (type_in(self._annotation, {Union}) and any(is_int_key(a) for a in self._annotation.__args__)):
-            val = {cast(k): v for k, v in val.items()}
-        return val
-
-
-    def _adapt_union_str(self, val):
-        if is_optional(self._annotation, Path):
-            arg_type = [a for a in self._annotation.__args__ if _issubclass(a, Path)][0]
-            val = arg_type(val)
-        else:
-            for arg in self._annotation.__args__:
-                if _issubclass(arg, Enum) and val in arg.__members__:
-                    val = arg[val]
-                    break
-        return val
 
 
     @staticmethod
@@ -177,66 +178,168 @@ class ActionJsonSchema(Action):
             for error in validate_properties(validator, properties, instance, schema):
                 yield error
 
-        jsonschema = import_jsonschema('ActionJsonSchema')[0]
         return jsonschema.validators.extend(validator_class, {'properties': set_defaults})
 
 
+    def _instantiate_classes(self, val):
+        if self._annotation is not None:
+            val = self._adapt_types(val, self._annotation, self._subschemas, instantiate_classes=True)
+        return val
+
+
     @staticmethod
-    def typing_schema(annotation, with_path=False):
-        """Generates a schema based on typing annotation."""
-        typesmap = {
-            str: 'string',
-            int: 'integer',
-            float: 'number',
-            bool: 'boolean',
-            type(None): 'null',
-        }
+    def _adapt_types(val, annotation, subschemas, reverse=False, instantiate_classes=False):
 
-        if annotation == Any:
-            return {}
+        def validate_adapt(v, subschema):
+            if subschema is not None:
+                subannotation, subvalidator, subsubschemas = subschema
+                if reverse:
+                    v = ActionJsonSchema._adapt_types(v, subannotation, subsubschemas, reverse, instantiate_classes)
+                else:
+                    try:
+                        if subvalidator is not None and not instantiate_classes:
+                            subvalidator.validate(v)
+                        v = ActionJsonSchema._adapt_types(v, subannotation, subsubschemas, reverse, instantiate_classes)
+                    except jsonschemaValidationError:
+                        pass
+            return v
 
-        elif annotation in typesmap:
-            return {'type': typesmap[annotation]}
+        if subschemas is None:
+            subschemas = []
 
-        elif _issubclass(annotation, Enum):
-            return {'type': 'string', 'enum': list(annotation.__members__.keys())}
+        if _issubclass(annotation, Enum):
+            if reverse and isinstance(val, annotation):
+                val = val.name
+            elif not reverse and val in annotation.__members__:
+                val = annotation[val]
 
-        elif _issubclass(annotation, (str, int, float)):
-            return annotation_to_schema(annotation)
+        elif _issubclass(annotation, Path):
+            if reverse and isinstance(val, annotation):
+                val = str(val)
+            elif not reverse:
+                val = annotation(val)
 
         elif not hasattr(annotation, '__origin__'):
-            return
+            if not reverse and \
+               not _issubclass(annotation, (str, int, float)) and \
+               isinstance(val, dict) and \
+               'class_path' in val:
+                try:
+                    val_class = import_object(val['class_path'])
+                    assert _issubclass(val_class, annotation), 'Not a subclass of '+annotation.__name__
+                    if 'init_args' in val:
+                        from jsonargparse import ArgumentParser
+                        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+                        parser.add_class_arguments(val_class)
+                        parser.check_config(val['init_args'])
+                        if instantiate_classes:
+                            init_args = parser.instantiate_subclasses(val['init_args'])
+                            val = val_class(**init_args)  # pylint: disable=not-a-mapping
+                except (ImportError, ModuleNotFound, AttributeError, AssertionError, ParserError) as ex:
+                    raise ParserError('Problem with given class_path "'+val['class_path']+'" :: '+str(ex))
+            return val
 
-        elif with_path and is_optional(annotation, Path):
-            return {'type': ['string', 'null']}
+        elif annotation.__origin__ == Union:
+            for subschema in subschemas:
+                val = validate_adapt(val, subschema)
+
+        elif annotation.__origin__ in {Tuple, tuple, Set, set} and isinstance(val, (list, tuple, set)):
+            if reverse:
+                val = list(val)
+            for n, v in enumerate(val):
+                if n < len(subschemas) and subschemas[n] is not None:
+                    for subschema in subschemas[n]:
+                        val[n] = validate_adapt(v, subschema)
+            if not reverse:
+                val = tuple(val) if annotation.__origin__ in {Tuple, tuple} else set(val)
+
+        elif annotation.__origin__ in {List, list, Set, set, Iterable, Sequence} and isinstance(val, list):
+            for n, v in enumerate(val):
+                for subschema in subschemas:
+                    val[n] = validate_adapt(v, subschema)
+
+        elif annotation.__origin__ in {Dict, dict} and isinstance(val, dict):
+            if annotation.__args__[0] == int:
+                cast = str if reverse else int
+                val = {cast(k): v for k, v in val.items()}
+            if annotation.__args__[1] not in typesmap:
+                for k, v in val.items():
+                    for subschema in subschemas:
+                        val[k] = validate_adapt(v, subschema)
+
+        return val
+
+
+    @staticmethod
+    def _typing_schema(annotation):
+        """Generates a schema based on a type annotation."""
+
+        if annotation == Any:
+            return {}, None
+
+        elif annotation in typesmap:
+            return {'type': typesmap[annotation]}, None
+
+        elif _issubclass(annotation, Enum):
+            return {'type': 'string', 'enum': list(annotation.__members__.keys())}, [(annotation, None, None)]
+
+        elif _issubclass(annotation, Path):
+            return {'type': 'string'}, [(annotation, None, None)]
+
+        elif _issubclass(annotation, (str, int, float)):
+            return annotation_to_schema(annotation), None
+
+        elif not hasattr(annotation, '__origin__'):
+            if annotation != inspect._empty:
+                schema = {
+                    'type': 'object',
+                    'properties': {
+                        'class_path': {'type': 'string'},
+                        'init_args': {'type': 'object'},
+                    },
+                    'required': ['class_path'],
+                    'additionalProperties': False,
+                }
+                return schema, [(annotation, jsonvalidator(schema), None)]
+            return None, None
 
         elif annotation.__origin__ == Union:
             members = []
+            union_subschemas = []
             for arg in annotation.__args__:
-                schema = ActionJsonSchema.typing_schema(arg)
+                schema, subschemas = ActionJsonSchema._typing_schema(arg)
                 if schema is not None:
                     members.append(schema)
+                    if arg not in typesmap:
+                        union_subschemas.append((arg, jsonvalidator(schema), subschemas))
             if len(members) == 1:
-                return members[0]
+                return members[0], union_subschemas
             elif len(members) > 1:
-                return {'anyOf': members}
+                return {'anyOf': members}, union_subschemas
 
         elif annotation.__origin__ in {Tuple, tuple}:
-            items = [ActionJsonSchema.typing_schema(a) for a in annotation.__args__]
-            if any(a is None for a in items):
-                return
-            return {'type': 'array', 'items': items}
+            items = []
+            tuple_subschemas = []
+            for arg in annotation.__args__:
+                item, subschemas = ActionJsonSchema._typing_schema(arg)
+                items.append(item)
+                tuple_subschemas.append(subschemas)
+            #if any(a is None for a in items):
+            #    return None, None
+            return {'type': 'array', 'items': items, 'minItems': len(items), 'maxItems': len(items)}, tuple_subschemas
 
-        elif annotation.__origin__ in {List, list, Set, set}:
-            items = ActionJsonSchema.typing_schema(annotation.__args__[0])
+        elif annotation.__origin__ in {List, list, Iterable, Sequence, Set, set}:
+            items, subschemas = ActionJsonSchema._typing_schema(annotation.__args__[0])
             if items is not None:
-                return {'type': 'array', 'items': items}
+                return {'type': 'array', 'items': items}, subschemas
 
         elif annotation.__origin__ in {Dict, dict} and annotation.__args__[0] in {str, int}:
             pattern = {str: '.*', int: '[0-9]+'}[annotation.__args__[0]]
-            schema = ActionJsonSchema.typing_schema(annotation.__args__[1])
+            schema, subschemas = ActionJsonSchema._typing_schema(annotation.__args__[1])
             if schema is not None:
-                return {'type': 'object', 'patternProperties': {pattern: schema}}
+                return {'type': 'object', 'patternProperties': {pattern: schema}}, subschemas
+
+        return None, None
 
 
     def _annotation_metavar(self):
@@ -264,13 +367,12 @@ class ActionJsonSchema(Action):
         elif is_optional(self._annotation, Path):
             return ['null'] + sorted(files_completer(prefix, **kwargs))
         elif chr(int(os.environ['COMP_TYPE'])) == '?':
-            jsonschema = import_jsonschema('ActionJsonSchema')[0]
             try:
                 if prefix.strip() == '':
                     raise ValueError()
                 self._validator.validate(yaml.safe_load(prefix))
                 msg = 'value already valid, '
-            except (ValueError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError):
+            except (ValueError, yamlParserError, yamlScannerError, jsonschemaValidationError):
                 msg = 'value not yet valid, '
             if self._annotation is not None:
                 msg += 'expected type '+type_to_str(self._annotation)

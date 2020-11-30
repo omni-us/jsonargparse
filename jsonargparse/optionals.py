@@ -1,6 +1,7 @@
 """Code related to optional dependencies."""
 
 import os
+import sys
 import locale
 from importlib.util import find_spec
 
@@ -29,12 +30,25 @@ dataclasses_support = False if _dataclasses is None else True
 _config_read_mode = 'fr'
 
 
+if sys.version_info.minor > 5:
+    ModuleNotFound = ModuleNotFoundError
+else:
+    class ModuleNotFound(Exception):  # type: ignore
+        pass
+
+
+if jsonschema_support:
+    from jsonschema.exceptions import ValidationError as jsonschemaValidationError
+else:
+    jsonschemaValidationError = None
+
+
 def import_jsonschema(importer):
     try:
         import jsonschema
         from jsonschema import Draft7Validator as jsonvalidator
         return jsonschema, jsonvalidator
-    except Exception as ex:
+    except (ImportError, ModuleNotFound) as ex:
         raise ImportError('jsonschema package is required by '+importer+' :: '+str(ex))
 
 
@@ -42,7 +56,7 @@ def import_jsonnet(importer):
     try:
         import _jsonnet
         return _jsonnet
-    except Exception as ex:
+    except (ImportError, ModuleNotFound) as ex:
         raise ImportError('jsonnet package is required by '+importer+' :: '+str(ex))
 
 
@@ -50,7 +64,7 @@ def import_url_validator(importer):
     try:
         from validators.url import url as url_validator
         return url_validator
-    except Exception as ex:
+    except (ImportError, ModuleNotFound) as ex:
         raise ImportError('validators package is required by '+importer+' :: '+str(ex))
 
 
@@ -58,7 +72,7 @@ def import_requests(importer):
     try:
         import requests
         return requests
-    except Exception as ex:
+    except (ImportError, ModuleNotFound) as ex:
         raise ImportError('requests package is required by '+importer+' :: '+str(ex))
 
 
@@ -66,7 +80,7 @@ def import_docstring_parse(importer):
     try:
         from docstring_parser import parse as docstring_parse
         return docstring_parse
-    except Exception as ex:
+    except (ImportError, ModuleNotFound) as ex:
         raise ImportError('docstring-parser package is required by '+importer+' :: '+str(ex))
 
 
@@ -74,7 +88,7 @@ def import_argcomplete(importer):
     try:
         import argcomplete
         return argcomplete
-    except Exception as ex:
+    except (ImportError, ModuleNotFound) as ex:
         raise ImportError('argcomplete package is required by '+importer+' :: '+str(ex))
 
 
@@ -82,7 +96,7 @@ def import_dataclasses(importer):
     try:
         import dataclasses
         return dataclasses
-    except Exception as ex:
+    except (ImportError, ModuleNotFound) as ex:
         raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex))
 
 

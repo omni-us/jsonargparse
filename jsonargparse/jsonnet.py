@@ -5,12 +5,19 @@ import yaml
 from typing import Optional, Union, Dict, Tuple, Any
 from argparse import Action, Namespace
 
-from .optionals import import_jsonschema, import_jsonnet, get_config_read_mode
 from .actions import _is_action_value_list
 from .jsonschema import ActionJsonSchema
+from .optionals import (
+    import_jsonschema,
+    import_jsonnet,
+    get_config_read_mode,
+    jsonschemaValidationError,
+)
 from .util import (
     dict_to_namespace,
     namespace_to_dict,
+    yamlParserError,
+    yamlScannerError,
     ParserError,
     Path,
     _check_unknown_kwargs,
@@ -64,7 +71,7 @@ class ActionJsonnet(Action):
                 if isinstance(schema, str):
                     try:
                         schema = yaml.safe_load(schema)
-                    except Exception as ex:
+                    except (yamlParserError, yamlScannerError) as ex:
                         raise ValueError('Problems parsing schema :: '+str(ex))
                 jsonvalidator.check_schema(schema)
                 self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
@@ -111,7 +118,7 @@ class ActionJsonnet(Action):
                 elif self._validator is not None:
                     self._validator.validate(val)
                 value[num] = val
-            except (TypeError, RuntimeError, yaml.parser.ParserError, jsonschema.exceptions.ValidationError) as ex:
+            except (TypeError, RuntimeError, yamlParserError, yamlScannerError, jsonschemaValidationError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex))
         return value if islist else value[0]
@@ -168,7 +175,7 @@ class ActionJsonnet(Action):
             snippet = fpath.get_content()
         try:
             values = yaml.safe_load(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
-        except Exception as ex:
+        except RuntimeError as ex:
             raise ParserError('Problems evaluating jsonnet "'+fname+'" :: '+str(ex))
         if self._validator is not None:
             self._validator.validate(values)

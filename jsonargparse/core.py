@@ -15,7 +15,8 @@ from argparse import ArgumentError, Action, Namespace, SUPPRESS
 
 from .formatters import DefaultHelpFormatter
 from .signatures import SignatureArguments
-from .jsonschema import ActionJsonSchema, type_in
+from .typing import type_in
+from .jsonschema import ActionJsonSchema, supported_types
 from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
 from .optionals import (
     import_jsonnet,
@@ -42,12 +43,15 @@ from .util import (
     dict_to_namespace,
     _flat_namespace_to_dict,
     _dict_to_flat_namespace,
+    yamlParserError,
+    yamlScannerError,
     ParserError,
     meta_keys,
     strip_meta,
     usage_and_exit_error_handler,
     Path,
     LoggerProperty,
+    _get_key_value,
     _get_env_var,
     _issubclass,
     _suppress_stderr,
@@ -73,7 +77,8 @@ class _ActionsContainer(argparse._ActionsContainer):
         are supported.
         """
         if 'type' in kwargs:
-            if kwargs['type'] == bool or type_in(kwargs['type'], {Union, Dict, dict, List, list}):
+            if type_in(kwargs['type'], supported_types) or \
+               (inspect.isclass(kwargs['type']) and not _issubclass(kwargs['type'], (str, int, float, Enum, Path))):
                 kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=False)
             elif _issubclass(kwargs['type'], Enum):
                 kwargs['action'] = ActionEnum(enum=kwargs['type'])
@@ -449,7 +454,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                         if re.match('^ *\\[.+,.+] *$', env_val):
                             try:
                                 env_val = yaml.safe_load(env_val)
-                            except (yaml.parser.ParserError, yaml.scanner.ScannerError):
+                            except (yamlParserError, yamlScannerError):
                                 env_val = [env_val]  # type: ignore
                         else:
                             env_val = [env_val]  # type: ignore
@@ -594,7 +599,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)
         try:
             cfg = yaml.safe_load(cfg_str)
-        except (yaml.parser.ParserError, yaml.scanner.ScannerError) as ex:
+        except (yamlParserError, yamlScannerError) as ex:
             raise TypeError('Problems parsing config :: '+str(ex))
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         if base is not None:
@@ -969,8 +974,21 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         try:
             check_required(cfg)
             check_values(cfg)
-        except Exception as ex:
+        except (TypeError, KeyError) as ex:
             raise type(ex)('Config checking failed :: '+str(ex))
+
+
+    def instantiate_subclasses(self, cfg:Union[Namespace, Dict[str, Any]]) -> Union[Namespace, Dict[str, Any]]:
+        cfg = namespace_to_dict(strip_meta(cfg))
+        for action in self._actions:
+            if isinstance(action, ActionJsonSchema):
+                try:
+                    val, par, key = _get_key_value(cfg, action.dest, parent=True)
+                except KeyError:
+                    pass
+                else:
+                    par[key] = action._instantiate_classes(val)
+        return cfg if self._parse_as_dict else dict_to_namespace(cfg)
 
 
     def strip_unknown(self, cfg:Union[Namespace, Dict[str, Any]]) -> Namespace:
