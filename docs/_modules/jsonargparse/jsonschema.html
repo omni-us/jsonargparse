@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.jsonschema &mdash; jsonargparse 3.0.0rc4 documentation</title>
+  <title>jsonargparse.jsonschema &mdash; jsonargparse 3.0.0 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc4
+                3.0.0
               </div>
             
           
@@ -294,7 +294,7 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enable_path</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">fpath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">get_config_read_mode</span><span class="p">())</span>
-                    <span class="k">except</span><span class="p">:</span>
+                    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
                         <span class="k">pass</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">fpath</span><span class="o">.</span><span class="n">get_content</span><span class="p">())</span>

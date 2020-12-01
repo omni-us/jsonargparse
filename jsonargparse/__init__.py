@@ -20,4 +20,4 @@ from argparse import (
 )
 
 
-__version__ = '3.0.0rc4'
+__version__ = '3.0.0'

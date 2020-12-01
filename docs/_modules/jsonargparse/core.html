@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.core &mdash; jsonargparse 3.0.0rc4 documentation</title>
+  <title>jsonargparse.core &mdash; jsonargparse 3.0.0 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc4
+                3.0.0
               </div>
             
           
@@ -245,6 +245,10 @@
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Argument with destination name &quot;&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;&quot; not allowed.&#39;</span><span class="p">)</span>
         <span class="n">parser</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;parser&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">help</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> \
+           <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;formatter_class&#39;</span><span class="p">)</span> <span class="ow">and</span> \
+           <span class="nb">issubclass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">formatter_class</span><span class="p">,</span> <span class="n">DefaultHelpFormatter</span><span class="p">):</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">help</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span>
         <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
             <span class="n">parser</span><span class="o">.</span><span class="n">required_args</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span>
             <span class="n">action</span><span class="o">.</span><span class="n">_required</span> <span class="o">=</span> <span class="kc">True</span>
@@ -827,7 +831,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            cfg: The configuration object to dump.</span>
 <span class="sd">            format: The output format: &quot;yaml&quot;, &quot;json&quot;, &quot;json_indented&quot; or &quot;parser_mode&quot;.</span>
-<span class="sd">            skip_none: Whether to exclude checking values that are None.</span>
+<span class="sd">            skip_none: Whether to exclude entries whose value is None.</span>
 <span class="sd">            skip_check: Whether to skip parser checking.</span>
 
 <span class="sd">        Returns:</span>
@@ -908,7 +912,7 @@
 <span class="sd">            cfg: The configuration object to save.</span>
 <span class="sd">            path: Path to the location where to save config.</span>
 <span class="sd">            format: The output format: &quot;yaml&quot;, &quot;json&quot;, &quot;json_indented&quot; or &quot;parser_mode&quot;.</span>
-<span class="sd">            skip_none: Whether to exclude checking values that are None.</span>
+<span class="sd">            skip_none: Whether to exclude entries whose value is None.</span>
 <span class="sd">            skip_check: Whether to skip parser checking.</span>
 <span class="sd">            overwrite: Whether to overwrite existing files.</span>
 <span class="sd">            multifile: Whether to save multiple config files by using the __path__ metas.</span>
@@ -1098,7 +1102,7 @@
                     <span class="n">val</span> <span class="o">=</span> <span class="n">get_key_value</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">reqkey</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">()</span>
-                <span class="k">except</span><span class="p">:</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Key &quot;&#39;</span><span class="o">+</span><span class="n">reqkey</span><span class="o">+</span><span class="s1">&#39;&quot; is required but not included in config object or its value is None.&#39;</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">check_values</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

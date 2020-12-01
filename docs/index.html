@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 3.0.0rc4 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse 3.0.0 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc4
+                3.0.0
               </div>
             
           
@@ -97,6 +97,7 @@
 <li><a class="reference internal" href="#classes-methods-and-functions">Classes, methods and functions</a></li>
 <li><a class="reference internal" href="#type-hints">Type hints</a></li>
 <li><a class="reference internal" href="#classes-as-type">Classes as type</a></li>
+<li><a class="reference internal" href="#sub-commands">Sub-commands</a></li>
 <li><a class="reference internal" href="#json-schemas">Json schemas</a></li>
 <li><a class="reference internal" href="#jsonnet-files">Jsonnet files</a></li>
 <li><a class="reference internal" href="#parsing-paths">Parsing paths</a></li>
@@ -106,13 +107,12 @@
 <li><a class="reference internal" href="#enum-arguments">Enum arguments</a></li>
 <li><a class="reference internal" href="#boolean-arguments">Boolean arguments</a></li>
 <li><a class="reference internal" href="#parsers-as-arguments">Parsers as arguments</a></li>
-<li><a class="reference internal" href="#sub-commands">Sub-commands</a></li>
 <li><a class="reference internal" href="#tab-completion">Tab completion</a></li>
 <li><a class="reference internal" href="#logging">Logging</a></li>
 <li><a class="reference internal" href="#contributing">Contributing</a></li>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
-<li><a class="reference internal" href="#module-jsonargparse.core">jsonargparse.core</a></li>
 <li><a class="reference internal" href="#module-jsonargparse.cli">jsonargparse.cli</a></li>
+<li><a class="reference internal" href="#module-jsonargparse.core">jsonargparse.core</a></li>
 <li><a class="reference internal" href="#module-jsonargparse.signatures">jsonargparse.signatures</a></li>
 <li><a class="reference internal" href="#module-jsonargparse.typing">jsonargparse.typing</a></li>
 <li><a class="reference internal" href="#module-jsonargparse.jsonschema">jsonargparse.jsonschema</a></li>
@@ -295,6 +295,12 @@ has many features designed to help in creating convenient argument parsers such
 as: <a class="reference internal" href="#nested-namespaces"><span class="std std-ref">Nested namespaces</span></a>, <a class="reference internal" href="#configuration-files"><span class="std std-ref">Configuration files</span></a>, arguments from
 <a class="reference internal" href="#classes-methods-functions"><span class="std std-ref">Classes, methods and functions</span></a>, additional type hints (<a class="reference internal" href="#parsing-paths"><span class="std std-ref">Parsing paths</span></a>,
 <a class="reference internal" href="#restricted-numbers"><span class="std std-ref">Restricted numbers</span></a>, <a class="reference internal" href="#restricted-strings"><span class="std std-ref">Restricted strings</span></a>) and much more.</p>
+<p>The next section explains how to create an argument parser in a very low level
+argparse-style. However, as parsers get more complex, being able to define them
+in a modular way becomes important. Three mechanisms are available to define
+parsers in a modular way, see respective sections
+<a class="reference internal" href="#classes-methods-functions"><span class="std std-ref">Classes, methods and functions</span></a>, <a class="reference internal" href="#sub-commands"><span class="std std-ref">Sub-commands</span></a> and
+<a class="reference internal" href="#parser-arguments"><span class="std std-ref">Parsers as arguments</span></a>.</p>
 </div>
 <div class="section" id="parsers">
 <h1>Parsers<a class="headerlink" href="#parsers" title="Permalink to this headline">¶</a></h1>
@@ -594,6 +600,57 @@ used.</p>
 type. But a subclass of <code class="code docutils literal notranslate"><span class="pre">Calendar</span></code> with an extended list of init
 parameters would also work.</p>
 </div>
+<div class="section" id="sub-commands">
+<span id="id6"></span><h1>Sub-commands<a class="headerlink" href="#sub-commands" title="Permalink to this headline">¶</a></h1>
+<p>A way to define parsers in a modular way is what in argparse is known as
+<a class="reference external" href="https://docs.python.org/3/library/argparse.html#sub-commands">sub-commands</a>.
+However, to promote modularity, in jsonargparse sub-commands work a bit
+different than in argparse. To add sub-commands to a parser, the
+<a class="reference internal" href="#jsonargparse.core.ArgumentParser.add_subcommands" title="jsonargparse.core.ArgumentParser.add_subcommands"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.add_subcommands()</span></code></a> method is used. Then an existing
+parser is added as a sub-command using <code class="xref py py-func docutils literal notranslate"><span class="pre">add_subcommand()</span></code>. In a parsed
+config object the sub-command will be stored in the <code class="code docutils literal notranslate"><span class="pre">subcommand</span></code> entry (or
+whatever <code class="code docutils literal notranslate"><span class="pre">dest</span></code> was set to), and the values of the sub-command will be in
+an entry with the same name as the respective sub-command. An example of
+defining a parser with sub-commands is the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="o">...</span>
+<span class="n">parser_subcomm1</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser_subcomm1</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="n">parser_subcomm2</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser_subcomm2</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op0&#39;</span><span class="p">)</span>
+<span class="n">subcommands</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_subcommands</span><span class="p">()</span>
+<span class="n">subcommands</span><span class="o">.</span><span class="n">add_subcommand</span><span class="p">(</span><span class="s1">&#39;subcomm1&#39;</span><span class="p">,</span> <span class="n">parser_subcomm1</span><span class="p">)</span>
+<span class="n">subcommands</span><span class="o">.</span><span class="n">add_subcommand</span><span class="p">(</span><span class="s1">&#39;subcomm2&#39;</span><span class="p">,</span> <span class="n">parser_subcomm2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then some examples of parsing are the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;subcomm1&#39;</span><span class="p">,</span> <span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="s1">&#39;val1&#39;</span><span class="p">])</span>
+<span class="go">Namespace(op0=None, subcomm1=Namespace(op1=&#39;val1&#39;), subcommand=&#39;subcomm1&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op0&#39;</span><span class="p">,</span> <span class="s1">&#39;val0&#39;</span><span class="p">,</span> <span class="s1">&#39;subcomm2&#39;</span><span class="p">,</span> <span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="s1">&#39;val2&#39;</span><span class="p">])</span>
+<span class="go">Namespace(op0=&#39;val0&#39;, subcomm2=Namespace(op2=&#39;val2&#39;), subcommand=&#39;subcomm2&#39;)</span>
+</pre></div>
+</div>
+<p>Parsing config files with <a class="reference internal" href="#jsonargparse.core.ArgumentParser.parse_path" title="jsonargparse.core.ArgumentParser.parse_path"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.parse_path()</span></code></a> or
+<a class="reference internal" href="#jsonargparse.core.ArgumentParser.parse_string" title="jsonargparse.core.ArgumentParser.parse_string"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.parse_string()</span></code></a> is also possible. Though there can only
+be values for one of the sub-commands. The config file is not required to
+specify a value for <code class="code docutils literal notranslate"><span class="pre">subcommand</span></code>. For the example parser above a valid
+yaml would be:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># File: example.yaml</span>
+<span class="l l-Scalar l-Scalar-Plain">op0</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">val0</span>
+<span class="l l-Scalar l-Scalar-Plain">subcomm1</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">op1</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">val1</span>
+</pre></div>
+</div>
+<p>Parsing of environment variables works similar to <a class="reference internal" href="#jsonargparse.actions.ActionParser" title="jsonargparse.actions.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a>. For
+the example parser above, all environment variables for <code class="code docutils literal notranslate"><span class="pre">subcomm1</span></code> would
+have as prefix <code class="code docutils literal notranslate"><span class="pre">APP_SUBCOMM1_</span></code> and likewise for <code class="code docutils literal notranslate"><span class="pre">subcomm2</span></code> as prefix
+<code class="code docutils literal notranslate"><span class="pre">APP_SUBCOMM2_</span></code>. The sub-command to use could be chosen by setting
+environment variable <code class="code docutils literal notranslate"><span class="pre">APP_SUBCOMMAND</span></code>.</p>
+</div>
 <div class="section" id="json-schemas">
 <h1>Json schemas<a class="headerlink" href="#json-schemas" title="Permalink to this headline">¶</a></h1>
 <p>The <a class="reference internal" href="#jsonargparse.jsonschema.ActionJsonSchema" title="jsonargparse.jsonschema.ActionJsonSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionJsonSchema</span></code></a> class is provided to allow parsing and validation
@@ -670,7 +727,7 @@ which case the jsonnet would be validated against this schema right after
 parsing.</p>
 </div>
 <div class="section" id="parsing-paths">
-<span id="id6"></span><h1>Parsing paths<a class="headerlink" href="#parsing-paths" title="Permalink to this headline">¶</a></h1>
+<span id="id7"></span><h1>Parsing paths<a class="headerlink" href="#parsing-paths" title="Permalink to this headline">¶</a></h1>
 <p>For some use cases it is necessary to parse file paths, checking its existence
 and access permissions, but not necessarily opening the file. Moreover, a file
 path could be included in a config file as relative with respect to the config
@@ -737,7 +794,7 @@ generated including all paths in all lists is provided.</p>
 <p>Note: the <a class="reference internal" href="#jsonargparse.util.Path" title="jsonargparse.util.Path"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> class is currently not fully supported in windows.</p>
 </div>
 <div class="section" id="parsing-urls">
-<span id="id7"></span><h1>Parsing URLs<a class="headerlink" href="#parsing-urls" title="Permalink to this headline">¶</a></h1>
+<span id="id8"></span><h1>Parsing URLs<a class="headerlink" href="#parsing-urls" title="Permalink to this headline">¶</a></h1>
 <p>The <a class="reference internal" href="#jsonargparse.typing.path_type" title="jsonargparse.typing.path_type"><code class="xref py py-func docutils literal notranslate"><span class="pre">path_type()</span></code></a> function also supports URLs which after parsing the
 <a class="reference internal" href="#jsonargparse.util.Path.get_content" title="jsonargparse.util.Path.get_content"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Path.get_content()</span></code></a> method can be used to perform a GET request to the
 corresponding URL and retrieve its content. For this to work the <em>validators</em>
@@ -764,7 +821,7 @@ file from a URL, that is something like the following would work:</p>
 </div>
 </div>
 <div class="section" id="restricted-numbers">
-<span id="id8"></span><h1>Restricted numbers<a class="headerlink" href="#restricted-numbers" title="Permalink to this headline">¶</a></h1>
+<span id="id9"></span><h1>Restricted numbers<a class="headerlink" href="#restricted-numbers" title="Permalink to this headline">¶</a></h1>
 <p>It is quite common that when parsing a number, its range should be limited. To
 ease these cases the module <code class="code docutils literal notranslate"><span class="pre">jsonargparse.typing</span></code> includes some predefined
 types and a function <a class="reference internal" href="#jsonargparse.typing.restricted_number_type" title="jsonargparse.typing.restricted_number_type"><code class="xref py py-func docutils literal notranslate"><span class="pre">restricted_number_type()</span></code></a> to define new types. The
@@ -785,7 +842,7 @@ are:</p>
 </div>
 </div>
 <div class="section" id="restricted-strings">
-<span id="id9"></span><h1>Restricted strings<a class="headerlink" href="#restricted-strings" title="Permalink to this headline">¶</a></h1>
+<span id="id10"></span><h1>Restricted strings<a class="headerlink" href="#restricted-strings" title="Permalink to this headline">¶</a></h1>
 <p>Similar to the restricted numbers, there is a function to create string types
 that are restricted to match a given regular expression:
 <a class="reference internal" href="#jsonargparse.typing.restricted_string_type" title="jsonargparse.typing.restricted_string_type"><code class="xref py py-func docutils literal notranslate"><span class="pre">restricted_string_type()</span></code></a>. A predefined type is <a class="reference internal" href="#jsonargparse.typing.Email" title="jsonargparse.typing.Email"><code class="xref py py-class docutils literal notranslate"><span class="pre">Email</span></code></a> which is
@@ -847,10 +904,7 @@ makes this straightforward. A couple of examples would be:</p>
 <code class="code docutils literal notranslate"><span class="pre">{'true',</span> <span class="pre">'yes',</span> <span class="pre">'false',</span> <span class="pre">'no'}</span></code>.</p>
 </div>
 <div class="section" id="parsers-as-arguments">
-<h1>Parsers as arguments<a class="headerlink" href="#parsers-as-arguments" title="Permalink to this headline">¶</a></h1>
-<p>As parsers get more complex, being able to define them in a modular way becomes
-important. Two mechanisms are available to define parsers in a modular way, both
-explained in this and the next section respectively.</p>
+<span id="parser-arguments"></span><h1>Parsers as arguments<a class="headerlink" href="#parsers-as-arguments" title="Permalink to this headline">¶</a></h1>
 <p>Sometimes it is useful to take an already existing parser that is required
 standalone in some part of the code, and reuse it to parse an inner node of
 another more complex parser. For these cases an argument can be defined using
@@ -882,57 +936,6 @@ checked to populate <code class="code docutils literal notranslate"><span class=
 <p>An important detail to note is that the parsers that are given to
 <a class="reference internal" href="#jsonargparse.actions.ActionParser" title="jsonargparse.actions.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> are internally modified. So they should be instantiated
 exclusively for the <a class="reference internal" href="#jsonargparse.actions.ActionParser" title="jsonargparse.actions.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a> and not used standalone.</p>
-</div>
-<div class="section" id="sub-commands">
-<span id="id10"></span><h1>Sub-commands<a class="headerlink" href="#sub-commands" title="Permalink to this headline">¶</a></h1>
-<p>A second way to define parsers in a modular way is what in argparse is known as
-<a class="reference external" href="https://docs.python.org/3/library/argparse.html#sub-commands">sub-commands</a>.
-However, to promote modularity, in jsonargparse sub-commands work a bit
-different than in argparse. To add sub-commands to a parser, the
-<a class="reference internal" href="#jsonargparse.core.ArgumentParser.add_subcommands" title="jsonargparse.core.ArgumentParser.add_subcommands"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.add_subcommands()</span></code></a> method is used. Then an existing
-parser is added as a sub-command using <code class="xref py py-func docutils literal notranslate"><span class="pre">add_subcommand()</span></code>. In a parsed
-config object the sub-command will be stored in the <code class="code docutils literal notranslate"><span class="pre">subcommand</span></code> entry (or
-whatever <code class="code docutils literal notranslate"><span class="pre">dest</span></code> was set to), and the values of the sub-command will be in
-an entry with the same name as the respective sub-command. An example of
-defining a parser with sub-commands is the following:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
-<span class="o">...</span>
-<span class="n">parser_subcomm1</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
-<span class="n">parser_subcomm1</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op1&#39;</span><span class="p">)</span>
-<span class="o">...</span>
-<span class="n">parser_subcomm2</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
-<span class="n">parser_subcomm2</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op2&#39;</span><span class="p">)</span>
-<span class="o">...</span>
-<span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--op0&#39;</span><span class="p">)</span>
-<span class="n">subcommands</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_subcommands</span><span class="p">()</span>
-<span class="n">subcommands</span><span class="o">.</span><span class="n">add_subcommand</span><span class="p">(</span><span class="s1">&#39;subcomm1&#39;</span><span class="p">,</span> <span class="n">parser_subcomm1</span><span class="p">)</span>
-<span class="n">subcommands</span><span class="o">.</span><span class="n">add_subcommand</span><span class="p">(</span><span class="s1">&#39;subcomm2&#39;</span><span class="p">,</span> <span class="n">parser_subcomm2</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Then some examples of parsing are the following:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;subcomm1&#39;</span><span class="p">,</span> <span class="s1">&#39;--op1&#39;</span><span class="p">,</span> <span class="s1">&#39;val1&#39;</span><span class="p">])</span>
-<span class="go">Namespace(op0=None, subcomm1=Namespace(op1=&#39;val1&#39;), subcommand=&#39;subcomm1&#39;)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--op0&#39;</span><span class="p">,</span> <span class="s1">&#39;val0&#39;</span><span class="p">,</span> <span class="s1">&#39;subcomm2&#39;</span><span class="p">,</span> <span class="s1">&#39;--op2&#39;</span><span class="p">,</span> <span class="s1">&#39;val2&#39;</span><span class="p">])</span>
-<span class="go">Namespace(op0=&#39;val0&#39;, subcomm2=Namespace(op2=&#39;val2&#39;), subcommand=&#39;subcomm2&#39;)</span>
-</pre></div>
-</div>
-<p>Parsing config files with <a class="reference internal" href="#jsonargparse.core.ArgumentParser.parse_path" title="jsonargparse.core.ArgumentParser.parse_path"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.parse_path()</span></code></a> or
-<a class="reference internal" href="#jsonargparse.core.ArgumentParser.parse_string" title="jsonargparse.core.ArgumentParser.parse_string"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.parse_string()</span></code></a> is also possible. Though there can only
-be values for one of the sub-commands. The config file is not required to
-specify a value for <code class="code docutils literal notranslate"><span class="pre">subcommand</span></code>. For the example parser above a valid
-yaml would be:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># File: example.yaml</span>
-<span class="l l-Scalar l-Scalar-Plain">op0</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">val0</span>
-<span class="l l-Scalar l-Scalar-Plain">subcomm1</span><span class="p p-Indicator">:</span>
-  <span class="l l-Scalar l-Scalar-Plain">op1</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">val1</span>
-</pre></div>
-</div>
-<p>Parsing of environment variables works similar to <a class="reference internal" href="#jsonargparse.actions.ActionParser" title="jsonargparse.actions.ActionParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActionParser</span></code></a>. For
-the example parser above, all environment variables for <code class="code docutils literal notranslate"><span class="pre">subcomm1</span></code> would
-have as prefix <code class="code docutils literal notranslate"><span class="pre">APP_SUBCOMM1_</span></code> and likewise for <code class="code docutils literal notranslate"><span class="pre">subcomm2</span></code> as prefix
-<code class="code docutils literal notranslate"><span class="pre">APP_SUBCOMM2_</span></code>. The sub-command to use could be chosen by setting
-environment variable <code class="code docutils literal notranslate"><span class="pre">APP_SUBCOMMAND</span></code>.</p>
 </div>
 <div class="section" id="tab-completion">
 <h1>Tab completion<a class="headerlink" href="#tab-completion" title="Permalink to this headline">¶</a></h1>
@@ -1020,6 +1023,46 @@ python3 -m jsonargparse_tests  <span class="c1"># Run tests for installed packag
 </div>
 <div class="section" id="api-reference">
 <h1>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-jsonargparse.cli">
+<span id="jsonargparse-cli"></span><h2>jsonargparse.cli<a class="headerlink" href="#module-jsonargparse.cli" title="Permalink to this headline">¶</a></h2>
+<p>Simple creation of command line interfaces.</p>
+<p><strong>Functions:</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.cli.CLI" title="jsonargparse.cli.CLI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CLI</span></code></a>([functions, args, config_help, …])</p></td>
+<td><p>Function for simple creation of command line interfaces.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt id="jsonargparse.cli.CLI">
+<code class="sig-prename descclassname">jsonargparse.cli.</code><code class="sig-name descname">CLI</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">functions</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config_help</span><span class="o">=</span><span class="default_value">'Path to a configuration file in json or yaml format.'</span></em>, <em class="sig-param"><span class="n">as_positional</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/cli.html#CLI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.cli.CLI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for simple creation of command line interfaces.</p>
+<p>Creates an argument parser from one or more functions, parses arguments and
+runs one of the functions depending on what was parsed. If the functions
+argument is not given, then the functions will be all the locals in the
+context and defined in the same module as from where CLI is called.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>functions</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>], <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>]) – One or more functions to include in the command line interface.</p></li>
+<li><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]) – List of arguments to parse or None to use sys.argv.</p></li>
+<li><p><strong>config_help</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Help string for config file option in help.</p></li>
+<li><p><strong>as_positional</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to add required parameters as positional arguments.</p></li>
+<li><p><strong>**kwargs</strong> – Used to instantiate <a class="reference internal" href="#jsonargparse.core.ArgumentParser" title="jsonargparse.core.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The value returned by the executed function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="section" id="module-jsonargparse.core">
 <span id="jsonargparse-core"></span><h2>jsonargparse.core<a class="headerlink" href="#module-jsonargparse.core" title="Permalink to this headline">¶</a></h2>
 <p><strong>Classes:</strong></p>
@@ -1358,7 +1401,7 @@ sub-command’s name as base key.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Namespace</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]) – The configuration object to dump.</p></li>
 <li><p><strong>format</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – The output format: “yaml”, “json”, “json_indented” or “parser_mode”.</p></li>
-<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to exclude checking values that are None.</p></li>
+<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to exclude entries whose value is None.</p></li>
 <li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to skip parser checking.</p></li>
 </ul>
 </dd>
@@ -1384,7 +1427,7 @@ sub-command’s name as base key.</p>
 <li><p><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Namespace</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]) – The configuration object to save.</p></li>
 <li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Path to the location where to save config.</p></li>
 <li><p><strong>format</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – The output format: “yaml”, “json”, “json_indented” or “parser_mode”.</p></li>
-<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to exclude checking values that are None.</p></li>
+<li><p><strong>skip_none</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to exclude entries whose value is None.</p></li>
 <li><p><strong>skip_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to skip parser checking.</p></li>
 <li><p><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to overwrite existing files.</p></li>
 <li><p><strong>multifile</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to save multiple config files by using the __path__ metas.</p></li>
@@ -1603,46 +1646,6 @@ sub-command’s name as base key.</p>
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-</div>
-<div class="section" id="module-jsonargparse.cli">
-<span id="jsonargparse-cli"></span><h2>jsonargparse.cli<a class="headerlink" href="#module-jsonargparse.cli" title="Permalink to this headline">¶</a></h2>
-<p>Simple creation of command line interfaces.</p>
-<p><strong>Functions:</strong></p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.cli.CLI" title="jsonargparse.cli.CLI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CLI</span></code></a>([functions, args, config_help, …])</p></td>
-<td><p>Function for simple creation of command line interfaces.</p></td>
-</tr>
-</tbody>
-</table>
-<dl class="py function">
-<dt id="jsonargparse.cli.CLI">
-<code class="sig-prename descclassname">jsonargparse.cli.</code><code class="sig-name descname">CLI</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">functions</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config_help</span><span class="o">=</span><span class="default_value">'Path to a configuration file in json or yaml format.'</span></em>, <em class="sig-param"><span class="n">as_positional</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/cli.html#CLI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.cli.CLI" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for simple creation of command line interfaces.</p>
-<p>Creates an argument parser from one or more functions, parses arguments and
-runs one of the functions depending on what was parsed. If the functions
-argument is not given, then the functions will be all the locals in the
-context and defined in the same module as from where CLI is called.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>functions</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>], <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>]) – One or more functions to include in the command line interface.</p></li>
-<li><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]) – List of arguments to parse or None to use sys.argv.</p></li>
-<li><p><strong>config_help</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Help string for config file option in help.</p></li>
-<li><p><strong>as_positional</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to add required parameters as positional arguments.</p></li>
-<li><p><strong>**kwargs</strong> – Used to instantiate <a class="reference internal" href="#jsonargparse.core.ArgumentParser" title="jsonargparse.core.ArgumentParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentParser</span></code></a>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The value returned by the executed function.</p>
-</dd>
-</dl>
 </dd></dl>
 
 </div>
@@ -2930,6 +2933,7 @@ SOFTWARE.</p>
 <div class="section" id="index">
 <h1>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
+<li><p><a class="reference internal" href="CHANGELOG.html#changelog"><span class="std std-ref">Changelog</span></a></p></li>
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 </ul>
 </div>

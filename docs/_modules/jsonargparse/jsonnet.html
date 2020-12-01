@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.jsonnet &mdash; jsonargparse 3.0.0rc4 documentation</title>
+  <title>jsonargparse.jsonnet &mdash; jsonargparse 3.0.0 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0rc4
+                3.0.0
               </div>
             
           
@@ -256,7 +256,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ext_vars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">ext_vars</span> <span class="o">=</span> <span class="n">_get_key_value</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ext_vars</span><span class="p">)</span>
-            <span class="k">except</span><span class="p">:</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
                 <span class="k">pass</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">islist</span><span class="p">:</span>
             <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
@@ -317,7 +317,7 @@
         <span class="n">snippet</span> <span class="o">=</span> <span class="n">jsonnet</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">fpath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">jsonnet</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">get_config_read_mode</span><span class="p">())</span>
-        <span class="k">except</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">fname</span> <span class="o">=</span> <span class="n">jsonnet</span><span class="p">(</span><span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">jsonnet</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="k">else</span> <span class="n">jsonnet</span>
