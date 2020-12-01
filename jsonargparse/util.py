@@ -292,7 +292,7 @@ class Path:
             is_url = path.is_url
             cwd = path.cwd  # type: ignore
             abs_path = path.abs_path  # type: ignore
-            path = path.path  # type: ignore
+            path = path.rel_path  # type: ignore
         elif isinstance(path, str):
             abs_path = path
             if re.match('^file:///?', abs_path):
@@ -347,18 +347,18 @@ class Path:
             if 'X' in mode and os.access(abs_path, os.X_OK):
                 raise TypeError(ptype+' is executable: '+abs_path)
 
-        self.path = path
+        self.rel_path = path
         self.abs_path = abs_path
         self.cwd = cwd
         self.mode = mode
         self.is_url = is_url  # type: bool
 
     def __str__(self):
-        return self.path
+        return self.rel_path
 
     def __repr__(self):
-        cwd = '' if self.path == self.abs_path else ', cwd='+self.cwd
-        return 'Path('+self.path+cwd+')'
+        cwd = '' if self.rel_path == self.abs_path else ', cwd='+self.cwd
+        return 'Path('+self.rel_path+cwd+')'
 
     def __call__(self, absolute:bool=True) -> str:
         """Returns the path as a string.
@@ -366,7 +366,7 @@ class Path:
         Args:
             absolute: If false returns the original path given, otherwise the corresponding absolute path.
         """
-        return self.abs_path if absolute else self.path
+        return self.abs_path if absolute else self.rel_path
 
     def get_content(self, mode:str='r') -> str:
         """Returns the contents of the file or the response of a GET request to the URL."""

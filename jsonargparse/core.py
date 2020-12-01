@@ -95,6 +95,10 @@ class _ActionsContainer(argparse._ActionsContainer):
             if key in action.dest:
                 raise ValueError('Argument with destination name "'+key+'" not allowed.')
         parser = self.parser if hasattr(self, 'parser') else self
+        if action.help is None and \
+           hasattr(self, 'formatter_class') and \
+           issubclass(self.formatter_class, DefaultHelpFormatter):
+            action.help = ' '
         if action.required:
             parser.required_args.add(action.dest)
             action._required = True
@@ -677,7 +681,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         Args:
             cfg: The configuration object to dump.
             format: The output format: "yaml", "json", "json_indented" or "parser_mode".
-            skip_none: Whether to exclude checking values that are None.
+            skip_none: Whether to exclude entries whose value is None.
             skip_check: Whether to skip parser checking.
 
         Returns:
@@ -758,7 +762,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             cfg: The configuration object to save.
             path: Path to the location where to save config.
             format: The output format: "yaml", "json", "json_indented" or "parser_mode".
-            skip_none: Whether to exclude checking values that are None.
+            skip_none: Whether to exclude entries whose value is None.
             skip_check: Whether to skip parser checking.
             overwrite: Whether to overwrite existing files.
             multifile: Whether to save multiple config files by using the __path__ metas.
@@ -948,7 +952,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                     val = get_key_value(cfg, reqkey)
                     if val is None:
                         raise TypeError()
-                except:
+                except (KeyError, TypeError):
                     raise TypeError('Key "'+reqkey+'" is required but not included in config object or its value is None.')
 
         def check_values(cfg, base=None):

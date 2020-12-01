@@ -106,7 +106,7 @@ class ActionJsonnet(Action):
         if self._ext_vars is not None:
             try:
                 ext_vars = _get_key_value(cfg, self._ext_vars)
-            except:
+            except (KeyError, AttributeError):
                 pass
         if not islist:
             value = [value]
@@ -167,7 +167,7 @@ class ActionJsonnet(Action):
         snippet = jsonnet
         try:
             fpath = Path(jsonnet, mode=get_config_read_mode())
-        except:
+        except TypeError:
             pass
         else:
             fname = jsonnet(absolute=False) if isinstance(jsonnet, Path) else jsonnet

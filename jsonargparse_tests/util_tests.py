@@ -76,7 +76,7 @@ class PathTests(TempDirTestCase):
         path2 = Path(path1)
         self.assertEqual(path1.cwd, path2.cwd)
         self.assertEqual(path1.abs_path, path2.abs_path)
-        self.assertEqual(path1.path, path2.path)
+        self.assertEqual(path1.rel_path, path2.rel_path)
         self.assertEqual(path1.is_url, path2.is_url)
         self.assertRaises(TypeError, lambda: Path(True))
 

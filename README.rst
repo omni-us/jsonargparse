@@ -144,6 +144,13 @@ as: :ref:`nested-namespaces`, :ref:`configuration-files`, arguments from
 :ref:`classes-methods-functions`, additional type hints (:ref:`parsing-paths`,
 :ref:`restricted-numbers`, :ref:`restricted-strings`) and much more.
 
+The next section explains how to create an argument parser in a very low level
+argparse-style. However, as parsers get more complex, being able to define them
+in a modular way becomes important. Three mechanisms are available to define
+parsers in a modular way, see respective sections
+:ref:`classes-methods-functions`, :ref:`sub-commands` and
+:ref:`parser-arguments`.
+
 
 Parsers
 =======
@@ -511,6 +518,67 @@ type. But a subclass of :code:`Calendar` with an extended list of init
 parameters would also work.
 
 
+.. _sub-commands:
+
+Sub-commands
+============
+
+A way to define parsers in a modular way is what in argparse is known as
+`sub-commands <https://docs.python.org/3/library/argparse.html#sub-commands>`__.
+However, to promote modularity, in jsonargparse sub-commands work a bit
+different than in argparse. To add sub-commands to a parser, the
+:py:meth:`.ArgumentParser.add_subcommands` method is used. Then an existing
+parser is added as a sub-command using :func:`.add_subcommand`. In a parsed
+config object the sub-command will be stored in the :code:`subcommand` entry (or
+whatever :code:`dest` was set to), and the values of the sub-command will be in
+an entry with the same name as the respective sub-command. An example of
+defining a parser with sub-commands is the following:
+
+.. code-block:: python
+
+    from jsonargparse import ArgumentParser
+    ...
+    parser_subcomm1 = ArgumentParser()
+    parser_subcomm1.add_argument('--op1')
+    ...
+    parser_subcomm2 = ArgumentParser()
+    parser_subcomm2.add_argument('--op2')
+    ...
+    parser = ArgumentParser(prog='app')
+    parser.add_argument('--op0')
+    subcommands = parser.add_subcommands()
+    subcommands.add_subcommand('subcomm1', parser_subcomm1)
+    subcommands.add_subcommand('subcomm2', parser_subcomm2)
+
+Then some examples of parsing are the following:
+
+.. code-block:: python
+
+    >>> parser.parse_args(['subcomm1', '--op1', 'val1'])
+    Namespace(op0=None, subcomm1=Namespace(op1='val1'), subcommand='subcomm1')
+    >>> parser.parse_args(['--op0', 'val0', 'subcomm2', '--op2', 'val2'])
+    Namespace(op0='val0', subcomm2=Namespace(op2='val2'), subcommand='subcomm2')
+
+Parsing config files with :py:meth:`.ArgumentParser.parse_path` or
+:py:meth:`.ArgumentParser.parse_string` is also possible. Though there can only
+be values for one of the sub-commands. The config file is not required to
+specify a value for :code:`subcommand`. For the example parser above a valid
+yaml would be:
+
+.. code-block:: yaml
+
+    # File: example.yaml
+    op0: val0
+    subcomm1:
+      op1: val1
+
+Parsing of environment variables works similar to :class:`.ActionParser`. For
+the example parser above, all environment variables for :code:`subcomm1` would
+have as prefix :code:`APP_SUBCOMM1_` and likewise for :code:`subcomm2` as prefix
+:code:`APP_SUBCOMM2_`. The sub-command to use could be chosen by setting
+environment variable :code:`APP_SUBCOMMAND`.
+
+
 Json schemas
 ============
 
@@ -827,12 +895,10 @@ If the :class:`.ActionYesNo` class is used in conjunction with
 :code:`{'true', 'yes', 'false', 'no'}`.
 
 
+.. _parser-arguments:
+
 Parsers as arguments
 ====================
-
-As parsers get more complex, being able to define them in a modular way becomes
-important. Two mechanisms are available to define parsers in a modular way, both
-explained in this and the next section respectively.
 
 Sometimes it is useful to take an already existing parser that is required
 standalone in some part of the code, and reuse it to parse an inner node of
@@ -870,67 +936,6 @@ checked to populate :code:`inner.node.op1`.
 An important detail to note is that the parsers that are given to
 :class:`.ActionParser` are internally modified. So they should be instantiated
 exclusively for the :class:`.ActionParser` and not used standalone.
-
-
-.. _sub-commands:
-
-Sub-commands
-============
-
-A second way to define parsers in a modular way is what in argparse is known as
-`sub-commands <https://docs.python.org/3/library/argparse.html#sub-commands>`__.
-However, to promote modularity, in jsonargparse sub-commands work a bit
-different than in argparse. To add sub-commands to a parser, the
-:py:meth:`.ArgumentParser.add_subcommands` method is used. Then an existing
-parser is added as a sub-command using :func:`.add_subcommand`. In a parsed
-config object the sub-command will be stored in the :code:`subcommand` entry (or
-whatever :code:`dest` was set to), and the values of the sub-command will be in
-an entry with the same name as the respective sub-command. An example of
-defining a parser with sub-commands is the following:
-
-.. code-block:: python
-
-    from jsonargparse import ArgumentParser
-    ...
-    parser_subcomm1 = ArgumentParser()
-    parser_subcomm1.add_argument('--op1')
-    ...
-    parser_subcomm2 = ArgumentParser()
-    parser_subcomm2.add_argument('--op2')
-    ...
-    parser = ArgumentParser(prog='app')
-    parser.add_argument('--op0')
-    subcommands = parser.add_subcommands()
-    subcommands.add_subcommand('subcomm1', parser_subcomm1)
-    subcommands.add_subcommand('subcomm2', parser_subcomm2)
-
-Then some examples of parsing are the following:
-
-.. code-block:: python
-
-    >>> parser.parse_args(['subcomm1', '--op1', 'val1'])
-    Namespace(op0=None, subcomm1=Namespace(op1='val1'), subcommand='subcomm1')
-    >>> parser.parse_args(['--op0', 'val0', 'subcomm2', '--op2', 'val2'])
-    Namespace(op0='val0', subcomm2=Namespace(op2='val2'), subcommand='subcomm2')
-
-Parsing config files with :py:meth:`.ArgumentParser.parse_path` or
-:py:meth:`.ArgumentParser.parse_string` is also possible. Though there can only
-be values for one of the sub-commands. The config file is not required to
-specify a value for :code:`subcommand`. For the example parser above a valid
-yaml would be:
-
-.. code-block:: yaml
-
-    # File: example.yaml
-    op0: val0
-    subcomm1:
-      op1: val1
-
-Parsing of environment variables works similar to :class:`.ActionParser`. For
-the example parser above, all environment variables for :code:`subcomm1` would
-have as prefix :code:`APP_SUBCOMM1_` and likewise for :code:`subcomm2` as prefix
-:code:`APP_SUBCOMM2_`. The sub-command to use could be chosen by setting
-environment variable :code:`APP_SUBCOMMAND`.
 
 
 Tab completion

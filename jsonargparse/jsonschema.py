@@ -144,7 +144,7 @@ class ActionJsonSchema(Action):
                 if self._enable_path and isinstance(val, str):
                     try:
                         fpath = Path(val, mode=get_config_read_mode())
-                    except:
+                    except TypeError:
                         pass
                     else:
                         val = yaml.safe_load(fpath.get_content())

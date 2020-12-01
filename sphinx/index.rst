@@ -4,17 +4,17 @@
 API Reference
 =============
 
-jsonargparse.core
------------------
-.. automodule:: jsonargparse.core
+jsonargparse.cli
+----------------
+.. automodule:: jsonargparse.cli
     :members:
     :undoc-members:
     :show-inheritance:
     :autosummary:
 
-jsonargparse.cli
------------------------
-.. automodule:: jsonargparse.cli
+jsonargparse.core
+-----------------
+.. automodule:: jsonargparse.core
     :members:
     :undoc-members:
     :show-inheritance:
@@ -94,4 +94,5 @@ License
 Index
 =====
 
+* :ref:`changelog`
 * :ref:`genindex`
