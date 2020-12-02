@@ -48,7 +48,17 @@ class SignatureArguments:
         def docs_func(base):
             return [base.__init__.__doc__, base.__doc__]
 
-        return self._add_signature_arguments(inspect.getmro(theclass), nested_key, as_group, as_positional, docs_func, skip)
+        def sign_func(base):
+            return base.__init__
+
+        return self._add_signature_arguments(inspect.getmro(theclass),
+                                             nested_key,
+                                             as_group,
+                                             as_positional,
+                                             skip,
+                                             docs_func,
+                                             sign_func,
+                                             skip_first=True)
 
 
     def add_method_arguments(
@@ -84,13 +94,15 @@ class SignatureArguments:
         if not hasattr(theclass, themethod) or not callable(getattr(theclass, themethod)):
             raise ValueError('Expected the method to a callable member of the class.')
 
-        def docs_func(base):
-            return [base.__doc__]
-
         skip_first = False if isinstance(theclass.__dict__[themethod], staticmethod) else True
         themethod = getattr(theclass, themethod)
 
-        return self._add_signature_arguments([themethod], nested_key, as_group, as_positional, docs_func, skip, skip_first=skip_first)
+        return self._add_signature_arguments([themethod],
+                                             nested_key,
+                                             as_group,
+                                             as_positional,
+                                             skip,
+                                             skip_first=skip_first)
 
 
     def add_function_arguments(
@@ -122,10 +134,11 @@ class SignatureArguments:
         if not callable(function):
             raise ValueError('Expected a callable object.')
 
-        def docs_func(base):
-            return [base.__doc__]
-
-        return self._add_signature_arguments([function], nested_key, as_group, as_positional, docs_func, skip)
+        return self._add_signature_arguments([function],
+                                             nested_key,
+                                             as_group,
+                                             as_positional,
+                                             skip)
 
 
     def _add_signature_arguments(
@@ -134,8 +147,9 @@ class SignatureArguments:
         nested_key: Optional[str],
         as_group: bool,
         as_positional: bool,
-        docs_func: Callable,
         skip: Optional[Set[str]],
+        docs_func: Callable = lambda x: [x.__doc__],
+        sign_func: Callable = lambda x: x,
         skip_first: bool = False,
     ) -> int:
         """Adds arguments from parameters of objects based on signatures and docstrings.
@@ -145,8 +159,9 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            docs_func: Function that returns docstrings for a given object.
             skip: Names of parameters that should be skipped.
+            docs_func: Function that returns docstrings for a given object.
+            sign_func: Function that returns signature method for a given object.
             skip_first: Whether to skip first argument, i.e., skip self of class methods.
 
         Returns:
@@ -158,7 +173,7 @@ class SignatureArguments:
         kinds = inspect._ParameterKind
 
         def update_has_args_kwargs(base, has_args=True, has_kwargs=True):
-            params = list(inspect.signature(base).parameters.values())
+            params = list(inspect.signature(sign_func(base)).parameters.values())
             has_args &= any(p._kind == kinds.VAR_POSITIONAL for p in params)
             has_kwargs &= any(p._kind == kinds.VAR_KEYWORD for p in params)
             return has_args, has_kwargs
@@ -206,7 +221,7 @@ class SignatureArguments:
         if dataclasses_support:
             dataclasses = import_dataclasses('_add_signature_arguments')
         for obj, (add_args, add_kwargs) in zip(objects, add_types):
-            for num, param in enumerate(inspect.signature(obj).parameters.values()):
+            for num, param in enumerate(inspect.signature(sign_func(obj)).parameters.values()):
                 name = param.name
                 annotation = param.annotation
                 default = param.default

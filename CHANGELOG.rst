@@ -10,6 +10,16 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.0.1 (2020-12-02)
+-------------------
+
+Fixed
+^^^^^
+
+- add_class_arguments incorrectly added arguments from :code:`__call__` instead
+  of :code:`__init__` for callable classes.
+
+
 v3.0.0 (2020-12-01)
 -------------------
 
