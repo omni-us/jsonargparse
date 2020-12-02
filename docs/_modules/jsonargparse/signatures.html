@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.signatures &mdash; jsonargparse 3.0.0 documentation</title>
+  <title>jsonargparse.signatures &mdash; jsonargparse 3.0.1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.0
+                3.0.1
               </div>
             
           
@@ -198,7 +198,17 @@
         <span class="k">def</span> <span class="nf">docs_func</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">base</span><span class="o">.</span><span class="fm">__init__</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getmro</span><span class="p">(</span><span class="n">theclass</span><span class="p">),</span> <span class="n">nested_key</span><span class="p">,</span> <span class="n">as_group</span><span class="p">,</span> <span class="n">as_positional</span><span class="p">,</span> <span class="n">docs_func</span><span class="p">,</span> <span class="n">skip</span><span class="p">)</span></div>
+        <span class="k">def</span> <span class="nf">sign_func</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">base</span><span class="o">.</span><span class="fm">__init__</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getmro</span><span class="p">(</span><span class="n">theclass</span><span class="p">),</span>
+                                             <span class="n">nested_key</span><span class="p">,</span>
+                                             <span class="n">as_group</span><span class="p">,</span>
+                                             <span class="n">as_positional</span><span class="p">,</span>
+                                             <span class="n">skip</span><span class="p">,</span>
+                                             <span class="n">docs_func</span><span class="p">,</span>
+                                             <span class="n">sign_func</span><span class="p">,</span>
+                                             <span class="n">skip_first</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SignatureArguments.add_method_arguments"><a class="viewcode-back" href="../../index.html#jsonargparse.signatures.SignatureArguments.add_method_arguments">[docs]</a>    <span class="k">def</span> <span class="nf">add_method_arguments</span><span class="p">(</span>
@@ -234,13 +244,15 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected the method to a callable member of the class.&#39;</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">docs_func</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">[</span><span class="n">base</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">]</span>
-
         <span class="n">skip_first</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">theclass</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">themethod</span><span class="p">],</span> <span class="nb">staticmethod</span><span class="p">)</span> <span class="k">else</span> <span class="kc">True</span>
         <span class="n">themethod</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">([</span><span class="n">themethod</span><span class="p">],</span> <span class="n">nested_key</span><span class="p">,</span> <span class="n">as_group</span><span class="p">,</span> <span class="n">as_positional</span><span class="p">,</span> <span class="n">docs_func</span><span class="p">,</span> <span class="n">skip</span><span class="p">,</span> <span class="n">skip_first</span><span class="o">=</span><span class="n">skip_first</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">([</span><span class="n">themethod</span><span class="p">],</span>
+                                             <span class="n">nested_key</span><span class="p">,</span>
+                                             <span class="n">as_group</span><span class="p">,</span>
+                                             <span class="n">as_positional</span><span class="p">,</span>
+                                             <span class="n">skip</span><span class="p">,</span>
+                                             <span class="n">skip_first</span><span class="o">=</span><span class="n">skip_first</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SignatureArguments.add_function_arguments"><a class="viewcode-back" href="../../index.html#jsonargparse.signatures.SignatureArguments.add_function_arguments">[docs]</a>    <span class="k">def</span> <span class="nf">add_function_arguments</span><span class="p">(</span>
@@ -272,10 +284,11 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected a callable object.&#39;</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">docs_func</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">[</span><span class="n">base</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">([</span><span class="n">function</span><span class="p">],</span> <span class="n">nested_key</span><span class="p">,</span> <span class="n">as_group</span><span class="p">,</span> <span class="n">as_positional</span><span class="p">,</span> <span class="n">docs_func</span><span class="p">,</span> <span class="n">skip</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">([</span><span class="n">function</span><span class="p">],</span>
+                                             <span class="n">nested_key</span><span class="p">,</span>
+                                             <span class="n">as_group</span><span class="p">,</span>
+                                             <span class="n">as_positional</span><span class="p">,</span>
+                                             <span class="n">skip</span><span class="p">)</span></div>
 
 
     <span class="k">def</span> <span class="nf">_add_signature_arguments</span><span class="p">(</span>
@@ -284,8 +297,9 @@
         <span class="n">nested_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">as_group</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
         <span class="n">as_positional</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-        <span class="n">docs_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
         <span class="n">skip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+        <span class="n">docs_func</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">],</span>
+        <span class="n">sign_func</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
         <span class="n">skip_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Adds arguments from parameters of objects based on signatures and docstrings.</span>
@@ -295,8 +309,9 @@
 <span class="sd">            nested_key: Key for nested namespace.</span>
 <span class="sd">            as_group: Whether arguments should be added to a new argument group.</span>
 <span class="sd">            as_positional: Whether to add required parameters as positional arguments.</span>
-<span class="sd">            docs_func: Function that returns docstrings for a given object.</span>
 <span class="sd">            skip: Names of parameters that should be skipped.</span>
+<span class="sd">            docs_func: Function that returns docstrings for a given object.</span>
+<span class="sd">            sign_func: Function that returns signature method for a given object.</span>
 <span class="sd">            skip_first: Whether to skip first argument, i.e., skip self of class methods.</span>
 
 <span class="sd">        Returns:</span>
@@ -308,7 +323,7 @@
         <span class="n">kinds</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">_ParameterKind</span>
 
         <span class="k">def</span> <span class="nf">update_has_args_kwargs</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">has_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">has_kwargs</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">base</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sign_func</span><span class="p">(</span><span class="n">base</span><span class="p">))</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
             <span class="n">has_args</span> <span class="o">&amp;=</span> <span class="nb">any</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">_kind</span> <span class="o">==</span> <span class="n">kinds</span><span class="o">.</span><span class="n">VAR_POSITIONAL</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">)</span>
             <span class="n">has_kwargs</span> <span class="o">&amp;=</span> <span class="nb">any</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">_kind</span> <span class="o">==</span> <span class="n">kinds</span><span class="o">.</span><span class="n">VAR_KEYWORD</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">has_args</span><span class="p">,</span> <span class="n">has_kwargs</span>
@@ -356,7 +371,7 @@
         <span class="k">if</span> <span class="n">dataclasses_support</span><span class="p">:</span>
             <span class="n">dataclasses</span> <span class="o">=</span> <span class="n">import_dataclasses</span><span class="p">(</span><span class="s1">&#39;_add_signature_arguments&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="n">add_args</span><span class="p">,</span> <span class="n">add_kwargs</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">objects</span><span class="p">,</span> <span class="n">add_types</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sign_func</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
                 <span class="n">name</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">name</span>
                 <span class="n">annotation</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">annotation</span>
                 <span class="n">default</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">default</span>
