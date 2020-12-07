@@ -215,10 +215,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                             setattr(namespace, key, val)
                         if len(args) == 0:
                             break
-            return namespace, args
         except (ArgumentError, ParserError):
             err = sys.exc_info()[1]
             self.error(str(err))
+
+        return namespace, args
 
 
     def _parse_common(

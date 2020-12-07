@@ -2,7 +2,7 @@
 
 import inspect
 from enum import Enum
-from typing import Union, Optional, List, Set, Type, Callable
+from typing import Union, Optional, List, Container, Type, Callable
 
 from .util import _issubclass
 from .actions import ActionEnum
@@ -22,7 +22,7 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[Set[str]] = None,
+        skip: Optional[Container[str]] = None,
     ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
 
@@ -68,7 +68,7 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[Set[str]] = None,
+        skip: Optional[Container[str]] = None,
     ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
 
@@ -111,7 +111,7 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[Set[str]] = None,
+        skip: Optional[Container[str]] = None,
     ) -> int:
         """Adds arguments from a function based on its type hints and docstrings.
 
@@ -147,7 +147,7 @@ class SignatureArguments:
         nested_key: Optional[str],
         as_group: bool,
         as_positional: bool,
-        skip: Optional[Set[str]],
+        skip: Optional[Container[str]],
         docs_func: Callable = lambda x: [x.__doc__],
         sign_func: Callable = lambda x: x,
         skip_first: bool = False,

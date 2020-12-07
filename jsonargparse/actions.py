@@ -433,7 +433,7 @@ class _ActionSubCommands(_SubParsersAction):
 
 
     @staticmethod
-    def handle_subcommands(parser, cfg, env, defaults):
+    def handle_subcommands(parser, cfg, env, defaults, prefix=''):
         """Adds sub-command dest if missing and parses defaults and environment variables."""
         if parser._subparsers is None:
             return
@@ -449,14 +449,15 @@ class _ActionSubCommands(_SubParsersAction):
 
         # Get sub-command parser
         subcommand = None
-        if action.dest in cfg_dict and cfg_dict[action.dest] is not None:
-            subcommand = cfg_dict[action.dest]
+        dest = prefix + action.dest
+        if dest in cfg_dict and cfg_dict[dest] is not None:
+            subcommand = cfg_dict[dest]
         else:
             for key in action.choices.keys():
                 if any([v.startswith(key+'.') for v in cfg_dict.keys()]):
                     subcommand = key
                     break
-            cfg_dict[action.dest] = subcommand
+            cfg_dict[dest] = subcommand
 
         assert subcommand in action._name_parser_map
         subparser = action._name_parser_map[subcommand]
@@ -470,9 +471,13 @@ class _ActionSubCommands(_SubParsersAction):
 
         if subnamespace is not None:
             for key, value in vars(subnamespace).items():
-                key = subcommand+'.'+key
+                key = prefix + subcommand+'.'+key
                 if key not in cfg_keys:
                     cfg_dict[key] = value
+
+        if subparser._subparsers is not None:
+            prefix = prefix + subcommand + '.'
+            _ActionSubCommands.handle_subcommands(subparser, cfg, env, defaults, prefix)
 
 
 class ActionPath(Action, FilesCompleterMethod):

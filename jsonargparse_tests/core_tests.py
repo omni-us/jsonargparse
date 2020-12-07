@@ -359,6 +359,33 @@ class AdvancedFeaturesTests(unittest.TestCase):
             del os.environ[key]
 
 
+    def test_subsubcommands(self):
+        parser_s1_a = ArgumentParser(error_handler=None)
+        parser_s1_a.add_argument('--os1a',
+            default='os1a_def')
+
+        parser_s2_b = ArgumentParser(error_handler=None)
+        parser_s2_b.add_argument('--os2b',
+            default='os2b_def')
+
+        parser = ArgumentParser(prog='app', error_handler=None, default_meta=False)
+        subcommands1 = parser.add_subcommands()
+        subcommands1.add_subcommand('a', parser_s1_a)
+
+        subcommands2 = parser_s1_a.add_subcommands()
+        subcommands2.add_subcommand('b', parser_s2_b)
+
+        self.assertRaises(ParserError, lambda: parser.parse_args([]))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['a']))
+
+        cfg = namespace_to_dict(parser.parse_args(['a', 'b']))
+        self.assertEqual(cfg, {'subcommand': 'a', 'a': {'subcommand': 'b', 'os1a': 'os1a_def', 'b': {'os2b': 'os2b_def'}}})
+        cfg = namespace_to_dict(parser.parse_args(['a', '--os1a=os1a_arg', 'b']))
+        self.assertEqual(cfg, {'subcommand': 'a', 'a': {'subcommand': 'b', 'os1a': 'os1a_arg', 'b': {'os2b': 'os2b_def'}}})
+        cfg = namespace_to_dict(parser.parse_args(['a', 'b', '--os2b=os2b_arg']))
+        self.assertEqual(cfg, {'subcommand': 'a', 'a': {'subcommand': 'b', 'os1a': 'os1a_def', 'b': {'os2b': 'os2b_arg'}}})
+
+
     @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
     @responses_activate
     def test_urls(self):
