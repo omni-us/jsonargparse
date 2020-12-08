@@ -388,6 +388,9 @@ class _ActionSubCommands(_SubParsersAction):
         <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers>`_
         add_parser requires to be given a parser as argument.
         """
+        if parser._subparsers is not None:
+            raise ValueError('Multiple levels of subcommands must be added in level order.')
+
         parser.prog = '%s [options] %s' % (self._prog_prefix, name)
         parser.env_prefix = self._env_prefix+'_'+name+'_'
 

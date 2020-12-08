@@ -662,6 +662,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             dest: Destination key where the chosen subcommand name is stored.
             **kwargs: All options that `argparse.ArgumentParser.add_subparsers` accepts.
         """
+        if 'description' not in kwargs:
+            kwargs['description'] = 'For more details of each subcommand add it as argument followed by --help.'
         subcommands = super().add_subparsers(dest=dest, **kwargs)
         subcommands.required = required
         _find_action(self, dest)._env_prefix = self.env_prefix

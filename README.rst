@@ -578,6 +578,12 @@ have as prefix :code:`APP_SUBCOMM1_` and likewise for :code:`subcomm2` as prefix
 :code:`APP_SUBCOMM2_`. The sub-command to use could be chosen by setting
 environment variable :code:`APP_SUBCOMMAND`.
 
+It is possible to have multiple levels of sub-commands. With multiple levels
+there is one basic requirement: the sub-commands must be added in the order of
+the levels. This is, first call :func:`add_subcommands` and
+:func:`add_subcommand` for the first level. Only after do the same for the
+second level, and so on.
+
 
 Json schemas
 ============

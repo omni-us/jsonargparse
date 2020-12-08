@@ -386,6 +386,18 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(cfg, {'subcommand': 'a', 'a': {'subcommand': 'b', 'os1a': 'os1a_def', 'b': {'os2b': 'os2b_arg'}}})
 
 
+    def test_subsubcommands_bad_order(self):
+        parser_s1_a = ArgumentParser()
+        parser_s2_b = ArgumentParser()
+        parser = ArgumentParser()
+
+        subcommands2 = parser_s1_a.add_subcommands()
+        subcommands2.add_subcommand('b', parser_s2_b)
+
+        subcommands1 = parser.add_subcommands()
+        self.assertRaises(ValueError, lambda: subcommands1.add_subcommand('a', parser_s1_a))
+
+
     @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
     @responses_activate
     def test_urls(self):
