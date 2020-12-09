@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.actions &mdash; jsonargparse 3.0.1 documentation</title>
+  <title>jsonargparse.actions &mdash; jsonargparse 3.1.0 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.0.1
+                3.1.0
               </div>
             
           
@@ -538,6 +538,9 @@
 <span class="sd">        &lt;https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers&gt;`_</span>
 <span class="sd">        add_parser requires to be given a parser as argument.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parser</span><span class="o">.</span><span class="n">_subparsers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Multiple levels of subcommands must be added in level order.&#39;</span><span class="p">)</span>
+
         <span class="n">parser</span><span class="o">.</span><span class="n">prog</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> [options] </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prog_prefix</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="n">parser</span><span class="o">.</span><span class="n">env_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env_prefix</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_&#39;</span>
 
@@ -583,7 +586,7 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">handle_subcommands</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">defaults</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle_subcommands</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Adds sub-command dest if missing and parses defaults and environment variables.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">parser</span><span class="o">.</span><span class="n">_subparsers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
@@ -599,14 +602,15 @@
 
         <span class="c1"># Get sub-command parser</span>
         <span class="n">subcommand</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span> <span class="ow">in</span> <span class="n">cfg_dict</span> <span class="ow">and</span> <span class="n">cfg_dict</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">subcommand</span> <span class="o">=</span> <span class="n">cfg_dict</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">action</span><span class="o">.</span><span class="n">dest</span>
+        <span class="k">if</span> <span class="n">dest</span> <span class="ow">in</span> <span class="n">cfg_dict</span> <span class="ow">and</span> <span class="n">cfg_dict</span><span class="p">[</span><span class="n">dest</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">subcommand</span> <span class="o">=</span> <span class="n">cfg_dict</span><span class="p">[</span><span class="n">dest</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">action</span><span class="o">.</span><span class="n">choices</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cfg_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()]):</span>
                     <span class="n">subcommand</span> <span class="o">=</span> <span class="n">key</span>
                     <span class="k">break</span>
-            <span class="n">cfg_dict</span><span class="p">[</span><span class="n">action</span><span class="o">.</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">subcommand</span>
+            <span class="n">cfg_dict</span><span class="p">[</span><span class="n">dest</span><span class="p">]</span> <span class="o">=</span> <span class="n">subcommand</span>
 
         <span class="k">assert</span> <span class="n">subcommand</span> <span class="ow">in</span> <span class="n">action</span><span class="o">.</span><span class="n">_name_parser_map</span>
         <span class="n">subparser</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">_name_parser_map</span><span class="p">[</span><span class="n">subcommand</span><span class="p">]</span>
@@ -620,9 +624,13 @@
 
         <span class="k">if</span> <span class="n">subnamespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">subnamespace</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">key</span> <span class="o">=</span> <span class="n">subcommand</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">subcommand</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cfg_keys</span><span class="p">:</span>
                     <span class="n">cfg_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">if</span> <span class="n">subparser</span><span class="o">.</span><span class="n">_subparsers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">subcommand</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span>
+            <span class="n">_ActionSubCommands</span><span class="o">.</span><span class="n">handle_subcommands</span><span class="p">(</span><span class="n">subparser</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="ActionPath"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionPath">[docs]</a><span class="k">class</span> <span class="nc">ActionPath</span><span class="p">(</span><span class="n">Action</span><span class="p">,</span> <span class="n">FilesCompleterMethod</span><span class="p">):</span>
