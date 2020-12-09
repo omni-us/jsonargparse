@@ -9,6 +9,15 @@ follow `Semantic Versioning <https://semver.org/>`_
 only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
+v3.1.0 (2020-12-09)
+-------------------
+
+Added
+^^^^^
+
+- Support for multiple levels of subcommands #29.
+- Default description of subcommands explaining use of --help.
+
 
 v3.0.1 (2020-12-02)
 -------------------
