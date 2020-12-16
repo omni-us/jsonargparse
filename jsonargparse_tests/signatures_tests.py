@@ -386,6 +386,17 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(2.3, cfg.c1.a2)
 
 
+    def test_implicit_optional(self):
+
+        def func(a1: int = None):
+            return a1
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_function_arguments(func)
+
+        self.assertIsNone(parser.parse_args(['--a1=null']).a1)
+
+
     @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
     def test_docstring_parse_fail(self):
 

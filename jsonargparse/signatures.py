@@ -6,6 +6,7 @@ from typing import Union, Optional, List, Container, Type, Callable
 
 from .util import _issubclass
 from .actions import ActionEnum
+from .typing import is_optional
 from .jsonschema import ActionJsonSchema
 from .optionals import docstring_parser_support, import_docstring_parse, dataclasses_support, import_dataclasses
 
@@ -247,6 +248,8 @@ class SignatureArguments:
                 kwargs = {'help': doc_params.get(name)}
                 if not is_required:
                     kwargs['default'] = default
+                    if default is None and not is_optional(annotation, object):
+                        annotation = Optional[annotation]
                 elif not as_positional:
                     kwargs['required'] = True
                 if annotation in {str, int, float, bool} or \

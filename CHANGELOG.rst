@@ -9,6 +9,14 @@ follow `Semantic Versioning <https://semver.org/>`_
 only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
+v3.X.X (YYYY-MM-DD)
+-------------------
+
+Added
+^^^^^
+- Automatic Optional for arguments with default None #30.
+
+
 v3.1.0 (2020-12-09)
 -------------------
 
