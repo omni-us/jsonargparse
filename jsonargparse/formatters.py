@@ -5,7 +5,7 @@ from argparse import HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 
 from .util import _get_env_var
 from .typing import type_to_str
-from .actions import ActionParser, ActionEnum, ActionConfigFile
+from .actions import ActionParser, ActionEnum, ActionYesNo, ActionConfigFile
 from .jsonschema import ActionJsonSchema
 
 
@@ -78,7 +78,9 @@ class DefaultHelpFormatter(HelpFormatter):
 
     def _get_type_str(self, action):
         type_str = None
-        if action.type is not None:
+        if isinstance(action, ActionYesNo):
+            type_str = 'bool'
+        elif action.type is not None:
             type_str = type_to_str(action.type)
         elif isinstance(action, ActionEnum):
             type_str = type_to_str(action._enum)

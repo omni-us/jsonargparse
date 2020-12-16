@@ -17,6 +17,7 @@ class DefaultFormatterTests(unittest.TestCase):
         parser2 = ArgumentParser()
         parser2.add_argument('--v4')
         parser.add_argument('--g2', action=ActionParser(parser=parser2))
+        parser.add_argument('--v5', action=ActionYesNo, default=True, help='Option v5.')
 
         os.environ['COLUMNS'] = '150'
         out = StringIO()
@@ -49,6 +50,10 @@ class DefaultFormatterTests(unittest.TestCase):
         self.assertIn('--g2 G2', outval)
         self.assertIn('APP_G2', outval)
         self.assertIn('--g2.help', outval)
+
+        self.assertIn('--v5, --no_v5', outval)
+        self.assertIn('APP_V5', outval)
+        self.assertIn('Option v5. (type: bool, default: True)', outval)
 
 
 if __name__ == '__main__':

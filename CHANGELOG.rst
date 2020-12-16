@@ -24,6 +24,11 @@ Changed
 - Improved description of parser used as standalone and for ActionParser #34.
 
 
+Fixed
+^^^^^
+
+- ActionYesNo argument in help the type is now bool.
+
 
 v3.1.0 (2020-12-09)
 -------------------
