@@ -940,8 +940,11 @@ populate the leaf nodes of the inner parser. In the example above, if
 checked to populate :code:`inner.node.op1`.
 
 An important detail to note is that the parsers that are given to
-:class:`.ActionParser` are internally modified. So they should be instantiated
-exclusively for the :class:`.ActionParser` and not used standalone.
+:class:`.ActionParser` are internally modified. Therefore, to use the parser
+both as standalone and an inner node, it is necessary to implement a function
+that instantiates the parser. This function would be used in one place to get an
+instance of the parser for standalone parsing, and in some other place use the
+function to provide an instance of the parser to :class:`.ActionParser`.
 
 
 Tab completion

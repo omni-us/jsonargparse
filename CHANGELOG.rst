@@ -14,7 +14,15 @@ v3.X.X (YYYY-MM-DD)
 
 Added
 ^^^^^
+
 - Automatic Optional for arguments with default None #30.
+
+
+Changed
+^^^^^^^
+
+- Improved description of parser used as standalone and for ActionParser #34.
+
 
 
 v3.1.0 (2020-12-09)
