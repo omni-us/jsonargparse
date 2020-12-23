@@ -125,22 +125,73 @@ Then in a shell you could run:
     $ python example.py Lucky --prize=1000
     Lucky won 1000€!
 
-:func:`.CLI` without arguments searches for functions defined in the same module
-and in the local context where :func:`.CLI` is called. If more than one function
-is found, then any of them can be executed via :ref:`sub-commands`, e.g.
-:code:`python example.py subcommand [arguments]`. Alternatively one or more
-functions can be given to :func:`.CLI` skipping the automatic search.
+:func:`.CLI` without arguments searches for functions and classes defined in the
+same module and in the local context where :func:`.CLI` is called. Giving a
+single or a list functions/classes as first argument to :func:`.CLI` skips the
+automatic search and only includes what is given.
+
+When :func:`.CLI` receives a single class, the first arguments are used to
+instantiate the class, then a class method name must be given (see
+:ref:`sub-commands`) and the remaining arguments are used to run the class
+method. An example would be:
+
+.. code-block:: python
+
+    from random import randint
+    from jsonargparse import CLI
+
+    class Main:
+        def __init__(
+            self,
+            max_prize: int = 100
+        ):
+            """
+            Args:
+                max_prize: Maximum prize that can be awarded.
+            """
+            self.max_prize = max_prize
+
+        def person(
+            self,
+            name: str
+        ):
+            """
+            Args:
+                name: Name of winner.
+            """
+            return f'{name} won {randint(0, self.max_prize)}€!'
+
+    if __name__ == '__main__':
+        print(CLI(Main))
+
+Then in a shell you could run:
+
+.. code-block:: bash
+
+    $ python example.py --max_prize=1000 person Lucky
+    Lucky won 632€!
+
+If more than one function is given to :func:`.CLI`, then any of them can be
+executed via :ref:`sub-commands` similar to the single class example above, e.g.
+:code:`python example.py function [arguments]` where :code:`function` is the
+name of the function to execute.
+
+If multiple classes or a mixture of functions and classes is given to
+:func:`.CLI`, to execute a method of a class, two levels of :ref:`sub-commands`
+are required. The first sub-command would be name of the class and the second
+the name of the method, i.e. :code:`python example.py class [init_arguments]
+method [arguments]`.
 
 This simple way of usage is similar and inspired by `Fire
 <https://pypi.org/project/fire/>`__. However, there are fundamental differences.
 First, the purpose is not allowing to call any python object from the command
-line. It is only intended for running functions specifically written for this
-purpose. Second, the arguments of the functions are required to have type hints,
-and the values will be validated according to these. Third, the return values of
-the functions are not automatically printed. :func:`.CLI` returns its value and
-it is up to the developer to decide what to do with it. Finally, jsonargparse
-has many features designed to help in creating convenient argument parsers such
-as: :ref:`nested-namespaces`, :ref:`configuration-files`, arguments from
+line. It is only intended for running functions and classes specifically written
+for this purpose. Second, the arguments are required to have type hints, and the
+values will be validated according to these. Third, the return values of the
+functions are not automatically printed. :func:`.CLI` returns its value and it
+is up to the developer to decide what to do with it. Finally, jsonargparse has
+many features designed to help in creating convenient argument parsers such as:
+:ref:`nested-namespaces`, :ref:`configuration-files`, arguments from
 :ref:`classes-methods-functions`, additional type hints (:ref:`parsing-paths`,
 :ref:`restricted-numbers`, :ref:`restricted-strings`) and much more.
 

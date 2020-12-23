@@ -16,6 +16,7 @@ Added
 ^^^^^
 
 - Automatic Optional for arguments with default None #30.
+- CLI now supports running methods from classes.
 
 
 Changed
@@ -28,6 +29,7 @@ Fixed
 ^^^^^
 
 - ActionYesNo argument in help the type is now bool.
+- Correctly skip self in add_method_arguments for inherited methods.
 
 
 v3.1.0 (2020-12-09)

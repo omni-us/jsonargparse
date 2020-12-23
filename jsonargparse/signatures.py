@@ -93,9 +93,9 @@ class SignatureArguments:
         if not inspect.isclass(theclass):
             raise ValueError('Expected a class object.')
         if not hasattr(theclass, themethod) or not callable(getattr(theclass, themethod)):
-            raise ValueError('Expected the method to a callable member of the class.')
+            raise ValueError('Expected the method to be a callable member of the class.')
 
-        skip_first = False if isinstance(theclass.__dict__[themethod], staticmethod) else True
+        skip_first = not isinstance(inspect.getattr_static(theclass, themethod), staticmethod)
         themethod = getattr(theclass, themethod)
 
         return self._add_signature_arguments([themethod],
