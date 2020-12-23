@@ -28,10 +28,10 @@ class CLITests(unittest.TestCase):
         class Class1:
             def __init__(self, i1: str):
                 self.i1 = i1
-            def method1(self, m1: bool):
+            def method1(self, m1: int):
                 return self.i1, m1
 
-        self.assertEqual(('1', False), CLI(Class1, args=['1', 'method1', 'false']))
+        self.assertEqual(('0', 2), CLI(Class1, args=['0', 'method1', '2']))
 
 
     def test_function_and_class_cli(self):
