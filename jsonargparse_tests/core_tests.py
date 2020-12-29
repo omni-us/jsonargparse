@@ -94,8 +94,6 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual(cfg2, parser.parse_path(yaml_file, defaults=False))
         self.assertNotEqual(cfg2, parser.parse_path(yaml_file, defaults=True))
         self.assertNotEqual(cfg1, parser.parse_path(yaml_file, defaults=False))
-        self.assertTrue(hasattr(parser.parse_path(yaml_file, with_meta=True), '__cwd__'))
-        self.assertFalse(hasattr(parser.parse_path(yaml_file), '__cwd__'))
 
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml+'  val2: eight\n')
@@ -191,7 +189,6 @@ class ParsersTests(TempDirTestCase):
         with open('config.json', 'w') as f:
             f.write('{}')
         parser = ArgumentParser(parse_as_dict=True, default_meta=True)
-        self.assertEqual({'__path__', '__cwd__'}, set(parser.parse_path('config.json').keys()))
 
 
 class ArgumentFeaturesTests(unittest.TestCase):
@@ -576,7 +573,6 @@ class OutputTests(TempDirTestCase):
 
         cfg2 = parser.parse_path(main_file, with_meta=True)
         self.assertEqual(namespace_to_dict(cfg1), strip_meta(cfg2))
-        self.assertEqual(cfg2.__path__(), main_file)
         self.assertEqual(cfg2.parser.__path__(absolute=False), 'parser.yaml')
         if jsonschema_support:
             self.assertEqual(cfg2.schema.__path__(absolute=False), 'schema.yaml')
@@ -682,9 +678,6 @@ class ConfigFilesTests(TempDirTestCase):
         self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', abs_yaml_file+'~']))
-
-        cfg = parser.parse_args(['--cfg', abs_yaml_file, '--cfg', abs_yaml_file])
-        self.assertEqual(3, len(cfg.__cwd__))
 
         cfg = parser.parse_args(['--cfg', 'file: '+abs_yaml_file+'\ndir: '+self.tmpdir+'\n'])
         self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))

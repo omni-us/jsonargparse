@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import stat
+import yaml
 import inspect
 import logging
 from copy import deepcopy
@@ -13,7 +14,13 @@ from argparse import Namespace
 from yaml.parser import ParserError as yamlParserError
 from yaml.scanner import ScannerError as yamlScannerError
 
-from .optionals import ModuleNotFound, url_support, import_requests, import_url_validator
+from .optionals import (
+    ModuleNotFound,
+    url_support,
+    import_requests,
+    import_url_validator,
+    get_config_read_mode,
+)
 
 
 __all__ = [
@@ -32,12 +39,36 @@ __all__ = [
 null_logger = logging.Logger('jsonargparse_null_logger')
 null_logger.addHandler(logging.NullHandler())
 
-meta_keys = {'__cwd__', '__path__', '__default_config__'}
+meta_keys = {'__path__', '__default_config__'}
 
 
 class ParserError(Exception):
     """Error raised when parsing a value fails."""
     pass
+
+
+def _load_config(value, enable_path=True, flat_namespace=True):
+    """Parses yaml config in a string or a path"""
+    cfg_path = None
+    if isinstance(value, str) and value.strip() != '':
+        parsed_val = yaml.safe_load(value)
+        if not isinstance(parsed_val, str):
+            value = parsed_val
+    if enable_path and isinstance(value, str):
+        try:
+            cfg_path = Path(value, mode=get_config_read_mode())
+        except TypeError:
+            pass
+        else:
+            value = yaml.safe_load(cfg_path.get_content())
+
+    if flat_namespace:
+        value = _dict_to_flat_namespace(value)
+        if cfg_path is not None:
+            setattr(value, '__path__', cfg_path)
+        return value
+
+    return value, cfg_path
 
 
 def _get_key_value(cfg, key, parent=False):

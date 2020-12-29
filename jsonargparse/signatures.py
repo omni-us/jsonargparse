@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Union, Optional, List, Container, Type, Callable
 
 from .util import _issubclass
-from .actions import ActionEnum
+from .actions import ActionEnum, _ActionConfigLoad
 from .typing import is_optional
 from .jsonschema import ActionJsonSchema
 from .optionals import docstring_parser_support, import_docstring_parse, dataclasses_support, import_dataclasses
@@ -214,6 +214,8 @@ class SignatureArguments:
                 doc_group = str(objects[0])
             name = objects[0].__name__ if nested_key is None else nested_key
             group = self.add_argument_group(doc_group, name=name)  # type: ignore
+            if nested_key is not None:
+                group.add_argument('--'+nested_key, action=_ActionConfigLoad)  # type: ignore
 
         ## Add objects arguments ##
         added_args = set()

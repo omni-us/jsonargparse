@@ -180,7 +180,9 @@ If multiple classes or a mixture of functions and classes is given to
 :func:`.CLI`, to execute a method of a class, two levels of :ref:`sub-commands`
 are required. The first sub-command would be name of the class and the second
 the name of the method, i.e. :code:`python example.py class [init_arguments]
-method [arguments]`.
+method [arguments]`. For more details about the automatic adding of arguments
+from classes and functions and the use of configuration files refer to section
+:ref:`classes-methods-functions`.
 
 This simple way of usage is similar and inspired by `Fire
 <https://pypi.org/project/fire/>`__. However, there are fundamental differences.
@@ -191,9 +193,9 @@ values will be validated according to these. Third, the return values of the
 functions are not automatically printed. :func:`.CLI` returns its value and it
 is up to the developer to decide what to do with it. Finally, jsonargparse has
 many features designed to help in creating convenient argument parsers such as:
-:ref:`nested-namespaces`, :ref:`configuration-files`, arguments from
-:ref:`classes-methods-functions`, additional type hints (:ref:`parsing-paths`,
-:ref:`restricted-numbers`, :ref:`restricted-strings`) and much more.
+:ref:`nested-namespaces`, :ref:`configuration-files`, additional type hints
+(:ref:`parsing-paths`, :ref:`restricted-numbers`, :ref:`restricted-strings`) and
+much more.
 
 The next section explains how to create an argument parser in a very low level
 argparse-style. However, as parsers get more complex, being able to define them
@@ -445,6 +447,27 @@ since the init has the :code:`**kwargs` argument, the keyword arguments from
 :func:`add_method_arguments` call adds to the *myclass.method* key the arguments
 :code:`value` as a required float and :code:`flag` as an optional boolean with
 default value false.
+
+Instead of using :func:`namespace_to_dict` to convert the namespaces to a
+dictionary, the :class:`.ArgumentParser` object can be instantiated with
+:code:`parse_as_dict=True` to get directly a dictionary from the parsing
+methods.
+
+When parsing from a configuration file (see :ref:`configuration-files`) all the
+values can be given in a single config file. However, for convenience it is also
+possible that the values for each of the groups created by the calls to the add
+signature methods can be parsed from independent files. This means that for the
+example above there could be one general config file with contents:
+
+.. code-block:: yaml
+
+    myclass:
+      init: myclass.yaml
+      method: mymethod.yaml
+
+Then the files :code:`myclass.yaml` and :code:`mymethod.yaml` would only include
+the settings for each of the instantiation of the class and the call to the
+method respectively.
 
 A wide range of type hints are supported. For exact details go to section
 :ref:`type-hints`. Some notes about the support for automatic adding of

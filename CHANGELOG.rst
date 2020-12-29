@@ -17,12 +17,14 @@ Added
 
 - Automatic Optional for arguments with default None #30.
 - CLI now supports running methods from classes.
+- Signature arguments can now be loaded from independent config files #32.
 
 
 Changed
 ^^^^^^^
 
 - Improved description of parser used as standalone and for ActionParser #34.
+- Removed :code:`__cwd__` and top level :code:`__path__` that were not needed.
 
 
 Fixed

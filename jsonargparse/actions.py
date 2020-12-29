@@ -17,6 +17,7 @@ from .util import (
     namespace_to_dict,
     dict_to_namespace,
     Path,
+    _load_config,
     _flat_namespace_to_dict,
     _dict_to_flat_namespace,
     _check_unknown_kwargs,
@@ -109,10 +110,7 @@ class ActionConfigFile(Action, FilesCompleterMethod):
         cfg_file = _dict_to_flat_namespace(namespace_to_dict(cfg_file))
         getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():
-            if key == '__cwd__' and hasattr(namespace, '__cwd__'):
-                setattr(namespace, key, getattr(namespace, key)+val)
-            else:
-                setattr(namespace, key, val)
+            setattr(namespace, key, val)
 
 
 class _ActionPrintConfig(Action):
@@ -129,6 +127,28 @@ class _ActionPrintConfig(Action):
 
     def __call__(self, parser, *args, **kwargs):
         parser._print_config = True
+
+
+class _ActionConfigLoad(Action):
+
+    def __init__(self, **kwargs):
+        kwargs['help'] = SUPPRESS
+        kwargs['default'] = SUPPRESS
+        super().__init__(**kwargs)
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        cfg_file = self._load_config(value)
+        for key, val in vars(cfg_file).items():
+            setattr(namespace, self.dest+'.'+key, val)
+
+    def _load_config(self, value):
+        try:
+            return _load_config(value)
+        except (TypeError, yamlParserError, yamlScannerError) as ex:
+            raise TypeError('Parser key "'+self.dest+'": '+str(ex)) from ex
+
+    def _check_type(self, value, cfg=None):
+        return self._load_config(value)
 
 
 class ActionYesNo(Action):
@@ -535,7 +555,7 @@ class ActionPath(Action, FilesCompleterMethod):
                     val = Path(val, mode=self._mode, skip_check=self._skip_check)
                 value[num] = val
         except TypeError as ex:
-            raise TypeError('Parser key "'+self.dest+'": '+str(ex))
+            raise TypeError('Parser key "'+self.dest+'": '+str(ex)) from ex
         return value if islist else value[0]
 
 
@@ -598,7 +618,7 @@ class ActionPathList(Action, FilesCompleterMethod):
                     with sys.stdin if path_list_file == '-' else open(path_list_file, 'r') as f:
                         path_list = [x.strip() for x in f.readlines()]
                 except FileNotFoundError as ex:
-                    raise TypeError('Problems reading path list: '+path_list_file+' :: '+str(ex))
+                    raise TypeError('Problems reading path list: '+path_list_file+' :: '+str(ex)) from ex
                 cwd = os.getcwd()
                 if self._rel == 'list' and path_list_file != '-':
                     os.chdir(os.path.abspath(os.path.join(path_list_file, os.pardir)))
@@ -607,7 +627,7 @@ class ActionPathList(Action, FilesCompleterMethod):
                         try:
                             path_list[num] = Path(val, mode=self._mode)
                         except TypeError as ex:
-                            raise TypeError('Path number '+str(num+1)+' in list '+path_list_file+', '+str(ex))
+                            raise TypeError('Path number '+str(num+1)+' in list '+path_list_file+', '+str(ex)) from ex
                 finally:
                     os.chdir(cwd)
                 value += path_list

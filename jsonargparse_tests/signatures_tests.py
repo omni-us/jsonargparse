@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import yaml
 from enum import Enum
 from io import StringIO
 from typing import Dict, List, Tuple, Optional, Union, Any
@@ -418,6 +419,57 @@ class SignaturesTests(unittest.TestCase):
             parser.print_help(help_str)
             self.assertIn('--a1 A1', help_str.getvalue())
             self.assertNotIn('a1 description', help_str.getvalue())
+
+
+@unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+class SignaturesConfigTests(TempDirTestCase):
+
+    def test_add_function_arguments_config(self):
+
+        def func(a1 = '1',
+                 a2: float = 2.0,
+                 a3: bool = False):
+            return a1
+
+        parser = ArgumentParser(error_handler=None, default_meta=False)
+        parser.add_function_arguments(func, 'func')
+
+        cfg_path = 'config.yaml'
+        with open(cfg_path, 'w') as f:
+            f.write(yaml.dump({'a1': 'one', 'a3': True}))
+
+        cfg = parser.parse_args(['--func', cfg_path])
+        self.assertEqual(cfg.func, Namespace(a1='one', a2=2.0, a3=True))
+
+        cfg = parser.parse_args(['--func={"a1": "ONE"}'])
+        self.assertEqual(cfg.func, Namespace(a1='ONE', a2=2.0, a3=False))
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--func="""']))
+
+
+    def test_config_within_config(self):
+
+        def func(a1 = '1',
+                 a2: float = 2.0,
+                 a3: bool = False):
+            return a1
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        parser.add_function_arguments(func, 'func')
+
+        cfg_path = 'subdir/config.yaml'
+        subcfg_path = 'subsubdir/func_config.yaml'
+        os.mkdir('subdir')
+        os.mkdir('subdir/subsubdir')
+        with open(cfg_path, 'w') as f:
+            f.write('func: '+subcfg_path+'\n')
+        with open(os.path.join('subdir', subcfg_path), 'w') as f:
+            f.write(yaml.dump({'a1': 'one', 'a3': True}))
+
+        cfg = parser.parse_args(['--cfg', cfg_path])
+        self.assertEqual(str(cfg.func.__path__), subcfg_path)
+        self.assertEqual(strip_meta(cfg.func), {'a1': 'one', 'a2': 2.0, 'a3': True})
 
 
 if __name__ == '__main__':

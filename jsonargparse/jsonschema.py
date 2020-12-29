@@ -18,6 +18,7 @@ from .util import (
     ParserError,
     strip_meta,
     import_object,
+    _load_config,
     _check_unknown_kwargs,
     _issubclass,
 )
@@ -26,7 +27,6 @@ from .optionals import (
     jsonschemaValidationError,
     jsonschema_support,
     import_jsonschema,
-    get_config_read_mode,
     files_completer,
     argcomplete_warn_redraw_prompt,
 )
@@ -90,7 +90,7 @@ class ActionJsonSchema(Action):
                 try:
                     schema = yaml.safe_load(schema)
                 except (yamlParserError, yamlScannerError) as ex:
-                    raise ValueError('Problems parsing schema :: '+str(ex))
+                    raise ValueError('Problems parsing schema :: '+str(ex)) from ex
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             self._enable_path = kwargs.get('enable_path', True)
@@ -136,18 +136,7 @@ class ActionJsonSchema(Action):
             value = [value]
         for num, val in enumerate(value):
             try:
-                fpath = None
-                if isinstance(val, str) and val.strip() != '':
-                    parsed_val = yaml.safe_load(val)
-                    if not isinstance(parsed_val, str):
-                        val = parsed_val
-                if self._enable_path and isinstance(val, str):
-                    try:
-                        fpath = Path(val, mode=get_config_read_mode())
-                    except TypeError:
-                        pass
-                    else:
-                        val = yaml.safe_load(fpath.get_content())
+                val, fpath = _load_config(val, enable_path=self._enable_path, flat_namespace=False)
                 if isinstance(val, Namespace):
                     val = namespace_to_dict(val)
                 val = self._adapt_types(val, self._annotation, self._subschemas, reverse=True)
@@ -161,7 +150,7 @@ class ActionJsonSchema(Action):
                 value[num] = val
             except (TypeError, yamlParserError, yamlScannerError, jsonschemaValidationError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)
-                raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex))
+                raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex)) from ex
         return value if islist else value[0]
 
 
@@ -236,7 +225,7 @@ class ActionJsonSchema(Action):
                             init_args = parser.instantiate_subclasses(val['init_args'])
                             val = val_class(**init_args)  # pylint: disable=not-a-mapping
                 except (ImportError, ModuleNotFound, AttributeError, AssertionError, ParserError) as ex:
-                    raise ParserError('Problem with given class_path "'+val['class_path']+'" :: '+str(ex))
+                    raise ParserError('Problem with given class_path "'+val['class_path']+'" :: '+str(ex)) from ex
             return val
 
         elif annotation.__origin__ == Union:

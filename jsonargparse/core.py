@@ -282,13 +282,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if not skip_check:
             self.check_config(cfg_ns)
 
-        if with_meta or (with_meta is None and self._default_meta):
-            if hasattr(cfg_ns, '__cwd__'):
-                if os.getcwd() not in cfg_ns.__cwd__:
-                    cfg_ns.__cwd__.insert(0, os.getcwd())
-            else:
-                cfg_ns.__cwd__ = [os.getcwd()]
-
         if log_message is not None:
             self._logger.info(log_message)
 
@@ -303,6 +296,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         defaults: bool = True,
         nested: bool = True,
         with_meta: bool = None,
+        _skip_check: bool = False,
     ) -> Union[Namespace, Dict[str, Any]]:
         """Parses command line argument strings.
 
@@ -339,7 +333,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                 defaults=defaults,
                 nested=nested,
                 with_meta=with_meta,
-                skip_check=False,
+                skip_check=_skip_check,
                 cfg_base=namespace,
                 log_message='Parsed command line arguments.',
             )
@@ -517,11 +511,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             cfg_str = fpath.get_content()
             parsed_cfg = self.parse_string(cfg_str, cfg_path, ext_vars, env, defaults, nested, with_meta=with_meta,
                                            _skip_logging=True, _skip_check=_skip_check, _base=_base)
-            if with_meta or (with_meta is None and self._default_meta):
-                if self._parse_as_dict:
-                    parsed_cfg['__path__'] = fpath
-                else:
-                    parsed_cfg.__path__ = fpath  # type: ignore
         finally:
             if not fpath.is_url:
                 os.chdir(cwd)
