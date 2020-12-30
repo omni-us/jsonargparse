@@ -975,7 +975,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             check_required(cfg)
             check_values(cfg)
         except (TypeError, KeyError) as ex:
-            raise type(ex)('Configuration check failed :: '+str(ex)) from ex
+            prefix = 'Configuration check failed :: '
+            message = str(ex)
+            if prefix not in message:
+                message = prefix+message
+            raise type(ex)(message) from ex
 
 
     def instantiate_subclasses(self, cfg:Union[Namespace, Dict[str, Any]]) -> Union[Namespace, Dict[str, Any]]:
