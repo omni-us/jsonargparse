@@ -9,7 +9,7 @@ follow `Semantic Versioning <https://semver.org/>`_
 only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
-v3.X.X (YYYY-MM-DD)
+v3.2.1 (2020-12-30)
 -------------------
 
 Added
@@ -31,6 +31,7 @@ Fixed
 - Correctly skip self in add_method_arguments for inherited methods.
 - Prevent failure of dump in cleanup_actions due to new _ActionConfigLoad.
 - Prevent failure in save_paths for dict with int keys.
+- Avoid duplicate config check failure message with subcommands.
 
 
 v3.1.0 (2020-12-09)
