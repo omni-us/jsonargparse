@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.cli &mdash; jsonargparse 3.1.0 documentation</title>
+  <title>jsonargparse.cli &mdash; jsonargparse 3.2.0 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.1.0
+                3.2.0
               </div>
             
           
@@ -151,7 +151,7 @@
 <span></span><span class="sd">&quot;&quot;&quot;Simple creation of command line interfaces.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Type</span>
 <span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="n">ArgumentParser</span>
 <span class="kn">from</span> <span class="nn">.actions</span> <span class="k">import</span> <span class="n">ActionConfigFile</span>
 
@@ -160,7 +160,7 @@
 
 
 <div class="viewcode-block" id="CLI"><a class="viewcode-back" href="../../index.html#jsonargparse.cli.CLI">[docs]</a><span class="k">def</span> <span class="nf">CLI</span><span class="p">(</span>
-    <span class="n">functions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Callable</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">components</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Type</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">args</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">config_help</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Path to a configuration file in json or yaml format.&#39;</span><span class="p">,</span>
     <span class="n">as_positional</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -168,58 +168,84 @@
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Function for simple creation of command line interfaces.</span>
 
-<span class="sd">    Creates an argument parser from one or more functions, parses arguments and</span>
-<span class="sd">    runs one of the functions depending on what was parsed. If the functions</span>
-<span class="sd">    argument is not given, then the functions will be all the locals in the</span>
-<span class="sd">    context and defined in the same module as from where CLI is called.</span>
+<span class="sd">    Creates an argument parser from one or more functions/classes, parses</span>
+<span class="sd">    arguments and runs one of the functions or class methods depending on what</span>
+<span class="sd">    was parsed. If the components argument is not given, then the components</span>
+<span class="sd">    will be all the locals in the context and defined in the same module as from</span>
+<span class="sd">    where CLI is called.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        functions: One or more functions to include in the command line interface.</span>
+<span class="sd">        components: One or more functions/classes to include in the command line interface.</span>
 <span class="sd">        args: List of arguments to parse or None to use sys.argv.</span>
 <span class="sd">        config_help: Help string for config file option in help.</span>
 <span class="sd">        as_positional: Whether to add required parameters as positional arguments.</span>
 <span class="sd">        **kwargs: Used to instantiate :class:`.ArgumentParser`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        The value returned by the executed function.</span>
+<span class="sd">        The value returned by the executed function or class method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">caller</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">if</span> <span class="s1">&#39;description&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">caller</span><span class="o">.</span><span class="n">f_globals</span><span class="p">[</span><span class="s1">&#39;__doc__&#39;</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">functions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">components</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">module</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">caller</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>  <span class="c1"># type: ignore</span>
-        <span class="n">functions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">caller</span><span class="o">.</span><span class="n">f_locals</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="n">module</span>  <span class="c1"># type: ignore</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">or</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="ow">and</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="n">module</span>  <span class="c1"># type: ignore</span>
         <span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">functions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Either functions argument must be given or there must be at least one &#39;</span>
-                             <span class="s1">&#39;function among the locals in the context where CLI is called.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">components</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Either components argument must be given or there must be at least one &#39;</span>
+                             <span class="s1">&#39;function or class among the locals in the context where CLI is called.&#39;</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">functions</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="n">functions</span> <span class="o">=</span> <span class="p">[</span><span class="n">functions</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">components</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">components</span><span class="p">]</span>
 
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">parse_as_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ActionConfigFile</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">config_help</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">functions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_function_arguments</span><span class="p">(</span><span class="n">functions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">as_positional</span><span class="o">=</span><span class="n">as_positional</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">components</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">component</span> <span class="o">=</span> <span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">_add_component_to_parser</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">as_positional</span><span class="p">)</span>
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="k">del</span> <span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">]</span>  <span class="c1"># pylint: disable=unsupported-delete-operation</span>
-        <span class="k">return</span> <span class="n">functions</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="o">**</span><span class="n">cfg</span><span class="p">)</span>  <span class="c1"># type: ignore  # pylint: disable=not-a-mapping</span>
+        <span class="k">return</span> <span class="n">_run_component</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="n">subcommands</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_subcommands</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">func_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">functions</span><span class="p">}</span>
-        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">function</span> <span class="ow">in</span> <span class="n">func_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">comp_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">comp_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">subparser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
-            <span class="n">subparser</span><span class="o">.</span><span class="n">add_function_arguments</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">as_positional</span><span class="o">=</span><span class="n">as_positional</span><span class="p">)</span>
             <span class="n">subcommands</span><span class="o">.</span><span class="n">add_subcommand</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">subparser</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+            <span class="n">_add_component_to_parser</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">subparser</span><span class="p">,</span> <span class="n">as_positional</span><span class="p">)</span>
 
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="n">function</span> <span class="o">=</span> <span class="n">func_dict</span><span class="p">[</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;subcommand&#39;</span><span class="p">]]</span>  <span class="c1"># type: ignore  # pylint: disable=unsubscriptable-object</span>
-        <span class="k">return</span> <span class="n">function</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">[</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;subcommand&#39;</span><span class="p">]])</span>  <span class="c1"># type: ignore  # pylint: disable=unsubscriptable-object</span></div>
+        <span class="n">subcommand</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;subcommand&#39;</span><span class="p">)</span>
+        <span class="n">component</span> <span class="o">=</span> <span class="n">comp_dict</span><span class="p">[</span><span class="n">subcommand</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">_run_component</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subcommand</span><span class="p">))</span></div>
+
+
+<span class="k">def</span> <span class="nf">_add_component_to_parser</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">as_positional</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="n">component</span><span class="p">):</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_function_arguments</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">as_positional</span><span class="o">=</span><span class="n">as_positional</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_class_arguments</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">as_positional</span><span class="o">=</span><span class="n">as_positional</span><span class="p">)</span>
+        <span class="n">subcommands</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_subcommands</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">component</span><span class="p">)</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;_&#39;</span><span class="p">]:</span>
+            <span class="n">subparser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+            <span class="n">subparser</span><span class="o">.</span><span class="n">add_method_arguments</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">as_positional</span><span class="o">=</span><span class="n">as_positional</span><span class="p">)</span>
+            <span class="n">subcommands</span><span class="o">.</span><span class="n">add_subcommand</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">subparser</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_run_component</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s1">&#39;config&#39;</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="n">component</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">component</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">subcommand</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;subcommand&#39;</span><span class="p">)</span>
+        <span class="n">subcommand_cfg</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">subcommand</span><span class="p">)</span>
+        <span class="n">component_obj</span> <span class="o">=</span> <span class="n">component</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">component_obj</span><span class="p">,</span> <span class="n">subcommand</span><span class="p">)(</span><span class="o">**</span><span class="n">subcommand_cfg</span><span class="p">)</span>
 </pre></div>
 
            </div>
