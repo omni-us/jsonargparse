@@ -18,6 +18,7 @@ Added
 - CLI now supports running methods from classes.
 - Signature arguments can now be loaded from independent config files #32.
 - add_argument now supports enable_path for type based on jsonschema.
+- print_config can now be given as value skip_null to exclude null entries.
 
 Changed
 ^^^^^^^

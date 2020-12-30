@@ -627,6 +627,13 @@ class OutputTests(TempDirTestCase):
         outval = yaml.safe_load(out.getvalue())
         self.assertEqual(outval, {'g1': {'v2': '2'}, 'g2': {'v3': None}, 'v1': 1})
 
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--print_config=skip_null'])
+
+        outval = yaml.safe_load(out.getvalue())
+        self.assertEqual(outval, {'g1': {'v2': '2'}, 'v1': 1})
+
 
 class ConfigFilesTests(TempDirTestCase):
 

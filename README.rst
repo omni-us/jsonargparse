@@ -373,7 +373,10 @@ configuration content can also be provided.
 
 All parsers include a :code:`--print_config` option. This is useful particularly
 for command line tools with a large set of options to create an initial config
-file including all default values.
+file including all default values. This option by default all entries, including
+the ones with :code:`null` values. If the argument is given as
+:code:`--print_config=skip_null`, then the entries with :code:`null` values will
+not be included.
 
 The config file can also be provided as an environment variable as explained
 in section :ref:`environment-variables`. The configuration file environment

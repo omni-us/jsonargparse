@@ -117,16 +117,19 @@ class _ActionPrintConfig(Action):
     def __init__(self,
                  option_strings,
                  dest=SUPPRESS,
-                 default=SUPPRESS,
-                 help='print configuration and exit'):
+                 default=SUPPRESS):
         super().__init__(option_strings=option_strings,
                          dest=dest,
                          default=default,
-                         nargs=0,
-                         help=help)
+                         nargs='?',
+                         metavar='skip_null',
+                         help='Print configuration and exit.')
 
-    def __call__(self, parser, *args, **kwargs):
-        parser._print_config = True
+    def __call__(self, parser, namespace, value, option_string=None):
+        kwargs = {'skip_none': False}
+        if value is not None and 'skip_null' in value:
+            kwargs['skip_none'] = True
+        parser._print_config = kwargs
 
 
 class _ActionConfigLoad(Action):

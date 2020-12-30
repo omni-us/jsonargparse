@@ -279,8 +279,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
         cfg_ns = dict_to_namespace(cfg)
 
-        if hasattr(self, '_print_config') and self._print_config:  # type: ignore
-            sys.stdout.write(self.dump(cfg_ns, skip_none=False, skip_check=True))
+        if hasattr(self, '_print_config'):
+            sys.stdout.write(self.dump(cfg_ns, skip_check=True, **self._print_config))  # type: ignore
             self.exit()
 
         if not skip_check:
