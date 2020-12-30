@@ -341,7 +341,7 @@ class Path:
                 try:
                     requests.head(abs_path).raise_for_status()
                 except requests.HTTPError as ex:
-                    raise TypeError(abs_path+' HEAD not accessible :: '+str(ex))
+                    raise TypeError(abs_path+' HEAD not accessible :: '+str(ex)) from ex
         elif not skip_check:
             ptype = 'Directory' if 'd' in mode else 'File'
             if 'c' in mode:

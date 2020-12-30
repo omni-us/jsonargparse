@@ -49,7 +49,7 @@ def import_jsonschema(importer):
         from jsonschema import Draft7Validator as jsonvalidator
         return jsonschema, jsonvalidator
     except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('jsonschema package is required by '+importer+' :: '+str(ex))
+        raise ImportError('jsonschema package is required by '+importer+' :: '+str(ex)) from ex
 
 
 def import_jsonnet(importer):
@@ -57,7 +57,7 @@ def import_jsonnet(importer):
         import _jsonnet
         return _jsonnet
     except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('jsonnet package is required by '+importer+' :: '+str(ex))
+        raise ImportError('jsonnet package is required by '+importer+' :: '+str(ex)) from ex
 
 
 def import_url_validator(importer):
@@ -65,7 +65,7 @@ def import_url_validator(importer):
         from validators.url import url as url_validator
         return url_validator
     except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('validators package is required by '+importer+' :: '+str(ex))
+        raise ImportError('validators package is required by '+importer+' :: '+str(ex)) from ex
 
 
 def import_requests(importer):
@@ -73,7 +73,7 @@ def import_requests(importer):
         import requests
         return requests
     except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('requests package is required by '+importer+' :: '+str(ex))
+        raise ImportError('requests package is required by '+importer+' :: '+str(ex)) from ex
 
 
 def import_docstring_parse(importer):
@@ -81,7 +81,7 @@ def import_docstring_parse(importer):
         from docstring_parser import parse as docstring_parse
         return docstring_parse
     except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('docstring-parser package is required by '+importer+' :: '+str(ex))
+        raise ImportError('docstring-parser package is required by '+importer+' :: '+str(ex)) from ex
 
 
 def import_argcomplete(importer):
@@ -89,7 +89,7 @@ def import_argcomplete(importer):
         import argcomplete
         return argcomplete
     except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('argcomplete package is required by '+importer+' :: '+str(ex))
+        raise ImportError('argcomplete package is required by '+importer+' :: '+str(ex)) from ex
 
 
 def import_dataclasses(importer):
@@ -97,7 +97,7 @@ def import_dataclasses(importer):
         import dataclasses
         return dataclasses
     except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex))
+        raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex)) from ex
 
 
 def set_url_support(enabled:bool):

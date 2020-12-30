@@ -72,7 +72,7 @@ class ActionJsonnet(Action):
                     try:
                         schema = yaml.safe_load(schema)
                     except (yamlParserError, yamlScannerError) as ex:
-                        raise ValueError('Problems parsing schema :: '+str(ex))
+                        raise ValueError('Problems parsing schema :: '+str(ex)) from ex
                 jsonvalidator.check_schema(schema)
                 self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             else:
@@ -119,7 +119,7 @@ class ActionJsonnet(Action):
                 value[num] = val
             except (TypeError, RuntimeError, yamlParserError, yamlScannerError, jsonschemaValidationError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)
-                raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex))
+                raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex)) from ex
         return value if islist else value[0]
 
 
@@ -175,7 +175,7 @@ class ActionJsonnet(Action):
         try:
             values = yaml.safe_load(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
         except RuntimeError as ex:
-            raise ParserError('Problems evaluating jsonnet "'+fname+'" :: '+str(ex))
+            raise ParserError('Problems evaluating jsonnet "'+fname+'" :: '+str(ex)) from ex
         if self._validator is not None:
             self._validator.validate(values)
         if with_meta and isinstance(values, dict) and fpath is not None:

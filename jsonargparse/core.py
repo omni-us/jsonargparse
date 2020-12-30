@@ -35,6 +35,7 @@ from .actions import (
     ActionPath,
     _ActionSubCommands,
     _ActionPrintConfig,
+    _ActionConfigLoad,
     _find_action,
     _is_action_value_list,
 )
@@ -69,24 +70,27 @@ class _ActionsContainer(argparse._ActionsContainer):
         self.register('action', 'parsers', _ActionSubCommands)
 
 
-    def add_argument(self, *args, **kwargs):
+    def add_argument(self, *args, enable_path:bool=False, **kwargs):
         """Adds an argument to the parser or argument group.
 
         All the arguments from `argparse.ArgumentParser.add_argument
         <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument>`_
-        are supported.
+        are supported. Additionally it accepts:
+
+        Args:
+            enable_path: Whether to try parsing path/subconfig when argument is a complex type.
         """
         if 'type' in kwargs:
             if type_in(kwargs['type'], supported_types) or \
                (inspect.isclass(kwargs['type']) and not _issubclass(kwargs['type'], (str, int, float, Enum, Path))):
-                kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=False)
+                kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=enable_path)
             elif _issubclass(kwargs['type'], Enum):
                 kwargs['action'] = ActionEnum(enum=kwargs['type'])
         action = super().add_argument(*args, **kwargs)
         if not hasattr(action, 'completer') and action.type is not None:
             completer_method = FilesCompleterMethod if isinstance(action.type, Path) else TypeCastCompleterMethod
             action_class = action.__class__
-            action.__class__ = action_class.__class__(
+            action.__class__ = action_class.__class__(  # type: ignore
                 action_class.__name__ + 'WithCompleter',
                 (action_class, completer_method),
                 {}
@@ -94,14 +98,14 @@ class _ActionsContainer(argparse._ActionsContainer):
         for key in meta_keys:
             if key in action.dest:
                 raise ValueError('Argument with destination name "'+key+'" not allowed.')
-        parser = self.parser if hasattr(self, 'parser') else self
+        parser = self.parser if hasattr(self, 'parser') else self  # type: ignore
         if action.help is None and \
            hasattr(self, 'formatter_class') and \
-           issubclass(self.formatter_class, DefaultHelpFormatter):
+           issubclass(self.formatter_class, DefaultHelpFormatter):  # type: ignore
             action.help = ' '
         if action.required:
             parser.required_args.add(action.dest)
-            action._required = True
+            action._required = True  # type: ignore
             action.required = False
         if isinstance(action, ActionParser):
             if action._parser == self:
@@ -594,7 +598,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         try:
             cfg = yaml.safe_load(cfg_str)
         except (yamlParserError, yamlScannerError) as ex:
-            raise TypeError('Problems parsing config :: '+str(ex))
+            raise TypeError('Problems parsing config :: '+str(ex)) from ex
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         if base is not None:
             cfg = {base+'.'+k: v for k, v in cfg.items()}
@@ -693,7 +697,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
         def cleanup_actions(cfg, actions):
             for action in actions:
-                if action.help == SUPPRESS or \
+                if (action.help == SUPPRESS and not isinstance(action, _ActionConfigLoad)) or \
                    isinstance(action, ActionConfigFile) or \
                    (skip_none and action.dest in cfg and cfg[action.dest] is None):
                     del cfg[action.dest]
@@ -791,8 +795,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             def save_paths(cfg, base=None):
                 replace_keys = {}
                 for key, val in cfg.items():
-                    kbase = key if base is None else base+'.'+key
                     if isinstance(val, dict):
+                        kbase = str(key) if base is None else base+'.'+str(key)
                         if '__path__' in val:
                             val_path = Path(os.path.join(dirname, os.path.basename(val['__path__']())), mode='fc')
                             if not overwrite and os.path.isfile(val_path()):
@@ -971,7 +975,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             check_required(cfg)
             check_values(cfg)
         except (TypeError, KeyError) as ex:
-            raise type(ex)('Config checking failed :: '+str(ex))
+            raise type(ex)('Configuration check failed :: '+str(ex)) from ex
 
 
     def instantiate_subclasses(self, cfg:Union[Namespace, Dict[str, Any]]) -> Union[Namespace, Dict[str, Any]]:
@@ -1121,7 +1125,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                     for k, v in enumerate(value):
                         value[k] = action.type(v)
             except (TypeError, ValueError) as ex:
-                raise TypeError('Parser key "'+str(key)+'": '+str(ex))
+                raise TypeError('Parser key "'+str(key)+'": '+str(ex)) from ex
         return value
 
 

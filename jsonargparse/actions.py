@@ -104,7 +104,7 @@ class ActionConfigFile(Action, FilesCompleterMethod):
                 cfg_path = None
                 cfg_file = parser.parse_string(value, env=False, defaults=False, _skip_check=True)
             except (TypeError, yamlParserError, yamlScannerError) as ex_str:
-                raise TypeError('Parser key "'+dest+'": '+str(ex_str))
+                raise TypeError('Parser key "'+dest+'": '+str(ex_str)) from ex_str
         else:
             cfg_file = parser.parse_path(value, env=False, defaults=False, _skip_check=True)
         cfg_file = _dict_to_flat_namespace(namespace_to_dict(cfg_file))
@@ -361,7 +361,7 @@ class ActionParser(Action):
             if fpath is not None:
                 value.__path__ = fpath
         except KeyError as ex:
-            raise type(ex)(re.sub('^Parser key ([^:]+):', 'Parser key '+self.dest+'.\\1: ', str(ex)))
+            raise type(ex)(re.sub('^Parser key ([^:]+):', 'Parser key '+self.dest+'.\\1: ', str(ex))) from ex
         return value
 
     @staticmethod
