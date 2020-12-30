@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.signatures &mdash; jsonargparse 3.1.0 documentation</title>
+  <title>jsonargparse.signatures &mdash; jsonargparse 3.2.1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.1.0
+                3.2.1
               </div>
             
           
@@ -155,7 +155,8 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Container</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span>
 
 <span class="kn">from</span> <span class="nn">.util</span> <span class="k">import</span> <span class="n">_issubclass</span>
-<span class="kn">from</span> <span class="nn">.actions</span> <span class="k">import</span> <span class="n">ActionEnum</span>
+<span class="kn">from</span> <span class="nn">.actions</span> <span class="k">import</span> <span class="n">ActionEnum</span><span class="p">,</span> <span class="n">_ActionConfigLoad</span>
+<span class="kn">from</span> <span class="nn">.typing</span> <span class="k">import</span> <span class="n">is_optional</span>
 <span class="kn">from</span> <span class="nn">.jsonschema</span> <span class="k">import</span> <span class="n">ActionJsonSchema</span>
 <span class="kn">from</span> <span class="nn">.optionals</span> <span class="k">import</span> <span class="n">docstring_parser_support</span><span class="p">,</span> <span class="n">import_docstring_parse</span><span class="p">,</span> <span class="n">dataclasses_support</span><span class="p">,</span> <span class="n">import_dataclasses</span>
 
@@ -242,9 +243,9 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">theclass</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected a class object.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected the method to a callable member of the class.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected the method to be a callable member of the class.&#39;</span><span class="p">)</span>
 
-        <span class="n">skip_first</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">theclass</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">themethod</span><span class="p">],</span> <span class="nb">staticmethod</span><span class="p">)</span> <span class="k">else</span> <span class="kc">True</span>
+        <span class="n">skip_first</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getattr_static</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">),</span> <span class="nb">staticmethod</span><span class="p">)</span>
         <span class="n">themethod</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">([</span><span class="n">themethod</span><span class="p">],</span>
@@ -363,6 +364,8 @@
                 <span class="n">doc_group</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">objects</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">objects</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">if</span> <span class="n">nested_key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">nested_key</span>
             <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">doc_group</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+            <span class="k">if</span> <span class="n">nested_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="n">nested_key</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">_ActionConfigLoad</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
         <span class="c1">## Add objects arguments ##</span>
         <span class="n">added_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -397,6 +400,8 @@
                 <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;help&#39;</span><span class="p">:</span> <span class="n">doc_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)}</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">is_required</span><span class="p">:</span>
                     <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+                    <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_optional</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="nb">object</span><span class="p">):</span>
+                        <span class="n">annotation</span> <span class="o">=</span> <span class="n">Optional</span><span class="p">[</span><span class="n">annotation</span><span class="p">]</span>
                 <span class="k">elif</span> <span class="ow">not</span> <span class="n">as_positional</span><span class="p">:</span>
                     <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;required&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="k">if</span> <span class="n">annotation</span> <span class="ow">in</span> <span class="p">{</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">}</span> <span class="ow">or</span> \

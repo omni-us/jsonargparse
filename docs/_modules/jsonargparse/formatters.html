@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.formatters &mdash; jsonargparse 3.1.0 documentation</title>
+  <title>jsonargparse.formatters &mdash; jsonargparse 3.2.1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.1.0
+                3.2.1
               </div>
             
           
@@ -155,7 +155,7 @@
 
 <span class="kn">from</span> <span class="nn">.util</span> <span class="k">import</span> <span class="n">_get_env_var</span>
 <span class="kn">from</span> <span class="nn">.typing</span> <span class="k">import</span> <span class="n">type_to_str</span>
-<span class="kn">from</span> <span class="nn">.actions</span> <span class="k">import</span> <span class="n">ActionParser</span><span class="p">,</span> <span class="n">ActionEnum</span><span class="p">,</span> <span class="n">ActionConfigFile</span>
+<span class="kn">from</span> <span class="nn">.actions</span> <span class="k">import</span> <span class="n">ActionParser</span><span class="p">,</span> <span class="n">ActionEnum</span><span class="p">,</span> <span class="n">ActionYesNo</span><span class="p">,</span> <span class="n">ActionConfigFile</span>
 <span class="kn">from</span> <span class="nn">.jsonschema</span> <span class="k">import</span> <span class="n">ActionJsonSchema</span>
 
 
@@ -228,7 +228,9 @@
 
     <span class="k">def</span> <span class="nf">_get_type_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
         <span class="n">type_str</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionYesNo</span><span class="p">):</span>
+            <span class="n">type_str</span> <span class="o">=</span> <span class="s1">&#39;bool&#39;</span>
+        <span class="k">elif</span> <span class="n">action</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">type_str</span> <span class="o">=</span> <span class="n">type_to_str</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">ActionEnum</span><span class="p">):</span>
             <span class="n">type_str</span> <span class="o">=</span> <span class="n">type_to_str</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">_enum</span><span class="p">)</span>

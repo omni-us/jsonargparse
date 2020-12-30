@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.actions &mdash; jsonargparse 3.1.0 documentation</title>
+  <title>jsonargparse.actions &mdash; jsonargparse 3.2.1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.1.0
+                3.2.1
               </div>
             
           
@@ -167,6 +167,7 @@
     <span class="n">namespace_to_dict</span><span class="p">,</span>
     <span class="n">dict_to_namespace</span><span class="p">,</span>
     <span class="n">Path</span><span class="p">,</span>
+    <span class="n">_load_config</span><span class="p">,</span>
     <span class="n">_flat_namespace_to_dict</span><span class="p">,</span>
     <span class="n">_dict_to_flat_namespace</span><span class="p">,</span>
     <span class="n">_check_unknown_kwargs</span><span class="p">,</span>
@@ -253,32 +254,54 @@
                 <span class="n">cfg_path</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_string</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_skip_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="n">yamlParserError</span><span class="p">,</span> <span class="n">yamlScannerError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex_str</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex_str</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex_str</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">ex_str</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_path</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">_skip_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">cfg_file</span> <span class="o">=</span> <span class="n">_dict_to_flat_namespace</span><span class="p">(</span><span class="n">namespace_to_dict</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">))</span>
         <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;__cwd__&#39;</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="s1">&#39;__cwd__&#39;</span><span class="p">):</span>
-                <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="n">val</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span></div>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span></div>
 
 
 <span class="k">class</span> <span class="nc">_ActionPrintConfig</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">option_strings</span><span class="p">,</span>
                  <span class="n">dest</span><span class="o">=</span><span class="n">SUPPRESS</span><span class="p">,</span>
-                 <span class="n">default</span><span class="o">=</span><span class="n">SUPPRESS</span><span class="p">,</span>
-                 <span class="n">help</span><span class="o">=</span><span class="s1">&#39;print configuration and exit&#39;</span><span class="p">):</span>
+                 <span class="n">default</span><span class="o">=</span><span class="n">SUPPRESS</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">option_strings</span><span class="o">=</span><span class="n">option_strings</span><span class="p">,</span>
                          <span class="n">dest</span><span class="o">=</span><span class="n">dest</span><span class="p">,</span>
                          <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span>
-                         <span class="n">nargs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                         <span class="n">help</span><span class="o">=</span><span class="n">help</span><span class="p">)</span>
+                         <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span>
+                         <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;skip_null&#39;</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Print configuration and exit.&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">parser</span><span class="o">.</span><span class="n">_print_config</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;skip_none&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;skip_null&#39;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;skip_none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">_print_config</span> <span class="o">=</span> <span class="n">kwargs</span>
+
+
+<span class="k">class</span> <span class="nc">_ActionConfigLoad</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;help&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SUPPRESS</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SUPPRESS</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">cfg_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_config</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">cfg_file</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_load_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_load_config</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="n">yamlParserError</span><span class="p">,</span> <span class="n">yamlScannerError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">ex</span>
+
+    <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_config</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="ActionYesNo"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionYesNo">[docs]</a><span class="k">class</span> <span class="nc">ActionYesNo</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
@@ -491,7 +514,7 @@
             <span class="k">if</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">value</span><span class="o">.</span><span class="n">__path__</span> <span class="o">=</span> <span class="n">fpath</span>
         <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="p">)(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^Parser key ([^:]+):&#39;</span><span class="p">,</span> <span class="s1">&#39;Parser key &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;.</span><span class="se">\\</span><span class="s1">1: &#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span>
+            <span class="k">raise</span> <span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="p">)(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;^Parser key ([^:]+):&#39;</span><span class="p">,</span> <span class="s1">&#39;Parser key &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;.</span><span class="se">\\</span><span class="s1">1: &#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)))</span> <span class="kn">from</span> <span class="nn">ex</span>
         <span class="k">return</span> <span class="n">value</span>
 
     <span class="nd">@staticmethod</span>
@@ -685,7 +708,7 @@
                     <span class="n">val</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_mode</span><span class="p">,</span> <span class="n">skip_check</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_skip_check</span><span class="p">)</span>
                 <span class="n">value</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
         <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">ex</span>
         <span class="k">return</span> <span class="n">value</span> <span class="k">if</span> <span class="n">islist</span> <span class="k">else</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
 
@@ -748,7 +771,7 @@
                     <span class="k">with</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span> <span class="k">if</span> <span class="n">path_list_file</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span> <span class="k">else</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_list_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                         <span class="n">path_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
                 <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Problems reading path list: &#39;</span><span class="o">+</span><span class="n">path_list_file</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Problems reading path list: &#39;</span><span class="o">+</span><span class="n">path_list_file</span><span class="o">+</span><span class="s1">&#39; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">ex</span>
                 <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rel</span> <span class="o">==</span> <span class="s1">&#39;list&#39;</span> <span class="ow">and</span> <span class="n">path_list_file</span> <span class="o">!=</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
                     <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_list_file</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">pardir</span><span class="p">)))</span>
@@ -757,7 +780,7 @@
                         <span class="k">try</span><span class="p">:</span>
                             <span class="n">path_list</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_mode</span><span class="p">)</span>
                         <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path number &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; in list &#39;</span><span class="o">+</span><span class="n">path_list_file</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+                            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Path number &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; in list &#39;</span><span class="o">+</span><span class="n">path_list_file</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">ex</span>
                 <span class="k">finally</span><span class="p">:</span>
                     <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">cwd</span><span class="p">)</span>
                 <span class="n">value</span> <span class="o">+=</span> <span class="n">path_list</span>

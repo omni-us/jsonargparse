@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.jsonnet &mdash; jsonargparse 3.1.0 documentation</title>
+  <title>jsonargparse.jsonnet &mdash; jsonargparse 3.2.1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.1.0
+                3.2.1
               </div>
             
           
@@ -222,7 +222,7 @@
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">schema</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
                     <span class="k">except</span> <span class="p">(</span><span class="n">yamlParserError</span><span class="p">,</span> <span class="n">yamlScannerError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Problems parsing schema :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Problems parsing schema :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">ex</span>
                 <span class="n">jsonvalidator</span><span class="o">.</span><span class="n">check_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="o">=</span> <span class="n">ActionJsonSchema</span><span class="o">.</span><span class="n">_extend_jsonvalidator_with_default</span><span class="p">(</span><span class="n">jsonvalidator</span><span class="p">)(</span><span class="n">schema</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -269,7 +269,7 @@
                 <span class="n">value</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">yamlParserError</span><span class="p">,</span> <span class="n">yamlScannerError</span><span class="p">,</span> <span class="n">jsonschemaValidationError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
                 <span class="n">elem</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">islist</span> <span class="k">else</span> <span class="s1">&#39; element &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;&#39;</span><span class="o">+</span><span class="n">elem</span><span class="o">+</span><span class="s1">&#39;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Parser key &quot;&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">+</span><span class="s1">&#39;&quot;&#39;</span><span class="o">+</span><span class="n">elem</span><span class="o">+</span><span class="s1">&#39;: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">ex</span>
         <span class="k">return</span> <span class="n">value</span> <span class="k">if</span> <span class="n">islist</span> <span class="k">else</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
 
@@ -325,7 +325,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">values</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">_jsonnet</span><span class="o">.</span><span class="n">evaluate_snippet</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">snippet</span><span class="p">,</span> <span class="n">ext_vars</span><span class="o">=</span><span class="n">ext_vars</span><span class="p">,</span> <span class="n">ext_codes</span><span class="o">=</span><span class="n">ext_codes</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ParserError</span><span class="p">(</span><span class="s1">&#39;Problems evaluating jsonnet &quot;&#39;</span><span class="o">+</span><span class="n">fname</span><span class="o">+</span><span class="s1">&#39;&quot; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">ParserError</span><span class="p">(</span><span class="s1">&#39;Problems evaluating jsonnet &quot;&#39;</span><span class="o">+</span><span class="n">fname</span><span class="o">+</span><span class="s1">&#39;&quot; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">ex</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">with_meta</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">fpath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
