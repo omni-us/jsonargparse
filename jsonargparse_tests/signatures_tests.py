@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+import json
 import yaml
+import calendar
 from enum import Enum
 from io import StringIO
+from contextlib import redirect_stdout
 from typing import Dict, List, Tuple, Optional, Union, Any
 from jsonargparse_tests.base import *
 from jsonargparse.actions import _find_action
@@ -239,6 +242,28 @@ class SignaturesTests(unittest.TestCase):
             for key in ['a1', 'a2']:
                 self.assertEqual(key+' description', _find_action(parser, key).help)
             self.assertIsNone(_find_action(parser, 'a3').help, 'expected help for a3 to be None')
+
+
+    def test_add_subclass_arguments(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+
+        cal = {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
+        cfg = parser.parse_args(['--cal='+json.dumps(cal)])
+        self.assertEqual(namespace_to_dict(cfg.cal), cal)
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"not.exist.Class"}']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"calendar.January"}']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal.help=calendar.January']))
+        self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(calendar.January, 'jan'))
+
+        os.environ['COLUMNS'] = '150'
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--cal.help=calendar.Calendar'])
+
+        self.assertIn('--cal.init_args.firstweekday', out.getvalue())
+
 
 
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')

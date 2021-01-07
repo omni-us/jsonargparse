@@ -552,20 +552,20 @@ Some notes about this support are:
   be shown as :code:`type: Union[str, null], default: null`.
 
 
-Classes as type
-===============
+Class type and sub-classes
+==========================
 
-Using an arbitrary class as a type is also possible, though it requires a bit
-explanation. In the config file or environment variable or command line
-argument, a class is represented by a dictionary with a :code:`class_path` entry
-indicating the dot notation expression to import the class, and optionally some
-:code:`init_args` that would be used to instantiate it. When parsing it will be
-checked that the class can be imported, that it is a subclass of the type and
-that :code:`init_args` values correspond to valid arguments to instantiate.
-After parsing, the config object will include the :code:`class_path` and
-:code:`init_args` entries. To get a config object with all subclasses
-instantiated, the :py:meth:`.ArgumentParser.instantiate_subclasses` method is
-used.
+It is also possible to use an arbitrary class as a type, such that the argument
+accepts this class or any derived subclass. In the config file or environment
+variable or command line argument, a class is represented by a dictionary with a
+:code:`class_path` entry indicating the dot notation expression to import the
+class, and optionally some :code:`init_args` that would be used to instantiate
+it. When parsing it will be checked that the class can be imported, that it is a
+subclass of the type and that :code:`init_args` values correspond to valid
+arguments to instantiate. After parsing, the config object will include the
+:code:`class_path` and :code:`init_args` entries. To get a config object with
+all subclasses instantiated, the
+:py:meth:`.ArgumentParser.instantiate_subclasses` method is used.
 
 A simple example would be having some config file :code:`config.yaml` as:
 
@@ -593,6 +593,39 @@ Then in python:
 In the example the :code:`class_path` points to the same class used for the
 type. But a subclass of :code:`Calendar` with an extended list of init
 parameters would also work.
+
+When using any of the methods described in :ref:`classes-methods-functions`,
+each argument with a class as the type can be given using a :code:`class_path`
+and :code:`init_args` pair.
+
+There is also another method
+:py:meth:`.SignatureArguments.add_subclass_arguments` which does the same as
+:code:`add_argument` in the example above, but has some added benefits: 1) the
+argument is added in a new group automatically using docstrings; 2) the argument
+values can be given in an independent config file by specifying a path to it; 3)
+by default has useful :code:`metavar` and :code:`help` strings; and 4) a special
+:code:`--*.help` argument is added that can be used to show the expected
+:code:`init_args` details for a specific given :code:`class_path`. Take for
+example a tool defined as:
+
+.. code-block:: python
+
+    from calendar import Calendar
+    from jsonargparse import ArgumentParser
+    ...
+    parser = ArgumentParser()
+    parser.add_subclass_arguments(Calendar, 'calendar')
+    ...
+    cfg = parser.parse_args()
+    ...
+
+If there is some subclass of :code:`Calendar` which can be imported from
+:code:`mycode.MyCalendar`, then it would be possible to see the corresponding
+:code:`init_args` details by running the tool from the command line as:
+
+.. code-block:: bash
+
+    python tool.py --calendar.help mycode.MyCalendar
 
 
 .. _sub-commands:

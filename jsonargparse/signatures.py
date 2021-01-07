@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Union, Optional, List, Container, Type, Callable
 
 from .util import _issubclass
-from .actions import ActionEnum, _ActionConfigLoad
+from .actions import ActionEnum, _ActionConfigLoad, _ActionHelpClassPath
 from .typing import is_optional
 from .jsonschema import ActionJsonSchema
 from .optionals import docstring_parser_support, import_docstring_parse, dataclasses_support, import_dataclasses
@@ -190,32 +190,10 @@ class SignatureArguments:
             has_args, has_kwargs = update_has_args_kwargs(objects[num], has_args, has_kwargs)
 
         ## Gather docstrings ##
-        doc_group = None
-        doc_params = {}
-        if docstring_parser_support:
-            docstring_parse = import_docstring_parse('_add_signature_arguments')
-            for base in objects:
-                for doc in docs_func(base):
-                    try:
-                        docstring = docstring_parse(doc)
-                    except ValueError:
-                        self.logger.debug('Failed parsing docstring for '+str(base))  # type: ignore
-                    else:
-                        if docstring.short_description and not doc_group:
-                            doc_group = docstring.short_description
-                        for param in docstring.params:
-                            if param.arg_name not in doc_params:
-                                doc_params[param.arg_name] = param.description
+        doc_group, doc_params = self._gather_docstrings(objects, docs_func)
 
         ## Create group if requested ##
-        group = self
-        if as_group:
-            if doc_group is None:
-                doc_group = str(objects[0])
-            name = objects[0].__name__ if nested_key is None else nested_key
-            group = self.add_argument_group(doc_group, name=name)  # type: ignore
-            if nested_key is not None:
-                group.add_argument('--'+nested_key, action=_ActionConfigLoad)  # type: ignore
+        group = self._create_group_if_requested(objects[0], nested_key, as_group, doc_group)
 
         ## Add objects arguments ##
         added_args = set()
@@ -226,11 +204,12 @@ class SignatureArguments:
         for obj, (add_args, add_kwargs) in zip(objects, add_types):
             for num, param in enumerate(inspect.signature(sign_func(obj)).parameters.values()):
                 name = param.name
+                kind = param._kind  # type: ignore
                 annotation = param.annotation
                 default = param.default
                 is_required = default == inspect._empty  # type: ignore
                 skip_message = 'Skipping parameter "'+name+'" from "'+obj.__name__+'" because of: '
-                if param._kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
+                if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
                    (is_required and skip_first and num == 0) or \
                    (annotation == inspect._empty and not is_required and default is None):  # type: ignore
                     continue
@@ -270,9 +249,89 @@ class SignatureArguments:
                         self.logger.debug(skip_message+'Argument already added.')  # type: ignore
                     else:
                         opt_str = dest if is_required and as_positional else '--'+dest
-                        group.add_argument(opt_str, **kwargs)  # type: ignore
+                        group.add_argument(opt_str, **kwargs)
                         added_args.add(dest)
                 elif is_required:
                     raise ValueError('Required parameter without a type for '+obj.__name__+' parameter '+name+'.')
 
         return len(added_args)
+
+
+    def add_subclass_arguments(
+        self,
+        baseclass: Type,
+        nested_key: str,
+        as_group: bool = True,
+        metavar: str = '{"class_path":...[,"init_args":...]}',
+        help: str = 'Dictionary with "class_path" and "init_args" for any subclass of %(baseclass_name)s.',
+        **kwargs
+    ):
+        """Adds arguments to allow specifying any subclass of the given base class.
+
+        This adds an argument that requires a dictionary with a "class_path"
+        entry which must be a import dot notation expression. Optionally any
+        init arguments for the class can be given in the "init_args" entry.
+        Since subclasses can have different init arguments, the help does not
+        show the details of the arguments of the base class. Instead a help
+        argument is added that will print the details for a given class path.
+
+        Args:
+            baseclass: Base class to use to check subclasses.
+            nested_key: Key for nested namespace.
+            as_group: Whether arguments should be added to a new argument group.
+            metavar: Variable string to show in the argument's help.
+            help: Description of argument to show in the help.
+
+        Raises:
+            ValueError: When not given a class.
+        """
+        if not inspect.isclass(baseclass):
+            raise ValueError('Expected a class object.')
+
+        def docs_func(base):
+            return [base.__init__.__doc__, base.__doc__]
+
+        doc_group = self._gather_docstrings([baseclass], docs_func)[0]
+        group = self._create_group_if_requested(baseclass, nested_key, as_group, doc_group, config_load=False)
+
+        group.add_argument('--'+nested_key+'.help', action=_ActionHelpClassPath(baseclass=baseclass))
+        group.add_argument(
+            '--' + nested_key,
+            type=baseclass,
+            enable_path=True,
+            metavar=metavar,
+            help=(help % {'baseclass_name': baseclass.__name__}),
+            **kwargs
+        )
+
+
+    def _gather_docstrings(self, objects, docs_func):
+        doc_group = None
+        doc_params = {}
+        if docstring_parser_support:
+            docstring_parse = import_docstring_parse('_gather_docstrings')
+            for base in objects:
+                for doc in docs_func(base):
+                    try:
+                        docstring = docstring_parse(doc)
+                    except ValueError:
+                        self.logger.debug('Failed parsing docstring for '+str(base))
+                    else:
+                        if docstring.short_description and not doc_group:
+                            doc_group = docstring.short_description
+                        for param in docstring.params:
+                            if param.arg_name not in doc_params:
+                                doc_params[param.arg_name] = param.description
+        return doc_group, doc_params
+
+
+    def _create_group_if_requested(self, obj, nested_key, as_group, doc_group, config_load=True):
+        group = self
+        if as_group:
+            if doc_group is None:
+                doc_group = str(obj)
+            name = obj.__name__ if nested_key is None else nested_key
+            group = self.add_argument_group(doc_group, name=name)
+            if config_load and nested_key is not None:
+                group.add_argument('--'+nested_key, action=_ActionConfigLoad)
+        return group

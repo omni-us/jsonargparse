@@ -9,6 +9,15 @@ follow `Semantic Versioning <https://semver.org/>`_
 only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
+
+vX.X.X (YYYY-MM-DD)
+-------------------
+
+Added
+^^^^^
+- New add_subclass_arguments method to add as type with a specific help option.
+
+
 v3.2.1 (2020-12-30)
 -------------------
 

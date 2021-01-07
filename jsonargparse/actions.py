@@ -4,9 +4,10 @@ import os
 import re
 import sys
 import yaml
+import inspect
 import argparse
 from enum import Enum
-from argparse import Namespace, Action, SUPPRESS, _StoreAction, _SubParsersAction
+from argparse import Namespace, Action, SUPPRESS, _StoreAction, _HelpAction, _SubParsersAction
 
 from .optionals import get_config_read_mode, FilesCompleterMethod
 from .typing import restricted_number_type
@@ -16,6 +17,7 @@ from .util import (
     ParserError,
     namespace_to_dict,
     dict_to_namespace,
+    import_object,
     Path,
     _load_config,
     _flat_namespace_to_dict,
@@ -68,6 +70,17 @@ def _is_action_value_list(action:Action):
     if action.nargs in {'*', '+'} or isinstance(action.nargs, int):
         return True
     return False
+
+
+def _remove_actions(parser, types):
+
+    def remove(actions):
+        rm_actions = [a for a in actions if isinstance(a, types)]
+        for action in rm_actions:
+            actions.remove(action)
+
+    remove(parser._actions)
+    remove(parser._action_groups[1]._group_actions)
 
 
 class ActionConfigFile(Action, FilesCompleterMethod):
@@ -152,6 +165,35 @@ class _ActionConfigLoad(Action):
 
     def _check_type(self, value, cfg=None):
         return self._load_config(value)
+
+
+class _ActionHelpClassPath(Action):
+
+    def __init__(self, **kwargs):
+        if 'baseclass' in kwargs:
+            _check_unknown_kwargs(kwargs, {'baseclass'})
+            self._baseclass = kwargs['baseclass']
+        else:
+            self._baseclass = kwargs.pop('_baseclass')
+            kwargs['help'] = 'Show the help for the given class path and exit.'
+            kwargs['metavar'] = 'CLASS'
+            kwargs['default'] = SUPPRESS
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        if len(args) == 0:
+            kwargs['_baseclass'] = self._baseclass
+            return _ActionHelpClassPath(**kwargs)
+        val_class = import_object(args[2])
+        if not _issubclass(val_class, self._baseclass):
+            raise TypeError('Class "'+args[2]+'" is not a subclass of '+self._baseclass.__name__)
+        dest = re.sub('\\.help$', '',  self.dest) + '.init_args'
+        ArgumentParser = import_object('jsonargparse.ArgumentParser')
+        tmp = ArgumentParser()
+        tmp.add_class_arguments(val_class, dest)
+        _remove_actions(tmp, (_HelpAction, _ActionPrintConfig))
+        tmp.print_help()
+        args[0].exit()
 
 
 class ActionYesNo(Action):
@@ -416,14 +458,7 @@ class _ActionSubCommands(_SubParsersAction):
 
         parser.prog = '%s [options] %s' % (self._prog_prefix, name)
         parser.env_prefix = self._env_prefix+'_'+name+'_'
-
-        def remove_print_config(actions):
-            print_config = [a for a in actions if isinstance(a, _ActionPrintConfig)]
-            if len(print_config) > 0:
-                actions.remove(print_config[0])
-
-        remove_print_config(parser._actions)
-        remove_print_config(parser._action_groups[1]._group_actions)
+        _remove_actions(parser, _ActionPrintConfig)
 
         # create a pseudo-action to hold the choice help
         aliases = kwargs.pop('aliases', ())
