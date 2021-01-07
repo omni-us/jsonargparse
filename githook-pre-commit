@@ -62,15 +62,22 @@ done
 ./setup.py test_coverage;
 [ "$?" != "0" ] && exit 1;
 
-## If bumping version, check wheel ok for pypi ##
+## Only when bumping version ##
 if [ "${BUMPVERSION_NEW_VERSION+x}" != "" ]; then
+  ## Check changelog ##
+  CHANGELOG=$(grep -E '^v.+\..+\..+ \(....-..-..\)' CHANGELOG.rst | head -n 1);
+  EXPECTED="v$BUMPVERSION_NEW_VERSION ($(date -u +%Y-%m-%d))";
+  if [ "$CHANGELOG" != "$EXPECTED" ]; then
+    echo "${0##*/}: expected latest release in CHANGELOG.rst to be '$EXPECTED'" 1>&2;
+    exit 1;
+  fi
+
+  ## Check wheel ok for pypi ##
   ./setup.py bdist_wheel;
   twine check dist/*.whl;
   [ "$?" != "0" ] && exit 1;
-fi
 
-## Update documentation ##
-if [ "${BUMPVERSION_NEW_VERSION+x}" != "" ]; then
+  ## Update documentation ##
   ./setup.py build_sphinx --quiet --builder html \
       --version $BUMPVERSION_NEW_VERSION --release $BUMPVERSION_NEW_VERSION &&
     rm -fr docs &&
