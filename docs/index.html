@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse &mdash; jsonargparse 3.2.1 documentation</title>
+  <title>jsonargparse &mdash; jsonargparse 3.3.0 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.2.1
+                3.3.0
               </div>
             
           
@@ -96,7 +96,7 @@
 <li><a class="reference internal" href="#configuration-files">Configuration files</a></li>
 <li><a class="reference internal" href="#classes-methods-and-functions">Classes, methods and functions</a></li>
 <li><a class="reference internal" href="#type-hints">Type hints</a></li>
-<li><a class="reference internal" href="#classes-as-type">Classes as type</a></li>
+<li><a class="reference internal" href="#class-type-and-sub-classes">Class type and sub-classes</a></li>
 <li><a class="reference internal" href="#sub-commands">Sub-commands</a></li>
 <li><a class="reference internal" href="#json-schemas">Json schemas</a></li>
 <li><a class="reference internal" href="#jsonnet-files">Jsonnet files</a></li>
@@ -631,19 +631,19 @@ is displayed as <code class="code docutils literal notranslate"><span class="pre
 be shown as <code class="code docutils literal notranslate"><span class="pre">type:</span> <span class="pre">Union[str,</span> <span class="pre">null],</span> <span class="pre">default:</span> <span class="pre">null</span></code>.</p></li>
 </ul>
 </div>
-<div class="section" id="classes-as-type">
-<h1>Classes as type<a class="headerlink" href="#classes-as-type" title="Permalink to this headline">¶</a></h1>
-<p>Using an arbitrary class as a type is also possible, though it requires a bit
-explanation. In the config file or environment variable or command line
-argument, a class is represented by a dictionary with a <code class="code docutils literal notranslate"><span class="pre">class_path</span></code> entry
-indicating the dot notation expression to import the class, and optionally some
-<code class="code docutils literal notranslate"><span class="pre">init_args</span></code> that would be used to instantiate it. When parsing it will be
-checked that the class can be imported, that it is a subclass of the type and
-that <code class="code docutils literal notranslate"><span class="pre">init_args</span></code> values correspond to valid arguments to instantiate.
-After parsing, the config object will include the <code class="code docutils literal notranslate"><span class="pre">class_path</span></code> and
-<code class="code docutils literal notranslate"><span class="pre">init_args</span></code> entries. To get a config object with all subclasses
-instantiated, the <a class="reference internal" href="#jsonargparse.core.ArgumentParser.instantiate_subclasses" title="jsonargparse.core.ArgumentParser.instantiate_subclasses"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.instantiate_subclasses()</span></code></a> method is
-used.</p>
+<div class="section" id="class-type-and-sub-classes">
+<h1>Class type and sub-classes<a class="headerlink" href="#class-type-and-sub-classes" title="Permalink to this headline">¶</a></h1>
+<p>It is also possible to use an arbitrary class as a type, such that the argument
+accepts this class or any derived subclass. In the config file or environment
+variable or command line argument, a class is represented by a dictionary with a
+<code class="code docutils literal notranslate"><span class="pre">class_path</span></code> entry indicating the dot notation expression to import the
+class, and optionally some <code class="code docutils literal notranslate"><span class="pre">init_args</span></code> that would be used to instantiate
+it. When parsing it will be checked that the class can be imported, that it is a
+subclass of the type and that <code class="code docutils literal notranslate"><span class="pre">init_args</span></code> values correspond to valid
+arguments to instantiate. After parsing, the config object will include the
+<code class="code docutils literal notranslate"><span class="pre">class_path</span></code> and <code class="code docutils literal notranslate"><span class="pre">init_args</span></code> entries. To get a config object with
+all subclasses instantiated, the
+<a class="reference internal" href="#jsonargparse.core.ArgumentParser.instantiate_subclasses" title="jsonargparse.core.ArgumentParser.instantiate_subclasses"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ArgumentParser.instantiate_subclasses()</span></code></a> method is used.</p>
 <p>A simple example would be having some config file <code class="code docutils literal notranslate"><span class="pre">config.yaml</span></code> as:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">calendar</span><span class="p p-Indicator">:</span>
   <span class="l l-Scalar l-Scalar-Plain">class_path</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">calendar.Calendar</span>
@@ -666,6 +666,34 @@ used.</p>
 <p>In the example the <code class="code docutils literal notranslate"><span class="pre">class_path</span></code> points to the same class used for the
 type. But a subclass of <code class="code docutils literal notranslate"><span class="pre">Calendar</span></code> with an extended list of init
 parameters would also work.</p>
+<p>When using any of the methods described in <a class="reference internal" href="#classes-methods-functions"><span class="std std-ref">Classes, methods and functions</span></a>,
+each argument with a class as the type can be given using a <code class="code docutils literal notranslate"><span class="pre">class_path</span></code>
+and <code class="code docutils literal notranslate"><span class="pre">init_args</span></code> pair.</p>
+<p>There is also another method
+<a class="reference internal" href="#jsonargparse.signatures.SignatureArguments.add_subclass_arguments" title="jsonargparse.signatures.SignatureArguments.add_subclass_arguments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">SignatureArguments.add_subclass_arguments()</span></code></a> which does the same as
+<code class="code docutils literal notranslate"><span class="pre">add_argument</span></code> in the example above, but has some added benefits: 1) the
+argument is added in a new group automatically using docstrings; 2) the argument
+values can be given in an independent config file by specifying a path to it; 3)
+by default has useful <code class="code docutils literal notranslate"><span class="pre">metavar</span></code> and <code class="code docutils literal notranslate"><span class="pre">help</span></code> strings; and 4) a special
+<code class="code docutils literal notranslate"><span class="pre">--*.help</span></code> argument is added that can be used to show the expected
+<code class="code docutils literal notranslate"><span class="pre">init_args</span></code> details for a specific given <code class="code docutils literal notranslate"><span class="pre">class_path</span></code>. Take for
+example a tool defined as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">calendar</span> <span class="kn">import</span> <span class="n">Calendar</span>
+<span class="kn">from</span> <span class="nn">jsonargparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="o">...</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_subclass_arguments</span><span class="p">(</span><span class="n">Calendar</span><span class="p">,</span> <span class="s1">&#39;calendar&#39;</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>If there is some subclass of <code class="code docutils literal notranslate"><span class="pre">Calendar</span></code> which can be imported from
+<code class="code docutils literal notranslate"><span class="pre">mycode.MyCalendar</span></code>, then it would be possible to see the corresponding
+<code class="code docutils literal notranslate"><span class="pre">init_args</span></code> details by running the tool from the command line as:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python tool.py --calendar.help mycode.MyCalendar
+</pre></div>
+</div>
 </div>
 <div class="section" id="sub-commands">
 <span id="id6"></span><h1>Sub-commands<a class="headerlink" href="#sub-commands" title="Permalink to this headline">¶</a></h1>
@@ -1761,6 +1789,9 @@ sub-command’s name as base key.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#jsonargparse.signatures.SignatureArguments.add_method_arguments" title="jsonargparse.signatures.SignatureArguments.add_method_arguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_method_arguments</span></code></a>(theclass, themethod[, …])</p></td>
 <td><p>Adds arguments from a class based on its type hints and docstrings.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#jsonargparse.signatures.SignatureArguments.add_subclass_arguments" title="jsonargparse.signatures.SignatureArguments.add_subclass_arguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_subclass_arguments</span></code></a>(baseclass, nested_key)</p></td>
+<td><p>Adds arguments to allow specifying any subclass of the given base class.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py method">
@@ -1850,6 +1881,32 @@ sub-command’s name as base key.</p>
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.9)"><strong>ValueError</strong></a> – When not given a callable.</p></li>
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.9)"><strong>ValueError</strong></a> – When there are required parameters without at least one valid type.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonargparse.signatures.SignatureArguments.add_subclass_arguments">
+<code class="sig-name descname">add_subclass_arguments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseclass</span></em>, <em class="sig-param"><span class="n">nested_key</span></em>, <em class="sig-param"><span class="n">as_group</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">metavar</span><span class="o">=</span><span class="default_value">'{&quot;class_path&quot;:...[,&quot;init_args&quot;:...]}'</span></em>, <em class="sig-param"><span class="n">help</span><span class="o">=</span><span class="default_value">'Dictionary with &quot;class_path&quot; and &quot;init_args&quot; for any subclass of %(baseclass_name)s.'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonargparse/signatures.html#SignatureArguments.add_subclass_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jsonargparse.signatures.SignatureArguments.add_subclass_arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds arguments to allow specifying any subclass of the given base class.</p>
+<p>This adds an argument that requires a dictionary with a “class_path”
+entry which must be a import dot notation expression. Optionally any
+init arguments for the class can be given in the “init_args” entry.
+Since subclasses can have different init arguments, the help does not
+show the details of the arguments of the base class. Instead a help
+argument is added that will print the details for a given class path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseclass</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Type" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code></a>) – Base class to use to check subclasses.</p></li>
+<li><p><strong>nested_key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Key for nested namespace.</p></li>
+<li><p><strong>as_group</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether arguments should be added to a new argument group.</p></li>
+<li><p><strong>metavar</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Variable string to show in the argument’s help.</p></li>
+<li><p><strong>help</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Description of argument to show in the help.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.9)"><strong>ValueError</strong></a> – When not given a class.</p>
 </dd>
 </dl>
 </dd></dl>

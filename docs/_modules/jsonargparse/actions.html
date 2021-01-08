@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.actions &mdash; jsonargparse 3.2.1 documentation</title>
+  <title>jsonargparse.actions &mdash; jsonargparse 3.3.0 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.2.1
+                3.3.0
               </div>
             
           
@@ -154,9 +154,10 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
-<span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">Namespace</span><span class="p">,</span> <span class="n">Action</span><span class="p">,</span> <span class="n">SUPPRESS</span><span class="p">,</span> <span class="n">_StoreAction</span><span class="p">,</span> <span class="n">_SubParsersAction</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="k">import</span> <span class="n">Namespace</span><span class="p">,</span> <span class="n">Action</span><span class="p">,</span> <span class="n">SUPPRESS</span><span class="p">,</span> <span class="n">_StoreAction</span><span class="p">,</span> <span class="n">_HelpAction</span><span class="p">,</span> <span class="n">_SubParsersAction</span>
 
 <span class="kn">from</span> <span class="nn">.optionals</span> <span class="k">import</span> <span class="n">get_config_read_mode</span><span class="p">,</span> <span class="n">FilesCompleterMethod</span>
 <span class="kn">from</span> <span class="nn">.typing</span> <span class="k">import</span> <span class="n">restricted_number_type</span>
@@ -166,6 +167,7 @@
     <span class="n">ParserError</span><span class="p">,</span>
     <span class="n">namespace_to_dict</span><span class="p">,</span>
     <span class="n">dict_to_namespace</span><span class="p">,</span>
+    <span class="n">import_object</span><span class="p">,</span>
     <span class="n">Path</span><span class="p">,</span>
     <span class="n">_load_config</span><span class="p">,</span>
     <span class="n">_flat_namespace_to_dict</span><span class="p">,</span>
@@ -218,6 +220,17 @@
     <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">nargs</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;+&#39;</span><span class="p">}</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">nargs</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">_remove_actions</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">types</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="n">actions</span><span class="p">):</span>
+        <span class="n">rm_actions</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">actions</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">types</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">rm_actions</span><span class="p">:</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+    <span class="n">remove</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">)</span>
+    <span class="n">remove</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">_action_groups</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">_group_actions</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="ActionConfigFile"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionConfigFile">[docs]</a><span class="k">class</span> <span class="nc">ActionConfigFile</span><span class="p">(</span><span class="n">Action</span><span class="p">,</span> <span class="n">FilesCompleterMethod</span><span class="p">):</span>
@@ -302,6 +315,35 @@
 
     <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_config</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_ActionHelpClassPath</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;baseclass&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">_check_unknown_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;baseclass&#39;</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_baseclass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;baseclass&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_baseclass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_baseclass&#39;</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;help&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Show the help for the given class path and exit.&#39;</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;metavar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;CLASS&#39;</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SUPPRESS</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_baseclass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_baseclass</span>
+            <span class="k">return</span> <span class="n">_ActionHelpClassPath</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">val_class</span> <span class="o">=</span> <span class="n">import_object</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_issubclass</span><span class="p">(</span><span class="n">val_class</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_baseclass</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Class &quot;&#39;</span><span class="o">+</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;&quot; is not a subclass of &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_baseclass</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">.help$&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.init_args&#39;</span>
+        <span class="n">ArgumentParser</span> <span class="o">=</span> <span class="n">import_object</span><span class="p">(</span><span class="s1">&#39;jsonargparse.ArgumentParser&#39;</span><span class="p">)</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+        <span class="n">tmp</span><span class="o">.</span><span class="n">add_class_arguments</span><span class="p">(</span><span class="n">val_class</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+        <span class="n">_remove_actions</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="p">(</span><span class="n">_HelpAction</span><span class="p">,</span> <span class="n">_ActionPrintConfig</span><span class="p">))</span>
+        <span class="n">tmp</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+        <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
 
 
 <div class="viewcode-block" id="ActionYesNo"><a class="viewcode-back" href="../../index.html#jsonargparse.actions.ActionYesNo">[docs]</a><span class="k">class</span> <span class="nc">ActionYesNo</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
@@ -566,14 +608,7 @@
 
         <span class="n">parser</span><span class="o">.</span><span class="n">prog</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> [options] </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prog_prefix</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="n">parser</span><span class="o">.</span><span class="n">env_prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env_prefix</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_&#39;</span>
-
-        <span class="k">def</span> <span class="nf">remove_print_config</span><span class="p">(</span><span class="n">actions</span><span class="p">):</span>
-            <span class="n">print_config</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">actions</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">_ActionPrintConfig</span><span class="p">)]</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">print_config</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">actions</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">print_config</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-
-        <span class="n">remove_print_config</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">)</span>
-        <span class="n">remove_print_config</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">_action_groups</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">_group_actions</span><span class="p">)</span>
+        <span class="n">_remove_actions</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">_ActionPrintConfig</span><span class="p">)</span>
 
         <span class="c1"># create a pseudo-action to hold the choice help</span>
         <span class="n">aliases</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;aliases&#39;</span><span class="p">,</span> <span class="p">())</span>
