@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.signatures &mdash; jsonargparse 3.3.0 documentation</title>
+  <title>jsonargparse.signatures &mdash; jsonargparse 3.3.1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.3.0
+                3.3.1
               </div>
             
           
@@ -194,7 +194,7 @@
 <span class="sd">            ValueError: When there are required parameters without at least one valid type.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">theclass</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected a class object.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected &quot;theclass&quot; argument to be a class object.&#39;</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">docs_func</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">base</span><span class="o">.</span><span class="fm">__init__</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">]</span>
@@ -241,9 +241,9 @@
 <span class="sd">            ValueError: When there are required parameters without at least one valid type.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">theclass</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected a class object.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected &quot;theclass&quot; argument to be a class object.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected the method to be a callable member of the class.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected &quot;themethod&quot; argument to be a callable member of the class.&#39;</span><span class="p">)</span>
 
         <span class="n">skip_first</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getattr_static</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">),</span> <span class="nb">staticmethod</span><span class="p">)</span>
         <span class="n">themethod</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">theclass</span><span class="p">,</span> <span class="n">themethod</span><span class="p">)</span>
@@ -283,7 +283,7 @@
 <span class="sd">            ValueError: When there are required parameters without at least one valid type.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected a callable object.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected &quot;function&quot; argument to be a callable object.&#39;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_signature_arguments</span><span class="p">([</span><span class="n">function</span><span class="p">],</span>
                                              <span class="n">nested_key</span><span class="p">,</span>
@@ -436,7 +436,7 @@
 <span class="sd">            ValueError: When not given a class.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">baseclass</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected a class object.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected &quot;baseclass&quot; argument to be a class object.&#39;</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">docs_func</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">base</span><span class="o">.</span><span class="fm">__init__</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">]</span>

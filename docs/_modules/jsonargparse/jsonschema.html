@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.jsonschema &mdash; jsonargparse 3.3.0 documentation</title>
+  <title>jsonargparse.jsonschema &mdash; jsonargparse 3.3.1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.3.0
+                3.3.1
               </div>
             
           
@@ -374,6 +374,8 @@
                         <span class="k">if</span> <span class="n">instantiate_classes</span><span class="p">:</span>
                             <span class="n">init_args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">instantiate_subclasses</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="s1">&#39;init_args&#39;</span><span class="p">])</span>
                             <span class="n">val</span> <span class="o">=</span> <span class="n">val_class</span><span class="p">(</span><span class="o">**</span><span class="n">init_args</span><span class="p">)</span>  <span class="c1"># pylint: disable=not-a-mapping</span>
+                    <span class="k">elif</span> <span class="n">instantiate_classes</span><span class="p">:</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="n">val_class</span><span class="p">()</span>
                 <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="n">ModuleNotFound</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">AssertionError</span><span class="p">,</span> <span class="n">ParserError</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">ParserError</span><span class="p">(</span><span class="s1">&#39;Problem with given class_path &quot;&#39;</span><span class="o">+</span><span class="n">val</span><span class="p">[</span><span class="s1">&#39;class_path&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;&quot; :: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">ex</span>
             <span class="k">return</span> <span class="n">val</span>

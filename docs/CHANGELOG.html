@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &mdash; jsonargparse 3.3.0 documentation</title>
+  <title>Changelog &mdash; jsonargparse 3.3.1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.3.0
+                3.3.1
               </div>
             
           
@@ -87,6 +87,10 @@
               <!-- Local TOC -->
               <div class="local-toc"><ul>
 <li><a class="reference internal" href="#">Changelog</a><ul>
+<li><a class="reference internal" href="#v3-3-1-2021-01-08">v3.3.1 (2021-01-08)</a><ul>
+<li><a class="reference internal" href="#fixed">Fixed</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#v3-3-0-2021-01-08">v3.3.0 (2021-01-08)</a><ul>
 <li><a class="reference internal" href="#added">Added</a></li>
 </ul>
@@ -94,20 +98,20 @@
 <li><a class="reference internal" href="#v3-2-1-2020-12-30">v3.2.1 (2020-12-30)</a><ul>
 <li><a class="reference internal" href="#id2">Added</a></li>
 <li><a class="reference internal" href="#changed">Changed</a></li>
-<li><a class="reference internal" href="#fixed">Fixed</a></li>
+<li><a class="reference internal" href="#id3">Fixed</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#v3-1-0-2020-12-09">v3.1.0 (2020-12-09)</a><ul>
-<li><a class="reference internal" href="#id3">Added</a></li>
+<li><a class="reference internal" href="#id4">Added</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#v3-0-1-2020-12-02">v3.0.1 (2020-12-02)</a><ul>
-<li><a class="reference internal" href="#id4">Fixed</a></li>
+<li><a class="reference internal" href="#id5">Fixed</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#v3-0-0-2020-12-01">v3.0.0 (2020-12-01)</a><ul>
-<li><a class="reference internal" href="#id5">Added</a></li>
-<li><a class="reference internal" href="#id6">Changed</a></li>
+<li><a class="reference internal" href="#id6">Added</a></li>
+<li><a class="reference internal" href="#id7">Changed</a></li>
 <li><a class="reference internal" href="#deprecated">Deprecated</a></li>
 </ul>
 </li>
@@ -186,6 +190,16 @@ follow <a class="reference external" href="https://semver.org/">Semantic Version
 (<code class="docutils literal notranslate"><span class="pre">&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;</span></code>). Backward incompatible (breaking) changes will
 only be introduced in major versions with advance notice in the <strong>Deprecated</strong>
 section of releases.</p>
+<div class="section" id="v3-3-1-2021-01-08">
+<h2>v3.3.1 (2021-01-08)<a class="headerlink" href="#v3-3-1-2021-01-08" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>instantiate_subclasses work properly when init_args not present.</p></li>
+<li><p>Addressed a couple of issues pointed out by sonarcloud.</p></li>
+</ul>
+</div>
+</div>
 <div class="section" id="v3-3-0-2021-01-08">
 <h2>v3.3.0 (2021-01-08)<a class="headerlink" href="#v3-3-0-2021-01-08" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="added">
@@ -214,8 +228,8 @@ section of releases.</p>
 <li><p>Removed <code class="code docutils literal notranslate"><span class="pre">__cwd__</span></code> and top level <code class="code docutils literal notranslate"><span class="pre">__path__</span></code> that were not needed.</p></li>
 </ul>
 </div>
-<div class="section" id="fixed">
-<h3>Fixed<a class="headerlink" href="#fixed" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id3">
+<h3>Fixed<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><p>ActionYesNo argument in help the type is now bool.</p></li>
 <li><p>Correctly skip self in add_method_arguments for inherited methods.</p></li>
@@ -227,8 +241,8 @@ section of releases.</p>
 </div>
 <div class="section" id="v3-1-0-2020-12-09">
 <h2>v3.1.0 (2020-12-09)<a class="headerlink" href="#v3-1-0-2020-12-09" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id3">
-<h3>Added<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id4">
+<h3>Added<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><p>Support for multiple levels of subcommands #29.</p></li>
 <li><p>Default description of subcommands explaining use of –help.</p></li>
@@ -237,8 +251,8 @@ section of releases.</p>
 </div>
 <div class="section" id="v3-0-1-2020-12-02">
 <h2>v3.0.1 (2020-12-02)<a class="headerlink" href="#v3-0-1-2020-12-02" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id4">
-<h3>Fixed<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id5">
+<h3>Fixed<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><p>add_class_arguments incorrectly added arguments from <code class="code docutils literal notranslate"><span class="pre">__call__</span></code> instead
 of <code class="code docutils literal notranslate"><span class="pre">__init__</span></code> for callable classes.</p></li>
@@ -247,8 +261,8 @@ of <code class="code docutils literal notranslate"><span class="pre">__init__</s
 </div>
 <div class="section" id="v3-0-0-2020-12-01">
 <h2>v3.0.0 (2020-12-01)<a class="headerlink" href="#v3-0-0-2020-12-01" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id5">
-<h3>Added<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id6">
+<h3>Added<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><p>Functions to add arguments from classes, methods and functions.</p></li>
 <li><p>CLI function that allows creating a line command line interface with a single
@@ -260,8 +274,8 @@ for paths and restricted numbers/strings.</p></li>
 <li><p>Support argcomplete for tab completion of arguments.</p></li>
 </ul>
 </div>
-<div class="section" id="id6">
-<h3>Changed<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id7">
+<h3>Changed<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><p>ArgumentParsers by default now use as error_handler the
 usage_and_exit_error_handler.</p></li>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jsonargparse.actions &mdash; jsonargparse 3.3.0 documentation</title>
+  <title>jsonargparse.actions &mdash; jsonargparse 3.3.1 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                3.3.0
+                3.3.1
               </div>
             
           
@@ -338,8 +338,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">_issubclass</span><span class="p">(</span><span class="n">val_class</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_baseclass</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Class &quot;&#39;</span><span class="o">+</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;&quot; is not a subclass of &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_baseclass</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="n">dest</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">.help$&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.init_args&#39;</span>
-        <span class="n">ArgumentParser</span> <span class="o">=</span> <span class="n">import_object</span><span class="p">(</span><span class="s1">&#39;jsonargparse.ArgumentParser&#39;</span><span class="p">)</span>
-        <span class="n">tmp</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">import_object</span><span class="p">(</span><span class="s1">&#39;jsonargparse.ArgumentParser&#39;</span><span class="p">)()</span>
         <span class="n">tmp</span><span class="o">.</span><span class="n">add_class_arguments</span><span class="p">(</span><span class="n">val_class</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
         <span class="n">_remove_actions</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="p">(</span><span class="n">_HelpAction</span><span class="p">,</span> <span class="n">_ActionPrintConfig</span><span class="p">))</span>
         <span class="n">tmp</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
