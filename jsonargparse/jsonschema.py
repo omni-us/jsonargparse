@@ -224,6 +224,8 @@ class ActionJsonSchema(Action):
                         if instantiate_classes:
                             init_args = parser.instantiate_subclasses(val['init_args'])
                             val = val_class(**init_args)  # pylint: disable=not-a-mapping
+                    elif instantiate_classes:
+                        val = val_class()
                 except (ImportError, ModuleNotFound, AttributeError, AssertionError, ParserError) as ex:
                     raise ParserError('Problem with given class_path "'+val['class_path']+'" :: '+str(ex)) from ex
             return val

@@ -44,7 +44,7 @@ class SignatureArguments:
             ValueError: When there are required parameters without at least one valid type.
         """
         if not inspect.isclass(theclass):
-            raise ValueError('Expected a class object.')
+            raise ValueError('Expected "theclass" argument to be a class object.')
 
         def docs_func(base):
             return [base.__init__.__doc__, base.__doc__]
@@ -91,9 +91,9 @@ class SignatureArguments:
             ValueError: When there are required parameters without at least one valid type.
         """
         if not inspect.isclass(theclass):
-            raise ValueError('Expected a class object.')
+            raise ValueError('Expected "theclass" argument to be a class object.')
         if not hasattr(theclass, themethod) or not callable(getattr(theclass, themethod)):
-            raise ValueError('Expected the method to be a callable member of the class.')
+            raise ValueError('Expected "themethod" argument to be a callable member of the class.')
 
         skip_first = not isinstance(inspect.getattr_static(theclass, themethod), staticmethod)
         themethod = getattr(theclass, themethod)
@@ -133,7 +133,7 @@ class SignatureArguments:
             ValueError: When there are required parameters without at least one valid type.
         """
         if not callable(function):
-            raise ValueError('Expected a callable object.')
+            raise ValueError('Expected "function" argument to be a callable object.')
 
         return self._add_signature_arguments([function],
                                              nested_key,
@@ -286,7 +286,7 @@ class SignatureArguments:
             ValueError: When not given a class.
         """
         if not inspect.isclass(baseclass):
-            raise ValueError('Expected a class object.')
+            raise ValueError('Expected "baseclass" argument to be a class object.')
 
         def docs_func(base):
             return [base.__init__.__doc__, base.__doc__]

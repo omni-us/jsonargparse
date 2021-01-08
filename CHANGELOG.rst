@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.3.1 (2021-01-08)
+-------------------
+
+Fixed
+^^^^^
+- instantiate_subclasses work properly when init_args not present.
+- Addressed a couple of issues pointed out by sonarcloud.
+
+
 v3.3.0 (2021-01-08)
 -------------------
 

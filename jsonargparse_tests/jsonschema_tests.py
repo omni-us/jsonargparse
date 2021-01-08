@@ -242,6 +242,8 @@ class JsonSchemaTests(TempDirTestCase):
         class_path = '"class_path": "calendar.Calendar"'
         cfg = parser.parse_args(['--op=[{'+class_path+'}]'])
         self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar'}])
+        cfg = parser.instantiate_subclasses(cfg)
+        self.assertIsInstance(cfg['op'][0], Calendar)
 
         with self.assertRaises(ParserError):
             parser.parse_args(['--op=[{"class_path": "jsonargparse.ArgumentParser"}]'])

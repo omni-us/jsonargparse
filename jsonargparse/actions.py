@@ -188,8 +188,7 @@ class _ActionHelpClassPath(Action):
         if not _issubclass(val_class, self._baseclass):
             raise TypeError('Class "'+args[2]+'" is not a subclass of '+self._baseclass.__name__)
         dest = re.sub('\\.help$', '',  self.dest) + '.init_args'
-        ArgumentParser = import_object('jsonargparse.ArgumentParser')
-        tmp = ArgumentParser()
+        tmp = import_object('jsonargparse.ArgumentParser')()
         tmp.add_class_arguments(val_class, dest)
         _remove_actions(tmp, (_HelpAction, _ActionPrintConfig))
         tmp.print_help()
