@@ -95,7 +95,6 @@ class JsonnetTests(TempDirTestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--input.ext_vars', '{"param": "a"}', '--input.jsonnet', example_2_jsonnet]))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--input.jsonnet', example_2_jsonnet]))
 
-        self.assertRaises(ValueError, lambda: ActionJsonnet())
         self.assertRaises(ValueError, lambda: ActionJsonnet(ext_vars=2))
         self.assertRaises(ValueError, lambda: ActionJsonnet(schema='.'+json.dumps(example_schema)))
 

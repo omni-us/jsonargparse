@@ -22,7 +22,6 @@ from .util import (
     _load_config,
     _flat_namespace_to_dict,
     _dict_to_flat_namespace,
-    _check_unknown_kwargs,
     _issubclass
 )
 
@@ -169,10 +168,9 @@ class _ActionConfigLoad(Action):
 
 class _ActionHelpClassPath(Action):
 
-    def __init__(self, **kwargs):
-        if 'baseclass' in kwargs:
-            _check_unknown_kwargs(kwargs, {'baseclass'})
-            self._baseclass = kwargs['baseclass']
+    def __init__(self, baseclass=None, **kwargs):
+        if baseclass is not None:
+            self._baseclass = baseclass
         else:
             self._baseclass = kwargs.pop('_baseclass')
             kwargs['help'] = 'Show the help for the given class path and exit.'
@@ -196,26 +194,26 @@ class _ActionHelpClassPath(Action):
 
 
 class ActionYesNo(Action):
-    """Paired options --{yes_prefix}opt, --{no_prefix}opt to set True or False respectively."""
+    """Paired options --[yes_prefix]opt, --[no_prefix]opt to set True or False respectively."""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        yes_prefix: str = '',
+        no_prefix: str = 'no_',
+        **kwargs
+    ):
         """Initializer for ActionYesNo instance.
 
         Args:
-            yes_prefix (str): Prefix for yes option (default='').
-            no_prefix (str or None): Prefix for no option (default='no_').
+            yes_prefix: Prefix for yes option.
+            no_prefix: Prefix for no option.
 
         Raises:
             ValueError: If a parameter is invalid.
         """
-        self._yes_prefix = ''
-        self._no_prefix = 'no_'
-        if 'yes_prefix' in kwargs or 'no_prefix' in kwargs or len(kwargs) == 0:
-            _check_unknown_kwargs(kwargs, {'yes_prefix', 'no_prefix'})
-            if 'yes_prefix' in kwargs:
-                self._yes_prefix = kwargs['yes_prefix']
-            if 'no_prefix' in kwargs:
-                self._no_prefix = kwargs['no_prefix']
+        if len(kwargs) == 0:
+            self._yes_prefix = yes_prefix
+            self._no_prefix = no_prefix
         else:
             self._yes_prefix = kwargs.pop('_yes_prefix') if '_yes_prefix' in kwargs else ''
             self._no_prefix = kwargs.pop('_no_prefix') if '_no_prefix' in kwargs else 'no_'
@@ -277,25 +275,28 @@ class ActionYesNo(Action):
 class ActionEnum(Action):
     """An action based on an Enum that maps to-from strings and enum values."""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        enum: Enum = None,
+        **kwargs
+    ):
         """Initializer for ActionEnum instance.
 
         Args:
-            enum (Enum): An Enum class.
+            enum: An Enum class.
 
         Raises:
             ValueError: If a parameter is invalid.
         """
-        if 'enum' in kwargs:
-            _check_unknown_kwargs(kwargs, {'enum'})
-            if not _issubclass(kwargs['enum'], Enum):
-                raise ValueError('Expected enum to be an instance of Enum.')
-            self._enum = kwargs['enum']
+        if enum is not None:
+            if not _issubclass(enum, Enum):
+                raise ValueError('Expected enum to be an subclass of Enum.')
+            self._enum = enum
         elif '_enum' not in kwargs:
             raise ValueError('Expected enum keyword argument.')
         else:
             self._enum = kwargs.pop('_enum')
-            kwargs['metavar'] = '{'+','.join(self._enum.__members__.keys())+'}'
+            kwargs['metavar'] = '{'+','.join(self._enum.__members__.keys())+'}'  # type: ignore
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -337,7 +338,6 @@ class ActionOperators:
 
     def __init__(self, **kwargs):
         if 'expr' in kwargs:
-            _check_unknown_kwargs(kwargs, {'expr', 'join', 'type'})
             self._type = restricted_number_type(None, kwargs.get('type', int), kwargs['expr'], kwargs.get('join', 'and'))
         else:
             raise ValueError('Expected expr keyword argument.')
@@ -352,20 +352,23 @@ class ActionOperators:
 class ActionParser(Action):
     """Action to parse option with a given parser optionally loading from file if string value."""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        parser: argparse.ArgumentParser = None,
+        **kwargs
+    ):
         """Initializer for ActionParser instance.
 
         Args:
-            parser (ArgumentParser): A parser to parse the option with.
+            parser: A parser to parse the option with.
 
         Raises:
             ValueError: If the parser parameter is invalid.
         """
-        if 'parser' in kwargs:
+        if parser is not None:
             ## Runs when first initializing class by external user ##
-            _check_unknown_kwargs(kwargs, {'parser'})
-            self._parser = kwargs['parser']
-            if not isinstance(self._parser, argparse.ArgumentParser):
+            self._parser = parser
+            if not isinstance(self._parser, import_object('jsonargparse.ArgumentParser')):
                 raise ValueError('Expected parser keyword argument to be an ArgumentParser.')
         elif '_parser' not in kwargs:
             raise ValueError('Expected parser keyword argument.')
@@ -543,21 +546,25 @@ class _ActionSubCommands(_SubParsersAction):
 class ActionPath(Action, FilesCompleterMethod):
     """Action to check and store a path."""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        mode: str = None,
+        skip_check: bool = False,
+        **kwargs
+    ):
         """Initializer for ActionPath instance.
 
         Args:
-            mode (str): The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument, e.g. ActionPath(mode='drw').
-            skip_check (bool): Whether to skip path checks (def.=False).
+            mode: The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument, e.g. ActionPath(mode='drw').
+            skip_check: Whether to skip path checks.
 
         Raises:
             ValueError: If the mode parameter is invalid.
         """
-        if 'mode' in kwargs:
-            _check_unknown_kwargs(kwargs, {'mode', 'skip_check'})
-            Path._check_mode(kwargs['mode'])
-            self._mode = kwargs['mode']
-            self._skip_check = kwargs.get('skip_check', False)
+        if mode is not None:
+            Path._check_mode(mode)
+            self._mode = mode
+            self._skip_check = skip_check
         elif '_mode' not in kwargs:
             raise ValueError('ActionPath expects mode keyword argument.')
         else:
@@ -599,23 +606,28 @@ class ActionPath(Action, FilesCompleterMethod):
 class ActionPathList(Action, FilesCompleterMethod):
     """Action to check and store a list of file paths read from a plain text file or stream."""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        mode: str = None,
+        skip_check: bool = False,
+        rel: str = 'cwd',
+        **kwargs
+    ):
         """Initializer for ActionPathList instance.
 
         Args:
-            mode (str): The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
-            skip_check (bool): Whether to skip path checks (def.=False).
-            rel (str): Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list' (default='cwd').
+            mode: The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
+            skip_check: Whether to skip path checks.
+            rel: Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list'.
 
         Raises:
             ValueError: If any of the parameters (mode or rel) are invalid.
         """
-        if 'mode' in kwargs:
-            _check_unknown_kwargs(kwargs, {'mode', 'skip_check', 'rel'})
-            Path._check_mode(kwargs['mode'])
-            self._mode = kwargs['mode']
-            self._skip_check = kwargs.get('skip_check', False)
-            self._rel = kwargs.get('rel', 'cwd')
+        if mode is not None:
+            Path._check_mode(mode)
+            self._mode = mode
+            self._skip_check = skip_check
+            self._rel = rel
             if self._rel not in {'cwd', 'list'}:
                 raise ValueError('rel must be either "cwd" or "list", got '+str(self._rel)+'.')
         elif '_mode' not in kwargs:

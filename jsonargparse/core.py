@@ -441,12 +441,12 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                 if isinstance(action, ActionParser):
                     subparser_cfg = {}
                     if defaults:
-                        subparser_cfg = vars(action._parser.get_defaults(nested=False))
+                        subparser_cfg = vars(action._parser.get_defaults(nested=False))  # type: ignore
                     env_var = _get_env_var(self, action)
                     if env_var in env:
                         pcfg = self._check_value_key(action, env[env_var], action.dest, cfg)
                         subparser_cfg.update(vars(_dict_to_flat_namespace(namespace_to_dict(pcfg))))
-                    pcfg = action._parser.parse_env(env=env, defaults=False, nested=False, with_meta=with_meta, _skip_logging=True, _skip_check=True)
+                    pcfg = action._parser.parse_env(env=env, defaults=False, nested=False, with_meta=with_meta, _skip_logging=True, _skip_check=True)  # type: ignore
                     subparser_cfg.update(namespace_to_dict(pcfg))
                     cfg.update(subparser_cfg)
                     continue
@@ -752,7 +752,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         multifile: bool = True,
         branch: str = None,
     ):
-        """Generates a yaml or json string for the given configuration object.
+        """Writes to file(s) the yaml or json for the given configuration object.
 
         Args:
             cfg: The configuration object to save.
@@ -879,7 +879,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         for action in self._actions:
             if action.default != SUPPRESS and action.dest != SUPPRESS:
                 if isinstance(action, ActionParser):
-                    cfg.update(namespace_to_dict(action._parser.get_defaults(nested=False)))
+                    cfg.update(namespace_to_dict(action._parser.get_defaults(nested=False)))  # type: ignore
                 else:
                     cfg[action.dest] = action.default
 
@@ -983,6 +983,14 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
 
     def instantiate_subclasses(self, cfg:Union[Namespace, Dict[str, Any]]) -> Union[Namespace, Dict[str, Any]]:
+        """Recursively instantiates all subclasses defined by 'class_path' and 'init_args'.
+
+        Args:
+            cfg: The configuration object to use.
+
+        Returns:
+            A configuration object with all subclasses instantiated.
+        """
         cfg = namespace_to_dict(strip_meta(cfg))
         for action in self._actions:
             if isinstance(action, ActionJsonSchema):

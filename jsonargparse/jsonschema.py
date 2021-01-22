@@ -6,7 +6,7 @@ import yaml
 import inspect
 from enum import Enum
 from argparse import Namespace, Action
-from typing import Any, Union, Tuple, List, Iterable, Sequence, Set, Dict
+from typing import Any, Union, Tuple, List, Iterable, Sequence, Set, Dict, Type
 
 from .actions import _is_action_value_list
 from .typing import is_optional, annotation_to_schema, type_to_str
@@ -19,7 +19,6 @@ from .util import (
     strip_meta,
     import_object,
     _load_config,
-    _check_unknown_kwargs,
     _issubclass,
 )
 from .optionals import (
@@ -60,32 +59,37 @@ if jsonschema_support:
 class ActionJsonSchema(Action):
     """Action to parse option as json validated by a jsonschema."""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        schema: Union[str, Dict] = None,
+        annotation: Type = None,
+        enable_path: bool = True,
+        with_meta: bool = True,
+        **kwargs
+    ):
         """Initializer for ActionJsonSchema instance.
 
         Args:
-            schema (str or dict): Schema to validate values against.
-            annotation (type): Type object from which to generate schema.
-            enable_path (bool): Whether to try to load json from path (def.=True).
-            with_meta (bool): Whether to include metadata (def.=True).
+            schema: Schema to validate values against.
+            annotation: Type object from which to generate schema.
+            enable_path: Whether to try to load json from path (def.=True).
+            with_meta: Whether to include metadata (def.=True).
 
         Raises:
             ValueError: If a parameter is invalid.
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
-        if 'schema' in kwargs or 'annotation' in kwargs:
-            _check_unknown_kwargs(kwargs, {'schema', 'annotation', 'enable_path', 'with_meta'})
-            if 'annotation' in kwargs:
-                if 'schema' in kwargs:
+        if schema is not None or annotation is not None:
+            if annotation is not None:
+                if schema is not None:
                     raise ValueError('Only one of schema or annotation is accepted.')
-                self._annotation = kwargs['annotation']
+                self._annotation = annotation
                 schema, subschemas = ActionJsonSchema._typing_schema(self._annotation)
                 if schema is None or schema == {'type': 'null'}:
                     raise ValueError('Unable to generate schema from annotation '+str(self._annotation))
                 self._subschemas = subschemas
             else:
-                self._annotation = self._subschemas = None
-                schema = kwargs['schema']
+                self._annotation = self._subschemas = None  # type: ignore
             if isinstance(schema, str):
                 try:
                     schema = yaml.safe_load(schema)
@@ -93,8 +97,8 @@ class ActionJsonSchema(Action):
                     raise ValueError('Problems parsing schema :: '+str(ex)) from ex
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
-            self._enable_path = kwargs.get('enable_path', True)
-            self._with_meta = kwargs.get('with_meta', True)
+            self._enable_path = enable_path
+            self._with_meta = with_meta
         elif '_validator' not in kwargs:
             raise ValueError('Expected schema or annotation keyword arguments.')
         else:

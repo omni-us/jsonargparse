@@ -271,51 +271,6 @@ example you could do the following:
     'from default 2'
 
 
-.. _environment-variables:
-
-Environment variables
-=====================
-
-The jsonargparse parsers can also get values from environment variables. The
-parser checks existing environment variables whose name is of the form
-:code:`[PREFIX_][LEV__]*OPT`, that is all in upper case, first a prefix (set by
-:code:`env_prefix`, or if unset the :code:`prog` without extension) followed by
-underscore and then the argument name replacing dots with two underscores. Using
-the parser from the :ref:`nested-namespaces` section above, in your shell you
-would set the environment variables as:
-
-.. code-block:: bash
-
-    export APP_LEV1__OPT1='from env 1'
-    export APP_LEV1__OPT2='from env 2'
-
-Then in python the parser would use these variables, unless overridden by the
-command line arguments, that is:
-
-.. code-block:: python
-
-    >>> parser = ArgumentParser(env_prefix='APP', default_env=True)
-    >>> parser.add_argument('--lev1.opt1', default='from default 1')
-    >>> parser.add_argument('--lev1.opt2', default='from default 2')
-    >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1'])
-    >>> cfg.lev1.opt1
-    'from arg 1'
-    >>> cfg.lev1.opt2
-    'from env 2'
-
-Note that when creating the parser, :code:`default_env=True` was given as
-argument. By default :py:meth:`.ArgumentParser.parse_args` does not check
-environment variables, so it has to be enabled explicitly.
-
-There is also the :py:meth:`.ArgumentParser.parse_env` function to only parse
-environment variables, which might be useful for some use cases in which there
-is no command line call involved.
-
-If a parser includes an :class:`.ActionConfigFile` argument, then the
-environment variable for this config file will be checked before all the other
-environment variables.
-
-
 .. _configuration-files:
 
 Configuration files
@@ -387,6 +342,51 @@ A configuration file or string can also be parsed without parsing command line
 arguments. The functions for this are :py:meth:`.ArgumentParser.parse_path` and
 :py:meth:`.ArgumentParser.parse_string` to parse a config file or a config
 contained in a string respectively.
+
+
+.. _environment-variables:
+
+Environment variables
+=====================
+
+The jsonargparse parsers can also get values from environment variables. The
+parser checks existing environment variables whose name is of the form
+:code:`[PREFIX_][LEV__]*OPT`, that is all in upper case, first a prefix (set by
+:code:`env_prefix`, or if unset the :code:`prog` without extension) followed by
+underscore and then the argument name replacing dots with two underscores. Using
+the parser from the :ref:`nested-namespaces` section above, in your shell you
+would set the environment variables as:
+
+.. code-block:: bash
+
+    export APP_LEV1__OPT1='from env 1'
+    export APP_LEV1__OPT2='from env 2'
+
+Then in python the parser would use these variables, unless overridden by the
+command line arguments, that is:
+
+.. code-block:: python
+
+    >>> parser = ArgumentParser(env_prefix='APP', default_env=True)
+    >>> parser.add_argument('--lev1.opt1', default='from default 1')
+    >>> parser.add_argument('--lev1.opt2', default='from default 2')
+    >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1'])
+    >>> cfg.lev1.opt1
+    'from arg 1'
+    >>> cfg.lev1.opt2
+    'from env 2'
+
+Note that when creating the parser, :code:`default_env=True` was given as
+argument. By default :py:meth:`.ArgumentParser.parse_args` does not check
+environment variables, so it has to be enabled explicitly.
+
+There is also the :py:meth:`.ArgumentParser.parse_env` function to only parse
+environment variables, which might be useful for some use cases in which there
+is no command line call involved.
+
+If a parser includes an :class:`.ActionConfigFile` argument, then the
+environment variable for this config file will be checked before all the other
+environment variables.
 
 
 .. _classes-methods-functions:

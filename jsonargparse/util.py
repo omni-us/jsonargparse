@@ -227,20 +227,6 @@ def strip_meta(cfg:Union[Namespace, Dict]):
     return cfg
 
 
-def _check_unknown_kwargs(kwargs:Dict[str, Any], keys:Set[str]):
-    """Checks whether a kwargs dict has unexpected keys.
-
-    Args:
-        kwargs (dict): The keyword arguments dict to check.
-        keys (set): The expected keys.
-
-    Raises:
-        ValueError: If an unexpected keyword argument is found.
-    """
-    if len(set(kwargs.keys())-keys) > 0:
-        raise ValueError('Unexpected keyword arguments: '+', '.join(set(kwargs.keys())-keys)+'.')
-
-
 def usage_and_exit_error_handler(self, message:str):
     """Error handler to get the same behavior as in argparse.
 

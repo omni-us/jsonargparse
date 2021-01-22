@@ -20,7 +20,6 @@ from .util import (
     yamlScannerError,
     ParserError,
     Path,
-    _check_unknown_kwargs,
     _get_key_value,
 )
 
@@ -48,24 +47,27 @@ class ActionJsonnetExtVars(ActionJsonSchema):
 class ActionJsonnet(Action):
     """Action to parse a jsonnet, optionally validating against a jsonschema."""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        ext_vars: str = None,
+        schema: Union[str, Dict] = None,
+        **kwargs
+    ):
         """Initializer for ActionJsonnet instance.
 
         Args:
-            ext_vars (str or None): Key where to find the external variables required to parse the jsonnet.
-            schema (str or object or None): Schema to validate values against. Keyword argument required even if schema=None.
+            ext_vars: Key where to find the external variables required to parse the jsonnet.
+            schema: Schema to validate values against.
 
         Raises:
             ValueError: If a parameter is invalid.
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
-        if 'ext_vars' in kwargs or 'schema' in kwargs:
+        if '_validator' not in kwargs:
             import_jsonnet('ActionJsonnet')
-            _check_unknown_kwargs(kwargs, {'schema', 'ext_vars'})
-            if 'ext_vars' in kwargs and not isinstance(kwargs['ext_vars'], (str, type(None))):
+            if not isinstance(ext_vars, (str, type(None))):
                 raise ValueError('ext_vars has to be either None or a string.')
-            self._ext_vars = kwargs.get('ext_vars', None)
-            schema = kwargs.get('schema', None)
+            self._ext_vars = ext_vars
             if schema is not None:
                 jsonvalidator = import_jsonschema('ActionJsonnet')[1]
                 if isinstance(schema, str):
@@ -77,8 +79,6 @@ class ActionJsonnet(Action):
                 self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             else:
                 self._validator = None
-        elif '_ext_vars' not in kwargs or '_validator' not in kwargs:
-            raise ValueError('Expected ext_vars and/or schema keyword arguments.')
         else:
             self._ext_vars = kwargs.pop('_ext_vars')
             self._validator = kwargs.pop('_validator')

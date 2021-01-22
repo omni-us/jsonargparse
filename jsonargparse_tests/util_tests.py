@@ -5,7 +5,7 @@ import pathlib
 import logging
 import platform
 from jsonargparse_tests.base import *
-from jsonargparse.util import _check_unknown_kwargs, _suppress_stderr, _flat_namespace_to_dict
+from jsonargparse.util import _suppress_stderr, _flat_namespace_to_dict
 
 
 class NamespaceDictConversionTests(unittest.TestCase):
@@ -238,13 +238,6 @@ class LoggingPropertyTests(unittest.TestCase):
     def test_failure_cases(self):
         self.assertRaises(ValueError, lambda: self.TestClass(logger={'level': 'invalid'}))
         self.assertRaises(ValueError, lambda: self.TestClass(logger=self.TestClass))
-
-
-class OtherTests(unittest.TestCase):
-
-    def test_check_unknown_kwargs(self):
-        _check_unknown_kwargs(kwargs={'a': 0, 'b': 1}, keys={'a', 'b'})
-        self.assertRaises(ValueError, lambda: _check_unknown_kwargs(kwargs={'b': 1}, keys={'a'}))
 
 
 if __name__ == '__main__':
