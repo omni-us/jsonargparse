@@ -76,15 +76,6 @@ if [ "${BUMPVERSION_NEW_VERSION+x}" != "" ]; then
   ./setup.py bdist_wheel;
   twine check dist/*.whl;
   [ "$?" != "0" ] && exit 1;
-
-  ## Update documentation ##
-  ./setup.py build_sphinx --quiet --builder html \
-      --version $BUMPVERSION_NEW_VERSION --release $BUMPVERSION_NEW_VERSION &&
-    rm -fr docs &&
-    mv sphinx/_build/html docs &&
-    touch docs/.nojekyll &&
-    git add docs;
-  [ "$?" != "0" ] && exit 1;
 fi
 
 exit 0;

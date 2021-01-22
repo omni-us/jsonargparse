@@ -179,7 +179,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if print_config is not None:
             self.add_argument(print_config, action=_ActionPrintConfig)
         if version is not None:
-            self.add_argument('--version', action='version', version='%(prog)s '+version)
+            self.add_argument('--version', action='version', version='%(prog)s '+version, help='Print version and exit.')
         if len(default_config_files) > 0:
             group = _ArgumentGroup(self,
                                    title='default config file locations',

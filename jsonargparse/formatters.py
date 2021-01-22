@@ -1,7 +1,7 @@
 """Formatter classes."""
 
 from enum import Enum
-from argparse import HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
+from argparse import HelpFormatter, _HelpAction, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 
 from .util import _get_env_var
 from .typing import type_to_str
@@ -25,9 +25,15 @@ class DefaultHelpFormatter(HelpFormatter):
     _env_prefix = None
     _default_env = True
 
+
     def _get_help_string(self, action):
         if isinstance(action, ActionConfigFile):
             return action.help
+        if isinstance(action, _HelpAction):
+            help_str = action.help[0].upper() + action.help[1:]
+            if help_str[-1] != '.':
+                help_str += '.'
+            return help_str
         help_str = ''
         if hasattr(action, '_required') and action._required:
             help_str = 'required'

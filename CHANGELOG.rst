@@ -10,6 +10,18 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.3.2 (2021-01-22)
+-------------------
+
+Fixed
+^^^^^
+- Changed actions so that keyword arguments are visible in API.
+- Fixed save method short description which was copy paste of dump.
+- Added missing docstring in instantiate_subclasses method.
+- Fixed crash when using --help and ActionConfigFile not given help string.
+- Standardized capitalization and punctuation of: help, config, version.
+
+
 v3.3.1 (2021-01-08)
 -------------------
 

@@ -93,6 +93,8 @@ class ActionConfigFile(Action, FilesCompleterMethod):
         opt_name = opt_name[0] if len(opt_name) == 1 else [x for x in opt_name if x[0:2] == '--'][0]
         if '.' in opt_name:
             raise ValueError('ActionConfigFile must be a top level option.')
+        if 'help' not in kwargs:
+            kwargs['help'] = 'Path to a configuration file.'
         super().__init__(**kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
