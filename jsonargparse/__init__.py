@@ -7,7 +7,6 @@ from .jsonschema import *
 from .optionals import *
 from .util import *
 from argparse import (
-    ArgumentError,
     Action,
     Namespace,
     HelpFormatter,

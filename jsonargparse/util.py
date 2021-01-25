@@ -8,7 +8,7 @@ import yaml
 import inspect
 import logging
 from copy import deepcopy
-from typing import Dict, Any, Set, Optional, Union
+from typing import Dict, Any, Optional, Union
 from contextlib import contextmanager, redirect_stderr
 from argparse import Namespace
 from yaml.parser import ParserError as yamlParserError
@@ -39,7 +39,7 @@ __all__ = [
 null_logger = logging.Logger('jsonargparse_null_logger')
 null_logger.addHandler(logging.NullHandler())
 
-meta_keys = {'__path__', '__default_config__'}
+meta_keys = {'__default_config__', '__path__', '__orig__'}
 
 
 class ParserError(Exception):

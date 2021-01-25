@@ -551,17 +551,17 @@ class OutputTests(TempDirTestCase):
         os.mkdir(indir)
         main_file = os.path.join(indir, 'main.yaml')
         parser_file = os.path.join(indir, 'parser.yaml')
-        schema_file = os.path.join(indir, 'schema.yaml')
-        jsonnet_file = os.path.join(indir, 'jsonnet.yaml')
+        schema_file = os.path.join(indir, 'schema.json')
+        jsonnet_file = os.path.join(indir, 'jsonnet.json')
 
         cfg1 = parser.get_defaults()
 
         with open(main_file, 'w') as output_file:
             output_file.write('parser: parser.yaml\n')
             if jsonschema_support:
-                output_file.write('schema: schema.yaml\n')
+                output_file.write('schema: schema.json\n')
             if jsonnet_support:
-                output_file.write('jsonnet: jsonnet.yaml\n')
+                output_file.write('jsonnet: jsonnet.json\n')
         with open(parser_file, 'w') as output_file:
             output_file.write(example_parser().dump(cfg1.parser))
         if jsonschema_support:
@@ -573,18 +573,18 @@ class OutputTests(TempDirTestCase):
 
         cfg2 = parser.parse_path(main_file, with_meta=True)
         self.assertEqual(namespace_to_dict(cfg1), strip_meta(cfg2))
-        self.assertEqual(cfg2.parser.__path__(absolute=False), 'parser.yaml')
+        self.assertEqual(str(cfg2.parser.__path__), 'parser.yaml')
         if jsonschema_support:
-            self.assertEqual(cfg2.schema.__path__(absolute=False), 'schema.yaml')
+            self.assertEqual(str(cfg2.schema.__path__), 'schema.json')
         if jsonnet_support:
-            self.assertEqual(cfg2.jsonnet.__path__(absolute=False), 'jsonnet.yaml')
+            self.assertEqual(str(cfg2.jsonnet.__path__), 'jsonnet.json')
 
         parser.save(cfg2, os.path.join(outdir, 'main.yaml'))
         self.assertTrue(os.path.isfile(os.path.join(outdir, 'parser.yaml')))
         if jsonschema_support:
-            self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))
+            self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.json')))
         if jsonnet_support:
-            self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.yaml')))
+            self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.json')))
 
         cfg3 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
         self.assertEqual(namespace_to_dict(cfg1), namespace_to_dict(cfg3))
@@ -592,6 +592,11 @@ class OutputTests(TempDirTestCase):
         parser.save(cfg2, os.path.join(outdir, 'main.yaml'), multifile=False, overwrite=True)
         cfg4 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
         self.assertEqual(namespace_to_dict(cfg1), namespace_to_dict(cfg4))
+
+        if jsonschema_support:
+            cfg2.schema.__path__ = Path(os.path.join(indir, 'schema.yaml'), mode='fc')
+            parser.save(cfg2, os.path.join(outdir, 'main.yaml'), overwrite=True)
+            self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))
 
 
     def test_save_failures(self):

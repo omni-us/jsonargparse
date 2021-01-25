@@ -99,6 +99,43 @@ class JsonnetTests(TempDirTestCase):
         self.assertRaises(ValueError, lambda: ActionJsonnet(schema='.'+json.dumps(example_schema)))
 
 
+    def test_ActionJsonnet_save(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--ext_vars',
+            action=ActionJsonnetExtVars())
+        parser.add_argument('--jsonnet',
+            action=ActionJsonnet(ext_vars='ext_vars'))
+        parser.add_argument('--cfg',
+            action=ActionConfigFile)
+
+        jsonnet_file = os.path.join(self.tmpdir, 'example.jsonnet')
+        with open(jsonnet_file, 'w') as output_file:
+            output_file.write(example_2_jsonnet)
+        outdir = os.path.join(self.tmpdir, 'output')
+        outyaml = os.path.join(outdir, 'main.yaml')
+        outjsonnet = os.path.join(outdir, 'example.jsonnet')
+        os.mkdir(outdir)
+
+        cfg = parser.parse_args(['--ext_vars', '{"param": 123}', '--jsonnet', jsonnet_file])
+        self.assertEqual(str(cfg.jsonnet.__path__), jsonnet_file)
+
+        parser.save(cfg, outyaml)
+        cfg2 = parser.parse_args(['--cfg', outyaml])
+        cfg2.cfg = None
+        self.assertTrue(os.path.isfile(outyaml))
+        self.assertTrue(os.path.isfile(outjsonnet))
+        self.assertEqual(strip_meta(cfg), strip_meta(cfg2))
+
+        os.unlink(outyaml)
+        os.unlink(outjsonnet)
+        parser.save(strip_meta(cfg), outyaml)
+        cfg3 = parser.parse_args(['--cfg', outyaml])
+        cfg3.cfg = None
+        self.assertTrue(os.path.isfile(outyaml))
+        self.assertTrue(not os.path.isfile(outjsonnet))
+        self.assertEqual(strip_meta(cfg), strip_meta(cfg3))
+
+
     def test_ActionJsonnet_help(self):
         parser = ArgumentParser()
         parser.add_argument('--jsonnet',

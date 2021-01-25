@@ -45,7 +45,8 @@ extensions = [
 
 autodoc_default_options = {
     'exclude-members': 'groups',
-    'member-order': 'bysource'
+    'member-order': 'bysource',
+    'autosummary_imported_members': False,
 }
 
 def skip(app, what, name, obj, would_skip, options):

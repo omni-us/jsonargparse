@@ -21,6 +21,8 @@ from .util import (
     ParserError,
     Path,
     _get_key_value,
+    _flat_namespace_to_dict,
+    _dict_to_flat_namespace,
 )
 
 
@@ -105,6 +107,8 @@ class ActionJsonnet(Action):
         ext_vars = {}
         if self._ext_vars is not None:
             try:
+                if isinstance(cfg, dict):
+                    cfg = _flat_namespace_to_dict(_dict_to_flat_namespace(cfg))
                 ext_vars = _get_key_value(cfg, self._ext_vars)
             except (KeyError, AttributeError):
                 pass
@@ -178,6 +182,8 @@ class ActionJsonnet(Action):
             raise ParserError('Problems evaluating jsonnet "'+fname+'" :: '+str(ex)) from ex
         if self._validator is not None:
             self._validator.validate(values)
-        if with_meta and isinstance(values, dict) and fpath is not None:
-            values['__path__'] = fpath
+        if with_meta:
+            if isinstance(values, dict) and fpath is not None:
+                values['__path__'] = fpath
+            values['__orig__'] = snippet
         return dict_to_namespace(values)

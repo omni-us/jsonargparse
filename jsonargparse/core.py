@@ -17,10 +17,9 @@ from .formatters import DefaultHelpFormatter
 from .signatures import SignatureArguments
 from .typing import type_in
 from .jsonschema import ActionJsonSchema, supported_types
-from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
+from .jsonnet import ActionJsonnet
 from .optionals import (
     import_jsonnet,
-    jsonschema_support,
     argcomplete_support,
     import_argcomplete,
     get_config_read_mode,
@@ -28,7 +27,6 @@ from .optionals import (
     TypeCastCompleterMethod,
 )
 from .actions import (
-    ActionYesNo,
     ActionEnum,
     ActionParser,
     ActionConfigFile,
@@ -769,10 +767,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if not overwrite and os.path.isfile(path):
             raise ValueError('Refusing to overwrite existing file: '+path)
         path = Path(path, mode='fc')
-        if format not in {'parser_mode', 'yaml', 'json_indented', 'json'}:
-            raise ValueError('Unknown output format "'+str(format)+'".')
-        if format == 'parser_mode':
-            format = 'yaml' if self.parser_mode == 'yaml' else 'json_indented'
 
         dump_kwargs = {'format': format, 'skip_none': skip_none, 'skip_check': skip_check}
 
@@ -800,7 +794,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                         if '__path__' in val:
                             val_path = Path(os.path.join(dirname, os.path.basename(val['__path__']())), mode='fc')
                             if not overwrite and os.path.isfile(val_path()):
-                                raise ValueError('Refusing to overwrite existing file: '+val_path(absolute=False))
+                                raise ValueError('Refusing to overwrite existing file: '+str(val_path))
                             action = _find_action(self, kbase)
                             if isinstance(action, ActionParser):
                                 replace_keys[key] = val_path
@@ -808,14 +802,14 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                             elif isinstance(action, (ActionJsonSchema, ActionJsonnet)):
                                 replace_keys[key] = val_path
                                 val_out = strip_meta(val)
-                                if format.startswith('json') or isinstance(action, ActionJsonnet):
+                                if '__orig__' in val:
+                                    val_str = val['__orig__']
+                                elif str(val_path).lower().endswith('.json'):
                                     val_str = json.dumps(val_out, indent=2, sort_keys=True, ensure_ascii=False)+'\n'
                                 else:
                                     val_str = yaml.dump(val_out, default_flow_style=False, allow_unicode=True)
                                 with open(val_path(), 'w') as f:
                                     f.write(val_str)
-                            #else:
-                            #    save_paths(val, kbase)
                         else:
                             save_paths(val, kbase)
                 for key, val in replace_keys.items():

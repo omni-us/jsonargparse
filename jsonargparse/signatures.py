@@ -2,7 +2,7 @@
 
 import inspect
 from enum import Enum
-from typing import Union, Optional, List, Container, Type, Callable
+from typing import Optional, Container, Type, Callable
 
 from .util import _issubclass
 from .actions import ActionEnum, _ActionConfigLoad, _ActionHelpClassPath
