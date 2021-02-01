@@ -24,7 +24,6 @@ from .util import (
 from .optionals import (
     ModuleNotFound,
     jsonschemaValidationError,
-    jsonschema_support,
     import_jsonschema,
     files_completer,
     argcomplete_warn_redraw_prompt,
@@ -51,9 +50,6 @@ supported_types = {
     Set, set,
     Dict, dict,
 }
-
-if jsonschema_support:
-    jsonschema, jsonvalidator = import_jsonschema('jsonschema.py')
 
 
 class ActionJsonSchema(Action):
@@ -95,6 +91,7 @@ class ActionJsonSchema(Action):
                     schema = yaml.safe_load(schema)
                 except (yamlParserError, yamlScannerError) as ex:
                     raise ValueError('Problems parsing schema :: '+str(ex)) from ex
+            jsonvalidator = import_jsonschema('ActionJsonSchema')[1]
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             self._enable_path = enable_path
@@ -171,6 +168,7 @@ class ActionJsonSchema(Action):
             for error in validate_properties(validator, properties, instance, schema):
                 yield error
 
+        jsonschema = import_jsonschema('ActionJsonSchema')[0]
         return jsonschema.validators.extend(validator_class, {'properties': set_defaults})
 
 
@@ -295,6 +293,7 @@ class ActionJsonSchema(Action):
                     'required': ['class_path'],
                     'additionalProperties': False,
                 }
+                jsonvalidator = import_jsonschema('ActionJsonSchema')[1]
                 return schema, [(annotation, jsonvalidator(schema), None)]
             return None, None
 
@@ -306,6 +305,7 @@ class ActionJsonSchema(Action):
                 if schema is not None:
                     members.append(schema)
                     if arg not in typesmap:
+                        jsonvalidator = import_jsonschema('ActionJsonSchema')[1]
                         union_subschemas.append((arg, jsonvalidator(schema), subschemas))
             if len(members) == 1:
                 return members[0], union_subschemas

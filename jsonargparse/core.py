@@ -162,12 +162,10 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         super().__init__(*args, **kwargs)
         if self.groups is None:
             self.groups = {}
-        if default_config_files is None:
-            default_config_files = []
         self.required_args = set()  # type: Set[str]
         self._stderr = sys.stderr
-        self._default_config_files = default_config_files
         self._parse_as_dict = parse_as_dict
+        self.default_config_files = default_config_files
         self.default_meta = default_meta
         self.default_env = default_env
         self.env_prefix = env_prefix
@@ -178,11 +176,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self.add_argument(print_config, action=_ActionPrintConfig)
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version, help='Print version and exit.')
-        if len(default_config_files) > 0:
-            group = _ArgumentGroup(self,
-                                   title='default config file locations',
-                                   description=str(default_config_files))
-            self._action_groups = [group] + self._action_groups  # type: ignore
         if parser_mode not in {'yaml', 'jsonnet'}:
             raise ValueError('The only accepted values for parser_mode are {"yaml", "jsonnet"}.')
         if parser_mode == 'jsonnet':
@@ -882,7 +875,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         self._logger.info('Loaded default values from parser.')
 
         default_config_files = []  # type: List[str]
-        for pattern in self._default_config_files:
+        for pattern in self.default_config_files:
             default_config_files += glob.glob(os.path.expanduser(pattern))
         if len(default_config_files) > 0:
             default_config_file = Path(default_config_files[0], mode=get_config_read_mode())
@@ -1156,6 +1149,37 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self._error_handler = error_handler
         else:
             raise ValueError('error_handler can be either a Callable or None.')
+
+
+    @property
+    def default_config_files(self):
+        """Default config file locations.
+
+        :getter: Returns the current default config file locations.
+        :setter: Sets new default config file locations, e.g. :code:`['~/.config/myapp/*.yaml']`.
+
+        Raises:
+            ValueError: If an invalid value is given.
+        """
+        return self._default_config_files
+
+
+    @default_config_files.setter
+    def default_config_files(self, default_config_files:Optional[List[str]]):
+        if default_config_files is None:
+            self._default_config_files = []
+        elif isinstance(default_config_files, list) and all(isinstance(x, str) for x in default_config_files):
+            self._default_config_files = default_config_files
+        else:
+            raise ValueError('default_config_files has to be None or List[str].')
+
+        if len(self._default_config_files) > 0:
+            group_title = 'default config file locations'
+            group = next((g for g in self._action_groups if g.title == group_title), None)
+            if group is None:
+                group = _ArgumentGroup(self, title=group_title)
+                self._action_groups = [group] + self._action_groups  # type: ignore
+            group.description = str(self._default_config_files)
 
 
     @property

@@ -10,6 +10,24 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.4.0 (2021-02-01)
+-------------------
+
+Added
+-----
+- Save with multifile=True now creates original jsonnet file for ActionJsonnet.
+- default_config_files is now a property of parser objects.
+- Table in readme to ease understanding of extras requires for optional features #38.
+
+Changed
+-------
+- Save with multifile=True uses file extension to choose json or yaml format.
+
+Fixed
+^^^^^
+- Better exception message when using ActionJsonSchema and jsonschema not installed #38.
+
+
 v3.3.2 (2021-01-22)
 -------------------
 

@@ -662,6 +662,9 @@ class ConfigFilesTests(TempDirTestCase):
         self.assertIn('default config file locations', out.getvalue())
         self.assertIn(os.path.basename(default_config_file), out.getvalue())
 
+        with self.assertRaises(ValueError):
+            parser.default_config_files = False
+
 
     def test_ActionConfigFile_and_ActionPath(self):
         os.mkdir(os.path.join(self.tmpdir, 'example'))

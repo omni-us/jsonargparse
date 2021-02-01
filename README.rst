@@ -89,8 +89,31 @@ jsonargparse with extras require is as follows:
 
 .. code-block:: bash
 
-    pip install "jsonargparse[signatures]"    # Enable only signatures feature
-    pip install "jsonargparse[all]"           # Enable all optional features
+    pip install "jsonargparse[signatures,urls]"  # Enable signatures and URLs features
+    pip install "jsonargparse[all]"              # Enable all optional features
+
+The following table references sections that describe optional features and the
+corresponding extras requires that enables them.
+
++----------------------------------+------+-------------+---------+------------+------------+
+|                                  | urls | argcomplete | jsonnet | jsonschema | signatures |
++----------------------------------+------+-------------+---------+------------+------------+
+| :ref:`boolean-arguments`         |      |             |         | ✓          | ✓          |
++----------------------------------+------+-------------+---------+------------+------------+
+| :ref:`type-hints`                |      |             |         | ✓          | ✓          |
++----------------------------------+------+-------------+---------+------------+------------+
+| :ref:`classes-methods-functions` |      |             |         |            | ✓          |
++----------------------------------+------+-------------+---------+------------+------------+
+| :ref:`sub-classes`               |      |             |         |            | ✓          |
++----------------------------------+------+-------------+---------+------------+------------+
+| :ref:`parsing-urls`              | ✓    |             |         |            |            |
++----------------------------------+------+-------------+---------+------------+------------+
+| :ref:`json-schemas`              |      |             |         | ✓          | ✓          |
++----------------------------------+------+-------------+---------+------------+------------+
+| :ref:`jsonnet-files`             |      |             | ✓       |            |            |
++----------------------------------+------+-------------+---------+------------+------------+
+| :ref:`tab-completion`            |      | ✓           |         |            |            |
++----------------------------------+------+-------------+---------+------------+------------+
 
 
 Basic usage
@@ -552,6 +575,8 @@ Some notes about this support are:
   be shown as :code:`type: Union[str, null], default: null`.
 
 
+.. _sub-classes:
+
 Class type and sub-classes
 ==========================
 
@@ -695,6 +720,8 @@ the levels. This is, first call :func:`add_subcommands` and
 second level, and so on.
 
 
+.. _json-schemas:
+
 Json schemas
 ============
 
@@ -733,6 +760,8 @@ parser to initialize the config values that are not specified. When adding an
 argument with the :class:`.ActionJsonSchema` action, you can use "%s" in the
 :code:`help` string so that in that position the schema will be printed.
 
+
+.. _jsonnet-files:
 
 Jsonnet files
 =============
@@ -971,6 +1000,8 @@ to some desired values. For example:
     Namespace(op=<MyEnum.choice1: -1>)
 
 
+.. _boolean-arguments:
+
 Boolean arguments
 =================
 
@@ -1056,6 +1087,8 @@ that instantiates the parser. This function would be used in one place to get an
 instance of the parser for standalone parsing, and in some other place use the
 function to provide an instance of the parser to :class:`.ActionParser`.
 
+
+.. _tab-completion:
 
 Tab completion
 ==============
