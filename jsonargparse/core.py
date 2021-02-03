@@ -226,6 +226,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         with_meta: Optional[bool],
         skip_check: bool,
         skip_subcommands: bool = False,
+        fail_no_subcommand: bool = True,
         cfg_base: Union[Namespace, Dict[str, Any]] = None,
         log_message: str = None,
     ) -> Union[Namespace, Dict[str, Any]]:
@@ -248,7 +249,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             env = True
 
         if not skip_subcommands:
-            _ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults)
+            _ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults, fail_no_subcommand=fail_no_subcommand)
 
         if nested:
             cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
@@ -480,6 +481,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         nested: bool = True,
         with_meta: bool = None,
         _skip_check: bool = False,
+        _fail_no_subcommand: bool = True,
         _base = None,
     ) -> Union[Namespace, Dict[str, Any]]:
         """Parses a configuration file (yaml or jsonnet) given its path.
@@ -504,8 +506,17 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             os.chdir(os.path.abspath(os.path.join(fpath(absolute=False), os.pardir)))
         try:
             cfg_str = fpath.get_content()
-            parsed_cfg = self.parse_string(cfg_str, cfg_path, ext_vars, env, defaults, nested, with_meta=with_meta,
-                                           _skip_logging=True, _skip_check=_skip_check, _base=_base)
+            parsed_cfg = self.parse_string(cfg_str,
+                                           cfg_path,
+                                           ext_vars,
+                                           env,
+                                           defaults,
+                                           nested,
+                                           with_meta=with_meta,
+                                           _skip_logging=True,
+                                           _skip_check=_skip_check,
+                                           _fail_no_subcommand=_fail_no_subcommand,
+                                           _base=_base)
         finally:
             if not fpath.is_url:
                 os.chdir(cwd)
@@ -526,6 +537,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         with_meta: bool = None,
         _skip_logging: bool = False,
         _skip_check: bool = False,
+        _fail_no_subcommand: bool = True,
         _base = None,
     ) -> Union[Namespace, Dict[str, Any]]:
         """Parses configuration (yaml or jsonnet) given as a string.
@@ -555,6 +567,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                 nested=nested,
                 with_meta=with_meta,
                 skip_check=_skip_check,
+                fail_no_subcommand=_fail_no_subcommand,
                 log_message=('Parsed %s string.' % self.parser_mode),
             )
 
@@ -649,7 +662,10 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if 'description' not in kwargs:
             kwargs['description'] = 'For more details of each subcommand add it as argument followed by --help.'
         subcommands = super().add_subparsers(dest=dest, **kwargs)
-        subcommands.required = required
+        if required:
+            self.required_args.add(dest)
+        subcommands._required = required  # type: ignore
+        subcommands.required = False
         _find_action(self, dest)._env_prefix = self.env_prefix
         return subcommands
 

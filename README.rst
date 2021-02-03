@@ -154,9 +154,9 @@ single or a list functions/classes as first argument to :func:`.CLI` skips the
 automatic search and only includes what is given.
 
 When :func:`.CLI` receives a single class, the first arguments are used to
-instantiate the class, then a class method name must be given (see
-:ref:`sub-commands`) and the remaining arguments are used to run the class
-method. An example would be:
+instantiate the class, then a class method name must be given (i.e. methods
+become :ref:`sub-commands`) and the remaining arguments are used to run the
+class method. An example would be:
 
 .. code-block:: python
 
@@ -195,14 +195,14 @@ Then in a shell you could run:
     Lucky won 632€!
 
 If more than one function is given to :func:`.CLI`, then any of them can be
-executed via :ref:`sub-commands` similar to the single class example above, e.g.
-:code:`python example.py function [arguments]` where :code:`function` is the
-name of the function to execute.
+executed via :ref:`sub-commands` similar to the single class example above, i.e.
+:code:`example.py function [arguments]` where :code:`function` is the name of
+the function to execute.
 
 If multiple classes or a mixture of functions and classes is given to
 :func:`.CLI`, to execute a method of a class, two levels of :ref:`sub-commands`
-are required. The first sub-command would be name of the class and the second
-the name of the method, i.e. :code:`python example.py class [init_arguments]
+are required. The first sub-command would be the name of the class and the
+second the name of the method, i.e. :code:`example.py class [init_arguments]
 method [arguments]`. For more details about the automatic adding of arguments
 from classes and functions and the use of configuration files refer to section
 :ref:`classes-methods-functions`.
@@ -258,7 +258,7 @@ the :py:meth:`.ArgumentParser.parse_args` function, after which you get
 an object with the parsed values or defaults available as attributes. For
 illustrative purposes giving to :func:`parse_args` a list of arguments (instead
 of automatically getting them from the command line arguments), with the parser
-from above you would observe:
+shown above you would observe:
 
 .. code-block:: python
 
@@ -303,17 +303,23 @@ An important feature of jsonargparse is the parsing of yaml/json files. The dot
 notation hierarchy of the arguments (see :ref:`nested-namespaces`) are used for
 the expected structure in the config files.
 
-The :class:`.ArgumentParser` class accepts a :code:`default_config_files`
-argument that can be given to specify patterns to search for configuration
-files. Only the first matched config file is parsed.
+The see :py:attr:`.ArgumentParser.default_config_files` property can be set when
+creating a parser to specify patterns to search for configuration files. For
+example if a parser is created as
+:code:`ArgumentParser(default_config_files=['~/.myapp.yaml',
+'/etc/myapp.yaml'])` when parsing if any of those two config files exist they
+will be parsed to override the defaults. Only the first matched config file is
+used. The default config file is always parsed first, this means that any
+command line arguments will override its values.
 
-When parsing command line arguments, it is possible to add a configuration file
-path argument. The config file would be read and parsed in the specific position
-among the command line arguments, so the arguments after would override the
-values from the configuration file. The config argument can be given multiple
-times, each overriding the values of the previous. Again using the parser from
-the :ref:`nested-namespaces` section above, for example we could have the
-following config file in yaml format:
+It is also possible to add an argument to explicitly provide a configuration
+file path. Providing a config file as an argument does not disable the parsing
+of :code:`default_config_files`. The config argument would be parsed in the
+specific position among the command line arguments. Therefore the arguments
+found after would override the values from the config file. The config argument
+can be given multiple times, each overriding the values of the previous. Using
+the example parser from the :ref:`nested-namespaces` section above, we could
+have the following config file in yaml format:
 
 .. code-block:: yaml
 
@@ -322,7 +328,7 @@ following config file in yaml format:
       opt1: from yaml 1
       opt2: from yaml 2
 
-Then in python adding a yaml file argument and parsing some example arguments,
+Then in python adding a config file argument and parsing some dummy arguments,
 the following would be observed:
 
 .. code-block:: python
@@ -349,22 +355,22 @@ configuration content can also be provided.
     >>> cfg.lev1.opt1
     'from string 1'
 
-All parsers include a :code:`--print_config` option. This is useful particularly
-for command line tools with a large set of options to create an initial config
-file including all default values. This option by default all entries, including
-the ones with :code:`null` values. If the argument is given as
-:code:`--print_config=skip_null`, then the entries with :code:`null` values will
-not be included.
-
-The config file can also be provided as an environment variable as explained
-in section :ref:`environment-variables`. The configuration file environment
-variable is the first one to be parsed. So any other argument provided through
-environment variables would override the config file one.
+The config file can also be provided as an environment variable as explained in
+section :ref:`environment-variables`. The configuration file environment
+variable is the first one to be parsed. So any argument provided through an
+environment variable would override the config file one.
 
 A configuration file or string can also be parsed without parsing command line
-arguments. The functions for this are :py:meth:`.ArgumentParser.parse_path` and
+arguments. The methods for this are :py:meth:`.ArgumentParser.parse_path` and
 :py:meth:`.ArgumentParser.parse_string` to parse a config file or a config
-contained in a string respectively.
+string respectively.
+
+All parsers include a :code:`--print_config` option. This is useful particularly
+for command line tools with a large set of options to create an initial config
+file including all default values. By default all entries are included, even the
+ones with :code:`null` values. If this argument is given as
+:code:`--print_config=skip_null`, then the entries with :code:`null` values will
+be excluded.
 
 
 .. _environment-variables:
@@ -399,9 +405,9 @@ command line arguments, that is:
     >>> cfg.lev1.opt2
     'from env 2'
 
-Note that when creating the parser, :code:`default_env=True` was given as
-argument. By default :py:meth:`.ArgumentParser.parse_args` does not check
-environment variables, so it has to be enabled explicitly.
+Note that when creating the parser, :code:`default_env=True` was given. By
+default :py:meth:`.ArgumentParser.parse_args` does not check environment
+variables, so it has to be enabled explicitly.
 
 There is also the :py:meth:`.ArgumentParser.parse_env` function to only parse
 environment variables, which might be useful for some use cases in which there
@@ -544,10 +550,9 @@ hints as follows:
 
 The support of type hints is designed to not require developers to change their
 types or default values. In other words, the idea is to support type hints
-whatever they may be, as opposed to requiring to be changed some jsonargparse
-specific types for the parsers to work. The types included in
-:code:`jsonargparse.typing` are completely generic and could even be useful
-independent of the argument parsers.
+whatever they may be, as opposed to requiring jsonargparse specific types. The
+types included in :code:`jsonargparse.typing` are completely generic and could
+even be useful independent of the argument parsers.
 
 A wide range of type hints are supported and with arbitrary complexity/nesting.
 Some notes about this support are:
@@ -570,9 +575,10 @@ Some notes about this support are:
   represented as a list.
 
 - To set a value to :code:`None` it is required to use :code:`null` since this
-  is how json/yaml requires it. To avoid confusion in the help, :code:`NoneType`
-  is displayed as :code:`null`. For example :code:`Optional[str] = None` would
-  be shown as :code:`type: Union[str, null], default: null`.
+  is how json/yaml defines it. To avoid confusion in the help, :code:`NoneType`
+  is displayed as :code:`null`. For example function argument with type and
+  default :code:`Optional[str] = None` would be shown in the help as
+  :code:`type: Union[str, null], default: null`.
 
 
 .. _sub-classes:
@@ -580,16 +586,16 @@ Some notes about this support are:
 Class type and sub-classes
 ==========================
 
-It is also possible to use an arbitrary class as a type, such that the argument
+It is also possible to use an arbitrary class as a type such that the argument
 accepts this class or any derived subclass. In the config file or environment
 variable or command line argument, a class is represented by a dictionary with a
 :code:`class_path` entry indicating the dot notation expression to import the
 class, and optionally some :code:`init_args` that would be used to instantiate
-it. When parsing it will be checked that the class can be imported, that it is a
-subclass of the type and that :code:`init_args` values correspond to valid
-arguments to instantiate. After parsing, the config object will include the
-:code:`class_path` and :code:`init_args` entries. To get a config object with
-all subclasses instantiated, the
+it. When parsing, it will be checked that the class can be imported, that it is
+a subclass of the given type and that :code:`init_args` values correspond to
+valid arguments to instantiate it. After parsing, the config object will include
+the :code:`class_path` and :code:`init_args` entries. To get a config object
+with all sub-classes instantiated, the
 :py:meth:`.ArgumentParser.instantiate_subclasses` method is used.
 
 A simple example would be having some config file :code:`config.yaml` as:
@@ -615,7 +621,7 @@ Then in python:
     >>> cfg['calendar']
     <calendar.Calendar object at 0x7ffa559aa940>
 
-In the example the :code:`class_path` points to the same class used for the
+In this example the :code:`class_path` points to the same class used for the
 type. But a subclass of :code:`Calendar` with an extended list of init
 parameters would also work.
 
@@ -626,9 +632,9 @@ and :code:`init_args` pair.
 There is also another method
 :py:meth:`.SignatureArguments.add_subclass_arguments` which does the same as
 :code:`add_argument` in the example above, but has some added benefits: 1) the
-argument is added in a new group automatically using docstrings; 2) the argument
-values can be given in an independent config file by specifying a path to it; 3)
-by default has useful :code:`metavar` and :code:`help` strings; and 4) a special
+argument is added in a new group automatically; 2) the argument values can be
+given in an independent config file by specifying a path to it; 3) by default
+sets a useful :code:`metavar` and :code:`help` strings; and 4) a special
 :code:`--*.help` argument is added that can be used to show the expected
 :code:`init_args` details for a specific given :code:`class_path`. Take for
 example a tool defined as:
@@ -758,7 +764,7 @@ provide a path to a json/yaml file, which would be loaded and validated against
 the schema. If the schema defines default values, these will be used by the
 parser to initialize the config values that are not specified. When adding an
 argument with the :class:`.ActionJsonSchema` action, you can use "%s" in the
-:code:`help` string so that in that position the schema will be printed.
+:code:`help` string so that in that position the schema is printed.
 
 
 .. _jsonnet-files:
@@ -865,11 +871,11 @@ file, or the corresponding absolute path:
     >>> cfg.databases.info()
     '/YOUR_CWD/app/data/info.db'
 
-Likewise directories can be parsed for example using as type the
-:class:`.Path_dw` type, would require a directory to exist and be writeable. New
-path types can be created using the :func:`.path_type` function. For example to
-create a type for files that must exist and be both readable and writeable, the
-command would be :code:`Path_frw = path_type('frw')`. If the file
+Likewise directories can be parsed for instance using the :class:`.Path_dw`
+type, which would require a directory to exist and be writeable. New path types
+can be created using the :func:`.path_type` function. For example to create a
+type for files that must exist and be both readable and writeable, the command
+would be :code:`Path_frw = path_type('frw')`. If the file
 :code:`app/config.yaml` is not writeable, then usig the type to cast
 :code:`Path_frw('app/config.yaml')` would raise a *TypeError: File is not
 writeable* exception. For more information of all the mode flags supported,
@@ -896,8 +902,9 @@ argument either the path to a file listing the paths is given or the special
     cfg = parser.parse_args(['--list', 'paths.lst')  # Text file with paths
     cfg = parser.parse_args(['--list', '-')          # List from stdin
 
-If :code:`nargs='+'` is given to :code:`add_argument` then a single list is
-generated including all paths in all lists is provided.
+If :code:`nargs='+'` is given to :code:`add_argument` with
+:class:`.ActionPathList` then a single list is generated including all paths in
+all provided lists.
 
 Note: the :class:`.Path` class is currently not fully supported in windows.
 
@@ -929,7 +936,7 @@ will also support loading from URLs: :py:meth:`.ArgumentParser.parse_path`,
 :class:`.ActionConfigFile`, :class:`.ActionJsonSchema`, :class:`.ActionJsonnet`
 and :class:`.ActionParser`. This means for example that a tool that can receive
 a configuration file via :class:`.ActionConfigFile` is able to get the config
-file from a URL, that is something like the following would work:
+file from a URL, thus something like the following would work:
 
 .. code-block:: bash
 
@@ -1037,9 +1044,9 @@ makes this straightforward. A couple of examples would be:
     # --with-opt2 for true and --without-opt2 for false.
     parser.add_argument('--with-op2', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
 
-If the :class:`.ActionYesNo` class is used in conjunction with
-:code:`nargs='?'` the options can also be set by giving as value any of
-:code:`{'true', 'yes', 'false', 'no'}`.
+If the :class:`.ActionYesNo` class is used in conjunction with :code:`nargs='?'`
+the options can also be set by giving as value any of :code:`{'true', 'yes',
+'false', 'no'}`. :class:`.ActionYesNo` works without any extras require.
 
 
 .. _parser-arguments:

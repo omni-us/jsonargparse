@@ -300,6 +300,10 @@ class AdvancedFeaturesTests(unittest.TestCase):
         cfg = namespace_to_dict(parser.get_defaults())
         self.assertEqual(cfg, {'o1': 'o1_def', 'subcommand': None})
 
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        cfg = namespace_to_dict(parser.parse_args(['--cfg={"o1": "o1_arg"}', 'a', 'ap1_arg']))
+        self.assertEqual(cfg, {'a': {'ao1': 'ao1_def', 'ap1': 'ap1_arg'}, 'cfg': [None], 'o1': 'o1_arg', 'subcommand': 'a'})
+
         cfg = namespace_to_dict(parser.parse_args(['--o1', 'o1_arg', 'a', 'ap1_arg']))
         self.assertEqual(cfg['o1'], 'o1_arg')
         self.assertEqual(cfg['subcommand'], 'a')

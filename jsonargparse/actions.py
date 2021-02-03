@@ -108,6 +108,7 @@ class ActionConfigFile(Action, FilesCompleterMethod):
     def _apply_config(parser, namespace, dest, value):
         if not hasattr(namespace, dest) or not isinstance(getattr(namespace, dest), list):
             setattr(namespace, dest, [])
+        kwargs = {'env': False, 'defaults': False, '_skip_check': True, '_fail_no_subcommand': False}
         try:
             cfg_path = Path(value, mode=get_config_read_mode())
         except TypeError as ex_path:
@@ -115,11 +116,11 @@ class ActionConfigFile(Action, FilesCompleterMethod):
                 if isinstance(yaml.safe_load(value), str):
                     raise ex_path
                 cfg_path = None
-                cfg_file = parser.parse_string(value, env=False, defaults=False, _skip_check=True)
+                cfg_file = parser.parse_string(value, **kwargs)
             except (TypeError, yamlParserError, yamlScannerError) as ex_str:
                 raise TypeError('Parser key "'+dest+'": '+str(ex_str)) from ex_str
         else:
-            cfg_file = parser.parse_path(value, env=False, defaults=False, _skip_check=True)
+            cfg_file = parser.parse_path(value, **kwargs)
         cfg_file = _dict_to_flat_namespace(namespace_to_dict(cfg_file))
         getattr(namespace, dest).append(cfg_path)
         for key, val in vars(cfg_file).items():
@@ -497,7 +498,7 @@ class _ActionSubCommands(_SubParsersAction):
 
 
     @staticmethod
-    def handle_subcommands(parser, cfg, env, defaults, prefix=''):
+    def handle_subcommands(parser, cfg, env, defaults, prefix='', fail_no_subcommand=True):
         """Adds sub-command dest if missing and parses defaults and environment variables."""
         if parser._subparsers is None:
             return
@@ -523,7 +524,11 @@ class _ActionSubCommands(_SubParsersAction):
                     break
             cfg_dict[dest] = subcommand
 
-        assert subcommand in action._name_parser_map
+        if subcommand is None and not fail_no_subcommand:
+            return
+        if action._required and subcommand not in action._name_parser_map:
+            raise KeyError('Sub-command "'+dest+'" is required but not given or its value is None.')
+
         subparser = action._name_parser_map[subcommand]
 
         # merge environment variable values and default values

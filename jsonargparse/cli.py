@@ -93,6 +93,6 @@ def _run_component(component, cfg):
         return component(**cfg)
     else:
         subcommand = cfg.pop('subcommand')
-        subcommand_cfg = cfg.pop(subcommand)
+        subcommand_cfg = cfg.pop(subcommand) if subcommand in cfg else {}
         component_obj = component(**cfg)
         return getattr(component_obj, subcommand)(**subcommand_cfg)

@@ -10,6 +10,16 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.4.1 (2021-02-03)
+-------------------
+
+Fixed
+^^^^^
+- CLI crashed for class method when zero args given after subcommand.
+- Options before subcommand provided in config file gave subcommand not given.
+- Various improvements and fixes to the readme.
+
+
 v3.4.0 (2021-02-01)
 -------------------
 
