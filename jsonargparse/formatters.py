@@ -35,11 +35,14 @@ class DefaultHelpFormatter(HelpFormatter):
                 help_str += '.'
             return help_str
         help_str = ''
-        if hasattr(action, '_required') and action._required:
+        is_required = hasattr(action, '_required') and action._required
+        if is_required:
             help_str = 'required'
         if '%(type)' not in action.help and self._get_type_str(action) is not None:
             help_str += (', ' if help_str else '') + 'type: %(type)s'
-        if '%(default)' not in action.help and action.default is not SUPPRESS and \
+        if '%(default)' not in action.help and \
+           action.default is not SUPPRESS and \
+           (action.default is not None or not is_required) and \
            (action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}):
             help_str += (', ' if help_str else '') + 'default: %(default)s'
         return action.help + (' ('+help_str+')' if help_str else '')

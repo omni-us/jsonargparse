@@ -17,6 +17,8 @@ Fixed
 ^^^^^
 - CLI crashed for class method when zero args given after subcommand.
 - Options before subcommand provided in config file gave subcommand not given.
+- Arguments in groups without help not showing required, type and default.
+- Required arguments help incorrectly showed null default value.
 - Various improvements and fixes to the readme.
 
 

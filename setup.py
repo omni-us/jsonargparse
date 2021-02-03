@@ -5,7 +5,7 @@ import re
 
 
 NAME_TESTS = next(filter(lambda x: x.startswith('test_suite = '), open('setup.cfg').readlines())).strip().split()[-1]
-LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:', '', open('README.rst').read())
+LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:|py:attr:', '', open('README.rst').read())
 LONG_DESCRIPTION = re.sub('([+|][- ]{12})[- ]{5}', r'\1', LONG_DESCRIPTION)
 CMDCLASS = {}
 

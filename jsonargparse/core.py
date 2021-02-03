@@ -98,8 +98,7 @@ class _ActionsContainer(argparse._ActionsContainer):
                 raise ValueError('Argument with destination name "'+key+'" not allowed.')
         parser = self.parser if hasattr(self, 'parser') else self  # type: ignore
         if action.help is None and \
-           hasattr(self, 'formatter_class') and \
-           issubclass(self.formatter_class, DefaultHelpFormatter):  # type: ignore
+           issubclass(parser.formatter_class, DefaultHelpFormatter):
             action.help = ' '
         if action.required:
             parser.required_args.add(action.dest)

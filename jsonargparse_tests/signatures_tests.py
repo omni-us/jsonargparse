@@ -117,7 +117,7 @@ class SignaturesTests(unittest.TestCase):
             for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a4', 'c3_a5', 'c1_a2']:
                 self.assertEqual(key+' description', _find_action(parser, key).help)
             for key in ['c3_a3', 'c3_a7', 'c1_a4']:
-                self.assertIsNone(_find_action(parser, key).help, 'expected help for '+key+' to be None')
+                self.assertNotEqual(key+' description', _find_action(parser, key).help)
 
         ## Test nested and as_group=False ##
         parser = ArgumentParser()
@@ -204,7 +204,7 @@ class SignaturesTests(unittest.TestCase):
             for key in ['m.a1', 'm.a2']:
                 self.assertEqual(key.split('.')[1]+' description', _find_action(parser, key).help)
             for key in ['m.a3', 's.a1', 's.a2']:
-                self.assertIsNone(_find_action(parser, key).help, 'expected help for '+key+' to be None')
+                self.assertNotEqual(key.split('.')[1]+' description', _find_action(parser, key).help)
 
 
     def test_add_function_arguments(self):
@@ -241,7 +241,6 @@ class SignaturesTests(unittest.TestCase):
             self.assertEqual('func short description', parser.groups['func'].title)
             for key in ['a1', 'a2']:
                 self.assertEqual(key+' description', _find_action(parser, key).help)
-            self.assertIsNone(_find_action(parser, 'a3').help, 'expected help for a3 to be None')
 
 
     def test_add_subclass_arguments(self):
