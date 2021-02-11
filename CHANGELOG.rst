@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.X.X
+------
+
+Fixed
+^^^^^
+- Using dict as type incorrectly considered as class requiring class_path.
+
+
 v3.4.1 (2021-02-03)
 -------------------
 

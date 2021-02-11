@@ -282,6 +282,9 @@ class ActionJsonSchema(Action):
         elif _issubclass(annotation, (str, int, float)):
             return annotation_to_schema(annotation), None
 
+        elif annotation == dict:
+            return {'type': 'object'}, None
+
         elif not hasattr(annotation, '__origin__'):
             if annotation != inspect._empty:
                 schema = {
