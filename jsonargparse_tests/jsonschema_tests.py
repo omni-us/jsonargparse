@@ -207,6 +207,14 @@ class JsonSchemaTests(TempDirTestCase):
         self.assertEqual([3, MyEnum.ab], parser.parse_args(['--list2=[3, "ab"]']).list2)
 
 
+    def test_dict(self):
+        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser.add_argument('--dict', type=dict)
+        self.assertEqual({}, parser.parse_args(['--dict={}'])['dict'])
+        self.assertEqual({'a': 1, 'b': '2'}, parser.parse_args(['--dict={"a":1, "b":"2"}'])['dict'])
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--dict=1']))
+
+
     def test_dict_union(self):
         class MyEnum(Enum):
             ab = 1
@@ -230,9 +238,31 @@ class JsonSchemaTests(TempDirTestCase):
         cfg = parser.parse_args(['--tuple=[2, "a", "b"]'])
         self.assertEqual((2, 'a', 'b'), cfg.tuple)
         self.assertIsInstance(cfg.tuple[1], Path)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[2, "a", "b", 5]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=["2", "a", "b"]']))
+
+
+    def test_nested_tuples(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--tuple', type=Tuple[Tuple[str, str], Tuple[Tuple[int, float], Tuple[int, float]]])
+        cfg = parser.parse_args(['--tuple=[["foo", "bar"], [[1, 2.02], [3, 3.09]]]'])
+        self.assertEqual((('foo', 'bar'), ((1, 2.02), (3, 3.09))), cfg.tuple)
+
+
+    def test_tuple_ellipsis(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--tuple', type=Tuple[float, ...])
+        self.assertEqual((1.2,), parser.parse_args(['--tuple=[1.2]']).tuple)
+        self.assertEqual((1.2, 3.4), parser.parse_args(['--tuple=[1.2, 3.4]']).tuple)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[]']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--tuple', type=Tuple[Tuple[str, str], Tuple[Tuple[int, float], ...]])
+        cfg = parser.parse_args(['--tuple=[["foo", "bar"], [[1, 2.02], [3, 3.09]]]'])
+        self.assertEqual((('foo', 'bar'), ((1, 2.02), (3, 3.09))), cfg.tuple)
 
 
     def test_class_type(self):

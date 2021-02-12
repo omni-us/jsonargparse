@@ -240,9 +240,11 @@ class ActionJsonSchema(Action):
             if reverse:
                 val = list(val)
             for n, v in enumerate(val):
-                if n < len(subschemas) and subschemas[n] is not None:
-                    for subschema in subschemas[n]:
-                        val[n] = validate_adapt(v, subschema)
+                if len(subschemas) == 0:
+                    break
+                subschema = subschemas[n if n < len(subschemas) else -1]
+                if subschema is not None:
+                    val[n] = validate_adapt(v, subschema)
             if not reverse:
                 val = tuple(val) if annotation.__origin__ in {Tuple, tuple} else set(val)
 
@@ -316,15 +318,24 @@ class ActionJsonSchema(Action):
                 return {'anyOf': members}, union_subschemas
 
         elif annotation.__origin__ in {Tuple, tuple}:
+            has_ellipsis = False
             items = []
             tuple_subschemas = []
             for arg in annotation.__args__:
+                if arg == Ellipsis:
+                    has_ellipsis = True
+                    break
                 item, subschemas = ActionJsonSchema._typing_schema(arg)
                 items.append(item)
-                tuple_subschemas.append(subschemas)
-            #if any(a is None for a in items):
-            #    return None, None
-            return {'type': 'array', 'items': items, 'minItems': len(items), 'maxItems': len(items)}, tuple_subschemas
+                if arg not in typesmap:
+                    jsonvalidator = import_jsonschema('ActionJsonSchema')[1]
+                    tuple_subschemas.append((arg, jsonvalidator(item), subschemas))
+            schema = {'type': 'array', 'items': items, 'minItems': len(items)}
+            if has_ellipsis:
+                schema['additionalItems'] = items[-1]
+            else:
+                schema['maxItems'] = len(items)
+            return schema, tuple_subschemas
 
         elif annotation.__origin__ in {List, list, Iterable, Sequence, Set, set}:
             items, subschemas = ActionJsonSchema._typing_schema(annotation.__args__[0])

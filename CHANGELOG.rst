@@ -13,9 +13,14 @@ section of releases.
 v3.X.X
 ------
 
+Added
+-----
+- Tuples with ellipsis are now supported #40.
+
 Fixed
 ^^^^^
 - Using dict as type incorrectly considered as class requiring class_path.
+- Nested tuples were not working correctly #40.
 
 
 v3.4.1 (2021-02-03)
