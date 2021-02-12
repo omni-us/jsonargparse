@@ -10,8 +10,8 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.X.X
-------
+v3.5.0 (2021-02-12)
+-------------------
 
 Added
 -----
