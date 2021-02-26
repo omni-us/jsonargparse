@@ -48,6 +48,7 @@ from .util import (
     meta_keys,
     strip_meta,
     usage_and_exit_error_handler,
+    change_to_path_dir,
     Path,
     LoggerProperty,
     _get_key_value,
@@ -500,10 +501,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             ParserError: If there is a parsing error and error_handler=None.
         """
         fpath = Path(cfg_path, mode=get_config_read_mode())
-        if not fpath.is_url:
-            cwd = os.getcwd()
-            os.chdir(os.path.abspath(os.path.join(fpath(absolute=False), os.pardir)))
-        try:
+        with change_to_path_dir(fpath):
             cfg_str = fpath.get_content()
             parsed_cfg = self.parse_string(cfg_str,
                                            cfg_path,
@@ -516,9 +514,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                                            _skip_check=_skip_check,
                                            _fail_no_subcommand=_fail_no_subcommand,
                                            _base=_base)
-        finally:
-            if not fpath.is_url:
-                os.chdir(cwd)
 
         self._logger.info('Parsed %s from path: %s', self.parser_mode, cfg_path)
 
@@ -894,7 +889,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             default_config_files += glob.glob(os.path.expanduser(pattern))
         if len(default_config_files) > 0:
             default_config_file = Path(default_config_files[0], mode=get_config_read_mode())
-            cfg_file = self._load_cfg(default_config_file.get_content())
+            with change_to_path_dir(default_config_file):
+                cfg_file = self._load_cfg(default_config_file.get_content())
             cfg = self._merge_config(cfg_file, cfg)
             cfg['__default_config__'] = default_config_file
             self._logger.info('Parsed configuration from default path: %s', str(default_config_file))

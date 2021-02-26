@@ -267,6 +267,19 @@ def _suppress_stderr():
             yield None
 
 
+@contextmanager
+def change_to_path_dir(path):
+    """A context manager for running code in the directory of a path."""
+    if not path.is_url:
+        cwd = os.getcwd()
+        os.chdir(os.path.abspath(os.path.join(str(path), os.pardir)))
+    try:
+        yield None
+    finally:
+        if not path.is_url:
+            os.chdir(cwd)
+
+
 class Path:
     """Stores a (possibly relative) path and the corresponding absolute path.
 

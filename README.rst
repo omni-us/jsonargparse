@@ -570,13 +570,14 @@ Some notes about this support are:
 
 - :code:`Tuple` and :code:`Set` are supported even though they can't be
   represented in json distinguishable from a list. Each :code:`Tuple` element
-  position can have its own type and will be validated as such. In command line
+  position can have its own type and will be validated as such. :code:`Tuple`
+  with ellipsis (:code:`Tuple[type, ...]`) is also supported. In command line
   arguments, config files and environment variables, tuples and sets are
   represented as a list.
 
 - To set a value to :code:`None` it is required to use :code:`null` since this
   is how json/yaml defines it. To avoid confusion in the help, :code:`NoneType`
-  is displayed as :code:`null`. For example function argument with type and
+  is displayed as :code:`null`. For example a function argument with type and
   default :code:`Optional[str] = None` would be shown in the help as
   :code:`type: Union[str, null], default: null`.
 

@@ -10,11 +10,20 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.5.1 (2021-02-26)
+-------------------
+
+Fixed
+^^^^^
+- Parsing of relative paths in default_config_files not working.
+- Description of tuple type in the readme.
+
+
 v3.5.0 (2021-02-12)
 -------------------
 
 Added
------
+^^^^^
 - Tuples with ellipsis are now supported #40.
 
 Fixed
@@ -39,13 +48,13 @@ v3.4.0 (2021-02-01)
 -------------------
 
 Added
------
+^^^^^
 - Save with multifile=True now creates original jsonnet file for ActionJsonnet.
 - default_config_files is now a property of parser objects.
 - Table in readme to ease understanding of extras requires for optional features #38.
 
 Changed
--------
+^^^^^^^
 - Save with multifile=True uses file extension to choose json or yaml format.
 
 Fixed
