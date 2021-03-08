@@ -98,13 +98,16 @@ def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
     Returns:
         The nested configuration dictionary.
     """
+    def raise_conflicting_base(base):
+        raise ParserError('Conflicting namespace base: '+base)
+
     cfg_ns = deepcopy(cfg_ns)
     cfg_dict = {}
     for k, v in vars(cfg_ns).items():
         ksplit = k.split('.')
         if len(ksplit) == 1:
             if k in cfg_dict:
-                raise ParserError('Conflicting namespace base: '+k)
+                raise_conflicting_base(k)
             elif isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
                 cfg_dict[k] = [namespace_to_dict(x) for x in v]
             elif isinstance(v, Namespace):
@@ -117,10 +120,10 @@ def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
                 if kk not in kdict or kdict[kk] is None:
                     kdict[kk] = {}  # type: ignore
                 elif not isinstance(kdict[kk], dict):
-                    raise ParserError('Conflicting namespace base: '+'.'.join(ksplit[:num+1]))
+                    raise_conflicting_base('.'.join(ksplit[:num+1]))
                 kdict = kdict[kk]  # type: ignore
             if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None:
-                raise ParserError('Conflicting namespace base: '+k)
+                raise_conflicting_base(k)
             if isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
                 kdict[ksplit[-1]] = [namespace_to_dict(x) for x in v]
             elif not (v is None and ksplit[-1] in kdict):

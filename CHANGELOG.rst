@@ -10,7 +10,7 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.6.0 (2021-03-XX)
+v3.6.0 (2021-03-08)
 -------------------
 
 Added
@@ -29,6 +29,7 @@ Fixed
 ^^^^^
 - ActionOperators not give error if type already registered.
 - List[Tuple] types not working correctly.
+- Some nested dicts kept as Namespace by dump.
 
 
 v3.5.1 (2021-02-26)

@@ -730,7 +730,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         cleanup_actions(cfg, self._actions)
         cleanup_types(cfg)
-        cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
+        cfg = _flat_namespace_to_dict(_dict_to_flat_namespace(cfg))
 
         if format == 'parser_mode':
             format = 'yaml' if self.parser_mode == 'yaml' else 'json_indented'
