@@ -3,12 +3,14 @@
 
 import re
 import json
+import uuid
 import pathlib
 import platform
 from enum import Enum
 from io import StringIO
 from contextlib import redirect_stdout
 from calendar import Calendar
+from datetime import datetime
 from typing import Optional, Union, List, Tuple, Dict, Generator
 from jsonargparse_tests.base import *
 
@@ -251,6 +253,13 @@ class JsonSchemaTests(TempDirTestCase):
         self.assertEqual((('foo', 'bar'), ((1, 2.02), (3, 3.09))), cfg.tuple)
 
 
+    def test_list_tuple(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--list', type=List[Tuple[int, float]])
+        cfg = parser.parse_args(['--list=[[1, 2.02], [3, 3.09]]'])
+        self.assertEqual([(1, 2.02), (3, 3.09)], cfg.list)
+
+
     def test_tuple_ellipsis(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--tuple', type=Tuple[float, ...])
@@ -321,6 +330,44 @@ class JsonSchemaTests(TempDirTestCase):
     def test_unsupported_type(self):
         parser = ArgumentParser(error_handler=None)
         self.assertRaises(ValueError, lambda: parser.add_argument('--op', type=Optional[Generator]))
+
+
+    def test_uuid_type(self):
+        id1 = uuid.uuid4()
+        id2 = uuid.uuid4()
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--uuid', type=uuid.UUID)
+        parser.add_argument('--uuids', type=List[uuid.UUID])
+        cfg = parser.parse_args(['--uuid='+str(id1), '--uuids=["'+str(id1)+'", "'+str(id2)+'"]'])
+        self.assertEqual(cfg.uuid, id1)
+        self.assertEqual(cfg.uuids, [id1, id2])
+        self.assertEqual('uuid: '+str(id1)+'\nuuids:\n- '+str(id1)+'\n- '+str(id2)+'\n', parser.dump(cfg))
+
+
+    def test_complex_number(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--complex', type=complex)
+        cfg = parser.parse_args(['--complex=(2+3j)'])
+        self.assertEqual(cfg.complex, 2+3j)
+        self.assertEqual(parser.dump(cfg), 'complex: (2+3j)\n')
+
+
+    def test_register_type(self):
+
+        def serializer(v):
+            return v.isoformat()
+
+        def deserializer(v):
+            return datetime.strptime(v, '%Y-%m-%dT%H:%M:%S')
+
+        register_type(datetime, serializer, deserializer)
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--datetime', type=datetime)
+        cfg = parser.parse_args(['--datetime=2008-09-03T20:56:35'])
+        self.assertEqual(cfg.datetime, datetime(2008, 9, 3, 20, 56, 35))
+        self.assertEqual(parser.dump(cfg), "datetime: '2008-09-03T20:56:35'\n")
+        self.assertRaises(ValueError, lambda: register_type(datetime))
+        register_type(uuid.UUID)
 
 
 if __name__ == '__main__':

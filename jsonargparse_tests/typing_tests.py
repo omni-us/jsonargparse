@@ -6,7 +6,7 @@ import pathlib
 import jsonargparse.typing
 from enum import Enum
 from typing import Optional, Union, Dict
-from jsonargparse.typing import is_optional, annotation_to_schema, type_to_str
+from jsonargparse.typing import is_optional, type_to_str, RegisteredType
 from jsonargparse_tests.base import *
 
 
@@ -18,6 +18,7 @@ class RestrictedNumberTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: PositiveInt(0))
         self.assertRaises(ValueError, lambda: PositiveInt('-3'))
         self.assertRaises(ValueError, lambda: PositiveInt('4.0'))
+        self.assertRaises(ValueError, lambda: PositiveInt(5.6))
 
 
     def test_NonNegativeInt(self):
@@ -26,6 +27,7 @@ class RestrictedNumberTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: NonNegativeInt(-1))
         self.assertRaises(ValueError, lambda: NonNegativeInt('-2'))
         self.assertRaises(ValueError, lambda: NonNegativeInt('3.0'))
+        self.assertRaises(ValueError, lambda: NonNegativeInt(4.5))
 
 
     def test_PositiveFloat(self):
@@ -60,7 +62,7 @@ class RestrictedNumberTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: OpenUnitInterval('1.0'))
 
 
-    def test_invalid_type(self):
+    def test_invalid_restricted_number_type(self):
         self.assertRaises(ValueError, lambda: restricted_number_type('Invalid', str, ('<', 0)))
         self.assertRaises(ValueError, lambda: restricted_number_type('Invalid', int, ('<', 0), join='xor'))
         self.assertRaises(ValueError, lambda: restricted_number_type('Invalid', int, ['<', 0]))
@@ -157,15 +159,13 @@ class PathTypeTests(TempDirTestCase):
         self.assertEqual(Path_fr, NewPath_fr)
 
 
-    def test_annotation_to_schema_not_supported(self):
-        self.assertIsNone(annotation_to_schema(Path_fr))
-
-
 class OtherTests(unittest.TestCase):
 
     def test_pickle_module_types(self):
         for otype in registered_types.values():
-            if hasattr(jsonargparse.typing, otype.__name__):
+            if isinstance(otype, RegisteredType) or hasattr(jsonargparse.typing, otype.__name__):
+                if isinstance(otype, RegisteredType):
+                    otype = otype.type_class
                 with self.subTest(otype.__name__):
                     utype = pickle.loads(pickle.dumps(otype))
                     self.assertEqual(otype, utype)

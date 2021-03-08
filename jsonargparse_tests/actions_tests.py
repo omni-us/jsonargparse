@@ -102,7 +102,6 @@ class SimpleActionsTests(unittest.TestCase):
             action=ActionOperators(expr=[('>', 1.0), ('<=', 4.0)], join='and', type=float))
         parser.add_argument('--lt5.o.ge10.o.eq7',
             action=ActionOperators(expr=[('<', 5), ('>=', 10), ('==', 7)], join='or', type=int))
-        def int_or_off(x): return x if x == 'off' else int(x)
         parser.add_argument('--ge0',
             nargs=3,
             action=ActionOperators(expr=('>=', 0)))

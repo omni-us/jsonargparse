@@ -710,6 +710,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                             cfg[action.dest] = str(cfg[action.dest])
                 elif isinstance(action, ActionParser):
                     cleanup_actions(cfg, action._parser._actions)
+                elif isinstance(action, ActionJsonSchema) and action._annotation is not None and cfg.get(action.dest) is not None:
+                    cfg[action.dest] = ActionJsonSchema._adapt_types(cfg[action.dest], action._annotation, action._subschemas, True)
 
         def cleanup_types(cfg):
             for dest, val in cfg.items():

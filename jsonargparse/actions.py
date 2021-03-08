@@ -9,7 +9,7 @@ from enum import Enum
 from argparse import Namespace, Action, SUPPRESS, _StoreAction, _HelpAction, _SubParsersAction
 
 from .optionals import get_config_read_mode, FilesCompleterMethod
-from .typing import restricted_number_type
+from .typing import restricted_number_type, registered_types
 from .util import (
     yamlParserError,
     yamlScannerError,
@@ -340,7 +340,12 @@ class ActionOperators:
 
     def __init__(self, **kwargs):
         if 'expr' in kwargs:
-            self._type = restricted_number_type(None, kwargs.get('type', int), kwargs['expr'], kwargs.get('join', 'and'))
+            restrictions = [kwargs['expr']] if isinstance(kwargs['expr'], tuple) else kwargs['expr']
+            register_key = (tuple(sorted(restrictions)), kwargs.get('type', int), kwargs.get('join', 'and'))
+            if register_key in registered_types:
+                self._type = registered_types[register_key]
+            else:
+                self._type = restricted_number_type(None, kwargs.get('type', int), kwargs['expr'], kwargs.get('join', 'and'))
         else:
             raise ValueError('Expected expr keyword argument.')
 

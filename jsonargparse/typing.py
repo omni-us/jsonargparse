@@ -1,13 +1,15 @@
 """Collection of types and type generators."""
 
 import re
+import uuid
 import operator
 from enum import Enum
-from typing import Dict, List, Tuple, Any, Union, Optional, Type, Pattern
+from typing import Dict, List, Tuple, Any, Union, Optional, Type, Pattern, Callable
 from .util import Path, _issubclass
 
 
 __all__ = [
+    'register_type',
     'registered_types',
     'restricted_number_type',
     'restricted_string_type',
@@ -35,14 +37,43 @@ _operators1 = {
     operator.ne: '!=',
 }
 _operators2 = {v: k for k, v in _operators1.items()}
-_schema_operator_map = {
-    operator.gt: 'exclusiveMinimum',
-    operator.ge: 'minimum',
-    operator.lt: 'exclusiveMaximum',
-    operator.le: 'maximum',
-}
 
 registered_types = {}  # type: Dict[Tuple, Any]
+
+
+def create_type(
+    name: str,
+    base_type: Type,
+    check_value: Callable,
+    register_key: Tuple = None,
+    docstring: str = None,
+    extra_attrs: dict = None,
+) -> Type:
+
+    if register_key in registered_types:
+        registered_type = registered_types[register_key]
+        if registered_type.__name__ != name:
+            raise ValueError('Same type already registered with a different name: '+registered_type.__name__+'.')
+        return registered_type
+
+    class TypeCore:
+
+        _check_value = check_value
+
+        def __new__(cls, v):
+            cls._check_value(cls, v)
+            return super().__new__(cls, v)
+
+    if extra_attrs is not None:
+        for key, value in extra_attrs.items():
+            setattr(TypeCore, key, value)
+
+    created_type = type(name, (TypeCore, base_type), {})
+    if docstring is not None:
+        created_type.__doc__ = docstring
+    add_type(created_type, register_key)
+
+    return created_type
 
 
 def restricted_number_type(
@@ -77,34 +108,9 @@ def restricted_number_type(
                          '(> >= < <= == !=) and a reference value of type '+base_type.__name__+'.')
 
     register_key = (tuple(sorted(restrictions)), base_type, join)
-    if register_key in registered_types:
-        registered_type = registered_types[register_key]
-        if name is not None and registered_type.__name__ != name:
-            raise ValueError('Same type already registered with a different name: '+registered_type.__name__+'.')
-        return registered_type
 
     restrictions = [(_operators2[x[0]], x[1]) for x in restrictions]
     expression = (' '+join+' ').join(['v'+_operators1[op]+str(ref) for op, ref in restrictions])
-
-    class RestrictedNumber:
-
-        _restrictions = restrictions
-        _expression = expression
-        _type = base_type
-        _join = join
-
-        def __new__(cls, v):
-            def within_restriction(cls, v):
-                check = [comparison(v, ref) for comparison, ref in cls._restrictions]
-                if (cls._join == 'and' and not all(check)) or \
-                   (cls._join == 'or' and not any(check)):
-                    return False
-                return True
-
-            v = cls._type(v)
-            if not within_restriction(cls, v):
-                raise ValueError('invalid value, '+str(v)+' does not conform to restriction '+cls._expression)
-            return super().__new__(cls, v)
 
     if name is None:
         name = base_type.__name__
@@ -112,12 +118,30 @@ def restricted_number_type(
             name += '_'+join+'_' if num > 0 else '_'
             name += comparison.__name__ + str(ref).replace('.', '')
 
-    restricted_type = type(name, (RestrictedNumber, base_type), {})
-    if docstring is not None:
-        restricted_type.__doc__ = docstring
-    register_type(register_key, restricted_type)
+    extra_attrs = {
+        '_restrictions': restrictions,
+        '_expression': expression,
+        '_join': join,
+        '_type': base_type,
+    }
 
-    return restricted_type
+    def check_value(cls, v):
+        if cls._type == int and isinstance(v, float) and not float.is_integer(v):
+            raise ValueError('invalid value, '+str(v)+' not an integer')
+        vv = cls._type(v)
+        check = [comparison(vv, ref) for comparison, ref in cls._restrictions]
+        if (cls._join == 'and' and not all(check)) or \
+           (cls._join == 'or' and not any(check)):
+            raise ValueError('invalid value, '+str(v)+' does not conform to restriction '+cls._expression)
+
+    return create_type(
+        name=name,
+        base_type=base_type,
+        check_value=check_value,
+        register_key=register_key,
+        docstring=docstring,
+        extra_attrs=extra_attrs
+    )
 
 
 def restricted_string_type(
@@ -139,31 +163,24 @@ def restricted_string_type(
         regex = re.compile(regex)
     expression = 'matching '+regex.pattern
 
-    register_key = (expression, str)
-    if register_key in registered_types:
-        registered_type = registered_types[register_key]
-        if registered_type.__name__ != name:
-            raise ValueError('Same type already registered with a different name: '+registered_type.__name__+'.')
-        return registered_type
+    extra_attrs = {
+        '_regex': regex,
+        '_expression': expression,
+        '_type': str,
+    }
 
-    class RestrictedString:
+    def check_value(cls, v):
+        if not cls._regex.match(v):
+            raise ValueError('invalid value, "'+v+'" does not match regular expression '+cls._regex.pattern)
 
-        _regex = regex
-        _expression = expression
-        _type = str
-
-        def __new__(cls, v):
-            v = str(v)
-            if not cls._regex.match(v):
-                raise ValueError('invalid value, "'+v+'" does not match regular expression '+cls._expression)
-            return super().__new__(cls, v)
-
-    restricted_type = type(name, (RestrictedString, str), {})
-    if docstring is not None:
-        restricted_type.__doc__ = docstring
-    register_type(register_key, restricted_type)
-
-    return restricted_type
+    return create_type(
+        name=name,
+        base_type=str,
+        check_value=check_value,
+        register_key=(expression, str),
+        docstring=docstring,
+        extra_attrs=extra_attrs
+    )
 
 
 def path_type(
@@ -200,17 +217,56 @@ def path_type(
     restricted_type = type(name, (PathType, str), {})
     if docstring is not None:
         restricted_type.__doc__ = docstring
-    register_type(register_key, restricted_type)
+    add_type(restricted_type, register_key)
 
     return restricted_type
 
 
-def register_type(register_key, new_type):
-    assert register_key not in registered_types
-    if new_type.__name__ in globals():
-        raise ValueError('Type name "'+new_type.__name__+'" clashes with name already defined in jsonargparse.typing.')
-    globals()[new_type.__name__] = new_type
-    registered_types[register_key] = new_type
+class RegisteredType:
+    def __init__(
+        self,
+        type_class: Type,
+        serializer: Callable,
+        deserializer: Optional[Callable]
+    ):
+        self.type_class = type_class
+        self.serializer = serializer
+        self.deserializer = type_class if deserializer is None else deserializer
+
+    def __eq__(self, other):
+        return all(getattr(self, k) == getattr(other, k) for k in ['type_class', 'serializer', 'deserializer'])
+
+
+def register_type(
+    type_class: Type,
+    serializer: Callable = str,
+    deserializer: Optional[Callable] = None,
+    uniqueness_key: Optional[Tuple] = None
+):
+    """Registers a new type for use in jsonargparse parsers.
+
+    Args:
+        type_class: The type object to be registered.
+        serializer: Function that converts an instance of the class to a basic type.
+        deserializer: Function that converts a basic type to an instance of the class. Default None instantiates type_class.
+        uniqueness_key: Key to determine uniqueness of type.
+    """
+    type_wrapper = RegisteredType(type_class, serializer, deserializer)
+    if type_class in registered_types:
+        if type_wrapper == registered_types[type_class]:  # type: ignore
+            return
+        raise ValueError('Type "'+str(type_class)+'" already registered with different serializer and/or deserializer.')
+    registered_types[type_class] = type_wrapper  # type: ignore
+    if uniqueness_key is not None:
+        registered_types[uniqueness_key] = type_class
+
+
+def add_type(type_class: Type, uniqueness_key: Optional[Tuple]):
+    assert uniqueness_key not in registered_types
+    if type_class.__name__ in globals():
+        raise ValueError('Type name "'+type_class.__name__+'" clashes with name already defined in jsonargparse.typing.')
+    globals()[type_class.__name__] = type_class
+    register_type(type_class, type_class._type, uniqueness_key=uniqueness_key)
 
 
 PositiveInt        = restricted_number_type('PositiveInt',        int, ('>', 0),
@@ -231,12 +287,12 @@ NotEmptyStr = restricted_string_type('NotEmptyStr', r'^.*[^ ].*$',
 Email       = restricted_string_type('Email', r'^[^@ ]+@[^@ ]+\.[^@ ]+$',
                                      docstring=r'str restricted to the email pattern ^[^@ ]+@[^@ ]+\.[^@ ]+$')
 
-Path_fr = path_type('fr',
-                    docstring='str pointing to a file that exists and is readable')
-Path_fc = path_type('fc',
-                    docstring='str pointing to a file that can be created if it does not exist')
-Path_dw = path_type('dw',
-                    docstring='str pointing to a directory that exists and is writeable')
+Path_fr = path_type('fr', docstring='str pointing to a file that exists and is readable')
+Path_fc = path_type('fc', docstring='str pointing to a file that can be created if it does not exist')
+Path_dw = path_type('dw', docstring='str pointing to a directory that exists and is writeable')
+
+register_type(complex)
+register_type(uuid.UUID)
 
 
 def is_optional(annotation, ref_type):
@@ -246,28 +302,6 @@ def is_optional(annotation, ref_type):
         len(annotation.__args__) == 2 and \
         any(type(None) == a for a in annotation.__args__) and \
         any(_issubclass(a, ref_type) for a in annotation.__args__)
-
-
-def annotation_to_schema(annotation) -> Optional[Dict[str, str]]:
-    """Generates a json schema from a type annotation if possible.
-
-    Args:
-        annotation: The type annotation to process.
-
-    Returns:
-        The json schema or None if an unsupported type.
-    """
-    schema = None
-    if issubclass(annotation, (int, float)) and \
-       hasattr(annotation, '_join') and annotation._join == 'and' and \
-       hasattr(annotation, '_restrictions') and \
-       all(x[0] in _schema_operator_map for x in annotation._restrictions):
-        schema = {'type': 'integer' if issubclass(annotation, int) else 'number'}
-        for comparison, ref in annotation._restrictions:
-            schema[_schema_operator_map[comparison]] = ref
-    elif issubclass(annotation, str) and hasattr(annotation, '_regex'):
-        schema = {'type': 'string', 'pattern': annotation._regex.pattern}
-    return schema
 
 
 def type_in(obj, types_set):

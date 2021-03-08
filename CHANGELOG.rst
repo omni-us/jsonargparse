@@ -10,6 +10,27 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.6.0 (2021-03-XX)
+-------------------
+
+Added
+^^^^^
+- Function to register additional types for use in parsers.
+- Type hint support for complex and UUID classes.
+
+Changed
+^^^^^^^
+- PositiveInt and NonNegativeInt now gives error instead of silently truncating
+  when given float.
+- Types created with restricted_number_type and restricted_string_type now share
+  a common TypeCore base class.
+
+Fixed
+^^^^^
+- ActionOperators not give error if type already registered.
+- List[Tuple] types not working correctly.
+
+
 v3.5.1 (2021-02-26)
 -------------------
 

@@ -560,11 +560,11 @@ Some notes about this support are:
 - Nested types are supported as long as at least one child type is supported.
 
 - Fully supported types are: :code:`str`, :code:`bool`, :code:`int`,
-  :code:`float`, :code:`List`, :code:`Iterable`, :code:`Sequence`, :code:`Any`,
-  :code:`Union`, :code:`Optional`, :code:`Enum`, restricted types as explained
-  in sections :ref:`restricted-numbers` and :ref:`restricted-strings` and paths
-  and URLs as explained in sections :ref:`parsing-paths` and
-  :ref:`parsing-urls`.
+  :code:`float`, :code:`complex`, :code:`List`, :code:`Iterable`,
+  :code:`Sequence`, :code:`Any`, :code:`Union`, :code:`Optional`, :code:`Enum`,
+  :code:`UUID`, restricted types as explained in sections
+  :ref:`restricted-numbers` and :ref:`restricted-strings` and paths and URLs as
+  explained in sections :ref:`parsing-paths` and :ref:`parsing-urls`.
 
 - :code:`Dict` is supported but only with :code:`str` or :code:`int` keys.
 
@@ -580,6 +580,45 @@ Some notes about this support are:
   is displayed as :code:`null`. For example a function argument with type and
   default :code:`Optional[str] = None` would be shown in the help as
   :code:`type: Union[str, null], default: null`.
+
+
+.. _registering-types:
+
+Registering types
+=================
+
+With the :func:`.register_type` function it is possible to register additional
+types for use in jsonargparse parsers. If the type class can be instantiated
+with a string representation and by casting the instance to :code:`str` gives
+back the string representation, then only the type class is given to
+:func:`.register_type`. For example in the :code:`jsonargparse.typing` package
+this is how complex numbers are registered: :code:`register_type(complex)`. For
+other type classes that don't have these properties, to register it might be
+necessary to provide a serializer and/or deserializer function. Including the
+serializer and deserializer functions, the registration of the complex numbers
+example is equivalent to :code:`register_type(complex, serializer=str,
+deserializer=complex)`.
+
+A more useful example could be registering the :code:`datetime` class. This case
+requires to give both a serializer and a deserializer as seen below.
+
+.. code-block:: python
+
+    from datetime import datetime
+    from jsonargparse import ArgumentParser
+    from jsonargparse.typing import register_type
+
+    def serializer(v):
+        return v.isoformat()
+
+    def deserializer(v):
+        return datetime.strptime(v, '%Y-%m-%dT%H:%M:%S')
+
+    register_type(datetime, serializer, deserializer)
+
+    parser = ArgumentParser()
+    parser.add_argument('--datetime', type=datetime)
+    parser.parse_args(['--datetime=2008-09-03T20:56:35'])
 
 
 .. _sub-classes:
