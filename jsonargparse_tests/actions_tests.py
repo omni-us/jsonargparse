@@ -294,6 +294,15 @@ class ActionParserTests(TempDirTestCase):
         self.assertRaises(ValueError, lambda: ActionParser(parser=object))
 
 
+    def test_ActionParser_required(self):
+        p1 = ArgumentParser()
+        p1.add_argument('--op1', required=True)
+        p2 = ArgumentParser(error_handler=None)
+        p2.add_argument('--op2', action=ActionParser(parser=p1))
+        p2.parse_args(['--op2.op1=1'])
+        self.assertRaises(ParserError, lambda: p2.parse_args([]))
+
+
     def test_ActionParser_failures(self):
         parser_lv2 = ArgumentParser()
         parser_lv2.add_argument('--op')

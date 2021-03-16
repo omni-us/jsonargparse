@@ -433,6 +433,7 @@ class ActionParser(Action):
         for key, val in action._parser._option_string_actions.items():
             option_string_actions[re.sub('^--', '--'+prefix+'.', key)] = val
         action._parser._option_string_actions = option_string_actions
+        action._parser.required_args = set(prefix+'.'+x for x in action._parser.required_args)
         for subaction in action._parser._actions:
             if isinstance(subaction, ActionYesNo):
                 subaction._add_dest_prefix(prefix)

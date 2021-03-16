@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.6.1 (2021-03-??)
+-------------------
+
+Fixed
+^^^^^
+- Use of required in ActionParser parsers not working #43.
+
+
 v3.6.0 (2021-03-08)
 -------------------
 

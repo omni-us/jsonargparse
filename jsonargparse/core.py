@@ -942,8 +942,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                 dct = dct[key]
             return dct
 
-        def check_required(cfg):
-            for reqkey in self.required_args:
+        def check_required(cfg, parser):
+            for action in parser._actions:
+                if isinstance(action, ActionParser):
+                    check_required(cfg, action._parser)
+            for reqkey in parser.required_args:
                 try:
                     val = get_key_value(cfg, reqkey)
                     if val is None:
@@ -972,7 +975,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                     raise KeyError('No action for key "'+kbase+'" to check its value.')
 
         try:
-            check_required(cfg)
+            check_required(cfg, self)
             check_values(cfg)
         except (TypeError, KeyError) as ex:
             prefix = 'Configuration check failed :: '
