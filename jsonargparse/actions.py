@@ -48,9 +48,8 @@ def _find_action(parser, dest:str):
         Action or None: The action if found, otherwise None.
     """
     for action in parser._actions:
-        if action.dest == dest:
-            return action
-        elif isinstance(action, _ActionSubCommands) and dest in action._name_parser_map:
+        if action.dest == dest \
+           or isinstance(action, _ActionSubCommands) and dest in action._name_parser_map:
             return action
     return None
 

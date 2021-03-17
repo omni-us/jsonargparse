@@ -1108,6 +1108,7 @@ following:
     ...
     outer_parser = ArgumentParser(prog='app2')
     outer_parser.add_argument('--inner.node',
+        title='Inner node title',
         action=ActionParser(parser=inner_parser))
 
 When using the :class:`.ActionParser` class, the value of the node in a config
@@ -1116,9 +1117,9 @@ loaded and parsed with the corresponding inner parser. Naturally using
 :class:`.ActionConfigFile` to parse a complete config file will parse the inner
 nodes correctly.
 
-From the command line the help of the inner parsers can be shown by calling the
-tool with a prefixed help command, that is, for the example above it would be
-:code:`--inner.node.help`.
+Note that when adding :code:`inner_parser` a title was given. In the help, the
+added parsers are shown as independent groups starting with the given
+:code:`title`. It is also possible to provide a :code:`description`.
 
 Regarding environment variables, the prefix of the outer parser will be used to
 populate the leaf nodes of the inner parser. In the example above, if
