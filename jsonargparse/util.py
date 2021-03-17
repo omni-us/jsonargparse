@@ -62,7 +62,7 @@ def _load_config(value, enable_path=True, flat_namespace=True):
         else:
             value = yaml.safe_load(cfg_path.get_content())
 
-    if flat_namespace:
+    if flat_namespace and isinstance(value, dict):
         value = _dict_to_flat_namespace(value)
         if cfg_path is not None:
             setattr(value, '__path__', cfg_path)
@@ -108,25 +108,26 @@ def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
         if len(ksplit) == 1:
             if k in cfg_dict:
                 raise_conflicting_base(k)
-            elif isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
-                cfg_dict[k] = [namespace_to_dict(x) for x in v]
-            elif isinstance(v, Namespace):
-                cfg_dict[k] = vars(v)  # type: ignore
+            #elif isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
+            #    cfg_dict[k] = [namespace_to_dict(x) for x in v]
+            #elif isinstance(v, Namespace):
+            #    cfg_dict[k] = vars(v)  # type: ignore
             elif not (v is None and k in cfg_dict):
                 cfg_dict[k] = v
         else:
             kdict = cfg_dict
             for num, kk in enumerate(ksplit[:len(ksplit)-1]):
                 if kk not in kdict or kdict[kk] is None:
-                    kdict[kk] = {}  # type: ignore
+                    kdict[kk] = {}
                 elif not isinstance(kdict[kk], dict):
                     raise_conflicting_base('.'.join(ksplit[:num+1]))
-                kdict = kdict[kk]  # type: ignore
+                kdict = kdict[kk]
             if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None:
                 raise_conflicting_base(k)
-            if isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
-                kdict[ksplit[-1]] = [namespace_to_dict(x) for x in v]
-            elif not (v is None and ksplit[-1] in kdict):
+            #if isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
+            #    kdict[ksplit[-1]] = [namespace_to_dict(x) for x in v]
+            #elif not (v is None and ksplit[-1] in kdict):
+            if not (v is None and ksplit[-1] in kdict):
                 kdict[ksplit[-1]] = v
     return cfg_dict
 
@@ -245,6 +246,8 @@ def usage_and_exit_error_handler(self, message:str):
 
 def _get_env_var(parser, action) -> str:
     """Returns the environment variable for a given parser and action."""
+    if hasattr(parser, '_parser'):
+        parser = parser._parser
     env_var = (parser._env_prefix+'_' if parser._env_prefix else '') + action.dest
     env_var = env_var.replace('.', '__').upper()
     return env_var

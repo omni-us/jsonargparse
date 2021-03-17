@@ -63,6 +63,17 @@ class ParsersTests(TempDirTestCase):
             parser.env_prefix = lambda: 'invalid'
 
 
+    def test_default_env(self):
+        parser = ArgumentParser()
+        self.assertFalse(parser.default_env)
+        parser.default_env = True
+        self.assertTrue(parser.default_env)
+        parser = ArgumentParser(default_env=True)
+        self.assertTrue(parser.default_env)
+        parser.default_env = False
+        self.assertFalse(parser.default_env)
+
+
     def test_parse_string(self):
         parser = example_parser()
 
@@ -776,6 +787,12 @@ class OtherTests(unittest.TestCase):
         cfg_to = Namespace(op1=None, op2=2, op3=3)
         cfg = ArgumentParser.merge_config(cfg_from, cfg_to)
         self.assertEqual(cfg, Namespace(op1=1, op2=None, op3=3))
+
+
+    def test_check_config_branch(self):
+        parser = example_parser()
+        cfg = parser.get_defaults()
+        parser.check_config(cfg.lev1, branch='lev1')
 
 
     def test_usage_and_exit_error_handler(self):

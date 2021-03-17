@@ -10,12 +10,19 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.6.1 (2021-03-??)
+v3.7.0 (2021-03-??)
 -------------------
+
+Changed
+^^^^^^^
+- ActionParser now moves all actions to the parent parser.
+- The help of ActionParser arguments is now shown in the main help #41.
 
 Fixed
 ^^^^^
 - Use of required in ActionParser parsers not working #43.
+- Nested options with names including dashes not working #42.
+- DefaultHelpFormatter not properly using env_prefix to show var names.
 
 
 v3.6.0 (2021-03-08)

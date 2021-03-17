@@ -4,6 +4,7 @@ import json
 import pathlib
 from enum import Enum
 from io import StringIO
+from contextlib import redirect_stdout
 from jsonargparse_tests.base import *
 from jsonargparse import ArgumentParser
 
@@ -288,11 +289,6 @@ class ActionParserTests(TempDirTestCase):
         self.assertEqual('opt2_arg', cfg.inner2.opt2)
         self.assertEqual('opt3_arg', cfg.inner2.inner3.opt3)
 
-        ## Check invalid initializations
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionParser))
-        self.assertRaises(ValueError, lambda: ActionParser())
-        self.assertRaises(ValueError, lambda: ActionParser(parser=object))
-
 
     def test_ActionParser_required(self):
         p1 = ArgumentParser()
@@ -308,8 +304,77 @@ class ActionParserTests(TempDirTestCase):
         parser_lv2.add_argument('--op')
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--inner', action=ActionParser(parser=parser_lv2))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--mistake', action=ActionParser(parser=parser)))
+        self.assertRaises(Exception, lambda: parser.add_argument('--bad', action=ActionParser))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--bad', action=ActionParser(parser=parser)))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--bad', type=str, action=ActionParser(ArgumentParser())))
+        self.assertRaises(ValueError, lambda: parser.add_argument('-b', '--bad', action=ActionParser(ArgumentParser())))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--inner=1']))
+        self.assertRaises(ValueError, lambda: ActionParser())
+        self.assertRaises(ValueError, lambda: ActionParser(parser=object))
+
+
+    def test_ActionParser_conflict(self):
+        parser_lv2 = ArgumentParser()
+        parser_lv2.add_argument('--op')
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--inner.op')
+        self.assertRaises(ValueError, lambda: parser.add_argument('--inner', action=ActionParser(parser_lv2)))
+
+
+    def test_ActionParser_nested_dash_names(self):
+        p1 = ArgumentParser(error_handler=None)
+        p1.add_argument('--op1-like')
+
+        p2 = ArgumentParser(error_handler=None)
+        p2.add_argument('--op2-like', action=ActionParser(parser=p1))
+
+        self.assertEqual(p2.parse_args(['--op2-like.op1-like=a']).op2_like.op1_like, 'a')
+
+        p3 = ArgumentParser(error_handler=None)
+        p3.add_argument('--op3', action=ActionParser(parser=p2))
+
+        self.assertEqual(p3.parse_args(['--op3.op2-like.op1-like=b']).op3.op2_like.op1_like, 'b')
+
+
+    def test_ActionParser_action_groups(self):
+        def get_parser_lv2():
+            parser_lv2 = ArgumentParser(description='parser_lv2 description')
+            parser_lv2.add_argument('--a1', help='lv2_a1 help')
+            group_lv2 = parser_lv2.add_argument_group(description='group_lv2 description')
+            group_lv2.add_argument('--a2', help='lv2_a2 help')
+            return parser_lv2
+
+        parser_lv2 = get_parser_lv2()
+        parser = ArgumentParser()
+        parser.add_argument('--lv2', action=ActionParser(parser_lv2))
+
+        os.environ['COLUMNS'] = '150'
+        out = StringIO()
+        with redirect_stdout(out):
+            parser.print_help()
+        outval = out.getvalue()
+
+        self.assertIn('<jsonargparse.core.ArgumentParser object at', outval)
+        self.assertIn('parser_lv2 description', outval)
+        self.assertIn('group_lv2 description', outval)
+        self.assertIn('--lv2.a1 A1', outval)
+
+        parser_lv2 = get_parser_lv2()
+        parser = ArgumentParser()
+        parser.add_argument(
+            '--lv2',
+            title='ActionParser title',
+            description='ActionParser description',
+            action=ActionParser(parser_lv2),
+        )
+
+        out = StringIO()
+        with redirect_stdout(out):
+            parser.print_help()
+        outval = out.getvalue()
+
+        self.assertIn('ActionParser title', outval)
+        self.assertIn('ActionParser description', outval)
 
 
 if __name__ == '__main__':

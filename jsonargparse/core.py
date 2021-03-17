@@ -36,6 +36,7 @@ from .actions import (
     _ActionConfigLoad,
     _find_action,
     _is_action_value_list,
+    filter_default_actions,
 )
 from .util import (
     namespace_to_dict,
@@ -79,6 +80,11 @@ class _ActionsContainer(argparse._ActionsContainer):
         Args:
             enable_path: Whether to try parsing path/subconfig when argument is a complex type.
         """
+        parser = self.parser if hasattr(self, 'parser') else self  # type: ignore
+        if 'action' in kwargs and isinstance(kwargs['action'], ActionParser):
+            if kwargs['action']._parser == parser:
+                raise ValueError('Parser cannot be added as a subparser of itself.')
+            return ActionParser._move_parser_actions(parser, args, kwargs)
         if 'type' in kwargs:
             if type_in(kwargs['type'], supported_types) or \
                (inspect.isclass(kwargs['type']) and not _issubclass(kwargs['type'], (str, int, float, Enum, Path))):
@@ -97,7 +103,6 @@ class _ActionsContainer(argparse._ActionsContainer):
         for key in meta_keys:
             if key in action.dest:
                 raise ValueError('Argument with destination name "'+key+'" not allowed.')
-        parser = self.parser if hasattr(self, 'parser') else self  # type: ignore
         if action.help is None and \
            issubclass(parser.formatter_class, DefaultHelpFormatter):
             action.help = ' '
@@ -105,10 +110,6 @@ class _ActionsContainer(argparse._ActionsContainer):
             parser.required_args.add(action.dest)
             action._required = True  # type: ignore
             action.required = False
-        if isinstance(action, ActionParser):
-            if action._parser == self:
-                raise ValueError('Parser cannot be added as a subparser of itself.')
-            ActionParser._set_inner_parser_prefix(self, action.dest, action)
         return action
 
 
@@ -158,7 +159,10 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             default_env: Set the default value on whether to parse environment variables.
             default_meta: Set the default value on whether to include metadata in config objects.
         """
-        kwargs['formatter_class'] = formatter_class
+        class FormatterClass(formatter_class):  # type: ignore
+            _parser = self
+
+        kwargs['formatter_class'] = FormatterClass
         super().__init__(*args, **kwargs)
         if self.groups is None:
             self.groups = {}
@@ -202,14 +206,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
         try:
             namespace, args = self._parse_known_args(args, namespace)
-            if len(args) > 0:
-                for action in self._actions:
-                    if isinstance(action, ActionParser):
-                        ns, args = action._parser.parse_known_args(args)
-                        for key, val in vars(ns).items():
-                            setattr(namespace, key, val)
-                        if len(args) == 0:
-                            break
         except (ArgumentError, ParserError):
             err = sys.exc_info()[1]
             self.error(str(err))
@@ -252,7 +248,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             _ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults, fail_no_subcommand=fail_no_subcommand)
 
         if nested:
-            cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
+            cfg = _flat_namespace_to_dict(_dict_to_flat_namespace(cfg))
 
         if cfg_base is not None:
             if isinstance(cfg_base, Namespace):
@@ -414,13 +410,14 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             if env is None:
                 env = dict(os.environ)
             cfg = {}  # type: ignore
-            for action in self._actions:
+            actions = filter_default_actions(self._actions)
+            for action in actions:
                 env_var = _get_env_var(self, action)
                 if env_var in env and isinstance(action, ActionConfigFile):
                     namespace = _dict_to_flat_namespace(cfg)
                     ActionConfigFile._apply_config(self, namespace, action.dest, env[env_var])
                     cfg = vars(namespace)
-            for action in self._actions:
+            for action in actions:
                 env_var = _get_env_var(self, action)
                 if env_var in env and isinstance(action, _ActionSubCommands):
                     env_val = env[env_var]
@@ -429,19 +426,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                         pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, nested=False, _skip_logging=True, _skip_check=True)  # type: ignore
                         for k, v in vars(pcfg).items():
                             cfg[subcommand+'.'+k] = v
-            for action in [a for a in self._actions if a.default != SUPPRESS]:
-                if isinstance(action, ActionParser):
-                    subparser_cfg = {}
-                    if defaults:
-                        subparser_cfg = vars(action._parser.get_defaults(nested=False))  # type: ignore
-                    env_var = _get_env_var(self, action)
-                    if env_var in env:
-                        pcfg = self._check_value_key(action, env[env_var], action.dest, cfg)
-                        subparser_cfg.update(vars(_dict_to_flat_namespace(namespace_to_dict(pcfg))))
-                    pcfg = action._parser.parse_env(env=env, defaults=False, nested=False, with_meta=with_meta, _skip_logging=True, _skip_check=True)  # type: ignore
-                    subparser_cfg.update(namespace_to_dict(pcfg))
-                    cfg.update(subparser_cfg)
-                    continue
+            for action in actions:
                 env_var = _get_env_var(self, action)
                 if env_var in env and not isinstance(action, ActionConfigFile):
                     env_val = env[env_var]
@@ -512,8 +497,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                                            with_meta=with_meta,
                                            _skip_logging=True,
                                            _skip_check=_skip_check,
-                                           _fail_no_subcommand=_fail_no_subcommand,
-                                           _base=_base)
+                                           _fail_no_subcommand=_fail_no_subcommand)
 
         self._logger.info('Parsed %s from path: %s', self.parser_mode, cfg_path)
 
@@ -532,7 +516,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         _skip_logging: bool = False,
         _skip_check: bool = False,
         _fail_no_subcommand: bool = True,
-        _base = None,
     ) -> Union[Namespace, Dict[str, Any]]:
         """Parses configuration (yaml or jsonnet) given as a string.
 
@@ -552,7 +535,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            cfg = self._load_cfg(cfg_str, cfg_path, ext_vars, _base)
+            cfg = self._load_cfg(cfg_str, cfg_path, ext_vars)
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -576,7 +559,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         cfg_str: str,
         cfg_path: str = '',
         ext_vars: dict = None,
-        base: str = None,
     ) -> Dict[str, Any]:
         """Loads a configuration string (yaml or jsonnet) into a namespace checking all values against the parser.
 
@@ -598,8 +580,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         except (yamlParserError, yamlScannerError) as ex:
             raise TypeError('Problems parsing config :: '+str(ex)) from ex
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
-        if base is not None:
-            cfg = {base+'.'+k: v for k, v in cfg.items()}
 
         self._apply_actions(cfg, self._actions)
 
@@ -708,8 +688,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                             cfg[action.dest] = [str(p) for p in cfg[action.dest]]
                         else:
                             cfg[action.dest] = str(cfg[action.dest])
-                elif isinstance(action, ActionParser):
-                    cleanup_actions(cfg, action._parser._actions)
                 elif isinstance(action, ActionJsonSchema) and action._annotation is not None and cfg.get(action.dest) is not None:
                     cfg[action.dest] = ActionJsonSchema._adapt_types(cfg[action.dest], action._annotation, action._subschemas, True)
 
@@ -801,10 +779,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                             if not overwrite and os.path.isfile(val_path()):
                                 raise ValueError('Refusing to overwrite existing file: '+str(val_path))
                             action = _find_action(self, kbase)
-                            if isinstance(action, ActionParser):
-                                replace_keys[key] = val_path
-                                action._parser.save(val, val_path(), branch=action.dest, **save_kwargs)
-                            elif isinstance(action, (ActionJsonSchema, ActionJsonnet)):
+                            if isinstance(action, (ActionJsonSchema, ActionJsonnet, _ActionConfigLoad)):
                                 replace_keys[key] = val_path
                                 val_out = strip_meta(val)
                                 if '__orig__' in val:
@@ -877,10 +852,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         cfg = {}
         for action in self._actions:
             if action.default != SUPPRESS and action.dest != SUPPRESS:
-                if isinstance(action, ActionParser):
-                    cfg.update(namespace_to_dict(action._parser.get_defaults(nested=False)))  # type: ignore
-                else:
-                    cfg[action.dest] = action.default
+                cfg[action.dest] = action.default
 
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
 
@@ -943,9 +915,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             return dct
 
         def check_required(cfg, parser):
-            for action in parser._actions:
-                if isinstance(action, ActionParser):
-                    check_required(cfg, action._parser)
             for reqkey in parser.required_args:
                 try:
                     val = get_key_value(cfg, reqkey)
@@ -1058,18 +1027,9 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
     def _apply_actions(self, cfg, actions):
         """Runs _check_value_key on actions present in flat config dict."""
         for action in actions:
-            if isinstance(action, ActionParser):
-                self._apply_actions(cfg, action._parser._actions)
             if action.dest in cfg:
                 value = self._check_value_key(action, cfg[action.dest], action.dest, cfg)
-                if isinstance(action, ActionParser):
-                    value = namespace_to_dict(_dict_to_flat_namespace(namespace_to_dict(value)))
-                    if '__path__' in value:
-                        value[action.dest+'.__path__'] = value.pop('__path__')
-                    del cfg[action.dest]
-                    cfg.update(value)
-                else:
-                    cfg[action.dest] = value
+                cfg[action.dest] = value
 
 
     @staticmethod
@@ -1141,6 +1101,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                         value[k] = action.type(v)
             except (TypeError, ValueError) as ex:
                 raise TypeError('Parser key "'+str(key)+'": '+str(ex)) from ex
+        if isinstance(value, Namespace):
+            value = namespace_to_dict(value)
         return value
 
 
@@ -1217,8 +1179,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self._default_env = default_env
         else:
             raise ValueError('default_env has to be a boolean.')
-        if _issubclass(self.formatter_class, DefaultHelpFormatter):
-            setattr(self.formatter_class, '_default_env', default_env)
 
 
     @property
@@ -1263,5 +1223,3 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self._env_prefix = env_prefix
         else:
             raise ValueError('env_prefix has to be a string or None.')
-        if _issubclass(self.formatter_class, DefaultHelpFormatter):
-            setattr(self.formatter_class, '_env_prefix', env_prefix)

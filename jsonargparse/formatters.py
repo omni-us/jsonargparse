@@ -5,7 +5,7 @@ from argparse import HelpFormatter, _HelpAction, OPTIONAL, SUPPRESS, ZERO_OR_MOR
 
 from .util import _get_env_var
 from .typing import type_to_str
-from .actions import ActionParser, ActionEnum, ActionYesNo, ActionConfigFile
+from .actions import ActionEnum, ActionYesNo, ActionConfigFile
 from .jsonschema import ActionJsonSchema
 
 
@@ -21,10 +21,6 @@ class DefaultHelpFormatter(HelpFormatter):
     with :code:`default_env=True` command line options are preceded by 'ARG:' and
     the respective environment variable name is included preceded by 'ENV:'.
     """
-
-    _env_prefix = None
-    _default_env = True
-
 
     def _get_help_string(self, action):
         if isinstance(action, ActionConfigFile):
@@ -49,13 +45,11 @@ class DefaultHelpFormatter(HelpFormatter):
 
 
     def _format_action_invocation(self, action):
-        if action.option_strings == [] or action.default == SUPPRESS or not self._default_env:
+        if action.option_strings == [] or action.default == SUPPRESS or not self._parser.default_env:
             return super()._format_action_invocation(action)
         extr = ''
-        if self._default_env:
+        if self._parser.default_env:
             extr += '\n  ENV:   ' + _get_env_var(self, action)
-        if isinstance(action, ActionParser):
-            extr += '\n                        For more details run command with --'+action.dest+'.help.'
         return 'ARG:   ' + super()._format_action_invocation(action) + extr
 
 

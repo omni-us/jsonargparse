@@ -17,6 +17,7 @@ from .util import (
     namespace_to_dict,
     dict_to_namespace,
     import_object,
+    change_to_path_dir,
     Path,
     _load_config,
     _flat_namespace_to_dict,
@@ -49,8 +50,6 @@ def _find_action(parser, dest:str):
     for action in parser._actions:
         if action.dest == dest:
             return action
-        elif isinstance(action, ActionParser) and dest.startswith(action.dest+'.'):
-            return _find_action(action._parser, dest)
         elif isinstance(action, _ActionSubCommands) and dest in action._name_parser_map:
             return action
     return None
@@ -79,6 +78,14 @@ def _remove_actions(parser, types):
 
     remove(parser._actions)
     remove(parser._action_groups[1]._group_actions)
+
+
+def filter_default_actions(actions):
+    default = (_HelpAction, _ActionPrintConfig)
+    if isinstance(actions, list):
+        return [a for a in actions if not isinstance(a, default)]
+    else:
+        return {k: a for k, a in actions.items() if not isinstance(a, default)}
 
 
 class ActionConfigFile(Action, FilesCompleterMethod):
@@ -156,7 +163,13 @@ class _ActionConfigLoad(Action):
     def __call__(self, parser, namespace, value, option_string=None):
         cfg_file = self._load_config(value)
         for key, val in vars(cfg_file).items():
-            setattr(namespace, self.dest+'.'+key, val)
+            dest = self.dest+'.'+key
+            action = _find_action(parser, dest)
+            if isinstance(action, _ActionConfigLoad):
+                with change_to_path_dir(cfg_file.__path__):
+                    action(parser, namespace, val)
+            else:
+                setattr(namespace, dest, val)
 
     def _load_config(self, value):
         try:
@@ -356,13 +369,12 @@ class ActionOperators:
         return _StoreAction(**kwargs)
 
 
-class ActionParser(Action):
+class ActionParser:
     """Action to parse option with a given parser optionally loading from file if string value."""
 
     def __init__(
         self,
         parser: argparse.ArgumentParser = None,
-        **kwargs
     ):
         """Initializer for ActionParser instance.
 
@@ -372,77 +384,65 @@ class ActionParser(Action):
         Raises:
             ValueError: If the parser parameter is invalid.
         """
-        if parser is not None:
-            ## Runs when first initializing class by external user ##
-            self._parser = parser
-            if not isinstance(self._parser, import_object('jsonargparse.ArgumentParser')):
-                raise ValueError('Expected parser keyword argument to be an ArgumentParser.')
-        elif '_parser' not in kwargs:
-            raise ValueError('Expected parser keyword argument.')
-        else:
-            ## Runs when initialied from the __call__ method below ##
-            self._parser = kwargs.pop('_parser')
-            super().__init__(**kwargs)
+        self._parser = parser
+        if not isinstance(self._parser, import_object('jsonargparse.ArgumentParser')):
+            raise ValueError('Expected parser keyword argument to be an ArgumentParser.')
 
-    def __call__(self, *args, **kwargs):
-        """Parses an argument with the corresponding parser and if valid, sets the parsed value to the corresponding key.
-
-        Raises:
-            TypeError: If the argument is not valid.
-        """
-        if len(args) == 0:
-            ## Runs when within _ActionsContainer super().add_argument call ##
-            kwargs['_parser'] = self._parser
-            return ActionParser(**kwargs)
-        ## Runs when parsing a value ##
-        value = _dict_to_flat_namespace(namespace_to_dict(self._check_type(args[2])))
-        for key, val in vars(value).items():
-            setattr(args[1], key, val)
-        if hasattr(value, '__path__'):
-            setattr(args[1], self.dest+'.__path__', getattr(value, '__path__'))
-
-    def _check_type(self, value, cfg=None):
-        try:
-            fpath = None
-            if isinstance(value, str):
-                value = yaml.safe_load(value)
-            if isinstance(value, str):
-                fpath = Path(value, mode=get_config_read_mode())
-                value = self._parser.parse_path(fpath, _base=self.dest)
-            else:
-                value = dict_to_namespace(_flat_namespace_to_dict(dict_to_namespace({self.dest: value})))
-                self._parser.check_config(value, skip_none=True)
-            if fpath is not None:
-                value.__path__ = fpath
-        except KeyError as ex:
-            raise type(ex)(re.sub('^Parser key ([^:]+):', 'Parser key '+self.dest+'.\\1: ', str(ex))) from ex
-        return value
 
     @staticmethod
-    def _set_inner_parser_prefix(parser, prefix, action):
-        """Sets the value of env_prefix to an ActionParser and all sub ActionParsers it contains.
+    def _move_parser_actions(parser, args, kwargs):
+        subparser = kwargs.pop('action')._parser
+        title = kwargs.pop('title', object.__repr__(subparser))
+        description = kwargs.pop('description', subparser.description)
+        if len(kwargs) > 0:
+            raise ValueError('ActionParser does not accept '+str(set(kwargs.keys())))
+        if not (len(args) == 1 and args[0][:2] == '--'):
+            raise ValueError('ActionParser only accepts a single optional key but got '+str(args))
+        prefix = args[0][2:]
 
-        Args:
-            parser (ArgumentParser): The parser to which the action belongs.
-            action (ActionParser): The action to set its env_prefix.
-        """
-        assert isinstance(action, ActionParser)
-        action._parser.env_prefix = parser.env_prefix
-        action._parser.default_env = parser.default_env
+        def add_prefix(key):
+            return re.sub('^--', '--'+prefix+'.', key)
+
+        required_args = set(prefix+'.'+x for x in subparser.required_args)
+
         option_string_actions = {}
-        for key, val in action._parser._option_string_actions.items():
-            option_string_actions[re.sub('^--', '--'+prefix+'.', key)] = val
-        action._parser._option_string_actions = option_string_actions
-        action._parser.required_args = set(prefix+'.'+x for x in action._parser.required_args)
-        for subaction in action._parser._actions:
-            if isinstance(subaction, ActionYesNo):
-                subaction._add_dest_prefix(prefix)
+        for key, action in filter_default_actions(subparser._option_string_actions).items():
+            option_string_actions[add_prefix(key)] = action
+
+        isect = set(option_string_actions.keys()).intersection(set(parser._option_string_actions.keys()))
+        if len(isect) > 0:
+            raise ValueError('ActionParser conflicting keys: '+str(isect))
+
+        actions = []
+        dest = prefix.replace('-', '_')
+        for action in filter_default_actions(subparser._actions):
+            if isinstance(action, ActionYesNo):
+                action._add_dest_prefix(prefix)
             else:
-                subaction.dest = prefix+'.'+subaction.dest
-                for n in range(len(subaction.option_strings)):
-                    subaction.option_strings[n] = re.sub('^--', '--'+prefix+'.', subaction.option_strings[n])
-            if isinstance(subaction, ActionParser):
-                ActionParser._set_inner_parser_prefix(action._parser, prefix, subaction)
+                action.dest = dest+'.'+action.dest
+                action.option_strings = [add_prefix(key) for key in action.option_strings]
+            actions.append(action)
+
+        base_action_group = subparser._action_groups[1]
+        base_action_group.title = title
+        if description is not None:
+            base_action_group.description = description
+        base_action_group.parser = parser
+        base_action_group._actions = filter_default_actions(base_action_group._actions)
+        base_action_group._group_actions = filter_default_actions(base_action_group._group_actions)
+        extra_action_groups = subparser._action_groups[2:]
+
+        parser.add_argument(args[0], action=_ActionConfigLoad)
+        parser.required_args.update(required_args)
+        parser._option_string_actions.update(option_string_actions)
+        parser._actions.extend(actions)
+        parser._action_groups.extend([base_action_group]+extra_action_groups)
+
+        subparser._option_string_actions = {}
+        subparser._actions = []
+        subparser._action_groups = []
+
+        return base_action_group
 
 
 class _ActionSubCommands(_SubParsersAction):

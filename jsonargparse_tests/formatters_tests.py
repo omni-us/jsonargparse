@@ -47,9 +47,8 @@ class DefaultFormatterTests(unittest.TestCase):
         self.assertIn('APP_V4', outval)
         self.assertIn('Option v4. (default: null)', outval)
 
-        self.assertIn('--g2 G2', outval)
-        self.assertIn('APP_G2', outval)
-        self.assertIn('--g2.help', outval)
+        self.assertIn('--g2.v4 V4', outval)
+        self.assertIn('APP_G2__V4', outval)
 
         self.assertIn('--v5, --no_v5', outval)
         self.assertIn('APP_V5', outval)
