@@ -3,6 +3,7 @@
 import os
 import sys
 import locale
+import platform
 from importlib.util import find_spec
 
 
@@ -41,6 +42,11 @@ if jsonschema_support:
     from jsonschema.exceptions import ValidationError as jsonschemaValidationError
 else:
     jsonschemaValidationError = None
+
+
+dump_preserve_order_support = True
+if sys.version_info.minor < 6 or platform.python_implementation() != 'CPython':
+    dump_preserve_order_support = False
 
 
 def import_jsonschema(importer):

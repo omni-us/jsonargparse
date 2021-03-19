@@ -19,6 +19,7 @@ from .typing import type_in
 from .jsonschema import ActionJsonSchema, supported_types
 from .jsonnet import ActionJsonnet
 from .optionals import (
+    dump_preserve_order_support,
     import_jsonnet,
     argcomplete_support,
     import_argcomplete,
@@ -65,12 +66,12 @@ __all__ = ['ArgumentParser']
 default_dump_yaml_kwargs = {
     'default_flow_style': False,
     'allow_unicode': True,
-    'sort_keys': False if sys.version_info.minor > 5 else True,
+    'sort_keys': False if dump_preserve_order_support else True,
 }
 
 default_dump_json_kwargs = {
     'ensure_ascii': False,
-    'sort_keys': False if sys.version_info.minor > 5 else True,
+    'sort_keys': False if dump_preserve_order_support else True,
 }
 
 

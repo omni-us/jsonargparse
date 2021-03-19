@@ -8,6 +8,7 @@ from contextlib import redirect_stdout
 from collections import OrderedDict
 from random import randint, shuffle
 from jsonargparse_tests.base import *
+from jsonargparse.optionals import dump_preserve_order_support
 from jsonargparse.util import meta_keys, _suppress_stderr
 
 
@@ -542,7 +543,8 @@ class OutputTests(TempDirTestCase):
         self.assertRaises(ValueError, lambda: parser.dump(cfg, format='invalid'))
 
 
-    @unittest.skipIf(sys.version_info.minor < 6, 'dict insertion order is only for python >=3.6')
+    @unittest.skipIf(not dump_preserve_order_support,
+                     'Dump preserve order only supported in python>=3.6 and CPython')
     def test_dump_order(self):
         args = {}
         for num in range(50):
