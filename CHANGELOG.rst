@@ -10,6 +10,23 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.8.0 (2021-03-??)
+-------------------
+
+Added
+^^^^^
+- Path class now supports home prefix '~' #45.
+- yaml/json dump kwargs can now be changed via attributes dump_yaml_kwargs and
+  dump_json_kwargs.
+- Add argument with type Enum or type hint giving an action now raises error #45.
+
+Changed
+^^^^^^^
+- Now by default dump/save/print_config preserve the add arguments and argument
+  groups order (python>=3.6) #46.
+- ActionParser group title now defaults to None if not given #47.
+
+
 v3.7.0 (2021-03-17)
 -------------------
 

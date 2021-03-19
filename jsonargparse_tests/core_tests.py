@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+import sys
 import json
 import yaml
 from io import StringIO
 from contextlib import redirect_stdout
 from collections import OrderedDict
+from random import randint, shuffle
 from jsonargparse_tests.base import *
 from jsonargparse.util import meta_keys, _suppress_stderr
 
@@ -538,6 +540,28 @@ class OutputTests(TempDirTestCase):
         self.assertEqual(parser.dump(cfg, format='json'), '{"op1":123,"op2":"abc"}')
         self.assertEqual(parser.dump(cfg, format='json_indented'), '{\n  "op1": 123,\n  "op2": "abc"\n}\n')
         self.assertRaises(ValueError, lambda: parser.dump(cfg, format='invalid'))
+
+
+    @unittest.skipIf(sys.version_info.minor < 6, 'dict insertion order is only for python >=3.6')
+    def test_dump_order(self):
+        args = {}
+        for num in range(50):
+            args[num] = ''.join(chr(randint(97, 122)) for n in range(8))
+
+        parser = ArgumentParser()
+        for num in range(len(args)):
+            parser.add_argument('--'+args[num], default=num)
+
+        cfg = parser.get_defaults()
+        dump = parser.dump(cfg)
+        self.assertEqual(dump, '\n'.join(v+': '+str(n) for n, v in args.items())+'\n')
+
+        rand = list(range(len(args)))
+        shuffle(rand)
+        yaml = '\n'.join(args[n]+': '+str(n) for n in rand)+'\n'
+        cfg = parser.parse_string(yaml)
+        dump = parser.dump(cfg)
+        self.assertEqual(dump, '\n'.join(v+': '+str(n) for n, v in args.items())+'\n')
 
 
     def test_save(self):

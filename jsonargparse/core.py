@@ -62,6 +62,18 @@ from .util import (
 __all__ = ['ArgumentParser']
 
 
+default_dump_yaml_kwargs = {
+    'default_flow_style': False,
+    'allow_unicode': True,
+    'sort_keys': False if sys.version_info.minor > 5 else True,
+}
+
+default_dump_json_kwargs = {
+    'ensure_ascii': False,
+    'sort_keys': False if sys.version_info.minor > 5 else True,
+}
+
+
 class _ActionsContainer(argparse._ActionsContainer):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
@@ -88,8 +100,12 @@ class _ActionsContainer(argparse._ActionsContainer):
         if 'type' in kwargs:
             if type_in(kwargs['type'], supported_types) or \
                (inspect.isclass(kwargs['type']) and not _issubclass(kwargs['type'], (str, int, float, Enum, Path))):
+                if 'action' in kwargs:
+                    raise ValueError('Type hints as type does not allow providing an action')
                 kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=enable_path)
             elif _issubclass(kwargs['type'], Enum):
+                if 'action' in kwargs:
+                    raise ValueError('Enum as type does not allow providing an action')
                 kwargs['action'] = ActionEnum(enum=kwargs['type'])
         action = super().add_argument(*args, **kwargs)
         if not hasattr(action, 'completer') and action.type is not None:
@@ -184,6 +200,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             raise ValueError('The only accepted values for parser_mode are {"yaml", "jsonnet"}.')
         if parser_mode == 'jsonnet':
             import_jsonnet('parser_mode=jsonnet')
+        self.dump_yaml_kwargs = dict(default_dump_yaml_kwargs)
+        self.dump_json_kwargs = dict(default_dump_json_kwargs)
 
 
     ## Parsing methods ##
@@ -713,11 +731,11 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if format == 'parser_mode':
             format = 'yaml' if self.parser_mode == 'yaml' else 'json_indented'
         if format == 'yaml':
-            return yaml.dump(cfg, default_flow_style=False, allow_unicode=True)
+            return yaml.dump(cfg, **self.dump_yaml_kwargs)  # type: ignore
         elif format == 'json_indented':
-            return json.dumps(cfg, indent=2, sort_keys=True, ensure_ascii=False)+'\n'
+            return json.dumps(cfg, indent=2, **self.dump_json_kwargs)+'\n'  # type: ignore
         elif format == 'json':
-            return json.dumps(cfg, separators=(',', ':'), sort_keys=True, ensure_ascii=False)
+            return json.dumps(cfg, separators=(',', ':'), **self.dump_json_kwargs)  # type: ignore
         else:
             raise ValueError('Unknown output format "'+str(format)+'".')
 
@@ -785,9 +803,9 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                                 if '__orig__' in val:
                                     val_str = val['__orig__']
                                 elif str(val_path).lower().endswith('.json'):
-                                    val_str = json.dumps(val_out, indent=2, sort_keys=True, ensure_ascii=False)+'\n'
+                                    val_str = json.dumps(val_out, indent=2, **self.dump_json_kwargs)+'\n'
                                 else:
-                                    val_str = yaml.dump(val_out, default_flow_style=False, allow_unicode=True)
+                                    val_str = yaml.dump(val_out, **self.dump_yaml_kwargs)
                                 with open(val_path(), 'w') as f:
                                     f.write(val_str)
                         else:

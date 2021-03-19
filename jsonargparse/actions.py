@@ -391,7 +391,7 @@ class ActionParser:
     @staticmethod
     def _move_parser_actions(parser, args, kwargs):
         subparser = kwargs.pop('action')._parser
-        title = kwargs.pop('title', object.__repr__(subparser))
+        title = kwargs.pop('title', None)
         description = kwargs.pop('description', subparser.description)
         if len(kwargs) > 0:
             raise ValueError('ActionParser does not accept '+str(set(kwargs.keys())))

@@ -93,6 +93,7 @@ class SimpleActionsTests(unittest.TestCase):
 
         self.assertRaises(ValueError, lambda: ActionEnum())
         self.assertRaises(ValueError, lambda: ActionEnum(enum=object))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--bad', type=MyEnum, action=True))
 
 
     def test_ActionOperators(self):
@@ -354,7 +355,6 @@ class ActionParserTests(TempDirTestCase):
             parser.print_help()
         outval = out.getvalue()
 
-        self.assertIn('<jsonargparse.core.ArgumentParser object at', outval)
         self.assertIn('parser_lv2 description', outval)
         self.assertIn('group_lv2 description', outval)
         self.assertIn('--lv2.a1 A1', outval)

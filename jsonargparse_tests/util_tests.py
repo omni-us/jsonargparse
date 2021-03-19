@@ -150,6 +150,16 @@ class PathTests(TempDirTestCase):
         self.assertTrue(path.__repr__().startswith('Path('))
 
 
+    def test_tilde_home(self):
+        with mock.patch.dict(os.environ, {'HOME': self.tmpdir}):
+            home = Path('~', 'dr')
+            path = Path('~/'+self.file_rw, 'frw')
+            self.assertEqual(str(home), '~')
+            self.assertEqual(str(path), '~/'+self.file_rw)
+            self.assertEqual(home(), self.tmpdir)
+            self.assertEqual(path(), os.path.join(self.tmpdir, self.file_rw))
+
+
     @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
     @responses_activate
     def test_urls(self):

@@ -168,6 +168,11 @@ class JsonSchemaTests(TempDirTestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', 'abc']))
 
 
+    def test_type_hint_action_failure(self):
+        parser = ArgumentParser(error_handler=None)
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op1', type=Optional[bool], action=True))
+
+
     def test_optional_path(self):
         pathlib.Path('file_fr').touch()
         parser = ArgumentParser(error_handler=None)
