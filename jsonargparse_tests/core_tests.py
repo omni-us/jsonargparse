@@ -696,15 +696,26 @@ class ConfigFilesTests(TempDirTestCase):
         self.assertEqual('from default config file', cfg.op1)
         self.assertEqual('from parser default', cfg.op2)
 
-        os.environ['COLUMNS'] = '150'
-        out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
-        self.assertIn('default config file locations', out.getvalue())
-        self.assertIn(os.path.basename(default_config_file), out.getvalue())
-
         with self.assertRaises(ValueError):
             parser.default_config_files = False
+
+
+    def test_get_default_with_default_config_files(self):
+        default_config_file = os.path.realpath(os.path.join(self.tmpdir, 'example.yaml'))
+        with open(default_config_file, 'w') as output_file:
+            output_file.write('op1: from yaml\n')
+
+        parser = ArgumentParser(default_config_files=[default_config_file])
+        parser.add_argument('--op1', default='from default')
+
+        self.assertEqual(parser.get_default('op1'), 'from yaml')
+
+        with open(default_config_file, 'w') as output_file:
+            output_file.write('op2: v2\n')
+        self.assertRaises(ParserError, lambda: parser.get_default('op1'))
+
+        os.chmod(default_config_file, 0)
+        self.assertEqual(parser.get_default('op1'), 'from default')
 
 
     def test_ActionConfigFile_and_ActionPath(self):

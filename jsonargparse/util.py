@@ -330,11 +330,9 @@ class Path:
             abs_path = path.abs_path  # type: ignore
             path = path.rel_path  # type: ignore
         elif isinstance(path, str):
-            abs_path = path
+            abs_path = os.path.expanduser(path)
             if re.match('^file:///?', abs_path):
                 abs_path = re.sub('^file:///?', '/', abs_path)
-            elif (abs_path == '~' or abs_path.startswith('~/')) and os.environ.get('HOME') is not None:
-                abs_path = os.environ.get('HOME') + abs_path[1:]
             if 'u' in mode and url_support and import_url_validator('Path')(abs_path):
                 is_url = True
             elif 'f' in mode or 'd' in mode:

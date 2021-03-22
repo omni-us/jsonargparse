@@ -256,7 +256,6 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal.help=calendar.January']))
         self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(calendar.January, 'jan'))
 
-        os.environ['COLUMNS'] = '150'
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
             parser.parse_args(['--cal.help=calendar.Calendar'])
@@ -281,7 +280,6 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(MyEnum.B, parser.parse_args(['--a1=B']).a1)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a1=D']))
 
-        os.environ['COLUMNS'] = '150'
         help_str = StringIO()
         parser.print_help(help_str)
         self.assertIn('--a1 {A,B,C,null}', help_str.getvalue())
@@ -438,7 +436,6 @@ class SignaturesTests(unittest.TestCase):
             parser = ArgumentParser(error_handler=None)
             parser.add_class_arguments(Class1)
 
-            os.environ['COLUMNS'] = '150'
             help_str = StringIO()
             parser.print_help(help_str)
             self.assertIn('--a1 A1', help_str.getvalue())

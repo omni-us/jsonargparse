@@ -142,7 +142,6 @@ class JsonnetTests(TempDirTestCase):
             action=ActionJsonnet(schema=example_schema),
             help='schema: %s')
 
-        os.environ['COLUMNS'] = '150'
         out = StringIO()
         with redirect_stdout(out):
             parser.print_help()

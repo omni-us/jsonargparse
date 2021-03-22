@@ -221,7 +221,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             namespace = Namespace()
 
         if caller == 'argcomplete':
-            namespace = _dict_to_flat_namespace(self._merge_config(self.get_defaults(nested=False), namespace))
+            namespace = _dict_to_flat_namespace(self._merge_config(self.get_defaults(nested=False, skip_check=True), namespace))
 
         try:
             namespace, args = self._parse_known_args(args, namespace)
@@ -279,7 +279,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             cfg = self._merge_config(cfg, cfg_env)
 
         elif defaults:
-            cfg = self._merge_config(cfg, self.get_defaults(nested=nested))
+            cfg = self._merge_config(cfg, self.get_defaults(nested=nested, skip_check=True))
 
         if not (with_meta or (with_meta is None and self._default_meta)):
             cfg = strip_meta(cfg)
@@ -844,6 +844,17 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             self.set_defaults(kwargs)
 
 
+    def _get_default_config_file(self):
+        default_config_files = []  # type: List[str]
+        for pattern in self.default_config_files:
+            default_config_files += glob.glob(os.path.expanduser(pattern))
+        if len(default_config_files) > 0:
+            try:
+                return Path(default_config_files[0], mode=get_config_read_mode())
+            except TypeError:
+                pass
+
+
     def get_default(self, dest:str):
         """Gets a single default value for the given destination key.
 
@@ -854,16 +865,20 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             KeyError: If key not defined in the parser.
         """
         action = _find_action(self, dest)
-        if action is None:
+        if action is None or action.default == SUPPRESS or action.dest == SUPPRESS:
             raise KeyError('No action for destination key "'+dest+'" to get its default.')
-        return action.default
+        default_config_file = self._get_default_config_file()
+        if default_config_file is None:
+            return action.default
+        return getattr(self.get_defaults(), action.dest)
 
 
-    def get_defaults(self, nested:bool=True) -> Namespace:
+    def get_defaults(self, nested:bool=True, skip_check:bool=False) -> Namespace:
         """Returns a namespace with all default values.
 
         Args:
             nested: Whether the namespace should be nested.
+            skip_check: Whether to skip check if configuration is valid.
 
         Returns:
             An object with all default values as attributes.
@@ -877,13 +892,15 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
         self._logger.info('Loaded default values from parser.')
 
-        default_config_files = []  # type: List[str]
-        for pattern in self.default_config_files:
-            default_config_files += glob.glob(os.path.expanduser(pattern))
-        if len(default_config_files) > 0:
-            default_config_file = Path(default_config_files[0], mode=get_config_read_mode())
+        default_config_file = self._get_default_config_file()
+        if default_config_file is not None:
             with change_to_path_dir(default_config_file):
                 cfg_file = self._load_cfg(default_config_file.get_content())
+                if not skip_check:
+                    try:
+                        self.check_config(cfg_file)
+                    except (TypeError, KeyError) as ex:
+                        raise ParserError('Problem in default config file "'+str(default_config_file)+'" :: '+ex.args[0]) from ex
             cfg = self._merge_config(cfg_file, cfg)
             cfg['__default_config__'] = default_config_file
             self._logger.info('Parsed configuration from default path: %s', str(default_config_file))
@@ -967,7 +984,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             check_values(cfg)
         except (TypeError, KeyError) as ex:
             prefix = 'Configuration check failed :: '
-            message = str(ex)
+            message = ex.args[0]
             if prefix not in message:
                 message = prefix+message
             raise type(ex)(message) from ex
@@ -1041,6 +1058,21 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not None:
                 cfg_files.extend(p for p in cfg[action.dest] if p is not None)
         return cfg_files
+
+
+    def format_help(self):
+        if len(self._default_config_files) > 0:
+            defaults = namespace_to_dict(self.get_defaults())
+            note = 'no existing default config file found.'
+            if '__default_config__' in defaults:
+                note = 'default values below will be ones overridden by the contents of: '+str(defaults['__default_config__'])
+                self.formatter_class.defaults = vars(_dict_to_flat_namespace(defaults))
+            group = self._default_config_files_group
+            group.description = str(self._default_config_files) + ', Note: '+note
+        help_str = super().format_help()
+        if hasattr(self.formatter_class, 'defaults'):
+            delattr(self.formatter_class, 'defaults')
+        return help_str
 
 
     def _apply_actions(self, cfg, actions):
@@ -1171,12 +1203,14 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             raise ValueError('default_config_files has to be None or List[str].')
 
         if len(self._default_config_files) > 0:
-            group_title = 'default config file locations'
-            group = next((g for g in self._action_groups if g.title == group_title), None)
-            if group is None:
+            if not hasattr(self, '_default_config_files_group'):
+                group_title = 'default config file locations'
                 group = _ArgumentGroup(self, title=group_title)
                 self._action_groups = [group] + self._action_groups  # type: ignore
-            group.description = str(self._default_config_files)
+                self._default_config_files_group = group
+        elif hasattr(self, '_default_config_files_group'):
+            self._action_groups = [g for g in self._action_groups if g != self._default_config_files_group]
+            delattr(self, '_default_config_files_group')
 
 
     @property

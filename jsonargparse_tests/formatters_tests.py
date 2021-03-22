@@ -19,7 +19,6 @@ class DefaultFormatterTests(unittest.TestCase):
         parser.add_argument('--g2', action=ActionParser(parser=parser2))
         parser.add_argument('--v5', action=ActionYesNo, default=True, help='Option v5.')
 
-        os.environ['COLUMNS'] = '150'
         out = StringIO()
         with redirect_stdout(out):
             parser.print_help()
@@ -53,6 +52,49 @@ class DefaultFormatterTests(unittest.TestCase):
         self.assertIn('--v5, --no_v5', outval)
         self.assertIn('APP_V5', outval)
         self.assertIn('Option v5. (type: bool, default: True)', outval)
+
+
+class DefaultFormatterTmpdirTests(TempDirTestCase):
+
+    def test_default_config_files_help(self):
+        not_exist = 'does_not_exist.yaml'
+        config_path = os.path.realpath(os.path.join(self.tmpdir, 'config.yaml'))
+        with open(config_path, 'w') as output_file:
+            output_file.write('v1: from yaml v1\nn1.v2: from yaml v2\n')
+
+        parser = ArgumentParser(default_config_files=[not_exist, config_path])
+        parser.add_argument('--v1', default='from default v1')
+        parser.add_argument('--n1.v2', default='from default v2')
+
+        out = StringIO()
+        with redirect_stdout(out):
+            parser.print_help()
+        outval = out.getvalue()
+
+        self.assertIn('default config file locations', outval)
+        self.assertIn('from yaml v1', outval)
+        self.assertIn('from yaml v2', outval)
+        self.assertIn(str([not_exist, config_path]), outval)
+        self.assertIn(config_path, outval)
+
+        parser.default_config_files = [not_exist]
+        out = StringIO()
+        with redirect_stdout(out):
+            parser.print_help()
+        outval = out.getvalue()
+
+        self.assertIn('from default v1', outval)
+        self.assertIn('from default v2', outval)
+        self.assertIn(str([not_exist]), outval)
+        self.assertIn('no existing default config file found', outval)
+
+        parser.default_config_files = None
+        out = StringIO()
+        with redirect_stdout(out):
+            parser.print_help()
+        outval = out.getvalue()
+
+        self.assertNotIn('default config file locations', outval)
 
 
 if __name__ == '__main__':

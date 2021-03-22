@@ -541,7 +541,7 @@ class _ActionSubCommands(_SubParsersAction):
         if env:
             subnamespace = subparser.parse_env(defaults=defaults, nested=False, _skip_check=True)
         elif defaults:
-            subnamespace = subparser.get_defaults(nested=False)
+            subnamespace = subparser.get_defaults(nested=False, skip_check=True)
 
         if subnamespace is not None:
             for key, value in vars(subnamespace).items():

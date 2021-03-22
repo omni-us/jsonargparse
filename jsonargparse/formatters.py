@@ -72,6 +72,8 @@ class DefaultHelpFormatter(HelpFormatter):
         if type_str is not None:
             params['type'] = type_str
         if 'default' in params:
+            if hasattr(self, 'defaults'):
+                params['default'] = self.defaults[action.dest]
             if params['default'] is None:
                 params['default'] = 'null'
             elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):

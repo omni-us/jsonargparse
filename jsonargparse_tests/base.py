@@ -1,4 +1,3 @@
-
 import os
 import shutil
 import tempfile
@@ -25,6 +24,9 @@ except:
         return func
     responses = False
     responses_activate = nothing_decorator
+
+
+os.environ['COLUMNS'] = '150'
 
 
 class TempDirTestCase(unittest.TestCase):

@@ -78,7 +78,6 @@ class SimpleActionsTests(unittest.TestCase):
         cfg = parser.parse_args(['--enum=C'], with_meta=False)
         self.assertEqual('enum: C\n', parser.dump(cfg))
 
-        os.environ['COLUMNS'] = '150'
         help_str = StringIO()
         parser.print_help(help_str)
         self.assertIn('Description (type: MyEnum, default: C)', help_str.getvalue())
@@ -349,7 +348,6 @@ class ActionParserTests(TempDirTestCase):
         parser = ArgumentParser()
         parser.add_argument('--lv2', action=ActionParser(parser_lv2))
 
-        os.environ['COLUMNS'] = '150'
         out = StringIO()
         with redirect_stdout(out):
             parser.print_help()

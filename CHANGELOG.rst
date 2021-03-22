@@ -18,13 +18,21 @@ Added
 - Path class now supports home prefix '~' #45.
 - yaml/json dump kwargs can now be changed via attributes dump_yaml_kwargs and
   dump_json_kwargs.
-- Add argument with type Enum or type hint giving an action now raises error #45.
 
 Changed
 ^^^^^^^
 - Now by default dump/save/print_config preserve the add arguments and argument
-  groups order (python>=3.6) #46.
+  groups order (only CPython>=3.6) #46.
 - ActionParser group title now defaults to None if not given #47.
+- Add argument with type Enum or type hint giving an action now raises error #45.
+- Parser help now also considers default_config_files and shows which config file
+  was loaded #47.
+- get_default method now also considers default_config_files.
+- get_defaults now raises ParserError if default config file not valid.
+
+Fixed
+^^^^^
+- default_config_files property not removing help group when setting None.
 
 
 v3.7.0 (2021-03-17)

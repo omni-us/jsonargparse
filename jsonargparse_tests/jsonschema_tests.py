@@ -144,7 +144,6 @@ class JsonSchemaTests(TempDirTestCase):
             action=ActionJsonSchema(schema=schema1),
             help='schema: %s')
 
-        os.environ['COLUMNS'] = '150'
         out = StringIO()
         with redirect_stdout(out):
             parser.print_help()
