@@ -3,6 +3,7 @@
 import sys
 import json
 import yaml
+import platform
 from io import StringIO
 from contextlib import redirect_stdout
 from collections import OrderedDict
@@ -714,8 +715,9 @@ class ConfigFilesTests(TempDirTestCase):
             output_file.write('op2: v2\n')
         self.assertRaises(ParserError, lambda: parser.get_default('op1'))
 
-        os.chmod(default_config_file, 0)
-        self.assertEqual(parser.get_default('op1'), 'from default')
+        if os.name == 'posix' and platform.python_implementation() == 'CPython':
+            os.chmod(default_config_file, 0)
+            self.assertEqual(parser.get_default('op1'), 'from default')
 
 
     def test_ActionConfigFile_and_ActionPath(self):
