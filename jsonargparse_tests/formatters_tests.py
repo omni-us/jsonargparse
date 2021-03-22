@@ -97,5 +97,23 @@ class DefaultFormatterTmpdirTests(TempDirTestCase):
         self.assertNotIn('default config file locations', outval)
 
 
+    def test_default_config_files_help_with_required(self):
+        config_path = os.path.realpath(os.path.join(self.tmpdir, 'config.yaml'))
+        with open(config_path, 'w') as output_file:
+            output_file.write('v1: from yaml\n')
+
+        parser = ArgumentParser(default_config_files=[config_path])
+        parser.add_argument('req', help='req description')
+        parser.add_argument('--v1', default='from default')
+
+        out = StringIO()
+        with redirect_stdout(out):
+            parser.print_help()
+        outval = out.getvalue()
+
+        self.assertIn('req description', outval)
+        self.assertIn('from yaml', outval)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

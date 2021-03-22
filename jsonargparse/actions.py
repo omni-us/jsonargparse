@@ -63,7 +63,7 @@ def _is_action_value_list(action:Action):
     Returns:
         bool: True if produces list otherwise False.
     """
-    if action.nargs in {'*', '+'} or isinstance(action.nargs, int):
+    if action.nargs in {'*', '+'} or (isinstance(action.nargs, int) and action.nargs != 0):
         return True
     return False
 

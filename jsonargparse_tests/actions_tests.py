@@ -27,11 +27,6 @@ class SimpleActionsTests(unittest.TestCase):
         self.assertEqual(True,  parser.parse_args(['--no_bools.def_true=no']).bools.def_true)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--bools.def_true nope']))
 
-        self.assertEqual(True,  parser.parse_env({'APP_BOOLS__DEF_FALSE': 'true'}).bools.def_false)
-        self.assertEqual(True,  parser.parse_env({'APP_BOOLS__DEF_FALSE': 'yes'}).bools.def_false)
-        self.assertEqual(False, parser.parse_env({'APP_BOOLS__DEF_TRUE': 'false'}).bools.def_true)
-        self.assertEqual(False, parser.parse_env({'APP_BOOLS__DEF_TRUE': 'no'}).bools.def_true)
-
         parser = ArgumentParser()
         parser.add_argument('--val', action=ActionYesNo)
         self.assertEqual(True,  parser.parse_args(['--val']).val)
@@ -44,6 +39,18 @@ class SimpleActionsTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--val', action=ActionYesNo(yes_prefix='yes_')))
         self.assertRaises(ValueError, lambda: parser.add_argument('pos', action=ActionYesNo))
         self.assertRaises(ValueError, lambda: parser.add_argument('--val', nargs='?', action=ActionYesNo(no_prefix=None)))
+
+
+    def test_ActionYesNo_parse_env(self):
+        parser = example_parser()
+        self.assertEqual(True,  parser.parse_env({'APP_BOOLS__DEF_FALSE': 'true'}).bools.def_false)
+        self.assertEqual(True,  parser.parse_env({'APP_BOOLS__DEF_FALSE': 'yes'}).bools.def_false)
+        self.assertEqual(False, parser.parse_env({'APP_BOOLS__DEF_TRUE': 'false'}).bools.def_true)
+        self.assertEqual(False, parser.parse_env({'APP_BOOLS__DEF_TRUE': 'no'}).bools.def_true)
+
+        parser = ArgumentParser(default_env=True, env_prefix='APP')
+        parser.add_argument('--op', action=ActionYesNo, default=False)
+        self.assertEqual(True, parser.parse_env({'APP_OP': 'true'}).op)
 
 
     def test_ActionYesNo_old_bool(self):

@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.8.1 (2021-03-22)
+-------------------
+
+Fixed
+^^^^^
+- Help fails saying required args missing if default config file exists #48.
+- ActionYesNo arguments failing when parsing from environment variable #49.
+
+
 v3.8.0 (2021-03-22)
 -------------------
 

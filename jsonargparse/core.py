@@ -898,7 +898,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                 cfg_file = self._load_cfg(default_config_file.get_content())
                 if not skip_check:
                     try:
-                        self.check_config(cfg_file)
+                        self.check_config(cfg_file, skip_required=True)
                     except (TypeError, KeyError) as ex:
                         raise ParserError('Problem in default config file "'+str(default_config_file)+'" :: '+ex.args[0]) from ex
             cfg = self._merge_config(cfg_file, cfg)
@@ -925,6 +925,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
     def check_config(
         self, cfg: Union[Namespace, Dict[str, Any]],
         skip_none: bool = True,
+        skip_required: bool = False,
         branch: str = None,
     ):
         """Checks that the content of a given configuration object conforms with the parser.
@@ -980,7 +981,8 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                     raise KeyError('No action for key "'+kbase+'" to check its value.')
 
         try:
-            check_required(cfg, self)
+            if not skip_required:
+                check_required(cfg, self)
             check_values(cfg)
         except (TypeError, KeyError) as ex:
             prefix = 'Configuration check failed :: '
