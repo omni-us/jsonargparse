@@ -21,7 +21,7 @@ from .jsonnet import ActionJsonnet
 from .optionals import (
     dump_preserve_order_support,
     import_jsonnet,
-    is_dataclass,
+    is_pure_dataclass,
     argcomplete_support,
     import_argcomplete,
     get_config_read_mode,
@@ -100,7 +100,7 @@ class _ActionsContainer(SignatureArguments, argparse._ActionsContainer):
                 raise ValueError('Parser cannot be added as a subparser of itself.')
             return ActionParser._move_parser_actions(parser, args, kwargs)
         if 'type' in kwargs:
-            if is_dataclass(kwargs['type']):
+            if is_pure_dataclass(kwargs['type']):
                 theclass = kwargs.pop('type')
                 nested_key = re.sub('^--', '', args[0])
                 super().add_dataclass_arguments(theclass, nested_key, **kwargs)
@@ -1013,7 +1013,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         actions.sort(key=lambda x: -len(x.dest.split('.')))
         for action in actions:
             if isinstance(action, ActionJsonSchema) or \
-               (isinstance(action, _ActionConfigLoad) and is_dataclass(action.basetype)):
+               (isinstance(action, _ActionConfigLoad) and is_pure_dataclass(action.basetype)):
                 try:
                     value, parent, key = _get_key_value(cfg, action.dest, parent=True)
                 except KeyError:

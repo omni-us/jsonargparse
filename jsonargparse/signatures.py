@@ -13,7 +13,7 @@ from .optionals import (
     docstring_parser_support,
     import_docstring_parse,
     import_dataclasses,
-    is_dataclass,
+    is_pure_dataclass,
     is_factory_class,
 )
 
@@ -234,7 +234,7 @@ class SignatureArguments:
                     kwargs['required'] = True
                 if annotation in {str, int, float, bool} or \
                    _issubclass(annotation, (str, int, float)) or \
-                   is_dataclass(annotation):
+                   is_pure_dataclass(annotation):
                     kwargs['type'] = annotation
                 elif _issubclass(annotation, Enum):
                     kwargs['action'] = ActionEnum(enum=annotation)
@@ -281,8 +281,8 @@ class SignatureArguments:
             ValueError: When default is not instance of or kwargs for theclass.
         """
         dataclasses = import_dataclasses('add_dataclass_arguments')
-        if not dataclasses.is_dataclass(theclass):
-            raise ValueError('Expected "theclass" argument to be a dataclass, given '+str(theclass))
+        if not is_pure_dataclass(theclass):
+            raise ValueError('Expected "theclass" argument to be a pure dataclass, given '+str(theclass))
 
         doc_group, doc_params = self._gather_docstrings([theclass], get_class_init_and_base_docstrings)
         for key in ['help', 'title']:
@@ -295,7 +295,7 @@ class SignatureArguments:
             if isinstance(default, dict):
                 try:
                     default = theclass(**default)
-                except:
+                except TypeError:
                     pass
             if not isinstance(default, theclass):
                 raise ValueError('Expected "default" argument to be an instance of "'+theclass.__name__+'" or its kwargs dict, given '+str(default))

@@ -425,11 +425,13 @@ Classes, methods and functions
 
 It is good practice to write python code in which parameters have type hints and
 are described in the docstrings. To make this well written code configurable, it
-wouldn't make sense to duplicate information of types and parameter descriptions.
-To avoid this duplication, jsonargparse includes methods to automatically add
-their arguments: :py:meth:`.SignatureArguments.add_class_arguments`,
-:py:meth:`.SignatureArguments.add_method_arguments` and
-:py:meth:`.SignatureArguments.add_function_arguments`.
+wouldn't make sense to duplicate information of types and parameter
+descriptions. To avoid this duplication, jsonargparse includes methods to
+automatically add their arguments:
+:py:meth:`.SignatureArguments.add_class_arguments`,
+:py:meth:`.SignatureArguments.add_method_arguments`,
+:py:meth:`.SignatureArguments.add_function_arguments` and
+:py:meth:`.SignatureArguments.add_dataclass_arguments`.
 
 Take for example a class with its init and a method with docstrings as follows:
 
@@ -575,7 +577,9 @@ Some notes about this support are:
   arguments, config files and environment variables, tuples and sets are
   represented as a list.
 
-- :code:`dataclasses` are supported as a type but without any nesting.
+- :code:`dataclasses` are supported as a type but without any nesting and for
+  pure data classes. By pure it is meant that it only inherits from data
+  classes, not a mixture of normal classes and data classes.
 
 - To set a value to :code:`None` it is required to use :code:`null` since this
   is how json/yaml defines it. To avoid confusion in the help, :code:`NoneType`

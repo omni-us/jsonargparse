@@ -3,6 +3,7 @@
 import os
 import sys
 import locale
+import inspect
 import platform
 from importlib.util import find_spec
 
@@ -106,11 +107,12 @@ def import_dataclasses(importer):
         raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex)) from ex
 
 
-def is_dataclass(value):
-    if not dataclasses_support:
+def is_pure_dataclass(value):
+    if not dataclasses_support or not inspect.isclass(value):
         return False
-    dataclasses = import_dataclasses('is_dataclass')
-    return dataclasses.is_dataclass(value)
+    dataclasses = import_dataclasses('is_pure_dataclass')
+    classes = [c for c in inspect.getmro(value) if c != object]
+    return all(dataclasses.is_dataclass(c) for c in classes)
 
 
 def is_factory_class(value):

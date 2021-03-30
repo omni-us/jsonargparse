@@ -64,6 +64,12 @@ class SignaturesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parser.add_dataclass_arguments(self.MyDataClassB, 'c', default=self.MyDataClassB(b2=self.MyDataClassB()))
 
+        class MyClass(ArgumentParser, self.MyDataClassA):
+            pass
+
+        with self.assertRaises(ValueError):
+            parser.add_dataclass_arguments(MyClass, 'c')
+
 
     def test_dataclass_type(self):
         parser = ArgumentParser()
