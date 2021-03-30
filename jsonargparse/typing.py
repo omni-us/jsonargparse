@@ -25,6 +25,7 @@ __all__ = [
     'Path_fr',
     'Path_fc',
     'Path_dw',
+    'Path_dc',
 ]
 
 
@@ -290,6 +291,7 @@ Email       = restricted_string_type('Email', r'^[^@ ]+@[^@ ]+\.[^@ ]+$',
 Path_fr = path_type('fr', docstring='str pointing to a file that exists and is readable')
 Path_fc = path_type('fc', docstring='str pointing to a file that can be created if it does not exist')
 Path_dw = path_type('dw', docstring='str pointing to a directory that exists and is writeable')
+Path_dc = path_type('dc', docstring='str pointing to a directory that can be created if it does not exist')
 
 register_type(complex)
 register_type(uuid.UUID)

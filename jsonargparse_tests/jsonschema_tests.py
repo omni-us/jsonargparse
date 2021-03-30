@@ -8,7 +8,6 @@ import pathlib
 import platform
 from enum import Enum
 from io import StringIO
-from contextlib import redirect_stdout
 from calendar import Calendar
 from datetime import datetime
 from typing import Optional, Union, List, Tuple, Dict, Generator
@@ -145,8 +144,7 @@ class JsonSchemaTests(TempDirTestCase):
             help='schema: %s')
 
         out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
+        parser.print_help(out)
 
         outval = out.getvalue()
         schema = re.sub('^.*schema:([^()]+)[^{}]*$', r'\1', outval.replace('\n', ' '))

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from io import StringIO
-from contextlib import redirect_stdout
 from jsonargparse_tests.base import *
 
 
@@ -20,8 +19,7 @@ class DefaultFormatterTests(unittest.TestCase):
         parser.add_argument('--v5', action=ActionYesNo, default=True, help='Option v5.')
 
         out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
+        parser.print_help(out)
         outval = out.getvalue()
 
         self.assertIn('--print_config', outval)
@@ -67,8 +65,7 @@ class DefaultFormatterTmpdirTests(TempDirTestCase):
         parser.add_argument('--n1.v2', default='from default v2')
 
         out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
+        parser.print_help(out)
         outval = out.getvalue()
 
         self.assertIn('default config file locations', outval)
@@ -79,8 +76,7 @@ class DefaultFormatterTmpdirTests(TempDirTestCase):
 
         parser.default_config_files = [not_exist]
         out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
+        parser.print_help(out)
         outval = out.getvalue()
 
         self.assertIn('from default v1', outval)
@@ -90,8 +86,7 @@ class DefaultFormatterTmpdirTests(TempDirTestCase):
 
         parser.default_config_files = None
         out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
+        parser.print_help(out)
         outval = out.getvalue()
 
         self.assertNotIn('default config file locations', outval)
@@ -107,8 +102,7 @@ class DefaultFormatterTmpdirTests(TempDirTestCase):
         parser.add_argument('--v1', default='from default')
 
         out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
+        parser.print_help(out)
         outval = out.getvalue()
 
         self.assertIn('req description', outval)

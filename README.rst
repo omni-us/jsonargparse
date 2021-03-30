@@ -575,6 +575,8 @@ Some notes about this support are:
   arguments, config files and environment variables, tuples and sets are
   represented as a list.
 
+- :code:`dataclasses` are supported as a type but without any nesting.
+
 - To set a value to :code:`None` it is required to use :code:`null` since this
   is how json/yaml defines it. To avoid confusion in the help, :code:`NoneType`
   is displayed as :code:`null`. For example a function argument with type and

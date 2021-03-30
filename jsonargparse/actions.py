@@ -6,6 +6,7 @@ import sys
 import yaml
 import argparse
 from enum import Enum
+from typing import Type
 from argparse import Namespace, Action, SUPPRESS, _StoreAction, _HelpAction, _SubParsersAction
 
 from .optionals import get_config_read_mode, FilesCompleterMethod
@@ -154,12 +155,24 @@ class _ActionPrintConfig(Action):
 
 class _ActionConfigLoad(Action):
 
-    def __init__(self, **kwargs):
-        kwargs['help'] = SUPPRESS
-        kwargs['default'] = SUPPRESS
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        basetype: Type = None,
+        **kwargs
+    ):
+        if len(kwargs) == 0:
+            self._basetype = basetype
+        else:
+            self.basetype = kwargs.pop('_basetype', None)
+            kwargs['help'] = SUPPRESS
+            kwargs['default'] = SUPPRESS
+            super().__init__(**kwargs)
 
-    def __call__(self, parser, namespace, value, option_string=None):
+    def __call__(self, *args, **kwargs):
+        if len(args) == 0:
+            kwargs['_basetype'] = self._basetype
+            return _ActionConfigLoad(**kwargs)
+        parser, namespace, value = args[:3]
         cfg_file = self._load_config(value)
         for key, val in vars(cfg_file).items():
             dest = self.dest+'.'+key
@@ -178,6 +191,9 @@ class _ActionConfigLoad(Action):
 
     def _check_type(self, value, cfg=None):
         return self._load_config(value)
+
+    def _instantiate_classes(self, value):
+        return self.basetype(**value)
 
 
 class _ActionHelpClassPath(Action):

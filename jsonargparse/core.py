@@ -21,6 +21,7 @@ from .jsonnet import ActionJsonnet
 from .optionals import (
     dump_preserve_order_support,
     import_jsonnet,
+    is_dataclass,
     argcomplete_support,
     import_argcomplete,
     get_config_read_mode,
@@ -75,7 +76,7 @@ default_dump_json_kwargs = {
 }
 
 
-class _ActionsContainer(argparse._ActionsContainer):
+class _ActionsContainer(SignatureArguments, argparse._ActionsContainer):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
     def __init__(self, *args, **kwargs):
@@ -99,6 +100,11 @@ class _ActionsContainer(argparse._ActionsContainer):
                 raise ValueError('Parser cannot be added as a subparser of itself.')
             return ActionParser._move_parser_actions(parser, args, kwargs)
         if 'type' in kwargs:
+            if is_dataclass(kwargs['type']):
+                theclass = kwargs.pop('type')
+                nested_key = re.sub('^--', '', args[0])
+                super().add_dataclass_arguments(theclass, nested_key, **kwargs)
+                return _find_action(parser, nested_key)
             if type_in(kwargs['type'], supported_types) or \
                (inspect.isclass(kwargs['type']) and not _issubclass(kwargs['type'], (str, int, float, Enum, Path))):
                 if 'action' in kwargs:
@@ -130,12 +136,39 @@ class _ActionsContainer(argparse._ActionsContainer):
         return action
 
 
+    def add_argument_group(self, *args, name:str=None, **kwargs):
+        """Adds a group to the parser.
+
+        All the arguments from `argparse.ArgumentParser.add_argument_group
+        <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group>`_
+        are supported. Additionally it accepts:
+
+        Args:
+            name: Name of the group. If set the group object will be included in the parser.groups dict.
+
+        Returns:
+            The group object.
+
+        Raises:
+            ValueError: If group with the same name already exists.
+        """
+        parser = self.parser if hasattr(self, 'parser') else self  # type: ignore
+        if name is not None and name in parser.groups:
+            raise ValueError('Group with name '+name+' already exists.')
+        group = _ArgumentGroup(parser, *args, **kwargs)
+        group.parser = parser
+        parser._action_groups.append(group)
+        if name is not None:
+            parser.groups[name] = group
+        return group
+
+
 class _ArgumentGroup(_ActionsContainer, argparse._ArgumentGroup):
     """Extension of argparse._ArgumentGroup to support additional functionalities."""
     parser = None  # type: Union[ArgumentParser, None]
 
 
-class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentParser, LoggerProperty):
+class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty):
     """Parser for command line, yaml/jsonnet files and environment variables."""
 
     groups = None  # type: Dict[str, argparse._ArgumentGroup]
@@ -607,32 +640,6 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
 
     ## Methods for adding to the parser ##
 
-    def add_argument_group(self, *args, name:str=None, **kwargs):
-        """Adds a group to the parser.
-
-        All the arguments from `argparse.ArgumentParser.add_argument_group
-        <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group>`_
-        are supported. Additionally it accepts:
-
-        Args:
-            name: Name of the group. If set the group object will be included in the parser.groups dict.
-
-        Returns:
-            The group object.
-
-        Raises:
-            ValueError: If group with the same name already exists.
-        """
-        if name is not None and name in self.groups:
-            raise ValueError('Group with name '+name+' already exists.')
-        group = _ArgumentGroup(self, *args, **kwargs)
-        group.parser = self
-        self._action_groups.append(group)
-        if name is not None:
-            self.groups[name] = group
-        return group
-
-
     def add_subparsers(self, **kwargs):
         """Raises a NotImplementedError since jsonargparse uses add_subcommands."""
         raise NotImplementedError('In jsonargparse sub-commands are added using the add_subcommands method.')
@@ -732,7 +739,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
         if format == 'parser_mode':
             format = 'yaml' if self.parser_mode == 'yaml' else 'json_indented'
         if format == 'yaml':
-            return yaml.dump(cfg, **self.dump_yaml_kwargs)  # type: ignore
+            return yaml.safe_dump(cfg, **self.dump_yaml_kwargs)  # type: ignore
         elif format == 'json_indented':
             return json.dumps(cfg, indent=2, **self.dump_json_kwargs)+'\n'  # type: ignore
         elif format == 'json':
@@ -806,7 +813,7 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
                                 elif str(val_path).lower().endswith('.json'):
                                     val_str = json.dumps(val_out, indent=2, **self.dump_json_kwargs)+'\n'
                                 else:
-                                    val_str = yaml.dump(val_out, **self.dump_yaml_kwargs)
+                                    val_str = yaml.safe_dump(val_out, **self.dump_yaml_kwargs)
                                 with open(val_path(), 'w') as f:
                                     f.write(val_str)
                         else:
@@ -1002,14 +1009,17 @@ class ArgumentParser(SignatureArguments, _ActionsContainer, argparse.ArgumentPar
             A configuration object with all subclasses instantiated.
         """
         cfg = namespace_to_dict(strip_meta(cfg))
-        for action in self._actions:
-            if isinstance(action, ActionJsonSchema):
+        actions = list(self._actions)
+        actions.sort(key=lambda x: -len(x.dest.split('.')))
+        for action in actions:
+            if isinstance(action, ActionJsonSchema) or \
+               (isinstance(action, _ActionConfigLoad) and is_dataclass(action.basetype)):
                 try:
-                    val, par, key = _get_key_value(cfg, action.dest, parent=True)
+                    value, parent, key = _get_key_value(cfg, action.dest, parent=True)
                 except KeyError:
                     pass
                 else:
-                    par[key] = action._instantiate_classes(val)
+                    parent[key] = action._instantiate_classes(value)
         return cfg if self._parse_as_dict else dict_to_namespace(cfg)
 
 

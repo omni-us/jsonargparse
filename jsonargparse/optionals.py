@@ -106,6 +106,20 @@ def import_dataclasses(importer):
         raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex)) from ex
 
 
+def is_dataclass(value):
+    if not dataclasses_support:
+        return False
+    dataclasses = import_dataclasses('is_dataclass')
+    return dataclasses.is_dataclass(value)
+
+
+def is_factory_class(value):
+    if not dataclasses_support:
+        return False
+    dataclasses = import_dataclasses('is_default_factory_class')
+    return value.__class__ == dataclasses._HAS_DEFAULT_FACTORY_CLASS
+
+
 def set_url_support(enabled:bool):
     """Enables/disables URL support for config read mode."""
     if enabled and not url_support:

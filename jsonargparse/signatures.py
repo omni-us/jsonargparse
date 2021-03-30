@@ -1,14 +1,21 @@
 """Metods to add arguments based on class/method/function signatures."""
 
+import re
 import inspect
 from enum import Enum
-from typing import Optional, Container, Type, Callable
+from typing import Callable, Container, Optional, Type, Union
 
 from .util import _issubclass
 from .actions import ActionEnum, _ActionConfigLoad, _ActionHelpClassPath
 from .typing import is_optional
 from .jsonschema import ActionJsonSchema
-from .optionals import docstring_parser_support, import_docstring_parse, dataclasses_support, import_dataclasses
+from .optionals import (
+    docstring_parser_support,
+    import_docstring_parse,
+    import_dataclasses,
+    is_dataclass,
+    is_factory_class,
+)
 
 
 __all__ = ['SignatureArguments']
@@ -46,19 +53,13 @@ class SignatureArguments:
         if not inspect.isclass(theclass):
             raise ValueError('Expected "theclass" argument to be a class object.')
 
-        def docs_func(base):
-            return [base.__init__.__doc__, base.__doc__]
-
-        def sign_func(base):
-            return base.__init__
-
         return self._add_signature_arguments(inspect.getmro(theclass),
                                              nested_key,
                                              as_group,
                                              as_positional,
                                              skip,
-                                             docs_func,
-                                             sign_func,
+                                             get_class_init_and_base_docstrings,
+                                             get_class_init,
                                              skip_first=True)
 
 
@@ -199,8 +200,6 @@ class SignatureArguments:
         added_args = set()
         if skip is None:
             skip = set()
-        if dataclasses_support:
-            dataclasses = import_dataclasses('_add_signature_arguments')
         for obj, (add_args, add_kwargs) in zip(objects, add_types):
             for num, param in enumerate(inspect.signature(sign_func(obj)).parameters.values()):
                 name = param.name
@@ -222,7 +221,7 @@ class SignatureArguments:
                 elif name in skip:
                     self.logger.debug(skip_message+'Parameter requested to be skipped.')  # type: ignore
                     continue
-                if dataclasses_support and default.__class__ == dataclasses._HAS_DEFAULT_FACTORY_CLASS:
+                if is_factory_class(default):
                     default = obj.__dataclass_fields__[name].default_factory()
                 if annotation == inspect._empty and not is_required:  # type: ignore
                     annotation = type(default)
@@ -234,7 +233,8 @@ class SignatureArguments:
                 elif not as_positional:
                     kwargs['required'] = True
                 if annotation in {str, int, float, bool} or \
-                   _issubclass(annotation, (str, int, float)):
+                   _issubclass(annotation, (str, int, float)) or \
+                   is_dataclass(annotation):
                     kwargs['type'] = annotation
                 elif _issubclass(annotation, Enum):
                     kwargs['action'] = ActionEnum(enum=annotation)
@@ -255,6 +255,62 @@ class SignatureArguments:
                     raise ValueError('Required parameter without a type for '+obj.__name__+' parameter '+name+'.')
 
         return len(added_args)
+
+
+    def add_dataclass_arguments(
+        self,
+        theclass: Type,
+        nested_key: str,
+        default: Union[Type, dict] = None,
+        as_group: bool = True,
+        **kwargs
+    ):
+        """Adds arguments from a dataclass based on its field types and docstrings.
+
+        Args:
+            theclass: Class from which to add arguments.
+            nested_key: Key for nested namespace.
+            default: Vale for defaults. Must be instance of or kwargs for theclass.
+            as_group: Whether arguments should be added to a new argument group.
+
+        Returns:
+            Number of arguments added.
+
+        Raises:
+            ValueError: When not given a dataclass.
+            ValueError: When default is not instance of or kwargs for theclass.
+        """
+        dataclasses = import_dataclasses('add_dataclass_arguments')
+        if not dataclasses.is_dataclass(theclass):
+            raise ValueError('Expected "theclass" argument to be a dataclass, given '+str(theclass))
+
+        doc_group, doc_params = self._gather_docstrings([theclass], get_class_init_and_base_docstrings)
+        for key in ['help', 'title']:
+            if key in kwargs:
+                doc_group = strip_title(kwargs.pop(key))
+        group = self._create_group_if_requested(theclass, nested_key, as_group, doc_group, config_load=True, config_load_type=theclass)
+
+        defaults = {}
+        if default is not None:
+            if isinstance(default, dict):
+                try:
+                    default = theclass(**default)
+                except:
+                    pass
+            if not isinstance(default, theclass):
+                raise ValueError('Expected "default" argument to be an instance of "'+theclass.__name__+'" or its kwargs dict, given '+str(default))
+            defaults = dataclasses.asdict(default)
+
+        for field in dataclasses.fields(theclass):
+            arg_kwargs = dict(kwargs)
+            arg_kwargs.update({
+                'type': field.type,
+                'default': defaults.get(field.name),
+                'help': doc_params.get(field.name),
+            })
+            group.add_argument('--' + nested_key + '.' + field.name, **arg_kwargs)
+
+        return len(dataclasses.fields(theclass))
 
 
     def add_subclass_arguments(
@@ -288,10 +344,7 @@ class SignatureArguments:
         if not inspect.isclass(baseclass):
             raise ValueError('Expected "baseclass" argument to be a class object.')
 
-        def docs_func(base):
-            return [base.__init__.__doc__, base.__doc__]
-
-        doc_group = self._gather_docstrings([baseclass], docs_func)[0]
+        doc_group = self._gather_docstrings([baseclass], get_class_init_and_base_docstrings)[0]
         group = self._create_group_if_requested(baseclass, nested_key, as_group, doc_group, config_load=False)
 
         group.add_argument('--'+nested_key+'.help', action=_ActionHelpClassPath(baseclass=baseclass))
@@ -322,10 +375,10 @@ class SignatureArguments:
                         for param in docstring.params:
                             if param.arg_name not in doc_params:
                                 doc_params[param.arg_name] = param.description
-        return doc_group, doc_params
+        return strip_title(doc_group), doc_params
 
 
-    def _create_group_if_requested(self, obj, nested_key, as_group, doc_group, config_load=True):
+    def _create_group_if_requested(self, obj, nested_key, as_group, doc_group, config_load=True, config_load_type=None):
         group = self
         if as_group:
             if doc_group is None:
@@ -333,5 +386,18 @@ class SignatureArguments:
             name = obj.__name__ if nested_key is None else nested_key
             group = self.add_argument_group(doc_group, name=name)
             if config_load and nested_key is not None:
-                group.add_argument('--'+nested_key, action=_ActionConfigLoad)
+                group.add_argument('--'+nested_key, action=_ActionConfigLoad(basetype=config_load_type))
         return group
+
+
+def get_class_init_and_base_docstrings(value):
+    return [value.__init__.__doc__, value.__doc__]
+
+
+def get_class_init(value):
+    return value.__init__
+
+
+def strip_title(value):
+    if value is not None:
+        return re.sub(r'\.$', '', value.strip())

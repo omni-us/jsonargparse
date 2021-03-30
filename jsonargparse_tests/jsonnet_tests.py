@@ -3,7 +3,6 @@
 import re
 import json
 from io import StringIO
-from contextlib import redirect_stdout
 from jsonargparse_tests.base import *
 
 
@@ -143,8 +142,7 @@ class JsonnetTests(TempDirTestCase):
             help='schema: %s')
 
         out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
+        parser.print_help(out)
 
         outval = out.getvalue()
         schema = re.sub('^.*schema:([^()]+)[^{}]*$', r'\1', outval.replace('\n', ' '))

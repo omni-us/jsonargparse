@@ -4,7 +4,6 @@ import json
 import pathlib
 from enum import Enum
 from io import StringIO
-from contextlib import redirect_stdout
 from jsonargparse_tests.base import *
 from jsonargparse import ArgumentParser
 
@@ -356,8 +355,7 @@ class ActionParserTests(TempDirTestCase):
         parser.add_argument('--lv2', action=ActionParser(parser_lv2))
 
         out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
+        parser.print_help(out)
         outval = out.getvalue()
 
         self.assertIn('parser_lv2 description', outval)
@@ -374,8 +372,7 @@ class ActionParserTests(TempDirTestCase):
         )
 
         out = StringIO()
-        with redirect_stdout(out):
-            parser.print_help()
+        parser.print_help(out)
         outval = out.getvalue()
 
         self.assertIn('ActionParser title', outval)

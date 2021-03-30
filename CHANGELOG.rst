@@ -10,6 +10,20 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.9.0 (2021-03-30)
+-------------------
+
+Added
+^^^^^
+- New method add_dataclass_arguments.
+- Dataclasses are now supported as a type.
+- New predefined type Path_dc.
+
+Changed
+^^^^^^^
+- Generation of yaml now uses internally pyyaml's safe_dump.
+
+
 v3.8.1 (2021-03-22)
 -------------------
 
