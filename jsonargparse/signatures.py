@@ -286,7 +286,7 @@ class SignatureArguments:
 
         doc_group, doc_params = self._gather_docstrings([theclass], get_class_init_and_base_docstrings)
         for key in ['help', 'title']:
-            if key in kwargs:
+            if key in kwargs and kwargs[key] is not None:
                 doc_group = strip_title(kwargs.pop(key))
         group = self._create_group_if_requested(theclass, nested_key, as_group, doc_group, config_load=True, config_load_type=theclass)
 
