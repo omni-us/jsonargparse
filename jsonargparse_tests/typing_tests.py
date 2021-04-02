@@ -166,7 +166,7 @@ class OtherTests(unittest.TestCase):
             if isinstance(otype, RegisteredType) or hasattr(jsonargparse.typing, otype.__name__):
                 if isinstance(otype, RegisteredType):
                     otype = otype.type_class
-                with self.subTest(otype.__name__):
+                with self.subTest(str(otype)):
                     utype = pickle.loads(pickle.dumps(otype))
                     self.assertEqual(otype, utype)
 

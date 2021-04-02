@@ -10,7 +10,7 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.9.0 (2021-03-30)
+v3.9.0 (2021-??-??)
 -------------------
 
 Added
@@ -18,6 +18,7 @@ Added
 - New method add_dataclass_arguments.
 - Dataclasses are now supported as a type.
 - New predefined type Path_dc.
+- Support for Callable type.
 
 Changed
 ^^^^^^^

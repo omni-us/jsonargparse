@@ -564,7 +564,7 @@ Some notes about this support are:
 - Fully supported types are: :code:`str`, :code:`bool`, :code:`int`,
   :code:`float`, :code:`complex`, :code:`List`, :code:`Iterable`,
   :code:`Sequence`, :code:`Any`, :code:`Union`, :code:`Optional`, :code:`Enum`,
-  :code:`UUID`, restricted types as explained in sections
+  :code:`Callable`, :code:`UUID`, restricted types as explained in sections
   :ref:`restricted-numbers` and :ref:`restricted-strings` and paths and URLs as
   explained in sections :ref:`parsing-paths` and :ref:`parsing-urls`.
 

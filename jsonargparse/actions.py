@@ -16,12 +16,10 @@ from .util import (
     yamlScannerError,
     ParserError,
     namespace_to_dict,
-    dict_to_namespace,
     import_object,
     change_to_path_dir,
     Path,
     _load_config,
-    _flat_namespace_to_dict,
     _dict_to_flat_namespace,
     _issubclass
 )
@@ -84,8 +82,7 @@ def filter_default_actions(actions):
     default = (_HelpAction, _ActionPrintConfig)
     if isinstance(actions, list):
         return [a for a in actions if not isinstance(a, default)]
-    else:
-        return {k: a for k, a in actions.items() if not isinstance(a, default)}
+    return {k: a for k, a in actions.items() if not isinstance(a, default)}
 
 
 class ActionConfigFile(Action, FilesCompleterMethod):
@@ -350,9 +347,9 @@ class ActionEnum(Action):
                     value[num] = self._enum[val]
                 else:
                     self._enum(val)
-            except KeyError:
+            except KeyError as ex:
                 elem = '' if not islist else ' element '+str(num+1)
-                raise TypeError('Parser key "'+self.dest+'"'+elem+': value '+str(val)+' not in '+self._enum.__name__+'.')
+                raise TypeError('Parser key "'+self.dest+'"'+elem+': value '+str(val)+' not in '+self._enum.__name__+'.') from ex
         return value if islist else value[0]
 
     def completer(self, **kwargs):

@@ -6,7 +6,7 @@ import yaml
 import inspect
 from enum import Enum
 from argparse import Namespace, Action
-from typing import Any, Union, Tuple, List, Iterable, Sequence, Set, Dict, Type
+from typing import Any, Callable, Dict, Iterable, List, Sequence, Set, Tuple, Type, Union
 
 from .actions import _is_action_value_list
 from .typing import is_optional, type_to_str, registered_types
@@ -49,6 +49,7 @@ supported_types = {
     Tuple, tuple,
     Set, set,
     Dict, dict,
+    Callable,
 }
 
 
@@ -216,7 +217,7 @@ class ActionJsonSchema(Action):
 
         if annotation in registered_types:
             registered_type = registered_types[annotation]
-            if reverse and val.__class__ == registered_type.type_class:
+            if reverse and registered_type.is_value_of_type(val):
                 val = registered_type.serializer(val)
             elif not reverse:
                 val = registered_type.deserializer(val)

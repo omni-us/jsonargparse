@@ -964,8 +964,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     val = get_key_value(cfg, reqkey)
                     if val is None:
                         raise TypeError()
-                except (KeyError, TypeError):
-                    raise TypeError('Key "'+reqkey+'" is required but not included in config object or its value is None.')
+                except (KeyError, TypeError) as ex:
+                    raise TypeError('Key "'+reqkey+'" is required but not included in config object or its value is None.') from ex
 
         def check_values(cfg, base=None):
             subcommand = None
