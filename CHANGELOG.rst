@@ -21,6 +21,7 @@ Added
 - Support for Callable type.
 - Signature methods with nested key can be made required.
 
+
 Changed
 ^^^^^^^
 - Generation of yaml now uses internally pyyaml's safe_dump.
