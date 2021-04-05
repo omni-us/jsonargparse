@@ -174,7 +174,7 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(parser.dump(cfg), 'complex: (2+3j)\n')
 
 
-def test_type_Any(self):
+    def test_type_Any(self):
         parser = ArgumentParser(error_handler=None, parse_as_dict=True)
         parser.add_argument('--any', type=Any)
         self.assertEqual('abc', parser.parse_args(['--any=abc'])['any'])

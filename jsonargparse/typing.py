@@ -251,9 +251,6 @@ class RegisteredType:
             type_class_name = getattr(self.type_class, '__name__', str(self.type_class))
             raise ValueError('Not of type '+type_class_name+'. '+str(ex)) from ex
 
-    def is_value_of_type(self, value):
-        return self.type_check(value, self.type_class)
-
 
 def register_type(
     type_class: Any,
