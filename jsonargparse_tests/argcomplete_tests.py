@@ -203,8 +203,7 @@ class ArgcompleteTests(TempDirTestCase):
     def test_list(self):
         self.parser.add_argument('--list', type=List[int])
 
-        arg = "--list='[1, 2, 3]'"
-        os.environ['COMP_LINE'] = 'tool.py '+arg
+        os.environ['COMP_LINE'] = "tool.py --list='[1, 2, 3]'"
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
         out, err = BytesIO(), StringIO()
@@ -213,15 +212,14 @@ class ArgcompleteTests(TempDirTestCase):
         self.assertEqual(out.getvalue(), b'')
         self.assertIn('value already valid, expected type List[int]', err.getvalue())
 
-        arg = "--list="
-        os.environ['COMP_LINE'] = 'tool.py '+arg
+        os.environ['COMP_LINE'] = 'tool.py --list='
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
         out, err = BytesIO(), StringIO()
         with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
         self.assertEqual(err.getvalue(), '')
-        self.assertIn(b'value\xc2\xa0not\xc2\xa0yet\xc2\xa0valid', out.getvalue())
+        self.assertIn('value not yet valid', out.getvalue().decode('utf-8').replace('\xa0', ' ').replace('_', ' '))
 
 
     def test_bool(self):
