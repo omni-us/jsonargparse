@@ -39,6 +39,7 @@ class SignaturesTests(unittest.TestCase):
         cls.MyDataClassB = MyDataClassB
 
 
+    @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
     def test_add_dataclass_arguments(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_dataclass_arguments(self.MyDataClassA, 'a', default=self.MyDataClassA(), title='CustomA title')

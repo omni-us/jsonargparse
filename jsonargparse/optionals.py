@@ -23,7 +23,7 @@ _argcomplete = find_spec('argcomplete')
 _dataclasses = find_spec('dataclasses')
 
 jsonschema_support = False if _jsonschema is None else True
-jsonnet_support = False if any(x is None for x in [_jsonnet, _jsonschema]) else True
+jsonnet_support = False if _jsonnet is None else True
 url_support = False if any(x is None for x in [_url_validator, _requests]) else True
 docstring_parser_support = False if _docstring_parser is None else True
 argcomplete_support = False if _argcomplete is None else True
