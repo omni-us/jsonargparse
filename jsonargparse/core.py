@@ -7,7 +7,6 @@ import yaml
 import logging
 import inspect
 import argparse
-from enum import Enum
 from copy import deepcopy
 from contextlib import redirect_stderr
 from typing import Any, List, Dict, Set, Union, Optional, Type, Callable
@@ -15,8 +14,8 @@ from argparse import ArgumentError, Action, Namespace, SUPPRESS
 
 from .formatters import DefaultHelpFormatter
 from .signatures import SignatureArguments
-from .typing import type_in
-from .jsonschema import ActionJsonSchema, supported_types
+from .typehints import ActionTypeHint
+from .jsonschema import ActionJsonSchema
 from .jsonnet import ActionJsonnet
 from .optionals import (
     dump_preserve_order_support,
@@ -29,7 +28,6 @@ from .optionals import (
     TypeCastCompleterMethod,
 )
 from .actions import (
-    ActionEnum,
     ActionParser,
     ActionConfigFile,
     ActionPath,
@@ -105,15 +103,10 @@ class _ActionsContainer(SignatureArguments, argparse._ActionsContainer):
                 nested_key = re.sub('^--', '', args[0])
                 super().add_dataclass_arguments(theclass, nested_key, **kwargs)
                 return _find_action(parser, nested_key)
-            if type_in(kwargs['type'], supported_types) or \
-               (inspect.isclass(kwargs['type']) and not _issubclass(kwargs['type'], (str, int, float, Enum, Path))):
+            if ActionTypeHint.is_supported_typehint(kwargs['type']):
                 if 'action' in kwargs:
-                    raise ValueError('Type hints as type does not allow providing an action')
-                kwargs['action'] = ActionJsonSchema(annotation=kwargs.pop('type'), enable_path=enable_path)
-            elif _issubclass(kwargs['type'], Enum):
-                if 'action' in kwargs:
-                    raise ValueError('Enum as type does not allow providing an action')
-                kwargs['action'] = ActionEnum(enum=kwargs['type'])
+                    raise ValueError('Type hint as type does not allow providing an action')
+                kwargs['action'] = ActionTypeHint(typehint=kwargs.pop('type'), enable_path=enable_path)
         action = super().add_argument(*args, **kwargs)
         if not hasattr(action, 'completer') and action.type is not None:
             completer_method = FilesCompleterMethod if isinstance(action.type, Path) else TypeCastCompleterMethod
@@ -273,6 +266,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         nested: bool,
         with_meta: Optional[bool],
         skip_check: bool,
+        skip_required: bool = False,
         skip_subcommands: bool = False,
         fail_no_subcommand: bool = True,
         cfg_base: Union[Namespace, Dict[str, Any]] = None,
@@ -324,7 +318,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             self.exit()
 
         if not skip_check:
-            self.check_config(cfg_ns)
+            self.check_config(cfg_ns, skip_required=skip_required)
+
+        if not nested:
+            cfg_ns = _dict_to_flat_namespace(namespace_to_dict(cfg_ns))
 
         if log_message is not None:
             self._logger.info(log_message)
@@ -397,6 +394,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         nested: bool = True,
         with_meta: bool = None,
         _skip_check: bool = False,
+        _skip_required: bool = False,
     ) -> Union[Namespace, Dict[str, Any]]:
         """Parses configuration given as an object.
 
@@ -416,6 +414,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         try:
             cfg = vars(_dict_to_flat_namespace(cfg_obj))
             self._apply_actions(cfg, self._actions)
+            cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -424,6 +423,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 nested=nested,
                 with_meta=with_meta,
                 skip_check=_skip_check,
+                skip_required=_skip_required,
                 cfg_base=cfg_base,
                 log_message='Parsed object.',
             )
@@ -703,7 +703,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             self.check_config(cfg)
 
         def cleanup_actions(cfg, actions):
-            for action in actions:
+            for action in filter_default_actions(actions):
                 if (action.help == SUPPRESS and not isinstance(action, _ActionConfigLoad)) or \
                    isinstance(action, ActionConfigFile) or \
                    (skip_none and action.dest in cfg and cfg[action.dest] is None):
@@ -714,26 +714,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                             cfg[action.dest] = [str(p) for p in cfg[action.dest]]
                         else:
                             cfg[action.dest] = str(cfg[action.dest])
-                elif isinstance(action, ActionJsonSchema) and action._annotation is not None and cfg.get(action.dest) is not None:
-                    cfg[action.dest] = ActionJsonSchema._adapt_types(cfg[action.dest], action._annotation, action._subschemas, True)
-
-        def cleanup_types(cfg):
-            for dest, val in cfg.items():
-                if isinstance(val, Enum):
-                    cfg[dest] = val.name
-                elif isinstance(val, Path):
-                    cfg[dest] = str(val)
-                elif 'jsonargparse.typing.' in str(type(val)):
-                    if isinstance(val, str):
-                        cfg[dest] = str(val)
-                    elif isinstance(val, int):
-                        cfg[dest] = int(val)
-                    elif isinstance(val, float):
-                        cfg[dest] = float(val)
+                elif isinstance(action, ActionTypeHint) and cfg.get(action.dest) is not None:
+                    cfg[action.dest] = ActionTypeHint.serialize(cfg[action.dest], action._typehint)
 
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         cleanup_actions(cfg, self._actions)
-        cleanup_types(cfg)
         cfg = _flat_namespace_to_dict(_dict_to_flat_namespace(cfg))
 
         if format == 'parser_mode':
@@ -891,7 +876,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             An object with all default values as attributes.
         """
         cfg = {}
-        for action in self._actions:
+        for action in filter_default_actions(self._actions):
             if action.default != SUPPRESS and action.dest != SUPPRESS:
                 cfg[action.dest] = action.default
 
@@ -903,17 +888,22 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if default_config_file is not None:
             with change_to_path_dir(default_config_file):
                 cfg_file = self._load_cfg(default_config_file.get_content())
-                if not skip_check:
-                    try:
-                        self.check_config(cfg_file, skip_required=True)
-                    except (TypeError, KeyError) as ex:
-                        raise ParserError('Problem in default config file "'+str(default_config_file)+'" :: '+ex.args[0]) from ex
+                try:
+                    cfg_file = self.parse_object(  # type: ignore
+                        _flat_namespace_to_dict(dict_to_namespace(cfg_file)),
+                        defaults=False,
+                        nested=False,
+                        _skip_check=skip_check,
+                        _skip_required=True,
+                    )
+                except (TypeError, KeyError, ParserError) as ex:
+                    raise ParserError('Problem in default config file "'+str(default_config_file)+'" :: '+ex.args[0]) from ex
             cfg = self._merge_config(cfg_file, cfg)
             cfg['__default_config__'] = default_config_file
             self._logger.info('Parsed configuration from default path: %s', str(default_config_file))
 
         if nested:
-            cfg = _flat_namespace_to_dict(Namespace(**cfg))
+            cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
         return dict_to_namespace(cfg)
 
@@ -1009,17 +999,18 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             A configuration object with all subclasses instantiated.
         """
         cfg = namespace_to_dict(strip_meta(cfg))
-        actions = list(self._actions)
+        actions = filter_default_actions(self._actions)
         actions.sort(key=lambda x: -len(x.dest.split('.')))
         for action in actions:
-            if isinstance(action, ActionJsonSchema) or \
+            if isinstance(action, ActionTypeHint) or \
                (isinstance(action, _ActionConfigLoad) and is_pure_dataclass(action.basetype)):
                 try:
                     value, parent, key = _get_key_value(cfg, action.dest, parent=True)
                 except KeyError:
                     pass
                 else:
-                    parent[key] = action._instantiate_classes(value)
+                    if value is not None:
+                        parent[key] = action._instantiate_classes(value)
         return cfg if self._parse_as_dict else dict_to_namespace(cfg)
 
 
@@ -1066,7 +1057,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         cfg_files = []
         if '__default_config__' in cfg:
             cfg_files.append(cfg['__default_config__'])
-        for action in self._actions:
+        for action in filter_default_actions(self._actions):
             if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not None:
                 cfg_files.extend(p for p in cfg[action.dest] if p is not None)
         return cfg_files
@@ -1078,7 +1069,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             note = 'no existing default config file found.'
             if '__default_config__' in defaults:
                 note = 'default values below will be ones overridden by the contents of: '+str(defaults['__default_config__'])
-                self.formatter_class.defaults = vars(_dict_to_flat_namespace(defaults))
+                self.formatter_class.defaults = defaults
             group = self._default_config_files_group
             group.description = str(self._default_config_files) + ', Note: '+note
         help_str = super().format_help()
@@ -1089,10 +1080,32 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
     def _apply_actions(self, cfg, actions):
         """Runs _check_value_key on actions present in flat config dict."""
-        for action in actions:
-            if action.dest in cfg:
+        def find_parent_action(key):
+            parts = key.split('.')
+            for n in reversed(range(len(parts)-1)):
+                action = _find_action(Namespace(_actions=actions), '.'.join(parts[:n+1]))
+                if action is not None:
+                    return action
+
+        keys = list(cfg.keys())
+        keys.sort(key=lambda x: -len(x.split('.')))
+        seen_keys = set()
+        for key in keys:
+            if key in seen_keys:
+                continue
+            action = _find_action(self, key)
+            if action is not None:
                 value = self._check_value_key(action, cfg[action.dest], action.dest, cfg)
                 cfg[action.dest] = value
+                continue
+            action = find_parent_action(key)
+            if action is not None:
+                value = {k[len(action.dest)+1:]: v for k, v in cfg.items() if k.startswith(action.dest+'.')}
+                value = _flat_namespace_to_dict(Namespace(**value))
+                value = self._check_value_key(action, value, action.dest, cfg)
+                value = vars(_dict_to_flat_namespace(value))
+                cfg.update({action.dest+'.'+k: v for k, v in value.items()})
+                seen_keys.update(action.dest+'.'+k for k in value.keys())
 
 
     @staticmethod

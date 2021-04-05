@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 
+import calendar
 import json
 import yaml
-import calendar
 from enum import Enum
 from io import StringIO
 from contextlib import redirect_stdout
-from typing import Dict, List, Tuple, Optional, Union, Any
+from typing import Any, Dict, List, Optional, Tuple, Union
 from jsonargparse_tests.base import *
 from jsonargparse.actions import _find_action
 from jsonargparse.util import _suppress_stderr
 
 
-@unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
 class SignaturesTests(unittest.TestCase):
 
     def test_add_class_arguments(self):
@@ -109,7 +108,6 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual('a', Class3(**namespace_to_dict(cfg))())
 
         self.assertRaises(ParserError, lambda: parser.parse_args([]))  # c3_a0 is required
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--c3_a0=0', '--c3_a4=4.0']))  # c3_a4 is str or None
         self.assertRaises(ParserError, lambda: parser.parse_args(['--c3_a0=0', '--c3_a7=["3", "3", 3.0]']))  # tuple[1] is int
 
         if docstring_parser_support:
@@ -263,8 +261,22 @@ class SignaturesTests(unittest.TestCase):
         self.assertIn('--cal.init_args.firstweekday', out.getvalue())
 
 
+    def test_required_group(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal', required=True)
+        self.assertRaises(ParserError, lambda: parser.parse_args([]))
+        self.assertRaises(ValueError, lambda: parser.add_class_arguments(calendar.Calendar, required=True))
 
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+
+    def test_invalid_type(self):
+
+        def func(a1: None):
+            return a1
+
+        parser = ArgumentParser(error_handler=None)
+        self.assertRaises(ValueError, lambda: parser.add_function_arguments(func))
+
+
     def test_optional_enum(self):
 
         class MyEnum(Enum):
@@ -442,7 +454,6 @@ class SignaturesTests(unittest.TestCase):
             self.assertNotIn('a1 description', help_str.getvalue())
 
 
-@unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
 class SignaturesConfigTests(TempDirTestCase):
 
     def test_add_function_arguments_config(self):

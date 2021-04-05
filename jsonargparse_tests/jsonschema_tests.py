@@ -104,7 +104,6 @@ class JsonSchemaTests(TempDirTestCase):
     def test_ActionJsonSchema_failures(self):
         self.assertRaises(ValueError, lambda: ActionJsonSchema())
         self.assertRaises(ValueError, lambda: ActionJsonSchema(schema=':'+json.dumps(schema1)))
-        self.assertRaises(ValueError, lambda: ActionJsonSchema(schema=schema1, annotation=int))
 
 
     def test_ActionJsonSchema_help(self):

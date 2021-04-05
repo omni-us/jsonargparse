@@ -7,10 +7,9 @@ import yaml
 import argparse
 from enum import Enum
 from typing import Type
-from argparse import Namespace, Action, SUPPRESS, _StoreAction, _HelpAction, _SubParsersAction
+from argparse import Namespace, Action, SUPPRESS, _HelpAction, _SubParsersAction
 
 from .optionals import get_config_read_mode, FilesCompleterMethod
-from .typing import restricted_number_type, registered_types
 from .util import (
     yamlParserError,
     yamlScannerError,
@@ -28,8 +27,6 @@ from .util import (
 __all__ = [
     'ActionConfigFile',
     'ActionYesNo',
-    'ActionEnum',
-    'ActionOperators',
     'ActionParser',
     'ActionPath',
     'ActionPathList',
@@ -297,88 +294,6 @@ class ActionYesNo(Action):
     def completer(self, **kwargs):
         """Used by argcomplete to support tab completion of arguments."""
         return ['true', 'false', 'yes', 'no']
-
-
-class ActionEnum(Action):
-    """An action based on an Enum that maps to-from strings and enum values."""
-
-    def __init__(
-        self,
-        enum: Enum = None,
-        **kwargs
-    ):
-        """Initializer for ActionEnum instance.
-
-        Args:
-            enum: An Enum class.
-
-        Raises:
-            ValueError: If a parameter is invalid.
-        """
-        if enum is not None:
-            if not _issubclass(enum, Enum):
-                raise ValueError('Expected enum to be an subclass of Enum.')
-            self._enum = enum
-        elif '_enum' not in kwargs:
-            raise ValueError('Expected enum keyword argument.')
-        else:
-            self._enum = kwargs.pop('_enum')
-            kwargs['metavar'] = '{'+','.join(self._enum.__members__.keys())+'}'  # type: ignore
-            super().__init__(**kwargs)
-
-    def __call__(self, *args, **kwargs):
-        """Parses an argument mapping a string to its Enum value.
-
-        Raises:
-            TypeError: If value not present in the Enum.
-        """
-        if len(args) == 0:
-            kwargs['_enum'] = self._enum
-            return ActionEnum(**kwargs)
-        setattr(args[1], self.dest, self._check_type(args[2]))
-
-    def _check_type(self, value, cfg=None):
-        islist = _is_action_value_list(self)
-        if not islist:
-            value = [value]
-        for num, val in enumerate(value):
-            try:
-                if isinstance(val, str):
-                    value[num] = self._enum[val]
-                else:
-                    self._enum(val)
-            except KeyError as ex:
-                elem = '' if not islist else ' element '+str(num+1)
-                raise TypeError('Parser key "'+self.dest+'"'+elem+': value '+str(val)+' not in '+self._enum.__name__+'.') from ex
-        return value if islist else value[0]
-
-    def completer(self, **kwargs):
-        """Used by argcomplete to support tab completion of arguments."""
-        return list(self._enum.__members__.keys())
-
-
-class ActionOperators:
-    """DEPRECATED: Action to restrict a value with comparison operators.
-
-    The new alternative is explained in :ref:`restricted-numbers`.
-    """
-
-    def __init__(self, **kwargs):
-        if 'expr' in kwargs:
-            restrictions = [kwargs['expr']] if isinstance(kwargs['expr'], tuple) else kwargs['expr']
-            register_key = (tuple(sorted(restrictions)), kwargs.get('type', int), kwargs.get('join', 'and'))
-            if register_key in registered_types:
-                self._type = registered_types[register_key]
-            else:
-                self._type = restricted_number_type(None, kwargs.get('type', int), kwargs['expr'], kwargs.get('join', 'and'))
-        else:
-            raise ValueError('Expected expr keyword argument.')
-
-    def __call__(self, *args, **kwargs):
-        if 'type' in kwargs:
-            raise ValueError('ActionOperators does not allow type given to add_argument.')
-        kwargs['type'] = self._type
-        return _StoreAction(**kwargs)
 
 
 class ActionParser:

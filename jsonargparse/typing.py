@@ -229,35 +229,34 @@ class RegisteredType:
         type_class: Any,
         serializer: Callable,
         deserializer: Optional[Callable],
-        deserializer_exceptions: Optional[Union[Type[Exception], Tuple[Type[Exception]]]],
+        deserializer_exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]],
         type_check: Callable,
     ):
         self.type_class = type_class
         self.serializer = serializer
-        self.deserializer = type_class if deserializer is None else deserializer
+        self.base_deserializer = type_class if deserializer is None else deserializer
+        self.deserializer_exceptions = deserializer_exceptions
         self.type_check = type_check
-        if deserializer_exceptions is not None:
-            def deserializer_try_except(value):
-                try:
-                    return self.base_deserializer(value)
-                except self.deserializer_exceptions as ex:
-                    raise TypeError(str(ex)) from ex
-            self.base_deserializer = self.deserializer
-            self.deserializer = deserializer_try_except
-            self.deserializer_exceptions = deserializer_exceptions
 
     def __eq__(self, other):
-        return all(getattr(self, k) == getattr(other, k) for k in ['type_class', 'serializer', 'deserializer'])
+        return all(getattr(self, k) == getattr(other, k) for k in ['type_class', 'serializer', 'base_deserializer'])
 
     def is_value_of_type(self, value):
         return self.type_check(value, self.type_class)
+
+    def deserializer(self, value):
+        try:
+            return self.base_deserializer(value)
+        except self.deserializer_exceptions as ex:
+            type_class_name = getattr(self.type_class, '__name__', str(self.type_class))
+            raise ValueError('Not of type '+type_class_name+'. '+str(ex)) from ex
 
 
 def register_type(
     type_class: Any,
     serializer: Callable = str,
     deserializer: Optional[Callable] = None,
-    deserializer_exceptions: Optional[Union[Type[Exception], Tuple[Type[Exception]]]] = None,
+    deserializer_exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]] = (ValueError, TypeError, AttributeError),
     type_check: Callable = lambda v, t: v.__class__ == t,
     uniqueness_key: Optional[Tuple] = None,
 ):
@@ -320,28 +319,4 @@ register_type(
     type_check=lambda v, t: callable(v),
     serializer=lambda x: x.__module__+'.'+x.__name__,
     deserializer=lambda x: x if callable(x) else import_object(x),
-    deserializer_exceptions=AttributeError,
 )
-
-
-def is_optional(annotation, ref_type):
-    """Checks whether a type annotation is an optional for one type class."""
-    return hasattr(annotation, '__origin__') and \
-        annotation.__origin__ == Union and \
-        len(annotation.__args__) == 2 and \
-        any(type(None) == a for a in annotation.__args__) and \
-        any(_issubclass(a, ref_type) for a in annotation.__args__)
-
-
-def type_in(obj, types_set):
-    return obj in types_set or (hasattr(obj, '__origin__') and obj.__origin__ in types_set)
-
-
-def type_to_str(obj):
-    if _issubclass(obj, (bool, int, float, str, Enum)):
-        if hasattr(obj, '_expression'):
-            return obj._type.__name__ + ' ' + obj._expression
-        else:
-            return obj.__name__
-    elif obj is not None:
-        return re.sub(r'[a-z_.]+\.', '', str(obj)).replace('NoneType', 'null')

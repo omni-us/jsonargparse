@@ -706,7 +706,7 @@ class ConfigFilesTests(TempDirTestCase):
         with open(default_config_file, 'w') as output_file:
             output_file.write('op1: from yaml\n')
 
-        parser = ArgumentParser(default_config_files=[default_config_file])
+        parser = ArgumentParser(default_config_files=[default_config_file], error_handler=None)
         parser.add_argument('--op1', default='from default')
 
         self.assertEqual(parser.get_default('op1'), 'from yaml')

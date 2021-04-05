@@ -1,12 +1,11 @@
 """Formatter classes."""
 
+from argparse import _HelpAction, HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 from enum import Enum
-from argparse import HelpFormatter, _HelpAction, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 
-from .util import _get_env_var
-from .typing import type_to_str
-from .actions import ActionEnum, ActionYesNo, ActionConfigFile
-from .jsonschema import ActionJsonSchema
+from .actions import ActionYesNo, ActionConfigFile
+from .typehints import ActionTypeHint, type_to_str
+from .util import _get_env_var, _get_key_value
 
 
 __all__ = ['DefaultHelpFormatter']
@@ -73,7 +72,7 @@ class DefaultHelpFormatter(HelpFormatter):
             params['type'] = type_str
         if 'default' in params:
             if hasattr(self, 'defaults'):
-                params['default'] = self.defaults[action.dest]
+                params['default'] = _get_key_value(self.defaults, action.dest)
             if params['default'] is None:
                 params['default'] = 'null'
             elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):
@@ -87,8 +86,6 @@ class DefaultHelpFormatter(HelpFormatter):
             type_str = 'bool'
         elif action.type is not None:
             type_str = type_to_str(action.type)
-        elif isinstance(action, ActionEnum):
-            type_str = type_to_str(action._enum)
-        elif isinstance(action, ActionJsonSchema):
-            type_str = type_to_str(action._annotation)
+        elif isinstance(action, ActionTypeHint):
+            type_str = type_to_str(action._typehint)
         return type_str
