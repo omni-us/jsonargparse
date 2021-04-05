@@ -4,9 +4,8 @@ import os
 import pickle
 import pathlib
 import jsonargparse.typing
-from enum import Enum
-from typing import Optional, Union, Dict
-from jsonargparse.typing import is_optional, type_to_str, RegisteredType
+from typing import Callable
+from jsonargparse.typing import RegisteredType
 from jsonargparse_tests.base import *
 
 
@@ -151,7 +150,6 @@ class PathTypeTests(TempDirTestCase):
         self.assertEqual(repr(path), self.file_fr)
         self.assertEqual(path(), os.path.realpath(self.file_fr))
         self.assertRaises(TypeError, lambda: Path_fr('does_not_exist'))
-        self.assertEqual('str Path_fr', type_to_str(Path_fr))
 
 
     def test_already_registered(self):
@@ -166,7 +164,7 @@ class OtherTests(unittest.TestCase):
             if isinstance(otype, RegisteredType) or hasattr(jsonargparse.typing, otype.__name__):
                 if isinstance(otype, RegisteredType):
                     otype = otype.type_class
-                with self.subTest(otype.__name__):
+                with self.subTest(str(otype)):
                     utype = pickle.loads(pickle.dumps(otype))
                     self.assertEqual(otype, utype)
 
@@ -175,25 +173,10 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: restricted_string_type('List', '^clash$'))
 
 
-    def test_is_optional(self):
-        class MyEnum(Enum):
-            A = 1
-
-        params = [
-            (Optional[bool],             bool, True),
-            (Union[type(None), bool],    bool, True),
-            (Dict[bool, type(None)],     bool, False),
-            (Optional[Path_fr],          Path, True),
-            (Union[type(None), Path_fr], Path, True),
-            (Dict[Path_fr, type(None)],  Path, False),
-            (Optional[MyEnum],           Enum, True),
-            (Union[type(None), MyEnum],  Enum, True),
-            (Dict[MyEnum, type(None)],   Enum, False),
-        ]
-
-        for annotation, ref_type, expected in params:
-            with self.subTest(str(annotation)):
-                self.assertEqual(expected, is_optional(annotation, ref_type))
+    def test_Callable(self):
+        CallableType = registered_types[Callable]
+        self.assertEqual(CallableType.deserializer('jsonargparse.CLI'), CLI)
+        self.assertRaises(ValueError, lambda: CallableType.deserializer(None))
 
 
 if __name__ == '__main__':

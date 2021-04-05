@@ -98,9 +98,7 @@ corresponding extras requires that enables them.
 +----------------------------------+------+-------------+---------+------------+------------+
 |                                  | urls | argcomplete | jsonnet | jsonschema | signatures |
 +----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`boolean-arguments`         |      |             |         | ✓          | ✓          |
-+----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`type-hints`                |      |             |         | ✓          | ✓          |
+| :ref:`type-hints`                |      |             |         |            | ✓          |
 +----------------------------------+------+-------------+---------+------------+------------+
 | :ref:`classes-methods-functions` |      |             |         |            | ✓          |
 +----------------------------------+------+-------------+---------+------------+------------+
@@ -108,7 +106,7 @@ corresponding extras requires that enables them.
 +----------------------------------+------+-------------+---------+------------+------------+
 | :ref:`parsing-urls`              | ✓    |             |         |            |            |
 +----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`json-schemas`              |      |             |         | ✓          | ✓          |
+| :ref:`json-schemas`              |      |             |         | ✓          |            |
 +----------------------------------+------+-------------+---------+------------+------------+
 | :ref:`jsonnet-files`             |      |             | ✓       |            |            |
 +----------------------------------+------+-------------+---------+------------+------------+
@@ -523,13 +521,11 @@ This can be done by initializing :class:`.ArgumentParser` with
 :code:`logger={'level': 'DEBUG'}`. For more details about logging go to section
 :ref:`logging`.
 
-For all features described above to work, two optional packages are required:
-`jsonschema <https://pypi.org/project/jsonschema/>`__ to support validation of
-complex type hints and `docstring-parser
-<https://pypi.org/project/docstring-parser/>`__ to get the argument descriptions
-from the docstrings. Both these packages are included when jsonargparse is
-installed using the :code:`signatures` extras require as explained in section
-:ref:`installation`.
+For all features described above to work, one optional package is required:
+`docstring-parser <https://pypi.org/project/docstring-parser/>`__ to get the
+argument descriptions from the docstrings. This package is included when
+jsonargparse is installed using the :code:`signatures` extras require as
+explained in section :ref:`installation`.
 
 
 .. _type-hints:
@@ -564,7 +560,7 @@ Some notes about this support are:
 - Fully supported types are: :code:`str`, :code:`bool`, :code:`int`,
   :code:`float`, :code:`complex`, :code:`List`, :code:`Iterable`,
   :code:`Sequence`, :code:`Any`, :code:`Union`, :code:`Optional`, :code:`Enum`,
-  :code:`UUID`, restricted types as explained in sections
+  :code:`Callable`, :code:`UUID`, restricted types as explained in sections
   :ref:`restricted-numbers` and :ref:`restricted-strings` and paths and URLs as
   explained in sections :ref:`parsing-paths` and :ref:`parsing-urls`.
 
@@ -1074,9 +1070,6 @@ is implemented. If given as values :code:`{'yes', 'true'}` or :code:`{'no',
     >>> parser.add_argument('--op2', type=bool, default=True)
     >>> parser.parse_args(['--op1', 'yes', '--op2', 'false'])
     Namespace(op1=True, op2=False)
-
-To use :code:`type=bool` jsonargparse needs to be installed with the
-:code:`jsonschema` extras require as explained in section :ref:`installation`.
 
 Sometimes it is also useful to define two paired options, one to set
 :code:`True` and the other to set :code:`False`. The :class:`.ActionYesNo` class

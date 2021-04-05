@@ -146,7 +146,6 @@ class ArgcompleteTests(TempDirTestCase):
         self.assertEqual(out.getvalue(), b'abc\x0babd')
 
 
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     def test_optional(self):
         class MyEnum(Enum):
             A = 1
@@ -171,11 +170,9 @@ class ArgcompleteTests(TempDirTestCase):
     @unittest.skipIf(platform.python_implementation() != 'CPython', 'only CPython supported')
     def test_json(self):
         self.parser.add_argument('--json', action=ActionJsonSchema(schema={'type': 'object'}))
-        self.parser.add_argument('--list', type=List[int])
 
         for arg, expected in [('--json=1',            'value not yet valid'),
-                              ("--json='{\"a\": 1}'", 'value already valid'),
-                              ("--list='[1, 2, 3]'",  'value already valid, expected type List[int]')]:
+                              ("--json='{\"a\": 1}'", 'value already valid')]:
             os.environ['COMP_LINE'] = 'tool.py '+arg
             os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
@@ -203,7 +200,30 @@ class ArgcompleteTests(TempDirTestCase):
         self.assertIn('value not yet valid', out.getvalue().decode('utf-8').replace('\xa0', ' ').replace('_', ' '))
 
 
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
+    def test_list(self):
+        self.parser.add_argument('--list', type=List[int])
+
+        arg = "--list='[1, 2, 3]'"
+        os.environ['COMP_LINE'] = 'tool.py '+arg
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+        out, err = BytesIO(), StringIO()
+        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        self.assertEqual(out.getvalue(), b'')
+        self.assertIn('value already valid, expected type List[int]', err.getvalue())
+
+        arg = "--list="
+        os.environ['COMP_LINE'] = 'tool.py '+arg
+        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+
+        out, err = BytesIO(), StringIO()
+        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        self.assertEqual(err.getvalue(), '')
+        self.assertIn(b'value\xc2\xa0not\xc2\xa0yet\xc2\xa0valid', out.getvalue())
+
+
     def test_bool(self):
         self.parser.add_argument('--bool', type=bool)
         os.environ['COMP_LINE'] = 'tool.py --bool='
@@ -215,7 +235,6 @@ class ArgcompleteTests(TempDirTestCase):
         self.assertEqual(b'true\x0bfalse', out.getvalue())
 
 
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
     @unittest.skipIf(os.name != 'posix', 'Path class currently only supported in posix systems')
     def test_optional_path(self):
         self.parser.add_argument('--path', type=Optional[Path_fr])

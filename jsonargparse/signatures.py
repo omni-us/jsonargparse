@@ -2,13 +2,11 @@
 
 import re
 import inspect
-from enum import Enum
 from typing import Callable, Container, Optional, Type, Union
 
+from .actions import _ActionConfigLoad, _ActionHelpClassPath
+from .typehints import ActionTypeHint, is_optional
 from .util import _issubclass
-from .actions import ActionEnum, _ActionConfigLoad, _ActionHelpClassPath
-from .typing import is_optional
-from .jsonschema import ActionJsonSchema
 from .optionals import (
     docstring_parser_support,
     import_docstring_parse,
@@ -30,6 +28,7 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
+        required: bool = False,
         skip: Optional[Container[str]] = None,
     ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
@@ -41,6 +40,7 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
+            required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
 
         Returns:
@@ -57,6 +57,7 @@ class SignatureArguments:
                                              nested_key,
                                              as_group,
                                              as_positional,
+                                             required,
                                              skip,
                                              get_class_init_and_base_docstrings,
                                              get_class_init,
@@ -70,6 +71,7 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
+        required: bool = False,
         skip: Optional[Container[str]] = None,
     ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
@@ -82,6 +84,7 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
+            required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
 
         Returns:
@@ -103,6 +106,7 @@ class SignatureArguments:
                                              nested_key,
                                              as_group,
                                              as_positional,
+                                             required,
                                              skip,
                                              skip_first=skip_first)
 
@@ -113,6 +117,7 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
+        required: bool = False,
         skip: Optional[Container[str]] = None,
     ) -> int:
         """Adds arguments from a function based on its type hints and docstrings.
@@ -124,6 +129,7 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
+            required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
 
         Returns:
@@ -140,6 +146,7 @@ class SignatureArguments:
                                              nested_key,
                                              as_group,
                                              as_positional,
+                                             required,
                                              skip)
 
 
@@ -149,6 +156,7 @@ class SignatureArguments:
         nested_key: Optional[str],
         as_group: bool,
         as_positional: bool,
+        required: bool,
         skip: Optional[Container[str]],
         docs_func: Callable = lambda x: [x.__doc__],
         sign_func: Callable = lambda x: x,
@@ -161,6 +169,7 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
+            required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
             docs_func: Function that returns docstrings for a given object.
             sign_func: Function that returns signature method for a given object.
@@ -194,7 +203,7 @@ class SignatureArguments:
         doc_group, doc_params = self._gather_docstrings(objects, docs_func)
 
         ## Create group if requested ##
-        group = self._create_group_if_requested(objects[0], nested_key, as_group, doc_group)
+        group = self._create_group_if_requested(objects[0], nested_key, as_group, required, doc_group)
 
         ## Add objects arguments ##
         added_args = set()
@@ -236,11 +245,9 @@ class SignatureArguments:
                    _issubclass(annotation, (str, int, float)) or \
                    is_pure_dataclass(annotation):
                     kwargs['type'] = annotation
-                elif _issubclass(annotation, Enum):
-                    kwargs['action'] = ActionEnum(enum=annotation)
-                else:
+                elif annotation != inspect._empty:  # type: ignore
                     try:
-                        kwargs['action'] = ActionJsonSchema(annotation=annotation, enable_path=False)
+                        kwargs['action'] = ActionTypeHint(typehint=annotation)
                     except ValueError as ex:
                         self.logger.debug(skip_message+str(ex))  # type: ignore
                 if 'type' in kwargs or 'action' in kwargs:
@@ -263,6 +270,7 @@ class SignatureArguments:
         nested_key: str,
         default: Union[Type, dict] = None,
         as_group: bool = True,
+        required: bool = False,
         **kwargs
     ):
         """Adds arguments from a dataclass based on its field types and docstrings.
@@ -272,6 +280,7 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             default: Vale for defaults. Must be instance of or kwargs for theclass.
             as_group: Whether arguments should be added to a new argument group.
+            required: Whether the argument group is required.
 
         Returns:
             Number of arguments added.
@@ -286,9 +295,9 @@ class SignatureArguments:
 
         doc_group, doc_params = self._gather_docstrings([theclass], get_class_init_and_base_docstrings)
         for key in ['help', 'title']:
-            if key in kwargs:
+            if key in kwargs and kwargs[key] is not None:
                 doc_group = strip_title(kwargs.pop(key))
-        group = self._create_group_if_requested(theclass, nested_key, as_group, doc_group, config_load=True, config_load_type=theclass)
+        group = self._create_group_if_requested(theclass, nested_key, as_group, required, doc_group, config_load=True, config_load_type=theclass)
 
         defaults = {}
         if default is not None:
@@ -318,6 +327,7 @@ class SignatureArguments:
         baseclass: Type,
         nested_key: str,
         as_group: bool = True,
+        required: bool = False,
         metavar: str = '{"class_path":...[,"init_args":...]}',
         help: str = 'Dictionary with "class_path" and "init_args" for any subclass of %(baseclass_name)s.',
         **kwargs
@@ -335,6 +345,7 @@ class SignatureArguments:
             baseclass: Base class to use to check subclasses.
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
+            required: Whether the argument group is required.
             metavar: Variable string to show in the argument's help.
             help: Description of argument to show in the help.
 
@@ -345,7 +356,7 @@ class SignatureArguments:
             raise ValueError('Expected "baseclass" argument to be a class object.')
 
         doc_group = self._gather_docstrings([baseclass], get_class_init_and_base_docstrings)[0]
-        group = self._create_group_if_requested(baseclass, nested_key, as_group, doc_group, config_load=False)
+        group = self._create_group_if_requested(baseclass, nested_key, as_group, required, doc_group, config_load=False)
 
         group.add_argument('--'+nested_key+'.help', action=_ActionHelpClassPath(baseclass=baseclass))
         group.add_argument(
@@ -378,7 +389,12 @@ class SignatureArguments:
         return strip_title(doc_group), doc_params
 
 
-    def _create_group_if_requested(self, obj, nested_key, as_group, doc_group, config_load=True, config_load_type=None):
+    def _create_group_if_requested(self, obj, nested_key, as_group, required, doc_group, config_load=True, config_load_type=None):
+        if required:
+            if nested_key is None:
+                raise ValueError('A nested_key is mandatory to make required.')
+            self.required_args.add(nested_key)
+
         group = self
         if as_group:
             if doc_group is None:

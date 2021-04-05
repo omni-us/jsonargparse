@@ -1,10 +1,12 @@
 from .actions import *
 from .cli import *
 from .core import *
+from .deprecated import *
 from .formatters import *
 from .jsonnet import *
 from .jsonschema import *
 from .optionals import *
+from .typehints import *
 from .util import *
 from argparse import (
     Action,

@@ -101,9 +101,14 @@ def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
     def raise_conflicting_base(base):
         raise ParserError('Conflicting namespace base: '+base)
 
+    nested_keys = {k.rsplit('.', 1)[0]+'.' for k in vars(cfg_ns).keys() if '.' in k}
+    skip_keys = {k for k, v in vars(cfg_ns).items() if v is None and k+'.' in nested_keys}
+
     cfg_ns = deepcopy(cfg_ns)
     cfg_dict = {}
     for k, v in vars(cfg_ns).items():
+        if k in skip_keys:
+            continue
         ksplit = k.split('.')
         if len(ksplit) == 1:
             if k in cfg_dict:
@@ -260,6 +265,8 @@ def _issubclass(cls, class_or_tuple):
 
 def import_object(name):
     """Returns an object in a module given its dot import path."""
+    if not isinstance(name, str):
+        raise ValueError('Expected a dot import path string')
     name_module, name_object = name.rsplit('.', 1)
     module = __import__(name_module, fromlist=[name_object])
     return getattr(module, name_object)

@@ -60,18 +60,17 @@ def CLI(
         cfg = parser.parse_args(args)
         return _run_component(component, cfg)
 
-    else:
-        subcommands = parser.add_subcommands(required=True)
-        comp_dict = {c.__name__: c for c in components}
-        for name, component in comp_dict.items():
-            subparser = ArgumentParser()
-            subcommands.add_subcommand(name, subparser)  # type: ignore
-            _add_component_to_parser(component, subparser, as_positional)
+    subcommands = parser.add_subcommands(required=True)
+    comp_dict = {c.__name__: c for c in components}
+    for name, component in comp_dict.items():
+        subparser = ArgumentParser()
+        subcommands.add_subcommand(name, subparser)  # type: ignore
+        _add_component_to_parser(component, subparser, as_positional)
 
-        cfg = parser.parse_args(args)
-        subcommand = cfg.pop('subcommand')
-        component = comp_dict[subcommand]
-        return _run_component(component, cfg.get(subcommand))
+    cfg = parser.parse_args(args)
+    subcommand = cfg.pop('subcommand')
+    component = comp_dict[subcommand]
+    return _run_component(component, cfg.get(subcommand))
 
 
 def _add_component_to_parser(component, parser, as_positional):
@@ -91,8 +90,7 @@ def _run_component(component, cfg):
         del cfg['config']
     if inspect.isfunction(component):
         return component(**cfg)
-    else:
-        subcommand = cfg.pop('subcommand')
-        subcommand_cfg = cfg.pop(subcommand) if subcommand in cfg else {}
-        component_obj = component(**cfg)
-        return getattr(component_obj, subcommand)(**subcommand_cfg)
+    subcommand = cfg.pop('subcommand')
+    subcommand_cfg = cfg.pop(subcommand) if subcommand in cfg else {}
+    component_obj = component(**cfg)
+    return getattr(component_obj, subcommand)(**subcommand_cfg)

@@ -5,7 +5,7 @@ import uuid
 import operator
 from enum import Enum
 from typing import Dict, List, Tuple, Any, Union, Optional, Type, Pattern, Callable
-from .util import Path, _issubclass
+from .util import import_object, Path, _issubclass
 
 
 __all__ = [
@@ -226,23 +226,39 @@ def path_type(
 class RegisteredType:
     def __init__(
         self,
-        type_class: Type,
+        type_class: Any,
         serializer: Callable,
-        deserializer: Optional[Callable]
+        deserializer: Optional[Callable],
+        deserializer_exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]],
+        type_check: Callable,
     ):
         self.type_class = type_class
         self.serializer = serializer
-        self.deserializer = type_class if deserializer is None else deserializer
+        self.base_deserializer = type_class if deserializer is None else deserializer
+        self.deserializer_exceptions = deserializer_exceptions
+        self.type_check = type_check
 
     def __eq__(self, other):
-        return all(getattr(self, k) == getattr(other, k) for k in ['type_class', 'serializer', 'deserializer'])
+        return all(getattr(self, k) == getattr(other, k) for k in ['type_class', 'serializer', 'base_deserializer'])
+
+    def is_value_of_type(self, value):
+        return self.type_check(value, self.type_class)
+
+    def deserializer(self, value):
+        try:
+            return self.base_deserializer(value)
+        except self.deserializer_exceptions as ex:
+            type_class_name = getattr(self.type_class, '__name__', str(self.type_class))
+            raise ValueError('Not of type '+type_class_name+'. '+str(ex)) from ex
 
 
 def register_type(
-    type_class: Type,
+    type_class: Any,
     serializer: Callable = str,
     deserializer: Optional[Callable] = None,
-    uniqueness_key: Optional[Tuple] = None
+    deserializer_exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]] = (ValueError, TypeError, AttributeError),
+    type_check: Callable = lambda v, t: v.__class__ == t,
+    uniqueness_key: Optional[Tuple] = None,
 ):
     """Registers a new type for use in jsonargparse parsers.
 
@@ -250,14 +266,16 @@ def register_type(
         type_class: The type object to be registered.
         serializer: Function that converts an instance of the class to a basic type.
         deserializer: Function that converts a basic type to an instance of the class. Default None instantiates type_class.
+        deserializer_exceptions: Exceptions that deserializer raises when it fails.
+        type_check: Function to check if a value is of type_class. Gets as arguments the value and type_class.
         uniqueness_key: Key to determine uniqueness of type.
     """
-    type_wrapper = RegisteredType(type_class, serializer, deserializer)
+    type_wrapper = RegisteredType(type_class, serializer, deserializer, deserializer_exceptions, type_check)
     if type_class in registered_types:
-        if type_wrapper == registered_types[type_class]:  # type: ignore
+        if type_wrapper == registered_types[type_class]:
             return
         raise ValueError('Type "'+str(type_class)+'" already registered with different serializer and/or deserializer.')
-    registered_types[type_class] = type_wrapper  # type: ignore
+    registered_types[type_class] = type_wrapper
     if uniqueness_key is not None:
         registered_types[uniqueness_key] = type_class
 
@@ -296,25 +314,9 @@ Path_dc = path_type('dc', docstring='str pointing to a directory that can be cre
 register_type(complex)
 register_type(uuid.UUID)
 
-
-def is_optional(annotation, ref_type):
-    """Checks whether a type annotation is an optional for one type class."""
-    return hasattr(annotation, '__origin__') and \
-        annotation.__origin__ == Union and \
-        len(annotation.__args__) == 2 and \
-        any(type(None) == a for a in annotation.__args__) and \
-        any(_issubclass(a, ref_type) for a in annotation.__args__)
-
-
-def type_in(obj, types_set):
-    return obj in types_set or (hasattr(obj, '__origin__') and obj.__origin__ in types_set)
-
-
-def type_to_str(obj):
-    if _issubclass(obj, (bool, int, float, str, Enum)):
-        if hasattr(obj, '_expression'):
-            return obj._type.__name__ + ' ' + obj._expression
-        else:
-            return obj.__name__
-    elif obj is not None:
-        return re.sub(r'[a-z_.]+\.', '', str(obj)).replace('NoneType', 'null')
+register_type(
+    Callable,
+    type_check=lambda v, t: callable(v),
+    serializer=lambda x: x.__module__+'.'+x.__name__,
+    deserializer=lambda x: x if callable(x) else import_object(x),
+)
