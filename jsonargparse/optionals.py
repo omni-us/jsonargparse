@@ -9,7 +9,6 @@ from importlib.util import find_spec
 
 
 __all__ = [
-    'compose_dataclasses',
     'set_url_support',
     'get_config_read_mode',
 ]
@@ -106,34 +105,6 @@ def import_dataclasses(importer):
         return dataclasses
     except (ImportError, ModuleNotFound) as ex:
         raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex)) from ex
-
-
-def is_pure_dataclass(value):
-    if not dataclasses_support or not inspect.isclass(value):
-        return False
-    dataclasses = import_dataclasses('is_pure_dataclass')
-    classes = [c for c in inspect.getmro(value) if c != object]
-    return all(dataclasses.is_dataclass(c) for c in classes)
-
-
-def compose_dataclasses(*args):
-    dataclasses = import_dataclasses('compose_dataclasses')
-
-    @dataclasses.dataclass
-    class ComposedDataclass(*args):
-        def __post_init__(self):
-            for arg in args:
-                if hasattr(arg, '__post_init__'):
-                    arg.__post_init__(self)
-
-    return ComposedDataclass
-
-
-def is_factory_class(value):
-    if not dataclasses_support:
-        return False
-    dataclasses = import_dataclasses('is_default_factory_class')
-    return value.__class__ == dataclasses._HAS_DEFAULT_FACTORY_CLASS
 
 
 def set_url_support(enabled:bool):

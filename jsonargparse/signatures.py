@@ -1,22 +1,24 @@
 """Metods to add arguments based on class/method/function signatures."""
 
-import re
 import inspect
+import re
 from typing import Callable, Container, Optional, Type, Union
 
 from .actions import _ActionConfigLoad, _ActionHelpClassPath
 from .typehints import ActionTypeHint, is_optional
 from .util import _issubclass
 from .optionals import (
+    dataclasses_support,
     docstring_parser_support,
-    import_docstring_parse,
     import_dataclasses,
-    is_pure_dataclass,
-    is_factory_class,
+    import_docstring_parse,
 )
 
 
-__all__ = ['SignatureArguments']
+__all__ = [
+    'compose_dataclasses',
+    'SignatureArguments',
+]
 
 
 class SignatureArguments:
@@ -417,3 +419,33 @@ def get_class_init(value):
 def strip_title(value):
     if value is not None:
         return re.sub(r'\.$', '', value.strip())
+
+
+def is_factory_class(value):
+    result = False
+    if dataclasses_support:
+        dataclasses = import_dataclasses('is_default_factory_class')
+        result = value.__class__ == dataclasses._HAS_DEFAULT_FACTORY_CLASS
+    return result
+
+
+def is_pure_dataclass(value):
+    if not dataclasses_support or not inspect.isclass(value):
+        return False
+    dataclasses = import_dataclasses('is_pure_dataclass')
+    classes = [c for c in inspect.getmro(value) if c != object]
+    return all(dataclasses.is_dataclass(c) for c in classes)
+
+
+def compose_dataclasses(*args):
+    """Returns a pure dataclass inheriting all given dataclasses and properly handling __post_init__."""
+    dataclasses = import_dataclasses('compose_dataclasses')
+
+    @dataclasses.dataclass
+    class ComposedDataclass(*args):
+        def __post_init__(self):
+            for arg in args:
+                if hasattr(arg, '__post_init__'):
+                    arg.__post_init__(self)
+
+    return ComposedDataclass

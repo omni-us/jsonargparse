@@ -163,5 +163,24 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual({'a': 1.2, 'b': 3.4}, cfg['a2'])
 
 
+    def test_compose_dataclasses(self):
+        dataclasses = import_dataclasses('test_compose_dataclasses')
+
+        @dataclasses.dataclass
+        class MyDataClassA:
+            a: int = 1
+
+            def __post_init__(self):
+                self.a += 1
+
+        @dataclasses.dataclass
+        class MyDataClassB:
+            b: str = '1'
+
+        MyDataClassAB = compose_dataclasses(MyDataClassA, MyDataClassB)
+        self.assertEqual(2, len(dataclasses.fields(MyDataClassAB)))
+        self.assertEqual({'a': 3, 'b': '2'}, dataclasses.asdict(MyDataClassAB(a=2, b='2')))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
