@@ -123,7 +123,8 @@ def compose_dataclasses(*args):
     class ComposedDataclass(*args):
         def __post_init__(self):
             for arg in args:
-                arg.__post_init__(self)
+                if hasattr(arg, '__post_init__'):
+                    arg.__post_init__(self)
 
     return ComposedDataclass
 
