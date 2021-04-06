@@ -32,6 +32,13 @@ jsonargparse.typing
     :show-inheritance:
     :autosummary:
 
+jsonargparse.typehints
+----------------------
+.. automodule:: jsonargparse.typehints
+    :members:
+    :show-inheritance:
+    :autosummary:
+
 jsonargparse.jsonschema
 -----------------------
 .. automodule:: jsonargparse.jsonschema
@@ -70,6 +77,13 @@ jsonargparse.optionals
 jsonargparse.util
 -----------------
 .. automodule:: jsonargparse.util
+    :members:
+    :show-inheritance:
+    :autosummary:
+
+jsonargparse.deprecated
+-----------------------
+.. automodule:: jsonargparse.deprecated
     :members:
     :show-inheritance:
     :autosummary:

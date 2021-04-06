@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import os
-import pickle
 import pathlib
+import pickle
 import jsonargparse.typing
 from typing import Callable
 from jsonargparse.typing import RegisteredType
@@ -177,6 +177,9 @@ class OtherTests(unittest.TestCase):
         CallableType = registered_types[Callable]
         self.assertEqual(CallableType.deserializer('jsonargparse.CLI'), CLI)
         self.assertRaises(ValueError, lambda: CallableType.deserializer(None))
+        self.assertEqual(CallableType.serializer(CLI), 'jsonargparse.cli.CLI')
+        self.assertRaises(ValueError, lambda: CallableType.serializer(lambda: None))
+        self.assertRaises(ValueError, lambda: CallableType.serializer(Namespace(__module__='jsonargparse.cli', __name__='CLI')))
 
 
 if __name__ == '__main__':

@@ -1,11 +1,11 @@
 """Collection of types and type generators."""
 
+import operator
 import re
 import uuid
-import operator
 from enum import Enum
-from typing import Dict, List, Tuple, Any, Union, Optional, Type, Pattern, Callable
-from .util import import_object, Path, _issubclass
+from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
+from .util import import_object, _issubclass, Path
 
 
 __all__ = [
@@ -314,9 +314,21 @@ Path_dc = path_type('dc', docstring='str pointing to a directory that can be cre
 register_type(complex)
 register_type(uuid.UUID)
 
+
+def callable_serializer(value):
+    try:
+        path = value.__module__+'.'+value.__name__
+        reimported = import_object(path)
+        if value != reimported:
+            raise ValueError
+        return path
+    except (ValueError, AttributeError):
+        raise ValueError('Only possible to serialize an importable callable, given '+str(value))
+
+
 register_type(
     Callable,
     type_check=lambda v, t: callable(v),
-    serializer=lambda x: x.__module__+'.'+x.__name__,
+    serializer=callable_serializer,
     deserializer=lambda x: x if callable(x) else import_object(x),
 )

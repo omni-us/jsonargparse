@@ -52,6 +52,8 @@ from .util import (
     change_to_path_dir,
     Path,
     LoggerProperty,
+    get_key_value_from_flat_dict,
+    update_key_value_in_flat_dict,
     _get_key_value,
     _get_env_var,
     _issubclass,
@@ -714,8 +716,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                             cfg[action.dest] = [str(p) for p in cfg[action.dest]]
                         else:
                             cfg[action.dest] = str(cfg[action.dest])
-                elif isinstance(action, ActionTypeHint) and cfg.get(action.dest) is not None:
-                    cfg[action.dest] = ActionTypeHint.serialize(cfg[action.dest], action._typehint)
+                elif isinstance(action, ActionTypeHint):
+                    value = get_key_value_from_flat_dict(cfg, action.dest)
+                    if value is not None and value != {}:
+                        value = ActionTypeHint.serialize(value, action._typehint)
+                        update_key_value_in_flat_dict(cfg, action.dest, value)
 
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         cleanup_actions(cfg, self._actions)
@@ -1100,11 +1105,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 continue
             action = find_parent_action(key)
             if action is not None:
-                value = {k[len(action.dest)+1:]: v for k, v in cfg.items() if k.startswith(action.dest+'.')}
-                value = _flat_namespace_to_dict(Namespace(**value))
+                value = get_key_value_from_flat_dict(cfg, action.dest)
                 value = self._check_value_key(action, value, action.dest, cfg)
-                value = vars(_dict_to_flat_namespace(value))
-                cfg.update({action.dest+'.'+k: v for k, v in value.items()})
+                update_key_value_in_flat_dict(cfg, action.dest, value)
                 seen_keys.update(action.dest+'.'+k for k in value.keys())
 
 

@@ -71,6 +71,22 @@ def _load_config(value, enable_path=True, flat_namespace=True):
     return value, cfg_path
 
 
+def get_key_value_from_flat_dict(cfg, key):
+    value = cfg.get(key)
+    if value is not None:
+        return value
+    value = {k[len(key)+1:]: v for k, v in cfg.items() if k.startswith(key+'.')}
+    return _flat_namespace_to_dict(Namespace(**value))
+
+
+def update_key_value_in_flat_dict(cfg, key, value):
+    if isinstance(value, dict):
+        value = vars(_dict_to_flat_namespace(value))
+        cfg.update({key+'.'+k: v for k, v in value.items()})
+    else:
+        cfg[key] = value
+
+
 def _get_key_value(cfg, key, parent=False):
     """Gets the value for a given key in a config object (dict or argparse.Namespace)."""
     def key_in_cfg(cfg, key):
@@ -81,7 +97,7 @@ def _get_key_value(cfg, key, parent=False):
 
     c = cfg
     k = key
-    while '.' in key and not key_in_cfg(c, k):
+    while '.' in k and not key_in_cfg(c, k):
         kp, k = k.split('.', 1)
         c = c[kp] if isinstance(c, dict) else getattr(c, kp)
 

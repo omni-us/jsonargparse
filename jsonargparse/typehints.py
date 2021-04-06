@@ -215,15 +215,21 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
     # Registered types
     elif typehint in registered_types:
         registered_type = registered_types[typehint]
-        if serialize and registered_type.is_value_of_type(val):
-            val = registered_type.serializer(val)
+        if serialize:
+            if registered_type.is_value_of_type(val):
+                val = registered_type.serializer(val)
+            else:
+                registered_type.deserializer(val)
         elif not serialize and not registered_type.is_value_of_type(val):
             val = registered_type.deserializer(val)
 
     # Enum
     elif _issubclass(typehint, Enum):
-        if serialize and isinstance(val, typehint):
-            val = val.name
+        if serialize:
+            if isinstance(val, typehint):
+                val = val.name
+            else:
+                typehint[val]
         elif not serialize and not isinstance(val, typehint):
             val = typehint[val]
 
@@ -291,7 +297,10 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
                 from jsonargparse import ArgumentParser
                 parser = ArgumentParser(error_handler=None, parse_as_dict=True)
                 parser.add_class_arguments(val_class)
-                val['init_args'] = parser.parse_object(val['init_args'], defaults=False)
+                if serialize:
+                    val['init_args'] = yaml.safe_load(parser.dump(val['init_args']))
+                else:
+                    val['init_args'] = parser.parse_object(val['init_args'], defaults=False)
                 if instantiate_classes:
                     init_args = parser.instantiate_subclasses(val['init_args'])
             if instantiate_classes:

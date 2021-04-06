@@ -9,6 +9,7 @@ from importlib.util import find_spec
 
 
 __all__ = [
+    'compose_dataclasses',
     'set_url_support',
     'get_config_read_mode',
 ]
@@ -113,6 +114,18 @@ def is_pure_dataclass(value):
     dataclasses = import_dataclasses('is_pure_dataclass')
     classes = [c for c in inspect.getmro(value) if c != object]
     return all(dataclasses.is_dataclass(c) for c in classes)
+
+
+def compose_dataclasses(*args):
+    dataclasses = import_dataclasses('compose_dataclasses')
+
+    @dataclasses.dataclass
+    class ComposedDataclass(*args):
+        def __post_init__(self):
+            for arg in args:
+                arg.__post_init__(self)
+
+    return ComposedDataclass
 
 
 def is_factory_class(value):

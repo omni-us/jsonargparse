@@ -258,6 +258,22 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(3, cfg.op.firstweekday)
 
 
+    def test_typehint_serialize_list(self):
+        val = [PositiveInt(1), PositiveInt(2)]
+        self.assertEqual([1, 2], ActionTypeHint.serialize(val, Union[PositiveInt, List[PositiveInt]]))
+        self.assertRaises(ValueError, lambda: ActionTypeHint.serialize([1, -2], List[PositiveInt]))  # type: ignore
+
+
+    def test_typehint_serialize_enum(self):
+
+        class MyEnum(Enum):
+            a = 1
+            b = 2
+
+        self.assertEqual('b', ActionTypeHint.serialize(MyEnum.b, Optional[MyEnum]))
+        self.assertRaises(ValueError, lambda: ActionTypeHint.serialize('x', Optional[MyEnum]))
+
+
     def test_unsupported_type(self):
         self.assertRaises(ValueError, lambda: ActionTypeHint(typehint=lambda: None))
         self.assertRaises(ValueError, lambda: ActionTypeHint(typehint=Union[int, lambda: None]))

@@ -21,7 +21,7 @@ class SignaturesTests(unittest.TestCase):
                 a1: a1 help
                 a2: a2 help
             """
-            a1: int = 1
+            a1: PositiveInt = PositiveInt(1)
             a2: str = '2'
 
         @cls.dataclasses.dataclass
@@ -32,7 +32,7 @@ class SignaturesTests(unittest.TestCase):
                 b1: b1 help
                 b2: b2 help
             """
-            b1: float = 3.0
+            b1: PositiveFloat = PositiveFloat(3.0)
             b2: MyDataClassA = MyDataClassA()
 
         cls.MyDataClassA = MyDataClassA
@@ -128,18 +128,20 @@ class SignaturesTests(unittest.TestCase):
         cfg = parser.parse_args(['--c1={'+class_path+', '+init_args+'}'])
         self.assertEqual(cfg.c1.class_path, 'jsonargparse_tests.signatures_tests_gt_py35.MyClass1')
         self.assertEqual(cfg.c1.init_args.a1.b2.a1, 7)
+        self.assertIsInstance(cfg.c1.init_args.a1.b2.a1, PositiveInt)
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg.c1, MyClass1)
         self.assertIsInstance(cfg.c1.a1, self.MyDataClassB)
         self.assertIsInstance(cfg.c1.a1.b2, self.MyDataClassA)
+        self.assertIsInstance(cfg.c1.a1.b1, PositiveFloat)
 
 
     def test_dataclass_add_argument_type(self):
         parser = ArgumentParser()
-        parser.add_argument('--b', type=self.MyDataClassB, default=self.MyDataClassB(b1=-3.0))
+        parser.add_argument('--b', type=self.MyDataClassB, default=self.MyDataClassB(b1=7.0))
 
         cfg = namespace_to_dict(parser.get_defaults())
-        self.assertEqual({'b1': -3.0, 'b2': {'a1': 1, 'a2': '2'}}, cfg['b'])
+        self.assertEqual({'b1': 7.0, 'b2': {'a1': 1, 'a2': '2'}}, cfg['b'])
 
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg.b, self.MyDataClassB)
