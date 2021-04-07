@@ -187,6 +187,7 @@ class TypeHintsTests(unittest.TestCase):
         self.assertIsNone(parser.parse_args(['--any=null'])['any'])
         self.assertEqual(' ', parser.parse_args(['--any= '])['any'])
         self.assertEqual(' xyz ', parser.parse_args(['--any= xyz '])['any'])
+        self.assertEqual('[[[', parser.parse_args(['--any=[[['])['any'])
 
 
     def test_uuid(self):

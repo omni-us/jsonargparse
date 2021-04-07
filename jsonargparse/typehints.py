@@ -130,7 +130,10 @@ class ActionTypeHint(Action):
         for num, val in enumerate(value):
             try:
                 orig_val = val
-                val, config_path = _load_config(val, enable_path=self._enable_path, flat_namespace=False)
+                try:
+                    val, config_path = _load_config(val, enable_path=self._enable_path, flat_namespace=False)
+                except (yamlParserError, yamlScannerError):
+                    config_path = None
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 try:
                     val = adapt_typehints(val, self._typehint)
@@ -144,7 +147,7 @@ class ActionTypeHint(Action):
                 if isinstance(val, dict) and config_path is not None:
                     val['__path__'] = config_path
                 value[num] = val
-            except (TypeError, ValueError, yamlParserError, yamlScannerError) as ex:
+            except (TypeError, ValueError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex)) from ex
         return value if islist else value[0]
@@ -205,7 +208,10 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
     # Any
     if typehint == Any:
         if isinstance(val, str):
-            val = _load_config(val, enable_path=False, flat_namespace=False)[0]
+            try:
+                val = _load_config(val, enable_path=False, flat_namespace=False)[0]
+            except (yamlParserError, yamlScannerError):
+                pass
 
     # Basic types
     elif typehint in leaf_types:
@@ -307,7 +313,6 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
                 val = val_class(**init_args)
         except (ImportError, ModuleNotFound, AttributeError, AssertionError, ParserError) as ex:
             raise ValueError('Problem with given class_path "'+val['class_path']+'" :: '+str(ex)) from ex
-        return val
 
     return val
 
