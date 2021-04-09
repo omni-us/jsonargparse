@@ -3,13 +3,14 @@
 
 import json
 import pathlib
+import sys
 import uuid
 from calendar import Calendar
 from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from jsonargparse_tests.base import *
-from jsonargparse.typehints import is_optional
+from jsonargparse.typehints import is_optional, Literal
 
 
 class TypeHintsTests(unittest.TestCase):
@@ -190,6 +191,21 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual('[[[', parser.parse_args(['--any=[[['])['any'])
 
 
+    @unittest.skipIf(sys.version_info.minor < 8, 'Literal introduced in python 3.8')
+    def test_Literal(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--str', type=Literal['a', 'b'])
+        parser.add_argument('--true', type=Literal[True])
+        parser.add_argument('--false', type=Literal[False])
+        self.assertEqual('a', parser.parse_args(['--str=a']).str)
+        self.assertEqual('b', parser.parse_args(['--str=b']).str)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--str=x']))
+        self.assertIs(True, parser.parse_args(['--true=true']).true)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--true=false']))
+        self.assertIs(False, parser.parse_args(['--false=false']).false)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--false=true']))
+
+
     def test_uuid(self):
         id1 = uuid.uuid4()
         id2 = uuid.uuid4()
@@ -255,8 +271,8 @@ class TypeHintsTests(unittest.TestCase):
         parser.add_argument('--op', type=Calendar)
         cfg = parser.parse_args(['--op={'+class_path+', '+init_args+'}'])
         cfg = parser.instantiate_subclasses(cfg)
-        self.assertIsInstance(cfg.op, Calendar)
-        self.assertEqual(3, cfg.op.firstweekday)
+        self.assertIsInstance(cfg['op'], Calendar)
+        self.assertEqual(3, cfg['op'].firstweekday)
 
 
     def test_typehint_serialize_list(self):

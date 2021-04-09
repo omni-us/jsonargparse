@@ -83,7 +83,7 @@ class PathTests(TempDirTestCase):
 
     def test_cwd(self):
         path = Path('file_rx', mode='fr', cwd=os.path.join(self.tmpdir, 'dir_x'))
-        self.assertEqual(path.cwd, Path('file_rx', mode='fr', cwd=[path.cwd]).cwd)
+        self.assertEqual(path.cwd, Path('file_rx', mode='fr', cwd=path.cwd).cwd)
 
 
     def test_file_access_mode(self):

@@ -212,9 +212,6 @@ def path_type(
         def __init__(self, v):
             super().__init__(v, mode=self._mode)
 
-        def __repr__(self):
-            return self.rel_path
-
     restricted_type = type(name, (PathType, str), {})
     if docstring is not None:
         restricted_type.__doc__ = docstring

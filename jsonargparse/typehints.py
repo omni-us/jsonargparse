@@ -8,6 +8,11 @@ from argparse import Action
 from enum import Enum
 from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple, Type, Union
 
+try:
+    from typing import Literal  # type: ignore
+except ImportError:
+    Literal = False
+
 from .actions import _is_action_value_list
 from .typing import registered_types
 from .optionals import (
@@ -33,6 +38,7 @@ __all__ = ['ActionTypeHint']
 root_types = {
     bool,
     Any,
+    Literal,
     Union,
     List, list, Iterable, Sequence,
     Tuple, tuple,
@@ -93,7 +99,7 @@ class ActionTypeHint(Action):
             (inspect.isclass(typehint) and typehint not in leaf_types)
         if full and supported:
             typehint_origin = getattr(typehint, '__origin__', typehint)
-            if typehint_origin in root_types:
+            if typehint_origin in root_types and typehint_origin != Literal:
                 for typehint in getattr(typehint, '__args__', []):
                     if typehint == Ellipsis:
                         continue
@@ -212,6 +218,11 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
                 val = _load_config(val, enable_path=False, flat_namespace=False)[0]
             except (yamlParserError, yamlScannerError):
                 pass
+
+    # Literal
+    elif typehint_origin == Literal:
+        if val not in subtypehints:
+            raise ValueError('Expected a '+str(typehint)+' but got "'+str(val)+'"')
 
     # Basic types
     elif typehint in leaf_types:

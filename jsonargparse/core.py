@@ -993,7 +993,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             raise type(ex)(message) from ex
 
 
-    def instantiate_subclasses(self, cfg:Union[Namespace, Dict[str, Any]]) -> Union[Namespace, Dict[str, Any]]:
+    def instantiate_subclasses(self, cfg:Union[Namespace, Dict[str, Any]]) -> Dict[str, Any]:
         """Recursively instantiates all subclasses defined by 'class_path' and 'init_args'.
 
         Args:
@@ -1002,7 +1002,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Returns:
             A configuration object with all subclasses instantiated.
         """
-        cfg = namespace_to_dict(strip_meta(cfg))
+        cfg = strip_meta(cfg)
         actions = filter_default_actions(self._actions)
         actions.sort(key=lambda x: -len(x.dest.split('.')))
         for action in actions:
@@ -1015,7 +1015,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 else:
                     if value is not None:
                         parent[key] = action._instantiate_classes(value)
-        return cfg if self._parse_as_dict else dict_to_namespace(cfg)
+        return cfg
 
 
     def strip_unknown(self, cfg:Union[Namespace, Dict[str, Any]]) -> Namespace:

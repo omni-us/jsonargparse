@@ -224,14 +224,14 @@ def namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
     return expand_namespace(cfg_ns)
 
 
-def strip_meta(cfg:Union[Namespace, Dict]):
+def strip_meta(cfg:Union[Namespace, Dict[str, Any]]) -> Dict[str, Any]:
     """Removes all metadata keys from a configuration object.
 
     Args:
         cfg: The configuration object to strip.
 
     Returns:
-        argparse.Namespace: The stripped configuration object.
+        A copy of the configuration object without any metadata keys.
     """
     cfg = deepcopy(cfg)
     if not isinstance(cfg, dict):
@@ -299,13 +299,14 @@ def _suppress_stderr():
 @contextmanager
 def change_to_path_dir(path):
     """A context manager for running code in the directory of a path."""
-    if not path.is_url:
+    chdir = path is not None and not path.is_url
+    if chdir:
         cwd = os.getcwd()
         os.chdir(os.path.abspath(os.path.join(str(path), os.pardir)))
     try:
         yield None
     finally:
-        if not path.is_url:
+        if chdir:
             os.chdir(cwd)
 
 
@@ -342,9 +343,6 @@ class Path:
         self._check_mode(mode)
         if cwd is None:
             cwd = os.getcwd()
-
-        if isinstance(cwd, list):
-            cwd = cwd[0]  # Temporal until multiple cwds is implemented.
 
         is_url = False
         if isinstance(path, Path):

@@ -416,9 +416,9 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(cfg.c1.class_path, 'jsonargparse_tests.signatures_tests.Class1')
         self.assertEqual(cfg.c1.init_args, Namespace(a1=7))
         cfg = parser.instantiate_subclasses(cfg)
-        self.assertIsInstance(cfg.c1, Class1)
-        self.assertEqual(7, cfg.c1.a1)
-        self.assertEqual(2.3, cfg.c1.a2)
+        self.assertIsInstance(cfg['c1'], Class1)
+        self.assertEqual(7, cfg['c1'].a1)
+        self.assertEqual(2.3, cfg['c1'].a2)
 
 
     def test_implicit_optional(self):

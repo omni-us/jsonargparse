@@ -1,10 +1,9 @@
 """Code related to optional dependencies."""
 
-import os
-import sys
 import locale
-import inspect
+import os
 import platform
+import sys
 from importlib.util import find_spec
 
 

@@ -147,7 +147,6 @@ class PathTypeTests(TempDirTestCase):
     def test_Path_fr(self):
         path = Path_fr(self.file_fr)
         self.assertEqual(path, self.file_fr)
-        self.assertEqual(repr(path), self.file_fr)
         self.assertEqual(path(), os.path.realpath(self.file_fr))
         self.assertRaises(TypeError, lambda: Path_fr('does_not_exist'))
 

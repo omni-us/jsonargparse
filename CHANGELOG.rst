@@ -18,18 +18,25 @@ Added
 - New method add_dataclass_arguments.
 - Dataclasses are now supported as a type.
 - New predefined type Path_dc.
-- Support for Callable type.
+- Experimental Callable type support.
 - Signature methods with nested key can be made required.
+- Support for Literal types.
 
 Changed
 ^^^^^^^
 - Generation of yaml now uses internally pyyaml's safe_dump.
 - New cleaner implementation for type hints support.
 - Moved deprecated code to a module specific for this.
+- Path types repr now has format Path(rel[, cwd=dir]).
+- instantiate_subclasses now always returns a dict.
 
 Deprecated
 ^^^^^^^^^^
 - ActionEnum should no longer be used, instead enums are given as type.
+
+Fixed
+^^^^^
+- Deserialization of types not being done for nested config files.
 
 
 v3.8.1 (2021-03-22)

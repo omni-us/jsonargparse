@@ -53,9 +53,9 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), dump['b'])
 
         cfg = parser.instantiate_subclasses(cfg)
-        self.assertIsInstance(cfg.a, self.MyDataClassA)
-        self.assertIsInstance(cfg.b, self.MyDataClassB)
-        self.assertIsInstance(cfg.b.b2, self.MyDataClassA)
+        self.assertIsInstance(cfg['a'], self.MyDataClassA)
+        self.assertIsInstance(cfg['b'], self.MyDataClassB)
+        self.assertIsInstance(cfg['b'].b2, self.MyDataClassA)
 
         self.assertEqual(5, parser.parse_args(['--b.b2.a1=5']).b.b2.a1)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--b.b2.a1=x']))
@@ -100,9 +100,9 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), dump['g']['a2'])
 
         cfg = parser.instantiate_subclasses(cfg)
-        self.assertIsInstance(cfg.g.a1, self.MyDataClassA)
-        self.assertIsInstance(cfg.g.a2, self.MyDataClassB)
-        self.assertIsInstance(cfg.g.a2.b2, self.MyDataClassA)
+        self.assertIsInstance(cfg['g']['a1'], self.MyDataClassA)
+        self.assertIsInstance(cfg['g']['a2'], self.MyDataClassB)
+        self.assertIsInstance(cfg['g']['a2'].b2, self.MyDataClassA)
 
 
     def test_dataclass_typehint_in_subclass(self):
@@ -130,10 +130,10 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(cfg.c1.init_args.a1.b2.a1, 7)
         self.assertIsInstance(cfg.c1.init_args.a1.b2.a1, PositiveInt)
         cfg = parser.instantiate_subclasses(cfg)
-        self.assertIsInstance(cfg.c1, MyClass1)
-        self.assertIsInstance(cfg.c1.a1, self.MyDataClassB)
-        self.assertIsInstance(cfg.c1.a1.b2, self.MyDataClassA)
-        self.assertIsInstance(cfg.c1.a1.b1, PositiveFloat)
+        self.assertIsInstance(cfg['c1'], MyClass1)
+        self.assertIsInstance(cfg['c1'].a1, self.MyDataClassB)
+        self.assertIsInstance(cfg['c1'].a1.b2, self.MyDataClassA)
+        self.assertIsInstance(cfg['c1'].a1.b1, PositiveFloat)
 
 
     def test_dataclass_add_argument_type(self):
@@ -144,8 +144,8 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual({'b1': 7.0, 'b2': {'a1': 1, 'a2': '2'}}, cfg['b'])
 
         cfg = parser.instantiate_subclasses(cfg)
-        self.assertIsInstance(cfg.b, self.MyDataClassB)
-        self.assertIsInstance(cfg.b.b2, self.MyDataClassA)
+        self.assertIsInstance(cfg['b'], self.MyDataClassB)
+        self.assertIsInstance(cfg['b'].b2, self.MyDataClassA)
 
 
     def test_dataclass_field_default_factory(self):

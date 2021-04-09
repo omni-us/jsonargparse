@@ -168,14 +168,11 @@ class _ActionConfigLoad(Action):
             return _ActionConfigLoad(**kwargs)
         parser, namespace, value = args[:3]
         cfg_file = self._load_config(value)
-        for key, val in vars(cfg_file).items():
-            dest = self.dest+'.'+key
-            action = _find_action(parser, dest)
-            if isinstance(action, _ActionConfigLoad):
-                with change_to_path_dir(cfg_file.__path__):
-                    action(parser, namespace, val)
-            else:
-                setattr(namespace, dest, val)
+        cfg_file = {self.dest+'.'+k: v for k, v in vars(cfg_file).items()}
+        with change_to_path_dir(cfg_file.get(self.dest+'.__path__')):
+            parser._apply_actions(cfg_file, parser._actions)
+        for key, val in cfg_file.items():
+            setattr(namespace, key, val)
 
     def _load_config(self, value):
         try:
