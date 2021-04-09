@@ -1091,7 +1091,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 if action is not None:
                     return action
 
-        keys = list(cfg.keys())
+        keys = [k for k in cfg.keys() if k.rsplit('.', 1)[-1] not in meta_keys]
         keys.sort(key=lambda x: -len(x.split('.')))
         seen_keys = set()
         for key in keys:
