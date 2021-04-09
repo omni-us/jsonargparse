@@ -21,6 +21,7 @@ Added
 - Experimental Callable type support.
 - Signature methods with nested key can be made required.
 - Support for Literal types.
+- New option in signatures methods to not fail for untyped required.
 
 Changed
 ^^^^^^^

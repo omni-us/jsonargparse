@@ -32,6 +32,7 @@ class SignatureArguments:
         as_positional: bool = False,
         required: bool = False,
         skip: Optional[Container[str]] = None,
+        fail_untyped: bool = True,
     ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
 
@@ -44,6 +45,7 @@ class SignatureArguments:
             as_positional: Whether to add required parameters as positional arguments.
             required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
+            fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
         Returns:
             Number of arguments added.
@@ -61,6 +63,7 @@ class SignatureArguments:
                                              as_positional,
                                              required,
                                              skip,
+                                             fail_untyped,
                                              get_class_init_and_base_docstrings,
                                              get_class_init,
                                              skip_first=True)
@@ -75,6 +78,7 @@ class SignatureArguments:
         as_positional: bool = False,
         required: bool = False,
         skip: Optional[Container[str]] = None,
+        fail_untyped: bool = True,
     ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
 
@@ -88,6 +92,7 @@ class SignatureArguments:
             as_positional: Whether to add required parameters as positional arguments.
             required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
+            fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
         Returns:
             Number of arguments added.
@@ -110,6 +115,7 @@ class SignatureArguments:
                                              as_positional,
                                              required,
                                              skip,
+                                             fail_untyped,
                                              skip_first=skip_first)
 
 
@@ -121,6 +127,7 @@ class SignatureArguments:
         as_positional: bool = False,
         required: bool = False,
         skip: Optional[Container[str]] = None,
+        fail_untyped: bool = True,
     ) -> int:
         """Adds arguments from a function based on its type hints and docstrings.
 
@@ -133,6 +140,7 @@ class SignatureArguments:
             as_positional: Whether to add required parameters as positional arguments.
             required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
+            fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
         Returns:
             Number of arguments added.
@@ -149,7 +157,8 @@ class SignatureArguments:
                                              as_group,
                                              as_positional,
                                              required,
-                                             skip)
+                                             skip,
+                                             fail_untyped)
 
 
     def _add_signature_arguments(
@@ -160,6 +169,7 @@ class SignatureArguments:
         as_positional: bool,
         required: bool,
         skip: Optional[Container[str]],
+        fail_untyped: bool,
         docs_func: Callable = lambda x: [x.__doc__],
         sign_func: Callable = lambda x: x,
         skip_first: bool = False,
@@ -173,6 +183,7 @@ class SignatureArguments:
             as_positional: Whether to add required parameters as positional arguments.
             required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
+            fail_untyped: Whether to raise exception if a required parameter does not have a type.
             docs_func: Function that returns docstrings for a given object.
             sign_func: Function that returns signature method for a given object.
             skip_first: Whether to skip first argument, i.e., skip self of class methods.
@@ -260,7 +271,7 @@ class SignatureArguments:
                         opt_str = dest if is_required and as_positional else '--'+dest
                         group.add_argument(opt_str, **kwargs)
                         added_args.add(dest)
-                elif is_required:
+                elif is_required and fail_untyped:
                     raise ValueError('Required parameter without a type for '+obj.__name__+' parameter '+name+'.')
 
         return len(added_args)
