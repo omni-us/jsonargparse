@@ -16,7 +16,7 @@ jsonargparse
 https://omni-us.github.io/jsonargparse/
 
 This package is an extension to python's argparse which simplifies parsing of
-configuration options from command line arguments, json  configuration files
+configuration options from command line arguments, json configuration files
 (`yaml <https://yaml.org/>`__ or `jsonnet <https://jsonnet.org/>`__ supersets),
 environment variables and hard-coded defaults.
 
@@ -36,23 +36,23 @@ alternatives it seemed simpler to start a new project.
 Features
 ========
 
-- Parsers are configured just like with python's argparse, thus it has a gentle
-  learning curve.
+- Great support of type hint annotations for automatic creation of parsers and
+  minimal boilerplate command line interfaces.
 
 - Not exclusively intended for parsing command line arguments. The main focus is
   parsing configuration files and not necessarily from a command line tool.
 
-- Support for two popular supersets of json: yaml and jsonnet.
-
 - Support for nested namespaces which makes it possible to parse config files
   with non-flat hierarchies.
 
-- Three mechanisms to define parsers in a modular way: arguments from classes,
-  methods and functions; sub-commands and parsers as arguments.
-
 - Parsing of relative paths within config files and path lists.
 
-- Several convenient action classes and types to ease common parsing use cases
+- Support for two popular supersets of json: yaml and jsonnet.
+
+- Parsers can be configured just like with python's argparse, thus it has a
+  gentle learning curve.
+
+- Several convenient types and action classes to ease common parsing use cases
   (paths, comparison operators, json schemas, enums ...).
 
 - Support for command line tab argument completion using `argcomplete
@@ -218,7 +218,7 @@ many features designed to help in creating convenient argument parsers such as:
 (:ref:`parsing-paths`, :ref:`restricted-numbers`, :ref:`restricted-strings`) and
 much more.
 
-The next section explains how to create an argument parser in a very low level
+The next section explains how to create an argument parser in a low level
 argparse-style. However, as parsers get more complex, being able to define them
 in a modular way becomes important. Three mechanisms are available to define
 parsers in a modular way, see respective sections
@@ -291,6 +291,27 @@ example you could do the following:
     >>> cfg.lev1.opt2
     'from default 2'
 
+A group of nested options can be created by using a dataclass. This has the
+advantage that the same options can be reused in multiple places of a project.
+An example analogous to the one above would be:
+
+.. code-block:: python
+
+    from dataclasses import dataclass
+
+    @dataclass
+    class Level1Options:
+        """Level 1 options
+        Args:
+            opt1: Option 1
+            opt2: Option 2
+        """
+        opt1: str = 'from default 1'
+        opt2: str = 'from default 2'
+
+    parser = ArgumentParser()
+    parser.add_argument('--lev1', type=Level1Options, default=Level1Options())
+
 
 .. _configuration-files:
 
@@ -301,14 +322,14 @@ An important feature of jsonargparse is the parsing of yaml/json files. The dot
 notation hierarchy of the arguments (see :ref:`nested-namespaces`) are used for
 the expected structure in the config files.
 
-The see :py:attr:`.ArgumentParser.default_config_files` property can be set when
+The :py:attr:`.ArgumentParser.default_config_files` property can be set when
 creating a parser to specify patterns to search for configuration files. For
 example if a parser is created as
 :code:`ArgumentParser(default_config_files=['~/.myapp.yaml',
-'/etc/myapp.yaml'])` when parsing if any of those two config files exist they
-will be parsed to override the defaults. Only the first matched config file is
-used. The default config file is always parsed first, this means that any
-command line arguments will override its values.
+'/etc/myapp.yaml'])`, when parsing if any of those two config files exist it
+will be parsed and used to override the defaults. Only the first matched config
+file is used. The default config file is always parsed first, this means that
+any command line arguments will override its values.
 
 It is also possible to add an argument to explicitly provide a configuration
 file path. Providing a config file as an argument does not disable the parsing
@@ -378,7 +399,7 @@ Environment variables
 
 The jsonargparse parsers can also get values from environment variables. The
 parser checks existing environment variables whose name is of the form
-:code:`[PREFIX_][LEV__]*OPT`, that is all in upper case, first a prefix (set by
+:code:`[PREFIX_][LEV__]*OPT`, that is, all in upper case, first a prefix (set by
 :code:`env_prefix`, or if unset the :code:`prog` without extension) followed by
 underscore and then the argument name replacing dots with two underscores. Using
 the parser from the :ref:`nested-namespaces` section above, in your shell you
@@ -509,7 +530,7 @@ arguments are:
   functions raise an exception.
 
 - Keyword arguments are ignored if they don't have at least one type that is
-  supported.
+  supported. They are also ignored if the name starts with :code:`_`.
 
 - Recursive adding of arguments from base classes only considers the presence
   of :code:`*args` and :code:`**kwargs`. It does not check the code to identify
@@ -537,8 +558,8 @@ As explained in section :ref:`classes-methods-functions` type hints are required
 to automatically add arguments from signatures to a parser. Additional to this
 feature, a type hint can also be used independently when adding a single
 argument to the parser. For example, an argument that can be :code:`None` or a
-float in the range :code:`(0, 1)` or a positive int could be added using type
-hints as follows:
+float in the range :code:`(0, 1)` or a positive int could be added using a type
+hint as follows:
 
 .. code-block:: python
 
@@ -571,7 +592,7 @@ Some notes about this support are:
   position can have its own type and will be validated as such. :code:`Tuple`
   with ellipsis (:code:`Tuple[type, ...]`) is also supported. In command line
   arguments, config files and environment variables, tuples and sets are
-  represented as a list.
+  represented as an array.
 
 - :code:`dataclasses` are supported as a type but without any nesting and for
   pure data classes. By pure it is meant that it only inherits from data
@@ -594,8 +615,8 @@ Registering types
 
 With the :func:`.register_type` function it is possible to register additional
 types for use in jsonargparse parsers. If the type class can be instantiated
-with a string representation and by casting the instance to :code:`str` gives
-back the string representation, then only the type class is given to
+with a string representation and casting the instance to :code:`str` gives back
+the string representation, then only the type class is given to
 :func:`.register_type`. For example in the :code:`jsonargparse.typing` package
 this is how complex numbers are registered: :code:`register_type(complex)`. For
 other type classes that don't have these properties, to register it might be
@@ -904,10 +925,10 @@ file that exists and is readable, the following could be done:
     parser.add_argument('--databases.info', type=Path_fr)
     cfg = parser.parse_path('app/config.yaml')
 
-The :code:`fr` in the type are flags stand for file and readable. After parsing
-the value of :code:`databases.info` will be an instance of the :class:`.Path`
-class that allows to get both the original relative path as included in the yaml
-file, or the corresponding absolute path:
+The :code:`fr` in the type are flags that stand for file and readable. After
+parsing, the value of :code:`databases.info` will be an instance of the
+:class:`.Path` class that allows to get both the original relative path as
+included in the yaml file, or the corresponding absolute path:
 
 .. code-block:: python
 
@@ -916,15 +937,15 @@ file, or the corresponding absolute path:
     >>> cfg.databases.info()
     '/YOUR_CWD/app/data/info.db'
 
-Likewise directories can be parsed for instance using the :class:`.Path_dw`
-type, which would require a directory to exist and be writeable. New path types
-can be created using the :func:`.path_type` function. For example to create a
-type for files that must exist and be both readable and writeable, the command
-would be :code:`Path_frw = path_type('frw')`. If the file
-:code:`app/config.yaml` is not writeable, then usig the type to cast
-:code:`Path_frw('app/config.yaml')` would raise a *TypeError: File is not
-writeable* exception. For more information of all the mode flags supported,
-refer to the documentation of the :class:`.Path` class.
+Likewise directories can be parsed using the :class:`.Path_dw` type, which would
+require a directory to exist and be writeable. New path types can be created
+using the :func:`.path_type` function. For example to create a type for files
+that must exist and be both readable and writeable, the command would be
+:code:`Path_frw = path_type('frw')`. If the file :code:`app/config.yaml` is not
+writeable, then using the type to cast :code:`Path_frw('app/config.yaml')` would
+raise a *TypeError: File is not writeable* exception. For more information of
+all the mode flags supported, refer to the documentation of the :class:`.Path`
+class.
 
 The content of a file that a :class:`.Path` instance references can be read by
 using the :py:meth:`.Path.get_content` method. For the previous example would be
@@ -938,7 +959,7 @@ An argument with a path type can be given :code:`nargs='+'` to parse multiple
 paths. But it might also be wanted to parse a list of paths found in a plain
 text file or from stdin. For this the :class:`.ActionPathList` is used and as
 argument either the path to a file listing the paths is given or the special
-:code:`'-'` string for reading the list from stdin. For for example:
+:code:`'-'` string for reading the list from stdin. Example:
 
 .. code-block:: python
 
@@ -970,18 +991,17 @@ The :code:`'u'` flag is used to parse URLs. For example if it is desired that an
 argument can be either a readable file or URL, the type would be created as
 :code:`Path_fur = path_type('fur')`. If the value appears to be a URL according
 to :func:`validators.url.url` then a HEAD request would be triggered to check if
-it is accessible, and if so, the parsing succeeds. To get the content of the
-parsed path, without needing to care if it is a local file or a URL, the
-:py:meth:`.Path.get_content` can be used.
+it is accessible. To get the content of the parsed path, without needing to care
+if it is a local file or a URL, the :py:meth:`.Path.get_content` can be used.
 
 If after importing jsonargparse you run
 :code:`jsonargparse.set_url_support(True)`, the following functions and classes
 will also support loading from URLs: :py:meth:`.ArgumentParser.parse_path`,
 :py:meth:`.ArgumentParser.get_defaults` (:code:`default_config_files` argument),
 :class:`.ActionConfigFile`, :class:`.ActionJsonSchema`, :class:`.ActionJsonnet`
-and :class:`.ActionParser`. This means for example that a tool that can receive
-a configuration file via :class:`.ActionConfigFile` is able to get the config
-file from a URL, thus something like the following would work:
+and :class:`.ActionParser`. This means that a tool that can receive a
+configuration file via :class:`.ActionConfigFile` is able to get the content
+from a URL, thus something like the following would work:
 
 .. code-block:: bash
 
@@ -1088,7 +1108,7 @@ makes this straightforward. A couple of examples would be:
 
 If the :class:`.ActionYesNo` class is used in conjunction with :code:`nargs='?'`
 the options can also be set by giving as value any of :code:`{'true', 'yes',
-'false', 'no'}`. :class:`.ActionYesNo` works without any extras require.
+'false', 'no'}`.
 
 
 .. _parser-arguments:
@@ -1202,9 +1222,9 @@ is used.
 Contributing
 ============
 
-Contributions to the jsonargparse package are very welcome, be it just to create
-`issues <https://github.com/omni-us/jsonargparse/issues>`_ for reporting bugs
-and proposing enhancements, or more directly by creating `pull requests
+Contributions to jsonargparse are very welcome, be it just to create `issues
+<https://github.com/omni-us/jsonargparse/issues>`_ for reporting bugs and
+proposing enhancements, or more directly by creating `pull requests
 <https://github.com/omni-us/jsonargparse/pulls>`_.
 
 If you intend to work with the source code, note that this project does not

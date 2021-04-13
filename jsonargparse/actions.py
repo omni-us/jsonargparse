@@ -33,7 +33,7 @@ __all__ = [
 ]
 
 
-def _find_action(parser, dest:str):
+def _find_action(parser, dest:str, within_subcommands:bool=False):
     """Finds an action in a parser given its dest.
 
     Args:
@@ -44,9 +44,15 @@ def _find_action(parser, dest:str):
         Action or None: The action if found, otherwise None.
     """
     for action in parser._actions:
-        if action.dest == dest \
-           or isinstance(action, _ActionSubCommands) and dest in action._name_parser_map:
+        if action.dest == dest:
             return action
+        elif isinstance(action, _ActionSubCommands):
+            if dest in action._name_parser_map:
+                return action
+            elif within_subcommands and dest.split('.', 1)[0] in action._name_parser_map:
+                subcommand, subdest = dest.split('.', 1)
+                subparser = action._name_parser_map[subcommand]
+                return _find_action(subparser, subdest, True)
     return None
 
 

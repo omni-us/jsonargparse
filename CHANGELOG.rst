@@ -10,6 +10,25 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.10.0 (2021-??-??)
+--------------------
+
+Added
+^^^^^
+- set_defaults method now works for arguments within subcommands.
+- CLI set_defaults option to allow overriding of defaults.
+- CLI return_parser option to ease inclusion in documentation.
+- save_path_content attribute to save paths content on config save.
+
+Changed
+^^^^^^^
+- Signature parameters whose name starts with "_" are skipped.
+
+Fixed
+^^^^^
+- CLI now does instantiate_subclasses before running.
+
+
 v3.9.0 (2021-04-09)
 -------------------
 

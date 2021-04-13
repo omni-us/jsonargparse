@@ -641,6 +641,31 @@ class OutputTests(TempDirTestCase):
             self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))
 
 
+    def test_save_path_content(self):
+        parser = ArgumentParser()
+        parser.add_argument('--the.path', type=Path_fr)
+
+        os.mkdir('pathdir')
+        os.mkdir('outdir')
+        file_txt = os.path.join('pathdir', 'file.txt')
+        out_yaml = os.path.join('outdir', 'saved.yaml')
+        out_file = os.path.join('outdir', 'file.txt')
+
+        with open(file_txt, 'w') as output_file:
+            output_file.write('file content')
+
+        cfg = parser.parse_args(['--the.path', file_txt])
+        parser.save_path_content.add('the.path')
+        parser.save(cfg, out_yaml)
+
+        self.assertTrue(os.path.isfile(out_yaml))
+        self.assertTrue(os.path.isfile(out_file))
+        with open(out_yaml) as input_file:
+            self.assertEqual(input_file.read(), 'the:\n  path: file.txt\n')
+        with open(out_file) as input_file:
+            self.assertEqual(input_file.read(), 'file content')
+
+
     def test_save_failures(self):
         parser = ArgumentParser()
         with open('existing.yaml', 'w') as output_file:

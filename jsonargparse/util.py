@@ -302,7 +302,7 @@ def change_to_path_dir(path):
     chdir = path is not None and not path.is_url
     if chdir:
         cwd = os.getcwd()
-        os.chdir(os.path.abspath(os.path.join(str(path), os.pardir)))
+        os.chdir(os.path.abspath(os.path.dirname(str(path))))
     try:
         yield None
     finally:

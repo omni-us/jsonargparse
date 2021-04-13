@@ -1,9 +1,9 @@
 """Simple creation of command line interfaces."""
 
 import inspect
-from typing import Union, List, Callable, Type
-from .core import ArgumentParser
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 from .actions import ActionConfigFile
+from .core import ArgumentParser
 
 
 __all__ = ['CLI']
@@ -13,7 +13,9 @@ def CLI(
     components: Union[Callable, Type, List[Union[Callable, Type]]] = None,
     args: List[str] = None,
     config_help: str = 'Path to a configuration file in json or yaml format.',
+    set_defaults: Optional[Dict[str, Any]] = None,
     as_positional: bool = True,
+    return_parser: bool = False,
     **kwargs
 ):
     """Function for simple creation of command line interfaces.
@@ -28,7 +30,9 @@ def CLI(
         components: One or more functions/classes to include in the command line interface.
         args: List of arguments to parse or None to use sys.argv.
         config_help: Help string for config file option in help.
+        set_defaults: Dictionary of values to override components defaults.
         as_positional: Whether to add required parameters as positional arguments.
+        return_parser: Whether to return the parser instead of parsing and running.
         **kwargs: Used to instantiate :class:`.ArgumentParser`.
 
     Returns:
@@ -57,7 +61,11 @@ def CLI(
     if len(components) == 1:
         component = components[0]
         _add_component_to_parser(component, parser, as_positional)
-        cfg = parser.parse_args(args)
+        if set_defaults is not None:
+            parser.set_defaults(set_defaults)
+        if return_parser:
+            return parser
+        cfg = parser.instantiate_subclasses(parser.parse_args(args))
         return _run_component(component, cfg)
 
     subcommands = parser.add_subcommands(required=True)
@@ -67,7 +75,11 @@ def CLI(
         subcommands.add_subcommand(name, subparser)  # type: ignore
         _add_component_to_parser(component, subparser, as_positional)
 
-    cfg = parser.parse_args(args)
+    if set_defaults is not None:
+        parser.set_defaults(set_defaults)
+    if return_parser:
+        return parser
+    cfg = parser.instantiate_subclasses(parser.parse_args(args))
     subcommand = cfg.pop('subcommand')
     component = comp_dict[subcommand]
     return _run_component(component, cfg.get(subcommand))
@@ -91,6 +103,6 @@ def _run_component(component, cfg):
     if inspect.isfunction(component):
         return component(**cfg)
     subcommand = cfg.pop('subcommand')
-    subcommand_cfg = cfg.pop(subcommand) if subcommand in cfg else {}
+    subcommand_cfg = cfg.pop(subcommand, {})
     component_obj = component(**cfg)
     return getattr(component_obj, subcommand)(**subcommand_cfg)

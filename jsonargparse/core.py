@@ -211,6 +211,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if self.groups is None:
             self.groups = {}
         self.required_args = set()  # type: Set[str]
+        self.save_path_content = set()  # type: Set[str]
         self._stderr = sys.stderr
         self._parse_as_dict = parse_as_dict
         self.default_config_files = default_config_files
@@ -762,14 +763,17 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
-        if not overwrite and os.path.isfile(path):
-            raise ValueError('Refusing to overwrite existing file: '+path)
-        path = Path(path, mode='fc')
+        def check_overwrite(path):
+            if not overwrite and os.path.isfile(path()):
+                raise ValueError('Refusing to overwrite existing file: '+path())
+
+        path_fc = Path(path, mode='fc')
+        check_overwrite(path_fc)
 
         dump_kwargs = {'format': format, 'skip_none': skip_none, 'skip_check': skip_check}
 
         if not multifile:
-            with open(path(), 'w') as f:
+            with open(path_fc(), 'w') as f:
                 f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
 
         else:
@@ -780,22 +784,17 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             if not skip_check:
                 self.check_config(strip_meta(cfg), branch=branch)
 
-            dirname = os.path.dirname(path())
-            save_kwargs = deepcopy(dump_kwargs)
-            save_kwargs.update({'overwrite': overwrite, 'multifile': multifile})
-
             def save_paths(cfg, base=None):
                 replace_keys = {}
                 for key, val in cfg.items():
+                    full_key = ('' if base is None else base+'.')+key
                     if isinstance(val, dict):
                         kbase = str(key) if base is None else base+'.'+str(key)
                         if '__path__' in val:
-                            val_path = Path(os.path.join(dirname, os.path.basename(val['__path__']())), mode='fc')
-                            if not overwrite and os.path.isfile(val_path()):
-                                raise ValueError('Refusing to overwrite existing file: '+str(val_path))
+                            val_path = Path(os.path.basename(val['__path__']()), mode='fc')
+                            check_overwrite(val_path)
                             action = _find_action(self, kbase)
                             if isinstance(action, (ActionJsonSchema, ActionJsonnet, _ActionConfigLoad)):
-                                replace_keys[key] = val_path
                                 val_out = strip_meta(val)
                                 if '__orig__' in val:
                                     val_str = val['__orig__']
@@ -805,14 +804,22 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                                     val_str = yaml.safe_dump(val_out, **self.dump_yaml_kwargs)
                                 with open(val_path(), 'w') as f:
                                     f.write(val_str)
+                                replace_keys[key] = os.path.basename(val_path())
                         else:
                             save_paths(val, kbase)
+                    elif isinstance(val, Path) and full_key in self.save_path_content and 'r' in val.mode:
+                        val_path = Path(os.path.basename(val()), mode='fc')
+                        check_overwrite(val_path)
+                        with open(val_path(), 'w') as f:
+                            f.write(val.get_content())
+                        replace_keys[key] = type(val)(str(val_path))
                 for key, val in replace_keys.items():
-                    cfg[key] = os.path.basename(val())
+                    cfg[key] = val
 
-            save_paths(cfg)
+            with change_to_path_dir(path_fc):
+                save_paths(cfg)
             dump_kwargs['skip_check'] = True
-            with open(path(), 'w') as f:
+            with open(path_fc(), 'w') as f:
                 f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
 
 
@@ -832,7 +839,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             for n in range(len(args)):
                 self._defaults.update(args[n])
                 for dest in args[n].keys():
-                    action = _find_action(self, dest)
+                    action = _find_action(self, dest, within_subcommands=True)
                     if action is None:
                         raise KeyError('No action for destination key "'+dest+'" to set its default.')
                     action.default = args[n][dest]
