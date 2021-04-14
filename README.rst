@@ -542,6 +542,10 @@ This can be done by initializing :class:`.ArgumentParser` with
 :code:`logger={'level': 'DEBUG'}`. For more details about logging go to section
 :ref:`logging`.
 
+Some use cases could require adding arguments from multiple classes and be
+desired that some parameters get exactly the same value. This behavior can be
+obtained by using the :py:meth:`.ArgumentParser.link_arguments` method.
+
 For all features described above to work, one optional package is required:
 `docstring-parser <https://pypi.org/project/docstring-parser/>`__ to get the
 argument descriptions from the docstrings. This package is included when

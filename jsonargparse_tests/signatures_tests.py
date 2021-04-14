@@ -454,6 +454,41 @@ class SignaturesTests(unittest.TestCase):
             self.assertNotIn('a1 description', help_str.getvalue())
 
 
+    def test_link_arguments(self):
+
+        class ClassA:
+            def __init__(self, v1: int = 2, v2: int = 3):
+                pass
+
+        class ClassB:
+            def __init__(self, v1: int = -1, v2: int = 4):
+                """ClassB title
+                Args:
+                    v1: b v1 help
+                """
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(ClassA, 'a')
+        parser.add_class_arguments(ClassB, 'b')
+        parser.link_arguments('a.v2', 'b.v1')
+
+        cfg = parser.parse_args([])
+        self.assertEqual(cfg.b.v1, cfg.a.v2)
+        self.assertEqual(7, parser.parse_args(['--a.v2=7']).b.v1)
+        self.assertEqual(Namespace(), parser.parse_args([], defaults=False))
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--b.v1=5']))
+        self.assertRaises(ValueError, lambda: parser.link_arguments('a.v2', 'b.v1'))
+        self.assertRaises(ValueError, lambda: parser.link_arguments('x', 'b.v2'))
+        self.assertRaises(ValueError, lambda: parser.link_arguments('a.v1', 'x'))
+
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertIn('Linked arguments', help_str.getvalue())
+        self.assertIn('b.v1 <= a.v2', help_str.getvalue())
+        self.assertIn('b v1 help', help_str.getvalue())
+
+
 class SignaturesConfigTests(TempDirTestCase):
 
     def test_add_function_arguments_config(self):

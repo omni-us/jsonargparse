@@ -24,6 +24,7 @@ from .actions import (
     _ActionSubCommands,
     _ActionPrintConfig,
     _ActionConfigLoad,
+    _ActionLink,
     _find_action,
     _is_action_value_list,
     filter_default_actions,
@@ -55,7 +56,6 @@ from .util import (
     update_key_value_in_flat_dict,
     _get_key_value,
     _get_env_var,
-    _issubclass,
     _suppress_stderr,
 )
 
@@ -283,6 +283,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             nested: Whether the namespace should be nested.
             with_meta: Whether to include metadata in config object, None to use parser's default.
             skip_check: Whether to skip check if configuration is valid.
+            skip_required: Whether to skip check of required arguments.
+            skip_subcommands: Whether to skip subcommand processing.
+            fail_no_subcommand: Whether to fail if no subcommand given.
             cfg_base: A base configuration object.
             log_message: Message to log at INFO level after parsing.
 
@@ -315,9 +318,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         cfg_ns = dict_to_namespace(cfg)
 
-        if hasattr(self, '_print_config'):
-            sys.stdout.write(self.dump(cfg_ns, skip_check=True, **self._print_config))  # type: ignore
-            self.exit()
+        _ActionPrintConfig.print_config_if_requested(self, cfg_ns)
+
+        _ActionLink.propagate_arguments(self, cfg_ns)
 
         if not skip_check:
             self.check_config(cfg_ns, skip_required=skip_required)
@@ -640,6 +643,19 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return cfg
 
 
+    def link_arguments(self, source: str, target: str):
+        """Makes an argument be derived from the value of another argument.
+
+        Args:
+            source: Key from which the value is derived.
+            target: Key to where the value is set.
+
+        Raises:
+            ValueError: If an invalid parameter is given.
+        """
+        _ActionLink(self, source, target)
+
+
     ## Methods for adding to the parser ##
 
     def add_subparsers(self, **kwargs):
@@ -931,7 +947,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def check_config(
-        self, cfg: Union[Namespace, Dict[str, Any]],
+        self,
+        cfg: Union[Namespace, Dict[str, Any]],
         skip_none: bool = True,
         skip_required: bool = False,
         branch: str = None,

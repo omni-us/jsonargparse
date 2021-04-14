@@ -84,7 +84,7 @@ class ActionTypeHint(Action):
             self._typehint = kwargs.pop('_typehint')
             self._enable_path = kwargs.pop('_enable_path')
             if 'metavar' not in kwargs:
-                kwargs['metavar'] = self._typehint_metavar()
+                kwargs['metavar'] = typehint_metavar(self._typehint)
             super().__init__(**kwargs)
 
 
@@ -161,22 +161,6 @@ class ActionTypeHint(Action):
 
     def _instantiate_classes(self, val):
         return adapt_typehints(val, self._typehint, instantiate_classes=True)
-
-
-    def _typehint_metavar(self):
-        """Generates a metavar for some types."""
-        metavar = None
-        if self._typehint == bool:
-            metavar = '{true,false}'
-        elif is_optional(self._typehint, bool):
-            metavar = '{true,false,null}'
-        elif _issubclass(self._typehint, Enum):
-            enum = self._typehint
-            metavar = '{'+','.join(list(enum.__members__.keys()))+'}'
-        elif is_optional(self._typehint, Enum):
-            enum = self._typehint.__args__[0]
-            metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
-        return metavar
 
 
     def completer(self, prefix, **kwargs):
@@ -346,3 +330,19 @@ def type_to_str(obj):
         return obj.__name__
     elif obj is not None:
         return re.sub(r'[a-z_.]+\.', '', str(obj)).replace('NoneType', 'null')
+
+
+def typehint_metavar(typehint):
+    """Generates a metavar for some types."""
+    metavar = None
+    if typehint == bool:
+        metavar = '{true,false}'
+    elif is_optional(typehint, bool):
+        metavar = '{true,false,null}'
+    elif _issubclass(typehint, Enum):
+        enum = typehint
+        metavar = '{'+','.join(list(enum.__members__.keys()))+'}'
+    elif is_optional(typehint, Enum):
+        enum = typehint.__args__[0]
+        metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
+    return metavar

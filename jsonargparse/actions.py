@@ -5,7 +5,6 @@ import re
 import sys
 import yaml
 import argparse
-from enum import Enum
 from typing import Type
 from argparse import Namespace, Action, SUPPRESS, _HelpAction, _SubParsersAction
 
@@ -18,6 +17,7 @@ from .util import (
     import_object,
     change_to_path_dir,
     Path,
+    _get_key_value,
     _load_config,
     _dict_to_flat_namespace,
     _issubclass
@@ -150,7 +150,13 @@ class _ActionPrintConfig(Action):
         kwargs = {'skip_none': False}
         if value is not None and 'skip_null' in value:
             kwargs['skip_none'] = True
-        parser._print_config = kwargs
+        parser.print_config = kwargs
+
+    @staticmethod
+    def print_config_if_requested(parser, cfg):
+        if hasattr(parser, 'print_config'):
+            sys.stdout.write(parser.dump(cfg, skip_check=True, **parser.print_config))
+            parser.exit()
 
 
 class _ActionConfigLoad(Action):
@@ -218,6 +224,63 @@ class _ActionHelpClassPath(Action):
         _remove_actions(tmp, (_HelpAction, _ActionPrintConfig))
         tmp.print_help()
         args[0].exit()
+
+
+class _ActionLink(Action):
+
+    def __init__(self, parser, source: str, target: str):
+        self.parser = parser
+        self.source = _find_action(parser, source)
+        self.target = _find_action(parser, target)
+        if self.source is None:
+            raise ValueError('No action found for source key "'+source+'".')
+        if self.target is None:
+            raise ValueError('No action found for target key "'+target+'".')
+        for action in [self.source, self.target]:
+            if isinstance(action, (_HelpAction,
+                                   _ActionPrintConfig,
+                                   _ActionConfigLoad,
+                                   _ActionHelpClassPath,
+                                   _ActionSubCommands,
+                                   _ActionLink,
+                                   ActionYesNo,
+                                   ActionConfigFile)):
+                raise ValueError('Unexpected action type "'+type(action).__name__+'" for key "'+action.dest+'".')
+        for key in self.target.option_strings:
+            parser._option_string_actions[key] = self
+        parser._actions[parser._actions.index(self.target)] = self
+        for group in parser._action_groups:
+            if self.target in group._group_actions:
+                group._group_actions.remove(self.target)
+        if not hasattr(self, '_links_group'):
+            parser._links_group = parser.add_argument_group('Linked arguments')
+        parser._links_group._group_actions.append(self)
+        super().__init__(
+            [target+' <= '+source],
+            dest=target,
+            default=SUPPRESS,
+            metavar='',
+            type=getattr(self.target, '_typehint', self.target.type),
+            help=self.target.help,
+        )
+
+    def __call__(self, *args, **kwargs):
+        raise TypeError('Linked "'+self.target.dest+'" must be given via "'+self.source.dest+'".')
+
+    @staticmethod
+    def propagate_arguments(parser, cfg_ns):
+        if hasattr(parser, '_links_group'):
+            for action in parser._links_group._group_actions:
+                try:
+                    value = _get_key_value(cfg_ns, action.source.dest)
+                except AttributeError:
+                    continue
+                key = action.target.dest
+                parent_ns = cfg_ns
+                if '.' in key:
+                    parent_key, key = key.rsplit('.', 1)
+                    parent_ns = _get_key_value(cfg_ns, parent_key)
+                setattr(parent_ns, key, value)
 
 
 class ActionYesNo(Action):
