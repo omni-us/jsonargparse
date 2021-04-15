@@ -486,7 +486,8 @@ class SignaturesTests(unittest.TestCase):
         parser.print_help(help_str)
         self.assertIn('Linked arguments', help_str.getvalue())
         self.assertIn('b.v1 <= a.v2', help_str.getvalue())
-        self.assertIn('b v1 help', help_str.getvalue())
+        if docstring_parser_support:
+            self.assertIn('b v1 help', help_str.getvalue())
 
 
 class SignaturesConfigTests(TempDirTestCase):
