@@ -415,7 +415,7 @@ class Path:
 
     def __repr__(self):
         cwd = '' if self.rel_path == self.abs_path else ', cwd='+self.cwd
-        return 'Path('+self.rel_path+cwd+')'
+        return 'Path_'+self.mode+'('+self.rel_path+cwd+')'
 
     def __call__(self, absolute:bool=True) -> str:
         """Returns the path as a string.

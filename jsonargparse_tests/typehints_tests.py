@@ -237,6 +237,8 @@ class TypeHintsTests(unittest.TestCase):
         class_path = '"class_path": "calendar.Calendar"'
         cfg = parser.parse_args(['--op=[{'+class_path+'}]'])
         self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar'}])
+        cfg = parser.parse_args(['--op=["calendar.Calendar"]'])
+        self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar'}])
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg['op'][0], Calendar)
 
@@ -247,7 +249,7 @@ class TypeHintsTests(unittest.TestCase):
         with self.assertRaises(ParserError):
             parser.parse_args(['--op=[{"class_path": "jsonargparse0.IncorrectModule"}]'])
         with self.assertRaises(ParserError):
-            parser.parse_args(['--op=["calendar.Calendar"]'])
+            parser.parse_args(['--op=[1]'])
 
         init_args = '"init_args": {"bad_arg": True}'
         with self.assertRaises(ParserError):

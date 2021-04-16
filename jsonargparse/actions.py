@@ -155,6 +155,15 @@ class _ActionPrintConfig(Action):
     @staticmethod
     def print_config_if_requested(parser, cfg):
         if hasattr(parser, 'print_config'):
+            from .typehints import ActionTypeHint
+            for action in parser._actions:
+                if isinstance(action, ActionTypeHint) and ActionTypeHint.is_subclass_typehint(action._typehint):
+                    val = _get_key_value(cfg, action.dest)
+                    if isinstance(val, Namespace) and hasattr(val, 'class_path') and not hasattr(val, 'init_args'):
+                        val_class = import_object(val.class_path)
+                        tmp = import_object('jsonargparse.ArgumentParser')()
+                        tmp.add_class_arguments(val_class)
+                        val.init_args = tmp.get_defaults()
             sys.stdout.write(parser.dump(cfg, skip_check=True, **parser.print_config))
             parser.exit()
 

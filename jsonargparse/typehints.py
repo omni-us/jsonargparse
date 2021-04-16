@@ -96,7 +96,7 @@ class ActionTypeHint(Action):
             getattr(typehint, '__origin__', None) in root_types or \
             typehint in registered_types or \
             _issubclass(typehint, Enum) or \
-            (inspect.isclass(typehint) and typehint not in leaf_types)
+            ActionTypeHint.is_subclass_typehint(typehint)
         if full and supported:
             typehint_origin = getattr(typehint, '__origin__', typehint)
             if typehint_origin in root_types and typehint_origin != Literal:
@@ -106,6 +106,11 @@ class ActionTypeHint(Action):
                     if not (typehint in leaf_types or ActionTypeHint.is_supported_typehint(typehint, full=True)):
                         return False
         return supported
+
+
+    @staticmethod
+    def is_subclass_typehint(typehint):
+        return inspect.isclass(typehint) and typehint not in leaf_types
 
 
     @staticmethod
@@ -287,10 +292,14 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
 
     # Subclasses
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):
-        if not isinstance(val, dict) or 'class_path' not in val:
-            raise ValueError('Expected a Dict with a class_path entry but got "'+str(val)+'"')
+        if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val)):
+            raise ValueError('Expected an str or a Dict with a class_path entry but got "'+str(val)+'"')
         try:
-            val_class = import_object(val['class_path'])
+            if isinstance(val, str):
+                val_class = import_object(val)
+                val = {'class_path': val}
+            else:
+                val_class = import_object(val['class_path'])
             if not _issubclass(val_class, typehint):
                 raise ValueError('"'+val['class_path']+'" is not a subclass of '+typehint.__name__)
             init_args = {}

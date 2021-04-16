@@ -255,6 +255,7 @@ class SignatureArguments:
                         annotation = Optional[annotation]
                 elif not as_positional:
                     kwargs['required'] = True
+                is_subclass_typehint = False
                 if annotation in {str, int, float, bool} or \
                    _issubclass(annotation, (str, int, float)) or \
                    is_pure_dataclass(annotation):
@@ -262,6 +263,7 @@ class SignatureArguments:
                 elif annotation != inspect._empty:  # type: ignore
                     try:
                         kwargs['action'] = ActionTypeHint(typehint=annotation)
+                        is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation)
                     except ValueError as ex:
                         self.logger.debug(skip_message+str(ex))  # type: ignore
                 if 'type' in kwargs or 'action' in kwargs:
@@ -270,6 +272,8 @@ class SignatureArguments:
                         self.logger.debug(skip_message+'Argument already added.')  # type: ignore
                     else:
                         opt_str = dest if is_required and as_positional else '--'+dest
+                        if is_subclass_typehint:
+                            group.add_argument('--'+dest+'.help', action=_ActionHelpClassPath(baseclass=annotation))
                         group.add_argument(opt_str, **kwargs)
                         added_args.add(dest)
                 elif is_required and fail_untyped:

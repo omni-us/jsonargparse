@@ -454,6 +454,26 @@ class SignaturesTests(unittest.TestCase):
             self.assertNotIn('a1 description', help_str.getvalue())
 
 
+    def test_print_config(self):
+        class MyClass:
+            def __init__(
+                self,
+                a1: calendar.Calendar,
+                a2: int = 7,
+            ):
+                pass
+
+        parser = ArgumentParser()
+        parser.add_class_arguments(MyClass, 'g')
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--g.a1=calendar.Calendar', '--print_config'])
+
+        outval = yaml.safe_load(out.getvalue())
+        self.assertEqual(outval['g'], {'a1': {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 0}}, 'a2': 7})
+
+
     def test_link_arguments(self):
 
         class ClassA:

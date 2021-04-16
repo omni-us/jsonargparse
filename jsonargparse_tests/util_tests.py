@@ -147,7 +147,7 @@ class PathTests(TempDirTestCase):
         self.assertEqual(path(True), os.path.join(self.tmpdir, self.file_rw))
         self.assertEqual(path(), os.path.join(self.tmpdir, self.file_rw))
         self.assertEqual(str(path), self.file_rw)
-        self.assertTrue(path.__repr__().startswith('Path('))
+        self.assertTrue(path.__repr__().startswith('Path_frw('))
 
 
     def test_tilde_home(self):

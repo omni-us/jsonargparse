@@ -20,10 +20,13 @@ Added
 - CLI return_parser option to ease inclusion in documentation.
 - save_path_content attribute to save paths content on config save.
 - New `link_arguments` method to derive an argument value from another.
+- print_config now includes subclass init_args if class_path given.
+- Subclass type hints now also have a --*.help option.
 
 Changed
 ^^^^^^^
 - Signature parameters whose name starts with "_" are skipped.
+- The repr of Path now has the form `Path_{mode}(`.
 
 Fixed
 ^^^^^
