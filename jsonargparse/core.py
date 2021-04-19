@@ -9,7 +9,7 @@ import inspect
 import argparse
 from copy import deepcopy
 from contextlib import redirect_stderr
-from typing import Any, List, Dict, Set, Union, Optional, Type, Callable
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 from argparse import ArgumentError, Action, Namespace, SUPPRESS
 
 from .formatters import DefaultHelpFormatter
@@ -26,6 +26,7 @@ from .actions import (
     _ActionConfigLoad,
     _ActionLink,
     _find_action,
+    _find_parent_action,
     _is_action_value_list,
     filter_default_actions,
 )
@@ -253,9 +254,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         try:
             namespace, args = self._parse_known_args(args, namespace)
-        except (ArgumentError, ParserError):
-            err = sys.exc_info()[1]
-            self.error(str(err))
+        except (ArgumentError, ParserError) as ex:
+            self.error(str(ex), ex)
 
         return namespace, args
 
@@ -290,7 +290,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             log_message: Message to log at INFO level after parsing.
 
         Returns:
-            A dict object with all parsed values.
+            A config object with all parsed values.
         """
         if env is None and self._default_env:
             env = True
@@ -358,7 +358,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            An object with all parsed values as nested attributes.
+            A config object with all parsed values.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -385,7 +385,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             )
 
         except (TypeError, KeyError) as ex:
-            self.error(str(ex))
+            self.error(str(ex), ex)
 
         return parsed_cfg
 
@@ -411,14 +411,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            An object with all parsed values as attributes.
+            A config object with all parsed values.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
             cfg = vars(_dict_to_flat_namespace(cfg_obj))
-            self._apply_actions(cfg, self._actions)
+            self._apply_actions(cfg)
             cfg = _flat_namespace_to_dict(dict_to_namespace(cfg))
 
             parsed_cfg = self._parse_common(
@@ -434,7 +434,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             )
 
         except (TypeError, KeyError) as ex:
-            self.error(str(ex))
+            self.error(str(ex), ex)
 
         return parsed_cfg
 
@@ -458,7 +458,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            An object with all parsed values as attributes.
+            A config object with all parsed values.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -509,7 +509,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             )
 
         except (TypeError, KeyError) as ex:
-            self.error(str(ex))
+            self.error(str(ex), ex)
 
         return parsed_cfg
 
@@ -537,7 +537,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            An object with all parsed values as nested attributes.
+            A config object with all parsed values.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -586,7 +586,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
-            An object with all parsed values as attributes.
+            A config object with all parsed values.
 
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
@@ -606,7 +606,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             )
 
         except (TypeError, KeyError) as ex:
-            self.error(str(ex))
+            self.error(str(ex), ex)
 
         return parsed_cfg
 
@@ -638,22 +638,34 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             raise TypeError('Problems parsing config :: '+str(ex)) from ex
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
 
-        self._apply_actions(cfg, self._actions)
+        self._apply_actions(cfg)
 
         return cfg
 
 
-    def link_arguments(self, source: str, target: str):
-        """Makes an argument be derived from the value of another argument.
+    def link_arguments(
+        self,
+        source: Union[str, Tuple[str, ...]],
+        target: str,
+        compute_fn: Callable = None,
+    ):
+        """Makes an argument value be derived from the values other arguments.
+
+        Source keys can be individual arguments or nested groups. The target key
+        has to be an single argument. The keys can be inside init_args of a
+        subclass. The compute function should accept as many positional
+        arguments as there are sources and return a value of type compatible
+        with the target.
 
         Args:
-            source: Key from which the value is derived.
+            source: Key(s) from which the target value is derived.
             target: Key to where the value is set.
+            compute_fn: Function to compute target value from source.
 
         Raises:
             ValueError: If an invalid parameter is given.
         """
-        _ActionLink(self, source, target)
+        _ActionLink(self, source, target, compute_fn)
 
 
     ## Methods for adding to the parser ##
@@ -725,7 +737,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 if (action.help == SUPPRESS and not isinstance(action, _ActionConfigLoad)) or \
                    isinstance(action, ActionConfigFile) or \
                    (skip_none and action.dest in cfg and cfg[action.dest] is None):
-                    del cfg[action.dest]
+                    cfg.pop(action.dest, None)
                 elif isinstance(action, ActionPath):
                     if cfg[action.dest] is not None:
                         if isinstance(cfg[action.dest], list):
@@ -916,6 +928,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             with change_to_path_dir(default_config_file):
                 cfg_file = self._load_cfg(default_config_file.get_content())
                 try:
+                    self.print_config_skip = True
                     cfg_file = self.parse_object(  # type: ignore
                         _flat_namespace_to_dict(dict_to_namespace(cfg_file)),
                         defaults=False,
@@ -923,6 +936,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                         _skip_check=skip_check,
                         _skip_required=True,
                     )
+                    delattr(self, 'print_config_skip')
                 except (TypeError, KeyError, ParserError) as ex:
                     raise ParserError('Problem in default config file "'+str(default_config_file)+'" :: '+ex.args[0]) from ex
             cfg = self._merge_config(cfg_file, cfg)
@@ -937,13 +951,16 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
     ## Other methods ##
 
-    def error(self, message:str):
+    def error(self, message:str, ex:Exception=None):
         """Logs error message if a logger is set, calls the error handler and raises a ParserError."""
         self._logger.error(message)
         if self._error_handler is not None:
             with redirect_stderr(self._stderr):
                 self._error_handler(self, message)
-        raise ParserError(message)
+        if ex is None:
+            raise ParserError(message)
+        else:
+            raise ParserError(message) from ex
 
 
     def check_config(
@@ -1000,6 +1017,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                         if subcommand is not None:
                             raise KeyError('Only values from a single sub-command are allowed ("'+subcommand+'", "'+kbase+'").')
                         subcommand = kbase
+                    elif isinstance(action, _ActionConfigLoad) and isinstance(val, dict):
+                        check_values(val, kbase)
                 elif isinstance(val, dict):
                     check_values(val, kbase)
                 else:
@@ -1032,13 +1051,16 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         for action in actions:
             if isinstance(action, ActionTypeHint) or \
                (isinstance(action, _ActionConfigLoad) and is_pure_dataclass(action.basetype)):
-                try:
-                    value, parent, key = _get_key_value(cfg, action.dest, parent=True)
-                except KeyError:
-                    pass
-                else:
-                    if value is not None:
-                        parent[key] = action._instantiate_classes(value)
+                value, parent, key = _get_key_value(cfg, action.dest, parent=True)
+                if value is not None:
+                    parent[key] = action._instantiate_classes(value)
+                #try:
+                #    value, parent, key = _get_key_value(cfg, action.dest, parent=True)
+                #except KeyError:
+                #    pass
+                #else:
+                #    if value is not None:
+                #        parent[key] = action._instantiate_classes(value)
         return cfg
 
 
@@ -1106,32 +1128,24 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return help_str
 
 
-    def _apply_actions(self, cfg, actions):
+    def _apply_actions(self, cfg):
         """Runs _check_value_key on actions present in flat config dict."""
-        def find_parent_action(key):
-            parts = key.split('.')
-            for n in reversed(range(len(parts)-1)):
-                action = _find_action(Namespace(_actions=actions), '.'.join(parts[:n+1]))
-                if action is not None:
-                    return action
-
         keys = [k for k in cfg.keys() if k.rsplit('.', 1)[-1] not in meta_keys]
         keys.sort(key=lambda x: -len(x.split('.')))
         seen_keys = set()
         for key in keys:
             if key in seen_keys:
                 continue
-            action = _find_action(self, key)
+            action = _find_parent_action(self, key)
             if action is not None:
-                value = self._check_value_key(action, cfg[action.dest], action.dest, cfg)
-                cfg[action.dest] = value
-                continue
-            action = find_parent_action(key)
-            if action is not None:
-                value = get_key_value_from_flat_dict(cfg, action.dest)
-                value = self._check_value_key(action, value, action.dest, cfg)
-                update_key_value_in_flat_dict(cfg, action.dest, value)
-                seen_keys.update(action.dest+'.'+k for k in value.keys())
+                if action.dest == key:
+                    value = self._check_value_key(action, cfg[action.dest], action.dest, cfg)
+                    cfg[action.dest] = value
+                else:
+                    value = get_key_value_from_flat_dict(cfg, action.dest)
+                    value = self._check_value_key(action, value, action.dest, cfg)
+                    update_key_value_in_flat_dict(cfg, action.dest, value)
+                    seen_keys.update(action.dest+'.'+k for k in value.keys())
 
 
     @staticmethod

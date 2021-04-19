@@ -5,6 +5,7 @@ import json
 import pathlib
 import sys
 import uuid
+import yaml
 from calendar import Calendar
 from datetime import datetime
 from enum import Enum
@@ -121,6 +122,8 @@ class TypeHintsTests(unittest.TestCase):
         self.assertIsInstance(cfg['dict2']['b'], Path)
         self.assertEqual({5: None}, parser.parse_args(['--dict1={"5":null}'])['dict1'])
         self.assertRaises(ParserError, lambda: parser.parse_args(['--dict1=["a", "b"]']))
+        cfg = yaml.safe_load(parser.dump(cfg))
+        self.assertEqual({'dict1': {'2': 4.5, '6': 'ab'}, 'dict2': {'a': True, 'b': 'f'}}, cfg)
 
 
     def test_tuple(self):
@@ -236,9 +239,9 @@ class TypeHintsTests(unittest.TestCase):
 
         class_path = '"class_path": "calendar.Calendar"'
         cfg = parser.parse_args(['--op=[{'+class_path+'}]'])
-        self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar'}])
+        self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar', "init_args": {"firstweekday": 0}}])
         cfg = parser.parse_args(['--op=["calendar.Calendar"]'])
-        self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar'}])
+        self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar', "init_args": {"firstweekday": 0}}])
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg['op'][0], Calendar)
 
@@ -275,6 +278,9 @@ class TypeHintsTests(unittest.TestCase):
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg['op'], Calendar)
         self.assertEqual(3, cfg['op'].firstweekday)
+
+        cfg = parser.instantiate_subclasses(parser.parse_args([]))
+        self.assertIsNone(cfg['op'])
 
 
     def test_typehint_serialize_list(self):

@@ -19,7 +19,7 @@ Added
 - CLI set_defaults option to allow overriding of defaults.
 - CLI return_parser option to ease inclusion in documentation.
 - save_path_content attribute to save paths content on config save.
-- New `link_arguments` method to derive an argument value from another.
+- New `link_arguments` method to derive an argument value from others.
 - print_config now includes subclass init_args if class_path given.
 - Subclass type hints now also have a --*.help option.
 

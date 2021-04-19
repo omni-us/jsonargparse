@@ -5,7 +5,7 @@ import re
 import sys
 import yaml
 import argparse
-from typing import Type
+from typing import Callable, Tuple, Type, Union
 from argparse import Namespace, Action, SUPPRESS, _HelpAction, _SubParsersAction
 
 from .optionals import get_config_read_mode, FilesCompleterMethod
@@ -14,6 +14,7 @@ from .util import (
     yamlScannerError,
     ParserError,
     namespace_to_dict,
+    dict_to_namespace,
     import_object,
     change_to_path_dir,
     Path,
@@ -33,7 +34,7 @@ __all__ = [
 ]
 
 
-def _find_action(parser, dest:str, within_subcommands:bool=False):
+def _find_action(parser, dest:str, within_subcommands:bool=False, exclude=None):
     """Finds an action in a parser given its dest.
 
     Args:
@@ -43,7 +44,10 @@ def _find_action(parser, dest:str, within_subcommands:bool=False):
     Returns:
         Action or None: The action if found, otherwise None.
     """
-    for action in parser._actions:
+    actions = filter_default_actions(parser._actions)
+    if exclude is not None:
+        actions = [a for a in actions if not isinstance(a, exclude)]
+    for action in actions:
         if action.dest == dest:
             return action
         elif isinstance(action, _ActionSubCommands):
@@ -52,8 +56,34 @@ def _find_action(parser, dest:str, within_subcommands:bool=False):
             elif within_subcommands and dest.split('.', 1)[0] in action._name_parser_map:
                 subcommand, subdest = dest.split('.', 1)
                 subparser = action._name_parser_map[subcommand]
-                return _find_action(subparser, subdest, True)
+                return _find_action(subparser, subdest, True, exclude=exclude)
     return None
+
+
+def _find_parent_action(parser, key:str, exclude=None):
+    action = _find_action(parser, key, exclude=exclude)
+    if action is None and '.' in key:
+        parts = key.split('.')
+        for n in reversed(range(len(parts)-1)):
+            action = _find_action(parser, '.'.join(parts[:n+1]), exclude=exclude)
+            if action is not None:
+                break
+    return action
+
+
+def _find_parent_actions(parser, key:str, exclude=None):
+    action = _find_parent_action(parser, key, exclude=exclude)
+    if action is None:
+        actions = filter_default_actions(parser._actions)
+        if exclude is not None:
+            actions = [a for a in actions if not isinstance(a, exclude)]
+        parts = key.split('.')
+        for n in reversed(range(len(parts))):
+            prefix = '.'.join(parts[:n+1])+'.'
+            action = [a for a in actions if a.dest.startswith(prefix)]
+            if action != []:
+                break
+    return None if action == [] else action
 
 
 def _is_action_value_list(action:Action):
@@ -82,7 +112,7 @@ def _remove_actions(parser, types):
 
 
 def filter_default_actions(actions):
-    default = (_HelpAction, _ActionPrintConfig)
+    default = (_HelpAction, _ActionHelpClassPath, _ActionPrintConfig)
     if isinstance(actions, list):
         return [a for a in actions if not isinstance(a, default)]
     return {k: a for k, a in actions.items() if not isinstance(a, default)}
@@ -154,16 +184,7 @@ class _ActionPrintConfig(Action):
 
     @staticmethod
     def print_config_if_requested(parser, cfg):
-        if hasattr(parser, 'print_config'):
-            from .typehints import ActionTypeHint
-            for action in parser._actions:
-                if isinstance(action, ActionTypeHint) and ActionTypeHint.is_subclass_typehint(action._typehint):
-                    val = _get_key_value(cfg, action.dest)
-                    if isinstance(val, Namespace) and hasattr(val, 'class_path') and not hasattr(val, 'init_args'):
-                        val_class = import_object(val.class_path)
-                        tmp = import_object('jsonargparse.ArgumentParser')()
-                        tmp.add_class_arguments(val_class)
-                        val.init_args = tmp.get_defaults()
+        if hasattr(parser, 'print_config') and not hasattr(parser, 'print_config_skip'):
             sys.stdout.write(parser.dump(cfg, skip_check=True, **parser.print_config))
             parser.exit()
 
@@ -191,7 +212,7 @@ class _ActionConfigLoad(Action):
         cfg_file = self._load_config(value)
         cfg_file = {self.dest+'.'+k: v for k, v in vars(cfg_file).items()}
         with change_to_path_dir(cfg_file.get(self.dest+'.__path__')):
-            parser._apply_actions(cfg_file, parser._actions)
+            parser._apply_actions(cfg_file)
         for key, val in cfg_file.items():
             setattr(namespace, key, val)
 
@@ -237,59 +258,109 @@ class _ActionHelpClassPath(Action):
 
 class _ActionLink(Action):
 
-    def __init__(self, parser, source: str, target: str):
+    def __init__(
+        self,
+        parser,
+        source: Union[str, Tuple[str, ...]],
+        target: str,
+        compute_fn: Callable = None,
+    ):
         self.parser = parser
-        self.source = _find_action(parser, source)
-        self.target = _find_action(parser, target)
-        if self.source is None:
-            raise ValueError('No action found for source key "'+source+'".')
-        if self.target is None:
-            raise ValueError('No action found for target key "'+target+'".')
-        for action in [self.source, self.target]:
-            if isinstance(action, (_HelpAction,
-                                   _ActionPrintConfig,
-                                   _ActionConfigLoad,
-                                   _ActionHelpClassPath,
-                                   _ActionSubCommands,
-                                   _ActionLink,
-                                   ActionYesNo,
-                                   ActionConfigFile)):
-                raise ValueError('Unexpected action type "'+type(action).__name__+'" for key "'+action.dest+'".')
-        for key in self.target.option_strings:
-            parser._option_string_actions[key] = self
-        parser._actions[parser._actions.index(self.target)] = self
-        for group in parser._action_groups:
-            if self.target in group._group_actions:
-                group._group_actions.remove(self.target)
-        if not hasattr(self, '_links_group'):
+
+        # Set and check compute function
+        self.compute_fn = compute_fn
+        if compute_fn is None and not isinstance(source, str):
+            raise ValueError('Multiple source keys requires a compute function.')
+
+        # Set and check source and target actions
+        exclude = (_ActionLink, _ActionConfigLoad, _ActionSubCommands, ActionConfigFile)
+        source = (source,) if isinstance(source, str) else source
+        self.source = [(s, _find_parent_actions(parser, s, exclude=exclude)) for s in source]
+        self.target = (target, _find_parent_action(parser, target, exclude=exclude))
+        for key, action in self.source + [self.target]:
+            if action is None:
+                raise ValueError('No action for key "'+key+'".')
+
+        from .typehints import ActionTypeHint
+        is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1])
+        valid_target_subclass = is_target_subclass and target.startswith(self.target[1].dest+'.init_args.')
+        valid_target_leaf = self.target[1].dest == target and not is_target_subclass
+        if not (valid_target_leaf or valid_target_subclass):
+            raise ValueError('Target key "'+target+'" must be for a individual argument.')
+
+        # Replace target action with link action
+        if not is_target_subclass:
+            for key in self.target[1].option_strings:
+                parser._option_string_actions[key] = self
+            parser._actions[parser._actions.index(self.target[1])] = self
+            for group in parser._action_groups:
+                if self.target[1] in group._group_actions:
+                    group._group_actions.remove(self.target[1])
+
+        # Add link action to group to show in help
+        if not hasattr(parser, '_links_group'):
             parser._links_group = parser.add_argument_group('Linked arguments')
         parser._links_group._group_actions.append(self)
+
+        # Initialize link action
+        link_str = target+' <= '
+        if compute_fn is None:
+            link_str += source[0]
+        else:
+            link_str += getattr(compute_fn, '__name__', str(compute_fn))+'('+', '.join(source)+')'
+
+        if is_target_subclass:
+            type_attr = None
+            help_str = 'Use --'+self.target[1].dest+'.help CLASS_PATH for details.'
+        else:
+            type_attr = getattr(self.target[1], '_typehint', self.target[1].type)
+            help_str = self.target[1].help
+
         super().__init__(
-            [target+' <= '+source],
+            [link_str],
             dest=target,
             default=SUPPRESS,
             metavar='',
-            type=getattr(self.target, '_typehint', self.target.type),
-            help=self.target.help,
+            type=type_attr,
+            help=help_str,
         )
 
     def __call__(self, *args, **kwargs):
-        raise TypeError('Linked "'+self.target.dest+'" must be given via "'+self.source.dest+'".')
+        source = ', '.join(s[0] for s in self.source)
+        raise TypeError('Linked "'+self.target[0]+'" must be given via "'+source+'".')
+
+    def _check_type(self, value, cfg=None):
+        return self.parser._check_value_key(self.target[1], value, self.target[0], cfg)
 
     @staticmethod
     def propagate_arguments(parser, cfg_ns):
         if hasattr(parser, '_links_group'):
             for action in parser._links_group._group_actions:
                 try:
-                    value = _get_key_value(cfg_ns, action.source.dest)
+                    args = []
+                    for key, _ in action.source:
+                        arg = _get_key_value(cfg_ns, key)
+                        if isinstance(arg, Namespace):
+                            arg = namespace_to_dict(arg)
+                        args.append(arg)
                 except AttributeError:
                     continue
-                key = action.target.dest
+                if action.compute_fn is None:
+                    value = args[0]
+                else:
+                    value = action.compute_fn(*args)
+                key = action.target[0]
                 parent_ns = cfg_ns
-                if '.' in key:
+                while True:
+                    if '.' not in key:
+                        setattr(parent_ns, key, value)
+                        break
                     parent_key, key = key.rsplit('.', 1)
-                    parent_ns = _get_key_value(cfg_ns, parent_key)
-                setattr(parent_ns, key, value)
+                    try:
+                        parent_ns = _get_key_value(cfg_ns, parent_key)
+                    except AttributeError:
+                        value = dict_to_namespace({key: value})
+                        key = parent_key
 
 
 class ActionYesNo(Action):

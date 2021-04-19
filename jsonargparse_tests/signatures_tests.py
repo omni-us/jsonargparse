@@ -414,7 +414,7 @@ class SignaturesTests(unittest.TestCase):
         init_args = '"init_args": {"a1": 7}'
         cfg = parser.parse_args(['--c1={'+class_path+', '+init_args+'}'])
         self.assertEqual(cfg.c1.class_path, 'jsonargparse_tests.signatures_tests.Class1')
-        self.assertEqual(cfg.c1.init_args, Namespace(a1=7))
+        self.assertEqual(cfg.c1.init_args, Namespace(a1=7, a2=2.3))
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg['c1'], Class1)
         self.assertEqual(7, cfg['c1'].a1)
@@ -481,7 +481,7 @@ class SignaturesTests(unittest.TestCase):
                 pass
 
         class ClassB:
-            def __init__(self, v1: int = -1, v2: int = 4):
+            def __init__(self, v1: int = -1, v2: int = 4, v3: int = 2):
                 """ClassB title
                 Args:
                     v1: b v1 help
@@ -491,23 +491,67 @@ class SignaturesTests(unittest.TestCase):
         parser.add_class_arguments(ClassA, 'a')
         parser.add_class_arguments(ClassB, 'b')
         parser.link_arguments('a.v2', 'b.v1')
+        def add(*args):
+            return sum(args)
+        parser.link_arguments(('a.v1', 'a.v2'), 'b.v2', add)
 
         cfg = parser.parse_args([])
         self.assertEqual(cfg.b.v1, cfg.a.v2)
-        self.assertEqual(7, parser.parse_args(['--a.v2=7']).b.v1)
+        self.assertEqual(cfg.b.v2, cfg.a.v1+cfg.a.v2)
+        cfg = parser.parse_args(['--a.v1=11', '--a.v2=7'])
+        self.assertEqual(7, cfg.b.v1)
+        self.assertEqual(11+7, cfg.b.v2)
         self.assertEqual(Namespace(), parser.parse_args([], defaults=False))
 
         self.assertRaises(ParserError, lambda: parser.parse_args(['--b.v1=5']))
         self.assertRaises(ValueError, lambda: parser.link_arguments('a.v2', 'b.v1'))
         self.assertRaises(ValueError, lambda: parser.link_arguments('x', 'b.v2'))
         self.assertRaises(ValueError, lambda: parser.link_arguments('a.v1', 'x'))
+        self.assertRaises(ValueError, lambda: parser.link_arguments(('a.v1', 'a.v2'), 'b.v3'))
 
         help_str = StringIO()
         parser.print_help(help_str)
         self.assertIn('Linked arguments', help_str.getvalue())
         self.assertIn('b.v1 <= a.v2', help_str.getvalue())
+        self.assertIn('b.v2 <= add(a.v1, a.v2)', help_str.getvalue())
         if docstring_parser_support:
             self.assertIn('b v1 help', help_str.getvalue())
+
+
+    def test_link_arguments_subclasses(self):
+        class ClassA:
+            def __init__(
+                self,
+                v1: Union[int, str] = 1,
+                v2: Union[int, str] = 2,
+            ):
+                pass
+
+        from jsonargparse_tests import signatures_tests
+        setattr(signatures_tests, 'ClassA', ClassA)
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments(ClassA, 'a')
+        parser.add_subclass_arguments(calendar.Calendar, 'c')
+
+        def add(v1, v2):
+            return v1 + v2
+        parser.link_arguments(('a.init_args.v1', 'a.init_args.v2'), 'c.init_args.firstweekday', add)
+
+        a_value = {
+            'class_path': 'jsonargparse_tests.signatures_tests.ClassA',
+            'init_args': {'v2': 3},
+        }
+
+        cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
+        self.assertEqual(cfg.c.init_args.firstweekday, 4)
+        self.assertEqual(cfg.c.init_args.firstweekday, cfg.a.init_args.v1+cfg.a.init_args.v2)
+
+        self.assertRaises(ValueError, lambda: parser.link_arguments('a.init_args.v1', 'c'))
+
+        a_value['init_args'] = {'v1': 'a', 'v2': 'b'}
+        with self.assertRaises(ParserError):
+            parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
 
 
 class SignaturesConfigTests(TempDirTestCase):

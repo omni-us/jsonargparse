@@ -543,8 +543,10 @@ This can be done by initializing :class:`.ArgumentParser` with
 :ref:`logging`.
 
 Some use cases could require adding arguments from multiple classes and be
-desired that some parameters get exactly the same value. This behavior can be
-obtained by using the :py:meth:`.ArgumentParser.link_arguments` method.
+desired that some parameters get a value automatically computed from other
+arguments. This behavior can be obtained by using the
+:py:meth:`.ArgumentParser.link_arguments` method. One or more source keys are
+given and an optional function to compute the target value from the source(s).
 
 For all features described above to work, one optional package is required:
 `docstring-parser <https://pypi.org/project/docstring-parser/>`__ to get the

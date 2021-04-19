@@ -82,6 +82,8 @@ def get_key_value_from_flat_dict(cfg, key):
 def update_key_value_in_flat_dict(cfg, key, value):
     if isinstance(value, dict):
         value = vars(_dict_to_flat_namespace(value))
+        if key in cfg:
+            del cfg[key]
         cfg.update({key+'.'+k: v for k, v in value.items()})
     else:
         cfg[key] = value

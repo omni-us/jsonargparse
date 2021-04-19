@@ -3,7 +3,7 @@
 from argparse import _HelpAction, HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 from enum import Enum
 
-from .actions import ActionYesNo, ActionConfigFile
+from .actions import ActionConfigFile, ActionYesNo, _ActionLink
 from .typehints import ActionTypeHint, type_to_str
 from .util import _get_env_var, _get_key_value
 
@@ -89,3 +89,8 @@ class DefaultHelpFormatter(HelpFormatter):
         elif isinstance(action, ActionTypeHint):
             type_str = type_to_str(action._typehint)
         return type_str
+
+
+    def add_usage(self, usage, actions, groups, prefix=None):
+        actions = [a for a in actions if not isinstance(a, _ActionLink)]
+        super().add_usage(usage, actions, groups, prefix=prefix)

@@ -110,6 +110,8 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def is_subclass_typehint(typehint):
+        if isinstance(typehint, Action):
+            typehint = getattr(typehint, '_typehint', None)
         return inspect.isclass(typehint) and typehint not in leaf_types
 
 
@@ -302,21 +304,19 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
                 val_class = import_object(val['class_path'])
             if not _issubclass(val_class, typehint):
                 raise ValueError('"'+val['class_path']+'" is not a subclass of '+typehint.__name__)
-            init_args = {}
-            if 'init_args' in val:
-                from jsonargparse import ArgumentParser
-                parser = ArgumentParser(error_handler=None, parse_as_dict=True)
-                parser.add_class_arguments(val_class)
-                if serialize:
-                    val['init_args'] = yaml.safe_load(parser.dump(val['init_args']))
-                else:
-                    val['init_args'] = parser.parse_object(val['init_args'], defaults=False)
-                if instantiate_classes:
-                    init_args = parser.instantiate_subclasses(val['init_args'])
+            from .core import ArgumentParser
+            parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+            parser.add_class_arguments(val_class)
+            if serialize and 'init_args' in val:
+                val['init_args'] = yaml.safe_load(parser.dump(val['init_args']))
+            else:
+                val['init_args'] = parser.parse_object(val.get('init_args', {}))
             if instantiate_classes:
+                init_args = parser.instantiate_subclasses(val['init_args'])
                 val = val_class(**init_args)
         except (ImportError, ModuleNotFound, AttributeError, AssertionError, ParserError) as ex:
-            raise ValueError('Problem with given class_path "'+val['class_path']+'" :: '+str(ex)) from ex
+            class_path = val if isinstance(val, str) else val['class_path']
+            raise ValueError('Problem with given class_path "'+class_path+'" :: '+str(ex)) from ex
 
     return val
 
