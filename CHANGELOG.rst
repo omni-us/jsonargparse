@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.X.X (2021-??-??)
+-------------------
+
+Fixed
+^^^^^
+- --*.help option being added for non-subclass types.
+
+
 v3.10.0 (2021-04-19)
 --------------------
 

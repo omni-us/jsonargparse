@@ -112,7 +112,7 @@ class ActionTypeHint(Action):
     def is_subclass_typehint(typehint):
         if isinstance(typehint, Action):
             typehint = getattr(typehint, '_typehint', None)
-        return inspect.isclass(typehint) and typehint not in leaf_types
+        return inspect.isclass(typehint) and typehint not in leaf_types.union(root_types)
 
 
     @staticmethod
