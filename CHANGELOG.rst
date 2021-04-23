@@ -13,6 +13,11 @@ section of releases.
 v3.X.X (2021-??-??)
 -------------------
 
+Changed
+^^^^^^^
+- fail_untyped now adds parameters as type Any and if no default then
+  default set to None.
+
 Fixed
 ^^^^^
 - --*.help option being added for non-subclass types.

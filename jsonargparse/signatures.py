@@ -2,7 +2,7 @@
 
 import inspect
 import re
-from typing import Callable, Container, Optional, Type, Union
+from typing import Any, Callable, Container, Optional, Type, Union
 
 from .actions import _ActionConfigLoad, _ActionHelpClassPath
 from .typehints import ActionTypeHint, is_optional
@@ -230,8 +230,12 @@ class SignatureArguments:
                 default = param.default
                 is_required = default == inspect._empty  # type: ignore
                 skip_message = 'Skipping parameter "'+name+'" from "'+obj.__name__+'" because of: '
+                if not fail_untyped and annotation == inspect._empty:  # type: ignore
+                    annotation = Any
+                    default = None if is_required else default
+                    is_required = False
                 if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
-                   (is_required and skip_first and num == 0) or \
+                   (skip_first and num == 0) or \
                    (not is_required and name[0] == '_') or \
                    (annotation == inspect._empty and not is_required and default is None):  # type: ignore
                     continue
@@ -274,6 +278,8 @@ class SignatureArguments:
                         opt_str = dest if is_required and as_positional else '--'+dest
                         if is_subclass_typehint:
                             group.add_argument('--'+dest+'.help', action=_ActionHelpClassPath(baseclass=annotation))
+                        if opt_str in group._option_string_actions:
+                            continue  # temporal
                         group.add_argument(opt_str, **kwargs)
                         added_args.add(dest)
                 elif is_required and fail_untyped:
