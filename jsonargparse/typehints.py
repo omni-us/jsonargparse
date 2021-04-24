@@ -5,6 +5,8 @@ import os
 import re
 import yaml
 from argparse import Action
+from collections.abc import Iterable as abcIterable
+from collections.abc import Sequence as abcSequence
 from enum import Enum
 from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple, Type, Union
 
@@ -40,7 +42,7 @@ root_types = {
     Any,
     Literal,
     Union,
-    List, list, Iterable, Sequence,
+    List, list, Iterable, Sequence, abcIterable, abcSequence,
     Tuple, tuple,
     Set, set,
     Dict, dict,
@@ -274,7 +276,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
             val = tuple(val) if typehint_origin in {Tuple, tuple} else set(val)
 
     # List, Iterable or Sequence
-    elif typehint_origin in {List, list, Iterable, Sequence}:
+    elif typehint_origin in {List, list, Iterable, Sequence, abcIterable, abcSequence}:
         if not isinstance(val, list):
             raise ValueError('Expected a List but got "'+str(val)+'"')
         if subtypehints is not None:

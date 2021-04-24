@@ -15,12 +15,13 @@ v3.X.X (2021-??-??)
 
 Changed
 ^^^^^^^
-- fail_untyped now adds parameters as type Any and if no default then
-  default set to None.
+- fail_untyped now adds untyped parameters as type Any and if no default
+  then default set to None.
 
 Fixed
 ^^^^^
 - --*.help option being added for non-subclass types.
+- Iterable and Sequence types not working for python>=3.7 #53.
 
 
 v3.10.0 (2021-04-19)

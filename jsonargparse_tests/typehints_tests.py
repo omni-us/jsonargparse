@@ -9,7 +9,7 @@ import yaml
 from calendar import Calendar
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from jsonargparse_tests.base import *
 from jsonargparse.typehints import is_optional, Literal
 
@@ -68,6 +68,15 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(' abc ', parser.parse_args(['--op= abc ']).op)
         self.assertEqual(' ', parser.parse_args(['--cfg={"op":" "}']).op)
         self.assertIsNone(parser.parse_args(['--op=null']).op)
+
+
+    def test_list(self):
+        for list_type in [Iterable, List, Sequence]:
+            with self.subTest(str(list_type)):
+                parser = ArgumentParser()
+                parser.add_argument('--list', type=list_type[int])
+                cfg = parser.parse_args(['--list=[1, 2]'])
+                self.assertEqual([1, 2], cfg.list)
 
 
     def test_list_path(self):
