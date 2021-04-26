@@ -20,7 +20,6 @@ from .typehints import ActionTypeHint
 from .actions import (
     ActionParser,
     ActionConfigFile,
-    ActionPath,
     _ActionSubCommands,
     _ActionPrintConfig,
     _ActionConfigLoad,
@@ -696,6 +695,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             self.required_args.add(dest)
         subcommands._required = required  # type: ignore
         subcommands.required = False
+        subcommands.parent_parser = self  # type: ignore
         _find_action(self, dest)._env_prefix = self.env_prefix
         return subcommands
 
@@ -732,23 +732,22 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if not skip_check:
             self.check_config(cfg)
 
-        def cleanup_actions(cfg, actions):
+        def cleanup_actions(cfg, actions, prefix=''):
             for action in filter_default_actions(actions):
+                action_dest = prefix + action.dest
                 if (action.help == SUPPRESS and not isinstance(action, _ActionConfigLoad)) or \
                    isinstance(action, ActionConfigFile) or \
-                   (skip_none and action.dest in cfg and cfg[action.dest] is None):
-                    cfg.pop(action.dest, None)
-                elif isinstance(action, ActionPath):
-                    if cfg[action.dest] is not None:
-                        if isinstance(cfg[action.dest], list):
-                            cfg[action.dest] = [str(p) for p in cfg[action.dest]]
-                        else:
-                            cfg[action.dest] = str(cfg[action.dest])
+                   (skip_none and action_dest in cfg and cfg[action_dest] is None):
+                    cfg.pop(action_dest, None)
+                elif isinstance(action, _ActionSubCommands):
+                    cfg.pop(action_dest, None)
+                    for key, subparser in action.choices.items():
+                        cleanup_actions(cfg, subparser._actions, prefix=prefix+key+'.')
                 elif isinstance(action, ActionTypeHint):
-                    value = get_key_value_from_flat_dict(cfg, action.dest)
+                    value = get_key_value_from_flat_dict(cfg, action_dest)
                     if value is not None and value != {}:
-                        value = ActionTypeHint.serialize(value, action._typehint)
-                        update_key_value_in_flat_dict(cfg, action.dest, value)
+                        value = action.serialize(value)
+                        update_key_value_in_flat_dict(cfg, action_dest, value)
 
         cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
         cleanup_actions(cfg, self._actions)
@@ -870,6 +869,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     action = _find_action(self, dest, within_subcommands=True)
                     if action is None:
                         raise KeyError('No action for destination key "'+dest+'" to set its default.')
+                    if isinstance(action, tuple):
+                        action = action[0]
                     action.default = args[n][dest]
         if kwargs:
             self.set_defaults(kwargs)
@@ -1136,16 +1137,21 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         for key in keys:
             if key in seen_keys:
                 continue
-            action = _find_parent_action(self, key)
+            action = _find_parent_action(self, key, within_subcommands=True)
             if action is not None:
-                if action.dest == key:
-                    value = self._check_value_key(action, cfg[action.dest], action.dest, cfg)
-                    cfg[action.dest] = value
+                if isinstance(action, tuple):
+                    action, subcommand = action
+                    action_dest = subcommand+'.'+action.dest
                 else:
-                    value = get_key_value_from_flat_dict(cfg, action.dest)
-                    value = self._check_value_key(action, value, action.dest, cfg)
-                    update_key_value_in_flat_dict(cfg, action.dest, value)
-                    seen_keys.update(action.dest+'.'+k for k in value.keys())
+                    action_dest = action.dest
+                if action_dest == key:
+                    value = self._check_value_key(action, cfg[key], key, cfg)
+                    cfg[key] = value
+                else:
+                    value = get_key_value_from_flat_dict(cfg, action_dest)
+                    value = self._check_value_key(action, value, action_dest, cfg)
+                    update_key_value_in_flat_dict(cfg, action_dest, value)
+                    seen_keys.update(action_dest+'.'+k for k in value.keys())
 
 
     @staticmethod

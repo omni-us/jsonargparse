@@ -92,5 +92,80 @@ class DeprecatedTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: ActionOperators(expr=[('<', 5), ('>=', 10)], join='xor'))
 
 
+class DeprecatedTempDirTests(TempDirTestCase):
+
+    def test_ActionPath(self):
+        os.mkdir(os.path.join(self.tmpdir, 'example'))
+        rel_yaml_file = os.path.join('..', 'example', 'example.yaml')
+        abs_yaml_file = os.path.realpath(os.path.join(self.tmpdir, 'example', rel_yaml_file))
+        with open(abs_yaml_file, 'w') as output_file:
+            output_file.write('file: '+rel_yaml_file+'\ndir: '+self.tmpdir+'\n')
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        parser.add_argument('--file', action=ActionPath(mode='fr'))
+        parser.add_argument('--dir', action=ActionPath(mode='drw'))
+        parser.add_argument('--files', nargs='+', action=ActionPath(mode='fr'))
+
+        cfg = parser.parse_args(['--cfg', abs_yaml_file])
+        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=False)))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=True)))
+        self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', abs_yaml_file+'~']))
+
+        cfg = parser.parse_args(['--cfg', 'file: '+abs_yaml_file+'\ndir: '+self.tmpdir+'\n'])
+        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
+        self.assertEqual(None, cfg.cfg[0])
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '{"k":"v"}']))
+
+        cfg = parser.parse_args(['--file', abs_yaml_file, '--dir', self.tmpdir])
+        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--dir', abs_yaml_file]))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--file', self.tmpdir]))
+
+        cfg = parser.parse_args(['--files', abs_yaml_file, abs_yaml_file])
+        self.assertTrue(isinstance(cfg.files, list))
+        self.assertEqual(2, len(cfg.files))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.files[-1](absolute=True)))
+
+        self.assertRaises(TypeError, lambda: parser.add_argument('--op1', action=ActionPath))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPath(mode='+')))
+        self.assertRaises(ValueError, lambda: parser.add_argument('--op4', type=str, action=ActionPath(mode='fr')))
+
+
+    def test_ActionPath_skip_check(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--file', action=ActionPath(mode='fr', skip_check=True))
+        cfg = parser.parse_args(['--file=not-exist'])
+        self.assertIsInstance(cfg.file, Path)
+        self.assertEqual(str(cfg.file), 'not-exist')
+        self.assertEqual(parser.dump(cfg), 'file: not-exist\n')
+        self.assertTrue(repr(cfg.file).startswith('Path_fr_skip_check'))
+
+
+    def test_ActionPath_dump(self):
+        parser = ArgumentParser()
+        parser.add_argument('--path', action=ActionPath(mode='fc'))
+        cfg = parser.parse_string('path: path')
+        self.assertEqual(parser.dump(cfg), 'path: path\n')
+
+        parser = ArgumentParser()
+        parser.add_argument('--paths', nargs='+', action=ActionPath(mode='fc'))
+        cfg = parser.parse_args(['--paths', 'path1', 'path2'])
+        self.assertEqual(parser.dump(cfg), 'paths:\n- path1\n- path2\n')
+
+
+    def test_ActionPath_nargs_questionmark(self):
+        parser = ArgumentParser()
+        parser.add_argument('val', type=int)
+        parser.add_argument('path', nargs='?', action=ActionPath(mode='fc'))
+        self.assertIsNone(parser.parse_args(['1']).path)
+        self.assertIsNotNone(parser.parse_args(['2', 'file']).path)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

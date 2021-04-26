@@ -79,15 +79,6 @@ class TypeHintsTests(unittest.TestCase):
                 self.assertEqual([1, 2], cfg.list)
 
 
-    def test_list_path(self):
-        parser = ArgumentParser()
-        parser.add_argument('--paths', type=List[Path_fc])
-        cfg = parser.parse_args(['--paths=["file1", "file2"]'])
-        self.assertEqual(['file1', 'file2'], cfg.paths)
-        self.assertIsInstance(cfg.paths[0], Path)
-        self.assertIsInstance(cfg.paths[1], Path)
-
-
     def test_list_enum(self):
         class MyEnum(Enum):
             ab = 0
@@ -293,9 +284,10 @@ class TypeHintsTests(unittest.TestCase):
 
 
     def test_typehint_serialize_list(self):
-        val = [PositiveInt(1), PositiveInt(2)]
-        self.assertEqual([1, 2], ActionTypeHint.serialize(val, Union[PositiveInt, List[PositiveInt]]))
-        self.assertRaises(ValueError, lambda: ActionTypeHint.serialize([1, -2], List[PositiveInt]))  # type: ignore
+        parser = ArgumentParser()
+        action = parser.add_argument('--list', type=Union[PositiveInt, List[PositiveInt]])
+        self.assertEqual([1, 2], action.serialize([PositiveInt(1), PositiveInt(2)]))
+        self.assertRaises(ValueError, lambda: action.serialize([1, -2]))
 
 
     def test_typehint_serialize_enum(self):
@@ -304,13 +296,24 @@ class TypeHintsTests(unittest.TestCase):
             a = 1
             b = 2
 
-        self.assertEqual('b', ActionTypeHint.serialize(MyEnum.b, Optional[MyEnum]))
-        self.assertRaises(ValueError, lambda: ActionTypeHint.serialize('x', Optional[MyEnum]))
+        parser = ArgumentParser()
+        action = parser.add_argument('--enum', type=Optional[MyEnum])
+        self.assertEqual('b', action.serialize(MyEnum.b))
+        self.assertRaises(ValueError, lambda: action.serialize('x'))
 
 
     def test_unsupported_type(self):
         self.assertRaises(ValueError, lambda: ActionTypeHint(typehint=lambda: None))
         self.assertRaises(ValueError, lambda: ActionTypeHint(typehint=Union[int, lambda: None]))
+
+
+    def test_nargs_questionmark(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('p1')
+        parser.add_argument('p2', nargs='?', type=OpenUnitInterval)
+        self.assertIsNone(parser.parse_args(['a']).p2)
+        self.assertEqual(0.5, parser.parse_args(['a', '0.5']).p2)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['a', 'b']))
 
 
     def test_register_type(self):
@@ -332,6 +335,49 @@ class TypeHintsTests(unittest.TestCase):
 
 
 class TypeHintsTmpdirTests(TempDirTestCase):
+
+    def test_path(self):
+        os.mkdir(os.path.join(self.tmpdir, 'example'))
+        rel_yaml_file = os.path.join('..', 'example', 'example.yaml')
+        abs_yaml_file = os.path.realpath(os.path.join(self.tmpdir, 'example', rel_yaml_file))
+        with open(abs_yaml_file, 'w') as output_file:
+            output_file.write('file: '+rel_yaml_file+'\ndir: '+self.tmpdir+'\n')
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        parser.add_argument('--file', type=Path_fr)
+        parser.add_argument('--dir', type=Path_drw)
+        parser.add_argument('--files', nargs='+', type=Path_fr)
+
+        cfg = parser.parse_args(['--cfg', abs_yaml_file])
+        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir()))
+        self.assertEqual(rel_yaml_file, str(cfg.file))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file()))
+
+        cfg = parser.parse_args(['--cfg', 'file: '+abs_yaml_file+'\ndir: '+self.tmpdir+'\n'])
+        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir()))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file()))
+
+        cfg = parser.parse_args(['--file', abs_yaml_file, '--dir', self.tmpdir])
+        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir()))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file()))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--dir', abs_yaml_file]))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--file', self.tmpdir]))
+
+        cfg = parser.parse_args(['--files', abs_yaml_file, abs_yaml_file])
+        self.assertTrue(isinstance(cfg.files, list))
+        self.assertEqual(2, len(cfg.files))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.files[-1]()))
+
+
+    def test_list_path(self):
+        parser = ArgumentParser()
+        parser.add_argument('--paths', type=List[Path_fc])
+        cfg = parser.parse_args(['--paths=["file1", "file2"]'])
+        self.assertEqual(['file1', 'file2'], cfg.paths)
+        self.assertIsInstance(cfg.paths[0], Path)
+        self.assertIsInstance(cfg.paths[1], Path)
+
 
     def test_optional_path(self):
         pathlib.Path('file_fr').touch()

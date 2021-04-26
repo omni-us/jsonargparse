@@ -3,7 +3,6 @@
 import operator
 import re
 import uuid
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 from .util import import_object, _issubclass, Path
 
@@ -26,6 +25,7 @@ __all__ = [
     'Path_fc',
     'Path_dw',
     'Path_dc',
+    'Path_drw',
 ]
 
 
@@ -187,19 +187,26 @@ def restricted_string_type(
 def path_type(
     mode: str,
     docstring: Optional[str] = None,
+    skip_check: bool = False,
 ) -> Type:
     """Creates or returns an already registered path type class.
 
     Args:
         mode: The required type and access permissions among [fdrwxcuFDRWX].
         docstring: Docstring for the type class.
+        skip_check: Whether to skip path checks.
 
     Returns:
         The created or retrieved type class.
     """
+    Path._check_mode(mode)
     name = 'Path_'+mode
+    key_name = 'path '+''.join(sorted(mode))
+    if skip_check:
+        name += '_skip_check'
+        key_name += ' skip_check'
 
-    register_key = ('path '+''.join(sorted(mode)), str)
+    register_key = (key_name, str)
     if register_key in registered_types:
         return registered_types[register_key]
 
@@ -207,10 +214,11 @@ def path_type(
 
         _expression = name
         _mode = mode
+        _skip_check = skip_check
         _type = str
 
         def __init__(self, v):
-            super().__init__(v, mode=self._mode)
+            super().__init__(v, mode=self._mode, skip_check=self._skip_check)
 
     restricted_type = type(name, (PathType, str), {})
     if docstring is not None:
@@ -307,6 +315,7 @@ Path_fr = path_type('fr', docstring='str pointing to a file that exists and is r
 Path_fc = path_type('fc', docstring='str pointing to a file that can be created if it does not exist')
 Path_dw = path_type('dw', docstring='str pointing to a directory that exists and is writeable')
 Path_dc = path_type('dc', docstring='str pointing to a directory that can be created if it does not exist')
+Path_drw = path_type('drw', docstring='str pointing to a directory that exists and is readable and writeable')
 
 register_type(complex)
 register_type(uuid.UUID)

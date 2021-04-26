@@ -411,13 +411,17 @@ class Path:
         self.cwd = cwd
         self.mode = mode
         self.is_url = is_url  # type: bool
+        self.skip_check = skip_check
 
     def __str__(self):
         return self.rel_path
 
     def __repr__(self):
-        cwd = '' if self.rel_path == self.abs_path else ', cwd='+self.cwd
-        return 'Path_'+self.mode+'('+self.rel_path+cwd+')'
+        cwd = '' if self.is_url or self.rel_path == self.abs_path else ', cwd='+self.cwd
+        name = 'Path_'+self.mode
+        if self.skip_check:
+            name += '_skip_check'
+        return name+'('+self.rel_path+cwd+')'
 
     def __call__(self, absolute:bool=True) -> str:
         """Returns the path as a string.

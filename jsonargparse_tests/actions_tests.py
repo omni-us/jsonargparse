@@ -64,12 +64,6 @@ class SimpleActionsTests(unittest.TestCase):
 
 class ActionPathTests(TempDirTestCase):
 
-    def test_ActionPath(self):
-        parser = ArgumentParser()
-        parser.add_argument('--path', nargs='?', action=ActionPath(mode='fc'))
-        self.assertIsNone(parser.parse_args(['--path']).path)
-
-
     def test_ActionPathList(self):
         tmpdir = os.path.join(self.tmpdir, 'subdir')
         os.mkdir(tmpdir)
@@ -99,11 +93,11 @@ class ActionPathTests(TempDirTestCase):
 
         cfg = parser.parse_args(['--list', list_file])
         self.assertEqual(4, len(cfg.list))
-        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [x(absolute=False) for x in cfg.list])
+        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [str(x) for x in cfg.list])
 
         cfg = parser.parse_args(['--list', list_file, list_file2])
         self.assertEqual(5, len(cfg.list))
-        self.assertEqual(['file1', 'file2', 'file3', 'file4', 'file5'], [x(absolute=False) for x in cfg.list])
+        self.assertEqual(['file1', 'file2', 'file3', 'file4', 'file5'], [str(x) for x in cfg.list])
 
         self.assertEqual(0, len(parser.parse_args(['--list', list_file3]).list))
 
@@ -111,7 +105,7 @@ class ActionPathTests(TempDirTestCase):
         os.chdir(tmpdir)
         cfg = parser.parse_args(['--list_cwd', list_file])
         self.assertEqual(4, len(cfg.list_cwd))
-        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [x(absolute=False) for x in cfg.list_cwd])
+        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [str(x) for x in cfg.list_cwd])
         os.chdir(cwd)
 
         self.assertRaises(ParserError, lambda: parser.parse_args(['--list']))

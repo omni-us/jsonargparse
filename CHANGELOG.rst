@@ -10,6 +10,31 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.11.0 (2021-??-??)
+--------------------
+
+Added
+^^^^^
+- CLI now has --config options at subcommand and subsubcommand levels.
+- CLI now adds subcommands with help string taken from docstrings.
+- print_config at subcommand level for global config with implicit subcommands.
+- New Path_drw predefined type.
+- Type hint arguments now support nargs='?'.
+
+Changed
+^^^^^^^
+- Removed skip_check from ActionPathList which was never implemented.
+
+Deprecated
+^^^^^^^^^^
+- ActionPath should no longer be used, instead paths are given as type.
+
+Fixed
+^^^^^
+- Actions not being applied for subsubcommand values.
+- handle_subcommands not correctly inferring subsubcommand.
+
+
 v3.10.1 (2021-04-24)
 --------------------
 

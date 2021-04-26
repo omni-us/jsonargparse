@@ -4,6 +4,7 @@ import inspect
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 from .actions import ActionConfigFile
 from .core import ArgumentParser
+from .optionals import docstring_parser_support, import_docstring_parse
 
 
 __all__ = ['CLI']
@@ -60,7 +61,7 @@ def CLI(
 
     if len(components) == 1:
         component = components[0]
-        _add_component_to_parser(component, parser, as_positional)
+        _add_component_to_parser(component, parser, as_positional, config_help)
         if set_defaults is not None:
             parser.set_defaults(set_defaults)
         if return_parser:
@@ -72,8 +73,9 @@ def CLI(
     comp_dict = {c.__name__: c for c in components}
     for name, component in comp_dict.items():
         subparser = ArgumentParser()
-        subcommands.add_subcommand(name, subparser)  # type: ignore
-        _add_component_to_parser(component, subparser, as_positional)
+        subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
+        subcommands.add_subcommand(name, subparser, help=_get_help_str(component))  # type: ignore
+        _add_component_to_parser(component, subparser, as_positional, config_help)
 
     if set_defaults is not None:
         parser.set_defaults(set_defaults)
@@ -85,7 +87,21 @@ def CLI(
     return _run_component(component, cfg.get(subcommand))
 
 
-def _add_component_to_parser(component, parser, as_positional):
+def _get_help_str(component):
+    help_str = str(component)
+    if docstring_parser_support:
+        docstring_parse = import_docstring_parse('_get_help_str')
+        description = None
+        if inspect.isclass(component):
+            description = docstring_parse(component.__init__.__doc__).short_description
+        if description is None:
+            description = docstring_parse(component.__doc__).short_description
+        if description is not None:
+            help_str = description
+    return help_str
+
+
+def _add_component_to_parser(component, parser, as_positional, config_help):
     if inspect.isfunction(component):
         parser.add_function_arguments(component, as_positional=as_positional)
     else:
@@ -93,16 +109,17 @@ def _add_component_to_parser(component, parser, as_positional):
         subcommands = parser.add_subcommands(required=True)
         for key in [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != '_']:
             subparser = ArgumentParser()
+            subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
             subparser.add_method_arguments(component, key, as_positional=as_positional)
-            subcommands.add_subcommand(key, subparser)
+            subcommands.add_subcommand(key, subparser, help=_get_help_str(getattr(component, key)))
 
 
 def _run_component(component, cfg):
-    if 'config' in cfg:
-        del cfg['config']
+    cfg.pop('config', None)
     if inspect.isfunction(component):
         return component(**cfg)
     subcommand = cfg.pop('subcommand')
     subcommand_cfg = cfg.pop(subcommand, {})
+    subcommand_cfg.pop('config', None)
     component_obj = component(**cfg)
     return getattr(component_obj, subcommand)(**subcommand_cfg)

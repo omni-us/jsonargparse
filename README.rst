@@ -907,8 +907,8 @@ path could be included in a config file as relative with respect to the config
 file's location. After parsing it should be easy to access the parsed file path
 without having to consider the location of the config file. To help in these
 situations jsonargparse includes a type generator :func:`.path_type`, some
-predefined types (e.g. :class:`.Path_fr`) and the :class:`.ActionPath` and
-:class:`.ActionPathList` classes.
+predefined types (e.g. :class:`.Path_fr`) and the :class:`.ActionPathList`
+class.
 
 For example suppose you have a directory with a configuration file
 :code:`app/config.yaml` and some data :code:`app/data/info.db`. The contents of
@@ -956,10 +956,6 @@ class.
 The content of a file that a :class:`.Path` instance references can be read by
 using the :py:meth:`.Path.get_content` method. For the previous example would be
 :code:`info_db = cfg.databases.info.get_content()`.
-
-Adding arguments with path types is equivalent to adding using for example
-:code:`action=ActionPath(mode='fr')` instead of a :code:`type=Path_fr`. However,
-the type option is preferred.
 
 An argument with a path type can be given :code:`nargs='+'` to parse multiple
 paths. But it might also be wanted to parse a list of paths found in a plain

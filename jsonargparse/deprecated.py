@@ -2,20 +2,21 @@
 
 from enum import Enum
 from .typehints import ActionTypeHint
-from .typing import restricted_number_type, registered_types
+from .typing import path_type, restricted_number_type, registered_types
 from .util import _issubclass
 
 
 __all__ = [
     'ActionEnum',
     'ActionOperators',
+    'ActionPath',
 ]
 
 
 class ActionEnum:
     """DEPRECATED: An action based on an Enum that maps to-from strings and enum values.
 
-    Enums now are intended to be given directly as a type.
+    Enums now should be given directly as a type.
     """
 
     def __init__(self, **kwargs):
@@ -52,4 +53,23 @@ class ActionOperators:
     def __call__(self, *args, **kwargs):
         if 'type' in kwargs:
             raise ValueError('ActionOperators does not allow type given to add_argument.')
+        return ActionTypeHint(typehint=self._type)(**kwargs)
+
+
+class ActionPath:
+    """DEPRECATED: Action to check and store a path.
+
+    Paths now should be given directly as a type.
+    """
+
+    def __init__(
+        self,
+        mode: str,
+        skip_check: bool = False,
+    ):
+        self._type = path_type(mode, skip_check=skip_check)
+
+    def __call__(self, *args, **kwargs):
+        if 'type' in kwargs:
+            raise ValueError('ActionPath does not allow type given to add_argument.')
         return ActionTypeHint(typehint=self._type)(**kwargs)

@@ -117,9 +117,10 @@ class ActionTypeHint(Action):
         return inspect.isclass(typehint) and typehint not in leaf_types.union(root_types)
 
 
-    @staticmethod
-    def serialize(value, typehint):
-        return adapt_typehints(value, typehint, serialize=True)
+    def serialize(self, value):
+        if _is_action_value_list(self):
+            return [adapt_typehints(v, self._typehint, serialize=True) for v in value]
+        return adapt_typehints(value, self._typehint, serialize=True)
 
 
     def __call__(self, *args, **kwargs):
@@ -134,7 +135,10 @@ class ActionTypeHint(Action):
             if 'nargs' in kwargs and kwargs['nargs'] == 0:
                 raise ValueError('ActionTypeHint does not allow nargs=0.')
             return ActionTypeHint(**kwargs)
-        val = self._check_type(args[2])
+        if self.nargs == '?' and args[2] is None:
+            val = None
+        else:
+            val = self._check_type(args[2])
         setattr(args[1], self.dest, val)
 
 

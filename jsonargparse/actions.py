@@ -9,6 +9,7 @@ from typing import Callable, Tuple, Type, Union
 from argparse import Namespace, Action, SUPPRESS, _HelpAction, _SubParsersAction
 
 from .optionals import get_config_read_mode, FilesCompleterMethod
+from .typing import path_type
 from .util import (
     yamlParserError,
     yamlScannerError,
@@ -29,7 +30,6 @@ __all__ = [
     'ActionConfigFile',
     'ActionYesNo',
     'ActionParser',
-    'ActionPath',
     'ActionPathList',
 ]
 
@@ -56,16 +56,20 @@ def _find_action(parser, dest:str, within_subcommands:bool=False, exclude=None):
             elif within_subcommands and dest.split('.', 1)[0] in action._name_parser_map:
                 subcommand, subdest = dest.split('.', 1)
                 subparser = action._name_parser_map[subcommand]
-                return _find_action(subparser, subdest, True, exclude=exclude)
+                subaction = _find_action(subparser, subdest, True, exclude=exclude)
+                if isinstance(subaction, tuple):
+                    subaction, subsubcommand = subaction
+                    subcommand += '.'+subsubcommand
+                return None if subaction is None else (subaction, subcommand)
     return None
 
 
-def _find_parent_action(parser, key:str, exclude=None):
-    action = _find_action(parser, key, exclude=exclude)
+def _find_parent_action(parser, key:str, within_subcommands:bool=False, exclude=None):
+    action = _find_action(parser, key, within_subcommands=within_subcommands, exclude=exclude)
     if action is None and '.' in key:
         parts = key.split('.')
         for n in reversed(range(len(parts)-1)):
-            action = _find_action(parser, '.'.join(parts[:n+1]), exclude=exclude)
+            action = _find_action(parser, '.'.join(parts[:n+1]), within_subcommands=within_subcommands, exclude=exclude)
             if action is not None:
                 break
     return action
@@ -177,15 +181,24 @@ class _ActionPrintConfig(Action):
                          help='Print configuration and exit.')
 
     def __call__(self, parser, namespace, value, option_string=None):
-        kwargs = {'skip_none': False}
-        if value is not None and 'skip_null' in value:
+        kwargs = {'subparser': parser, 'key': None, 'skip_none': False, 'skip_check': True}
+        if value is not None:
+            if value not in {'skip_null', ''}:
+                raise ParserError('Invalid option "'+str(value)+'" for '+option_string)
             kwargs['skip_none'] = True
+        while hasattr(parser, 'parent_parser'):
+            kwargs['key'] = parser.subcommand if kwargs['key'] is None else parser.subcommand+'.'+kwargs['key']
+            parser = parser.parent_parser
         parser.print_config = kwargs
 
     @staticmethod
     def print_config_if_requested(parser, cfg):
         if hasattr(parser, 'print_config') and not hasattr(parser, 'print_config_skip'):
-            sys.stdout.write(parser.dump(cfg, skip_check=True, **parser.print_config))
+            key = parser.print_config.pop('key')
+            subparser = parser.print_config.pop('subparser')
+            if key is not None:
+                cfg = _get_key_value(cfg, key)
+            sys.stdout.write(subparser.dump(cfg, **parser.print_config))
             parser.exit()
 
 
@@ -541,7 +554,8 @@ class _ActionSubCommands(_SubParsersAction):
 
         parser.prog = '%s [options] %s' % (self._prog_prefix, name)
         parser.env_prefix = self._env_prefix+'_'+name+'_'
-        _remove_actions(parser, _ActionPrintConfig)
+        parser.parent_parser = self.parent_parser
+        parser.subcommand = name
 
         # create a pseudo-action to hold the choice help
         aliases = kwargs.pop('aliases', ())
@@ -598,7 +612,7 @@ class _ActionSubCommands(_SubParsersAction):
             subcommand = cfg_dict[dest]
         else:
             for key in action.choices.keys():
-                if any([v.startswith(key+'.') for v in cfg_dict.keys()]):
+                if any([v.startswith(prefix+key+'.') for v in cfg_dict.keys()]):
                     subcommand = key
                     break
             cfg_dict[dest] = subcommand
@@ -628,73 +642,12 @@ class _ActionSubCommands(_SubParsersAction):
             _ActionSubCommands.handle_subcommands(subparser, cfg, env, defaults, prefix)
 
 
-class ActionPath(Action, FilesCompleterMethod):
-    """Action to check and store a path."""
-
-    def __init__(
-        self,
-        mode: str = None,
-        skip_check: bool = False,
-        **kwargs
-    ):
-        """Initializer for ActionPath instance.
-
-        Args:
-            mode: The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument, e.g. ActionPath(mode='drw').
-            skip_check: Whether to skip path checks.
-
-        Raises:
-            ValueError: If the mode parameter is invalid.
-        """
-        if mode is not None:
-            Path._check_mode(mode)
-            self._mode = mode
-            self._skip_check = skip_check
-        elif '_mode' not in kwargs:
-            raise ValueError('ActionPath expects mode keyword argument.')
-        else:
-            self._mode = kwargs.pop('_mode')
-            self._skip_check = kwargs.pop('_skip_check')
-            super().__init__(**kwargs)
-
-    def __call__(self, *args, **kwargs):
-        """Parses an argument as a Path and if valid sets the parsed value to the corresponding key.
-
-        Raises:
-            TypeError: If the argument is not a valid Path.
-        """
-        if len(args) == 0:
-            kwargs['_mode'] = self._mode
-            kwargs['_skip_check'] = self._skip_check
-            return ActionPath(**kwargs)
-        if hasattr(self, 'nargs') and self.nargs == '?' and args[2] is None:
-            setattr(args[1], self.dest, args[2])
-        else:
-            setattr(args[1], self.dest, self._check_type(args[2]))
-
-    def _check_type(self, value, cfg=None, islist=None):
-        islist = _is_action_value_list(self) if islist is None else islist
-        if not islist:
-            value = [value]
-        try:
-            for num, val in enumerate(value):
-                if isinstance(val, Path):
-                    val = Path(str(val), mode=self._mode, skip_check=self._skip_check, cwd=val.cwd)
-                else:
-                    val = Path(val, mode=self._mode, skip_check=self._skip_check)
-                value[num] = val
-        except TypeError as ex:
-            raise TypeError('Parser key "'+self.dest+'": '+str(ex)) from ex
-        return value if islist else value[0]
-
-
 class ActionPathList(Action, FilesCompleterMethod):
     """Action to check and store a list of file paths read from a plain text file or stream."""
 
     def __init__(
         self,
         mode: str = None,
-        skip_check: bool = False,
         rel: str = 'cwd',
         **kwargs
     ):
@@ -702,24 +655,20 @@ class ActionPathList(Action, FilesCompleterMethod):
 
         Args:
             mode: The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
-            skip_check: Whether to skip path checks.
             rel: Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list'.
 
         Raises:
             ValueError: If any of the parameters (mode or rel) are invalid.
         """
         if mode is not None:
-            Path._check_mode(mode)
-            self._mode = mode
-            self._skip_check = skip_check
+            self._type = path_type(mode)
             self._rel = rel
             if self._rel not in {'cwd', 'list'}:
                 raise ValueError('rel must be either "cwd" or "list", got '+str(self._rel)+'.')
-        elif '_mode' not in kwargs:
+        elif '_type' not in kwargs:
             raise ValueError('Expected mode keyword argument.')
         else:
-            self._mode = kwargs.pop('_mode')
-            self._skip_check = kwargs.pop('_skip_check')
+            self._type = kwargs.pop('_type')
             self._rel = kwargs.pop('_rel')
             super().__init__(**kwargs)
 
@@ -732,8 +681,7 @@ class ActionPathList(Action, FilesCompleterMethod):
         if len(args) == 0:
             if 'nargs' in kwargs and kwargs['nargs'] not in {'+', 1}:
                 raise ValueError('ActionPathList only supports nargs of 1 or "+".')
-            kwargs['_mode'] = self._mode
-            kwargs['_skip_check'] = self._skip_check
+            kwargs['_type'] = self._type
             kwargs['_rel'] = self._rel
             return ActionPathList(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
@@ -744,7 +692,7 @@ class ActionPathList(Action, FilesCompleterMethod):
         islist = _is_action_value_list(self)
         if not islist and not isinstance(value, list):
             value = [value]
-        if isinstance(value, list) and all(isinstance(v, str) for v in value):
+        if isinstance(value, list) and all(not isinstance(v, self._type) for v in value):
             path_list_files = value
             value = []
             for path_list_file in path_list_files:
@@ -759,12 +707,10 @@ class ActionPathList(Action, FilesCompleterMethod):
                 try:
                     for num, val in enumerate(path_list):
                         try:
-                            path_list[num] = Path(val, mode=self._mode)
+                            path_list[num] = self._type(val)
                         except TypeError as ex:
                             raise TypeError('Path number '+str(num+1)+' in list '+path_list_file+', '+str(ex)) from ex
                 finally:
                     os.chdir(cwd)
                 value += path_list
-            return value
-        else:
-            return ActionPath._check_type(self, value, islist=True)
+        return value

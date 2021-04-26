@@ -506,18 +506,6 @@ class OutputTests(TempDirTestCase):
         parser.dump(cfg2)
 
 
-    def test_dump_ActionPath(self):
-        parser = ArgumentParser()
-        parser.add_argument('--path', action=ActionPath(mode='fc'))
-        cfg = parser.parse_string('path: path')
-        self.assertEqual(parser.dump(cfg), 'path: path\n')
-
-        parser = ArgumentParser()
-        parser.add_argument('--paths', nargs='+', action=ActionPath(mode='fc'))
-        cfg = parser.parse_args(['--paths', 'path1', 'path2'])
-        self.assertEqual(parser.dump(cfg), 'paths:\n- path1\n- path2\n')
-
-
     def test_dump_restricted_string_type(self):
         parser = ArgumentParser()
         parser.add_argument('--str', type=NotEmptyStr)
@@ -544,6 +532,11 @@ class OutputTests(TempDirTestCase):
         parser.add_argument('--path', type=Path_fc)
         cfg = parser.parse_string('path: path')
         self.assertEqual(parser.dump(cfg), 'path: path\n')
+
+        parser = ArgumentParser()
+        parser.add_argument('--paths', nargs='+', type=Path_fc)
+        cfg = parser.parse_args(['--paths', 'path1', 'path2'])
+        self.assertEqual(parser.dump(cfg), 'paths:\n- path1\n- path2\n')
 
 
     def test_dump_formats(self):
@@ -698,7 +691,7 @@ class OutputTests(TempDirTestCase):
 
 
     def test_print_config(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--v0', help=SUPPRESS, default='0')
         parser.add_argument('--v1', help='Option v1.', default=1)
         parser.add_argument('--g1.v2', help='Option v2.', default='2')
@@ -719,6 +712,8 @@ class OutputTests(TempDirTestCase):
 
         outval = yaml.safe_load(out.getvalue())
         self.assertEqual(outval, {'g1': {'v2': '2'}, 'v1': 1})
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--print_config=bad']))
 
 
 class ConfigFilesTests(TempDirTestCase):
@@ -759,60 +754,37 @@ class ConfigFilesTests(TempDirTestCase):
             self.assertEqual(parser.get_default('op1'), 'from default')
 
 
-    def test_ActionConfigFile_and_ActionPath(self):
-        os.mkdir(os.path.join(self.tmpdir, 'example'))
-        rel_yaml_file = os.path.join('..', 'example', 'example.yaml')
-        abs_yaml_file = os.path.realpath(os.path.join(self.tmpdir, 'example', rel_yaml_file))
+    def test_ActionConfigFile(self):
+        os.mkdir(os.path.join(self.tmpdir, 'subdir'))
+        rel_yaml_file = os.path.join('subdir', 'config.yaml')
+        abs_yaml_file = os.path.realpath(os.path.join(self.tmpdir, rel_yaml_file))
         with open(abs_yaml_file, 'w') as output_file:
-            output_file.write('file: '+rel_yaml_file+'\ndir: '+self.tmpdir+'\n')
+            output_file.write('val: yaml\n')
 
-        parser = ArgumentParser(prog='app', error_handler=None)
-        parser.add_argument('--cfg',
-            action=ActionConfigFile)
-        parser.add_argument('--file',
-            action=ActionPath(mode='fr'))
-        parser.add_argument('--dir',
-            action=ActionPath(mode='drw'))
-        parser.add_argument('--files',
-            nargs='+',
-            action=ActionPath(mode='fr'))
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        parser.add_argument('--val')
 
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '"""']))
+        cfg = parser.parse_args(['--cfg', abs_yaml_file, '--cfg', rel_yaml_file, '--cfg', 'val: arg'])
+        self.assertEqual(3, len(cfg.cfg))
+        self.assertEqual('arg', cfg.val)
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0]()))
+        self.assertEqual(abs_yaml_file, os.path.realpath(str(cfg.cfg[0])))
+        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[1]()))
+        self.assertEqual(rel_yaml_file, str(cfg.cfg[1]))
+        self.assertEqual(None, cfg.cfg[2])
 
-        cfg = parser.parse_args(['--cfg', abs_yaml_file])
-        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=False)))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=True)))
-        self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', abs_yaml_file+'~']))
-
-        cfg = parser.parse_args(['--cfg', 'file: '+abs_yaml_file+'\ndir: '+self.tmpdir+'\n'])
-        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
-        self.assertEqual(None, cfg.cfg[0])
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '{"k":"v"}']))
-
-        cfg = parser.parse_args(['--file', abs_yaml_file, '--dir', self.tmpdir])
-        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--dir', abs_yaml_file]))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--file', self.tmpdir]))
-
-        cfg = parser.parse_args(['--files', abs_yaml_file, abs_yaml_file])
-        self.assertTrue(isinstance(cfg.files, list))
-        self.assertEqual(2, len(cfg.files))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.files[-1](absolute=True)))
-
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPath))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPath()))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPath(mode='+')))
 
 
     def test_ActionConfigFile_failures(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         self.assertRaises(ValueError, lambda: parser.add_argument('--cfg', default='config.yaml', action=ActionConfigFile))
         self.assertRaises(ValueError, lambda: parser.add_argument('--nested.cfg', action=ActionConfigFile))
+
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '"""']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg=not-exist']))
 
 
 class OtherTests(unittest.TestCase):
