@@ -155,7 +155,7 @@ class ActionTypeHint(Action):
                     config_path = None
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 try:
-                    val = adapt_typehints(val, self._typehint)
+                    val = adapt_typehints(val, self._typehint, skip=getattr(self, 'skip', None))
                 except ValueError as ex:
                     if isinstance(val, (int, float)) and config_path is None:
                         val = adapt_typehints(orig_val, self._typehint)
@@ -202,9 +202,9 @@ class ActionTypeHint(Action):
             return argcomplete_warn_redraw_prompt(prefix, msg)
 
 
-def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
+def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, skip=None):
 
-    adapt_kwargs = {'serialize': serialize, 'instantiate_classes': instantiate_classes}
+    adapt_kwargs = {'serialize': serialize, 'instantiate_classes': instantiate_classes, 'skip': skip}
     subtypehints = getattr(typehint, '__args__', None)
     typehint_origin = getattr(typehint, '__origin__', typehint)
 
@@ -312,7 +312,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False):
                 raise ValueError('"'+val['class_path']+'" is not a subclass of '+typehint.__name__)
             from .core import ArgumentParser
             parser = ArgumentParser(error_handler=None, parse_as_dict=True)
-            parser.add_class_arguments(val_class)
+            parser.add_class_arguments(val_class, skip=skip)
             if serialize and 'init_args' in val:
                 val['init_args'] = yaml.safe_load(parser.dump(val['init_args']))
             else:

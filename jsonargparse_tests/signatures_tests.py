@@ -326,6 +326,29 @@ class SignaturesTests(unittest.TestCase):
             self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
 
 
+    def test_skip_within_subclass(self):
+
+        class Class1:
+            def __init__(self, a1: int = 1, a2: float = 2.3, a3: str = '4'):
+                self.a1 = a1
+                self.a2 = a2
+                self.a3 = a3
+
+        class Class2:
+            def __init__(self, c1: Class1, c2: int = 5, c3: float = 6.7):
+                pass
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(Class2, skip={'c1.init_args.a2', 'c2'})
+
+        from jsonargparse_tests import signatures_tests
+        setattr(signatures_tests, 'Class1', Class1)
+        class_path = 'jsonargparse_tests.signatures_tests.Class1'
+
+        cfg = parser.parse_args(['--c1='+class_path])
+        self.assertEqual(cfg.c1.init_args, Namespace(a1=1, a3='4'))
+
+
     def test_basic_subtypes(self):
 
         def func(a1: PositiveFloat = PositiveFloat(1),

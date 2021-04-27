@@ -2,7 +2,7 @@
 
 import inspect
 import re
-from typing import Any, Callable, Container, Optional, Type, Union
+from typing import Any, Callable, Optional, Set, Type, Union
 
 from .actions import _ActionConfigLoad, _ActionHelpClassPath
 from .typehints import ActionTypeHint, is_optional
@@ -31,7 +31,7 @@ class SignatureArguments:
         as_group: bool = True,
         as_positional: bool = False,
         required: bool = False,
-        skip: Optional[Container[str]] = None,
+        skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
     ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
@@ -77,7 +77,7 @@ class SignatureArguments:
         as_group: bool = True,
         as_positional: bool = False,
         required: bool = False,
-        skip: Optional[Container[str]] = None,
+        skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
     ) -> int:
         """Adds arguments from a class based on its type hints and docstrings.
@@ -126,7 +126,7 @@ class SignatureArguments:
         as_group: bool = True,
         as_positional: bool = False,
         required: bool = False,
-        skip: Optional[Container[str]] = None,
+        skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
     ) -> int:
         """Adds arguments from a function based on its type hints and docstrings.
@@ -168,7 +168,7 @@ class SignatureArguments:
         as_group: bool,
         as_positional: bool,
         required: bool,
-        skip: Optional[Container[str]],
+        skip: Optional[Set[str]],
         fail_untyped: bool,
         docs_func: Callable = lambda x: [x.__doc__],
         sign_func: Callable = lambda x: x,
@@ -278,9 +278,13 @@ class SignatureArguments:
                         opt_str = dest if is_required and as_positional else '--'+dest
                         if is_subclass_typehint:
                             group.add_argument('--'+dest+'.help', action=_ActionHelpClassPath(baseclass=annotation))
+                            init = name + '.init_args.'
+                            subclass_skip = {s[len(init):] for s in skip if s.startswith(init)}
                         if opt_str in group._option_string_actions:
                             continue  # temporal
-                        group.add_argument(opt_str, **kwargs)
+                        action = group.add_argument(opt_str, **kwargs)
+                        if is_subclass_typehint and len(subclass_skip) > 0:
+                            action.skip = subclass_skip
                         added_args.add(dest)
                 elif is_required and fail_untyped:
                     raise ValueError('Required parameter without a type for '+obj.__name__+' parameter '+name+'.')

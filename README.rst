@@ -536,11 +536,12 @@ arguments are:
   of :code:`*args` and :code:`**kwargs`. It does not check the code to identify
   if :code:`super().__init__` is called or with which arguments.
 
-Since keyword arguments with unsupported types are ignored, during development
-it might be desired to know which arguments are ignored and the specific reason.
-This can be done by initializing :class:`.ArgumentParser` with
-:code:`logger={'level': 'DEBUG'}`. For more details about logging go to section
-:ref:`logging`.
+- Arguments whose name starts with :code:`_` are considered for internal use
+  and ignored.
+
+- The signature methods have a :code:`skip` parameters which can be used to
+  exclude adding some arguments, e.g.
+  :code:`parser.add_method_arguments(MyClass, 'mymethod', skip={'flag'})`.
 
 Some use cases could require adding arguments from multiple classes and be
 desired that some parameters get a value automatically computed from other
@@ -548,11 +549,21 @@ arguments. This behavior can be obtained by using the
 :py:meth:`.ArgumentParser.link_arguments` method. One or more source keys are
 given and an optional function to compute the target value from the source(s).
 
-For all features described above to work, one optional package is required:
-`docstring-parser <https://pypi.org/project/docstring-parser/>`__ to get the
-argument descriptions from the docstrings. This package is included when
-jsonargparse is installed using the :code:`signatures` extras require as
-explained in section :ref:`installation`.
+.. note::
+
+    Since keyword arguments with unsupported types are ignored, during
+    development it might be desired to know which arguments are ignored and the
+    specific reason. This can be done by initializing :class:`.ArgumentParser`
+    with :code:`logger={'level': 'DEBUG'}`. For more details about logging go to
+    section :ref:`logging`.
+
+.. note::
+
+    For all features described above to work, one optional package is required:
+    `docstring-parser <https://pypi.org/project/docstring-parser/>`__ to get the
+    argument descriptions from the docstrings. This package is included when
+    jsonargparse is installed using the :code:`signatures` extras require as
+    explained in section :ref:`installation`.
 
 
 .. _type-hints:
@@ -668,59 +679,44 @@ a subclass of the given type and that :code:`init_args` values correspond to
 valid arguments to instantiate it. After parsing, the config object will include
 the :code:`class_path` and :code:`init_args` entries. To get a config object
 with all sub-classes instantiated, the
-:py:meth:`.ArgumentParser.instantiate_subclasses` method is used.
+:py:meth:`.ArgumentParser.instantiate_subclasses` method is used. The
+:code:`skip` parameter of the signature methods can also be used to exclude
+arguments within subclasses. This is done by giving its relative destination
+key, i.e. as :code:`param.init_args.subparam`.
 
 A simple example would be having some config file :code:`config.yaml` as:
 
 .. code-block:: yaml
 
-    calendar:
-      class_path: calendar.Calendar
-      init_args:
-        firstweekday: 1
+    myclass:
+      calendar:
+        class_path: calendar.Calendar
+        init_args:
+          firstweekday: 1
 
 Then in python:
 
 .. code-block:: python
 
     >>> from calendar import Calendar
+    >>> class MyClass:
+            def __init__(self, calendar: Calendar):
+                self.calendar = calendar
     >>> parser = ArgumentParser(parse_as_dict=True)
-    >>> parser.add_argument('--calendar', type=Calendar)
+    >>> parser.add_class_arguments(MyClass, 'myclass')
     >>> cfg = parser.parse_path('config.yaml')
-    >>> cfg['calendar']
+    >>> cfg['myclass']['calendar']
     {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
     >>> cfg = parser.instantiate_subclasses(cfg)
-    >>> cfg['calendar']
-    <calendar.Calendar object at 0x7ffa559aa940>
+    >>> cfg['myclass']['calendar'].getfirstweekday()
+    1
 
 In this example the :code:`class_path` points to the same class used for the
 type. But a subclass of :code:`Calendar` with an extended list of init
-parameters would also work.
-
-When using any of the methods described in :ref:`classes-methods-functions`,
-each argument with a class as the type can be given using a :code:`class_path`
-and :code:`init_args` pair.
-
-There is also another method
-:py:meth:`.SignatureArguments.add_subclass_arguments` which does the same as
-:code:`add_argument` in the example above, but has some added benefits: 1) the
-argument is added in a new group automatically; 2) the argument values can be
-given in an independent config file by specifying a path to it; 3) by default
-sets a useful :code:`metavar` and :code:`help` strings; and 4) a special
-:code:`--*.help` argument is added that can be used to show the expected
-:code:`init_args` details for a specific given :code:`class_path`. Take for
-example a tool defined as:
-
-.. code-block:: python
-
-    from calendar import Calendar
-    from jsonargparse import ArgumentParser
-    ...
-    parser = ArgumentParser()
-    parser.add_subclass_arguments(Calendar, 'calendar')
-    ...
-    cfg = parser.parse_args()
-    ...
+parameters would also work. The help of the parser does not show details for a
+type class since this depends on the subclass used. To get help details for a
+particular subclass there is a specific help option that receives the import
+path as follows:
 
 If there is some subclass of :code:`Calendar` which can be imported from
 :code:`mycode.MyCalendar`, then it would be possible to see the corresponding
@@ -728,7 +724,16 @@ If there is some subclass of :code:`Calendar` which can be imported from
 
 .. code-block:: bash
 
-    python tool.py --calendar.help mycode.MyCalendar
+    python tool.py --myclass.calendar.help mycode.MyCalendar
+
+
+An individual argument can also be added having as type a class, i.e.
+:code:`parser.add_argument('--calendar', type=Calendar)`. There is also another
+method :py:meth:`.SignatureArguments.add_subclass_arguments` which does the same
+as :code:`add_argument`, but has some added benefits: 1) the argument is added
+in a new group automatically; 2) the argument values can be given in an
+independent config file by specifying a path to it; and 3) by default sets a
+useful :code:`metavar` and :code:`help` strings.
 
 
 .. _sub-commands:

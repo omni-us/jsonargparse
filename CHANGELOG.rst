@@ -10,7 +10,7 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.11.0 (2021-??-??)
+v3.11.0 (2021-04-27)
 --------------------
 
 Added
@@ -20,6 +20,7 @@ Added
 - print_config at subcommand level for global config with implicit subcommands.
 - New Path_drw predefined type.
 - Type hint arguments now support nargs='?'.
+- Signature methods can now skip arguments within init_args of subclasses.
 
 Changed
 ^^^^^^^
