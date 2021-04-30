@@ -21,6 +21,10 @@ __all__ = [
 ]
 
 
+kinds = inspect._ParameterKind
+inspect_empty = inspect._empty  # type: ignore
+
+
 class SignatureArguments:
     """Methods to add arguments based on signatures to an ArgumentParser instance."""
 
@@ -30,7 +34,6 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        required: bool = False,
         skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
     ) -> int:
@@ -43,7 +46,6 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
@@ -61,7 +63,6 @@ class SignatureArguments:
                                              nested_key,
                                              as_group,
                                              as_positional,
-                                             required,
                                              skip,
                                              fail_untyped,
                                              get_class_init_and_base_docstrings,
@@ -76,7 +77,6 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        required: bool = False,
         skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
     ) -> int:
@@ -90,7 +90,6 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
@@ -113,7 +112,6 @@ class SignatureArguments:
                                              nested_key,
                                              as_group,
                                              as_positional,
-                                             required,
                                              skip,
                                              fail_untyped,
                                              skip_first=skip_first)
@@ -125,7 +123,6 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        required: bool = False,
         skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
     ) -> int:
@@ -138,7 +135,6 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
@@ -156,7 +152,6 @@ class SignatureArguments:
                                              nested_key,
                                              as_group,
                                              as_positional,
-                                             required,
                                              skip,
                                              fail_untyped)
 
@@ -167,7 +162,6 @@ class SignatureArguments:
         nested_key: Optional[str],
         as_group: bool,
         as_positional: bool,
-        required: bool,
         skip: Optional[Set[str]],
         fail_untyped: bool,
         docs_func: Callable = lambda x: [x.__doc__],
@@ -181,7 +175,6 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            required: Whether the argument group is required.
             skip: Names of parameters that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
             docs_func: Function that returns docstrings for a given object.
@@ -194,7 +187,6 @@ class SignatureArguments:
         Raises:
             ValueError: When there are required parameters without at least one valid type.
         """
-        kinds = inspect._ParameterKind
 
         def update_has_args_kwargs(base, has_args=True, has_kwargs=True):
             params = list(inspect.signature(sign_func(base)).parameters.values())
@@ -216,80 +208,110 @@ class SignatureArguments:
         doc_group, doc_params = self._gather_docstrings(objects, docs_func)
 
         ## Create group if requested ##
-        group = self._create_group_if_requested(objects[0], nested_key, as_group, required, doc_group)
+        group = self._create_group_if_requested(objects[0], nested_key, as_group, doc_group)
 
         ## Add objects arguments ##
-        added_args = set()
+        added_args = set()  # type: Set[str]
         if skip is None:
             skip = set()
         for obj, (add_args, add_kwargs) in zip(objects, add_types):
             for num, param in enumerate(inspect.signature(sign_func(obj)).parameters.values()):
-                name = param.name
-                kind = param._kind  # type: ignore
-                annotation = param.annotation
-                default = param.default
-                is_required = default == inspect._empty  # type: ignore
-                skip_message = 'Skipping parameter "'+name+'" from "'+obj.__name__+'" because of: '
-                if not fail_untyped and annotation == inspect._empty:  # type: ignore
-                    annotation = Any
-                    default = None if is_required else default
-                    is_required = False
-                if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
-                   (skip_first and num == 0) or \
-                   (not is_required and name[0] == '_') or \
-                   (annotation == inspect._empty and not is_required and default is None):  # type: ignore
+                if skip_first and num == 0:
                     continue
-                elif is_required and not add_args:
-                    self.logger.debug(skip_message+'Positional parameter but *args not propagated.')  # type: ignore
-                    continue
-                elif not is_required and not add_kwargs:
-                    self.logger.debug(skip_message+'Keyword parameter but **kwargs not propagated.')  # type: ignore
-                    continue
-                elif name in skip:
-                    self.logger.debug(skip_message+'Parameter requested to be skipped.')  # type: ignore
-                    continue
-                if is_factory_class(default):
-                    default = obj.__dataclass_fields__[name].default_factory()
-                if annotation == inspect._empty and not is_required:  # type: ignore
-                    annotation = type(default)
-                kwargs = {'help': doc_params.get(name)}
-                if not is_required:
-                    kwargs['default'] = default
-                    if default is None and not is_optional(annotation, object):
-                        annotation = Optional[annotation]
-                elif not as_positional:
-                    kwargs['required'] = True
-                is_subclass_typehint = False
-                if annotation in {str, int, float, bool} or \
-                   _issubclass(annotation, (str, int, float)) or \
-                   is_pure_dataclass(annotation):
-                    kwargs['type'] = annotation
-                elif annotation != inspect._empty:  # type: ignore
-                    try:
-                        kwargs['action'] = ActionTypeHint(typehint=annotation)
-                        is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation)
-                    except ValueError as ex:
-                        self.logger.debug(skip_message+str(ex))  # type: ignore
-                if 'type' in kwargs or 'action' in kwargs:
-                    dest = (nested_key+'.' if nested_key else '') + name
-                    if dest in added_args:
-                        self.logger.debug(skip_message+'Argument already added.')  # type: ignore
-                    else:
-                        opt_str = dest if is_required and as_positional else '--'+dest
-                        if is_subclass_typehint:
-                            group.add_argument('--'+dest+'.help', action=_ActionHelpClassPath(baseclass=annotation))
-                            init = name + '.init_args.'
-                            subclass_skip = {s[len(init):] for s in skip if s.startswith(init)}
-                        if opt_str in group._option_string_actions:
-                            continue  # temporal
-                        action = group.add_argument(opt_str, **kwargs)
-                        if is_subclass_typehint and len(subclass_skip) > 0:
-                            action.skip = subclass_skip
-                        added_args.add(dest)
-                elif is_required and fail_untyped:
-                    raise ValueError('Required parameter without a type for '+obj.__name__+' parameter '+name+'.')
+                self._add_signature_parameter(
+                    group,
+                    nested_key,
+                    param,
+                    obj,
+                    doc_params,
+                    added_args,
+                    skip,
+                    fail_untyped=fail_untyped,
+                    as_positional=as_positional,
+                    add_args=add_args,
+                    add_kwargs=add_kwargs,
+                )
 
         return len(added_args)
+
+
+    def _add_signature_parameter(
+        self,
+        group,
+        nested_key: Optional[str],
+        param,
+        obj: Type,
+        doc_params: dict,
+        added_args: Set[str],
+        skip: Set[str],
+        fail_untyped: bool = True,
+        as_positional: bool = False,
+        add_args: bool = True,
+        add_kwargs: bool = True,
+        default: Any = inspect_empty,
+    ):
+        name = param.name
+        kind = param._kind
+        annotation = param.annotation
+        if default == inspect_empty:
+            default = param.default
+        is_required = default == inspect_empty
+        skip_message = 'Skipping parameter "'+name+'" from "'+obj.__name__+'" because of: '
+        if not fail_untyped and annotation == inspect_empty:
+            annotation = Any
+            default = None if is_required else default
+            is_required = False
+        if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
+           (not is_required and name[0] == '_') or \
+           (annotation == inspect_empty and not is_required and default is None):
+            return
+        elif is_required and not add_args:
+            self.logger.debug(skip_message+'Positional parameter but *args not propagated.')  # type: ignore
+            return
+        elif not is_required and not add_kwargs:
+            self.logger.debug(skip_message+'Keyword parameter but **kwargs not propagated.')  # type: ignore
+            return
+        elif name in skip:
+            self.logger.debug(skip_message+'Parameter requested to be skipped.')  # type: ignore
+            return
+        if is_factory_class(default):
+            default = obj.__dataclass_fields__[name].default_factory()
+        if annotation == inspect_empty and not is_required:
+            annotation = type(default)
+        kwargs = {'help': doc_params.get(name)}
+        if not is_required:
+            kwargs['default'] = default
+            if default is None and not is_optional(annotation, object):
+                annotation = Optional[annotation]
+        elif not as_positional:
+            kwargs['required'] = True
+        is_subclass_typehint = False
+        if annotation in {str, int, float, bool} or \
+           _issubclass(annotation, (str, int, float)) or \
+           is_pure_dataclass(annotation):
+            kwargs['type'] = annotation
+        elif annotation != inspect_empty:
+            try:
+                kwargs['action'] = ActionTypeHint(typehint=annotation)
+                is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation)
+            except ValueError as ex:
+                self.logger.debug(skip_message+str(ex))  # type: ignore
+        if 'type' in kwargs or 'action' in kwargs:
+            dest = (nested_key+'.' if nested_key else '') + name
+            if dest in added_args:
+                self.logger.debug(skip_message+'Argument already added.')  # type: ignore
+            else:
+                opt_str = dest if is_required and as_positional else '--'+dest
+                if is_subclass_typehint:
+                    group.add_argument('--'+dest+'.help', action=_ActionHelpClassPath(baseclass=annotation))
+                    init = name + '.init_args.'
+                    subclass_skip = {s[len(init):] for s in skip if s.startswith(init)}
+                action = group.add_argument(opt_str, **kwargs)
+                if is_subclass_typehint and len(subclass_skip) > 0:
+                    action.skip = subclass_skip
+                added_args.add(dest)
+        elif is_required and fail_untyped:
+            raise ValueError('Required parameter without a type for '+obj.__name__+' parameter '+name+'.')
 
 
     def add_dataclass_arguments(
@@ -298,7 +320,6 @@ class SignatureArguments:
         nested_key: str,
         default: Union[Type, dict] = None,
         as_group: bool = True,
-        required: bool = False,
         **kwargs
     ):
         """Adds arguments from a dataclass based on its field types and docstrings.
@@ -308,7 +329,6 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             default: Vale for defaults. Must be instance of or kwargs for theclass.
             as_group: Whether arguments should be added to a new argument group.
-            required: Whether the argument group is required.
 
         Returns:
             Number of arguments added.
@@ -325,7 +345,7 @@ class SignatureArguments:
         for key in ['help', 'title']:
             if key in kwargs and kwargs[key] is not None:
                 doc_group = strip_title(kwargs.pop(key))
-        group = self._create_group_if_requested(theclass, nested_key, as_group, required, doc_group, config_load=True, config_load_type=theclass)
+        group = self._create_group_if_requested(theclass, nested_key, as_group, doc_group, config_load_type=theclass)
 
         defaults = {}
         if default is not None:
@@ -338,16 +358,22 @@ class SignatureArguments:
                 raise ValueError('Expected "default" argument to be an instance of "'+theclass.__name__+'" or its kwargs dict, given '+str(default))
             defaults = dataclasses.asdict(default)
 
+        added_args = set()  # type: Set[str]
+        skip = set()  # type: Set[str]
+        params = inspect.signature(theclass.__init__).parameters
         for field in dataclasses.fields(theclass):
-            arg_kwargs = dict(kwargs)
-            arg_kwargs.update({
-                'type': field.type,
-                'default': defaults.get(field.name),
-                'help': doc_params.get(field.name),
-            })
-            group.add_argument('--' + nested_key + '.' + field.name, **arg_kwargs)
+            self._add_signature_parameter(
+                group,
+                nested_key,
+                params[field.name],
+                theclass,
+                doc_params,
+                added_args,
+                skip,
+                default=defaults.get(field.name, inspect_empty),
+            )
 
-        return len(dataclasses.fields(theclass))
+        return len(added_args)
 
 
     def add_subclass_arguments(
@@ -384,7 +410,7 @@ class SignatureArguments:
             raise ValueError('Expected "baseclass" argument to be a class object.')
 
         doc_group = self._gather_docstrings([baseclass], get_class_init_and_base_docstrings)[0]
-        group = self._create_group_if_requested(baseclass, nested_key, as_group, required, doc_group, config_load=False)
+        group = self._create_group_if_requested(baseclass, nested_key, as_group, doc_group, config_load=False, required=required)
 
         group.add_argument('--'+nested_key+'.help', action=_ActionHelpClassPath(baseclass=baseclass))
         group.add_argument(
@@ -417,7 +443,7 @@ class SignatureArguments:
         return strip_title(doc_group), doc_params
 
 
-    def _create_group_if_requested(self, obj, nested_key, as_group, required, doc_group, config_load=True, config_load_type=None):
+    def _create_group_if_requested(self, obj, nested_key, as_group, doc_group, config_load=True, config_load_type=None, required=False):
         if required:
             if nested_key is None:
                 raise ValueError('A nested_key is mandatory to make required.')

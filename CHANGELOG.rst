@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.11.1 (2021-04-30)
+--------------------
+
+Fixed
+^^^^^
+- add_dataclass_arguments not making parameters without default as required #54.
+- Removed from signature add methods required option included by mistake.
+
+
 v3.11.0 (2021-04-27)
 --------------------
 

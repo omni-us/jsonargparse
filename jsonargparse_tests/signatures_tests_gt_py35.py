@@ -6,7 +6,7 @@ from typing import Dict, List
 from jsonargparse_tests.base import *
 
 
-@unittest.skipIf(not dataclasses_support, 'dataclasses packages are required')
+@unittest.skipIf(not dataclasses_support, 'dataclasses package is required')
 class SignaturesTests(unittest.TestCase):
 
     @classmethod
@@ -146,6 +146,20 @@ class SignaturesTests(unittest.TestCase):
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg['b'], self.MyDataClassB)
         self.assertIsInstance(cfg['b'].b2, self.MyDataClassA)
+
+
+    def test_dataclass_add_argument_type_some_required(self):
+
+        @self.dataclasses.dataclass
+        class MyDataClass:
+            a1: str
+            a2: float = 1.2
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--b', type=MyDataClass)
+
+        self.assertEqual(Namespace(a1='v', a2=1.2), parser.parse_args(['--b.a1=v']).b)
+        self.assertRaises(ParserError, lambda: parser.parse_args([]))
 
 
     def test_dataclass_field_default_factory(self):

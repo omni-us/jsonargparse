@@ -263,9 +263,9 @@ class SignaturesTests(unittest.TestCase):
 
     def test_required_group(self):
         parser = ArgumentParser(error_handler=None)
+        self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(calendar.Calendar, None, required=True))
         parser.add_subclass_arguments(calendar.Calendar, 'cal', required=True)
         self.assertRaises(ParserError, lambda: parser.parse_args([]))
-        self.assertRaises(ValueError, lambda: parser.add_class_arguments(calendar.Calendar, required=True))
 
 
     def test_invalid_type(self):
