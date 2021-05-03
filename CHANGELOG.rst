@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.11.2 (2021-05-03)
+--------------------
+
+Fixed
+^^^^^
+- Link argument arrow `<=` can be confused as less or equal, changed to `<--`.
+
+
 v3.11.1 (2021-04-30)
 --------------------
 

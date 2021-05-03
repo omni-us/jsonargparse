@@ -316,7 +316,7 @@ class _ActionLink(Action):
         parser._links_group._group_actions.append(self)
 
         # Initialize link action
-        link_str = target+' <= '
+        link_str = target+' <-- '
         if compute_fn is None:
             link_str += source[0]
         else:
