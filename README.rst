@@ -95,23 +95,23 @@ jsonargparse with extras require is as follows:
 The following table references sections that describe optional features and the
 corresponding extras requires that enables them.
 
-+----------------------------------+------+-------------+---------+------------+------------+
-|                                  | urls | argcomplete | jsonnet | jsonschema | signatures |
-+----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`type-hints`                |      |             |         |            | ✓          |
-+----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`classes-methods-functions` |      |             |         |            | ✓          |
-+----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`sub-classes`               |      |             |         |            | ✓          |
-+----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`parsing-urls`              | ✓    |             |         |            |            |
-+----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`json-schemas`              |      |             |         | ✓          |            |
-+----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`jsonnet-files`             |      |             | ✓       |            |            |
-+----------------------------------+------+-------------+---------+------------+------------+
-| :ref:`tab-completion`            |      | ✓           |         |            |            |
-+----------------------------------+------+-------------+---------+------------+------------+
++----------------------------------+-------------+-------------+---------+------------+------------+
+|                                  | urls/fsspec | argcomplete | jsonnet | jsonschema | signatures |
++----------------------------------+-------------+-------------+---------+------------+------------+
+| :ref:`type-hints`                |             |             |         |            | ✓          |
++----------------------------------+-------------+-------------+---------+------------+------------+
+| :ref:`classes-methods-functions` |             |             |         |            | ✓          |
++----------------------------------+-------------+-------------+---------+------------+------------+
+| :ref:`sub-classes`               |             |             |         |            | ✓          |
++----------------------------------+-------------+-------------+---------+------------+------------+
+| :ref:`parsing-urls`              | ✓           |             |         |            |            |
++----------------------------------+-------------+-------------+---------+------------+------------+
+| :ref:`json-schemas`              |             |             |         | ✓          |            |
++----------------------------------+-------------+-------------+---------+------------+------------+
+| :ref:`jsonnet-files`             |             |             | ✓       |            |            |
++----------------------------------+-------------+-------------+---------+------------+------------+
+| :ref:`tab-completion`            |             | ✓           |         |            |            |
++----------------------------------+-------------+-------------+---------+------------+------------+
 
 
 Basic usage
@@ -990,25 +990,30 @@ Parsing URLs
 The :func:`.path_type` function also supports URLs which after parsing the
 :py:meth:`.Path.get_content` method can be used to perform a GET request to the
 corresponding URL and retrieve its content. For this to work the *validators*
-and *requests* python packages are required which will be installed along with
-jsonargparse if installed with the :code:`urls` extras require as explained in
-section :ref:`installation`.
+and *requests* python packages are required. Alternatively, :func:`.path_type`
+can also be used for `fsspec <https://filesystem-spec.readthedocs.io>`__
+supported file systems. The respective optional package(s) will be installed
+along with jsonargparse if installed with the :code:`urls` or :code:`fsspec`
+extras require as explained in section :ref:`installation`.
 
-The :code:`'u'` flag is used to parse URLs. For example if it is desired that an
+The :code:`'u'` flag is used to parse URLs using requests and the flag
+:code:`'s'` to parse fsspec file systems. For example if it is desired that an
 argument can be either a readable file or URL, the type would be created as
 :code:`Path_fur = path_type('fur')`. If the value appears to be a URL according
 to :func:`validators.url.url` then a HEAD request would be triggered to check if
 it is accessible. To get the content of the parsed path, without needing to care
 if it is a local file or a URL, the :py:meth:`.Path.get_content` can be used.
 
-If after importing jsonargparse you run
-:code:`jsonargparse.set_url_support(True)`, the following functions and classes
-will also support loading from URLs: :py:meth:`.ArgumentParser.parse_path`,
-:py:meth:`.ArgumentParser.get_defaults` (:code:`default_config_files` argument),
-:class:`.ActionConfigFile`, :class:`.ActionJsonSchema`, :class:`.ActionJsonnet`
-and :class:`.ActionParser`. This means that a tool that can receive a
-configuration file via :class:`.ActionConfigFile` is able to get the content
-from a URL, thus something like the following would work:
+If you import :code:`from jsonargparse import set_config_read_mode` and then run
+:code:`set_config_read_mode(urls_enabled=True)` or
+:code:`set_config_read_mode(fsspec_enabled=True)`, the following functions and
+classes will also support loading from URLs:
+:py:meth:`.ArgumentParser.parse_path`, :py:meth:`.ArgumentParser.get_defaults`
+(:code:`default_config_files` argument), :class:`.ActionConfigFile`,
+:class:`.ActionJsonSchema`, :class:`.ActionJsonnet` and :class:`.ActionParser`.
+This means that a tool that can receive a configuration file via
+:class:`.ActionConfigFile` is able to get the content from a URL, thus something
+like the following would work:
 
 .. code-block:: bash
 
