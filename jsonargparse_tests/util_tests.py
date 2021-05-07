@@ -4,6 +4,7 @@ import stat
 import pathlib
 import logging
 import platform
+import zipfile
 from jsonargparse_tests.base import *
 from jsonargparse.util import _suppress_stderr, _flat_namespace_to_dict
 
@@ -179,6 +180,38 @@ class PathTests(TempDirTestCase):
         path = Path(existing, mode='ur')
         self.assertEqual(existing_body, path.get_content())
         self.assertRaises(TypeError, lambda: Path(nonexisting, mode='ur'))
+
+
+    @unittest.skipIf(not fsspec_support, 'fsspec package is required')
+    def test_fsspec(self):
+
+        def create_zip(zip_path, file_path):
+            ziph = zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED)
+            ziph.write(file_path)
+            ziph.close()
+
+        existing = 'existing.txt'
+        existing_body = 'existing content'
+        nonexisting = 'non-existing.txt'
+        with open(existing, 'w') as f:
+            f.write(existing_body)
+        zip1_path = 'file1.zip'
+        zip2_path = 'file2.zip'
+        create_zip(zip1_path, existing)
+        create_zip(zip2_path, existing)
+        os.chmod(zip2_path, 0)
+
+        path = Path('zip://'+existing+'::file://'+zip1_path, mode='sr')
+        self.assertEqual(existing_body, path.get_content())
+
+        with self.assertRaises(TypeError):
+            Path('zip://'+nonexisting+'::file://'+zip1_path, mode='sr')
+        with self.assertRaises(TypeError):
+            Path('zip://'+existing+'::file://'+zip2_path, mode='sr')
+        with self.assertRaises(ValueError):
+            Path('zip://'+existing+'::file://'+zip1_path, mode='ds')
+        with self.assertRaises(TypeError):
+            Path('unsupported://'+existing, mode='sr')
 
 
 class LoggingPropertyTests(unittest.TestCase):

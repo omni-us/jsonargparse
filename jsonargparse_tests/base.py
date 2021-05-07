@@ -12,14 +12,16 @@ from jsonargparse.optionals import (
     docstring_parser_support, import_docstring_parse,
     argcomplete_support, import_argcomplete,
     dataclasses_support, import_dataclasses,
-    set_url_support, get_config_read_mode,
+    fsspec_support, import_fsspec,
+    get_config_read_mode,
+    ModuleNotFound,
 )
 
 
 try:
     import responses
     responses_activate = responses.activate
-except:
+except (ImportError, ModuleNotFound):
     def nothing_decorator(func):
         return func
     responses = False

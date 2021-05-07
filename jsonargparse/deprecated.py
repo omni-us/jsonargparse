@@ -1,6 +1,7 @@
 """Deprecated code."""
 
 from enum import Enum
+from .optionals import get_config_read_mode, set_config_read_mode
 from .typehints import ActionTypeHint
 from .typing import path_type, restricted_number_type, registered_types
 from .util import _issubclass
@@ -10,6 +11,7 @@ __all__ = [
     'ActionEnum',
     'ActionOperators',
     'ActionPath',
+    'set_url_support',
 ]
 
 
@@ -73,3 +75,14 @@ class ActionPath:
         if 'type' in kwargs:
             raise ValueError('ActionPath does not allow type given to add_argument.')
         return ActionTypeHint(typehint=self._type)(**kwargs)
+
+
+def set_url_support(enabled:bool):
+    """DEPRECATED: Enables/disables URL support for config read mode.
+
+    Optional config read modes should now be set using function set_config_read_mode.
+    """
+    set_config_read_mode(
+        urls_enabled=enabled,
+        fsspec_enabled=True if 's' in get_config_read_mode() else False,
+    )

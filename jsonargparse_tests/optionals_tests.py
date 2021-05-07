@@ -94,14 +94,33 @@ class DataclassesSupportTests(unittest.TestCase):
             self.assertIn('test_dataclasses_support_false', context.msg)
 
 
+class FsspecSupportTests(unittest.TestCase):
+
+    @unittest.skipIf(not fsspec_support, 'fsspec package is required')
+    def test_fsspec_support_true(self):
+        import_fsspec('test_fsspec_support_true')
+
+
+    @unittest.skipIf(fsspec_support, 'fsspec package should not be installed')
+    def test_fsspec_support_false(self):
+        with self.assertRaises(ImportError) as context:
+            import_fsspec('test_fsspec_support_false')
+            self.assertIn('test_fsspec_support_false', context.msg)
+
+
 class ConfigReadModeTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        set_config_read_mode()
+
 
     @unittest.skipIf(not url_support, 'validators and requests packages are required')
     def test_url_support_true(self):
         self.assertEqual('fr', get_config_read_mode())
-        set_url_support(True)
+        set_config_read_mode(urls_enabled=True)
         self.assertEqual('fur', get_config_read_mode())
-        set_url_support(False)
+        set_config_read_mode(urls_enabled=False)
         self.assertEqual('fr', get_config_read_mode())
 
 
@@ -109,9 +128,28 @@ class ConfigReadModeTests(unittest.TestCase):
     def test_url_support_false(self):
         self.assertEqual('fr', get_config_read_mode())
         with self.assertRaises(ImportError):
-            set_url_support(True)
+            set_config_read_mode(urls_enabled=True)
         self.assertEqual('fr', get_config_read_mode())
-        set_url_support(False)
+        set_config_read_mode(urls_enabled=False)
+        self.assertEqual('fr', get_config_read_mode())
+
+
+    @unittest.skipIf(not fsspec_support, 'fsspec package is required')
+    def test_fsspec_support_true(self):
+        self.assertEqual('fr', get_config_read_mode())
+        set_config_read_mode(fsspec_enabled=True)
+        self.assertEqual('fsr', get_config_read_mode())
+        set_config_read_mode(fsspec_enabled=False)
+        self.assertEqual('fr', get_config_read_mode())
+
+
+    @unittest.skipIf(fsspec_support, 'fsspec package should not be installed')
+    def test_fsspec_support_false(self):
+        self.assertEqual('fr', get_config_read_mode())
+        with self.assertRaises(ImportError):
+            set_config_read_mode(fsspec_enabled=True)
+        self.assertEqual('fr', get_config_read_mode())
+        set_config_read_mode(fsspec_enabled=False)
         self.assertEqual('fr', get_config_read_mode())
 
 
