@@ -92,6 +92,25 @@ class DeprecatedTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: ActionOperators(expr=[('<', 5), ('>=', 10)], join='xor'))
 
 
+    @unittest.skipIf(not url_support, 'validators and requests packages are required')
+    def test_url_support_true(self):
+        self.assertEqual('fr', get_config_read_mode())
+        set_url_support(True)
+        self.assertEqual('fur', get_config_read_mode())
+        set_url_support(False)
+        self.assertEqual('fr', get_config_read_mode())
+
+
+    @unittest.skipIf(url_support, 'validators and requests packages should not be installed')
+    def test_url_support_false(self):
+        self.assertEqual('fr', get_config_read_mode())
+        with self.assertRaises(ImportError):
+            set_url_support(True)
+        self.assertEqual('fr', get_config_read_mode())
+        set_url_support(False)
+        self.assertEqual('fr', get_config_read_mode())
+
+
 class DeprecatedTempDirTests(TempDirTestCase):
 
     def test_ActionPath(self):

@@ -8,8 +8,8 @@ from importlib.util import find_spec
 
 
 __all__ = [
-    'set_url_support',
     'get_config_read_mode',
+    'set_config_read_mode',
 ]
 
 
@@ -20,6 +20,7 @@ _requests = find_spec('requests')
 _docstring_parser = find_spec('docstring_parser')
 _argcomplete = find_spec('argcomplete')
 _dataclasses = find_spec('dataclasses')
+_fsspec = find_spec('fsspec')
 
 jsonschema_support = False if _jsonschema is None else True
 jsonnet_support = False if _jsonnet is None else True
@@ -27,6 +28,7 @@ url_support = False if any(x is None for x in [_url_validator, _requests]) else 
 docstring_parser_support = False if _docstring_parser is None else True
 argcomplete_support = False if _argcomplete is None else True
 dataclasses_support = False if _dataclasses is None else True
+fsspec_support = False if _fsspec is None else True
 
 _config_read_mode = 'fr'
 
@@ -106,14 +108,41 @@ def import_dataclasses(importer):
         raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex)) from ex
 
 
-def set_url_support(enabled:bool):
-    """Enables/disables URL support for config read mode."""
-    if enabled and not url_support:
-        pkg = ['validators', 'requests']
-        missing = {pkg[n] for n, x in enumerate([_url_validator, _requests]) if x is None}
-        raise ImportError('Missing packages for URL support: '+str(missing))
-    global _config_read_mode
-    _config_read_mode = 'fur' if enabled else 'fr'
+def import_fsspec(importer):
+    try:
+        import fsspec
+        return fsspec
+    except (ImportError, ModuleNotFound) as ex:
+        raise ImportError('fsspec package is required by '+importer+' :: '+str(ex)) from ex
+
+
+def set_config_read_mode(
+    urls_enabled: bool = False,
+    fsspec_enabled: bool = False,
+):
+    """Enables/disables optional config read modes.
+
+    Args:
+        urls_enabled: Whether to read config files from URLs using requests package.
+        fsspec_enabled: Whether to read config files from fsspec supported file systems.
+    """
+    imports = {
+        'u': [import_url_validator, import_requests],
+        's': [import_fsspec],
+    }
+
+    def update_mode(flag, enabled):
+        global _config_read_mode
+        if enabled:
+            for import_func in imports[flag]:
+                import_func('set_config_read_mode')
+            if flag not in _config_read_mode:
+                _config_read_mode = _config_read_mode.replace('f', 'f'+flag)
+        else:
+            _config_read_mode = _config_read_mode.replace(flag, '')
+
+    update_mode('u', urls_enabled)
+    update_mode('s', fsspec_enabled)
 
 
 def get_config_read_mode() -> str:

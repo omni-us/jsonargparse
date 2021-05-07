@@ -10,6 +10,19 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.12.0 (2021-??-??)
+--------------------
+
+Added
+^^^^^
+- Path support for fsspec file systems using the 's' mode flag.
+- set_config_read_mode function that can enable fsspec for config reading.
+
+Deprecated
+^^^^^^^^^^
+- set_url_support functionality now should be done with set_config_read_mode.
+
+
 v3.11.2 (2021-05-03)
 --------------------
 

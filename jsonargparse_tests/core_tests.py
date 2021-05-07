@@ -431,7 +431,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
     @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
     @responses_activate
     def test_urls(self):
-        set_url_support(True)
+        set_config_read_mode(urls_enabled=True)
         parser = ArgumentParser()
         parser.add_argument('--cfg',
             action=ActionConfigFile)
@@ -492,7 +492,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
         if jsonnet_support:
             self.assertEqual(cfg1['jsonnet'], cfg2['jsonnet'])
 
-        set_url_support(False)
+        set_config_read_mode(urls_enabled=False)
 
 
 class OutputTests(TempDirTestCase):

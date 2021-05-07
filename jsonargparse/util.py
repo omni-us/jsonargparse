@@ -19,6 +19,8 @@ from .optionals import (
     url_support,
     import_requests,
     import_url_validator,
+    fsspec_support,
+    import_fsspec,
     get_config_read_mode,
 )
 
@@ -301,7 +303,7 @@ def _suppress_stderr():
 @contextmanager
 def change_to_path_dir(path):
     """A context manager for running code in the directory of a path."""
-    chdir = path is not None and not path.is_url
+    chdir = path is not None and not (path.is_url or path.is_fsspec)
     if chdir:
         cwd = os.getcwd()
         os.chdir(os.path.abspath(os.path.dirname(str(path))))
@@ -312,16 +314,25 @@ def change_to_path_dir(path):
             os.chdir(cwd)
 
 
+def known_to_fsspec(path):
+    import_fsspec('known_to_fsspec')
+    from fsspec.registry import known_implementations
+    for protocol in known_implementations.keys():
+        if path.startswith(protocol+'://') or path.startswith(protocol+'::'):
+            return True
+    return False
+
+
 class Path:
     """Stores a (possibly relative) path and the corresponding absolute path.
 
     When a Path instance is created it is checked that: the path exists, whether
     it is a file or directory and whether has the required access permissions
     (f=file, d=directory, r=readable, w=writeable, x=executable, c=creatable,
-    u=url or in uppercase meaning not, i.e., F=not-file, D=not-directory,
-    R=not-readable, W=not-writeable and X=not-executable). The absolute path can
-    be obtained without having to remember the working directory from when the
-    object was created.
+    u=url, s=fsspec or in uppercase meaning not, i.e., F=not-file,
+    D=not-directory, R=not-readable, W=not-writeable and X=not-executable). The
+    absolute path can be obtained without having to remember the working
+    directory from when the object was created.
     """
     def __init__(
         self,
@@ -347,8 +358,10 @@ class Path:
             cwd = os.getcwd()
 
         is_url = False
+        is_fsspec = False
         if isinstance(path, Path):
             is_url = path.is_url
+            is_fsspec = path.is_fsspec
             cwd = path.cwd  # type: ignore
             abs_path = path.abs_path  # type: ignore
             path = path.rel_path  # type: ignore
@@ -358,6 +371,8 @@ class Path:
                 abs_path = re.sub('^file:///?', '/', abs_path)
             if 'u' in mode and url_support and import_url_validator('Path')(abs_path):
                 is_url = True
+            elif 's' in mode and fsspec_support and known_to_fsspec(abs_path):
+                is_fsspec = True
             elif 'f' in mode or 'd' in mode:
                 abs_path = abs_path if os.path.isabs(abs_path) else os.path.join(cwd, abs_path)
         else:
@@ -370,6 +385,18 @@ class Path:
                     requests.head(abs_path).raise_for_status()
                 except requests.HTTPError as ex:
                     raise TypeError(abs_path+' HEAD not accessible :: '+str(ex)) from ex
+        elif not skip_check and is_fsspec:
+            fsspec_mode = ''.join(c for c in mode if c in {'r','w'})
+            if fsspec_mode:
+                fsspec = import_fsspec('Path')
+                try:
+                    handle = fsspec.open(abs_path, fsspec_mode)
+                    handle.open()
+                    handle.close()
+                except FileNotFoundError:
+                    raise TypeError('Path does not exist: '+abs_path)
+                except PermissionError:
+                    raise TypeError('Path exists but no permission to access: '+abs_path)
         elif not skip_check:
             ptype = 'Directory' if 'd' in mode else 'File'
             if 'c' in mode:
@@ -411,13 +438,14 @@ class Path:
         self.cwd = cwd
         self.mode = mode
         self.is_url = is_url  # type: bool
+        self.is_fsspec = is_fsspec  # type: bool
         self.skip_check = skip_check
 
     def __str__(self):
         return self.rel_path
 
     def __repr__(self):
-        cwd = '' if self.is_url or self.rel_path == self.abs_path else ', cwd='+self.cwd
+        cwd = '' if self.rel_path == self.abs_path else ', cwd='+self.cwd
         name = 'Path_'+self.mode
         if self.skip_check:
             name += '_skip_check'
@@ -433,25 +461,32 @@ class Path:
 
     def get_content(self, mode:str='r') -> str:
         """Returns the contents of the file or the response of a GET request to the URL."""
-        if not self.is_url:
-            with open(self.abs_path, mode) as input_file:
-                return input_file.read()
-        else:
+        if self.is_url:
             requests = import_requests('Path with URL support')
             response = requests.get(self.abs_path)
             response.raise_for_status()
             return response.text
+        elif self.is_fsspec:
+            fsspec = import_fsspec('Path')
+            with fsspec.open(self.abs_path, mode) as handle:
+                with handle as input_file:
+                    return input_file.read()
+        else:
+            with open(self.abs_path, mode) as input_file:
+                return input_file.read()
 
     @staticmethod
     def _check_mode(mode:str):
         if not isinstance(mode, str):
             raise ValueError('Expected mode to be a string.')
-        if len(set(mode)-set('fdrwxcuFDRWX')) > 0:
-            raise ValueError('Expected mode to only include [fdrwxcuFDRWX] flags.')
+        if len(set(mode)-set('fdrwxcusFDRWX')) > 0:
+            raise ValueError('Expected mode to only include [fdrwxcusFDRWX] flags.')
         if 'f' in mode and 'd' in mode:
             raise ValueError('Both modes "f" and "d" not possible.')
         if 'u' in mode and 'd' in mode:
             raise ValueError('Both modes "d" and "u" not possible.')
+        if 's' in mode and 'd' in mode:
+            raise ValueError('Both modes "d" and "s" not possible.')
 
 
 class LoggerProperty:
