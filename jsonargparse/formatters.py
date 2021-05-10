@@ -1,9 +1,20 @@
 """Formatter classes."""
 
+import re
 from argparse import _HelpAction, HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 from enum import Enum
+from io import StringIO
 
-from .actions import ActionConfigFile, ActionYesNo, _ActionLink
+from .actions import (
+    ActionConfigFile,
+    ActionYesNo,
+    _ActionConfigLoad,
+    _ActionLink,
+    _ActionSubCommands,
+    _find_action,
+    filter_default_actions,
+)
+from .optionals import import_ruyaml
 from .typehints import ActionTypeHint, type_to_str
 from .util import _get_env_var, _get_key_value
 
@@ -94,3 +105,108 @@ class DefaultHelpFormatter(HelpFormatter):
     def add_usage(self, usage, actions, groups, prefix=None):
         actions = [a for a in actions if not isinstance(a, _ActionLink)]
         super().add_usage(usage, actions, groups, prefix=prefix)
+
+
+    def add_yaml_comments(self, cfg: str) -> str:
+        """Adds help text as yaml comments."""
+        ruyaml = import_ruyaml('add_yaml_comments')
+        yaml = ruyaml.YAML()
+        cfg = yaml.load(cfg)
+
+        def get_subparsers(parser, prefix=''):
+            subparsers = {}
+            if parser._subparsers is not None:
+                for key, subparser in parser._subparsers._group_actions[0].choices.items():
+                    full_key = (prefix+'.' if prefix else '')+key
+                    subparsers[full_key] = subparser
+                    subparsers.update(get_subparsers(subparser, prefix=full_key))
+            return subparsers
+
+        parsers = get_subparsers(self._parser)  # type: ignore
+        parsers[None] = self._parser  # type: ignore
+
+        group_titles = {}
+        for prefix, parser in parsers.items():
+            for group in parser._action_groups:
+                actions = filter_default_actions(group._group_actions)
+                actions = [a for a in actions if not isinstance(a, (_ActionConfigLoad, ActionConfigFile, _ActionSubCommands))]
+                keys = set(re.sub(r'\.?[^.]+$', '', a.dest) for a in actions)
+                if len(keys) == 1:
+                    key = keys.pop()
+                    full_key = (prefix+('.' if key else '') if prefix else '')+key
+                    group_titles[full_key] = group.title
+
+        def set_comments(cfg, prefix='', depth=0):
+            for key in cfg.keys():
+                full_key = (prefix+'.' if prefix else '')+key
+                action = _find_action(self._parser, full_key, within_subcommands=True)
+                if isinstance(action, tuple):
+                    action = action[0]
+                text = None
+                if full_key in group_titles and isinstance(cfg[key], dict):
+                    text = group_titles[full_key]
+                elif action is not None and action.help not in {None, SUPPRESS}:
+                    text = self._expand_help(action)
+                if isinstance(cfg[key], dict):
+                    if text:
+                        self.set_yaml_group_comment(text, cfg, key, depth)
+                    set_comments(cfg[key], full_key, depth+1)
+                elif text:
+                    self.set_yaml_argument_comment(text, cfg, key, depth)
+
+        if self._parser.description is not None:  # type: ignore
+            self.set_yaml_start_comment(self._parser.description, cfg)  # type: ignore
+        set_comments(cfg)
+        out = StringIO()
+        yaml.dump(cfg, out)
+        return out.getvalue()
+
+
+    def set_yaml_start_comment(
+        self,
+        text: str,
+        cfg: 'ruyaml.comments.CommentedMap',  # type: ignore
+    ):
+        """Sets the start comment to a ruyaml object.
+
+        Args:
+            text: The content to use for the comment.
+            cfg: The ruyaml object.
+        """
+        cfg.yaml_set_start_comment(text)
+
+
+    def set_yaml_group_comment(
+        self,
+        text: str,
+        cfg: 'ruyaml.comments.CommentedMap',  # type: ignore
+        key: str,
+        depth: int,
+    ):
+        """Sets the comment for a group to a ruyaml object.
+
+        Args:
+            text: The content to use for the comment.
+            cfg: The parent ruyaml object.
+            key: The key of the group.
+            depth: The nested level of the group.
+        """
+        cfg.yaml_set_comment_before_after_key(key, before='\n'+text, indent=2*depth)
+
+
+    def set_yaml_argument_comment(
+        self,
+        text: str,
+        cfg: 'ruyaml.comments.CommentedMap',  # type: ignore
+        key: str,
+        depth: int,
+    ):
+        """Sets the comment for an argument to a ruyaml object.
+
+        Args:
+            text: The content to use for the comment.
+            cfg: The parent ruyaml object.
+            key: The key of the argument.
+            depth: The nested level of the argument.
+        """
+        cfg.yaml_set_comment_before_after_key(key, before='\n'+text, indent=2*depth)

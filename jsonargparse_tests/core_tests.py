@@ -691,7 +691,7 @@ class OutputTests(TempDirTestCase):
 
 
     def test_print_config(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(error_handler=None, description='cli tool')
         parser.add_argument('--v0', help=SUPPRESS, default='0')
         parser.add_argument('--v1', help='Option v1.', default=1)
         parser.add_argument('--g1.v2', help='Option v2.', default='2')
@@ -709,11 +709,18 @@ class OutputTests(TempDirTestCase):
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
             parser.parse_args(['--print_config=skip_null'])
-
         outval = yaml.safe_load(out.getvalue())
         self.assertEqual(outval, {'g1': {'v2': '2'}, 'v1': 1})
 
         self.assertRaises(ParserError, lambda: parser.parse_args(['--print_config=bad']))
+
+        if docstring_parser_support and ruyaml_support:
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                parser.parse_args(['--print_config=comments'])
+            self.assertIn('# cli tool', out.getvalue())
+            self.assertIn('# Option v1. (default: 1)', out.getvalue())
+            self.assertIn('# Option v2. (default: 2)', out.getvalue())
 
 
 class ConfigFilesTests(TempDirTestCase):

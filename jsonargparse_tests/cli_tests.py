@@ -150,6 +150,13 @@ class CLITests(unittest.TestCase):
             CLI(components, args=['--print_config=', 'Cmd2', 'method2'])
         self.assertEqual('Cmd2:\n  i1: d\n  method2:\n    m2: 0\n', out.getvalue())
 
+        if docstring_parser_support and ruyaml_support:
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                CLI(components, args=['--print_config=comments', 'Cmd2', 'method2'])
+            self.assertIn('# Description of Cmd2', out.getvalue())
+            self.assertIn('# Description of method2', out.getvalue())
+
 
     def test_empty_context(self):
         def empty_context():
