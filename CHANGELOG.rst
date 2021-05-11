@@ -17,6 +17,7 @@ Added
 ^^^^^
 - Path support for fsspec file systems using the 's' mode flag.
 - set_config_read_mode function that can enable fsspec for config reading.
+- Option for print_config and dump with help as yaml comments.
 
 Deprecated
 ^^^^^^^^^^
