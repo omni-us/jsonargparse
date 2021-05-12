@@ -8,7 +8,7 @@ import argparse
 from typing import Callable, Tuple, Type, Union
 from argparse import Namespace, Action, SUPPRESS, _HelpAction, _SubParsersAction
 
-from .optionals import get_config_read_mode, FilesCompleterMethod
+from .optionals import FilesCompleterMethod, get_config_read_mode, ruyaml_support
 from .typing import path_type
 from .util import (
     yamlParserError,
@@ -177,15 +177,19 @@ class _ActionPrintConfig(Action):
                          dest=dest,
                          default=default,
                          nargs='?',
-                         metavar='skip_null',
+                         metavar='comments,skip_null',
                          help='Print configuration and exit.')
 
     def __call__(self, parser, namespace, value, option_string=None):
         kwargs = {'subparser': parser, 'key': None, 'skip_none': False, 'skip_check': True}
+        valid_flags = {'': None, 'comments': 'yaml_comments', 'skip_null': 'skip_none'}
         if value is not None:
-            if value not in {'skip_null', ''}:
-                raise ParserError('Invalid option "'+str(value)+'" for '+option_string)
-            kwargs['skip_none'] = True
+            flags = value.split(',')
+            invalid_flags = [f for f in flags if f not in valid_flags]
+            if len(invalid_flags) > 0:
+                raise ParserError('Invalid option "'+str(invalid_flags[0])+'" for '+option_string)
+            for flag in [f for f in flags if f != '']:
+                kwargs[valid_flags[flag]] = True
         while hasattr(parser, 'parent_parser'):
             kwargs['key'] = parser.subcommand if kwargs['key'] is None else parser.subcommand+'.'+kwargs['key']
             parser = parser.parent_parser

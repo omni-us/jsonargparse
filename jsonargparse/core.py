@@ -708,6 +708,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         format: str = 'parser_mode',
         skip_none: bool = True,
         skip_check: bool = False,
+        yaml_comments: bool = False,
     ) -> str:
         """Generates a yaml or json string for the given configuration object.
 
@@ -716,6 +717,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             format: The output format: "yaml", "json", "json_indented" or "parser_mode".
             skip_none: Whether to exclude entries whose value is None.
             skip_check: Whether to skip parser checking.
+            yaml_comments: Whether to add help content as comments.
 
         Returns:
             The configuration in yaml or json format.
@@ -756,7 +758,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         if format == 'parser_mode':
             format = 'yaml' if self.parser_mode == 'yaml' else 'json_indented'
         if format == 'yaml':
-            return yaml.safe_dump(cfg, **self.dump_yaml_kwargs)  # type: ignore
+            dump = yaml.safe_dump(cfg, **self.dump_yaml_kwargs)  # type: ignore
+            if yaml_comments:
+                formatter = self.formatter_class(self.prog)
+                dump = formatter.add_yaml_comments(dump)  # type: ignore
+            return dump
         elif format == 'json_indented':
             return json.dumps(cfg, indent=2, **self.dump_json_kwargs)+'\n'  # type: ignore
         elif format == 'json':

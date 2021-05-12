@@ -14,6 +14,7 @@ from jsonargparse.optionals import (
     dataclasses_support, import_dataclasses,
     fsspec_support, import_fsspec,
     get_config_read_mode,
+    ruyaml_support,
     ModuleNotFound,
 )
 

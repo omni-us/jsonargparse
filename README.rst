@@ -386,10 +386,12 @@ string respectively.
 
 All parsers include a :code:`--print_config` option. This is useful particularly
 for command line tools with a large set of options to create an initial config
-file including all default values. By default all entries are included, even the
-ones with :code:`null` values. If this argument is given as
-:code:`--print_config=skip_null`, then the entries with :code:`null` values will
-be excluded.
+file including all default values. If the `ruyaml
+<https://ruyaml.readthedocs.io>`__ package is installed, the config can be
+printed having the help descriptions content as yaml comments by using
+:code:`--print_config=comments`. Another option is
+:code:`--print_config=skip_null` which skips entries whose value is
+:code:`null`.
 
 
 .. _environment-variables:

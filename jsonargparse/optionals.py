@@ -21,6 +21,7 @@ _docstring_parser = find_spec('docstring_parser')
 _argcomplete = find_spec('argcomplete')
 _dataclasses = find_spec('dataclasses')
 _fsspec = find_spec('fsspec')
+_ruyaml = find_spec('ruyaml')
 
 jsonschema_support = False if _jsonschema is None else True
 jsonnet_support = False if _jsonnet is None else True
@@ -29,6 +30,7 @@ docstring_parser_support = False if _docstring_parser is None else True
 argcomplete_support = False if _argcomplete is None else True
 dataclasses_support = False if _dataclasses is None else True
 fsspec_support = False if _fsspec is None else True
+ruyaml_support = False if _ruyaml is None else True
 
 _config_read_mode = 'fr'
 
@@ -114,6 +116,14 @@ def import_fsspec(importer):
         return fsspec
     except (ImportError, ModuleNotFound) as ex:
         raise ImportError('fsspec package is required by '+importer+' :: '+str(ex)) from ex
+
+
+def import_ruyaml(importer):
+    try:
+        import ruyaml
+        return ruyaml
+    except (ImportError, ModuleNotFound) as ex:
+        raise ImportError('ruyaml package is required by '+importer+' :: '+str(ex)) from ex
 
 
 def set_config_read_mode(
