@@ -384,12 +384,12 @@ arguments. The methods for this are :py:meth:`.ArgumentParser.parse_path` and
 :py:meth:`.ArgumentParser.parse_string` to parse a config file or a config
 string respectively.
 
-All parsers include a :code:`--print_config` option. This is useful particularly
-for command line tools with a large set of options to create an initial config
-file including all default values. If the `ruyaml
-<https://ruyaml.readthedocs.io>`__ package is installed, the config can be
-printed having the help descriptions content as yaml comments by using
-:code:`--print_config=comments`. Another option is
+Parsers that have an :class:`.ActionConfigFile` also include a
+:code:`--print_config` option. This is useful particularly for command line
+tools with a large set of options to create an initial config file including all
+default values. If the `ruyaml <https://ruyaml.readthedocs.io>`__ package is
+installed, the config can be printed having the help descriptions content as
+yaml comments by using :code:`--print_config=comments`. Another option is
 :code:`--print_config=skip_null` which skips entries whose value is
 :code:`null`.
 

@@ -498,6 +498,7 @@ class SignaturesTests(unittest.TestCase):
                 pass
 
         parser = ArgumentParser()
+        parser.add_argument('--config', action=ActionConfigFile)
         parser.add_class_arguments(MyClass, 'g')
 
         out = StringIO()

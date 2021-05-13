@@ -10,7 +10,7 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.12.0 (2021-??-??)
+v3.12.0 (2021-05-13)
 --------------------
 
 Added
@@ -18,6 +18,10 @@ Added
 - Path support for fsspec file systems using the 's' mode flag.
 - set_config_read_mode function that can enable fsspec for config reading.
 - Option for print_config and dump with help as yaml comments.
+
+Changed
+^^^^^^^
+- print_config only added to parsers when ActionConfigFile is added.
 
 Deprecated
 ^^^^^^^^^^
@@ -29,7 +33,8 @@ v3.11.2 (2021-05-03)
 
 Fixed
 ^^^^^
-- Link argument arrow `<=` can be confused as less or equal, changed to `<--`.
+- Link argument arrow :code:`<=` can be confused as less or equal, changed to
+  :code:`<--`.
 
 
 v3.11.1 (2021-04-30)
@@ -46,11 +51,11 @@ v3.11.0 (2021-04-27)
 
 Added
 ^^^^^
-- CLI now has --config options at subcommand and subsubcommand levels.
+- CLI now has :code:`--config` options at subcommand and subsubcommand levels.
 - CLI now adds subcommands with help string taken from docstrings.
 - print_config at subcommand level for global config with implicit subcommands.
 - New Path_drw predefined type.
-- Type hint arguments now support nargs='?'.
+- Type hint arguments now support :code:`nargs='?'`.
 - Signature methods can now skip arguments within init_args of subclasses.
 
 Changed
@@ -77,7 +82,7 @@ Changed
 
 Fixed
 ^^^^^
-- --*.help option being added for non-subclass types.
+- :code:`--*.help` option being added for non-subclass types.
 - Iterable and Sequence types not working for python>=3.7 #53.
 
 
@@ -92,7 +97,7 @@ Added
 - save_path_content attribute to save paths content on config save.
 - New `link_arguments` method to derive an argument value from others.
 - print_config now includes subclass init_args if class_path given.
-- Subclass type hints now also have a --*.help option.
+- Subclass type hints now also have a :code:`--*.help` option.
 
 Changed
 ^^^^^^^
@@ -265,7 +270,7 @@ Fixed
 - Changed actions so that keyword arguments are visible in API.
 - Fixed save method short description which was copy paste of dump.
 - Added missing docstring in instantiate_subclasses method.
-- Fixed crash when using --help and ActionConfigFile not given help string.
+- Fixed crash when using :code:`--help` and ActionConfigFile not given help string.
 - Standardized capitalization and punctuation of: help, config, version.
 
 
@@ -317,7 +322,7 @@ v3.1.0 (2020-12-09)
 Added
 ^^^^^
 - Support for multiple levels of subcommands #29.
-- Default description of subcommands explaining use of --help.
+- Default description of subcommands explaining use of :code:`--help`.
 
 
 v3.0.1 (2020-12-02)
@@ -340,7 +345,7 @@ Added
 - Typing module that includes predefined types and type generator functions
   for paths and restricted numbers/strings.
 - Extended support to add_argument type to allow complex type hints.
-- Parsers now include --print_config option to dump defaults.
+- Parsers now include :code:`--print_config` option to dump defaults.
 - Support argcomplete for tab completion of arguments.
 
 Changed

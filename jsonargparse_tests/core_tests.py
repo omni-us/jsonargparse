@@ -692,6 +692,7 @@ class OutputTests(TempDirTestCase):
 
     def test_print_config(self):
         parser = ArgumentParser(error_handler=None, description='cli tool')
+        parser.add_argument('--cfg', action=ActionConfigFile)
         parser.add_argument('--v0', help=SUPPRESS, default='0')
         parser.add_argument('--v1', help='Option v1.', default=1)
         parser.add_argument('--g1.v2', help='Option v2.', default='2')

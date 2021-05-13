@@ -117,6 +117,8 @@ class _ActionsContainer(SignatureArguments, argparse._ActionsContainer):
                 (action_class, completer_method),
                 {}
             )
+        if isinstance(action, ActionConfigFile) and getattr(self, '_print_config', None) is not None:
+            self.add_argument(self._print_config, action=_ActionPrintConfig)  # type: ignore
         for key in meta_keys:
             if key in action.dest:
                 raise ValueError('Argument with destination name "'+key+'" not allowed.')
@@ -221,8 +223,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         self.parser_mode = parser_mode
         self.logger = logger
         self.error_handler = error_handler
-        if print_config is not None:
-            self.add_argument(print_config, action=_ActionPrintConfig)
+        self._print_config = print_config
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version, help='Print version and exit.')
         if parser_mode not in {'yaml', 'jsonnet'}:
