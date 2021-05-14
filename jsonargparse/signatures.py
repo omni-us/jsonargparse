@@ -2,7 +2,7 @@
 
 import inspect
 import re
-from typing import Any, Callable, Optional, Set, Type, Union
+from typing import Any, Callable, List, Optional, Set, Type, Union
 
 from .actions import _ActionConfigLoad, _ActionHelpClassPath
 from .typehints import ActionTypeHint, is_optional
@@ -36,7 +36,7 @@ class SignatureArguments:
         as_positional: bool = False,
         skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
-    ) -> int:
+    ) -> List[str]:
         """Adds arguments from a class based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
@@ -50,7 +50,7 @@ class SignatureArguments:
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
         Returns:
-            Number of arguments added.
+            The list of arguments added.
 
         Raises:
             ValueError: When not given a class.
@@ -79,7 +79,7 @@ class SignatureArguments:
         as_positional: bool = False,
         skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
-    ) -> int:
+    ) -> List[str]:
         """Adds arguments from a class based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
@@ -94,7 +94,7 @@ class SignatureArguments:
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
         Returns:
-            Number of arguments added.
+            The list of arguments added.
 
         Raises:
             ValueError: When not given a class or the name of a method of the class.
@@ -125,7 +125,7 @@ class SignatureArguments:
         as_positional: bool = False,
         skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
-    ) -> int:
+    ) -> List[str]:
         """Adds arguments from a function based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
@@ -139,7 +139,7 @@ class SignatureArguments:
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
         Returns:
-            Number of arguments added.
+            The list of arguments added.
 
         Raises:
             ValueError: When not given a callable.
@@ -167,7 +167,7 @@ class SignatureArguments:
         docs_func: Callable = lambda x: [x.__doc__],
         sign_func: Callable = lambda x: x,
         skip_first: bool = False,
-    ) -> int:
+    ) -> List[str]:
         """Adds arguments from parameters of objects based on signatures and docstrings.
 
         Args:
@@ -182,7 +182,7 @@ class SignatureArguments:
             skip_first: Whether to skip first argument, i.e., skip self of class methods.
 
         Returns:
-            Number of arguments added.
+            The list of arguments added.
 
         Raises:
             ValueError: When there are required parameters without at least one valid type.
@@ -211,7 +211,7 @@ class SignatureArguments:
         group = self._create_group_if_requested(objects[0], nested_key, as_group, doc_group)
 
         ## Add objects arguments ##
-        added_args = set()  # type: Set[str]
+        added_args = []  # type: List[str]
         if skip is None:
             skip = set()
         for obj, (add_args, add_kwargs) in zip(objects, add_types):
@@ -232,7 +232,7 @@ class SignatureArguments:
                     add_kwargs=add_kwargs,
                 )
 
-        return len(added_args)
+        return added_args
 
 
     def _add_signature_parameter(
@@ -242,7 +242,7 @@ class SignatureArguments:
         param,
         obj: Type,
         doc_params: dict,
-        added_args: Set[str],
+        added_args: List[str],
         skip: Set[str],
         fail_untyped: bool = True,
         as_positional: bool = False,
@@ -309,7 +309,7 @@ class SignatureArguments:
                 action = group.add_argument(opt_str, **kwargs)
                 if is_subclass_typehint and len(subclass_skip) > 0:
                     action.skip = subclass_skip
-                added_args.add(dest)
+                added_args.append(dest)
         elif is_required and fail_untyped:
             raise ValueError('Required parameter without a type for '+obj.__name__+' parameter '+name+'.')
 
@@ -321,7 +321,7 @@ class SignatureArguments:
         default: Union[Type, dict] = None,
         as_group: bool = True,
         **kwargs
-    ):
+    ) -> List[str]:
         """Adds arguments from a dataclass based on its field types and docstrings.
 
         Args:
@@ -331,7 +331,7 @@ class SignatureArguments:
             as_group: Whether arguments should be added to a new argument group.
 
         Returns:
-            Number of arguments added.
+            The list of arguments added.
 
         Raises:
             ValueError: When not given a dataclass.
@@ -358,7 +358,7 @@ class SignatureArguments:
                 raise ValueError('Expected "default" argument to be an instance of "'+theclass.__name__+'" or its kwargs dict, given '+str(default))
             defaults = dataclasses.asdict(default)
 
-        added_args = set()  # type: Set[str]
+        added_args = []  # type: List[str]
         skip = set()  # type: Set[str]
         params = inspect.signature(theclass.__init__).parameters
         for field in dataclasses.fields(theclass):
@@ -373,7 +373,7 @@ class SignatureArguments:
                 default=defaults.get(field.name, inspect_empty),
             )
 
-        return len(added_args)
+        return added_args
 
 
     def add_subclass_arguments(

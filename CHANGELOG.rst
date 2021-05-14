@@ -20,6 +20,8 @@ Fixed
 Changed
 ^^^^^^^
 - :code:`--print_config` now only receives a value with `=` syntax.
+- :code:`add_{class,method,function,dataclass}_arguments` now return a list of
+  added arguments.
 
 
 v3.12.0 (2021-05-13)

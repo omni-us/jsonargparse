@@ -119,9 +119,11 @@ class SignaturesTests(unittest.TestCase):
 
         ## Test nested and as_group=False ##
         parser = ArgumentParser()
-        parser.add_class_arguments(Class3, 'g', as_group=False)
+        added_args = parser.add_class_arguments(Class3, 'g', as_group=False)
 
         self.assertNotIn('g', parser.groups)
+        self.assertEqual(12, len(added_args))
+        self.assertTrue(all(a.startswith('g.') for a in added_args))
 
         for key in ['c3_a0', 'c3_a1', 'c3_a2', 'c3_a3', 'c3_a4', 'c3_a5', 'c3_a6', 'c3_a7', 'c3_a8', 'c1_a2', 'c1_a4', 'c1_a5']:
             self.assertIsNotNone(_find_action(parser, 'g.'+key), key+' should be in parser but is not')
@@ -141,7 +143,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, a0=None):
                 pass
 
-        self.assertEqual(0, parser.add_class_arguments(NoValidArgs))
+        self.assertEqual([], parser.add_class_arguments(NoValidArgs))
 
         def func(a1: Union[int, Dict[int, int]] = 1):
             pass
@@ -177,14 +179,16 @@ class SignaturesTests(unittest.TestCase):
                 return a1
 
         parser = ArgumentParser()
-        parser.add_method_arguments(MyClass, 'mymethod', 'm')
-        parser.add_method_arguments(MyClass, 'mystaticmethod', 's')
+        added_args1 = parser.add_method_arguments(MyClass, 'mymethod', 'm')
+        added_args2 = parser.add_method_arguments(MyClass, 'mystaticmethod', 's')
 
         self.assertRaises(ValueError, lambda: parser.add_method_arguments('MyClass', 'mymethod'))
         self.assertRaises(ValueError, lambda: parser.add_method_arguments(MyClass, 'mymethod3'))
 
         self.assertIn('m', parser.groups)
         self.assertIn('s', parser.groups)
+        self.assertEqual(added_args1, ['m.a1', 'm.a2', 'm.a3'])
+        self.assertEqual(added_args2, ['s.a1', 's.a2'])
 
         for key in ['m.a1', 'm.a2', 'm.a3', 's.a1', 's.a2']:
             self.assertIsNotNone(_find_action(parser, key), key+' should be in parser but is not')
