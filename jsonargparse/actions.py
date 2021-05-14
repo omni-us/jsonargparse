@@ -176,15 +176,15 @@ class _ActionPrintConfig(Action):
         super().__init__(option_strings=option_strings,
                          dest=dest,
                          default=default,
-                         nargs='?',
-                         metavar='comments,skip_null',
+                         nargs=1,
+                         metavar='[={comments,skip_null}+]',
                          help='Print configuration and exit.')
 
     def __call__(self, parser, namespace, value, option_string=None):
         kwargs = {'subparser': parser, 'key': None, 'skip_none': False, 'skip_check': True}
         valid_flags = {'': None, 'comments': 'yaml_comments', 'skip_null': 'skip_none'}
         if value is not None:
-            flags = value.split(',')
+            flags = value[0].split(',')
             invalid_flags = [f for f in flags if f not in valid_flags]
             if len(invalid_flags) > 0:
                 raise ParserError('Invalid option "'+str(invalid_flags[0])+'" for '+option_string)

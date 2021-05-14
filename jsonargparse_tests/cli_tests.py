@@ -77,7 +77,7 @@ class CLITests(unittest.TestCase):
 
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
-            CLI(Class1, args=['--print_config=', '0', 'method1', '2'])
+            CLI(Class1, args=['--print_config', '0', 'method1', '2'])
         cfg = yaml.safe_load(out.getvalue())
         self.assertEqual(cfg, {'i1': '0', 'method1': {'m1': 2}})
 
@@ -142,12 +142,12 @@ class CLITests(unittest.TestCase):
 
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
-            CLI(components, args=['Cmd2', '--print_config=', 'method2'])
+            CLI(components, args=['Cmd2', '--print_config', 'method2'])
         self.assertEqual('i1: d\nmethod2:\n  m2: 0\n', out.getvalue())
 
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
-            CLI(components, args=['--print_config=', 'Cmd2', 'method2'])
+            CLI(components, args=['--print_config', 'Cmd2', 'method2'])
         self.assertEqual('Cmd2:\n  i1: d\n  method2:\n    m2: 0\n', out.getvalue())
 
         if docstring_parser_support and ruyaml_support:

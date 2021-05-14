@@ -260,6 +260,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         return namespace, args
 
 
+    def _parse_optional(self, arg_string):
+        if arg_string == self._print_config:
+            arg_string += '='
+        return super()._parse_optional(arg_string)
+
+
     def _parse_common(
         self,
         cfg: Dict[str, Any],

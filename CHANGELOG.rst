@@ -10,6 +10,18 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.12.1 (2021-??-??)
+--------------------
+
+Fixed
+^^^^^
+- :code:`--print_config` can now be given before other arguments without value.
+
+Changed
+^^^^^^^
+- :code:`--print_config` now only receives a value with `=` syntax.
+
+
 v3.12.0 (2021-05-13)
 --------------------
 
