@@ -43,6 +43,8 @@ null_logger.addHandler(logging.NullHandler())
 
 meta_keys = {'__default_config__', '__path__', '__orig__'}
 
+empty_namespace = Namespace()
+
 
 class ParserError(Exception):
     """Error raised when parsing a value fails."""
@@ -142,10 +144,10 @@ def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
         else:
             kdict = cfg_dict
             for num, kk in enumerate(ksplit[:len(ksplit)-1]):
-                if kk not in kdict or kdict[kk] is None:
+                if kk not in kdict or kdict[kk] is None or kdict[kk] == empty_namespace:
                     kdict[kk] = {}
                 elif not isinstance(kdict[kk], dict):
-                    raise_conflicting_base('.'.join(ksplit[:num+1]))
+                    raise_conflicting_base('.'.join(ksplit[:num+1])+', expected dict but is '+str(kdict[kk]))
                 kdict = kdict[kk]
             if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None:
                 raise_conflicting_base(k)
