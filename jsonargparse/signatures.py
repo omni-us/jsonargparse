@@ -2,11 +2,12 @@
 
 import inspect
 import re
+from argparse import Namespace
 from typing import Any, Callable, List, Optional, Set, Type, Union
 
 from .actions import _ActionConfigLoad, _ActionHelpClassPath
 from .typehints import ActionTypeHint, is_optional
-from .util import _issubclass
+from .util import _get_key_value, _issubclass
 from .optionals import (
     dataclasses_support,
     docstring_parser_support,
@@ -35,8 +36,10 @@ class SignatureArguments:
         as_group: bool = True,
         as_positional: bool = False,
         skip: Optional[Set[str]] = None,
+        instantiate: bool = True,
         fail_untyped: bool = True,
         sub_configs: bool = False,
+        linked_targets: Optional[Set[str]] = None,
     ) -> List[str]:
         """Adds arguments from a class based on its type hints and docstrings.
 
@@ -48,6 +51,7 @@ class SignatureArguments:
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
             skip: Names of parameters that should be skipped.
+            instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
             sub_configs: Whether subclass type hints should be loadable from inner config file.
 
@@ -70,6 +74,8 @@ class SignatureArguments:
                                              sub_configs=sub_configs,
                                              docs_func=get_class_init_and_base_docstrings,
                                              sign_func=get_class_init,
+                                             instantiate=instantiate,
+                                             linked_targets=linked_targets,
                                              skip_first=True)
 
 
@@ -177,6 +183,8 @@ class SignatureArguments:
         docs_func: Callable = lambda x: [x.__doc__],
         sign_func: Callable = lambda x: x,
         skip_first: bool = False,
+        instantiate: bool = True,
+        linked_targets: Optional[Set[str]] = None,
     ) -> List[str]:
         """Adds arguments from parameters of objects based on signatures and docstrings.
 
@@ -191,6 +199,7 @@ class SignatureArguments:
             docs_func: Function that returns docstrings for a given object.
             sign_func: Function that returns signature method for a given object.
             skip_first: Whether to skip first argument, i.e., skip self of class methods.
+            instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
 
         Returns:
             The list of arguments added.
@@ -219,7 +228,7 @@ class SignatureArguments:
         doc_group, doc_params = self._gather_docstrings(objects, docs_func)
 
         ## Create group if requested ##
-        group = self._create_group_if_requested(objects[0], nested_key, as_group, doc_group)
+        group = self._create_group_if_requested(objects[0], nested_key, as_group, doc_group, instantiate=instantiate)
 
         ## Add objects arguments ##
         added_args = []  # type: List[str]
@@ -239,6 +248,7 @@ class SignatureArguments:
                     skip,
                     fail_untyped=fail_untyped,
                     sub_configs=sub_configs,
+                    linked_targets=linked_targets or set(),
                     as_positional=as_positional,
                     add_args=add_args,
                     add_kwargs=add_kwargs,
@@ -259,9 +269,12 @@ class SignatureArguments:
         fail_untyped: bool = True,
         as_positional: bool = False,
         sub_configs: bool = False,
+        linked_targets: Optional[Set[str]] = None,
         add_args: bool = True,
         add_kwargs: bool = True,
         default: Any = inspect_empty,
+        enable_path: bool = False,
+        **kwargs
     ):
         name = param.name
         kind = param._kind
@@ -273,6 +286,9 @@ class SignatureArguments:
         if not fail_untyped and annotation == inspect_empty:
             annotation = Any
             default = None if is_required else default
+            is_required = False
+        if is_required and linked_targets is not None and name in linked_targets:
+            default = None
             is_required = False
         if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
            (not is_required and name[0] == '_') or \
@@ -291,7 +307,8 @@ class SignatureArguments:
             default = obj.__dataclass_fields__[name].default_factory()
         if annotation == inspect_empty and not is_required:
             annotation = type(default)
-        kwargs = {'help': doc_params.get(name)}
+        if 'help' not in kwargs:
+            kwargs['help'] = doc_params.get(name)
         if not is_required:
             kwargs['default'] = default
             if default is None and not is_optional(annotation, object):
@@ -399,6 +416,7 @@ class SignatureArguments:
         baseclass: Type,
         nested_key: str,
         as_group: bool = True,
+        skip: Optional[Set[str]] = None,
         required: bool = False,
         metavar: str = '{"class_path":...[,"init_args":...]}',
         help: str = 'Dictionary with "class_path" and "init_args" for any subclass of %(baseclass_name)s.',
@@ -417,6 +435,7 @@ class SignatureArguments:
             baseclass: Base class to use to check subclasses.
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
+            skip: Names of parameters that should be skipped.
             required: Whether the argument group is required.
             metavar: Variable string to show in the argument's help.
             help: Description of argument to show in the help.
@@ -428,15 +447,36 @@ class SignatureArguments:
             raise ValueError('Expected "baseclass" argument to be a class object.')
 
         doc_group = self._gather_docstrings([baseclass], get_class_init_and_base_docstrings)[0]
-        group = self._create_group_if_requested(baseclass, nested_key, as_group, doc_group, config_load=False, required=required)
+        group = self._create_group_if_requested(
+            baseclass,
+            nested_key,
+            as_group,
+            doc_group,
+            config_load=False,
+            required=required,
+            instantiate=False,
+        )
 
-        group.add_argument('--'+nested_key+'.help', action=_ActionHelpClassPath(baseclass=baseclass))
-        group.add_argument(
-            '--' + nested_key,
-            type=baseclass,
+        added_args = []  # type: List[str]
+        if skip is None:
+            skip = set()
+        else:
+            skip = set(nested_key+'.init_args.'+s for s in skip)
+        param = Namespace(name=nested_key, _kind=None, annotation=baseclass)
+        kwargs.update({
+            'metavar': metavar,
+            'help': (help % {'baseclass_name': baseclass.__name__}),
+        })
+        self._add_signature_parameter(
+            group,
+            None,
+            param,
+            baseclass,
+            {},
+            added_args,
+            skip,
+            default={},
             enable_path=True,
-            metavar=metavar,
-            help=(help % {'baseclass_name': baseclass.__name__}),
             **kwargs
         )
 
@@ -461,7 +501,7 @@ class SignatureArguments:
         return strip_title(doc_group), doc_params
 
 
-    def _create_group_if_requested(self, obj, nested_key, as_group, doc_group, config_load=True, config_load_type=None, required=False):
+    def _create_group_if_requested(self, obj, nested_key, as_group, doc_group, config_load=True, config_load_type=None, required=False, instantiate=True):
         if required:
             if nested_key is None:
                 raise ValueError('A nested_key is mandatory to make required.')
@@ -475,7 +515,22 @@ class SignatureArguments:
             group = self.add_argument_group(doc_group, name=name)
             if config_load and nested_key is not None:
                 group.add_argument('--'+nested_key, action=_ActionConfigLoad(basetype=config_load_type))
+            if inspect.isclass(obj) and nested_key is not None and instantiate:
+                group.dest = nested_key
+                group.group_class = obj
+                group.instantiate_class = group_instantiate_class
         return group
+
+
+def group_instantiate_class(group, cfg):
+    try:
+        value, parent, key = _get_key_value(cfg, group.dest, parent=True)
+    except KeyError:
+        value = {}
+        parent = cfg
+        key = group.dest
+        assert '.' not in key
+    parent[key] = group.group_class(**value)
 
 
 def get_class_init_and_base_docstrings(value):

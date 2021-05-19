@@ -545,12 +545,6 @@ arguments are:
   exclude adding some arguments, e.g.
   :code:`parser.add_method_arguments(MyClass, 'mymethod', skip={'flag'})`.
 
-Some use cases could require adding arguments from multiple classes and be
-desired that some parameters get a value automatically computed from other
-arguments. This behavior can be obtained by using the
-:py:meth:`.ArgumentParser.link_arguments` method. One or more source keys are
-given and an optional function to compute the target value from the source(s).
-
 .. note::
 
     Since keyword arguments with unsupported types are ignored, during
@@ -566,6 +560,78 @@ given and an optional function to compute the target value from the source(s).
     argument descriptions from the docstrings. This package is included when
     jsonargparse is installed using the :code:`signatures` extras require as
     explained in section :ref:`installation`.
+
+
+.. _argument-linking:
+
+Argument linking
+================
+
+Some use cases could require adding arguments from multiple classes and be
+desired that some parameters get a value automatically computed from other
+arguments. This behavior can be obtained by using the
+:py:meth:`.ArgumentParser.link_arguments` method.
+
+There are two types of links each defined with :code:`apply_on='parse'` and
+:code:`apply_on='instantiate'`. As the names suggest the former are set when
+calling one of the parse methods and the latter are set when calling
+:py:meth:`.ArgumentParser.instantiate_classes`.
+
+For parsing links, source keys can be individual arguments or nested groups. The
+target key has to be a single argument. The keys can be inside init_args of a
+subclass. The compute function should accept as many positional arguments as
+there are sources and return a value of type compatible with the target. An
+example would be the following:
+
+.. code-block:: python
+
+    class Model:
+        def __init__(self, batch_size: int):
+            self.batch_size = batch_size
+
+    class Data:
+        def __init__(self, batch_size: int = 5):
+            self.batch_size = batch_size
+
+    parser = ArgumentParser()
+    parser.add_class_arguments(Model, 'model')
+    parser.add_class_arguments(Data, 'data')
+    parser.link_arguments('data.batch_size', 'model.batch_size', apply_on='parse')
+
+As argument and in config files only :code:`data.batch_size` should be
+specified. Then whatever value it has will be propagated to
+:code:`model.batch_size`.
+
+For instantiation links, only a single source key is supported. The key can be
+for a class group created using
+:py:meth:`.SignatureArguments.add_class_arguments` or a subclass action created
+using :py:meth:`.SignatureArguments.add_subclass_arguments`. If the key is only
+the class group or subclass action, then a compute function is required which
+takes the source class instance and returns the value to set in target.
+Alternatively the key can specify a class attribute. The target key has to be a
+single argument and can be inside init_args of a subclass. The order of
+instantiation used by :py:meth:`.ArgumentParser.instantiate_classes` is
+automatically determined based on the links. The instantiation links must be
+a directed acyclic graph. An example would be the following:
+
+.. code-block:: python
+
+    class Model:
+        def __init__(self, num_classes: int):
+            self.num_classes = num_classes
+
+    class Data:
+        def __init__(self):
+            self.num_classes = get_num_classes()
+
+    parser = ArgumentParser()
+    parser.add_class_arguments(Model, 'model')
+    parser.add_class_arguments(Data, 'data')
+    parser.link_arguments('data.num_classes', 'model.num_classes', apply_on='instantiate')
+
+This link would imply that :py:meth:`.ArgumentParser.instantiate_classes`
+instantiates :class:`Data` first, then use the :code:`num_classes` attribute to
+instantiate :class:`Model`.
 
 
 .. _type-hints:

@@ -326,7 +326,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         _ActionPrintConfig.print_config_if_requested(self, cfg_ns)
 
-        _ActionLink.propagate_arguments(self, cfg_ns)
+        _ActionLink.apply_parsing_links(self, cfg_ns)
 
         if not skip_check:
             self.check_config(cfg_ns, skip_required=skip_required)
@@ -654,24 +654,22 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         source: Union[str, Tuple[str, ...]],
         target: str,
         compute_fn: Callable = None,
+        apply_on: str = 'parse',
     ):
-        """Makes an argument value be derived from the values other arguments.
+        """Makes an argument value be derived from the values of other arguments.
 
-        Source keys can be individual arguments or nested groups. The target key
-        has to be an single argument. The keys can be inside init_args of a
-        subclass. The compute function should accept as many positional
-        arguments as there are sources and return a value of type compatible
-        with the target.
+        Refer to :ref:`argument-linking` for a detailed explanation and examples-
 
         Args:
             source: Key(s) from which the target value is derived.
             target: Key to where the value is set.
             compute_fn: Function to compute target value from source.
+            apply_on: At what point to set target value, 'parse' or 'instantiate'.
 
         Raises:
             ValueError: If an invalid parameter is given.
         """
-        _ActionLink(self, source, target, compute_fn)
+        _ActionLink(self, source, target, compute_fn, apply_on)
 
 
     ## Methods for adding to the parser ##
@@ -1057,7 +1055,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
 
     def instantiate_subclasses(self, cfg:Union[Namespace, Dict[str, Any]]) -> Dict[str, Any]:
-        """Recursively instantiates all subclasses defined by 'class_path' and 'init_args'.
+        """Calls instantiate_classes with instantiate_groups=False.
 
         Args:
             cfg: The configuration object to use.
@@ -1065,22 +1063,40 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Returns:
             A configuration object with all subclasses instantiated.
         """
+        return self.instantiate_classes(cfg, instantiate_groups=False)
+
+
+    def instantiate_classes(self, cfg:Union[Namespace, Dict[str, Any]], instantiate_groups: bool = True) -> Dict[str, Any]:
+        """Recursively instantiates all subclasses defined by 'class_path' and 'init_args' and class groups.
+
+        Args:
+            cfg: The configuration object to use.
+            instantiate_groups: Whether class groups should be instantiated.
+
+        Returns:
+            A configuration object with all subclasses and classes instantiated.
+        """
         cfg = strip_meta(cfg)
+        order = _ActionLink.instantiation_order(self)
+
         actions = filter_default_actions(self._actions)
         actions.sort(key=lambda x: -len(x.dest.split('.')))
+        actions = _ActionLink.reorder(order, actions)
         for action in actions:
             if isinstance(action, ActionTypeHint) or \
                (isinstance(action, _ActionConfigLoad) and is_pure_dataclass(action.basetype)):
                 value, parent, key = _get_key_value(cfg, action.dest, parent=True)
                 if value is not None:
                     parent[key] = action._instantiate_classes(value)
-                #try:
-                #    value, parent, key = _get_key_value(cfg, action.dest, parent=True)
-                #except KeyError:
-                #    pass
-                #else:
-                #    if value is not None:
-                #        parent[key] = action._instantiate_classes(value)
+                    _ActionLink.apply_instantiation_links(self, cfg, action.dest)
+
+        if instantiate_groups:
+            groups = [g for g in self._action_groups if hasattr(g, 'instantiate_class')]
+            groups = _ActionLink.reorder(order, groups)
+            for group in groups:
+                group.instantiate_class(group, cfg)
+                _ActionLink.apply_instantiation_links(self, cfg, group.dest)
+
         return cfg
 
 

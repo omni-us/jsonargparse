@@ -13,6 +13,12 @@ section of releases.
 v3.14.0 (2021-??-??)
 --------------------
 
+Added
+^^^^^
+- Method `instantiate_classes` that instantiates subclasses and class groups.
+- Support for `link_arguments` that are applied on instantiation.
+- Method `add_subclass_arguments` now supports skipping of arguments.
+
 Fixed
 ^^^^^
 - Custom string template to avoid problems with percent symbols in docstrings.

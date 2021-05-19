@@ -7,6 +7,7 @@ import stat
 import yaml
 import inspect
 import logging
+from collections import defaultdict
 from copy import deepcopy
 from typing import Dict, Any, Optional, Union
 from contextlib import contextmanager, redirect_stderr
@@ -323,6 +324,38 @@ def known_to_fsspec(path):
         if path.startswith(protocol+'://') or path.startswith(protocol+'::'):
             return True
     return False
+
+
+class DirectedGraph:
+    def __init__(self):
+        self.nodes = []
+        self.edges_dict = defaultdict(list)
+
+    def add_edge(self, source, target):
+        for node in [source, target]:
+            if node not in self.nodes:
+                self.nodes.append(node)
+        self.edges_dict[self.nodes.index(source)].append(self.nodes.index(target))
+
+    def get_topological_order(self):
+        exploring = [False]*len(self.nodes)
+        visited = [False]*len(self.nodes)
+        order = []
+        for source in range(len(self.nodes)):
+            if not visited[source]:
+                self.topological_sort(source, exploring, visited, order)
+        return [self.nodes[n] for n in order]
+
+    def topological_sort(self, source, exploring, visited, order):
+        exploring[source] = True
+        for target in self.edges_dict[source]:
+            if exploring[target]:
+                raise ValueError('Graph has cycles, found while checking '+self.nodes[source]+' --> '+self.nodes[target])
+            elif not visited[target]:
+                self.topological_sort(target, exploring, visited, order)
+        visited[source] = True
+        exploring[source] = False
+        order.insert(0, source)
 
 
 class Path:

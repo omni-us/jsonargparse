@@ -11,6 +11,7 @@ from argparse import Namespace, Action, SUPPRESS, _HelpAction, _SubParsersAction
 from .optionals import FilesCompleterMethod, get_config_read_mode, ruyaml_support
 from .typing import path_type
 from .util import (
+    DirectedGraph,
     yamlParserError,
     yamlScannerError,
     ParserError,
@@ -88,6 +89,17 @@ def _find_parent_actions(parser, key:str, exclude=None):
             if action != []:
                 break
     return None if action == [] else action
+
+
+def _find_subclass_action_or_class_group(parser, key:str, exclude=None):
+    from .typehints import ActionTypeHint
+    action = _find_parent_action(parser, key, exclude=exclude)
+    if ActionTypeHint.is_subclass_typehint(action):
+        return action
+    key_set = {key, key.rsplit('.', 1)[0]}
+    for group in parser._action_groups:
+        if getattr(group, 'dest', None) in key_set and hasattr(group, 'instantiate_class'):
+            return group
 
 
 def _is_action_value_list(action:Action):
@@ -281,18 +293,37 @@ class _ActionLink(Action):
         source: Union[str, Tuple[str, ...]],
         target: str,
         compute_fn: Callable = None,
+        apply_on: str = 'parse',
     ):
         self.parser = parser
+
+        # Set and check apply_on
+        self.apply_on = apply_on
+        if apply_on not in {'parse', 'instantiate'}:
+            raise ValueError("apply_on must be 'parse' or 'instantiate'.")
 
         # Set and check compute function
         self.compute_fn = compute_fn
         if compute_fn is None and not isinstance(source, str):
             raise ValueError('Multiple source keys requires a compute function.')
 
-        # Set and check source and target actions
+        # Set and check source actions or group
         exclude = (_ActionLink, _ActionConfigLoad, _ActionSubCommands, ActionConfigFile)
         source = (source,) if isinstance(source, str) else source
-        self.source = [(s, _find_parent_actions(parser, s, exclude=exclude)) for s in source]
+        if apply_on == 'instantiate':
+            if len(source) != 1:
+                raise ValueError('Links applied on instantiation only supported for a single source.')
+            self.source = [(source[0], _find_subclass_action_or_class_group(parser, source[0], exclude=exclude))]
+            if self.source[0][1] is None:
+                raise ValueError('Links applied on instantiation require source to be a subclass action or a class group.')
+            if '.' in self.source[0][1].dest:
+                raise ValueError('Links applied on instantiation only supported for first level objects.')
+            if source[0] == self.source[0][1].dest and compute_fn is None:
+                raise ValueError('Links applied on instantiation with object as source requires a compute function.')
+        else:
+            self.source = [(s, _find_parent_actions(parser, s, exclude=exclude)) for s in source]
+
+        # Set and check target action
         self.target = (target, _find_parent_action(parser, target, exclude=exclude))
         for key, action in self.source + [self.target]:
             if action is None:
@@ -314,10 +345,27 @@ class _ActionLink(Action):
                 if self.target[1] in group._group_actions:
                     group._group_actions.remove(self.target[1])
 
+        # Remove target from required
+        if target in parser.required_args:
+            parser.required_args.remove(target)
+        if is_target_subclass:
+            sub_add_kwargs = getattr(self.target[1], 'sub_add_kwargs')
+            if 'linked_targets' not in sub_add_kwargs:
+                sub_add_kwargs['linked_targets'] = set()
+            subtarget = target.split('.init_args.', 1)[1]
+            sub_add_kwargs['linked_targets'].add(subtarget)
+
         # Add link action to group to show in help
         if not hasattr(parser, '_links_group'):
             parser._links_group = parser.add_argument_group('Linked arguments')
         parser._links_group._group_actions.append(self)
+
+        # Check instantiation link does not create cycle
+        if apply_on == 'instantiate':
+            try:
+                self.instantiation_order(parser)
+            except ValueError as ex:
+                raise ValueError('Invalid link '+source[0]+' --> '+target+': '+str(ex)) from ex
 
         # Initialize link action
         link_str = target+' <-- '
@@ -337,7 +385,7 @@ class _ActionLink(Action):
             [link_str],
             dest=target,
             default=SUPPRESS,
-            metavar='',
+            metavar='[applied on '+self.apply_on+']',
             type=type_attr,
             help=help_str,
         )
@@ -350,34 +398,87 @@ class _ActionLink(Action):
         return self.parser._check_value_key(self.target[1], value, self.target[0], cfg)
 
     @staticmethod
-    def propagate_arguments(parser, cfg_ns):
-        if hasattr(parser, '_links_group'):
-            for action in parser._links_group._group_actions:
-                try:
-                    args = []
-                    for key, _ in action.source:
-                        arg = _get_key_value(cfg_ns, key)
-                        if isinstance(arg, Namespace):
-                            arg = namespace_to_dict(arg)
-                        args.append(arg)
-                except AttributeError:
-                    continue
-                if action.compute_fn is None:
-                    value = args[0]
+    def apply_parsing_links(parser, cfg_ns):
+        if not hasattr(parser, '_links_group'):
+            return
+        for action in parser._links_group._group_actions:
+            if action.apply_on != 'parse':
+                continue
+            try:
+                args = []
+                for key, _ in action.source:
+                    arg = _get_key_value(cfg_ns, key)
+                    if isinstance(arg, Namespace):
+                        arg = namespace_to_dict(arg)
+                    args.append(arg)
+            except AttributeError:
+                continue
+            if action.compute_fn is None:
+                value = args[0]
+            else:
+                value = action.compute_fn(*args)
+            _ActionLink.set_target_value(action, value, cfg_ns)
+
+    @staticmethod
+    def apply_instantiation_links(parser, cfg, source):
+        if not hasattr(parser, '_links_group'):
+            return
+        for action in parser._links_group._group_actions:
+            if action.apply_on != 'instantiate' or source != action.source[0][1].dest:
+                continue
+            source_object = _get_key_value(cfg, source)
+            if action.source[0][0] == action.source[0][1].dest:
+                value = action.compute_fn(source_object)
+            else:
+                attr = action.source[0][0].rsplit('.', 1)[1]
+                value = getattr(source_object, attr)
+            _ActionLink.set_target_value(action, value, cfg)
+
+    @staticmethod
+    def set_target_value(action, value, cfg):
+        key = action.target[0]
+        parent = cfg
+        while True:
+            if '.' not in key:
+                if isinstance(parent, Namespace):
+                    setattr(parent, key, value)
                 else:
-                    value = action.compute_fn(*args)
-                key = action.target[0]
-                parent_ns = cfg_ns
-                while True:
-                    if '.' not in key:
-                        setattr(parent_ns, key, value)
-                        break
-                    parent_key, key = key.rsplit('.', 1)
-                    try:
-                        parent_ns = _get_key_value(cfg_ns, parent_key)
-                    except AttributeError:
-                        value = dict_to_namespace({key: value})
-                        key = parent_key
+                    parent[key] = value
+                break
+            parent_key, key = key.rsplit('.', 1)
+            try:
+                parent = _get_key_value(cfg, parent_key)
+            except (AttributeError, KeyError):
+                value = {key: value}
+                if isinstance(parent, Namespace):
+                    value = dict_to_namespace(value)
+                key = parent_key
+
+    @staticmethod
+    def instantiation_order(parser):
+        if hasattr(parser, '_links_group'):
+            actions = [a for a in parser._links_group._group_actions if a.apply_on == 'instantiate']
+            if len(actions) > 0:
+                graph = DirectedGraph()
+                for action in actions:
+                    source = action.source[0][1].dest
+                    target = re.sub(r'\.init_args$', '', action.target[0].rsplit('.', 1)[0])
+                    graph.add_edge(source, target)
+                return graph.get_topological_order()
+        return []
+
+    @staticmethod
+    def reorder(order, components):
+        ordered = []
+        for key in order:
+            after = []
+            for component in components:
+                if key == component.dest or component.dest.startswith(key+'.'):
+                    ordered.append(component)
+                else:
+                    after.append(component)
+            components = after
+        return ordered + components
 
 
 class ActionYesNo(Action):
