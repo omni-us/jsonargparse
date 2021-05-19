@@ -827,7 +827,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             def save_paths(cfg, base=None):
                 replace_keys = {}
                 for key, val in cfg.items():
-                    full_key = ('' if base is None else base+'.')+key
+                    full_key = ('' if base is None else base+'.')+str(key)
                     if isinstance(val, dict):
                         kbase = str(key) if base is None else base+'.'+str(key)
                         if '__path__' in val:
@@ -953,7 +953,13 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     delattr(self, 'print_config_skip')
                 except (TypeError, KeyError, ParserError) as ex:
                     raise ParserError('Problem in default config file "'+str(default_config_file)+'" :: '+ex.args[0]) from ex
-            cfg = self._merge_config(cfg_file, cfg)
+            if isinstance(cfg_file, Namespace):
+                cfg_file = namespace_to_dict(cfg_file)
+            cfg = self._merge_config(
+                _flat_namespace_to_dict(dict_to_namespace(cfg_file)),
+                _flat_namespace_to_dict(dict_to_namespace(cfg))
+            )
+            cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
             cfg['__default_config__'] = default_config_file
             self._logger.info('Parsed configuration from default path: %s', str(default_config_file))
 

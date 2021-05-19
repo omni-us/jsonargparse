@@ -10,12 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.12.1 (2021-??-??)
+v3.12.1 (2021-05-19)
 --------------------
 
 Fixed
 ^^^^^
 - :code:`--print_config` can now be given before other arguments without value.
+- Fixed conversion of flat namespace to dict when there is a nested empty namespace.
+- Fixed issue with get_defaults with default config file and parse_as_dict=False.
+- Fixed bug in save which failed when there was an int key.
 
 Changed
 ^^^^^^^
