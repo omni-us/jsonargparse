@@ -4,7 +4,7 @@ import inspect
 import os
 import re
 import yaml
-from argparse import Action
+from argparse import Action, Namespace
 from collections.abc import Iterable as abcIterable
 from collections.abc import Sequence as abcSequence
 from enum import Enum
@@ -26,6 +26,7 @@ from .util import (
     import_object,
     ParserError,
     Path,
+    namespace_to_dict,
     yamlParserError,
     yamlScannerError,
     _issubclass,
@@ -304,9 +305,11 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
 
     # Subclasses
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):
-        if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val)):
+        if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val) or (isinstance(val, Namespace) and hasattr(val, 'class_path'))):
             raise ValueError('Expected an str or a Dict with a class_path entry but got "'+str(val)+'"')
         try:
+            if isinstance(val, Namespace):
+                val = namespace_to_dict(val)
             if isinstance(val, str):
                 val_class = import_object(val)
                 val = {'class_path': val}
