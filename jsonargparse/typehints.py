@@ -23,7 +23,6 @@ from .optionals import (
     ModuleNotFound,
 )
 from .util import (
-    namespace_to_dict,
     import_object,
     ParserError,
     Path,
@@ -36,6 +35,8 @@ from .util import (
 
 __all__ = ['ActionTypeHint']
 
+
+NoneType = type(None)
 
 root_types = {
     bool,
@@ -53,7 +54,7 @@ leaf_types = {
     int,
     float,
     bool,
-    type(None),
+    NoneType,
 }
 
 
@@ -114,6 +115,9 @@ class ActionTypeHint(Action):
     def is_subclass_typehint(typehint):
         if isinstance(typehint, Action):
             typehint = getattr(typehint, '_typehint', None)
+        if getattr(typehint, '__origin__', None) == Union:
+            subtypes = [a for a in typehint.__args__ if a != NoneType]
+            return all(ActionTypeHint.is_subclass_typehint(s) for s in subtypes)
         return inspect.isclass(typehint) and typehint not in leaf_types.union(root_types)
 
 
@@ -336,7 +340,7 @@ def is_optional(annotation, ref_type):
     return hasattr(annotation, '__origin__') and \
         annotation.__origin__ == Union and \
         len(annotation.__args__) == 2 and \
-        any(type(None) == a for a in annotation.__args__) and \
+        any(NoneType == a for a in annotation.__args__) and \
         any(_issubclass(a, ref_type) for a in annotation.__args__)
 
 

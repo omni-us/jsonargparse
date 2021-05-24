@@ -185,5 +185,54 @@ class CLITests(unittest.TestCase):
         self.assertEqual(('a', 2), non_empty_context_2())
 
 
+class CLITempDirTests(TempDirTestCase):
+
+    def test_subclass_type_config_file(self):
+        a_yaml = {
+            'class_path': 'jsonargparse_tests.A',
+            'init_args': {'p1': 'a yaml'}
+        }
+
+        with open('config.yaml', 'w') as f:
+            f.write('a: a.yaml\n')
+        with open('a.yaml', 'w') as f:
+            f.write(yaml.safe_dump(a_yaml))
+
+        class A:
+            def __init__(self, p1: str = 'a default'):
+                self.p1 = p1
+
+        class B:
+            def __init__(self, a: A = A()):
+                self.a = a
+
+        class C:
+            def __init__(self, a: A = A(), b: B = None):
+                self.a = a
+                self.b = b
+            def cmd_a(self):
+                print(self.a.p1)
+            def cmd_b(self):
+                print(self.b.a.p1)
+
+        import jsonargparse_tests
+        setattr(jsonargparse_tests, 'A', A)
+
+        out = StringIO()
+        with redirect_stdout(out):
+            CLI(C, args=['--config=config.yaml', 'cmd_a'])
+        self.assertEqual('a yaml\n', out.getvalue())
+
+        #with open('config.yaml', 'w') as f:
+        #    f.write('a: a.yaml\nb: b.yaml\n')
+        #with open('b.yaml', 'w') as f:
+        #    f.write('a: a.yaml\n')
+
+        #out = StringIO()
+        #with redirect_stdout(out):
+        #    CLI(C, args=['--config=config.yaml', 'cmd_b'])
+        #self.assertEqual('a yaml\n', out.getvalue())
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

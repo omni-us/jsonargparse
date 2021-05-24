@@ -36,6 +36,7 @@ class SignatureArguments:
         as_positional: bool = False,
         skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
+        sub_configs: bool = False,
     ) -> List[str]:
         """Adds arguments from a class based on its type hints and docstrings.
 
@@ -48,6 +49,7 @@ class SignatureArguments:
             as_positional: Whether to add required parameters as positional arguments.
             skip: Names of parameters that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
+            sub_configs: Whether subclass type hints should be loadable from inner config file.
 
         Returns:
             The list of arguments added.
@@ -65,8 +67,9 @@ class SignatureArguments:
                                              as_positional,
                                              skip,
                                              fail_untyped,
-                                             get_class_init_and_base_docstrings,
-                                             get_class_init,
+                                             sub_configs=sub_configs,
+                                             docs_func=get_class_init_and_base_docstrings,
+                                             sign_func=get_class_init,
                                              skip_first=True)
 
 
@@ -79,6 +82,7 @@ class SignatureArguments:
         as_positional: bool = False,
         skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
+        sub_configs: bool = False,
     ) -> List[str]:
         """Adds arguments from a class based on its type hints and docstrings.
 
@@ -92,6 +96,7 @@ class SignatureArguments:
             as_positional: Whether to add required parameters as positional arguments.
             skip: Names of parameters that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
+            sub_configs: Whether subclass type hints should be loadable from inner config file.
 
         Returns:
             The list of arguments added.
@@ -114,6 +119,7 @@ class SignatureArguments:
                                              as_positional,
                                              skip,
                                              fail_untyped,
+                                             sub_configs=sub_configs,
                                              skip_first=skip_first)
 
 
@@ -125,6 +131,7 @@ class SignatureArguments:
         as_positional: bool = False,
         skip: Optional[Set[str]] = None,
         fail_untyped: bool = True,
+        sub_configs: bool = False,
     ) -> List[str]:
         """Adds arguments from a function based on its type hints and docstrings.
 
@@ -137,6 +144,7 @@ class SignatureArguments:
             as_positional: Whether to add required parameters as positional arguments.
             skip: Names of parameters that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
+            sub_configs: Whether subclass type hints should be loadable from inner config file.
 
         Returns:
             The list of arguments added.
@@ -153,7 +161,8 @@ class SignatureArguments:
                                              as_group,
                                              as_positional,
                                              skip,
-                                             fail_untyped)
+                                             fail_untyped,
+                                             sub_configs=sub_configs)
 
 
     def _add_signature_arguments(
@@ -164,6 +173,7 @@ class SignatureArguments:
         as_positional: bool,
         skip: Optional[Set[str]],
         fail_untyped: bool,
+        sub_configs: bool = False,
         docs_func: Callable = lambda x: [x.__doc__],
         sign_func: Callable = lambda x: x,
         skip_first: bool = False,
@@ -177,6 +187,7 @@ class SignatureArguments:
             as_positional: Whether to add required parameters as positional arguments.
             skip: Names of parameters that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
+            sub_configs: Whether subclass type hints should be loadable from inner config file.
             docs_func: Function that returns docstrings for a given object.
             sign_func: Function that returns signature method for a given object.
             skip_first: Whether to skip first argument, i.e., skip self of class methods.
@@ -227,6 +238,7 @@ class SignatureArguments:
                     added_args,
                     skip,
                     fail_untyped=fail_untyped,
+                    sub_configs=sub_configs,
                     as_positional=as_positional,
                     add_args=add_args,
                     add_kwargs=add_kwargs,
@@ -246,6 +258,7 @@ class SignatureArguments:
         skip: Set[str],
         fail_untyped: bool = True,
         as_positional: bool = False,
+        sub_configs: bool = False,
         add_args: bool = True,
         add_kwargs: bool = True,
         default: Any = inspect_empty,
@@ -258,7 +271,7 @@ class SignatureArguments:
         is_required = default == inspect_empty
         skip_message = 'Skipping parameter "'+name+'" from "'+obj.__name__+'" because of: '
         if not fail_untyped and annotation == inspect_empty:
-            annotation = Any
+            annotation = Any if is_required else type(default)
             default = None if is_required else default
             is_required = False
         if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
@@ -292,8 +305,9 @@ class SignatureArguments:
             kwargs['type'] = annotation
         elif annotation != inspect_empty:
             try:
-                kwargs['action'] = ActionTypeHint(typehint=annotation)
                 is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation)
+                enable_path = is_subclass_typehint and sub_configs
+                kwargs['action'] = ActionTypeHint(typehint=annotation, enable_path=enable_path)
             except ValueError as ex:
                 self.logger.debug(skip_message+str(ex))  # type: ignore
         if 'type' in kwargs or 'action' in kwargs:

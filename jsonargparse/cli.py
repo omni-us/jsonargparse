@@ -102,15 +102,16 @@ def _get_help_str(component):
 
 
 def _add_component_to_parser(component, parser, as_positional, config_help):
+    kwargs = {'as_positional': as_positional, 'sub_configs': True}
     if inspect.isfunction(component):
-        parser.add_function_arguments(component, as_positional=as_positional)
+        parser.add_function_arguments(component, **kwargs)
     else:
-        parser.add_class_arguments(component, as_positional=as_positional)
+        parser.add_class_arguments(component, **kwargs)
         subcommands = parser.add_subcommands(required=True)
         for key in [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != '_']:
             subparser = ArgumentParser()
             subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
-            subparser.add_method_arguments(component, key, as_positional=as_positional)
+            subparser.add_method_arguments(component, key, **kwargs)
             subcommands.add_subcommand(key, subparser, help=_get_help_str(getattr(component, key)))
 
 

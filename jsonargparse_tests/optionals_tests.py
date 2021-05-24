@@ -108,6 +108,20 @@ class FsspecSupportTests(unittest.TestCase):
             self.assertIn('test_fsspec_support_false', context.msg)
 
 
+class RuyamlSupportTests(unittest.TestCase):
+
+    @unittest.skipIf(not ruyaml_support, 'ruyaml package is required')
+    def test_ruyaml_support_true(self):
+        import_ruyaml('test_ruyaml_support_true')
+
+
+    @unittest.skipIf(ruyaml_support, 'ruyaml package should not be installed')
+    def test_ruyaml_support_false(self):
+        with self.assertRaises(ImportError) as context:
+            import_ruyaml('test_ruyaml_support_false')
+            self.assertIn('test_ruyaml_support_false', context.msg)
+
+
 class ConfigReadModeTests(unittest.TestCase):
 
     @classmethod
