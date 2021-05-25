@@ -58,6 +58,9 @@ leaf_types = {
     NoneType,
 }
 
+not_subclass_types = set(k for k in registered_types.keys() if not isinstance(k, tuple))  # type: Set
+not_subclass_types = not_subclass_types.union(leaf_types).union(root_types)
+
 
 class ActionTypeHint(Action):
     """Action to parse a type hint."""
@@ -119,7 +122,7 @@ class ActionTypeHint(Action):
         if getattr(typehint, '__origin__', None) == Union:
             subtypes = [a for a in typehint.__args__ if a != NoneType]
             return all(ActionTypeHint.is_subclass_typehint(s) for s in subtypes)
-        return inspect.isclass(typehint) and typehint not in leaf_types.union(root_types)
+        return inspect.isclass(typehint) and typehint not in not_subclass_types
 
 
     def serialize(self, value):
