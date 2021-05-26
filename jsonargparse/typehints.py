@@ -119,10 +119,11 @@ class ActionTypeHint(Action):
     def is_subclass_typehint(typehint):
         if isinstance(typehint, Action):
             typehint = getattr(typehint, '_typehint', None)
-        if getattr(typehint, '__origin__', None) == Union:
+        typehint_origin = getattr(typehint, '__origin__', None)
+        if typehint_origin == Union:
             subtypes = [a for a in typehint.__args__ if a != NoneType]
             return all(ActionTypeHint.is_subclass_typehint(s) for s in subtypes)
-        return inspect.isclass(typehint) and typehint not in not_subclass_types
+        return inspect.isclass(typehint) and typehint not in not_subclass_types and typehint_origin is None
 
 
     def serialize(self, value):

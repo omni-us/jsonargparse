@@ -20,7 +20,7 @@ Added
 Fixed
 ^^^^^
 - With fail_untyped=True use type from default value instead of Any.
-- Registered types incorrectly considered subclass types.
+- Registered types and typing types incorrectly considered subclass types.
 
 
 v3.12.1 (2021-05-19)
