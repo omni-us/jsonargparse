@@ -14,15 +14,15 @@ from jsonargparse_tests.base import *
 class ArgcompleteTests(TempDirTestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.orig_environ = os.environ.copy()
-        self.argcomplete = import_argcomplete('ArgcompleteTests')
+    def setUpClass(cls):
+        cls.orig_environ = os.environ.copy()
+        cls.argcomplete = import_argcomplete('ArgcompleteTests')
 
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         os.environ.clear()
-        os.environ.update(self.orig_environ)
+        os.environ.update(cls.orig_environ)
 
 
     def setUp(self):

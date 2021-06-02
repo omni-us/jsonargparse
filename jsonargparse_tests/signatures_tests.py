@@ -461,13 +461,14 @@ class SignaturesTests(unittest.TestCase):
 
     def test_fail_untyped_false(self):
 
-        def func(a1):
+        def func(a1, a2=None):
             return a1
 
         parser = ArgumentParser(error_handler=None)
-        parser.add_function_arguments(func, fail_untyped=False)
+        added_args = parser.add_function_arguments(func, fail_untyped=False)
 
-        self.assertEqual(Namespace(a1=None), parser.parse_args([]))
+        self.assertEqual(['a1', 'a2'], added_args)
+        self.assertEqual(Namespace(a1=None, a2=None), parser.parse_args([]))
 
 
     @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')

@@ -271,7 +271,7 @@ class SignatureArguments:
         is_required = default == inspect_empty
         skip_message = 'Skipping parameter "'+name+'" from "'+obj.__name__+'" because of: '
         if not fail_untyped and annotation == inspect_empty:
-            annotation = Any if is_required else type(default)
+            annotation = Any
             default = None if is_required else default
             is_required = False
         if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
