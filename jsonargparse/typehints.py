@@ -127,9 +127,10 @@ class ActionTypeHint(Action):
 
 
     def serialize(self, value):
+        sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
         if _is_action_value_list(self):
-            return [adapt_typehints(v, self._typehint, serialize=True) for v in value]
-        return adapt_typehints(value, self._typehint, serialize=True)
+            return [adapt_typehints(v, self._typehint, serialize=True, sub_add_kwargs=sub_add_kwargs) for v in value]
+        return adapt_typehints(value, self._typehint, serialize=True, sub_add_kwargs=sub_add_kwargs)
 
 
     def __call__(self, *args, **kwargs):
@@ -163,11 +164,12 @@ class ActionTypeHint(Action):
                 except (yamlParserError, yamlScannerError):
                     config_path = None
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
+                sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
                 try:
-                    val = adapt_typehints(val, self._typehint, skip=getattr(self, 'skip', None))
+                    val = adapt_typehints(val, self._typehint, sub_add_kwargs=sub_add_kwargs)
                 except ValueError as ex:
                     if isinstance(val, (int, float)) and config_path is None:
-                        val = adapt_typehints(orig_val, self._typehint)
+                        val = adapt_typehints(orig_val, self._typehint, sub_add_kwargs=sub_add_kwargs)
                     else:
                         raise ex
                 if path_meta is not None:
@@ -182,7 +184,8 @@ class ActionTypeHint(Action):
 
 
     def _instantiate_classes(self, val):
-        return adapt_typehints(val, self._typehint, instantiate_classes=True)
+        sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
+        return adapt_typehints(val, self._typehint, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs)
 
 
     def completer(self, prefix, **kwargs):
@@ -211,9 +214,13 @@ class ActionTypeHint(Action):
             return argcomplete_warn_redraw_prompt(prefix, msg)
 
 
-def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, skip=None):
+def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, sub_add_kwargs=None):
 
-    adapt_kwargs = {'serialize': serialize, 'instantiate_classes': instantiate_classes, 'skip': skip}
+    adapt_kwargs = {
+        'serialize': serialize,
+        'instantiate_classes': instantiate_classes,
+        'sub_add_kwargs': sub_add_kwargs or {},
+    }
     subtypehints = getattr(typehint, '__args__', None)
     typehint_origin = getattr(typehint, '__origin__', typehint)
 
@@ -266,8 +273,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             except Exception as ex:
                 vals.append(ex)
         if all(isinstance(v, Exception) for v in vals):
-            e = ' :: '.join(str(v) for v in vals)
-            raise ValueError('Value "'+str(val)+'" does not validate against any of the types in '+str(typehint)+' :: '+e)
+            e = indent_text('\n- '.join(str(v) for v in ['']+vals))
+            raise ValueError('Value "'+str(val)+'" does not validate against any of the types in '+str(typehint)+':'+e)
         val = [v for v in vals if not isinstance(v, Exception)][0]
 
     # Tuple or Set
@@ -323,7 +330,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 raise ValueError('"'+val['class_path']+'" is not a subclass of '+typehint.__name__)
             from .core import ArgumentParser
             parser = ArgumentParser(error_handler=None, parse_as_dict=True)
-            parser.add_class_arguments(val_class, skip=skip)
+            parser.add_class_arguments(val_class, **sub_add_kwargs)
             if serialize and 'init_args' in val:
                 val['init_args'] = yaml.safe_load(parser.dump(val['init_args']))
             else:
@@ -333,7 +340,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 val = val_class(**init_args)
         except (ImportError, ModuleNotFound, AttributeError, AssertionError, ParserError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
-            raise ValueError('Problem with given class_path "'+class_path+'" :: '+str(ex)) from ex
+            e = indent_text('\n- '+str(ex))
+            raise ValueError('Problem with given class_path "'+class_path+'":'+e) from ex
 
     return val
 
@@ -372,3 +380,7 @@ def typehint_metavar(typehint):
         enum = typehint.__args__[0]
         metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
     return metavar
+
+
+def indent_text(text):
+    return text.replace('\n', '\n  ')

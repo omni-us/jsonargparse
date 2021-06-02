@@ -10,17 +10,22 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.13.0 (2021-??-??)
+v3.13.0 (2021-06-02)
 --------------------
 
 Added
 ^^^^^
 - Inner config file support for subclass type hints in signatures and CLI #57.
+- Forward fail_untyped setting to nested subclass type hints.
 
 Fixed
 ^^^^^
 - With fail_untyped=True use type from default value instead of Any.
 - Registered types and typing types incorrectly considered subclass types.
+
+Changed
+^^^^^^^
+- Better structure of type hint error messages to ease understanding.
 
 
 v3.12.1 (2021-05-19)

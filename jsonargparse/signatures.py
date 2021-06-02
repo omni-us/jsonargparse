@@ -321,8 +321,12 @@ class SignatureArguments:
                     init = name + '.init_args.'
                     subclass_skip = {s[len(init):] for s in skip if s.startswith(init)}
                 action = group.add_argument(opt_str, **kwargs)
+                action.sub_add_kwargs = {
+                    'fail_untyped': fail_untyped,
+                    'sub_configs': sub_configs,
+                }
                 if is_subclass_typehint and len(subclass_skip) > 0:
-                    action.skip = subclass_skip
+                    action.sub_add_kwargs['skip'] = subclass_skip
                 added_args.append(dest)
         elif is_required and fail_untyped:
             raise ValueError('Required parameter without a type for '+obj.__name__+' parameter '+name+'.')
