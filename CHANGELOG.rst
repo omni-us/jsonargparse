@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.13.1 (2021-06-03)
+--------------------
+
+Fixed
+^^^^^
+- Type hint Any not correctly serializing Enum and registered type values.
+
+
 v3.13.0 (2021-06-02)
 --------------------
 

@@ -226,7 +226,10 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
 
     # Any
     if typehint == Any:
-        if isinstance(val, str):
+        type_val = type(val)
+        if type_val in registered_types or _issubclass(type_val, Enum):
+            val = adapt_typehints(val, type_val, **adapt_kwargs)
+        elif isinstance(val, str):
             try:
                 val = _load_config(val, enable_path=False, flat_namespace=False)[0]
             except (yamlParserError, yamlScannerError):

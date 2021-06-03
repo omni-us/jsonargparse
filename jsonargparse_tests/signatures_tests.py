@@ -313,6 +313,21 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual('B', parser.parse_args(['--a1=B']).a1)
 
 
+    def test_type_any_serialize(self):
+
+        class MyEnum(str, Enum):
+            A = 'a'
+            B = 'b'
+
+        def func(a1: Any = MyEnum.B):
+            return a1
+
+        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser.add_function_arguments(func)
+        cfg = parser.parse_args([])
+        self.assertEqual('a1: B\n', parser.dump(cfg))
+
+
     def test_skip(self):
 
         def func(a1 = '1',
