@@ -4,6 +4,7 @@ import re
 from argparse import _HelpAction, HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 from enum import Enum
 from io import StringIO
+from string import Template
 
 from .actions import (
     ActionConfigFile,
@@ -20,6 +21,18 @@ from .util import _get_env_var, _get_key_value
 
 
 __all__ = ['DefaultHelpFormatter']
+
+
+class PercentTemplate(Template):
+    delimiter = '%'
+    pattern = r'''
+    \%\((?:
+    (?P<escaped>\%\%)|
+    (?P<named>[_a-z][_a-z0-9]*)\)s|
+    (?P<braced>[_a-z][_a-z0-9]*)\)s|
+    (?P<invalid>)
+    )
+    '''
 
 
 class DefaultHelpFormatter(HelpFormatter):
@@ -88,7 +101,7 @@ class DefaultHelpFormatter(HelpFormatter):
                 params['default'] = 'null'
             elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):
                 params['default'] = action.default.name
-        return self._get_help_string(action) % params
+        return PercentTemplate(self._get_help_string(action)).safe_substitute(params)
 
 
     def _get_type_str(self, action):

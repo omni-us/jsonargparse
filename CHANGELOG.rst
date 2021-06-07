@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.14.0 (2021-??-??)
+--------------------
+
+Fixed
+^^^^^
+- Custom string template to avoid problems with percent symbols in docstrings.
+
+
 v3.13.1 (2021-06-03)
 --------------------
 
