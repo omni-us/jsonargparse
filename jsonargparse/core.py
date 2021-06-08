@@ -1076,26 +1076,30 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         Returns:
             A configuration object with all subclasses and classes instantiated.
         """
-        cfg = strip_meta(cfg)
-        order = _ActionLink.instantiation_order(self)
-
-        actions = filter_default_actions(self._actions)
-        actions.sort(key=lambda x: -len(x.dest.split('.')))
-        actions = _ActionLink.reorder(order, actions)
-        for action in actions:
+        components = []  # type: List[Any]
+        for action in filter_default_actions(self._actions):
             if isinstance(action, ActionTypeHint) or \
                (isinstance(action, _ActionConfigLoad) and is_pure_dataclass(action.basetype)):
-                value, parent, key = _get_key_value(cfg, action.dest, parent=True)
-                if value is not None:
-                    parent[key] = action._instantiate_classes(value)
-                    _ActionLink.apply_instantiation_links(self, cfg, action.dest)
+                components.append(action)
 
         if instantiate_groups:
             groups = [g for g in self._action_groups if hasattr(g, 'instantiate_class')]
-            groups = _ActionLink.reorder(order, groups)
-            for group in groups:
-                group.instantiate_class(group, cfg)
-                _ActionLink.apply_instantiation_links(self, cfg, group.dest)
+            components.extend(groups)
+
+        components.sort(key=lambda x: -len(x.dest.split('.')))
+        order = _ActionLink.instantiation_order(self)
+        components = _ActionLink.reorder(order, components)
+
+        cfg = strip_meta(cfg)
+        for component in components:
+            if isinstance(component, Action):
+                value, parent, key = _get_key_value(cfg, component.dest, parent=True)
+                if value is not None:
+                    parent[key] = component._instantiate_classes(value)  # type: ignore
+                    _ActionLink.apply_instantiation_links(self, cfg, component.dest)
+            else:
+                component.instantiate_class(component, cfg)
+                _ActionLink.apply_instantiation_links(self, cfg, component.dest)
 
         return cfg
 
