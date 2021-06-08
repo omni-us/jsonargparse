@@ -8,7 +8,7 @@ from argparse import Action, Namespace
 from collections.abc import Iterable as abcIterable
 from collections.abc import Sequence as abcSequence
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple, Type, TypeVar, Union
 
 try:
     from typing import Literal  # type: ignore
@@ -16,7 +16,7 @@ except ImportError:
     Literal = False
 
 from .actions import _is_action_value_list
-from .typing import registered_types
+from .typing import object_path_serializer, registered_types
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     files_completer,
@@ -43,6 +43,7 @@ root_types = {
     bool,
     Any,
     Literal,
+    Type, type,
     Union,
     List, list, Iterable, Sequence, abcIterable, abcSequence,
     Tuple, tuple,
@@ -108,7 +109,7 @@ class ActionTypeHint(Action):
             typehint_origin = getattr(typehint, '__origin__', typehint)
             if typehint_origin in root_types and typehint_origin != Literal:
                 for typehint in getattr(typehint, '__args__', []):
-                    if typehint == Ellipsis:
+                    if typehint == Ellipsis or (typehint_origin == type and isinstance(typehint, TypeVar)):
                         continue
                     if not (typehint in leaf_types or ActionTypeHint.is_supported_typehint(typehint, full=True)):
                         return False
@@ -265,6 +266,17 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 typehint[val]
         elif not serialize and not isinstance(val, typehint):
             val = typehint[val]
+
+    # Type
+    elif typehint in {Type, type} or typehint_origin in {Type, type}:
+        if serialize:
+            val = object_path_serializer(val)
+        elif not serialize and not isinstance(val, Type):
+            path = val
+            val = import_object(val)
+            if (typehint in {Type, type} and not isinstance(val, (Type, type))) or \
+               (typehint != Type and typehint_origin in {Type, type} and not _issubclass(val, subtypehints[0])):
+                raise ValueError('Value "'+str(path)+'" is not a '+str(typehint)+'.')
 
     # Union
     elif typehint_origin == Union:

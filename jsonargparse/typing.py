@@ -4,7 +4,7 @@ import operator
 import re
 import uuid
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
-from .util import import_object, _issubclass, Path
+from .util import import_object, Path
 
 
 __all__ = [
@@ -321,7 +321,7 @@ register_type(complex)
 register_type(uuid.UUID)
 
 
-def callable_serializer(value):
+def object_path_serializer(value):
     try:
         path = value.__module__+'.'+value.__name__
         reimported = import_object(path)
@@ -329,12 +329,12 @@ def callable_serializer(value):
             raise ValueError
         return path
     except (ValueError, AttributeError):
-        raise ValueError('Only possible to serialize an importable callable, given '+str(value))
+        raise ValueError('Only possible to serialize an importable object, given '+str(value))
 
 
 register_type(
     Callable,
     type_check=lambda v, t: callable(v),
-    serializer=callable_serializer,
+    serializer=object_path_serializer,
     deserializer=lambda x: x if callable(x) else import_object(x),
 )

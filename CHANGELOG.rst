@@ -18,6 +18,7 @@ Added
 - Method `instantiate_classes` that instantiates subclasses and class groups.
 - Support for `link_arguments` that are applied on instantiation.
 - Method `add_subclass_arguments` now supports skipping of arguments.
+- Added support for Type in type hints #59.
 
 Fixed
 ^^^^^

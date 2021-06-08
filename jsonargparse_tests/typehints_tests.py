@@ -9,7 +9,7 @@ import yaml
 from calendar import Calendar
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
 from jsonargparse_tests.base import *
 from jsonargparse.typehints import is_optional, Literal
 
@@ -207,6 +207,20 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--true=false']))
         self.assertIs(False, parser.parse_args(['--false=false']).false)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--false=true']))
+
+
+    def test_type_Type(self):
+        parser = ArgumentParser(error_handler=None)
+        ActionTypeHint.is_supported_typehint(Type, full=True)
+        parser.add_argument('--type', type=Type)
+        parser.add_argument('--cal', type=Type[Calendar])
+        cfg = parser.parse_args(['--type=uuid.UUID'])
+        self.assertEqual(cfg.type, uuid.UUID)
+        self.assertEqual(parser.dump(cfg), 'type: uuid.UUID\n')
+        cfg = parser.parse_args(['--cal=calendar.Calendar'])
+        self.assertEqual(cfg.cal, Calendar)
+        self.assertEqual(parser.dump(cfg), 'cal: calendar.Calendar\n')
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal=uuid.UUID']))
 
 
     def test_uuid(self):
