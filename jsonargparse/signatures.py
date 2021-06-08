@@ -273,7 +273,6 @@ class SignatureArguments:
         add_args: bool = True,
         add_kwargs: bool = True,
         default: Any = inspect_empty,
-        enable_path: bool = False,
         **kwargs
     ):
         name = param.name
@@ -476,7 +475,7 @@ class SignatureArguments:
             added_args,
             skip,
             default={},
-            enable_path=True,
+            sub_configs=True,
             **kwargs
         )
 
