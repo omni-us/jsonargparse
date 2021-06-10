@@ -16,13 +16,14 @@ except ImportError:
     Literal = False
 
 from .actions import _is_action_value_list
-from .typing import object_path_serializer, registered_types
+from .typing import is_final_class, object_path_serializer, registered_types
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     files_completer,
     ModuleNotFound,
 )
 from .util import (
+    change_to_path_dir,
     import_object,
     ParserError,
     Path,
@@ -104,7 +105,7 @@ class ActionTypeHint(Action):
             getattr(typehint, '__origin__', None) in root_types or \
             typehint in registered_types or \
             _issubclass(typehint, Enum) or \
-            ActionTypeHint.is_subclass_typehint(typehint)
+            ActionTypeHint.is_class_typehint(typehint)
         if full and supported:
             typehint_origin = getattr(typehint, '__origin__', typehint)
             if typehint_origin in root_types and typehint_origin != Literal:
@@ -117,14 +118,21 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def is_subclass_typehint(typehint):
+    def is_class_typehint(typehint, only_subclasses=False):
         if isinstance(typehint, Action):
             typehint = getattr(typehint, '_typehint', None)
         typehint_origin = getattr(typehint, '__origin__', None)
         if typehint_origin == Union:
             subtypes = [a for a in typehint.__args__ if a != NoneType]
-            return all(ActionTypeHint.is_subclass_typehint(s) for s in subtypes)
+            return all(ActionTypeHint.is_class_typehint(s, only_subclasses) for s in subtypes)
+        if only_subclasses and is_final_class(typehint):
+            return False
         return inspect.isclass(typehint) and typehint not in not_subclass_types and typehint_origin is None
+
+
+    @staticmethod
+    def is_subclass_typehint(typehint):
+        return ActionTypeHint.is_class_typehint(typehint, True)
 
 
     def serialize(self, value):
@@ -167,7 +175,8 @@ class ActionTypeHint(Action):
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
                 try:
-                    val = adapt_typehints(val, self._typehint, sub_add_kwargs=sub_add_kwargs)
+                    with change_to_path_dir(config_path):
+                        val = adapt_typehints(val, self._typehint, sub_add_kwargs=sub_add_kwargs)
                 except ValueError as ex:
                     if isinstance(val, (int, float)) and config_path is None:
                         val = adapt_typehints(orig_val, self._typehint, sub_add_kwargs=sub_add_kwargs)
@@ -329,7 +338,13 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             for k, v in val.items():
                 val[k] = adapt_typehints(v, subtypehints[1], **adapt_kwargs)
 
-    # Subclasses
+    # Final class
+    elif is_final_class(typehint):
+        if not isinstance(val, dict):
+            raise ValueError('Expected a Dict but got "'+str(val)+'"')
+        val = adapt_class_type(typehint, val, serialize, instantiate_classes, sub_add_kwargs)
+
+    # Subclass
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):
         if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val) or (isinstance(val, Namespace) and hasattr(val, 'class_path'))):
             raise ValueError('Expected an str or a Dict with a class_path entry but got "'+str(val)+'"')
@@ -343,22 +358,32 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 val_class = import_object(val['class_path'])
             if not _issubclass(val_class, typehint):
                 raise ValueError('"'+val['class_path']+'" is not a subclass of '+typehint.__name__)
-            from .core import ArgumentParser
-            parser = ArgumentParser(error_handler=None, parse_as_dict=True)
-            parser.add_class_arguments(val_class, **sub_add_kwargs)
-            if serialize and 'init_args' in val:
-                val['init_args'] = yaml.safe_load(parser.dump(val['init_args']))
-            else:
-                val['init_args'] = parser.parse_object(val.get('init_args', {}))
+            init_args = val.get('init_args', {})
+            adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs)
             if instantiate_classes:
-                init_args = parser.instantiate_subclasses(val['init_args'])
-                val = val_class(**init_args)
+                val = adapted
+            else:
+                val['init_args'] = adapted
         except (ImportError, ModuleNotFound, AttributeError, AssertionError, ParserError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
             e = indent_text('\n- '+str(ex))
             raise ValueError('Problem with given class_path "'+class_path+'":'+e) from ex
 
     return val
+
+
+def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs):
+    from .core import ArgumentParser
+    parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+    parser.add_class_arguments(val_class, **sub_add_kwargs)
+    if instantiate_classes:
+        init_args = parser.instantiate_subclasses(init_args)
+        return val_class(**init_args)
+    if serialize:
+        init_args = yaml.safe_load(parser.dump(init_args))
+    else:
+        init_args = parser.parse_object(init_args)
+    return init_args
 
 
 def is_ellipsis_tuple(typehint):

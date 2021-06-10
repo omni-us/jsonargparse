@@ -35,12 +35,11 @@ ruyaml_support = False if _ruyaml is None else True
 _config_read_mode = 'fr'
 
 
-if sys.version_info.minor > 5:
+if sys.version_info[:2] > (3, 5):
     ModuleNotFound = ModuleNotFoundError
 else:
-    class ModuleNotFound(Exception):  # type: ignore
+    class ModuleNotFound(Exception):
         pass
-
 
 if jsonschema_support:
     from jsonschema.exceptions import ValidationError as jsonschemaValidationError
@@ -49,7 +48,7 @@ else:
 
 
 dump_preserve_order_support = True
-if sys.version_info.minor < 6 or platform.python_implementation() != 'CPython':
+if sys.version_info[:2] < (3, 6) or platform.python_implementation() != 'CPython':
     dump_preserve_order_support = False
 
 

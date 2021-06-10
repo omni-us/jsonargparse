@@ -8,6 +8,8 @@ from .util import import_object, Path
 
 
 __all__ = [
+    'final',
+    'is_final_class',
     'register_type',
     'registered_types',
     'restricted_number_type',
@@ -291,6 +293,17 @@ def add_type(type_class: Type, uniqueness_key: Optional[Tuple]):
         raise ValueError('Type name "'+type_class.__name__+'" clashes with name already defined in jsonargparse.typing.')
     globals()[type_class.__name__] = type_class
     register_type(type_class, type_class._type, uniqueness_key=uniqueness_key)
+
+
+def final(cls):
+    """Decorator to make a class `final` meaning that it shouldn't be subclassed."""
+    setattr(cls, '_final_class', True)
+    return cls
+
+
+def is_final_class(cls):
+    """Checks whether a class was decorated as `final`."""
+    return getattr(cls, '_final_class', False)
 
 
 PositiveInt        = restricted_number_type('PositiveInt',        int, ('>', 0),

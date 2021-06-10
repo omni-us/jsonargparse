@@ -5,8 +5,9 @@ import re
 from argparse import Namespace
 from typing import Any, Callable, List, Optional, Set, Type, Union
 
-from .actions import _ActionConfigLoad, _ActionHelpClassPath
+from .actions import _ActionConfigLoad, _ActionHelpClass, _ActionHelpClassPath
 from .typehints import ActionTypeHint, is_optional
+from .typing import is_final_class
 from .util import _get_key_value, _issubclass
 from .optionals import (
     dataclasses_support,
@@ -314,15 +315,15 @@ class SignatureArguments:
                 annotation = Optional[annotation]
         elif not as_positional:
             kwargs['required'] = True
-        is_subclass_typehint = False
+        is_class_typehint = False
         if annotation in {str, int, float, bool} or \
            _issubclass(annotation, (str, int, float)) or \
            is_pure_dataclass(annotation):
             kwargs['type'] = annotation
         elif annotation != inspect_empty:
             try:
-                is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation)
-                enable_path = is_subclass_typehint and sub_configs
+                is_class_typehint = ActionTypeHint.is_class_typehint(annotation)
+                enable_path = is_class_typehint and sub_configs
                 kwargs['action'] = ActionTypeHint(typehint=annotation, enable_path=enable_path)
             except ValueError as ex:
                 self.logger.debug(skip_message+str(ex))  # type: ignore
@@ -332,16 +333,20 @@ class SignatureArguments:
                 self.logger.debug(skip_message+'Argument already added.')  # type: ignore
             else:
                 opt_str = dest if is_required and as_positional else '--'+dest
-                if is_subclass_typehint:
-                    group.add_argument('--'+dest+'.help', action=_ActionHelpClassPath(baseclass=annotation))
-                    init = name + '.init_args.'
-                    subclass_skip = {s[len(init):] for s in skip if s.startswith(init)}
+                if is_class_typehint:
+                    help_action = _ActionHelpClass
+                    prefix = name + '.'
+                    if ActionTypeHint.is_subclass_typehint(annotation):
+                        help_action = _ActionHelpClassPath
+                        prefix = name + '.init_args.'
+                    group.add_argument('--'+dest+'.help', action=help_action(baseclass=annotation))
+                    subclass_skip = {s[len(prefix):] for s in skip if s.startswith(prefix)}
                 action = group.add_argument(opt_str, **kwargs)
                 action.sub_add_kwargs = {
                     'fail_untyped': fail_untyped,
                     'sub_configs': sub_configs,
                 }
-                if is_subclass_typehint and len(subclass_skip) > 0:
+                if is_class_typehint and len(subclass_skip) > 0:
                     action.sub_add_kwargs['skip'] = subclass_skip
                 added_args.append(dest)
         elif is_required and fail_untyped:
@@ -444,6 +449,8 @@ class SignatureArguments:
         """
         if not inspect.isclass(baseclass):
             raise ValueError('Expected "baseclass" argument to be a class object.')
+        if is_final_class(baseclass):
+            raise ValueError("Not allowed for classes that are final.")
 
         doc_group = self._gather_docstrings([baseclass], get_class_init_and_base_docstrings)[0]
         group = self._create_group_if_requested(

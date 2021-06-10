@@ -397,6 +397,32 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(cfg.c.init_args, Namespace(a2=2.3, b1=4.5))
 
 
+    def test_final_class(self):
+
+        @final
+        class ClassA:
+            def __init__(self, a1: int = 1, a2: float = 2.3):
+                self.a1 = a1
+                self.a2 = a2
+
+        class ClassB:
+            def __init__(self, b1: str = '4', b2: ClassA = None):
+                self.b1 = b1
+                self.b2 = b2
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(ClassB, 'b')
+        cfg = parser.parse_args(['--b.b2={"a2": 6.7}'])
+        self.assertEqual(cfg.b.b2, Namespace(a1=1, a2=6.7))
+        cfg = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg['b'], ClassB)
+        self.assertIsInstance(cfg['b'].b2, ClassA)
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--b.b2={"bad": "value"}']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--b.b2="bad"']))
+        self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(ClassA, 'a'))
+
+
     def test_basic_subtypes(self):
 
         def func(a1: PositiveFloat = PositiveFloat(1),

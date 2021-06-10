@@ -794,7 +794,6 @@ If there is some subclass of :code:`Calendar` which can be imported from
 
     python tool.py --myclass.calendar.help mycode.MyCalendar
 
-
 An individual argument can also be added having as type a class, i.e.
 :code:`parser.add_argument('--calendar', type=Calendar)`. There is also another
 method :py:meth:`.SignatureArguments.add_subclass_arguments` which does the same
@@ -802,6 +801,29 @@ as :code:`add_argument`, but has some added benefits: 1) the argument is added
 in a new group automatically; 2) the argument values can be given in an
 independent config file by specifying a path to it; and 3) by default sets a
 useful :code:`metavar` and :code:`help` strings.
+
+When a class is decorated with :func:`.final` there shouldn't be any derived
+subclass. Using a final class as a type hint works similar to subclasses. The
+difference is that the init args are given directly in a dictionary without
+specifying a :code:`class_path`. Therefore, the code below would accept
+the corresponding yaml structure.
+
+.. code-block:: python
+
+    from jsonargparse.typing import final
+
+    @final
+    class FinalCalendar(Calendar):
+        pass
+
+    parser = ArgumentParser()
+    parser.add_argument('--calendar', type=FinalCalendar)
+    cfg = parser.parse_path('config.yaml')
+
+.. code-block:: yaml
+
+    calendar:
+      firstweekday: 1
 
 
 .. _sub-commands:

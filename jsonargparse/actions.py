@@ -1,5 +1,6 @@
 """Collection of useful actions to define arguments."""
 
+import inspect
 import os
 import re
 import sys
@@ -94,7 +95,7 @@ def _find_parent_actions(parser, key:str, exclude=None):
 def _find_subclass_action_or_class_group(parser, key:str, exclude=None):
     from .typehints import ActionTypeHint
     action = _find_parent_action(parser, key, exclude=exclude)
-    if ActionTypeHint.is_subclass_typehint(action):
+    if ActionTypeHint.is_class_typehint(action):
         return action
     key_set = {key, key.rsplit('.', 1)[0]}
     for group in parser._action_groups:
@@ -128,7 +129,7 @@ def _remove_actions(parser, types):
 
 
 def filter_default_actions(actions):
-    default = (_HelpAction, _ActionHelpClassPath, _ActionPrintConfig)
+    default = (_HelpAction, _ActionHelpClass, _ActionPrintConfig)
     if isinstance(actions, list):
         return [a for a in actions if not isinstance(a, default)]
     return {k: a for k, a in actions.items() if not isinstance(a, default)}
@@ -258,31 +259,54 @@ class _ActionConfigLoad(Action):
         return self.basetype(**value)
 
 
-class _ActionHelpClassPath(Action):
+class _ActionHelpClass(Action):
 
     def __init__(self, baseclass=None, **kwargs):
         if baseclass is not None:
+            if getattr(baseclass, '__origin__', None) == Union:
+                baseclass = next(c for c in baseclass.__args__ if inspect.isclass(c))
             self._baseclass = baseclass
         else:
             self._baseclass = kwargs.pop('_baseclass')
-            kwargs['help'] = 'Show the help for the given class path and exit.'
-            kwargs['metavar'] = 'CLASS'
-            kwargs['default'] = SUPPRESS
+            self.update_init_kwargs(kwargs)
             super().__init__(**kwargs)
+
+    def update_init_kwargs(self, kwargs):
+        kwargs.update({
+            'nargs': 0,
+            'default': SUPPRESS,
+            'help': 'Show the help for the class '+self._baseclass.__name__+' and exit.',
+        })
 
     def __call__(self, *args, **kwargs):
         if len(args) == 0:
             kwargs['_baseclass'] = self._baseclass
-            return _ActionHelpClassPath(**kwargs)
-        val_class = import_object(args[2])
-        if not _issubclass(val_class, self._baseclass):
-            raise TypeError('Class "'+args[2]+'" is not a subclass of '+self._baseclass.__name__)
-        dest = re.sub('\\.help$', '',  self.dest) + '.init_args'
+            return type(self)(**kwargs)
+        dest = re.sub('\\.help$', '',  self.dest)
+        self.print_help(args, self._baseclass, dest)
+
+    def print_help(self, call_args, val_class, dest):
         tmp = import_object('jsonargparse.ArgumentParser')()
         tmp.add_class_arguments(val_class, dest)
-        _remove_actions(tmp, (_HelpAction, _ActionPrintConfig))
+        _remove_actions(tmp, (_HelpAction, _ActionHelpClass, _ActionPrintConfig))
         tmp.print_help()
-        args[0].exit()
+        call_args[0].exit()
+
+
+class _ActionHelpClassPath(_ActionHelpClass):
+
+    def update_init_kwargs(self, kwargs):
+        kwargs.update({
+            'metavar': 'CLASS',
+            'default': SUPPRESS,
+            'help': 'Show the help for the given subclass of '+self._baseclass.__name__+' and exit.',
+        })
+
+    def print_help(self, call_args, baseclass, dest):
+        val_class = import_object(call_args[2])
+        if not _issubclass(val_class, baseclass):
+            raise TypeError('Class "'+call_args[2]+'" is not a subclass of '+baseclass.__name__)
+        super().print_help(call_args, val_class, dest+'.init_args')
 
 
 class _ActionLink(Action):
@@ -334,7 +358,7 @@ class _ActionLink(Action):
         valid_target_subclass = is_target_subclass and target.startswith(self.target[1].dest+'.init_args.')
         valid_target_leaf = self.target[1].dest == target and not is_target_subclass
         if not (valid_target_leaf or valid_target_subclass):
-            raise ValueError('Target key "'+target+'" must be for a individual argument.')
+            raise ValueError('Target key "'+target+'" must be for an individual argument.')
 
         # Replace target action with link action
         if not is_target_subclass:
