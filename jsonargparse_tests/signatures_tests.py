@@ -266,6 +266,44 @@ class SignaturesTests(unittest.TestCase):
         self.assertIn('--cal.init_args.firstweekday', out.getvalue())
 
 
+    def test_add_subclass_arguments_tuple(self):
+
+        class ClassA:
+            def __init__(self, a1: int = 1, a2: float = 2.3):
+                self.a1 = a1
+                self.a2 = a2
+
+        class ClassB:
+            def __init__(self, b1: float = 4.5, b2: int = 6):
+                self.b1 = b1
+                self.b2 = b2
+
+        from jsonargparse_tests import signatures_tests
+        setattr(signatures_tests, 'ClassA', ClassA)
+        setattr(signatures_tests, 'ClassB', ClassB)
+        class_path_a = 'jsonargparse_tests.signatures_tests.ClassA'
+        class_path_b = 'jsonargparse_tests.signatures_tests.ClassB'
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments((ClassA, ClassB), 'c')
+
+        cfg = parser.parse_args(['--c={"class_path": "'+class_path_a+'", "init_args": {"a1": -1}}'])
+        self.assertEqual(cfg.c.init_args.a1, -1)
+        cfg = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg['c'], ClassA)
+
+        cfg = parser.parse_args(['--c={"class_path": "'+class_path_b+'", "init_args": {"b1": -4.5}}'])
+        self.assertEqual(cfg.c.init_args.b1, -4.5)
+        cfg = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg['c'], ClassB)
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--c.help='+class_path_b])
+
+        self.assertIn('--c.init_args.b1', out.getvalue())
+
+
     def test_required_group(self):
         parser = ArgumentParser(error_handler=None)
         self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(calendar.Calendar, None, required=True))

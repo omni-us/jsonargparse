@@ -28,6 +28,7 @@ from .util import (
     ParserError,
     Path,
     namespace_to_dict,
+    NoneType,
     yamlParserError,
     yamlScannerError,
     _issubclass,
@@ -37,8 +38,6 @@ from .util import (
 
 __all__ = ['ActionTypeHint']
 
-
-NoneType = type(None)
 
 root_types = {
     bool,

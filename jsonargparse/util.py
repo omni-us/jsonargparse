@@ -46,6 +46,8 @@ meta_keys = {'__default_config__', '__path__', '__orig__'}
 
 empty_namespace = Namespace()
 
+NoneType = type(None)
+
 
 class ParserError(Exception):
     """Error raised when parsing a value fails."""

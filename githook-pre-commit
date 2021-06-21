@@ -27,6 +27,7 @@ fi
 FILES=( $(git status --porcelain | sed -r 's|^ |_|; s|^(.) |\1_|; s|^(R[_M]) .* ->|\1|;' | grep -E '^([MRA]|.M)') );
 PYLINT=$(which pylint pylint3 | head -n 1);
 PYLINT+=" --errors-only --disable=no-member";
+PYFILES=();
 
 check_change_after_staged () {
   [ "${2:1:1}" = "M" ] &&
@@ -40,15 +41,8 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
   case "${FILES[$n]}" in
     *.py )
       if [ "${FILES[$n]}" != "sphinx/conf.py" ]; then
-        echo "${0##*/}: mypy ${FILES[$n]}" 1>&2;
-        mypy "${FILES[$n]}";
-        [ "$?" != "0" ] && exit 1;
+        PYFILES+=("${FILES[$n]}")
       fi
-      echo "${0##*/}: pycodestyle ${FILES[$n]}" 1>&2;
-      pycodestyle "${FILES[$n]}";
-      [ "$?" != "0" ] && exit 1;
-      echo "${0##*/}: $PYLINT ${FILES[$n]}" 1>&2;
-      $PYLINT "${FILES[$n]}";
       ;;
     .circleci/config.yml )
       echo "${0##*/}: circleci config validate -c .circleci/config.yml" 1>&2;
@@ -57,6 +51,19 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
   [ "$?" != "0" ] && exit 1;
   n=$((n+2));
 done
+
+if [ "${#PYFILES[@]}" -gt 0 ]; then
+  echo "${0##*/}: mypy ${PYFILES[@]}" 1>&2;
+  mypy jsonargparse/*.py jsonargparse_tests/*.py;
+  [ "$?" != "0" ] && exit 1;
+  echo "${0##*/}: pycodestyle ${PYFILES[@]}" 1>&2;
+  pycodestyle "${PYFILES[@]}";
+  [ "$?" != "0" ] && exit 1;
+  echo "${0##*/}: $PYLINT ${PYFILES[@]}" 1>&2;
+  $PYLINT "${PYFILES[@]}";
+  [ "$?" != "0" ] && exit 1;
+fi
+exit 0
 
 ## Run unit tests ##
 ./setup.py test_coverage;

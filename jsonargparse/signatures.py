@@ -3,7 +3,7 @@
 import inspect
 import re
 from argparse import Namespace
-from typing import Any, Callable, List, Optional, Set, Type, Union
+from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from .actions import _ActionConfigLoad, _ActionHelpClass, _ActionHelpClassPath
 from .typehints import ActionTypeHint, is_optional
@@ -263,7 +263,7 @@ class SignatureArguments:
         group,
         nested_key: Optional[str],
         param,
-        obj: Type,
+        obj: Any,
         doc_params: dict,
         added_args: List[str],
         skip: Set[str],
@@ -282,7 +282,7 @@ class SignatureArguments:
         if default == inspect_empty:
             default = param.default
         is_required = default == inspect_empty
-        skip_message = 'Skipping parameter "'+name+'" from "'+obj.__name__+'" because of: '
+        skip_message = 'Skipping parameter "'+name+'" from "'+getattr(obj, '__name__', str(obj))+'" because of: '
         if not fail_untyped and annotation == inspect_empty:
             annotation = Any
             default = None if is_required else default
@@ -417,7 +417,7 @@ class SignatureArguments:
 
     def add_subclass_arguments(
         self,
-        baseclass: Type,
+        baseclass: Union[Type, Tuple[Type, ...]],
         nested_key: str,
         as_group: bool = True,
         skip: Optional[Set[str]] = None,
@@ -436,7 +436,7 @@ class SignatureArguments:
         argument is added that will print the details for a given class path.
 
         Args:
-            baseclass: Base class to use to check subclasses.
+            baseclass: Base class or classes to use to check subclasses.
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             skip: Names of parameters that should be skipped.
@@ -447,12 +447,14 @@ class SignatureArguments:
         Raises:
             ValueError: When not given a class.
         """
-        if not inspect.isclass(baseclass):
-            raise ValueError('Expected "baseclass" argument to be a class object.')
         if is_final_class(baseclass):
             raise ValueError("Not allowed for classes that are final.")
+        if type(baseclass) is not tuple:
+            baseclass = (baseclass,)  # type: ignore
+        if not all(inspect.isclass(c) for c in baseclass):
+            raise ValueError('Expected "baseclass" argument to be a class or a tuple of classes.')
 
-        doc_group = self._gather_docstrings([baseclass], get_class_init_and_base_docstrings)[0]
+        doc_group = self._gather_docstrings(baseclass, get_class_init_and_base_docstrings)[0]
         group = self._create_group_if_requested(
             baseclass,
             nested_key,
@@ -468,16 +470,16 @@ class SignatureArguments:
             skip = set()
         else:
             skip = set(nested_key+'.init_args.'+s for s in skip)
-        param = Namespace(name=nested_key, _kind=None, annotation=baseclass)
+        param = Namespace(name=nested_key, _kind=None, annotation=Union[baseclass])
         kwargs.update({
             'metavar': metavar,
-            'help': (help % {'baseclass_name': baseclass.__name__}),
+            'help': (help % {'baseclass_name': str(baseclass)}),
         })
         self._add_signature_parameter(
             group,
             None,
             param,
-            baseclass,
+            Union[baseclass],
             {},
             added_args,
             skip,
@@ -521,6 +523,7 @@ class SignatureArguments:
             group = self.add_argument_group(doc_group, name=name)
             if config_load and nested_key is not None:
                 group.add_argument('--'+nested_key, action=_ActionConfigLoad(basetype=config_load_type))
+            # TODO implement function to test isclass being a type or a tuple of types to replace inspect.isclass
             if inspect.isclass(obj) and nested_key is not None and instantiate:
                 group.dest = nested_key
                 group.group_class = obj

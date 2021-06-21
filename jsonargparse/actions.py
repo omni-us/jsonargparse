@@ -1,6 +1,5 @@
 """Collection of useful actions to define arguments."""
 
-import inspect
 import os
 import re
 import sys
@@ -9,7 +8,7 @@ import argparse
 from typing import Callable, Tuple, Type, Union
 from argparse import Namespace, Action, SUPPRESS, _HelpAction, _SubParsersAction
 
-from .optionals import FilesCompleterMethod, get_config_read_mode, ruyaml_support
+from .optionals import FilesCompleterMethod, get_config_read_mode
 from .typing import path_type
 from .util import (
     DirectedGraph,
@@ -20,6 +19,7 @@ from .util import (
     dict_to_namespace,
     import_object,
     change_to_path_dir,
+    NoneType,
     Path,
     _get_key_value,
     _load_config,
@@ -264,7 +264,9 @@ class _ActionHelpClass(Action):
     def __init__(self, baseclass=None, **kwargs):
         if baseclass is not None:
             if getattr(baseclass, '__origin__', None) == Union:
-                baseclass = next(c for c in baseclass.__args__ if inspect.isclass(c))
+                baseclasses = [c for c in baseclass.__args__ if c is not NoneType]
+                if len(baseclasses) == 1:
+                    baseclass = baseclasses[0]
             self._baseclass = baseclass
         else:
             self._baseclass = kwargs.pop('_baseclass')
@@ -296,16 +298,24 @@ class _ActionHelpClass(Action):
 class _ActionHelpClassPath(_ActionHelpClass):
 
     def update_init_kwargs(self, kwargs):
+        if getattr(self._baseclass, '__origin__', None) == Union:
+            self._basename = '{'+', '.join(c.__name__ for c in self._baseclass.__args__)+'}'
+        else:
+            self._basename = self._baseclass.__name__
         kwargs.update({
             'metavar': 'CLASS',
             'default': SUPPRESS,
-            'help': 'Show the help for the given subclass of '+self._baseclass.__name__+' and exit.',
+            'help': 'Show the help for the given subclass of '+self._basename+' and exit.',
         })
 
     def print_help(self, call_args, baseclass, dest):
         val_class = import_object(call_args[2])
-        if not _issubclass(val_class, baseclass):
-            raise TypeError('Class "'+call_args[2]+'" is not a subclass of '+baseclass.__name__)
+        if getattr(self._baseclass, '__origin__', None) == Union:
+            baseclasses = self._baseclass.__args__
+        else:
+            baseclasses = [baseclass]
+        if not any(_issubclass(val_class, b) for b in baseclasses):
+            raise TypeError('Class "'+call_args[2]+'" is not a subclass of '+self._basename)
         super().print_help(call_args, val_class, dest+'.init_args')
 
 

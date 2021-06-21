@@ -17,6 +17,7 @@ Added
 ^^^^^
 - Decorator for final classes and an is_final_class function to test it.
 - Support for final classes as type hint.
+- `add_subclass_arguments` now supports multiple classes given as tuple.
 
 Fixed
 ^^^^^
