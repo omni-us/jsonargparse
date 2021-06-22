@@ -270,6 +270,7 @@ class SignatureArguments:
         fail_untyped: bool = True,
         as_positional: bool = False,
         sub_configs: bool = False,
+        instantiate: bool = True,
         linked_targets: Optional[Set[str]] = None,
         add_args: bool = True,
         add_kwargs: bool = True,
@@ -345,6 +346,7 @@ class SignatureArguments:
                 action.sub_add_kwargs = {
                     'fail_untyped': fail_untyped,
                     'sub_configs': sub_configs,
+                    'instantiate': instantiate,
                 }
                 if is_class_typehint and len(subclass_skip) > 0:
                     action.sub_add_kwargs['skip'] = subclass_skip
@@ -421,6 +423,7 @@ class SignatureArguments:
         nested_key: str,
         as_group: bool = True,
         skip: Optional[Set[str]] = None,
+        instantiate: bool = True,
         required: bool = False,
         metavar: str = '{"class_path":...[,"init_args":...]}',
         help: str = 'Dictionary with "class_path" and "init_args" for any subclass of %(baseclass_name)s.',
@@ -485,6 +488,7 @@ class SignatureArguments:
             skip,
             default={},
             sub_configs=True,
+            instantiate=instantiate,
             **kwargs
         )
 
@@ -523,7 +527,6 @@ class SignatureArguments:
             group = self.add_argument_group(doc_group, name=name)
             if config_load and nested_key is not None:
                 group.add_argument('--'+nested_key, action=_ActionConfigLoad(basetype=config_load_type))
-            # TODO implement function to test isclass being a type or a tuple of types to replace inspect.isclass
             if inspect.isclass(obj) and nested_key is not None and instantiate:
                 group.dest = nested_key
                 group.group_class = obj

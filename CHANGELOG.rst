@@ -10,7 +10,7 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.15.0 (2021-??-??)
+v3.15.0 (2021-06-22)
 --------------------
 
 Added
@@ -18,6 +18,7 @@ Added
 - Decorator for final classes and an is_final_class function to test it.
 - Support for final classes as type hint.
 - `add_subclass_arguments` now supports multiple classes given as tuple.
+- `add_subclass_arguments` now supports the instantiate parameter.
 
 Fixed
 ^^^^^

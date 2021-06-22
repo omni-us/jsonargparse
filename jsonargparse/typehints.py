@@ -359,7 +359,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 raise ValueError('"'+val['class_path']+'" is not a subclass of '+typehint.__name__)
             init_args = val.get('init_args', {})
             adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs)
-            if instantiate_classes:
+            if instantiate_classes and sub_add_kwargs.get('instantiate', True):
                 val = adapted
             else:
                 val['init_args'] = adapted
@@ -377,6 +377,8 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
     parser.add_class_arguments(val_class, **sub_add_kwargs)
     if instantiate_classes:
         init_args = parser.instantiate_subclasses(init_args)
+        if not sub_add_kwargs.get('instantiate', True):
+            return init_args
         return val_class(**init_args)
     if serialize:
         init_args = yaml.safe_load(parser.dump(init_args))
