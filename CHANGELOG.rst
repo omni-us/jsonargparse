@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.??.? (2021-??-??)
+--------------------
+
+Fixed
+^^^^^
+- `--help` broken when default_config_files fail to parse #60.
+
+
 v3.15.0 (2021-06-22)
 --------------------
 

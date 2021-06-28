@@ -1155,11 +1155,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
     def format_help(self):
         if len(self._default_config_files) > 0:
-            defaults = namespace_to_dict(self.get_defaults())
             note = 'no existing default config file found.'
-            if '__default_config__' in defaults:
-                note = 'default values below will be ones overridden by the contents of: '+str(defaults['__default_config__'])
-                self.formatter_class.defaults = defaults
+            try:
+                defaults = namespace_to_dict(self.get_defaults())
+                if '__default_config__' in defaults:
+                    note = 'default values below will be ones overridden by the contents of: '+str(defaults['__default_config__'])
+                    self.formatter_class.defaults = defaults
+            except ParserError as ex:
+                note = 'tried getting defaults considering default_config_files but failed due to: '+str(ex)
             group = self._default_config_files_group
             group.description = str(self._default_config_files) + ', Note: '+note
         help_str = super().format_help()

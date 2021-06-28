@@ -757,6 +757,10 @@ class ConfigFilesTests(TempDirTestCase):
             output_file.write('op2: v2\n')
         self.assertRaises(ParserError, lambda: parser.get_default('op1'))
 
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('tried getting defaults considering default_config_files but failed', out.getvalue())
+
         if os.name == 'posix' and platform.python_implementation() == 'CPython':
             os.chmod(default_config_file, 0)
             self.assertEqual(parser.get_default('op1'), 'from default')
