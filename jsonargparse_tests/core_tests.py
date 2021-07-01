@@ -759,7 +759,8 @@ class ConfigFilesTests(TempDirTestCase):
 
         out = StringIO()
         parser.print_help(out)
-        self.assertIn('tried getting defaults considering default_config_files but failed', out.getvalue())
+        outval = ' '.join(out.getvalue().split())
+        self.assertIn('tried getting defaults considering default_config_files but failed', outval)
 
         if os.name == 'posix' and platform.python_implementation() == 'CPython':
             os.chmod(default_config_file, 0)
