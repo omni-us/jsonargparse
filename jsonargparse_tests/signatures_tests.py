@@ -247,12 +247,20 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_add_subclass_arguments(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
         parser.add_subclass_arguments(calendar.Calendar, 'cal')
 
         cal = {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
         cfg = parser.parse_args(['--cal='+json.dumps(cal)])
-        self.assertEqual(namespace_to_dict(cfg.cal), cal)
+        self.assertEqual(cfg['cal'], cal)
+
+        cal['init_args']['firstweekday'] = 2
+        cfg = parser.parse_args(['--cal.class_path=calendar.Calendar', '--cal.init_args.firstweekday=2'])
+        self.assertEqual(cfg['cal'], cal)
+
+        cal['init_args']['firstweekday'] = 3
+        cfg = parser.parse_args(['--cal.class_path', 'calendar.Calendar', '--cal.init_args.firstweekday', '3'])
+        self.assertEqual(cfg['cal'], cal)
 
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"not.exist.Class"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"calendar.January"}']))

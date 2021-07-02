@@ -134,6 +134,26 @@ class ActionTypeHint(Action):
         return ActionTypeHint.is_class_typehint(typehint, True)
 
 
+    @staticmethod
+    def parse_subclass_arg(parser, arg_string):
+        if '.class_path' in arg_string or '.init_args.' in arg_string:
+            if '.class_path' in arg_string:
+                arg_base, explicit_arg = arg_string.rsplit('.class_path', 1)
+            else:
+                arg_base, init_arg = arg_string.rsplit('.init_args.', 1)
+                match = re.match(r'([\w_]+)(|=.*)$', init_arg)
+                if match:
+                    explicit_arg = match.groups()[1]
+            action = parser._option_string_actions.get(arg_base)
+            if action:
+                if explicit_arg:
+                    arg_string = arg_string[:-len(explicit_arg)]
+                    explicit_arg = explicit_arg[1:]
+                else:
+                    explicit_arg = None
+                return action, arg_string, explicit_arg
+
+
     def serialize(self, value):
         sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
         if _is_action_value_list(self):
@@ -156,7 +176,17 @@ class ActionTypeHint(Action):
         if self.nargs == '?' and args[2] is None:
             val = None
         else:
-            val = self._check_type(args[2])
+            cfg, val, opt_str = args[1:]
+            if isinstance(opt_str, str):
+                if opt_str.endswith('.class_path'):
+                    val = {'class_path': val}
+                elif '.init_args.' in opt_str:
+                    match = re.match(r'.+\.init_args\.([^.]+)$', opt_str)
+                    if match and isinstance(getattr(cfg, self.dest, None), dict):
+                        init_args = getattr(cfg, self.dest).get('init_args', {})
+                        init_args[match.groups()[0]] = val
+                        val = getattr(cfg, self.dest)
+            val = self._check_type(val)
         setattr(args[1], self.dest, val)
 
 
