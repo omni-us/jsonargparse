@@ -3,11 +3,13 @@
 import inspect
 import os
 import re
+import warnings
 import yaml
 from argparse import Action, Namespace
 from collections.abc import Iterable as abcIterable
 from collections.abc import Sequence as abcSequence
 from enum import Enum
+from functools import partial
 from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple, Type, TypeVar, Union
 
 try:
@@ -16,7 +18,7 @@ except ImportError:
     Literal = False
 
 from .actions import _is_action_value_list
-from .typing import is_final_class, object_path_serializer, registered_types
+from .typing import get_import_path, is_final_class, object_path_serializer, registered_types
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     files_completer,
@@ -36,7 +38,7 @@ from .util import (
 )
 
 
-__all__ = ['ActionTypeHint']
+__all__ = ['ActionTypeHint', 'lazy_instance']
 
 
 root_types = {
@@ -375,6 +377,16 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
 
     # Subclass
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):
+        if isinstance(val, typehint):
+            if isinstance(val, LazyInitBaseClass):
+                val = val.get_init_dict()
+            elif serialize:
+                val = str(val)
+                warnings.warn(
+                    'Not possible to serialize an instance of ' + str(typehint.__name__) + '. It will be represented as the '
+                    'string ' + val + '. If this was set as a default, consider using setting a dict or using lazy_instance.'
+                )
+            return val
         if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val) or (isinstance(val, Namespace) and hasattr(val, 'class_path'))):
             raise ValueError('Expected an str or a Dict with a class_path entry but got "'+str(val)+'"')
         try:
@@ -455,3 +467,54 @@ def typehint_metavar(typehint):
 
 def indent_text(text):
     return text.replace('\n', '\n  ')
+
+
+class LazyInitBaseClass:
+
+    def __init__(self, class_type: Type, lazy_kwargs: dict):
+        self._lazy_class_type = class_type
+        self._lazy_class_path = get_import_path(class_type)
+        self._lazy_kwargs = lazy_kwargs
+        self._lazy_methods = {}
+        for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
+            if name in {'__init__', '_lazy_init', '_lazy_init_then_call_method', 'get_init_dict'}:
+                continue
+            self._lazy_methods[name] = method
+            setattr(self, name, partial(self._lazy_init_then_call_method, method_name=name))
+
+    def _lazy_init(self):
+        for name, method in self._lazy_methods.items():
+            setattr(self, name, method)
+        super().__init__(**self._lazy_kwargs)
+
+    def _lazy_init_then_call_method(self, method_name, *args, **kwargs):
+        self._lazy_init()
+        return getattr(self, method_name)(*args, **kwargs)
+
+    def get_init_dict(self):
+        init_dict = {'class_path': self._lazy_class_path}
+        if len(self._lazy_kwargs) > 0:
+            init_dict['init_args'] = self._lazy_kwargs
+        return init_dict
+
+
+ClassType = TypeVar('ClassType')
+
+
+def lazy_instance(class_type: Type[ClassType], **kwargs) -> ClassType:
+    """Instantiates a lazy instance of the given type.
+
+    By lazy it is meant that the init is delayed unit the first time that a
+    method of the instance is called. It also provides a `get_init_dict` method
+    useful for serializing.
+
+    Note: Only supported in CPython.
+
+    Args:
+        class_type: The class to instantiate.
+        **kwargs: Any keyword arguments to use for instantiation.
+    """
+    class LazyInitClass(LazyInitBaseClass, class_type):  # type: ignore
+        pass
+
+    return LazyInitClass(class_type, kwargs)

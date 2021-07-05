@@ -890,15 +890,16 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             self.set_defaults(kwargs)
 
 
-    def _get_default_config_file(self):
+    def _get_default_config_files(self):
         default_config_files = []  # type: List[str]
         for pattern in self.default_config_files:
-            default_config_files += glob.glob(os.path.expanduser(pattern))
+            default_config_files += sorted(glob.glob(os.path.expanduser(pattern)))
         if len(default_config_files) > 0:
             try:
-                return Path(default_config_files[0], mode=get_config_read_mode())
+                return [Path(x, mode=get_config_read_mode()) for x in default_config_files]
             except TypeError:
                 pass
+        return []
 
 
     def get_default(self, dest:str):
@@ -913,8 +914,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         action = _find_action(self, dest)
         if action is None or action.default == SUPPRESS or action.dest == SUPPRESS:
             raise KeyError('No action for destination key "'+dest+'" to get its default.')
-        default_config_file = self._get_default_config_file()
-        if default_config_file is None:
+        default_config_files = self._get_default_config_files()
+        if not default_config_files:
             return action.default
         return getattr(self.get_defaults(), action.dest)
 
@@ -938,8 +939,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
         self._logger.info('Loaded default values from parser.')
 
-        default_config_file = self._get_default_config_file()
-        if default_config_file is not None:
+        default_config_files = self._get_default_config_files()
+        for default_config_file in default_config_files:
             with change_to_path_dir(default_config_file):
                 cfg_file = self._load_cfg(default_config_file.get_content())
                 try:
@@ -961,7 +962,13 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 _flat_namespace_to_dict(dict_to_namespace(cfg))
             )
             cfg = namespace_to_dict(_dict_to_flat_namespace(cfg))
-            cfg['__default_config__'] = default_config_file
+            meta = cfg.get('__default_config__')
+            if isinstance(meta, list):
+                meta.append(default_config_file)
+            elif isinstance(meta, Path):
+                cfg['__default_config__'] = [meta, default_config_file]
+            else:
+                cfg['__default_config__'] = default_config_file
             self._logger.info('Parsed configuration from default path: %s', str(default_config_file))
 
         if nested:
@@ -1162,7 +1169,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             try:
                 defaults = namespace_to_dict(self.get_defaults())
                 if '__default_config__' in defaults:
-                    note = 'default values below will be ones overridden by the contents of: '+str(defaults['__default_config__'])
+                    config_files = defaults['__default_config__']
+                    if isinstance(config_files, list):
+                        config_files = [str(x) for x in config_files]
+                    note = 'default values below will be ones overridden by the contents of: '+str(config_files)
                     self.formatter_class.defaults = defaults
             except ParserError as ex:
                 note = 'tried getting defaults considering default_config_files but failed due to: '+str(ex)

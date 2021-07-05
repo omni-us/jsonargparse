@@ -334,9 +334,13 @@ register_type(complex)
 register_type(uuid.UUID)
 
 
+def get_import_path(value):
+    return value.__module__+'.'+value.__name__
+
+
 def object_path_serializer(value):
     try:
-        path = value.__module__+'.'+value.__name__
+        path = get_import_path(value)
         reimported = import_object(path)
         if value != reimported:
             raise ValueError

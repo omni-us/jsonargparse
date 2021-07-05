@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import calendar
-from collections import defaultdict
 import json
+import platform
 import yaml
 from enum import Enum
 from io import StringIO
@@ -270,8 +270,29 @@ class SignaturesTests(unittest.TestCase):
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
             parser.parse_args(['--cal.help=calendar.Calendar'])
-
         self.assertIn('--cal.init_args.firstweekday', out.getvalue())
+
+        if platform.python_implementation() == 'CPython':
+            cal['init_args']['firstweekday'] = 4
+            lazy_calendar = lazy_instance(calendar.Calendar, firstweekday=4)
+            parser.set_defaults({'cal': lazy_calendar})
+            cfg = parser.parse_string(parser.dump(parser.parse_args([])))
+            self.assertEqual(cfg['cal'], cal)
+            self.assertEqual(lazy_calendar.getfirstweekday(), 4)
+
+            parser.add_argument('--config', action=ActionConfigFile)
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                parser.parse_args(['--print_config'])
+            self.assertIn('class_path: calendar.Calendar', out.getvalue())
+
+        parser.set_defaults({'cal': calendar.Calendar(firstweekday=4)})
+        cfg = parser.parse_args([])
+        self.assertIsInstance(cfg['cal'], calendar.Calendar)
+        cfg = parser.instantiate_subclasses(cfg)
+        self.assertIsInstance(cfg['cal'], calendar.Calendar)
+        dump = parser.dump(cfg)
+        self.assertIn('cal: <calendar.Calendar object at ', dump)
 
 
     def test_add_subclass_arguments_tuple(self):

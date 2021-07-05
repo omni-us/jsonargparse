@@ -13,7 +13,7 @@
 jsonargparse
 ============
 
-https://omni-us.github.io/jsonargparse/
+https://jsonargparse.readthedocs.io/en/stable/
 
 This package is an extension to python's argparse which simplifies parsing of
 configuration options from command line arguments, json configuration files
@@ -738,19 +738,18 @@ Class type and sub-classes
 ==========================
 
 It is also possible to use an arbitrary class as a type such that the argument
-accepts this class or any derived subclass. In the config file or environment
-variable or command line argument, a class is represented by a dictionary with a
-:code:`class_path` entry indicating the dot notation expression to import the
-class, and optionally some :code:`init_args` that would be used to instantiate
-it. When parsing, it will be checked that the class can be imported, that it is
-a subclass of the given type and that :code:`init_args` values correspond to
-valid arguments to instantiate it. After parsing, the config object will include
-the :code:`class_path` and :code:`init_args` entries. To get a config object
-with all sub-classes instantiated, the
-:py:meth:`.ArgumentParser.instantiate_subclasses` method is used. The
-:code:`skip` parameter of the signature methods can also be used to exclude
-arguments within subclasses. This is done by giving its relative destination
-key, i.e. as :code:`param.init_args.subparam`.
+accepts this class or any derived subclass. In the config file a class is
+represented by a dictionary with a :code:`class_path` entry indicating the dot
+notation expression to import the class, and optionally some :code:`init_args`
+that would be used to instantiate it. When parsing, it will be checked that the
+class can be imported, that it is a subclass of the given type and that
+:code:`init_args` values correspond to valid arguments to instantiate it. After
+parsing, the config object will include the :code:`class_path` and
+:code:`init_args` entries. To get a config object with all sub-classes
+instantiated, the :py:meth:`.ArgumentParser.instantiate_subclasses` method is
+used. The :code:`skip` parameter of the signature methods can also be used to
+exclude arguments within subclasses. This is done by giving its relative
+destination key, i.e. as :code:`param.init_args.subparam`.
 
 A simple example would be having some config file :code:`config.yaml` as:
 
@@ -782,11 +781,9 @@ Then in python:
 In this example the :code:`class_path` points to the same class used for the
 type. But a subclass of :code:`Calendar` with an extended list of init
 parameters would also work. The help of the parser does not show details for a
-type class since this depends on the subclass used. To get help details for a
+type class since this depends on the subclass. To get help details for a
 particular subclass there is a specific help option that receives the import
-path as follows:
-
-If there is some subclass of :code:`Calendar` which can be imported from
+path. If there is some subclass of :code:`Calendar` which can be imported from
 :code:`mycode.MyCalendar`, then it would be possible to see the corresponding
 :code:`init_args` details by running the tool from the command line as:
 
@@ -801,6 +798,62 @@ as :code:`add_argument`, but has some added benefits: 1) the argument is added
 in a new group automatically; 2) the argument values can be given in an
 independent config file by specifying a path to it; and 3) by default sets a
 useful :code:`metavar` and :code:`help` strings.
+
+Default values
+--------------
+
+For a parameter that has a class as type it might also be wanted to set a
+default value for it. Special care must be taken when doing this, could be
+considered bad practice and be a good idea to avoid in most cases. The issue is
+that classes are normally mutable. Depending on how the parameter value is used,
+its default class instance in the signature could be changed. This goes against
+what a default value is expected to be and lead to bugs which are difficult to
+debug.
+
+Since there are some legitimate use cases for class instances in defaults, they
+are supported with a particular behavior and recommendations. The first approach
+is using a normal class instance, for example:
+
+.. code-block:: python
+
+    class MyClass:
+        def __init__(
+            self,
+            calendar: Calendar = Calendar(firstweekday=1),
+        ):
+            self.calendar = calendar
+
+Adding this class to a parser will work without issues. Parsing would also work
+and if not overridden the default class instance will be found in the respective
+key of the config object. If :code:`--print_config` is used, the class instance
+is just cast to a string. This means that the generated config file must be
+modified to become a valid input to the parser. Due to the limitations and the
+risk of mutable default this approach is discouraged.
+
+The second approach which is the recommended one is to use the special function
+:func:`.lazy_instance` to instantiate the default. Continuing with the same
+example above this would be:
+
+.. code-block:: python
+
+    from jsonargparse import lazy_instance
+
+    class MyClass:
+        def __init__(
+            self,
+            calendar: Calendar = lazy_instance(Calendar, firstweekday=1),
+        ):
+            self.calendar = calendar
+
+In this case the default value will still be an instance of :code:`Calendar`.
+The difference is that the parsing methods would provide a dict with
+:code:`class_path` and :code:`init_args` instead of the class instance.
+Furthermore, if :py:meth:`.ArgumentParser.instantiate_subclasses` is used a new
+instance of the class is created thereby avoiding issues related to the
+mutability of the default.
+
+Final classes
+-------------
 
 When a class is decorated with :func:`.final` there shouldn't be any derived
 subclass. Using a final class as a type hint works similar to subclasses. The

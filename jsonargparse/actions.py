@@ -216,6 +216,7 @@ class _ActionPrintConfig(Action):
             if key is not None:
                 cfg = _get_key_value(cfg, key)
             sys.stdout.write(subparser.dump(cfg, **parser.print_config))
+            delattr(parser, 'print_config')
             parser.exit()
 
 

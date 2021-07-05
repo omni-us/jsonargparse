@@ -10,13 +10,19 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.??.? (2021-??-??)
+v3.16.0 (2021-07-05)
 --------------------
+
+Added
+-----
+- `lazy_instance` function for serializable class type defaults.
+- Support for parsing multiple matched default config files #58.
 
 Fixed
 ^^^^^
-- `--help` broken when default_config_files fail to parse #60.
 - `--*.class_path` and `--*.init_args.*` arguments not being parsed.
+- `--help` broken when default_config_files fail to parse #60.
+- Pattern in default_config_files not using sort.
 
 
 v3.15.0 (2021-06-22)

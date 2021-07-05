@@ -743,13 +743,13 @@ class ConfigFilesTests(TempDirTestCase):
             parser.default_config_files = False
 
 
-    def test_get_default_with_default_config_files(self):
-        default_config_file = os.path.realpath(os.path.join(self.tmpdir, 'example.yaml'))
-        with open(default_config_file, 'w') as output_file:
-            output_file.write('op1: from yaml\n')
-
+    def test_get_default_with_default_config_file(self):
+        default_config_file = os.path.realpath(os.path.join(self.tmpdir, 'defaults.yaml'))
         parser = ArgumentParser(default_config_files=[default_config_file], error_handler=None)
         parser.add_argument('--op1', default='from default')
+
+        with open(default_config_file, 'w') as output_file:
+            output_file.write('op1: from yaml\n')
 
         self.assertEqual(parser.get_default('op1'), 'from yaml')
 
@@ -765,6 +765,48 @@ class ConfigFilesTests(TempDirTestCase):
         if os.name == 'posix' and platform.python_implementation() == 'CPython':
             os.chmod(default_config_file, 0)
             self.assertEqual(parser.get_default('op1'), 'from default')
+
+
+    def test_get_default_with_multiple_default_config_files(self):
+        default_configs_pattern = os.path.realpath(os.path.join(self.tmpdir, 'defaults_*.yaml'))
+        parser = ArgumentParser(default_config_files=[default_configs_pattern], error_handler=None)
+        parser.add_argument('--op1', default='from default')
+        parser.add_argument('--op2', default='from default')
+
+        config_1 = os.path.realpath(os.path.join(self.tmpdir, 'defaults_1.yaml'))
+        with open(config_1, 'w') as output_file:
+            output_file.write('op1: from yaml 1\nop2: from yaml 1\n')
+
+        cfg = parser.get_defaults()
+        self.assertEqual(cfg.op1, 'from yaml 1')
+        self.assertEqual(cfg.op2, 'from yaml 1')
+        self.assertEqual(str(cfg.__default_config__), config_1)
+
+        config_2 = os.path.realpath(os.path.join(self.tmpdir, 'defaults_2.yaml'))
+        with open(config_2, 'w') as output_file:
+            output_file.write('op1: from yaml 2\n')
+
+        cfg = parser.get_defaults()
+        self.assertEqual(cfg.op1, 'from yaml 2')
+        self.assertEqual(cfg.op2, 'from yaml 1')
+        self.assertIsInstance(cfg.__default_config__, list)
+        self.assertEqual([str(v) for v in cfg.__default_config__], [config_1, config_2])
+
+        config_0 = os.path.realpath(os.path.join(self.tmpdir, 'defaults_0.yaml'))
+        with open(config_0, 'w') as output_file:
+            output_file.write('op2: from yaml 0\n')
+
+        cfg = parser.get_defaults()
+        self.assertEqual(cfg.op1, 'from yaml 2')
+        self.assertEqual(cfg.op2, 'from yaml 1')
+        self.assertIsInstance(cfg.__default_config__, list)
+        self.assertEqual([str(v) for v in cfg.__default_config__], [config_0, config_1, config_2])
+
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('/defaults_0.yaml', out.getvalue())
+        self.assertIn('/defaults_1.yaml', out.getvalue())
+        self.assertIn('/defaults_2.yaml', out.getvalue())
 
 
     def test_ActionConfigFile(self):
