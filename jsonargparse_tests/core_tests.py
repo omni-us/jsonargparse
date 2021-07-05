@@ -804,9 +804,9 @@ class ConfigFilesTests(TempDirTestCase):
 
         out = StringIO()
         parser.print_help(out)
-        self.assertIn('/defaults_0.yaml', out.getvalue())
-        self.assertIn('/defaults_1.yaml', out.getvalue())
-        self.assertIn('/defaults_2.yaml', out.getvalue())
+        self.assertIn('defaults_0.yaml', out.getvalue())
+        self.assertIn('defaults_1.yaml', out.getvalue())
+        self.assertIn('defaults_2.yaml', out.getvalue())
 
 
     def test_ActionConfigFile(self):
