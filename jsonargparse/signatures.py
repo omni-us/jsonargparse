@@ -74,7 +74,7 @@ class SignatureArguments:
                                              fail_untyped,
                                              sub_configs=sub_configs,
                                              docs_func=get_class_init_and_base_docstrings,
-                                             sign_func=get_class_init,
+                                             sign_func=get_class_signature_functions,
                                              instantiate=instantiate,
                                              linked_targets=linked_targets,
                                              skip_first=True)
@@ -182,7 +182,7 @@ class SignatureArguments:
         fail_untyped: bool,
         sub_configs: bool = False,
         docs_func: Callable = lambda x: [x.__doc__],
-        sign_func: Callable = lambda x: x,
+        sign_func: Callable = lambda x: [(v, v) for v in x],
         skip_first: bool = False,
         instantiate: bool = True,
         linked_targets: Optional[Set[str]] = None,
@@ -198,7 +198,7 @@ class SignatureArguments:
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
             sub_configs: Whether subclass type hints should be loadable from inner config file.
             docs_func: Function that returns docstrings for a given object.
-            sign_func: Function that returns signature method for a given object.
+            sign_func: Function that returns signature functions for a given object.
             skip_first: Whether to skip first argument, i.e., skip self of class methods.
             instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
 
@@ -210,23 +210,24 @@ class SignatureArguments:
         """
 
         def update_has_args_kwargs(base, has_args=True, has_kwargs=True):
-            params = list(inspect.signature(sign_func(base)).parameters.values())
+            params = list(inspect.signature(base).parameters.values())
             has_args &= any(p._kind == kinds.VAR_POSITIONAL for p in params)
             has_kwargs &= any(p._kind == kinds.VAR_KEYWORD for p in params)
             return has_args, has_kwargs
 
         ## Determine propagation of arguments ##
+        signatures = sign_func(objects)
         add_types = [(True, True)]
-        has_args, has_kwargs = update_has_args_kwargs(objects[0])
-        for num in range(1, len(objects)):
+        has_args, has_kwargs = update_has_args_kwargs(signatures[0][1])
+        for num in range(1, len(signatures)):
             if not (has_args or has_kwargs):
-                objects = objects[:num]
+                signatures = signatures[:num]
                 break
             add_types.append((has_args, has_kwargs))
-            has_args, has_kwargs = update_has_args_kwargs(objects[num], has_args, has_kwargs)
+            has_args, has_kwargs = update_has_args_kwargs(signatures[num][1], has_args, has_kwargs)
 
         ## Gather docstrings ##
-        doc_group, doc_params = self._gather_docstrings(objects, docs_func)
+        doc_group, doc_params = self._gather_docstrings([s[0] for s in signatures], docs_func)
 
         ## Create group if requested ##
         group = self._create_group_if_requested(objects[0], nested_key, as_group, doc_group, instantiate=instantiate)
@@ -235,8 +236,8 @@ class SignatureArguments:
         added_args = []  # type: List[str]
         if skip is None:
             skip = set()
-        for obj, (add_args, add_kwargs) in zip(objects, add_types):
-            for num, param in enumerate(inspect.signature(sign_func(obj)).parameters.values()):
+        for (obj, func), (add_args, add_kwargs) in zip(signatures, add_types):
+            for num, param in enumerate(inspect.signature(func).parameters.values()):
                 if skip_first and num == 0:
                     continue
                 self._add_signature_parameter(
@@ -549,8 +550,14 @@ def get_class_init_and_base_docstrings(value):
     return [value.__init__.__doc__, value.__doc__]
 
 
-def get_class_init(value):
-    return value.__init__
+def get_class_signature_functions(classes):
+    signatures = []
+    for num, cls in enumerate(classes):
+        if cls.__new__ is not object.__new__ and not any(cls.__new__ is c.__new__ for c in classes[num+1:]):
+            signatures.append((cls, cls.__new__))
+        if not any(cls.__init__ is c.__init__ for c in classes[num+1:]):
+            signatures.append((cls, cls.__init__))
+    return signatures
 
 
 def strip_title(value):

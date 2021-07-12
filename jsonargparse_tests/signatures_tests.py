@@ -156,6 +156,22 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual({2: 7, 4: 9}, parser.parse_args(['--a1={"2": 7, "4": 9}']).a1)
 
 
+    def test_add_class_implemented_with_new(self):
+
+        class ClassA:
+            def __new__(cls, a1: int = 1, a2: float = 2.3):
+                obj = object.__new__(cls)
+                obj.a1 = a1
+                obj.a2 = a2
+                return obj
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(ClassA, 'a')
+
+        cfg = parser.parse_args(['--a.a1=4'])
+        self.assertEqual(cfg.a, Namespace(a1=4, a2=2.3))
+
+
     def test_add_method_arguments(self):
 
         class MyClass:

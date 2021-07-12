@@ -384,7 +384,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 val = str(val)
                 warnings.warn(
                     'Not possible to serialize an instance of ' + str(typehint.__name__) + '. It will be represented as the '
-                    'string ' + val + '. If this was set as a default, consider using setting a dict or using lazy_instance.'
+                    'string ' + val + '. If this was set as a default, consider setting a dict or using lazy_instance.'
                 )
             return val
         if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val) or (isinstance(val, Namespace) and hasattr(val, 'class_path'))):
