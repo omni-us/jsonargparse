@@ -53,7 +53,7 @@ while [ "$n" -lt "${#FILES[@]}" ]; do
 done
 
 if [ "${#PYFILES[@]}" -gt 0 ]; then
-  echo "${0##*/}: mypy ${PYFILES[@]}" 1>&2;
+  echo "${0##*/}: mypy jsonargparse/*.py jsonargparse_tests/*.py" 1>&2;
   mypy jsonargparse/*.py jsonargparse_tests/*.py;
   [ "$?" != "0" ] && exit 1;
   echo "${0##*/}: pycodestyle ${PYFILES[@]}" 1>&2;

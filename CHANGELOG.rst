@@ -10,12 +10,13 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.16.1 (2021-07-??)
+v3.16.1 (2021-07-13)
 --------------------
 
 Fixed
 ^^^^^
 - Signature functions not working for classes implemented with `__new__`.
+- `instantiate_classes` failing when keys not present in config object.
 
 
 v3.16.0 (2021-07-05)

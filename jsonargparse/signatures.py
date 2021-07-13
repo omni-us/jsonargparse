@@ -182,7 +182,7 @@ class SignatureArguments:
         fail_untyped: bool,
         sub_configs: bool = False,
         docs_func: Callable = lambda x: [x.__doc__],
-        sign_func: Callable = lambda x: [(v, v) for v in x],
+        sign_func: Callable = lambda x: [(v, v) for v in x],  # type: ignore
         skip_first: bool = False,
         instantiate: bool = True,
         linked_targets: Optional[Set[str]] = None,

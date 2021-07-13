@@ -1103,10 +1103,13 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         cfg = strip_meta(cfg)
         for component in components:
             if isinstance(component, Action):
-                value, parent, key = _get_key_value(cfg, component.dest, parent=True)
-                if value is not None:
-                    parent[key] = component._instantiate_classes(value)  # type: ignore
-                    _ActionLink.apply_instantiation_links(self, cfg, component.dest)
+                try:
+                    value, parent, key = _get_key_value(cfg, component.dest, parent=True)
+                    if value is not None:
+                        parent[key] = component._instantiate_classes(value)  # type: ignore
+                        _ActionLink.apply_instantiation_links(self, cfg, component.dest)
+                except KeyError:
+                    pass
             else:
                 component.instantiate_class(component, cfg)
                 _ActionLink.apply_instantiation_links(self, cfg, component.dest)
