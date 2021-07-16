@@ -4,6 +4,7 @@ import os
 import pathlib
 import pickle
 import jsonargparse.typing
+from datetime import timedelta
 from typing import Callable
 from jsonargparse.typing import RegisteredType
 from jsonargparse_tests.base import *
@@ -179,6 +180,20 @@ class OtherTests(unittest.TestCase):
         self.assertEqual(CallableType.serializer(CLI), 'jsonargparse.cli.CLI')
         self.assertRaises(ValueError, lambda: CallableType.serializer(lambda: None))
         self.assertRaises(ValueError, lambda: CallableType.serializer(Namespace(__module__='jsonargparse.cli', __name__='CLI')))
+
+
+    def test_timedelta(self):
+        timedelta_type = registered_types[timedelta]
+        for delta_in, delta_out in [
+            ('1:2:3', '1:02:03'),
+            ('0:05:30', '0:05:30'),
+            ('3 days, 2:0:0', '3 days, 2:00:00'),
+            ('345:0:0', '14 days, 9:00:00'),
+        ]:
+            with self.subTest(delta_in):
+                delta = timedelta_type.deserializer(delta_in)
+                self.assertIsInstance(delta, timedelta)
+                self.assertEqual(str(delta), delta_out)
 
 
 if __name__ == '__main__':

@@ -10,6 +10,16 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.17.0 (2021-07-??)
+--------------------
+
+Added
+^^^^^
+- `datetime.timedelta` now supported as a type.
+- New function `class_from_function` to add signature of functions that
+  return an instantiated class.
+
+
 v3.16.1 (2021-07-13)
 --------------------
 

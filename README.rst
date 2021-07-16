@@ -508,6 +508,13 @@ dictionary, the :class:`.ArgumentParser` object can be instantiated with
 :code:`parse_as_dict=True` to get directly a dictionary from the parsing
 methods.
 
+Instantiation of classes added as argument groups with
+:func:`add_class_arguments` can be done more simply for an entire config object
+using :py:meth:`.ArgumentParser.instantiate_classes`. For the example above
+running :code:`cfg = parser.instantiate_classes(cfg)` would result in a dict in
+which :code:`cfg['myclass']['init']` would contain an instance of
+:code:`MyClass` initialized with whatever command line arguments were parsed.
+
 When parsing from a configuration file (see :ref:`configuration-files`) all the
 values can be given in a single config file. However, for convenience it is also
 possible that the values for each of the groups created by the calls to the add
@@ -524,6 +531,18 @@ Then the files :code:`myclass.yaml` and :code:`mymethod.yaml` would only include
 the settings for each of the instantiation of the class and the call to the
 method respectively.
 
+In some cases there are functions which return an instance of a class. To add
+this to a parser such that :py:meth:`.ArgumentParser.instantiate_classes` calls
+this function, the example would change to:
+
+.. code-block:: python
+
+    from jsonargparse import ArgumentParser, class_from_function
+
+    parser = ArgumentParser()
+    dynamic_class = class_from_function(instantiate_myclass)
+    parser.add_class_arguments(dynamic_class, 'myclass.init')
+
 A wide range of type hints are supported. For exact details go to section
 :ref:`type-hints`. Some notes about the support for automatic adding of
 arguments are:
@@ -532,7 +551,7 @@ arguments are:
   functions raise an exception.
 
 - Keyword arguments are ignored if they don't have at least one type that is
-  supported. They are also ignored if the name starts with :code:`_`.
+  supported.
 
 - Recursive adding of arguments from base classes only considers the presence
   of :code:`*args` and :code:`**kwargs`. It does not check the code to identify
@@ -666,9 +685,10 @@ Some notes about this support are:
 - Fully supported types are: :code:`str`, :code:`bool`, :code:`int`,
   :code:`float`, :code:`complex`, :code:`List`, :code:`Iterable`,
   :code:`Sequence`, :code:`Any`, :code:`Union`, :code:`Optional`, :code:`Type`,
-  :code:`Enum`, :code:`UUID`, restricted types as explained in sections
-  :ref:`restricted-numbers` and :ref:`restricted-strings` and paths and URLs as
-  explained in sections :ref:`parsing-paths` and :ref:`parsing-urls`.
+  :code:`Enum`, :code:`UUID`, :code:`timedelta`, restricted types as explained
+  in sections :ref:`restricted-numbers` and :ref:`restricted-strings` and paths
+  and URLs as explained in sections :ref:`parsing-paths` and
+  :ref:`parsing-urls`.
 
 - :code:`Dict` is supported but only with :code:`str` or :code:`int` keys.
 

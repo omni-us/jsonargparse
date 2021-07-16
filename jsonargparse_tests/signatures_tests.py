@@ -866,6 +866,32 @@ class SignaturesTests(unittest.TestCase):
             parser.link_arguments('g.b.b2', 'g.a.a1', apply_on='instantiate')
 
 
+    def test_add_class_from_function_arguments(self):
+
+        def get_calendar(a1: str, a2: int = 2) -> calendar.Calendar:
+            """Returns instance of Calendar"""
+            cal = calendar.Calendar()
+            cal.a1 = a1  # type: ignore
+            cal.a2 = a2  # type: ignore
+            return cal
+
+        get_calendar_class = class_from_function(get_calendar)
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(get_calendar_class, 'a')
+
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertIn('Returns instance of Calendar', help_str.getvalue())
+
+        cfg = parser.parse_args(['--a.a1=v', '--a.a2=3'])
+        self.assertEqual(cfg.a, Namespace(a1='v', a2=3))
+        cfg = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg['a'], calendar.Calendar)
+        self.assertEqual(cfg['a'].a1, 'v')
+        self.assertEqual(cfg['a'].a2, 3)
+
+
 class SignaturesConfigTests(TempDirTestCase):
 
     def test_add_function_arguments_config(self):

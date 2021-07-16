@@ -3,6 +3,7 @@
 import operator
 import re
 import uuid
+from datetime import timedelta
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 from .util import import_object, Path
 
@@ -355,3 +356,21 @@ register_type(
     serializer=object_path_serializer,
     deserializer=lambda x: x if callable(x) else import_object(x),
 )
+
+
+def timedelta_deserializer(value):
+    def raise_error():
+        raise ValueError('Expected a string with form "h:m:s" or "d days, h:m:s" but got "'+str(value)+'"')
+    if not isinstance(value, str):
+        raise_error()
+    pattern = r'(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d[\.\d+]*)'
+    if 'day' in value:
+        pattern = r'(?P<days>[-\d]+) day[s]*, ' + pattern
+    match = re.match(pattern, value)
+    if not match:
+        raise_error()
+    kwargs = {key: float(val) for key, val in match.groupdict().items()}
+    return timedelta(**kwargs)
+
+
+register_type(timedelta, deserializer=timedelta_deserializer)

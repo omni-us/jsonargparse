@@ -3,10 +3,11 @@
 import inspect
 import re
 from argparse import Namespace
+from functools import wraps
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from .actions import _ActionConfigLoad, _ActionHelpClass, _ActionHelpClassPath
-from .typehints import ActionTypeHint, is_optional
+from .typehints import ActionTypeHint, ClassType, is_optional
 from .typing import is_final_class
 from .util import _get_key_value, _issubclass
 from .optionals import (
@@ -18,6 +19,7 @@ from .optionals import (
 
 
 __all__ = [
+    'class_from_function',
     'compose_dataclasses',
     'SignatureArguments',
 ]
@@ -66,6 +68,8 @@ class SignatureArguments:
         if not inspect.isclass(theclass):
             raise ValueError('Expected "theclass" argument to be a class object.')
 
+        skip_first = not _issubclass(theclass, ClassFromFunctionBase)
+
         return self._add_signature_arguments(inspect.getmro(theclass),
                                              nested_key,
                                              as_group,
@@ -77,7 +81,7 @@ class SignatureArguments:
                                              sign_func=get_class_signature_functions,
                                              instantiate=instantiate,
                                              linked_targets=linked_targets,
-                                             skip_first=True)
+                                             skip_first=skip_first)
 
 
     def add_method_arguments(
@@ -593,3 +597,26 @@ def compose_dataclasses(*args):
                     arg.__post_init__(self)
 
     return ComposedDataclass
+
+
+class ClassFromFunctionBase:
+    pass
+
+
+def class_from_function(func: Callable[..., ClassType]) -> Type[ClassType]:
+    """Creates a dynamic class which if instantiated is equivalent to calling func.
+
+    Args:
+        func: A function that returns an instance of a class. It must have a return type annotation.
+    """
+    @wraps(func)
+    def __new__(cls, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    class ClassFromFunction(inspect.signature(func).return_annotation, ClassFromFunctionBase):  # type: ignore
+        pass
+
+    ClassFromFunction.__new__ = __new__  # type: ignore
+    ClassFromFunction.__doc__ = func.__doc__
+    ClassFromFunction.__name__ = func.__name__
+    return ClassFromFunction
