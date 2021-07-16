@@ -880,9 +880,10 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_class_arguments(get_calendar_class, 'a')
 
-        help_str = StringIO()
-        parser.print_help(help_str)
-        self.assertIn('Returns instance of Calendar', help_str.getvalue())
+        if docstring_parser_support:
+            help_str = StringIO()
+            parser.print_help(help_str)
+            self.assertIn('Returns instance of Calendar', help_str.getvalue())
 
         cfg = parser.parse_args(['--a.a1=v', '--a.a2=3'])
         self.assertEqual(cfg.a, Namespace(a1='v', a2=3))
