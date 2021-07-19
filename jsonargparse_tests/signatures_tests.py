@@ -943,5 +943,23 @@ class SignaturesConfigTests(TempDirTestCase):
         self.assertEqual(strip_meta(cfg.func), {'a1': 'one', 'a2': 2.0, 'a3': True})
 
 
+    def test_add_subclass_arguments_with_config(self):
+        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+
+        cfg_path = 'config.yaml'
+        cal = {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
+        with open(cfg_path, 'w') as f:
+            f.write(yaml.dump({'cal': cal}))
+
+        cfg = parser.parse_args(['--cfg='+cfg_path])
+        self.assertEqual(cfg['cal'], cal)
+
+        cal['init_args']['firstweekday'] = 2
+        cfg = parser.parse_args(['--cfg='+cfg_path, '--cal.init_args.firstweekday=2'])
+        self.assertEqual(cfg['cal'], cal)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

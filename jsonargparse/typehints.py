@@ -30,9 +30,12 @@ from .util import (
     ParserError,
     Path,
     namespace_to_dict,
+    get_key_value_from_flat_dict,
+    update_key_value_in_flat_dict,
     NoneType,
     yamlParserError,
     yamlScannerError,
+    indent_text,
     _issubclass,
     _load_config,
 )
@@ -188,8 +191,17 @@ class ActionTypeHint(Action):
                         init_args = getattr(cfg, self.dest).get('init_args', {})
                         init_args[match.groups()[0]] = val
                         val = getattr(cfg, self.dest)
+                    else:
+                        cfg_dict = vars(cfg)
+                        cfg_dest = get_key_value_from_flat_dict(cfg_dict, self.dest)
+                        init_args = cfg_dest.get('init_args', {})
+                        init_args[match.groups()[0]] = val
+                        val = cfg_dest
             val = self._check_type(val)
-        setattr(args[1], self.dest, val)
+        if 'cfg_dest' in locals():
+            update_key_value_in_flat_dict(vars(args[1]), self.dest, val)
+        else:
+            setattr(args[1], self.dest, val)
 
 
     def _check_type(self, value, cfg=None):
@@ -212,6 +224,9 @@ class ActionTypeHint(Action):
                     if isinstance(val, (int, float)) and config_path is None:
                         val = adapt_typehints(orig_val, self._typehint, sub_add_kwargs=sub_add_kwargs)
                     else:
+                        if self._enable_path and config_path is None and isinstance(orig_val, str):
+                            msg = '\n- Expected a config path but "'+orig_val+'" either not accessible or invalid.\n- '
+                            raise type(ex)(msg+str(ex)) from ex
                         raise ex
                 if path_meta is not None:
                     val['__path__'] = path_meta
@@ -388,7 +403,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 )
             return val
         if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val) or (isinstance(val, Namespace) and hasattr(val, 'class_path'))):
-            raise ValueError('Expected an str or a Dict with a class_path entry but got "'+str(val)+'"')
+            raise ValueError('Type '+str(typehint)+' expects an str or a Dict with a class_path entry but got "'+str(val)+'"')
         try:
             if isinstance(val, Namespace):
                 val = namespace_to_dict(val)
@@ -463,10 +478,6 @@ def typehint_metavar(typehint):
         enum = typehint.__args__[0]
         metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
     return metavar
-
-
-def indent_text(text):
-    return text.replace('\n', '\n  ')
 
 
 class LazyInitBaseClass:

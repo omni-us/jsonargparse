@@ -319,6 +319,10 @@ def change_to_path_dir(path):
             os.chdir(cwd)
 
 
+def indent_text(text):
+    return text.replace('\n', '\n  ')
+
+
 def known_to_fsspec(path):
     import_fsspec('known_to_fsspec')
     from fsspec.registry import known_implementations

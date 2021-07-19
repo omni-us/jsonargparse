@@ -20,6 +20,7 @@ from .util import (
     import_object,
     change_to_path_dir,
     NoneType,
+    indent_text,
     Path,
     _get_key_value,
     _load_config,
@@ -251,7 +252,8 @@ class _ActionConfigLoad(Action):
         try:
             return _load_config(value)
         except (TypeError, yamlParserError, yamlScannerError) as ex:
-            raise TypeError('Parser key "'+self.dest+'": '+str(ex)) from ex
+            str_ex = indent_text(str(ex))
+            raise TypeError('Parser key "'+self.dest+'": Unable to load config "'+str(value)+'"\n- '+str_ex) from ex
 
     def _check_type(self, value, cfg=None):
         return self._load_config(value)

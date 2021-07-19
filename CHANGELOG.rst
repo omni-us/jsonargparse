@@ -15,9 +15,13 @@ v3.17.0 (2021-07-??)
 
 Added
 ^^^^^
-- `datetime.timedelta` now supported as a type.
-- New function `class_from_function` to add signature of functions that
+- ``datetime.timedelta`` now supported as a type.
+- New function ``class_from_function`` to add signature of functions that
   return an instantiated class.
+
+Fixed
+^^^^^
+- ``--*.init_args.*`` causing crash when overriding value from config file.
 
 
 v3.16.1 (2021-07-13)
@@ -25,8 +29,8 @@ v3.16.1 (2021-07-13)
 
 Fixed
 ^^^^^
-- Signature functions not working for classes implemented with `__new__`.
-- `instantiate_classes` failing when keys not present in config object.
+- Signature functions not working for classes implemented with ``__new__``.
+- ``instantiate_classes`` failing when keys not present in config object.
 
 
 v3.16.0 (2021-07-05)
@@ -34,13 +38,13 @@ v3.16.0 (2021-07-05)
 
 Added
 -----
-- `lazy_instance` function for serializable class type defaults.
+- ``lazy_instance`` function for serializable class type defaults.
 - Support for parsing multiple matched default config files #58.
 
 Fixed
 ^^^^^
-- `--*.class_path` and `--*.init_args.*` arguments not being parsed.
-- `--help` broken when default_config_files fail to parse #60.
+- ``--*.class_path`` and ``--*.init_args.*`` arguments not being parsed.
+- ``--help`` broken when default_config_files fail to parse #60.
 - Pattern in default_config_files not using sort.
 
 
@@ -51,8 +55,8 @@ Added
 ^^^^^
 - Decorator for final classes and an is_final_class function to test it.
 - Support for final classes as type hint.
-- `add_subclass_arguments` now supports multiple classes given as tuple.
-- `add_subclass_arguments` now supports the instantiate parameter.
+- ``add_subclass_arguments`` now supports multiple classes given as tuple.
+- ``add_subclass_arguments`` now supports the instantiate parameter.
 
 Fixed
 ^^^^^
@@ -64,9 +68,9 @@ v3.14.0 (2021-06-08)
 
 Added
 ^^^^^
-- Method `instantiate_classes` that instantiates subclasses and class groups.
-- Support for `link_arguments` that are applied on instantiation.
-- Method `add_subclass_arguments` now supports skipping of arguments.
+- Method ``instantiate_classes`` that instantiates subclasses and class groups.
+- Support for ``link_arguments`` that are applied on instantiation.
+- Method ``add_subclass_arguments`` now supports skipping of arguments.
 - Added support for Type in type hints #59.
 
 Fixed
@@ -105,15 +109,15 @@ v3.12.1 (2021-05-19)
 
 Fixed
 ^^^^^
-- :code:`--print_config` can now be given before other arguments without value.
+- ``--print_config`` can now be given before other arguments without value.
 - Fixed conversion of flat namespace to dict when there is a nested empty namespace.
 - Fixed issue with get_defaults with default config file and parse_as_dict=False.
 - Fixed bug in save which failed when there was an int key.
 
 Changed
 ^^^^^^^
-- :code:`--print_config` now only receives a value with `=` syntax.
-- :code:`add_{class,method,function,dataclass}_arguments` now return a list of
+- ``--print_config`` now only receives a value with ``=`` syntax.
+- ``add_{class,method,function,dataclass}_arguments`` now return a list of
   added arguments.
 
 
@@ -140,8 +144,8 @@ v3.11.2 (2021-05-03)
 
 Fixed
 ^^^^^
-- Link argument arrow :code:`<=` can be confused as less or equal, changed to
-  :code:`<--`.
+- Link argument arrow ``<=`` can be confused as less or equal, changed to
+  ``<--``.
 
 
 v3.11.1 (2021-04-30)
@@ -158,11 +162,11 @@ v3.11.0 (2021-04-27)
 
 Added
 ^^^^^
-- CLI now has :code:`--config` options at subcommand and subsubcommand levels.
+- CLI now has ``--config`` options at subcommand and subsubcommand levels.
 - CLI now adds subcommands with help string taken from docstrings.
 - print_config at subcommand level for global config with implicit subcommands.
 - New Path_drw predefined type.
-- Type hint arguments now support :code:`nargs='?'`.
+- Type hint arguments now support ``nargs='?'``.
 - Signature methods can now skip arguments within init_args of subclasses.
 
 Changed
@@ -189,7 +193,7 @@ Changed
 
 Fixed
 ^^^^^
-- :code:`--*.help` option being added for non-subclass types.
+- ``--*.help`` option being added for non-subclass types.
 - Iterable and Sequence types not working for python>=3.7 #53.
 
 
@@ -202,14 +206,14 @@ Added
 - CLI set_defaults option to allow overriding of defaults.
 - CLI return_parser option to ease inclusion in documentation.
 - save_path_content attribute to save paths content on config save.
-- New `link_arguments` method to derive an argument value from others.
+- New ``link_arguments`` method to derive an argument value from others.
 - print_config now includes subclass init_args if class_path given.
-- Subclass type hints now also have a :code:`--*.help` option.
+- Subclass type hints now also have a ``--*.help`` option.
 
 Changed
 ^^^^^^^
 - Signature parameters whose name starts with "_" are skipped.
-- The repr of Path now has the form `Path_{mode}(`.
+- The repr of Path now has the form ``Path_{mode}(``.
 
 Fixed
 ^^^^^
@@ -377,7 +381,7 @@ Fixed
 - Changed actions so that keyword arguments are visible in API.
 - Fixed save method short description which was copy paste of dump.
 - Added missing docstring in instantiate_subclasses method.
-- Fixed crash when using :code:`--help` and ActionConfigFile not given help string.
+- Fixed crash when using ``--help`` and ActionConfigFile not given help string.
 - Standardized capitalization and punctuation of: help, config, version.
 
 
@@ -412,7 +416,7 @@ Added
 Changed
 ^^^^^^^
 - Improved description of parser used as standalone and for ActionParser #34.
-- Removed :code:`__cwd__` and top level :code:`__path__` that were not needed.
+- Removed ``__cwd__`` and top level ``__path__`` that were not needed.
 
 Fixed
 ^^^^^
@@ -429,7 +433,7 @@ v3.1.0 (2020-12-09)
 Added
 ^^^^^
 - Support for multiple levels of subcommands #29.
-- Default description of subcommands explaining use of :code:`--help`.
+- Default description of subcommands explaining use of ``--help``.
 
 
 v3.0.1 (2020-12-02)
@@ -437,8 +441,8 @@ v3.0.1 (2020-12-02)
 
 Fixed
 ^^^^^
-- add_class_arguments incorrectly added arguments from :code:`__call__` instead
-  of :code:`__init__` for callable classes.
+- add_class_arguments incorrectly added arguments from ``__call__`` instead
+  of ``__init__`` for callable classes.
 
 
 v3.0.0 (2020-12-01)
@@ -452,7 +456,7 @@ Added
 - Typing module that includes predefined types and type generator functions
   for paths and restricted numbers/strings.
 - Extended support to add_argument type to allow complex type hints.
-- Parsers now include :code:`--print_config` option to dump defaults.
+- Parsers now include ``--print_config`` option to dump defaults.
 - Support argcomplete for tab completion of arguments.
 
 Changed

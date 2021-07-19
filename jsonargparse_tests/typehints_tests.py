@@ -412,7 +412,7 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         with open('cal.yaml', 'w') as f:
             json.dump(cal, f)
 
-        parser = ArgumentParser(parse_as_dict=True)
+        parser = ArgumentParser(parse_as_dict=True, error_handler=None)
         parser.add_argument('--data', type=Dict[str, Any], enable_path=True)
         parser.add_argument('--cal', type=Calendar, enable_path=True)
         cfg = parser.parse_args(['--data=data.yaml'])
@@ -420,6 +420,7 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertEqual(data, cfg['data'])
         cfg = parser.instantiate_subclasses(parser.parse_args(['--cal=cal.yaml']))
         self.assertIsInstance(cfg['cal'], Calendar)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--data=does-not-exist.yaml']))
 
 
     def test_class_type_with_default_config_files(self):
