@@ -7,10 +7,12 @@ import warnings
 import yaml
 from argparse import Action, Namespace
 from collections.abc import Iterable as abcIterable
+from collections.abc import Mapping as abcMapping
+from collections.abc import MutableMapping as abcMutableMapping
 from collections.abc import Sequence as abcSequence
 from enum import Enum
 from functools import partial
-from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Set, Tuple, Type, TypeVar, Union
 
 try:
     from typing import Literal  # type: ignore
@@ -374,7 +376,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 val[n] = adapt_typehints(v, subtypehints[0], **adapt_kwargs)
 
     # Dict
-    elif typehint_origin in {Dict, dict}:
+    elif typehint_origin in {Dict, dict, Mapping, MutableMapping, abcMapping, abcMutableMapping}:
         if not isinstance(val, dict):
             raise ValueError('Expected a Dict but got "'+str(val)+'"')
         if subtypehints is not None:
