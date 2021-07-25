@@ -9,6 +9,13 @@ follow `Semantic Versioning <https://semver.org/>`_
 only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
+v3.18.0 (2021-??-??)
+--------------------
+
+Added
+^^^^^
+- Support for parsing ``Mapping`` and ``MutableMapping` types.
+
 
 v3.17.0 (2021-07-19)
 --------------------
