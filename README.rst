@@ -690,7 +690,8 @@ Some notes about this support are:
   and URLs as explained in sections :ref:`parsing-paths` and
   :ref:`parsing-urls`.
 
-- :code:`Dict` is supported but only with :code:`str` or :code:`int` keys.
+- :code:`Dict`, :code:`Mapping`, and :code:`MutableMapping` are supported but
+  only with :code:`str` or :code:`int` keys.
 
 - :code:`Tuple` and :code:`Set` are supported even though they can't be
   represented in json distinguishable from a list. Each :code:`Tuple` element
