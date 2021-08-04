@@ -15,6 +15,7 @@ v3.18.0 (2021-??-??)
 Added
 ^^^^^
 - Support for parsing ``Mapping`` and ``MutableMapping` types.
+- Fix a bug that can sometimes occur when serializing an Enum.
 
 
 v3.17.0 (2021-07-19)

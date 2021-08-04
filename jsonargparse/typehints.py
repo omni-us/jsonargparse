@@ -320,7 +320,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             if isinstance(val, typehint):
                 val = val.name
             else:
-                typehint[val]
+                val = typehint[val]
         elif not serialize and not isinstance(val, typehint):
             val = typehint[val]
 
