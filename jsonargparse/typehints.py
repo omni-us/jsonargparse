@@ -9,10 +9,28 @@ from argparse import Action, Namespace
 from collections.abc import Iterable as abcIterable
 from collections.abc import Mapping as abcMapping
 from collections.abc import MutableMapping as abcMutableMapping
+from collections.abc import Set as abcSet
+from collections.abc import MutableSet as abcMutableSet
 from collections.abc import Sequence as abcSequence
+from collections.abc import MutableSequence as abcMutableSequence
 from enum import Enum
 from functools import partial
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Set, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    MutableSet,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 try:
     from typing import Literal  # type: ignore
@@ -52,10 +70,10 @@ root_types = {
     Literal,
     Type, type,
     Union,
-    List, list, Iterable, Sequence, abcIterable, abcSequence,
+    List, list, Iterable, Sequence, MutableSequence, abcIterable, abcSequence, abcMutableSequence,
     Tuple, tuple,
-    Set, set,
-    Dict, dict,
+    Set, set, frozenset, MutableSet,
+    Dict, dict, Mapping, MutableMapping,
 }
 
 leaf_types = {
@@ -350,7 +368,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
         val = [v for v in vals if not isinstance(v, Exception)][0]
 
     # Tuple or Set
-    elif typehint_origin in {Tuple, tuple, Set, set}:
+    elif typehint_origin in {Tuple, tuple, Set, set, frozenset, MutableSet, abcSet, abcMutableSet}:
         if not isinstance(val, (list, tuple, set)):
             raise ValueError('Expected a '+str(typehint_origin)+' but got "'+str(val)+'"')
         val = list(val)
@@ -368,7 +386,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             val = tuple(val) if typehint_origin in {Tuple, tuple} else set(val)
 
     # List, Iterable or Sequence
-    elif typehint_origin in {List, list, Iterable, Sequence, abcIterable, abcSequence}:
+    elif typehint_origin in {List, list, Iterable, Sequence, MutableSequence, abcIterable, abcSequence,
+                             abcMutableSequence}:
         if not isinstance(val, list):
             raise ValueError('Expected a List but got "'+str(val)+'"')
         if subtypehints is not None:
