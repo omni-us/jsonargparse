@@ -72,8 +72,8 @@ root_types = {
     Union,
     List, list, Iterable, Sequence, MutableSequence, abcIterable, abcSequence, abcMutableSequence,
     Tuple, tuple,
-    Set, set, frozenset, MutableSet,
-    Dict, dict, Mapping, MutableMapping,
+    Set, set, frozenset, MutableSet, abcMutableSet,
+    Dict, dict, Mapping, MutableMapping, abcMapping, abcMutableMapping,
 }
 
 leaf_types = {
