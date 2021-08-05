@@ -14,7 +14,8 @@ v3.18.0 (2021-??-??)
 
 Added
 ^^^^^
-- Support for parsing ``Mapping`` and ``MutableMapping` types.
+- Support for parsing ``Mapping`` and ``MutableMapping`` types.
+- Support for parsing ``frozenset``, ``MutableSequence`` and ``MutableSet`` types.
 - Fix a bug that can sometimes occur when serializing an Enum.
 
 
