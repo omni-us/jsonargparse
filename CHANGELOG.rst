@@ -14,7 +14,8 @@ v3.18.0 (2021-??-??)
 
 Added
 ^^^^^
-- Support for parsing ``Mapping`` and ``MutableMapping` types.
+- Support for parsing ``Mapping`` and ``MutableMapping`` types.
+- Support for parsing ``frozenset``, ``MutableSequence`` and ``MutableSet`` types.
 
 
 v3.17.0 (2021-07-19)

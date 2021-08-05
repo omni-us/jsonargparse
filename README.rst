@@ -693,12 +693,12 @@ Some notes about this support are:
 - :code:`Dict`, :code:`Mapping`, and :code:`MutableMapping` are supported but
   only with :code:`str` or :code:`int` keys.
 
-- :code:`Tuple` and :code:`Set` are supported even though they can't be
-  represented in json distinguishable from a list. Each :code:`Tuple` element
-  position can have its own type and will be validated as such. :code:`Tuple`
-  with ellipsis (:code:`Tuple[type, ...]`) is also supported. In command line
-  arguments, config files and environment variables, tuples and sets are
-  represented as an array.
+- :code:`Tuple`, :code:`Set` and :code:`MutableSet` are supported even though
+  they can't be represented in json distinguishable from a list. Each
+  :code:`Tuple` element position can have its own type and will be validated
+  as such. :code:`Tuple` with ellipsis (:code:`Tuple[type, ...]`) is also
+  supported. In command line arguments, config files and environment variables,
+  tuples and sets are represented as an array.
 
 - :code:`dataclasses` are supported as a type but without any nesting and for
   pure data classes. By pure it is meant that it only inherits from data
