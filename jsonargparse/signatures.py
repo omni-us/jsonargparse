@@ -373,7 +373,7 @@ class SignatureArguments:
         Args:
             theclass: Class from which to add arguments.
             nested_key: Key for nested namespace.
-            default: Vale for defaults. Must be instance of or kwargs for theclass.
+            default: Value for defaults. Must be instance of or kwargs for theclass.
             as_group: Whether arguments should be added to a new argument group.
 
         Returns:
