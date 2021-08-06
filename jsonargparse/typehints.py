@@ -454,18 +454,21 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
     parser = ArgumentParser(error_handler=None, parse_as_dict=True)
     parser.add_class_arguments(val_class, **sub_add_kwargs)
 
+    # No need to re-create the linked arg but just "inform" the corresponding parser actions that it exists upstream.
     for target in sub_add_kwargs.get('linked_targets', []):
-        for split in ['.init_args.', '.']:
-            if split in target:
-                prefix, suffix = target.split(split, maxsplit=1)
+        split_index = target.find(".")
+        if split_index != -1:
+            split = ".init_args." if target[split_index:].startswith(".init_args.") else "."
 
-                action = next(a for a in parser._actions if a.dest == prefix)
+            parent_key, key = target.split(split, maxsplit=1)
 
-                sub_add_kwargs = getattr(action, 'sub_add_kwargs')
-                sub_add_kwargs.setdefault('linked_targets', set())
-                sub_add_kwargs['linked_targets'].add(suffix)
+            action = next(a for a in parser._actions if a.dest == parent_key)
 
-                break
+            sub_add_kwargs = getattr(action, 'sub_add_kwargs')
+            sub_add_kwargs.setdefault('linked_targets', set())
+            sub_add_kwargs['linked_targets'].add(key)
+
+            break
 
     if instantiate_classes:
         init_args = parser.instantiate_subclasses(init_args)
