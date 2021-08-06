@@ -403,7 +403,11 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 cast = str if serialize else int
                 val = {cast(k): v for k, v in val.items()}
             for k, v in val.items():
-                val[k] = adapt_typehints(v, subtypehints[1], **adapt_kwargs)
+                kwargs = adapt_kwargs.copy()
+                kwargs["linked_targets"] = {t[len(k + "."):] for t in kwargs["linked_targets"] if t.startswith(k)}
+                kwargs["linked_targets"] = {t[len("init_args."):] if t.startswith("init_args.") else t
+                                            for t in kwargs["linked_targets"]}
+                val[k] = adapt_typehints(v, subtypehints[1], **kwargs)
 
     # Final class
     elif is_final_class(typehint):
