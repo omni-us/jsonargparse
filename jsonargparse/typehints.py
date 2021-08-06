@@ -455,14 +455,17 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
     parser.add_class_arguments(val_class, **sub_add_kwargs)
 
     for target in sub_add_kwargs.get('linked_targets', []):
-        if "." in target:
-            prefix, suffix = target.split(".", maxsplit=1)
+        for split in ['.init_args.', '.']:
+            if split in target:
+                prefix, suffix = target.split(split, maxsplit=1)
 
-            action = next(a for a in parser._actions if a.dest == prefix)
+                action = next(a for a in parser._actions if a.dest == prefix)
 
-            sub_add_kwargs = getattr(action, 'sub_add_kwargs')
-            sub_add_kwargs.setdefault('linked_targets', set())
-            sub_add_kwargs['linked_targets'].add(suffix)
+                sub_add_kwargs = getattr(action, 'sub_add_kwargs')
+                sub_add_kwargs.setdefault('linked_targets', set())
+                sub_add_kwargs['linked_targets'].add(suffix)
+
+                break
 
     if instantiate_classes:
         init_args = parser.instantiate_subclasses(init_args)
