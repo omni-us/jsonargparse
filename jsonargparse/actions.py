@@ -733,14 +733,10 @@ class _ActionSubCommands(_SubParsersAction):
 
 
     @staticmethod
-    def handle_subcommands(parser, cfg, env, defaults, prefix='', fail_no_subcommand=True):
-        """Adds sub-command dest if missing and parses defaults and environment variables."""
+    def get_subcommand(parser, cfg_dict:dict, prefix:str='', fail_no_subcommand:bool=True):
+        """Returns the sub-command name and corresponding subparser."""
         if parser._subparsers is None:
-            return
-
-        cfg_dict = cfg.__dict__ if isinstance(cfg, Namespace) else cfg
-        cfg_keys = set(vars(_dict_to_flat_namespace(cfg)).keys())
-        cfg_keys = cfg_keys.union(set(cfg_dict.keys()))
+            return None, None
 
         # Get subcommands action
         for action in parser._actions:
@@ -760,11 +756,27 @@ class _ActionSubCommands(_SubParsersAction):
             cfg_dict[dest] = subcommand
 
         if subcommand is None and not fail_no_subcommand:
-            return
+            return None, None
         if action._required and subcommand not in action._name_parser_map:
             raise KeyError('Sub-command "'+dest+'" is required but not given or its value is None.')
 
-        subparser = action._name_parser_map[subcommand]
+        subparser = action._name_parser_map.get(subcommand)
+
+        return subcommand, subparser
+
+
+    @staticmethod
+    def handle_subcommands(parser, cfg, env, defaults, prefix='', fail_no_subcommand=True):
+        """Adds sub-command dest if missing and parses defaults and environment variables."""
+
+        cfg_dict = cfg.__dict__ if isinstance(cfg, Namespace) else cfg
+
+        subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg_dict, prefix=prefix, fail_no_subcommand=fail_no_subcommand)
+        if subcommand is None:
+            return
+
+        cfg_keys = set(vars(_dict_to_flat_namespace(cfg)).keys())
+        cfg_keys = cfg_keys.union(set(cfg_dict.keys()))
 
         # merge environment variable values and default values
         subnamespace = None

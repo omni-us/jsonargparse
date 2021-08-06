@@ -17,6 +17,10 @@ Added
 - Support for parsing ``Mapping`` and ``MutableMapping`` types.
 - Support for parsing ``frozenset``, ``MutableSequence`` and ``MutableSet`` types.
 
+Fixed
+^^^^^
+- ``instantiate_classes`` not working for subcommand keys #70.
+
 Changed
 ^^^^^^^
 - Docstrings no longer supported for python 3.5.
