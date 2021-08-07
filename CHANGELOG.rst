@@ -17,6 +17,10 @@ Added
 - Support for parsing ``Mapping`` and ``MutableMapping`` types.
 - Support for parsing ``frozenset``, ``MutableSequence`` and ``MutableSet`` types.
 
+Changed
+^^^^^^^
+- Docstrings no longer supported for python 3.5.
+
 
 v3.17.0 (2021-07-19)
 --------------------
