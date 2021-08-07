@@ -346,11 +346,11 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
     elif typehint in {Type, type} or typehint_origin in {Type, type}:
         if serialize:
             val = object_path_serializer(val)
-        elif not serialize and not isinstance(val, Type):
+        elif not serialize and not isinstance(val, type):
             path = val
             val = import_object(val)
-            if (typehint in {Type, type} and not isinstance(val, (Type, type))) or \
-               (typehint != Type and typehint_origin in {Type, type} and not _issubclass(val, subtypehints[0])):
+            if (typehint in {Type, type} and not isinstance(val, type)) or \
+               (typehint not in {Type, type} and not _issubclass(val, subtypehints[0])):
                 raise ValueError('Value "'+str(path)+'" is not a '+str(typehint)+'.')
 
     # Union
