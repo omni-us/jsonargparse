@@ -204,6 +204,9 @@ class ActionTypeHint(Action):
             cfg, val, opt_str = args[1:]
             if isinstance(opt_str, str):
                 if opt_str.endswith('.class_path'):
+                    cfg_dest = get_key_value_from_flat_dict(vars(cfg), self.dest)
+                    if cfg_dest.get('class_path') == val:
+                        return
                     val = {'class_path': val}
                 elif '.init_args.' in opt_str:
                     match = re.match(r'.+\.init_args\.([^.]+)$', opt_str)
@@ -212,8 +215,7 @@ class ActionTypeHint(Action):
                         init_args[match.groups()[0]] = val
                         val = getattr(cfg, self.dest)
                     else:
-                        cfg_dict = vars(cfg)
-                        cfg_dest = get_key_value_from_flat_dict(cfg_dict, self.dest)
+                        cfg_dest = get_key_value_from_flat_dict(vars(cfg), self.dest)
                         init_args = cfg_dest.get('init_args', {})
                         init_args[match.groups()[0]] = val
                         val = cfg_dest

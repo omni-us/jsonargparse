@@ -278,6 +278,10 @@ class SignaturesTests(unittest.TestCase):
         cfg = parser.parse_args(['--cal.class_path', 'calendar.Calendar', '--cal.init_args.firstweekday', '3'])
         self.assertEqual(cfg['cal'], cal)
 
+        cal['init_args']['firstweekday'] = 4
+        cfg = parser.parse_args(['--cal.class_path=calendar.Calendar', '--cal.init_args.firstweekday=4', '--cal.class_path=calendar.Calendar'])
+        self.assertEqual(cfg['cal'], cal)
+
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"not.exist.Class"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"calendar.January"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal.help=calendar.January']))

@@ -17,6 +17,12 @@ Added
 - Support for parsing ``Mapping`` and ``MutableMapping`` types.
 - Support for parsing ``frozenset``, ``MutableSequence`` and ``MutableSet`` types.
 
+Fixed
+^^^^^
+- Don't discard ``init_args`` with non-changing ``--*.class_path`` argument.
+- Don't ignore ``KeyError`` in call to instantiate_classes #81.
+- Optional subcommands fail with a KeyError #68.
+
 Changed
 ^^^^^^^
 - Docstrings no longer supported for python 3.5.
