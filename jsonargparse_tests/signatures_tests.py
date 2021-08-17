@@ -3,6 +3,7 @@
 import calendar
 import json
 import platform
+import warnings
 import yaml
 from enum import Enum
 from io import StringIO
@@ -313,6 +314,27 @@ class SignaturesTests(unittest.TestCase):
         self.assertIsInstance(cfg['cal'], calendar.Calendar)
         dump = parser.dump(cfg)
         self.assertIn('cal: <calendar.Calendar object at ', dump)
+
+
+    def test_add_subclass_discard_init_args(self):
+        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+
+        class MyCal(calendar.Calendar):
+            pass
+
+        from jsonargparse_tests import signatures_tests
+        setattr(signatures_tests, 'MyCal', MyCal)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            parser.parse_args([
+                '--cal.class_path=calendar.Calendar',
+                '--cal.init_args.firstweekday=4',
+                '--cal.class_path=jsonargparse_tests.signatures_tests.MyCal',
+            ])
+            self.assertEqual(len(w), 1)
+            self.assertIn("discarding init_args {'firstweekday': 4} defined for class_path calendar.Calendar", str(w[0].message))
 
 
     def test_add_subclass_arguments_tuple(self):

@@ -245,6 +245,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             args = sys.argv[1:]
         else:
             args = list(args)
+            if not all(isinstance(a, str) for a in args):
+                self.error('All arguments are expected to be strings: '+str(args))
 
         if namespace is None:
             namespace = Namespace()

@@ -207,6 +207,11 @@ class ActionTypeHint(Action):
                     cfg_dest = get_key_value_from_flat_dict(vars(cfg), self.dest)
                     if cfg_dest.get('class_path') == val:
                         return
+                    elif cfg_dest.get('init_args') is not None and cfg_dest.get('init_args') != {}:
+                        warnings.warn(
+                            'Argument ' + opt_str + '=' + val + ' implies discarding init_args ' + str(cfg_dest.get('init_args')) +
+                            ' defined for class_path ' + cfg_dest.get('class_path')
+                        )
                     val = {'class_path': val}
                 elif '.init_args.' in opt_str:
                     match = re.match(r'.+\.init_args\.([^.]+)$', opt_str)
