@@ -23,6 +23,7 @@ Fixed
 - Don't ignore ``KeyError`` in call to instantiate_classes #81.
 - Optional subcommands fail with a KeyError #68.
 - Conflicting namespace for subclass key in subcommand.
+- ``instantiate_classes`` not working for subcommand keys #70.
 
 Changed
 ^^^^^^^

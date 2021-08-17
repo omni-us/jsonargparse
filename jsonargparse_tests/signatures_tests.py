@@ -644,6 +644,24 @@ class SignaturesTests(unittest.TestCase):
         self.assertIsInstance(cfg['e'], EmptyInitClass)
 
 
+    def test_instantiate_classes_subcommand(self):
+        class Foo:
+            def __init__(self, a: int = 1):
+                self.a = a
+
+        parser = ArgumentParser(parse_as_dict=True)
+        subcommands = parser.add_subcommands()
+        subparser = ArgumentParser()
+        key = "foo"
+        subparser.add_class_arguments(Foo, key)
+        subcommand = "cmd"
+        subcommands.add_subcommand(subcommand, subparser)
+
+        config = parser.parse_args([subcommand])
+        config_init = parser.instantiate_classes(config)
+        self.assertIsInstance(config_init[subcommand][key], Foo)
+
+
     def test_implicit_optional(self):
 
         def func(a1: int = None):

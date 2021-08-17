@@ -1117,6 +1117,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 component.instantiate_class(component, cfg)
                 _ActionLink.apply_instantiation_links(self, cfg, component.dest)
 
+        cfg_dict = cfg.__dict__ if isinstance(cfg, Namespace) else cfg
+        subcommand, subparser = _ActionSubCommands.get_subcommand(self, cfg_dict, fail_no_subcommand=False)
+        if subcommand:
+            cfg[subcommand] = subparser.instantiate_classes(cfg[subcommand], instantiate_groups=instantiate_groups)
+
         return cfg
 
 
