@@ -428,6 +428,15 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: subcommands1.add_subcommand('a', parser_s1_a))
 
 
+    def test_optional_subcommand(self):
+        parser = ArgumentParser(error_handler=None)
+        subcommands = parser.add_subcommands(required=False)
+        subparser = ArgumentParser()
+        subcommands.add_subcommand('foo', subparser)
+        cfg = parser.parse_args([])
+        self.assertEqual(cfg, Namespace(subcommand=None))
+
+
     @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
     @responses_activate
     def test_urls(self):

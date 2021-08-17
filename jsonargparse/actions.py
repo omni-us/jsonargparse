@@ -755,7 +755,7 @@ class _ActionSubCommands(_SubParsersAction):
                     break
             cfg_dict[dest] = subcommand
 
-        if subcommand is None and not fail_no_subcommand:
+        if subcommand is None and not (fail_no_subcommand and action._required):
             return None, None
         if action._required and subcommand not in action._name_parser_map:
             raise KeyError('Sub-command "'+dest+'" is required but not given or its value is None.')

@@ -245,6 +245,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             args = sys.argv[1:]
         else:
             args = list(args)
+            if not all(isinstance(a, str) for a in args):
+                self.error('All arguments are expected to be strings: '+str(args))
 
         if namespace is None:
             namespace = Namespace()
@@ -1105,11 +1107,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             if isinstance(component, Action):
                 try:
                     value, parent, key = _get_key_value(cfg, component.dest, parent=True)
+                except KeyError:
+                    pass
+                else:
                     if value is not None:
                         parent[key] = component._instantiate_classes(value)  # type: ignore
                         _ActionLink.apply_instantiation_links(self, cfg, component.dest)
-                except KeyError:
-                    pass
             else:
                 component.instantiate_class(component, cfg)
                 _ActionLink.apply_instantiation_links(self, cfg, component.dest)

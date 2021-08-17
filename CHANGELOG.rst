@@ -19,11 +19,17 @@ Added
 
 Fixed
 ^^^^^
+- Don't discard ``init_args`` with non-changing ``--*.class_path`` argument.
+- Don't ignore ``KeyError`` in call to instantiate_classes #81.
+- Optional subcommands fail with a KeyError #68.
+- Conflicting namespace for subclass key in subcommand.
 - ``instantiate_classes`` not working for subcommand keys #70.
 
 Changed
 ^^^^^^^
 - Docstrings no longer supported for python 3.5.
+- Show warning when ``--*.class_path`` discards previous ``init_args``.
+- Trigger error when ``parse_args`` called with non-string value.
 
 
 v3.17.0 (2021-07-19)
