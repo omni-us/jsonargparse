@@ -1005,5 +1005,20 @@ class SignaturesConfigTests(TempDirTestCase):
         self.assertEqual(cfg['cal'], cal)
 
 
+    def test_add_class_arguments_with_config_not_found(self):
+        class A:
+            def __init__(self, param: int):
+                self.param = param
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(A, 'a')
+        try:
+            parser.parse_args(['--a=does_not_exist.yaml'])
+        except ParserError as ex:
+            self.assertIn('Unable to load config "does_not_exist.yaml"', str(ex))
+        else:
+            raise ValueError('Expected ParserError to be raised')
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

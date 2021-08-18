@@ -456,7 +456,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         defaults: bool = True,
         nested: bool = True,
         with_meta: bool = None,
-        _skip_logging: bool = False,
         _skip_check: bool = False,
         _skip_subcommands: bool = False,
     ) -> Union[Namespace, Dict[str, Any]]:
@@ -491,7 +490,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     env_val = env[env_var]
                     if env_val in action.choices:
                         cfg[action.dest] = subcommand = self._check_value_key(action, env_val, action.dest, cfg)
-                        pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, nested=False, _skip_logging=True, _skip_check=True)  # type: ignore
+                        pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, nested=False, _skip_check=True)  # type: ignore
                         for k, v in vars(pcfg).items():
                             cfg[subcommand+'.'+k] = v
             for action in actions:
@@ -563,7 +562,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                                            defaults,
                                            nested,
                                            with_meta=with_meta,
-                                           _skip_logging=True,
                                            _skip_check=_skip_check,
                                            _fail_no_subcommand=_fail_no_subcommand)
 
@@ -581,7 +579,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         defaults: bool = True,
         nested: bool = True,
         with_meta: bool = None,
-        _skip_logging: bool = False,
         _skip_check: bool = False,
         _fail_no_subcommand: bool = True,
     ) -> Union[Namespace, Dict[str, Any]]:
@@ -1033,7 +1030,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     raise TypeError('Key "'+reqkey+'" is required but not included in config object or its value is None.') from ex
 
         def check_values(cfg, base=None):
-            subcommand = None
             for key, val in cfg.items():
                 if key in meta_keys:
                     continue
@@ -1043,11 +1039,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     if val is None and skip_none:
                         continue
                     self._check_value_key(action, val, kbase, ccfg)
-                    if isinstance(action, _ActionSubCommands) and kbase != action.dest:
-                        if subcommand is not None:
-                            raise KeyError('Only values from a single sub-command are allowed ("'+subcommand+'", "'+kbase+'").')
-                        subcommand = kbase
-                    elif isinstance(action, _ActionConfigLoad) and isinstance(val, dict):
+                    if isinstance(action, _ActionConfigLoad) and isinstance(val, dict):
                         check_values(val, kbase)
                 elif isinstance(val, dict):
                     check_values(val, kbase)
@@ -1197,10 +1189,17 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
     def _apply_actions(self, cfg):
         """Runs _check_value_key on actions present in flat config dict."""
-        keys = [k for k in cfg.keys() if k.rsplit('.', 1)[-1] not in meta_keys]
-        keys.sort(key=lambda x: -len(x.split('.')))
+        def get_sorted_keys(cfg):
+            keys = [k for k in cfg.keys() if k.rsplit('.', 1)[-1] not in meta_keys]
+            keys.sort(key=lambda x: -len(x.split('.')))
+            return keys
+
+        keys = get_sorted_keys(cfg)
         seen_keys = set()
-        for key in keys:
+        num = 0
+        while num < len(keys):
+            key = keys[num]
+            num += 1
             if key in seen_keys:
                 continue
             action = _find_parent_action(self, key, within_subcommands=True)
@@ -1212,12 +1211,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     action_dest = action.dest
                 if action_dest == key:
                     value = self._check_value_key(action, cfg[key], key, cfg)
-                    cfg[key] = value
                 else:
                     value = get_key_value_from_flat_dict(cfg, action_dest)
                     value = self._check_value_key(action, value, action_dest, cfg)
-                    update_key_value_in_flat_dict(cfg, action_dest, value)
                     seen_keys.update(action_dest+'.'+k for k in value.keys())
+                update_key_value_in_flat_dict(cfg, action_dest, value)
+                if isinstance(value, dict):
+                    new_keys = get_sorted_keys(value)
+                    keys += [action_dest+'.'+k for k in new_keys if action_dest+'.'+k not in keys]
 
 
     @staticmethod

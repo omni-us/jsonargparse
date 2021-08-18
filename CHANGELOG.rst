@@ -9,6 +9,7 @@ follow `Semantic Versioning <https://semver.org/>`_
 only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
+
 v3.18.0 (2021-??-??)
 --------------------
 
@@ -24,12 +25,16 @@ Fixed
 - Optional subcommands fail with a KeyError #68.
 - Conflicting namespace for subclass key in subcommand.
 - ``instantiate_classes`` not working for subcommand keys #70.
+- Proper file not found message from _ActionConfigLoad #64.
+- ``parse_path`` not parsing inner config files.
 
 Changed
 ^^^^^^^
 - Docstrings no longer supported for python 3.5.
 - Show warning when ``--*.class_path`` discards previous ``init_args``.
 - Trigger error when ``parse_args`` called with non-string value.
+- ActionParser accepts both title and help, title having preference.
+- Multiple subcommand settings allowed if explicit subcommand given.
 
 
 v3.17.0 (2021-07-19)

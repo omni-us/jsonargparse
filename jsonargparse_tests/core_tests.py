@@ -363,6 +363,9 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'))
         self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}'))
 
+        cfg = parser.parse_string('{"subcommand": "a", "a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
+        self.assertFalse(hasattr(cfg, 'b'))
+
         os.environ['APP_O1'] = 'o1_env'
         os.environ['APP_A__AP1'] = 'ap1_env'
         os.environ['APP_A__AO1'] = 'ao1_env'

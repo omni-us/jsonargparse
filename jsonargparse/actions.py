@@ -250,7 +250,10 @@ class _ActionConfigLoad(Action):
 
     def _load_config(self, value):
         try:
-            return _load_config(value)
+            cfg = _load_config(value)
+            if isinstance(cfg, tuple):
+                raise TypeError('Parser key "'+self.dest+'": Unable to load config "'+str(value)+'"')
+            return cfg
         except (TypeError, yamlParserError, yamlScannerError) as ex:
             str_ex = indent_text(str(ex))
             raise TypeError('Parser key "'+self.dest+'": Unable to load config "'+str(value)+'"\n- '+str_ex) from ex
@@ -620,10 +623,10 @@ class ActionParser:
     @staticmethod
     def _move_parser_actions(parser, args, kwargs):
         subparser = kwargs.pop('action')._parser
-        title = kwargs.pop('title', None)
+        title = kwargs.pop('title', kwargs.pop('help', None))
         description = kwargs.pop('description', subparser.description)
         if len(kwargs) > 0:
-            raise ValueError('ActionParser does not accept '+str(set(kwargs.keys())))
+            raise ValueError('ActionParser does not accept the following parameters: '+str(set(kwargs.keys())))
         if not (len(args) == 1 and args[0][:2] == '--'):
             raise ValueError('ActionParser only accepts a single optional key but got '+str(args))
         prefix = args[0][2:]
@@ -744,16 +747,23 @@ class _ActionSubCommands(_SubParsersAction):
                 break
 
         # Get sub-command parser
+        subcommand_keys = []
+        for key in action.choices.keys():
+            if any([k.startswith(prefix+key+'.') for k in cfg_dict.keys()]):
+                subcommand_keys.append(key)
+
         subcommand = None
         dest = prefix + action.dest
         if dest in cfg_dict and cfg_dict[dest] is not None:
             subcommand = cfg_dict[dest]
+            for key in [k for k in subcommand_keys if k != subcommand]:
+                for subkey in [k for k in cfg_dict.keys() if k.startswith(prefix+key+'.')]:
+                    del cfg_dict[subkey]
         else:
-            for key in action.choices.keys():
-                if any([v.startswith(prefix+key+'.') for v in cfg_dict.keys()]):
-                    subcommand = key
-                    break
-            cfg_dict[dest] = subcommand
+            if len(subcommand_keys) > 1:
+                raise KeyError('Key "'+dest+'" is required if multiple sub-command values are provided: '+str(subcommand_keys)+'.')
+            elif len(subcommand_keys) == 1:
+                cfg_dict[dest] = subcommand = subcommand_keys[0]
 
         if subcommand is None and not (fail_no_subcommand and action._required):
             return None, None
