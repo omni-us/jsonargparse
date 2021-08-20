@@ -1,12 +1,13 @@
 """Collection of useful actions to define arguments."""
 
+import argparse
 import os
 import re
 import sys
+import warnings
 import yaml
-import argparse
-from typing import Callable, Tuple, Type, Union
 from argparse import Namespace, Action, SUPPRESS, _HelpAction, _SubParsersAction
+from typing import Callable, Tuple, Type, Union
 
 from .optionals import FilesCompleterMethod, get_config_read_mode
 from .typing import path_type
@@ -746,24 +747,30 @@ class _ActionSubCommands(_SubParsersAction):
             if isinstance(action, _ActionSubCommands):
                 break
 
-        # Get sub-command parser
+        # Get subcommand settings keys
         subcommand_keys = []
         for key in action.choices.keys():
             if any([k.startswith(prefix+key+'.') for k in cfg_dict.keys()]):
                 subcommand_keys.append(key)
 
+        # Get subcommand
         subcommand = None
         dest = prefix + action.dest
         if dest in cfg_dict and cfg_dict[dest] is not None:
             subcommand = cfg_dict[dest]
+        elif len(subcommand_keys) > 0:
+            cfg_dict[dest] = subcommand = subcommand_keys[0]
+            if len(subcommand_keys) > 1:
+                warnings.warn(
+                    'Multiple subcommand settings provided (' + ', '.join(subcommand_keys) + ') without an explicit "' +
+                    dest + '" key. Subcommand "' + subcommand + '" will be used.'
+                )
+
+        # Remove extra subcommand settings
+        if subcommand and len(subcommand_keys) > 1:
             for key in [k for k in subcommand_keys if k != subcommand]:
                 for subkey in [k for k in cfg_dict.keys() if k.startswith(prefix+key+'.')]:
                     del cfg_dict[subkey]
-        else:
-            if len(subcommand_keys) > 1:
-                raise KeyError('Key "'+dest+'" is required if multiple sub-command values are provided: '+str(subcommand_keys)+'.')
-            elif len(subcommand_keys) == 1:
-                cfg_dict[dest] = subcommand = subcommand_keys[0]
 
         if subcommand is None and not (fail_no_subcommand and action._required):
             return None, None

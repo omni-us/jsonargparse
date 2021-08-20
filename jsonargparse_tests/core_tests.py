@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import sys
 import json
-import yaml
 import platform
+import warnings
+import yaml
 from io import StringIO
 from contextlib import redirect_stdout
 from collections import OrderedDict
@@ -361,9 +361,19 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(cfg['subcommand'], 'a')
         self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_cfg', 'ao1': 'ao1_def'})
         self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'))
-        self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}'))
 
-        cfg = parser.parse_string('{"subcommand": "a", "a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
+            self.assertEqual(cfg.subcommand, 'a')
+            self.assertFalse(hasattr(cfg, 'b'))
+            self.assertEqual(len(w), 1)
+            self.assertIn('Subcommand "a" will be used', str(w[0].message))
+
+        cfg = parser.parse_string('{"subcommand": "b", "a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
+        self.assertFalse(hasattr(cfg, 'a'))
+
+        cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', 'a'])
         self.assertFalse(hasattr(cfg, 'b'))
 
         os.environ['APP_O1'] = 'o1_env'

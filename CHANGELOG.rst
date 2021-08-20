@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.19.0 (2021-??-??)
+--------------------
+
+Changed
+^^^^^^^
+- Multiple subcommand settings without explicit subcommand is now a warning
+  instead of exception.
+
+
 v3.18.0 (2021-08-18)
 --------------------
 
