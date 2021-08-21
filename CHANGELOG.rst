@@ -13,6 +13,10 @@ section of releases.
 v3.19.0 (2021-??-??)
 --------------------
 
+Fixed
+^^^^^
+- Multifile save not working correctly for subclasses #63.
+
 Changed
 ^^^^^^^
 - Multiple subcommand settings without explicit subcommand is now a warning

@@ -1020,5 +1020,25 @@ class SignaturesConfigTests(TempDirTestCase):
             raise ValueError('Expected ParserError to be raised')
 
 
+    def test_add_subclass_arguments_with_multifile_save(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+
+        cal_cfg_path = 'cal.yaml'
+        with open(cal_cfg_path, 'w') as f:
+            f.write(yaml.dump({'class_path': 'calendar.Calendar'}))
+
+        cfg = parser.parse_args(['--cal='+cal_cfg_path])
+        os.mkdir('out')
+        out_main_cfg = os.path.join('out', 'config.yaml')
+        parser.save(cfg, out_main_cfg, multifile=True)
+
+        with open(out_main_cfg) as f:
+            self.assertEqual('cal: cal.yaml', f.read().strip())
+        with open(os.path.join('out', 'cal.yaml')) as f:
+            cal = yaml.safe_load(f.read())
+            self.assertEqual({'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 0}}, cal)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

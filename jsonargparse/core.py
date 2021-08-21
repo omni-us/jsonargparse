@@ -834,7 +834,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                             val_path = Path(os.path.basename(val['__path__']()), mode='fc')
                             check_overwrite(val_path)
                             action = _find_action(self, kbase)
-                            if isinstance(action, (ActionJsonSchema, ActionJsonnet, _ActionConfigLoad)):
+                            if isinstance(action, (ActionJsonSchema, ActionJsonnet, ActionTypeHint, _ActionConfigLoad)):
                                 val_out = strip_meta(val)
                                 if '__orig__' in val:
                                     val_str = val['__orig__']

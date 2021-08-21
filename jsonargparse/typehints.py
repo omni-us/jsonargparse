@@ -430,6 +430,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                     'string ' + val + '. If this was set as a default, consider setting a dict or using lazy_instance.'
                 )
             return val
+        if serialize and isinstance(val, str):
+            return val
         if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val) or (isinstance(val, Namespace) and hasattr(val, 'class_path'))):
             raise ValueError('Type '+str(typehint)+' expects an str or a Dict with a class_path entry but got "'+str(val)+'"')
         try:
