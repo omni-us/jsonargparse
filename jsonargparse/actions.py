@@ -440,6 +440,9 @@ class _ActionLink(Action):
 
     @staticmethod
     def apply_parsing_links(parser, cfg_ns):
+        subcommand, subparser = _ActionSubCommands.get_subcommand(parser, namespace_to_dict(cfg_ns), fail_no_subcommand=False)
+        if subcommand:
+            _ActionLink.apply_parsing_links(subparser, getattr(cfg_ns, subcommand))
         if not hasattr(parser, '_links_group'):
             return
         for action in parser._links_group._group_actions:
@@ -741,11 +744,7 @@ class _ActionSubCommands(_SubParsersAction):
         """Returns the sub-command name and corresponding subparser."""
         if parser._subparsers is None:
             return None, None
-
-        # Get subcommands action
-        for action in parser._actions:
-            if isinstance(action, _ActionSubCommands):
-                break
+        action = getattr(parser, '_subcommands_action', None)
 
         # Get subcommand settings keys
         subcommand_keys = []

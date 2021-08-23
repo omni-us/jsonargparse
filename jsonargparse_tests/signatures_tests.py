@@ -809,6 +809,27 @@ class SignaturesTests(unittest.TestCase):
             parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
 
 
+    def test_link_arguments_subcommand(self):
+        class Foo:
+            def __init__(self, a: int):
+                self.a = a
+
+        parser = ArgumentParser(parse_as_dict=True)
+        subparser = ArgumentParser()
+
+        subcommands = parser.add_subcommands()
+        subparser.add_class_arguments(Foo, nested_key='foo')
+        subparser.add_argument('--b', type=int)
+        subparser.link_arguments('b', 'foo.a')
+        subcommands.add_subcommand('cmd', subparser)
+
+        cfg = parser.parse_args(['cmd', '--b=2'])
+        self.assertEqual(cfg['cmd']['foo'], {'a': 2})
+
+        cfg = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg['cmd']['foo'], Foo)
+
+
     def test_link_arguments_apply_on_instantiate(self):
 
         class ClassA:

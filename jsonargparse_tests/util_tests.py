@@ -213,6 +213,14 @@ class PathTests(TempDirTestCase):
         with self.assertRaises(TypeError):
             Path('unsupported://'+existing, mode='sr')
 
+        fsspec = import_fsspec('test_fsspec')
+
+        nonexisting = 'nonexisting.txt'
+        path = Path('memory://'+nonexisting, mode='sw')
+        with fsspec.open(path(), 'w') as f:
+            f.write(existing_body)
+        self.assertEqual(existing_body, path.get_content())
+
 
 class LoggingPropertyTests(unittest.TestCase):
 

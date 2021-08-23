@@ -32,10 +32,12 @@ from .actions import (
 from .optionals import (
     argcomplete_support,
     dump_preserve_order_support,
+    fsspec_support,
     FilesCompleterMethod,
     get_config_read_mode,
     import_jsonnet,
     import_argcomplete,
+    import_fsspec,
     TypeCastCompleterMethod,
 )
 from .util import (
@@ -704,6 +706,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         subcommands.required = False
         subcommands.parent_parser = self  # type: ignore
         _find_action(self, dest)._env_prefix = self.env_prefix
+        self._subcommands_action = subcommands
         return subcommands
 
 
@@ -807,10 +810,24 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             if not overwrite and os.path.isfile(path()):
                 raise ValueError('Refusing to overwrite existing file: '+path())
 
+        dump_kwargs = {'format': format, 'skip_none': skip_none, 'skip_check': skip_check}
+
+        if fsspec_support:
+            try:
+                path_sw = Path(path, mode='sw')
+            except TypeError:
+                pass
+            else:
+                if path_sw.is_fsspec:
+                    if multifile:
+                        raise NotImplementedError('multifile=True not supported for fsspec paths: '+path)
+                    fsspec = import_fsspec('ArgumentParser.save')
+                    with fsspec.open(path, 'w') as f:
+                        f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
+                    return
+
         path_fc = Path(path, mode='fc')
         check_overwrite(path_fc)
-
-        dump_kwargs = {'format': format, 'skip_none': skip_none, 'skip_check': skip_check}
 
         if not multifile:
             with open(path_fc(), 'w') as f:

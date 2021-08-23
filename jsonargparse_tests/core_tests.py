@@ -695,6 +695,15 @@ class OutputTests(TempDirTestCase):
             self.assertEqual(input_file.read(), 'file content')
 
 
+    @unittest.skipIf(not fsspec_support, 'fsspec package is required')
+    def test_save_fsspec(self):
+        parser = example_parser()
+        cfg = parser.get_defaults()
+        parser.save(cfg, 'memory://config.yaml', multifile=False)
+        path = Path('memory://config.yaml', mode='sr')
+        self.assertEqual(cfg, parser.parse_string(path.get_content()))
+
+
     def test_save_failures(self):
         parser = ArgumentParser()
         with open('existing.yaml', 'w') as output_file:

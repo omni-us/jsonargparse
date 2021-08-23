@@ -13,9 +13,14 @@ section of releases.
 v3.19.0 (2021-??-??)
 --------------------
 
+Added
+^^^^^
+- ``save`` now supports saving to an fsspec path #86.
+
 Fixed
 ^^^^^
 - Multifile save not working correctly for subclasses #63.
+- ``link_arguments`` not working for subcommands #82.
 
 Changed
 ^^^^^^^
