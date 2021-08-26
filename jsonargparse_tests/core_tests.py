@@ -374,7 +374,11 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertFalse(hasattr(cfg, 'a'))
 
         cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', 'a'])
-        self.assertFalse(hasattr(cfg, 'b'))
+        cfg = namespace_to_dict(cfg)
+        self.assertEqual(cfg, {'o1': 'o1_def', 'subcommand': 'a', 'cfg': [None], 'a': {'ap1': 'ap1_cfg', 'ao1': 'ao1_def'}})
+        cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', 'b'])
+        self.assertFalse(hasattr(cfg, 'a'))
+        self.assertTrue(hasattr(cfg, 'b'))
 
         os.environ['APP_O1'] = 'o1_env'
         os.environ['APP_A__AP1'] = 'ap1_env'

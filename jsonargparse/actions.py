@@ -740,8 +740,8 @@ class _ActionSubCommands(_SubParsersAction):
 
 
     @staticmethod
-    def get_subcommand(parser, cfg_dict:dict, prefix:str='', fail_no_subcommand:bool=True):
-        """Returns the sub-command name and corresponding subparser."""
+    def get_subcommand(parser, cfg_dict:dict, prefix:str='', fail_no_subcommand:bool=True, require_single:bool=True):
+        """Returns the subcommand name and corresponding subparser."""
         if parser._subparsers is None:
             return None, None
         action = getattr(parser, '_subcommands_action', None)
@@ -758,12 +758,13 @@ class _ActionSubCommands(_SubParsersAction):
         if dest in cfg_dict and cfg_dict[dest] is not None:
             subcommand = cfg_dict[dest]
         elif len(subcommand_keys) > 0:
-            cfg_dict[dest] = subcommand = subcommand_keys[0]
-            if len(subcommand_keys) > 1:
-                warnings.warn(
-                    'Multiple subcommand settings provided (' + ', '.join(subcommand_keys) + ') without an explicit "' +
-                    dest + '" key. Subcommand "' + subcommand + '" will be used.'
-                )
+            if fail_no_subcommand:
+                cfg_dict[dest] = subcommand = subcommand_keys[0]
+                if len(subcommand_keys) > 1:
+                    warnings.warn(
+                        'Multiple subcommand settings provided (' + ', '.join(subcommand_keys) + ') without an explicit "' +
+                        dest + '" key. Subcommand "' + subcommand + '" will be used.'
+                    )
 
         # Remove extra subcommand settings
         if subcommand and len(subcommand_keys) > 1:
@@ -771,14 +772,19 @@ class _ActionSubCommands(_SubParsersAction):
                 for subkey in [k for k in cfg_dict.keys() if k.startswith(prefix+key+'.')]:
                     del cfg_dict[subkey]
 
-        if subcommand is None and not (fail_no_subcommand and action._required):
-            return None, None
-        if action._required and subcommand not in action._name_parser_map:
-            raise KeyError('Sub-command "'+dest+'" is required but not given or its value is None.')
+        if subcommand:
+            subcommand_keys = [subcommand]
 
-        subparser = action._name_parser_map.get(subcommand)
+        if fail_no_subcommand:
+            if subcommand is None and not (fail_no_subcommand and action._required):
+                return None, None
+            if action._required and subcommand not in action._name_parser_map:
+                raise KeyError('Sub-command "'+dest+'" is required but not given or its value is None.')
 
-        return subcommand, subparser
+        if require_single:
+            return subcommand, action._name_parser_map.get(subcommand)
+        else:
+            return subcommand_keys, [action._name_parser_map.get(s) for s in subcommand_keys]
 
 
     @staticmethod
@@ -787,29 +793,32 @@ class _ActionSubCommands(_SubParsersAction):
 
         cfg_dict = cfg.__dict__ if isinstance(cfg, Namespace) else cfg
 
-        subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg_dict, prefix=prefix, fail_no_subcommand=fail_no_subcommand)
-        if subcommand is None:
+        subcommands, subparsers = _ActionSubCommands.get_subcommand(parser, cfg_dict, prefix=prefix, fail_no_subcommand=fail_no_subcommand, require_single=False)
+        if not subcommands:
             return
 
         cfg_keys = set(vars(_dict_to_flat_namespace(cfg)).keys())
         cfg_keys = cfg_keys.union(set(cfg_dict.keys()))
 
-        # merge environment variable values and default values
-        subnamespace = None
-        if env:
-            subnamespace = subparser.parse_env(defaults=defaults, nested=False, _skip_check=True)
-        elif defaults:
-            subnamespace = subparser.get_defaults(nested=False, skip_check=True)
+        for subcommand, subparser in zip(subcommands, subparsers):
+            # Merge environment variable values and default values
+            subnamespace = None
+            if env:
+                subnamespace = subparser.parse_env(defaults=defaults, nested=False, _skip_check=True)
+            elif defaults:
+                subnamespace = subparser.get_defaults(nested=False, skip_check=True)
 
-        if subnamespace is not None:
-            for key, value in vars(subnamespace).items():
-                key = prefix + subcommand+'.'+key
-                if key not in cfg_keys:
-                    cfg_dict[key] = value
+            # Update all subcommand settings
+            if subnamespace is not None:
+                for key, value in vars(subnamespace).items():
+                    key = prefix + subcommand + '.' + key
+                    if key not in cfg_keys:
+                        cfg_dict[key] = value
 
-        if subparser._subparsers is not None:
-            prefix = prefix + subcommand + '.'
-            _ActionSubCommands.handle_subcommands(subparser, cfg, env, defaults, prefix)
+            # Handle inner subcommands
+            if subparser._subparsers is not None:
+                prefix = prefix + subcommand + '.'
+                _ActionSubCommands.handle_subcommands(subparser, cfg, env, defaults, prefix)
 
 
 class ActionPathList(Action, FilesCompleterMethod):
