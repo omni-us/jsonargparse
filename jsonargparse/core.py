@@ -1104,7 +1104,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 components.append(action)
 
         if instantiate_groups:
-            groups = [g for g in self._action_groups if hasattr(g, 'instantiate_class')]
+            skip = set(c.dest for c in components)
+            groups = [g for g in self._action_groups if hasattr(g, 'instantiate_class') and g.dest not in skip]  # type: ignore
             components.extend(groups)
 
         components.sort(key=lambda x: -len(x.dest.split('.')))

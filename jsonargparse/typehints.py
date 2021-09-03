@@ -35,7 +35,7 @@ from typing import (
 try:
     from typing import Literal  # type: ignore
 except ImportError:
-    Literal = False
+    Literal = False  # type: ignore
 
 from .actions import _is_action_value_list
 from .typing import get_import_path, is_final_class, object_path_serializer, registered_types

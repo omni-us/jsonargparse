@@ -5,9 +5,9 @@ import json
 import platform
 import warnings
 import yaml
+from contextlib import redirect_stdout
 from enum import Enum
 from io import StringIO
-from contextlib import redirect_stdout
 from typing import Any, Dict, List, Optional, Tuple, Union
 from jsonargparse_tests.base import *
 from jsonargparse.actions import _find_action

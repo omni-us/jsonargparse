@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.19.1 (2021-??-??)
+--------------------
+
+Fixed
+^^^^^
+- Repeated instantiation of dataclasses PyTorchLightning/pytorch-lightning#9207.
+
+
 v3.19.0 (2021-08-27)
 --------------------
 

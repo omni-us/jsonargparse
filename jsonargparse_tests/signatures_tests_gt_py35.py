@@ -193,7 +193,27 @@ class SignaturesTests(unittest.TestCase):
 
         MyDataClassAB = compose_dataclasses(MyDataClassA, MyDataClassB)
         self.assertEqual(2, len(dataclasses.fields(MyDataClassAB)))
-        self.assertEqual({'a': 3, 'b': '2'}, dataclasses.asdict(MyDataClassAB(a=2, b='2')))
+        self.assertEqual({'a': 3, 'b': '2'}, dataclasses.asdict(MyDataClassAB(a=2, b='2')))  # pylint: disable=unexpected-keyword-arg
+
+
+    def test_instantiate_classes_skip_dataclasses(self):
+        # https://github.com/PyTorchLightning/pytorch-lightning/issues/9207
+        dataclasses = import_dataclasses('test_instantiate_classes_skip_dataclasses')
+
+        @dataclasses.dataclass
+        class MyDataClass:
+            name: str = 'name'
+
+        class MyClass:
+            def __init__(self, data: MyDataClass):
+                self.data = data
+
+        parser = ArgumentParser(parse_as_dict=True)
+        parser.add_class_arguments(MyClass, 'class')
+        cfg = parser.parse_args([])
+        cfg = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg['class'], MyClass)
+        self.assertIsInstance(cfg['class'].data, MyDataClass)
 
 
 if __name__ == '__main__':
