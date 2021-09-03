@@ -74,8 +74,13 @@ if [ "${BUMPVERSION_NEW_VERSION+x}" != "" ]; then
   CHANGELOG=$(grep -E '^v.+\..+\..+ \(....-..-..\)' CHANGELOG.rst | head -n 1);
   EXPECTED="v$BUMPVERSION_NEW_VERSION ($(date -u +%Y-%m-%d))";
   if [ "$CHANGELOG" != "$EXPECTED" ]; then
-    echo "${0##*/}: expected latest release in CHANGELOG.rst to be '$EXPECTED'" 1>&2;
-    exit 1;
+    if [ ! -z "${BUMPVERSION_UPDATE_CHANGELOG+x}" ] && [ $(grep -c "^v$BUMPVERSION_NEW_VERSION " CHANGELOG.rst) = 1 ]; then
+      sed -i "s|^v$BUMPVERSION_NEW_VERSION .*|$EXPECTED|" CHANGELOG.rst;
+      git add CHANGELOG.rst;
+    else
+      echo "${0##*/}: expected latest release in CHANGELOG.rst to be '$EXPECTED'" 1>&2;
+      exit 1;
+    fi
   fi
 
   ## Check wheel ok for pypi ##
