@@ -382,6 +382,13 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args([]))
 
 
+    def test_not_required_group(self):
+        parser = ArgumentParser(parse_as_dict=True, error_handler=None)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal', required=False)
+        cfg = parser.parse_args([])
+        self.assertEqual(cfg, {'cal': {}})
+
+
     def test_invalid_type(self):
 
         def func(a1: None):

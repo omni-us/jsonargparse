@@ -1055,7 +1055,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 if action is not None:
                     if val is None and skip_none:
                         continue
-                    self._check_value_key(action, val, kbase, ccfg)
+                    try:
+                        self._check_value_key(action, val, kbase, ccfg)
+                    except TypeError as ex:
+                        if not (val == {} and ActionTypeHint.is_class_typehint(action) and kbase not in self.required_args):
+                            raise ex
                     if isinstance(action, _ActionConfigLoad) and isinstance(val, dict):
                         check_values(val, kbase)
                 elif isinstance(val, dict):
