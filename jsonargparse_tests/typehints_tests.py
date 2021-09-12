@@ -209,18 +209,37 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--false=true']))
 
 
-    def test_type_Type(self):
+    def _test_typehint_non_parameterized_types(self, type):
         parser = ArgumentParser(error_handler=None)
-        ActionTypeHint.is_supported_typehint(Type, full=True)
-        parser.add_argument('--type', type=Type)
-        parser.add_argument('--cal', type=Type[Calendar])
+        ActionTypeHint.is_supported_typehint(type, full=True)
+        parser.add_argument('--type', type=type)
         cfg = parser.parse_args(['--type=uuid.UUID'])
         self.assertEqual(cfg.type, uuid.UUID)
         self.assertEqual(parser.dump(cfg), 'type: uuid.UUID\n')
+
+
+    def _test_typehint_parameterized_types(self, type):
+        parser = ArgumentParser(error_handler=None)
+        ActionTypeHint.is_supported_typehint(type, full=True)
+        parser.add_argument('--cal', type=type[Calendar])
         cfg = parser.parse_args(['--cal=calendar.Calendar'])
         self.assertEqual(cfg.cal, Calendar)
         self.assertEqual(parser.dump(cfg), 'cal: calendar.Calendar\n')
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal=uuid.UUID']))
+
+
+    def test_typehint_Type(self):
+        self._test_typehint_non_parameterized_types(type=Type)
+        self._test_typehint_parameterized_types(type=Type)
+
+
+    def test_typehint_non_parameterized_type(self):
+        self._test_typehint_non_parameterized_types(type=type)
+
+
+    @unittest.skipIf(sys.version_info[:2] < (3, 9), '[] support for builtins introduced in python 3.9')
+    def test_typehint_parametrized_type(self):
+        self._test_typehint_parameterized_types(type=type)
 
 
     def test_uuid(self):

@@ -35,7 +35,7 @@ from typing import (
 try:
     from typing import Literal  # type: ignore
 except ImportError:
-    Literal = False
+    Literal = False  # type: ignore
 
 from .actions import _is_action_value_list
 from .typing import get_import_path, is_final_class, object_path_serializer, registered_types
@@ -204,6 +204,14 @@ class ActionTypeHint(Action):
             cfg, val, opt_str = args[1:]
             if isinstance(opt_str, str):
                 if opt_str.endswith('.class_path'):
+                    cfg_dest = get_key_value_from_flat_dict(vars(cfg), self.dest)
+                    if cfg_dest.get('class_path') == val:
+                        return
+                    elif cfg_dest.get('init_args') is not None and cfg_dest.get('init_args') != {}:
+                        warnings.warn(
+                            'Argument ' + opt_str + '=' + val + ' implies discarding init_args ' + str(cfg_dest.get('init_args')) +
+                            ' defined for class_path ' + cfg_dest.get('class_path')
+                        )
                     val = {'class_path': val}
                 elif '.init_args.' in opt_str:
                     match = re.match(r'.+\.init_args\.([^.]+)$', opt_str)
@@ -212,8 +220,7 @@ class ActionTypeHint(Action):
                         init_args[match.groups()[0]] = val
                         val = getattr(cfg, self.dest)
                     else:
-                        cfg_dict = vars(cfg)
-                        cfg_dest = get_key_value_from_flat_dict(cfg_dict, self.dest)
+                        cfg_dest = get_key_value_from_flat_dict(vars(cfg), self.dest)
                         init_args = cfg_dest.get('init_args', {})
                         init_args[match.groups()[0]] = val
                         val = cfg_dest
@@ -346,11 +353,11 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
     elif typehint in {Type, type} or typehint_origin in {Type, type}:
         if serialize:
             val = object_path_serializer(val)
-        elif not serialize and not isinstance(val, Type):
+        elif not serialize and not isinstance(val, type):
             path = val
             val = import_object(val)
-            if (typehint in {Type, type} and not isinstance(val, (Type, type))) or \
-               (typehint != Type and typehint_origin in {Type, type} and not _issubclass(val, subtypehints[0])):
+            if (typehint in {Type, type} and not isinstance(val, type)) or \
+               (typehint not in {Type, type} and not _issubclass(val, subtypehints[0])):
                 raise ValueError('Value "'+str(path)+'" is not a '+str(typehint)+'.')
 
     # Union
@@ -431,6 +438,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                     'Not possible to serialize an instance of ' + str(typehint.__name__) + '. It will be represented as the '
                     'string ' + val + '. If this was set as a default, consider setting a dict or using lazy_instance.'
                 )
+            return val
+        if serialize and isinstance(val, str):
             return val
         if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val) or (isinstance(val, Namespace) and hasattr(val, 'class_path'))):
             raise ValueError('Type '+str(typehint)+' expects an str or a Dict with a class_path entry but got "'+str(val)+'"')

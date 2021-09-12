@@ -3,10 +3,11 @@
 import calendar
 import json
 import platform
+import warnings
 import yaml
+from contextlib import redirect_stdout
 from enum import Enum
 from io import StringIO
-from contextlib import redirect_stdout
 from typing import Any, Dict, List, Optional, Tuple, Union
 from jsonargparse_tests.base import *
 from jsonargparse.actions import _find_action
@@ -278,6 +279,10 @@ class SignaturesTests(unittest.TestCase):
         cfg = parser.parse_args(['--cal.class_path', 'calendar.Calendar', '--cal.init_args.firstweekday', '3'])
         self.assertEqual(cfg['cal'], cal)
 
+        cal['init_args']['firstweekday'] = 4
+        cfg = parser.parse_args(['--cal.class_path=calendar.Calendar', '--cal.init_args.firstweekday=4', '--cal.class_path=calendar.Calendar'])
+        self.assertEqual(cfg['cal'], cal)
+
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"not.exist.Class"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"calendar.January"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal.help=calendar.January']))
@@ -309,6 +314,27 @@ class SignaturesTests(unittest.TestCase):
         self.assertIsInstance(cfg['cal'], calendar.Calendar)
         dump = parser.dump(cfg)
         self.assertIn('cal: <calendar.Calendar object at ', dump)
+
+
+    def test_add_subclass_discard_init_args(self):
+        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+
+        class MyCal(calendar.Calendar):
+            pass
+
+        from jsonargparse_tests import signatures_tests
+        setattr(signatures_tests, 'MyCal', MyCal)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            parser.parse_args([
+                '--cal.class_path=calendar.Calendar',
+                '--cal.init_args.firstweekday=4',
+                '--cal.class_path=jsonargparse_tests.signatures_tests.MyCal',
+            ])
+            self.assertEqual(len(w), 1)
+            self.assertIn("discarding init_args {'firstweekday': 4} defined for class_path calendar.Calendar", str(w[0].message))
 
 
     def test_add_subclass_arguments_tuple(self):
@@ -354,6 +380,13 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(calendar.Calendar, None, required=True))
         parser.add_subclass_arguments(calendar.Calendar, 'cal', required=True)
         self.assertRaises(ParserError, lambda: parser.parse_args([]))
+
+
+    def test_not_required_group(self):
+        parser = ArgumentParser(parse_as_dict=True, error_handler=None)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal', required=False)
+        cfg = parser.parse_args([])
+        self.assertEqual(cfg, {'cal': {}})
 
 
     def test_invalid_type(self):
@@ -618,6 +651,24 @@ class SignaturesTests(unittest.TestCase):
         self.assertIsInstance(cfg['e'], EmptyInitClass)
 
 
+    def test_instantiate_classes_subcommand(self):
+        class Foo:
+            def __init__(self, a: int = 1):
+                self.a = a
+
+        parser = ArgumentParser(parse_as_dict=True)
+        subcommands = parser.add_subcommands()
+        subparser = ArgumentParser()
+        key = "foo"
+        subparser.add_class_arguments(Foo, key)
+        subcommand = "cmd"
+        subcommands.add_subcommand(subcommand, subparser)
+
+        config = parser.parse_args([subcommand])
+        config_init = parser.instantiate_classes(config)
+        self.assertIsInstance(config_init[subcommand][key], Foo)
+
+
     def test_implicit_optional(self):
 
         def func(a1: int = None):
@@ -763,6 +814,27 @@ class SignaturesTests(unittest.TestCase):
         a_value['init_args'] = {'v1': 'a', 'v2': 'b'}
         with self.assertRaises(ParserError):
             parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
+
+
+    def test_link_arguments_subcommand(self):
+        class Foo:
+            def __init__(self, a: int):
+                self.a = a
+
+        parser = ArgumentParser(parse_as_dict=True)
+        subparser = ArgumentParser()
+
+        subcommands = parser.add_subcommands()
+        subparser.add_class_arguments(Foo, nested_key='foo')
+        subparser.add_argument('--b', type=int)
+        subparser.link_arguments('b', 'foo.a')
+        subcommands.add_subcommand('cmd', subparser)
+
+        cfg = parser.parse_args(['cmd', '--b=2'])
+        self.assertEqual(cfg['cmd']['foo'], {'a': 2})
+
+        cfg = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg['cmd']['foo'], Foo)
 
 
     def test_link_arguments_apply_on_instantiate(self):
@@ -959,6 +1031,41 @@ class SignaturesConfigTests(TempDirTestCase):
         cal['init_args']['firstweekday'] = 2
         cfg = parser.parse_args(['--cfg='+cfg_path, '--cal.init_args.firstweekday=2'])
         self.assertEqual(cfg['cal'], cal)
+
+
+    def test_add_class_arguments_with_config_not_found(self):
+        class A:
+            def __init__(self, param: int):
+                self.param = param
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(A, 'a')
+        try:
+            parser.parse_args(['--a=does_not_exist.yaml'])
+        except ParserError as ex:
+            self.assertIn('Unable to load config "does_not_exist.yaml"', str(ex))
+        else:
+            raise ValueError('Expected ParserError to be raised')
+
+
+    def test_add_subclass_arguments_with_multifile_save(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+
+        cal_cfg_path = 'cal.yaml'
+        with open(cal_cfg_path, 'w') as f:
+            f.write(yaml.dump({'class_path': 'calendar.Calendar'}))
+
+        cfg = parser.parse_args(['--cal='+cal_cfg_path])
+        os.mkdir('out')
+        out_main_cfg = os.path.join('out', 'config.yaml')
+        parser.save(cfg, out_main_cfg, multifile=True)
+
+        with open(out_main_cfg) as f:
+            self.assertEqual('cal: cal.yaml', f.read().strip())
+        with open(os.path.join('out', 'cal.yaml')) as f:
+            cal = yaml.safe_load(f.read())
+            self.assertEqual({'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 0}}, cal)
 
 
 if __name__ == '__main__':

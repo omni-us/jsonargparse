@@ -32,10 +32,12 @@ from .actions import (
 from .optionals import (
     argcomplete_support,
     dump_preserve_order_support,
+    fsspec_support,
     FilesCompleterMethod,
     get_config_read_mode,
     import_jsonnet,
     import_argcomplete,
+    import_fsspec,
     TypeCastCompleterMethod,
 )
 from .util import (
@@ -245,6 +247,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             args = sys.argv[1:]
         else:
             args = list(args)
+            if not all(isinstance(a, str) for a in args):
+                self.error('All arguments are expected to be strings: '+str(args))
 
         if namespace is None:
             namespace = Namespace()
@@ -454,7 +458,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         defaults: bool = True,
         nested: bool = True,
         with_meta: bool = None,
-        _skip_logging: bool = False,
         _skip_check: bool = False,
         _skip_subcommands: bool = False,
     ) -> Union[Namespace, Dict[str, Any]]:
@@ -489,7 +492,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     env_val = env[env_var]
                     if env_val in action.choices:
                         cfg[action.dest] = subcommand = self._check_value_key(action, env_val, action.dest, cfg)
-                        pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, nested=False, _skip_logging=True, _skip_check=True)  # type: ignore
+                        pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, nested=False, _skip_check=True)  # type: ignore
                         for k, v in vars(pcfg).items():
                             cfg[subcommand+'.'+k] = v
             for action in actions:
@@ -561,7 +564,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                                            defaults,
                                            nested,
                                            with_meta=with_meta,
-                                           _skip_logging=True,
                                            _skip_check=_skip_check,
                                            _fail_no_subcommand=_fail_no_subcommand)
 
@@ -579,7 +581,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         defaults: bool = True,
         nested: bool = True,
         with_meta: bool = None,
-        _skip_logging: bool = False,
         _skip_check: bool = False,
         _fail_no_subcommand: bool = True,
     ) -> Union[Namespace, Dict[str, Any]]:
@@ -705,6 +706,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
         subcommands.required = False
         subcommands.parent_parser = self  # type: ignore
         _find_action(self, dest)._env_prefix = self.env_prefix
+        self._subcommands_action = subcommands
         return subcommands
 
 
@@ -808,10 +810,24 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             if not overwrite and os.path.isfile(path()):
                 raise ValueError('Refusing to overwrite existing file: '+path())
 
+        dump_kwargs = {'format': format, 'skip_none': skip_none, 'skip_check': skip_check}
+
+        if fsspec_support:
+            try:
+                path_sw = Path(path, mode='sw')
+            except TypeError:
+                pass
+            else:
+                if path_sw.is_fsspec:
+                    if multifile:
+                        raise NotImplementedError('multifile=True not supported for fsspec paths: '+path)
+                    fsspec = import_fsspec('ArgumentParser.save')
+                    with fsspec.open(path, 'w') as f:
+                        f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
+                    return
+
         path_fc = Path(path, mode='fc')
         check_overwrite(path_fc)
-
-        dump_kwargs = {'format': format, 'skip_none': skip_none, 'skip_check': skip_check}
 
         if not multifile:
             with open(path_fc(), 'w') as f:
@@ -835,7 +851,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                             val_path = Path(os.path.basename(val['__path__']()), mode='fc')
                             check_overwrite(val_path)
                             action = _find_action(self, kbase)
-                            if isinstance(action, (ActionJsonSchema, ActionJsonnet, _ActionConfigLoad)):
+                            if isinstance(action, (ActionJsonSchema, ActionJsonnet, ActionTypeHint, _ActionConfigLoad)):
                                 val_out = strip_meta(val)
                                 if '__orig__' in val:
                                     val_str = val['__orig__']
@@ -1031,7 +1047,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     raise TypeError('Key "'+reqkey+'" is required but not included in config object or its value is None.') from ex
 
         def check_values(cfg, base=None):
-            subcommand = None
             for key, val in cfg.items():
                 if key in meta_keys:
                     continue
@@ -1040,12 +1055,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 if action is not None:
                     if val is None and skip_none:
                         continue
-                    self._check_value_key(action, val, kbase, ccfg)
-                    if isinstance(action, _ActionSubCommands) and kbase != action.dest:
-                        if subcommand is not None:
-                            raise KeyError('Only values from a single sub-command are allowed ("'+subcommand+'", "'+kbase+'").')
-                        subcommand = kbase
-                    elif isinstance(action, _ActionConfigLoad) and isinstance(val, dict):
+                    try:
+                        self._check_value_key(action, val, kbase, ccfg)
+                    except TypeError as ex:
+                        if not (val == {} and ActionTypeHint.is_class_typehint(action) and kbase not in self.required_args):
+                            raise ex
+                    if isinstance(action, _ActionConfigLoad) and isinstance(val, dict):
                         check_values(val, kbase)
                 elif isinstance(val, dict):
                     check_values(val, kbase)
@@ -1093,7 +1108,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                 components.append(action)
 
         if instantiate_groups:
-            groups = [g for g in self._action_groups if hasattr(g, 'instantiate_class')]
+            skip = set(c.dest for c in components)
+            groups = [g for g in self._action_groups if hasattr(g, 'instantiate_class') and g.dest not in skip]  # type: ignore
             components.extend(groups)
 
         components.sort(key=lambda x: -len(x.dest.split('.')))
@@ -1105,14 +1121,20 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
             if isinstance(component, Action):
                 try:
                     value, parent, key = _get_key_value(cfg, component.dest, parent=True)
+                except KeyError:
+                    pass
+                else:
                     if value is not None:
                         parent[key] = component._instantiate_classes(value)  # type: ignore
                         _ActionLink.apply_instantiation_links(self, cfg, component.dest)
-                except KeyError:
-                    pass
             else:
                 component.instantiate_class(component, cfg)
                 _ActionLink.apply_instantiation_links(self, cfg, component.dest)
+
+        cfg_dict = cfg.__dict__ if isinstance(cfg, Namespace) else cfg
+        subcommand, subparser = _ActionSubCommands.get_subcommand(self, cfg_dict, fail_no_subcommand=False)
+        if subcommand:
+            cfg[subcommand] = subparser.instantiate_classes(cfg[subcommand], instantiate_groups=instantiate_groups)
 
         return cfg
 
@@ -1189,10 +1211,17 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
 
     def _apply_actions(self, cfg):
         """Runs _check_value_key on actions present in flat config dict."""
-        keys = [k for k in cfg.keys() if k.rsplit('.', 1)[-1] not in meta_keys]
-        keys.sort(key=lambda x: -len(x.split('.')))
+        def get_sorted_keys(cfg):
+            keys = [k for k in cfg.keys() if k.rsplit('.', 1)[-1] not in meta_keys]
+            keys.sort(key=lambda x: -len(x.split('.')))
+            return keys
+
+        keys = get_sorted_keys(cfg)
         seen_keys = set()
-        for key in keys:
+        num = 0
+        while num < len(keys):
+            key = keys[num]
+            num += 1
             if key in seen_keys:
                 continue
             action = _find_parent_action(self, key, within_subcommands=True)
@@ -1204,12 +1233,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty)
                     action_dest = action.dest
                 if action_dest == key:
                     value = self._check_value_key(action, cfg[key], key, cfg)
-                    cfg[key] = value
                 else:
                     value = get_key_value_from_flat_dict(cfg, action_dest)
                     value = self._check_value_key(action, value, action_dest, cfg)
-                    update_key_value_in_flat_dict(cfg, action_dest, value)
                     seen_keys.update(action_dest+'.'+k for k in value.keys())
+                update_key_value_in_flat_dict(cfg, action_dest, value)
+                if isinstance(value, dict):
+                    new_keys = get_sorted_keys(value)
+                    keys += [action_dest+'.'+k for k in new_keys if action_dest+'.'+k not in keys]
 
 
     @staticmethod

@@ -152,12 +152,12 @@ def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
                 elif not isinstance(kdict[kk], dict):
                     raise_conflicting_base('.'.join(ksplit[:num+1])+', expected dict but is '+str(kdict[kk]))
                 kdict = kdict[kk]
-            if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None:
+            if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None and v != Namespace():
                 raise_conflicting_base(k)
             #if isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
             #    kdict[ksplit[-1]] = [namespace_to_dict(x) for x in v]
             #elif not (v is None and ksplit[-1] in kdict):
-            if not (v is None and ksplit[-1] in kdict):
+            if not ((v is None or v == Namespace()) and ksplit[-1] in kdict):
                 kdict[ksplit[-1]] = v
     return cfg_dict
 
