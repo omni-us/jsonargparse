@@ -338,7 +338,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             if isinstance(val, typehint):
                 val = val.name
             else:
-                val = typehint[val]
+                if val not in typehint:
+                    raise ValueError('Value "'+str(val)+'" is not a valid member name for the enum "'+str(typehint)+'"')
         elif not serialize and not isinstance(val, typehint):
             val = typehint[val]
 
