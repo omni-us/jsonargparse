@@ -121,7 +121,7 @@ Added
 
 Fixed
 ^^^^^
-- Parsing of relative paths inside inner configs for type hint acti
+- Parsing of relative paths inside inner configs for type hint actions.
 
 
 v3.14.0 (2021-06-08)
