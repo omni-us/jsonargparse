@@ -466,6 +466,59 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertIn('class_path: calendar.Calendar\n', cfg)
         self.assertIn('firstweekday: 3\n', cfg)
 
+    def test_linking_deep_targets(self):
+        class D:
+            pass
+
+        class A:
+            def __init__(self, d: D) -> None:
+                self.d = d
+
+        class BSuper:
+            pass
+
+        class BSub(BSuper):
+            def __init__(self, a: A) -> None:
+                self.a = a
+
+        class C:
+            def fn(self) -> D:
+                return D()
+
+        config = {
+            "b": {
+                "class_path": "jsonargparse_tests.BSub",
+                "init_args": {
+                    "a": {
+                        "class_path": "jsonargparse_tests.A",
+                    },
+                },
+            },
+            "c": {},
+        }
+        config_path = os.path.join(self.tmpdir, 'config.yaml')
+        with open(config_path, 'w') as f:
+            yaml.safe_dump(config, f)
+
+        import jsonargparse_tests
+        setattr(jsonargparse_tests, 'D', D)
+        setattr(jsonargparse_tests, 'A', A)
+        setattr(jsonargparse_tests, 'BSuper', BSuper)
+        setattr(jsonargparse_tests, 'BSub', BSub)
+        setattr(jsonargparse_tests, 'C', C)
+
+        parser = ArgumentParser()
+        parser.add_argument("--config", action=ActionConfigFile)
+        parser.add_subclass_arguments(BSuper, nested_key="b", required=True)
+        parser.add_class_arguments(C, nested_key="c")
+        parser.link_arguments("c", "b.init_args.a.init_args.d", compute_fn=C.fn, apply_on="instantiate")
+
+        args = parser.parse_args(["--config", config_path])
+
+        config = parser.instantiate_classes(args)
+
+        assert isinstance(config["b"].a.d, D)
+
 
 class OtherTests(unittest.TestCase):
 
