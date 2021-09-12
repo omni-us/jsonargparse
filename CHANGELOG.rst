@@ -16,7 +16,6 @@ Added
 ^^^^^
 - Support for parsing ``Mapping`` and ``MutableMapping`` types.
 - Support for parsing ``frozenset``, ``MutableSequence`` and ``MutableSet`` types.
-- Fix a bug that can sometimes occur when serializing an Enum.
 
 
 v3.17.0 (2021-07-19)
