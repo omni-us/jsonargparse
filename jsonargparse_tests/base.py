@@ -25,7 +25,7 @@ try:
 except (ImportError, ModuleNotFound):
     def nothing_decorator(func):
         return func
-    responses = False
+    responses = False  # type: ignore
     responses_activate = nothing_decorator
 
 

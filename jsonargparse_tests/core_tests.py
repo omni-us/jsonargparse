@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import sys
 import json
-import yaml
 import platform
+import warnings
+import yaml
 from io import StringIO
 from contextlib import redirect_stdout
 from collections import OrderedDict
@@ -361,7 +361,24 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(cfg['subcommand'], 'a')
         self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_cfg', 'ao1': 'ao1_def'})
         self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'))
-        self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}'))
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
+            self.assertEqual(cfg.subcommand, 'a')
+            self.assertFalse(hasattr(cfg, 'b'))
+            self.assertEqual(len(w), 1)
+            self.assertIn('Subcommand "a" will be used', str(w[0].message))
+
+        cfg = parser.parse_string('{"subcommand": "b", "a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
+        self.assertFalse(hasattr(cfg, 'a'))
+
+        cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', 'a'])
+        cfg = namespace_to_dict(cfg)
+        self.assertEqual(cfg, {'o1': 'o1_def', 'subcommand': 'a', 'cfg': [None], 'a': {'ap1': 'ap1_cfg', 'ao1': 'ao1_def'}})
+        cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', 'b'])
+        self.assertFalse(hasattr(cfg, 'a'))
+        self.assertTrue(hasattr(cfg, 'b'))
 
         os.environ['APP_O1'] = 'o1_env'
         os.environ['APP_A__AP1'] = 'ap1_env'
@@ -426,6 +443,15 @@ class AdvancedFeaturesTests(unittest.TestCase):
 
         subcommands1 = parser.add_subcommands()
         self.assertRaises(ValueError, lambda: subcommands1.add_subcommand('a', parser_s1_a))
+
+
+    def test_optional_subcommand(self):
+        parser = ArgumentParser(error_handler=None)
+        subcommands = parser.add_subcommands(required=False)
+        subparser = ArgumentParser()
+        subcommands.add_subcommand('foo', subparser)
+        cfg = parser.parse_args([])
+        self.assertEqual(cfg, Namespace(subcommand=None))
 
 
     @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
@@ -671,6 +697,15 @@ class OutputTests(TempDirTestCase):
             self.assertEqual(input_file.read(), 'the:\n  path: file.txt\n')
         with open(out_file) as input_file:
             self.assertEqual(input_file.read(), 'file content')
+
+
+    @unittest.skipIf(not fsspec_support, 'fsspec package is required')
+    def test_save_fsspec(self):
+        parser = example_parser()
+        cfg = parser.get_defaults()
+        parser.save(cfg, 'memory://config.yaml', multifile=False)
+        path = Path('memory://config.yaml', mode='sr')
+        self.assertEqual(cfg, parser.parse_string(path.get_content()))
 
 
     def test_save_failures(self):

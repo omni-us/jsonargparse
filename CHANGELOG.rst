@@ -9,13 +9,66 @@ follow `Semantic Versioning <https://semver.org/>`_
 only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
-v3.18.0 (2021-??-??)
+
+v3.19.2 (2021-09-09)
+--------------------
+
+Fixed
+^^^^^
+- add_subclass_arguments with required=False failing when not given #83.
+
+
+v3.19.1 (2021-09-03)
+--------------------
+
+Fixed
+^^^^^
+- Repeated instantiation of dataclasses PyTorchLightning/pytorch-lightning#9207.
+
+
+v3.19.0 (2021-08-27)
+--------------------
+
+Added
+^^^^^
+- ``save`` now supports saving to an fsspec path #86.
+
+Fixed
+^^^^^
+- Multifile save not working correctly for subclasses #63.
+- ``link_arguments`` not working for subcommands #82.
+
+Changed
+^^^^^^^
+- Multiple subcommand settings without explicit subcommand is now a warning
+  instead of exception.
+
+
+v3.18.0 (2021-08-18)
 --------------------
 
 Added
 ^^^^^
 - Support for parsing ``Mapping`` and ``MutableMapping`` types.
 - Support for parsing ``frozenset``, ``MutableSequence`` and ``MutableSet`` types.
+
+Fixed
+^^^^^
+- Don't discard ``init_args`` with non-changing ``--*.class_path`` argument.
+- Don't ignore ``KeyError`` in call to instantiate_classes #81.
+- Optional subcommands fail with a KeyError #68.
+- Conflicting namespace for subclass key in subcommand.
+- ``instantiate_classes`` not working for subcommand keys #70.
+- Proper file not found message from _ActionConfigLoad #64.
+- ``parse_path`` not parsing inner config files.
+
+Changed
+^^^^^^^
+- Docstrings no longer supported for python 3.5.
+- Show warning when ``--*.class_path`` discards previous ``init_args``.
+- Trigger error when ``parse_args`` called with non-string value.
+- ActionParser accepts both title and help, title having preference.
+- Multiple subcommand settings allowed if explicit subcommand given.
 
 
 v3.17.0 (2021-07-19)
