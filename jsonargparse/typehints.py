@@ -1,5 +1,5 @@
 """Action to support type hints."""
-
+import copy
 import inspect
 import os
 import re
@@ -411,7 +411,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 val = {cast(k): v for k, v in val.items()}
             for k, v in val.items():
                 if "linked_targets" in adapt_kwargs["sub_add_kwargs"]:
-                    kwargs = adapt_kwargs.copy()
+                    kwargs = copy.deepcopy(adapt_kwargs)
                     sub_add_kwargs = kwargs["sub_add_kwargs"]
                     sub_add_kwargs["linked_targets"] = {t[len(k + "."):] for t in sub_add_kwargs["linked_targets"]
                                                         if t.startswith(k + ".")}

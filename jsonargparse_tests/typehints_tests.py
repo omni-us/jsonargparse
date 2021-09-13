@@ -9,7 +9,7 @@ import yaml
 from calendar import Calendar
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
 from jsonargparse_tests.base import *
 from jsonargparse.typehints import is_optional, Literal
 
@@ -466,6 +466,7 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertIn('class_path: calendar.Calendar\n', cfg)
         self.assertIn('firstweekday: 3\n', cfg)
 
+
     def test_linking_deep_targets(self):
         class D:
             pass
@@ -518,6 +519,62 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         config = parser.instantiate_classes(args)
 
         assert isinstance(config["b"].a.d, D)
+
+
+    def test_linking_deep_targets_mapping(self):
+        class D:
+            pass
+
+        class A:
+            def __init__(self, d: D) -> None:
+                self.d = d
+
+        class BSuper:
+            pass
+
+        class BSub(BSuper):
+            def __init__(self, a_map: Mapping[str, A]) -> None:
+                self.a_map = a_map
+
+        class C:
+            def fn(self) -> D:
+                return D()
+
+        config = {
+            "b": {
+                "class_path": "jsonargparse_tests.BSub",
+                "init_args": {
+                    "a_map": {
+                        "name": {
+                            "class_path": "jsonargparse_tests.A",
+                        },
+                    },
+                },
+            },
+            "c": {},
+        }
+        config_path = os.path.join(self.tmpdir, 'config.yaml')
+        with open(config_path, 'w') as f:
+            yaml.safe_dump(config, f)
+
+        import jsonargparse_tests
+        setattr(jsonargparse_tests, 'D', D)
+        setattr(jsonargparse_tests, 'A', A)
+        setattr(jsonargparse_tests, 'BSuper', BSuper)
+        setattr(jsonargparse_tests, 'BSub', BSub)
+        setattr(jsonargparse_tests, 'C', C)
+
+        parser = ArgumentParser()
+        parser.add_argument("--config", action=ActionConfigFile)
+        parser.add_subclass_arguments(BSuper, nested_key="b", required=True)
+        parser.add_class_arguments(C, nested_key="c")
+        parser.link_arguments("c", "b.init_args.a_map.name.init_args.d", compute_fn=C.fn, apply_on="instantiate")
+
+        args = parser.parse_args(["--config", config_path])
+
+        config = parser.instantiate_classes(args)
+
+        assert isinstance(config["b"].a_map["name"].d, D)
 
 
 class OtherTests(unittest.TestCase):
