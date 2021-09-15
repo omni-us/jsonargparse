@@ -386,7 +386,9 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser(parse_as_dict=True, error_handler=None)
         parser.add_subclass_arguments(calendar.Calendar, 'cal', required=False)
         cfg = parser.parse_args([])
-        self.assertEqual(cfg, {'cal': {}})
+        self.assertEqual(cfg, {})
+        cfg_init = parser.instantiate_classes(cfg)
+        self.assertEqual(cfg_init, {})
 
 
     def test_invalid_type(self):
