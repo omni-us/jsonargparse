@@ -22,4 +22,4 @@ from .typehints import *
 from .util import *
 
 
-__version__ = '3.19.2'
+__version__ = '3.19.3'

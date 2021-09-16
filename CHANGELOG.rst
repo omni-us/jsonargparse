@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.19.3 (2021-09-16)
+--------------------
+
+Fixed
+^^^^^
+- add_subclass_arguments with required=False failing on instantiation #83.
+
+
 v3.19.2 (2021-09-09)
 --------------------
 
