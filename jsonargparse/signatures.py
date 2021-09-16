@@ -2,7 +2,7 @@
 
 import inspect
 import re
-from argparse import Namespace
+from argparse import Namespace, SUPPRESS
 from functools import wraps
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
@@ -491,7 +491,7 @@ class SignatureArguments:
             {},
             added_args,
             skip,
-            default={},
+            default=SUPPRESS,
             sub_configs=True,
             instantiate=instantiate,
             **kwargs
