@@ -1,6 +1,5 @@
 from argparse import (
     Action,
-    Namespace,
     HelpFormatter,
     OPTIONAL,
     REMAINDER,
@@ -16,6 +15,7 @@ from .deprecated import *
 from .formatters import *
 from .jsonnet import *
 from .jsonschema import *
+from .namespace import *
 from .optionals import *
 from .signatures import *
 from .typehints import *

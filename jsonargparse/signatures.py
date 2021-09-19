@@ -2,14 +2,15 @@
 
 import inspect
 import re
-from argparse import Namespace, SUPPRESS
+from argparse import SUPPRESS
 from functools import wraps
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from .actions import _ActionConfigLoad, _ActionHelpClass, _ActionHelpClassPath
+from .namespace import Namespace
 from .typehints import ActionTypeHint, ClassType, is_optional
 from .typing import is_final_class
-from .util import _get_key_value, _issubclass
+from .util import _issubclass
 from .optionals import (
     dataclasses_support,
     docstring_parser_support,
@@ -541,7 +542,7 @@ class SignatureArguments:
 
 def group_instantiate_class(group, cfg):
     try:
-        value, parent, key = _get_key_value(cfg, group.dest, parent=True)
+        value, parent, key = cfg.get_value_and_parent(group.dest)
     except KeyError:
         value = {}
         parent = cfg

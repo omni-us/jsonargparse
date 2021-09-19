@@ -2,8 +2,8 @@
 
 from enum import Enum
 from io import StringIO
+#from jsonargparse import ArgumentParser
 from jsonargparse_tests.base import *
-from jsonargparse import ArgumentParser
 
 
 class DeprecatedTests(unittest.TestCase):
@@ -111,6 +111,13 @@ class DeprecatedTests(unittest.TestCase):
         self.assertEqual('fr', get_config_read_mode())
 
 
+    def test_dict_to_namespace(self):
+        ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
+        dic = {'a': 1, 'b': {'c': 2}, 'd': [{'e': 3}]}
+        ns2 = dict_to_namespace(dic)
+        self.assertEqual(ns1, ns2)
+
+
 class DeprecatedTempDirTests(TempDirTestCase):
 
     def test_ActionPath(self):
@@ -184,6 +191,17 @@ class DeprecatedTempDirTests(TempDirTestCase):
         parser.add_argument('path', nargs='?', action=ActionPath(mode='fc'))
         self.assertIsNone(parser.parse_args(['1']).path)
         self.assertIsNotNone(parser.parse_args(['2', 'file']).path)
+
+
+    def test_namespace_to_dict(self):
+        ns = Namespace()
+        ns['w'] = 1
+        ns['x.y'] = 2
+        ns['x.z'] = 3
+        dic1 = namespace_to_dict(ns)
+        dic2 = ns.as_dict()
+        self.assertEqual(dic1, dic2)
+        self.assertFalse(dic1 is dic2)
 
 
 if __name__ == '__main__':

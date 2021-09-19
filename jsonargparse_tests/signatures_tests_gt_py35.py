@@ -45,7 +45,7 @@ class SignaturesTests(unittest.TestCase):
         parser.add_dataclass_arguments(self.MyDataClassA, 'a', default=self.MyDataClassA(), title='CustomA title')
         parser.add_dataclass_arguments(self.MyDataClassB, 'b', default=self.MyDataClassB())
 
-        cfg = namespace_to_dict(parser.get_defaults())
+        cfg = parser.get_defaults().as_dict()
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), cfg['a'])
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), cfg['b'])
         dump = yaml.safe_load(parser.dump(cfg))
@@ -92,7 +92,7 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser()
         parser.add_class_arguments(MyClass, 'g')
 
-        cfg = namespace_to_dict(parser.get_defaults())
+        cfg = parser.get_defaults().as_dict()
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), cfg['g']['a1'])
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), cfg['g']['a2'])
         dump = yaml.safe_load(parser.dump(cfg))
@@ -140,7 +140,7 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser()
         parser.add_argument('--b', type=self.MyDataClassB, default=self.MyDataClassB(b1=7.0))
 
-        cfg = namespace_to_dict(parser.get_defaults())
+        cfg = parser.get_defaults().as_dict()
         self.assertEqual({'b1': 7.0, 'b2': {'a1': 1, 'a2': '2'}}, cfg['b'])
 
         cfg = parser.instantiate_subclasses(cfg)
@@ -172,7 +172,7 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser()
         parser.add_class_arguments(MyDataClass)
 
-        cfg = namespace_to_dict(parser.get_defaults())
+        cfg = parser.get_defaults().as_dict()
         self.assertEqual([1, 2, 3], cfg['a1'])
         self.assertEqual({'a': 1.2, 'b': 3.4}, cfg['a2'])
 

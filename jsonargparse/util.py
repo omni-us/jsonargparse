@@ -8,13 +8,12 @@ import yaml
 import inspect
 import logging
 from collections import defaultdict
-from copy import deepcopy
-from typing import Dict, Any, Optional, Union
+from typing import Optional, Union
 from contextlib import contextmanager, redirect_stderr
-from argparse import Namespace
 from yaml.parser import ParserError as yamlParserError
 from yaml.scanner import ScannerError as yamlScannerError
 
+from .namespace import Namespace
 from .optionals import (
     ModuleNotFound,
     url_support,
@@ -29,10 +28,6 @@ from .optionals import (
 __all__ = [
     'ParserError',
     'null_logger',
-    'dict_to_namespace',
-    'namespace_to_dict',
-    'meta_keys',
-    'strip_meta',
     'usage_and_exit_error_handler',
     'Path',
     'LoggerProperty',
@@ -42,9 +37,6 @@ __all__ = [
 null_logger = logging.Logger('jsonargparse_null_logger')
 null_logger.addHandler(logging.NullHandler())
 
-meta_keys = {'__default_config__', '__path__', '__orig__'}
-
-empty_namespace = Namespace()
 
 NoneType = type(None)
 
@@ -69,199 +61,15 @@ def _load_config(value, enable_path=True, flat_namespace=True):
         else:
             value = yaml.safe_load(cfg_path.get_content())
 
-    if flat_namespace and isinstance(value, dict):
-        value = _dict_to_flat_namespace(value)
+    if flat_namespace and isinstance(value, dict):  # TODO: requires rename?
         if cfg_path is not None:
-            setattr(value, '__path__', cfg_path)
+            value['__path__'] = cfg_path
         return value
 
     return value, cfg_path
 
 
-def get_key_value_from_flat_dict(cfg, key):
-    value = cfg.get(key)
-    if value is not None:
-        return value
-    value = {k[len(key)+1:]: v for k, v in cfg.items() if k.startswith(key+'.')}
-    return _flat_namespace_to_dict(Namespace(**value))
-
-
-def update_key_value_in_flat_dict(cfg, key, value):
-    if isinstance(value, dict):
-        value = vars(_dict_to_flat_namespace(value))
-        if key in cfg:
-            del cfg[key]
-        cfg.update({key+'.'+k: v for k, v in value.items()})
-    else:
-        cfg[key] = value
-
-
-def _get_key_value(cfg, key, parent=False):
-    """Gets the value for a given key in a config object (dict or argparse.Namespace)."""
-    def key_in_cfg(cfg, key):
-        if (isinstance(cfg, Namespace) and hasattr(cfg, key)) or \
-           (isinstance(cfg, dict) and key in cfg):
-            return True
-        return False
-
-    c = cfg
-    k = key
-    while '.' in k and not key_in_cfg(c, k):
-        kp, k = k.split('.', 1)
-        c = c[kp] if isinstance(c, dict) else getattr(c, kp)
-
-    v = c[k] if isinstance(c, dict) else getattr(c, k)
-    return (v, c, k) if parent else v
-
-
-def _flat_namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
-    """Converts a flat namespace into a nested dictionary.
-
-    Args:
-        cfg_ns: The configuration to process.
-
-    Returns:
-        The nested configuration dictionary.
-    """
-    def raise_conflicting_base(base):
-        raise ParserError('Conflicting namespace base: '+base)
-
-    nested_keys = {k.rsplit('.', 1)[0]+'.' for k in vars(cfg_ns).keys() if '.' in k}
-    skip_keys = {k for k, v in vars(cfg_ns).items() if v is None and k+'.' in nested_keys}
-
-    cfg_ns = deepcopy(cfg_ns)
-    cfg_dict = {}
-    for k, v in vars(cfg_ns).items():
-        if k in skip_keys:
-            continue
-        ksplit = k.split('.')
-        if len(ksplit) == 1:
-            if k in cfg_dict:
-                raise_conflicting_base(k)
-            #elif isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
-            #    cfg_dict[k] = [namespace_to_dict(x) for x in v]
-            #elif isinstance(v, Namespace):
-            #    cfg_dict[k] = vars(v)  # type: ignore
-            elif not (v is None and k in cfg_dict):
-                cfg_dict[k] = v
-        else:
-            kdict = cfg_dict
-            for num, kk in enumerate(ksplit[:len(ksplit)-1]):
-                if kk not in kdict or kdict[kk] is None or kdict[kk] == empty_namespace:
-                    kdict[kk] = {}
-                elif not isinstance(kdict[kk], dict):
-                    raise_conflicting_base('.'.join(ksplit[:num+1])+', expected dict but is '+str(kdict[kk]))
-                kdict = kdict[kk]
-            if ksplit[-1] in kdict and kdict[ksplit[-1]] is not None and v != Namespace():
-                raise_conflicting_base(k)
-            #if isinstance(v, list) and any([isinstance(x, Namespace) for x in v]):
-            #    kdict[ksplit[-1]] = [namespace_to_dict(x) for x in v]
-            #elif not (v is None and ksplit[-1] in kdict):
-            if not ((v is None or v == Namespace()) and ksplit[-1] in kdict):
-                kdict[ksplit[-1]] = v
-    return cfg_dict
-
-
-def _dict_to_flat_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
-    """Converts a nested dictionary into a flat namespace.
-
-    Args:
-        cfg_dict: The configuration to process.
-
-    Returns:
-        The configuration namespace.
-    """
-    cfg_dict = deepcopy(cfg_dict)
-    cfg_ns = {}
-
-    def flatten_dict(cfg, base=None):
-        for key, val in cfg.items():
-            kbase = key if base is None else base+'.'+key
-            if isinstance(val, dict) and val != {} and all(isinstance(k, str) for k in val.keys()):
-                flatten_dict(val, kbase)
-            else:
-                cfg_ns[kbase] = val
-
-    flatten_dict(cfg_dict)
-
-    return Namespace(**cfg_ns)
-
-
-def dict_to_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
-    """Converts a nested dictionary into a nested namespace.
-
-    Args:
-        cfg_dict: The configuration to process.
-
-    Returns:
-        The nested configuration namespace.
-    """
-    cfg_dict = deepcopy(cfg_dict)
-    def expand_dict(cfg):
-        for k, v in cfg.items():
-            if isinstance(v, dict) and all(isinstance(k, str) for k in v.keys()):
-                cfg[k] = expand_dict(v)
-            elif isinstance(v, list):
-                for nn, vv in enumerate(v):
-                    if isinstance(vv, dict) and all(isinstance(k, str) for k in vv.keys()):
-                        cfg[k][nn] = expand_dict(vv)
-        return Namespace(**cfg)
-    return expand_dict(cfg_dict)
-
-
-def namespace_to_dict(cfg_ns:Namespace) -> Dict[str, Any]:
-    """Converts a nested namespace into a nested dictionary.
-
-    Args:
-        cfg_ns: The configuration to process.
-
-    Returns:
-        The nested configuration dictionary.
-    """
-    cfg_ns = deepcopy(cfg_ns)
-    def expand_namespace(cfg):
-        if not isinstance(cfg, dict):
-            cfg = dict(vars(cfg))
-        for k, v in cfg.items():
-            if isinstance(v, Namespace):
-                cfg[k] = expand_namespace(v)
-            elif isinstance(v, list):
-                for nn, vv in enumerate(v):
-                    if isinstance(vv, Namespace):
-                        cfg[k][nn] = expand_namespace(vv)
-        return cfg
-    return expand_namespace(cfg_ns)
-
-
-def strip_meta(cfg:Union[Namespace, Dict[str, Any]]) -> Dict[str, Any]:
-    """Removes all metadata keys from a configuration object.
-
-    Args:
-        cfg: The configuration object to strip.
-
-    Returns:
-        A copy of the configuration object without any metadata keys.
-    """
-    cfg = deepcopy(cfg)
-    if not isinstance(cfg, dict):
-        cfg = namespace_to_dict(cfg)
-
-    def strip_keys(cfg, base=None):
-        del_keys = []
-        for key, val in cfg.items():
-            kbase = str(key) if base is None else base+'.'+str(key)
-            if isinstance(val, dict):
-                strip_keys(val, kbase)
-            elif key in meta_keys:
-                del_keys.append(key)
-        for key in del_keys:
-            del cfg[key]
-
-    strip_keys(cfg)
-    return cfg
-
-
-def usage_and_exit_error_handler(self, message:str):
+def usage_and_exit_error_handler(self, message: str) -> None:
     """Error handler to get the same behavior as in argparse.
 
     Args:
@@ -286,6 +94,11 @@ def _get_env_var(parser, action) -> str:
 def _issubclass(cls, class_or_tuple):
     """Extension of issubclass that supports non-class argument."""
     return inspect.isclass(cls) and issubclass(cls, class_or_tuple)
+
+
+def _check_valid_dump_format(value: str):
+    if value not in {'parser_mode', 'yaml', 'json_indented', 'json'}:
+        raise ValueError('Unknown output format "'+str(format)+'".')
 
 
 def import_object(name):

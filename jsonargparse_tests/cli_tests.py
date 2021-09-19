@@ -207,7 +207,7 @@ class CLITempDirTests(TempDirTestCase):
                 self.a = a
 
         class C:
-            def __init__(self, a: A = A(), b: B = None):
+            def __init__(self, a: A = lazy_instance(A), b: B = None):
                 self.a = a
                 self.b = b
             def cmd_a(self):
@@ -217,22 +217,25 @@ class CLITempDirTests(TempDirTestCase):
 
         import jsonargparse_tests
         setattr(jsonargparse_tests, 'A', A)
+        setattr(jsonargparse_tests, 'B', B)
 
         out = StringIO()
         with redirect_stdout(out):
             CLI(C, args=['--config=config.yaml', 'cmd_a'])
         self.assertEqual('a yaml\n', out.getvalue())
 
-        #with open('config.yaml', 'w') as f:
-        #    f.write('a: a.yaml\nb: b.yaml\n')
-        #with open('b.yaml', 'w') as f:
-        #    f.write('a: a.yaml\n')
+        with open('config.yaml', 'w') as f:
+            f.write('a: a.yaml\nb: b.yaml\n')
+        with open('b.yaml', 'w') as f:
+            f.write('class_path: jsonargparse_tests.B\ninit_args:\n  a: a.yaml\n')
 
-        #out = StringIO()
-        #with redirect_stdout(out):
-        #    CLI(C, args=['--config=config.yaml', 'cmd_b'])
-        #self.assertEqual('a yaml\n', out.getvalue())
+        out = StringIO()
+        with redirect_stdout(out):
+            CLI(C, args=['--config=config.yaml', 'cmd_b'])
+        self.assertEqual('a yaml\n', out.getvalue())
 
 
 if __name__ == '__main__':
+    import jsonargparse_tests.cli_tests
+    __name__ = 'jsonargparse_tests.cli_tests'
     unittest.main(verbosity=2)

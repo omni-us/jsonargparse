@@ -64,8 +64,8 @@ class JsonSchemaTests(TempDirTestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '[1, "two"]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '[1.5, 2]']))
 
-        self.assertEqual(op2_val, vars(parser.parse_args(['--op2', str(op2_val)]).op2))
-        self.assertEqual(17, parser.parse_args(['--op2', '{"k2": 2}']).op2.k3)
+        self.assertEqual(op2_val, parser.parse_args(['--op2', str(op2_val)]).op2)
+        self.assertEqual(17, parser.parse_args(['--op2', '{"k2": 2}']).op2['k3'])
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k1": 1}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k2": "2"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k4": 4}']))
@@ -84,16 +84,16 @@ class JsonSchemaTests(TempDirTestCase):
         with open(cfg3_file, 'w') as f:
             f.write('op3:\n  n1:\n  - '+str(op2_val)+'\n')
 
-        cfg = namespace_to_dict(parser.parse_path(cfg1_file))
+        cfg = parser.parse_path(cfg1_file).as_dict()
         self.assertEqual(op1_val, cfg['op1'])
         self.assertEqual(op2_val, cfg['op2'])
 
-        cfg = namespace_to_dict(parser.parse_string(cfg2_str))
+        cfg = parser.parse_string(cfg2_str).as_dict()
         self.assertEqual(op1_val, cfg['op1'])
         self.assertEqual(op2_val, cfg['op2'])
 
         cfg = parser.parse_args(['--cfg', cfg3_file])
-        self.assertEqual(op2_val, namespace_to_dict(cfg.op3.n1[0]))
+        self.assertEqual(op2_val, cfg.op3['n1'][0])
         parser.check_config(cfg, skip_none=True)
 
         if os.name == 'posix' and platform.python_implementation() == 'CPython':
