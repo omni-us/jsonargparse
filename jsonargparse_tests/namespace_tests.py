@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+import sys
 from jsonargparse.namespace import ArgparseNamespace, Namespace, namespace_to_dict
 
 
@@ -80,6 +81,7 @@ class NamespaceTests(unittest.TestCase):
         self.assertFalse('x..y' in ns)
         self.assertFalse(123 in ns)
 
+    @unittest.skipIf(sys.version_info[:2] < (3, 6), 'Dict insertion order only since python 3.6')
     def test_items_generator(self):
         ns = Namespace()
         ns['a'] = 1
@@ -89,6 +91,7 @@ class NamespaceTests(unittest.TestCase):
         items = list(ns.items())
         self.assertEqual(items, [('a', 1), ('b.c', 2), ('b.d', 3), ('p.q.r', {'x': 4, 'y': 5})])
 
+    @unittest.skipIf(sys.version_info[:2] < (3, 6), 'Dict insertion order only since python 3.6')
     def test_keys_generator(self):
         ns = Namespace()
         ns['a'] = 1
@@ -98,6 +101,7 @@ class NamespaceTests(unittest.TestCase):
         keys = list(ns.keys())
         self.assertEqual(keys, ['a', 'b.c', 'b.d', 'p.q.r'])
 
+    @unittest.skipIf(sys.version_info[:2] < (3, 6), 'Dict insertion order only since python 3.6')
     def test_values_generator(self):
         ns = Namespace()
         ns['a'] = 1
