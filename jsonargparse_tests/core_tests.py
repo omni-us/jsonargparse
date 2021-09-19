@@ -665,7 +665,8 @@ class OutputTests(TempDirTestCase):
             self.assertTrue(os.path.isfile(jsonnet_file_out))
 
         for file in [main_file_out, parser_file_out, schema_file_out, jsonnet_file_out]:
-            os.remove(file)
+            if os.path.isfile(file):
+                os.remove(file)
         parser.save(cfg2.as_dict(), main_file_out)
         self.assertTrue(os.path.isfile(parser_file_out))
         if jsonschema_support:
