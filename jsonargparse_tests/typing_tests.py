@@ -194,6 +194,9 @@ class OtherTests(unittest.TestCase):
                 delta = timedelta_type.deserializer(delta_in)
                 self.assertIsInstance(delta, timedelta)
                 self.assertEqual(str(delta), delta_out)
+        for delta_in in ['not delta', 1234]:
+            with self.subTest(delta_in):
+                self.assertRaises(ValueError, lambda: timedelta_type.deserializer(delta_in))
 
 
 if __name__ == '__main__':

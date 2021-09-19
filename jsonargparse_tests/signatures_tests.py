@@ -92,22 +92,24 @@ class SignaturesTests(unittest.TestCase):
             self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
 
         cfg = parser.parse_args(['--c3_a0=0', '--c3_a3=true', '--c3_a4=a'], with_meta=False)
-        self.assertEqual(namespace_to_dict(cfg), {'c1_a2': 2.0,
-                                                  'c1_a4': 4,
-                                                  'c1_a5': 'five',
-                                                  'c3_a0': 0,
-                                                  'c3_a1': '1',
-                                                  'c3_a2': 2.0,
-                                                  'c3_a3': True,
-                                                  'c3_a4': 'a',
-                                                  'c3_a5': 5,
-                                                  'c3_a6': None,
-                                                  'c3_a7': ('7', 7, 7.0),
-                                                  'c3_a8': None})
+        self.assertEqual(cfg.as_dict(), {
+            'c1_a2': 2.0,
+            'c1_a4': 4,
+            'c1_a5': 'five',
+            'c3_a0': 0,
+            'c3_a1': '1',
+            'c3_a2': 2.0,
+            'c3_a3': True,
+            'c3_a4': 'a',
+            'c3_a5': 5,
+            'c3_a6': None,
+            'c3_a7': ('7', 7, 7.0),
+            'c3_a8': None,
+        })
         self.assertEqual([1, 2], parser.parse_args(['--c3_a0=0', '--c3_a5=[1,2]']).c3_a5)
-        self.assertEqual({'k': 5.0}, namespace_to_dict(parser.parse_args(['--c3_a0=0', '--c3_a5={"k": 5.0}']).c3_a5))
+        self.assertEqual({'k': 5.0}, parser.parse_args(['--c3_a0=0', '--c3_a5={"k": 5.0}']).c3_a5)
         self.assertEqual(('3', 3, 3.0), parser.parse_args(['--c3_a0=0', '--c3_a7=["3", 3, 3.0]']).c3_a7)
-        self.assertEqual('a', Class3(**namespace_to_dict(cfg))())
+        self.assertEqual('a', Class3(**cfg.as_dict())())
 
         self.assertRaises(ParserError, lambda: parser.parse_args([]))  # c3_a0 is required
         self.assertRaises(ParserError, lambda: parser.parse_args(['--c3_a0=0', '--c3_a7=["3", "3", 3.0]']))  # tuple[1] is int
@@ -150,7 +152,7 @@ class SignaturesTests(unittest.TestCase):
         def func(a1: Union[int, Dict[int, int]] = 1):
             pass
 
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_function_arguments(func)
         parser.get_defaults()
         cfg = parser.parse_args(['--a1={"2": 7, "4": 9}'])
@@ -213,7 +215,7 @@ class SignaturesTests(unittest.TestCase):
         for key in ['m.a4', 's.a3']:
             self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
 
-        cfg = namespace_to_dict(parser.parse_args(['--m.a1=x', '--s.a1=y'], with_meta=False))
+        cfg = parser.parse_args(['--m.a1=x', '--s.a1=y'], with_meta=False).as_dict()
         self.assertEqual(cfg, {'m': {'a1': 'x', 'a2': 2.0, 'a3': False}, 's': {'a1': 'y', 'a2': 2.0}})
         self.assertEqual('x', MyClass().mymethod(**cfg['m']))
         self.assertEqual('y', MyClass.mystaticmethod(**cfg['s']))
@@ -253,7 +255,7 @@ class SignaturesTests(unittest.TestCase):
             self.assertIsNotNone(_find_action(parser, key), key+' should be in parser but is not')
         self.assertIsNone(_find_action(parser, 'a4'), 'a4 should not be in parser but is')
 
-        cfg = namespace_to_dict(parser.parse_args(['--a1=x'], with_meta=False))
+        cfg = parser.parse_args(['--a1=x'], with_meta=False).as_dict()
         self.assertEqual(cfg, {'a1': 'x', 'a2': 2.0, 'a3': False})
         self.assertEqual('x', func(**cfg))
 
@@ -306,6 +308,10 @@ class SignaturesTests(unittest.TestCase):
             with redirect_stdout(out), self.assertRaises(SystemExit):
                 parser.parse_args(['--print_config'])
             self.assertIn('class_path: calendar.Calendar', out.getvalue())
+
+            out = StringIO()
+            parser.print_help(out)
+            self.assertIn("'init_args': {'firstweekday': 4}", out.getvalue())
 
         parser.set_defaults({'cal': calendar.Calendar(firstweekday=4)})
         cfg = parser.parse_args([])
@@ -532,6 +538,7 @@ class SignaturesTests(unittest.TestCase):
         parser.add_class_arguments(ClassB, 'b')
         cfg = parser.parse_args(['--b.b2={"a2": 6.7}'])
         self.assertEqual(cfg.b.b2, Namespace(a1=1, a2=6.7))
+        self.assertEqual(cfg, parser.parse_string(parser.dump(cfg)))
         cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['b'], ClassB)
         self.assertIsInstance(cfg['b'].b2, ClassA)
@@ -559,6 +566,19 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=0']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=1.5']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=-1']))
+
+
+    def test_dict_int_str_type(self):
+        class Foo:
+            def __init__(self, d: Dict[int, str]):
+                self.d = d
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(Foo)
+        parser.add_argument('--config', action=ActionConfigFile)
+        cfg = {'d': {1: 'val1', 2: 'val2'}}
+        self.assertEqual(cfg['d'], parser.parse_args(['--config', str(cfg)]).d)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--config={"d": {"a": "b"}}']))
 
 
     def test_logger_debug(self):
@@ -1014,7 +1034,7 @@ class SignaturesConfigTests(TempDirTestCase):
 
         cfg = parser.parse_args(['--cfg', cfg_path])
         self.assertEqual(str(cfg.func.__path__), subcfg_path)
-        self.assertEqual(strip_meta(cfg.func), {'a1': 'one', 'a2': 2.0, 'a3': True})
+        self.assertEqual(strip_meta(cfg.func), Namespace(a1='one', a2=2.0, a3=True))
 
 
     def test_add_subclass_arguments_with_config(self):

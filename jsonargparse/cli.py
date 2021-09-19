@@ -66,8 +66,9 @@ def CLI(
             parser.set_defaults(set_defaults)
         if return_parser:
             return parser
-        cfg = parser.instantiate_subclasses(parser.parse_args(args))
-        return _run_component(component, cfg)
+        cfg = parser.parse_args(args)
+        cfg_init = parser.instantiate_subclasses(cfg)
+        return _run_component(component, cfg_init)
 
     subcommands = parser.add_subcommands(required=True)
     comp_dict = {c.__name__: c for c in components}

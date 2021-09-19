@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=unsubscriptable-object
+# pylint: disable=unsubscriptable-object  TODO: remove if possible
 
 import json
 import pathlib
@@ -271,10 +271,11 @@ class TypeHintsTests(unittest.TestCase):
         parser.add_argument('--op', type=Optional[List[Calendar]])
 
         class_path = '"class_path": "calendar.Calendar"'
+        expected = [Namespace(class_path='calendar.Calendar', init_args=Namespace(firstweekday=0))]
         cfg = parser.parse_args(['--op=[{'+class_path+'}]'])
-        self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar', "init_args": {"firstweekday": 0}}])
+        self.assertEqual(cfg['op'], expected)
         cfg = parser.parse_args(['--op=["calendar.Calendar"]'])
-        self.assertEqual(cfg['op'], [{'class_path': 'calendar.Calendar', "init_args": {"firstweekday": 0}}])
+        self.assertEqual(cfg['op'], expected)
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg['op'][0], Calendar)
 
@@ -293,12 +294,12 @@ class TypeHintsTests(unittest.TestCase):
 
         init_args = '"init_args": {"firstweekday": 3}'
         cfg = parser.parse_args(['--op=[{'+class_path+', '+init_args+'}]'])
-        self.assertEqual(cfg['op'][0]['init_args'], {'firstweekday': 3})
+        self.assertEqual(cfg['op'][0]['init_args'], Namespace(firstweekday=3))
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg['op'][0], Calendar)
         self.assertEqual(3, cfg['op'][0].firstweekday)
 
-        parser = ArgumentParser(parse_as_dict=True)
+        parser = ArgumentParser(parse_as_dict=True, error_handler=None)
         parser.add_argument('--n.op', type=Optional[Calendar])
         cfg = parser.parse_args(['--n.op={'+class_path+', '+init_args+'}'])
         cfg = parser.instantiate_subclasses(cfg)
@@ -468,7 +469,7 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         parser.add_argument('--op', default='from default')
         parser.add_class_arguments(MyClass, 'data')
 
-        cfg = namespace_to_dict(parser.get_defaults())
+        cfg = parser.get_defaults().as_dict()
         self.assertEqual(config_path, str(cfg['__default_config__']))
         self.assertEqual(cfg['data']['cal'], config)
         cfg = parser.dump(cfg)

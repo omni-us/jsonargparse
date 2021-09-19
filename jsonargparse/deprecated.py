@@ -1,6 +1,9 @@
 """Deprecated code."""
 
+from argparse import Namespace
+from copy import deepcopy
 from enum import Enum
+from typing import Any, Dict
 from .optionals import get_config_read_mode, set_config_read_mode
 from .typehints import ActionTypeHint
 from .typing import path_type, restricted_number_type, registered_types
@@ -12,6 +15,7 @@ __all__ = [
     'ActionOperators',
     'ActionPath',
     'set_url_support',
+    'dict_to_namespace',
 ]
 
 
@@ -86,3 +90,25 @@ def set_url_support(enabled:bool):
         urls_enabled=enabled,
         fsspec_enabled=True if 's' in get_config_read_mode() else False,
     )
+
+
+def dict_to_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
+    """Converts a nested dictionary into a nested namespace.
+
+    Args:
+        cfg_dict: The configuration to process.
+
+    Returns:
+        The nested configuration namespace.
+    """
+    cfg_dict = deepcopy(cfg_dict)
+    def expand_dict(cfg):
+        for k, v in cfg.items():
+            if isinstance(v, dict) and all(isinstance(k, str) for k in v.keys()):
+                cfg[k] = expand_dict(v)
+            elif isinstance(v, list):
+                for nn, vv in enumerate(v):
+                    if isinstance(vv, dict) and all(isinstance(k, str) for k in vv.keys()):
+                        cfg[k][nn] = expand_dict(vv)
+        return Namespace(**cfg)
+    return expand_dict(cfg_dict)

@@ -72,9 +72,7 @@ def create_type(
         for key, value in extra_attrs.items():
             setattr(TypeCore, key, value)
 
-    created_type = type(name, (TypeCore, base_type), {})
-    if docstring is not None:
-        created_type.__doc__ = docstring
+    created_type = type(name, (TypeCore, base_type), {'__doc__': docstring})
     add_type(created_type, register_key)
 
     return created_type
@@ -227,9 +225,7 @@ def path_type(
         def __init__(self, v):
             super().__init__(v, mode=self._mode, skip_check=self._skip_check)
 
-    restricted_type = type(name, (PathType, str), {})
-    if docstring is not None:
-        restricted_type.__doc__ = docstring
+    restricted_type = type(name, (PathType, str), {'__doc__': docstring})
     add_type(restricted_type, register_key, type_check=_is_path_type)
 
     return restricted_type

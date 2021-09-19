@@ -130,7 +130,7 @@ class ActionParserTests(TempDirTestCase):
         parser_lv2.add_argument('--inner3',
             action=ActionParser(parser=parser_lv3))
 
-        parser = ArgumentParser(prog='lv1', default_env=True)
+        parser = ArgumentParser(prog='lv1', default_env=True, error_handler=None)
         parser.add_argument('--opt1',
             default='opt1_def')
         parser.add_argument('--inner2',
@@ -158,41 +158,42 @@ class ActionParserTests(TempDirTestCase):
         ## Check ActionParser with parse_path
         expected = {'opt1': 'opt1_yaml', 'inner2': {'opt2': 'opt2_yaml', 'inner3': {'opt3': 'opt3_yaml'}}}
         cfg = parser.parse_path(yaml_main_file, with_meta=False)
-        self.assertEqual(expected, namespace_to_dict(cfg))
+        self.assertEqual(expected, cfg.as_dict())
         with open(yaml_main_file, 'w') as output_file:
             output_file.write(parser.dump(cfg))
         cfg2 = parser.parse_path(yaml_main_file, with_meta=False)
-        self.assertEqual(expected, namespace_to_dict(cfg2))
+        self.assertEqual(expected, cfg2.as_dict())
 
         ## Check ActionParser inner environment variables
         self.assertEqual('opt2_env', parser.parse_env({'LV1_INNER2__OPT2': 'opt2_env'}).inner2.opt2)
         self.assertEqual('opt3_env', parser.parse_env({'LV1_INNER2__INNER3__OPT3': 'opt3_env'}).inner2.inner3.opt3)
         expected = {'opt1': 'opt1_def', 'inner2': {'opt2': 'opt2_def', 'inner3': {'opt3': 'opt3_yaml'}}}
         cfg = parser.parse_env({'LV1_INNER2__INNER3': yaml_inner3_file}, with_meta=False)
-        self.assertEqual(expected, namespace_to_dict(cfg))
-        #self.assertEqual('opt2_yaml', parser.parse_env({'LV1_INNER2': yaml_inner2_file}).inner2.opt2) # @todo Fix inner relative conf
+        self.assertEqual(expected, cfg.as_dict())
+        parser.parse_env({'LV1_INNER2': yaml_inner2_file})
+        self.assertEqual('opt2_yaml', parser.parse_env({'LV1_INNER2': yaml_inner2_file}).inner2.opt2)
 
         ## Check ActionParser as argument path
         expected = {'opt1': 'opt1_arg', 'inner2': {'opt2': 'opt2_yaml', 'inner3': {'opt3': 'opt3_yaml'}}}
         cfg = parser.parse_args(['--opt1', 'opt1_arg', '--inner2', yaml_inner2_file], with_meta=False)
-        self.assertEqual(expected, namespace_to_dict(cfg))
+        self.assertEqual(expected, cfg.as_dict())
 
         expected = {'opt1': 'opt1_def', 'inner2': {'opt2': 'opt2_arg', 'inner3': {'opt3': 'opt3_yaml'}}}
         cfg = parser.parse_args(['--inner2.opt2', 'opt2_arg', '--inner2.inner3', yaml_inner3_file], with_meta=False)
-        self.assertEqual(expected, namespace_to_dict(cfg))
+        self.assertEqual(expected, cfg.as_dict())
 
         expected = {'opt1': 'opt1_def', 'inner2': {'opt2': 'opt2_def', 'inner3': {'opt3': 'opt3_arg'}}}
         cfg = parser.parse_args(['--inner2.inner3', yaml_inner3_file, '--inner2.inner3.opt3', 'opt3_arg'], with_meta=False)
-        self.assertEqual(expected, namespace_to_dict(cfg))
+        self.assertEqual(expected, cfg.as_dict())
 
         ## Check ActionParser as argument string
         expected = {'opt2': 'opt2_str', 'inner3': {'opt3': 'opt3_str'}}
         cfg = parser.parse_args(['--inner2', json.dumps(expected)], with_meta=False)
-        self.assertEqual(expected, namespace_to_dict(cfg)['inner2'])
+        self.assertEqual(expected, cfg.as_dict()['inner2'])
 
         expected = {'opt3': 'opt3_str'}
         cfg = parser.parse_args(['--inner2.inner3', json.dumps(expected)], with_meta=False)
-        self.assertEqual(expected, namespace_to_dict(cfg)['inner2']['inner3'])
+        self.assertEqual(expected, cfg.as_dict()['inner2']['inner3'])
 
         ## Check ActionParser with ActionConfigFile
         parser.add_argument('--cfg',
@@ -201,7 +202,7 @@ class ActionParserTests(TempDirTestCase):
         expected = {'opt1': 'opt1_yaml', 'inner2': {'opt2': 'opt2_yaml', 'inner3': {'opt3': 'opt3_yaml'}}}
         cfg = parser.parse_args(['--cfg', yaml_main_file], with_meta=False)
         delattr(cfg, 'cfg')
-        self.assertEqual(expected, namespace_to_dict(cfg))
+        self.assertEqual(expected, cfg.as_dict())
 
         cfg = parser.parse_args(['--cfg', yaml_main_file, '--inner2.opt2', 'opt2_arg', '--inner2.inner3.opt3', 'opt3_arg'])
         self.assertEqual('opt2_arg', cfg.inner2.opt2)

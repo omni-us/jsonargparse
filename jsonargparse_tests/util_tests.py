@@ -6,31 +6,7 @@ import logging
 import platform
 import zipfile
 from jsonargparse_tests.base import *
-from jsonargparse.util import _suppress_stderr, _flat_namespace_to_dict
-
-
-class NamespaceDictConversionTests(unittest.TestCase):
-
-    def test_empty_config_dict(self):
-        cfg_dict = {}
-        cfg_ns = dict_to_namespace(cfg_dict)
-        self.assertEqual({}, namespace_to_dict(cfg_ns))
-        self.assertEqual({}, namespace_to_dict(cfg_dict))
-
-
-    def test_flat_namespace_to_dict_failures(self):
-        cfg_ns = Namespace()
-        setattr(cfg_ns, 'n1', 1)
-        setattr(cfg_ns, 'n1.v1', 2)
-        self.assertRaises(ParserError, lambda: _flat_namespace_to_dict(cfg_ns))
-        cfg_ns = Namespace()
-        setattr(cfg_ns, 'n1.v1', 2)
-        setattr(cfg_ns, 'n1', 1)
-        self.assertRaises(ParserError, lambda: _flat_namespace_to_dict(cfg_ns))
-        cfg_ns = Namespace()
-        setattr(cfg_ns, 'n1.n2.v1', 1)
-        setattr(cfg_ns, 'n1.n2', 2)
-        self.assertRaises(ParserError, lambda: _flat_namespace_to_dict(cfg_ns))
+from jsonargparse.util import _suppress_stderr
 
 
 @unittest.skipIf(os.name != 'posix' or platform.python_implementation() != 'CPython',

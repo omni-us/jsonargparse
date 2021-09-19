@@ -10,7 +10,8 @@ from collections import OrderedDict
 from random import randint, shuffle
 from jsonargparse_tests.base import *
 from jsonargparse.optionals import dump_preserve_order_support
-from jsonargparse.util import meta_keys, _suppress_stderr
+from jsonargparse.namespace import meta_keys
+from jsonargparse.util import _suppress_stderr
 
 
 class ParsersTests(TempDirTestCase):
@@ -22,7 +23,7 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual(6.4, parser.parse_args(['--nums.val2', '6.4']).nums.val2)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val1', '7.5']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val2', 'eight']))
-        self.assertEqual(9, vars(parser.parse_args(['--nums.val1', '9'], nested=False))['nums.val1'])
+        self.assertEqual(9, parser.parse_args(['--nums.val1', '9'])['nums.val1'])
 
 
     def test_parse_object(self):
@@ -264,7 +265,7 @@ class ArgumentFeaturesTests(unittest.TestCase):
         parser.add_argument('--ch2',
             choices=['v1', 'v2'])
         cfg = parser.parse_args(['--ch1', 'C', '--ch2', 'v1'])
-        self.assertEqual(strip_meta(cfg), {'ch1': 'C', 'ch2': 'v1'})
+        self.assertEqual(cfg.as_dict(), {'ch1': 'C', 'ch2': 'v1'})
         self.assertRaises(ParserError, lambda: parser.parse_args(['--ch1', 'D']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--ch2', 'v0']))
 
@@ -326,27 +327,27 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, lambda: subcommands.add_parser(''))
         self.assertRaises(ParserError, lambda: parser.parse_args(['c']))
 
-        cfg = namespace_to_dict(parser.get_defaults())
+        cfg = parser.get_defaults().as_dict()
         self.assertEqual(cfg, {'o1': 'o1_def', 'subcommand': None})
 
         parser.add_argument('--cfg', action=ActionConfigFile)
-        cfg = namespace_to_dict(parser.parse_args(['--cfg={"o1": "o1_arg"}', 'a', 'ap1_arg']))
+        cfg = parser.parse_args(['--cfg={"o1": "o1_arg"}', 'a', 'ap1_arg']).as_dict()
         self.assertEqual(cfg, {'a': {'ao1': 'ao1_def', 'ap1': 'ap1_arg'}, 'cfg': [None], 'o1': 'o1_arg', 'subcommand': 'a'})
 
-        cfg = namespace_to_dict(parser.parse_args(['--o1', 'o1_arg', 'a', 'ap1_arg']))
+        cfg = parser.parse_args(['--o1', 'o1_arg', 'a', 'ap1_arg'])
         self.assertEqual(cfg['o1'], 'o1_arg')
         self.assertEqual(cfg['subcommand'], 'a')
-        self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_arg', 'ao1': 'ao1_def'})
-        cfg = namespace_to_dict(parser.parse_args(['a', 'ap1_arg', '--ao1', 'ao1_arg'], with_meta=False))
-        self.assertEqual(cfg['a'], {'ap1': 'ap1_arg', 'ao1': 'ao1_arg'})
+        self.assertEqual(cfg['a'].as_dict(), {'ap1': 'ap1_arg', 'ao1': 'ao1_def'})
+        cfg = parser.parse_args(['a', 'ap1_arg', '--ao1', 'ao1_arg'])
+        self.assertEqual(cfg['a'].as_dict(), {'ap1': 'ap1_arg', 'ao1': 'ao1_arg'})
         self.assertRaises(KeyError, lambda: cfg['b'])
 
-        cfg = namespace_to_dict(parser.parse_args(['b', '--lev1.lev2.opt2', 'opt2_arg']))
-        cfg_def = namespace_to_dict(example_parser().get_defaults())
+        cfg = parser.parse_args(['b', '--lev1.lev2.opt2', 'opt2_arg']).as_dict()
+        cfg_def = example_parser().get_defaults().as_dict()
         cfg_def['lev1']['lev2']['opt2'] = 'opt2_arg'
         self.assertEqual(cfg['o1'], 'o1_def')
         self.assertEqual(cfg['subcommand'], 'b')
-        self.assertEqual(strip_meta(cfg['b']), cfg_def)
+        self.assertEqual(cfg['b'], cfg_def)
         self.assertRaises(KeyError, lambda: cfg['a'])
 
         parser.parse_args(['B'])
@@ -357,9 +358,9 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['b', '--unk']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['c']))
 
-        cfg = namespace_to_dict(parser.parse_string('{"a": {"ap1": "ap1_cfg"}}'))
+        cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}}').as_dict()
         self.assertEqual(cfg['subcommand'], 'a')
-        self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_cfg', 'ao1': 'ao1_def'})
+        self.assertEqual(cfg['a'], {'ap1': 'ap1_cfg', 'ao1': 'ao1_def'})
         self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'))
 
         with warnings.catch_warnings(record=True) as w:
@@ -374,7 +375,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertFalse(hasattr(cfg, 'a'))
 
         cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', 'a'])
-        cfg = namespace_to_dict(cfg)
+        cfg = cfg.as_dict()
         self.assertEqual(cfg, {'o1': 'o1_def', 'subcommand': 'a', 'cfg': [None], 'a': {'ap1': 'ap1_cfg', 'ao1': 'ao1_def'}})
         cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', 'b'])
         self.assertFalse(hasattr(cfg, 'a'))
@@ -385,22 +386,22 @@ class AdvancedFeaturesTests(unittest.TestCase):
         os.environ['APP_A__AO1'] = 'ao1_env'
         os.environ['APP_B__LEV1__LEV2__OPT2'] = 'opt2_env'
 
-        cfg = namespace_to_dict(parser.parse_args(['a'], env=True))
+        cfg = parser.parse_args(['a'], env=True).as_dict()
         self.assertEqual(cfg['o1'], 'o1_env')
         self.assertEqual(cfg['subcommand'], 'a')
-        self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_env', 'ao1': 'ao1_env'})
+        self.assertEqual(cfg['a'], {'ap1': 'ap1_env', 'ao1': 'ao1_env'})
         parser.default_env = True
-        cfg = namespace_to_dict(parser.parse_args(['b']))
+        cfg = parser.parse_args(['b']).as_dict()
         cfg_def['lev1']['lev2']['opt2'] = 'opt2_env'
         self.assertEqual(cfg['subcommand'], 'b')
-        self.assertEqual(strip_meta(cfg['b']), cfg_def)
+        self.assertEqual(cfg['b'], cfg_def)
 
         os.environ['APP_SUBCOMMAND'] = 'a'
 
-        cfg = namespace_to_dict(parser.parse_env())
+        cfg = parser.parse_env().as_dict()
         self.assertEqual(cfg['o1'], 'o1_env')
         self.assertEqual(cfg['subcommand'], 'a')
-        self.assertEqual(strip_meta(cfg['a']), {'ap1': 'ap1_env', 'ao1': 'ao1_env'})
+        self.assertEqual(cfg['a'], {'ap1': 'ap1_env', 'ao1': 'ao1_env'})
 
         for key in ['APP_O1', 'APP_A__AP1', 'APP_A__AO1', 'APP_B__LEV1__LEV2__OPT2', 'APP_SUBCOMMAND']:
             del os.environ[key]
@@ -425,11 +426,11 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args([]))
         self.assertRaises(ParserError, lambda: parser.parse_args(['a']))
 
-        cfg = namespace_to_dict(parser.parse_args(['a', 'b']))
+        cfg = parser.parse_args(['a', 'b']).as_dict()
         self.assertEqual(cfg, {'subcommand': 'a', 'a': {'subcommand': 'b', 'os1a': 'os1a_def', 'b': {'os2b': 'os2b_def'}}})
-        cfg = namespace_to_dict(parser.parse_args(['a', '--os1a=os1a_arg', 'b']))
+        cfg = parser.parse_args(['a', '--os1a=os1a_arg', 'b']).as_dict()
         self.assertEqual(cfg, {'subcommand': 'a', 'a': {'subcommand': 'b', 'os1a': 'os1a_arg', 'b': {'os2b': 'os2b_def'}}})
-        cfg = namespace_to_dict(parser.parse_args(['a', 'b', '--os2b=os2b_arg']))
+        cfg = parser.parse_args(['a', 'b', '--os2b=os2b_arg']).as_dict()
         self.assertEqual(cfg, {'subcommand': 'a', 'a': {'subcommand': 'b', 'os1a': 'os1a_def', 'b': {'os2b': 'os2b_arg'}}})
 
 
@@ -458,7 +459,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
     @responses_activate
     def test_urls(self):
         set_config_read_mode(urls_enabled=True)
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--cfg',
             action=ActionConfigFile)
         parser.add_argument('--parser',
@@ -479,7 +480,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
                 default={'c': 3, 'd': 4},
                 action=ActionJsonnet(ext_vars=None))
 
-        cfg1 = namespace_to_dict(parser.get_defaults())
+        cfg1 = parser.get_defaults().as_dict()
 
         base_url = 'http://example.com/'
         main_body = 'parser: '+base_url+'parser.yaml\n'
@@ -511,7 +512,6 @@ class AdvancedFeaturesTests(unittest.TestCase):
                           status=200)
 
         cfg2 = parser.parse_args(['--cfg', base_url+'main.yaml'], with_meta=False)
-        cfg2 = namespace_to_dict(cfg2)
         self.assertEqual(cfg1['parser'], cfg2['parser'])
         if jsonschema_support:
             self.assertEqual(cfg1['schema'], cfg2['schema'])
@@ -601,7 +601,7 @@ class OutputTests(TempDirTestCase):
 
 
     def test_save(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--parser',
             action=ActionParser(parser=example_parser()))
         if jsonschema_support:
@@ -624,53 +624,65 @@ class OutputTests(TempDirTestCase):
         outdir = os.path.join(self.tmpdir, 'output')
         os.mkdir(outdir)
         os.mkdir(indir)
-        main_file = os.path.join(indir, 'main.yaml')
-        parser_file = os.path.join(indir, 'parser.yaml')
-        schema_file = os.path.join(indir, 'schema.json')
-        jsonnet_file = os.path.join(indir, 'jsonnet.json')
-
+        main_file_in = os.path.join(indir, 'main.yaml')
+        parser_file_in = os.path.join(indir, 'parser.yaml')
+        schema_file_in = os.path.join(indir, 'schema.json')
+        jsonnet_file_in = os.path.join(indir, 'jsonnet.json')
+        main_file_out = os.path.join(outdir, 'main.yaml')
+        parser_file_out = os.path.join(outdir, 'parser.yaml')
+        schema_file_out = os.path.join(outdir, 'schema.json')
+        jsonnet_file_out = os.path.join(outdir, 'jsonnet.json')
         cfg1 = parser.get_defaults()
 
-        with open(main_file, 'w') as output_file:
+        with open(main_file_in, 'w') as output_file:
             output_file.write('parser: parser.yaml\n')
             if jsonschema_support:
                 output_file.write('schema: schema.json\n')
             if jsonnet_support:
                 output_file.write('jsonnet: jsonnet.json\n')
-        with open(parser_file, 'w') as output_file:
+        with open(parser_file_in, 'w') as output_file:
             output_file.write(example_parser().dump(cfg1.parser))
         if jsonschema_support:
-            with open(schema_file, 'w') as output_file:
-                output_file.write(json.dumps(namespace_to_dict(cfg1.schema))+'\n')
+            with open(schema_file_in, 'w') as output_file:
+                output_file.write(json.dumps(cfg1.schema)+'\n')
         if jsonnet_support:
-            with open(jsonnet_file, 'w') as output_file:
-                output_file.write(json.dumps(namespace_to_dict(cfg1.jsonnet))+'\n')
+            with open(jsonnet_file_in, 'w') as output_file:
+                output_file.write(json.dumps(cfg1.jsonnet)+'\n')
 
-        cfg2 = parser.parse_path(main_file, with_meta=True)
-        self.assertEqual(namespace_to_dict(cfg1), strip_meta(cfg2))
-        self.assertEqual(str(cfg2.parser.__path__), 'parser.yaml')
+        cfg2 = parser.parse_path(main_file_in, with_meta=True)  # TODO: cfg2.parser is dict instead of namespace, fix
+        self.assertEqual(cfg1.as_dict(), strip_meta(cfg2).as_dict())
+        self.assertEqual(str(cfg2.parser['__path__']), 'parser.yaml')
         if jsonschema_support:
-            self.assertEqual(str(cfg2.schema.__path__), 'schema.json')
+            self.assertEqual(str(cfg2.schema['__path__']), 'schema.json')
         if jsonnet_support:
-            self.assertEqual(str(cfg2.jsonnet.__path__), 'jsonnet.json')
+            self.assertEqual(str(cfg2.jsonnet['__path__']), 'jsonnet.json')
 
-        parser.save(cfg2, os.path.join(outdir, 'main.yaml'))
-        self.assertTrue(os.path.isfile(os.path.join(outdir, 'parser.yaml')))
+        parser.save(cfg2, main_file_out)
+        self.assertTrue(os.path.isfile(parser_file_out))
         if jsonschema_support:
-            self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.json')))
+            self.assertTrue(os.path.isfile(schema_file_out))
         if jsonnet_support:
-            self.assertTrue(os.path.isfile(os.path.join(outdir, 'jsonnet.json')))
+            self.assertTrue(os.path.isfile(jsonnet_file_out))
 
-        cfg3 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
-        self.assertEqual(namespace_to_dict(cfg1), namespace_to_dict(cfg3))
+        for file in [main_file_out, parser_file_out, schema_file_out, jsonnet_file_out]:
+            os.remove(file)
+        parser.save(cfg2.as_dict(), main_file_out)
+        self.assertTrue(os.path.isfile(parser_file_out))
+        if jsonschema_support:
+            self.assertTrue(os.path.isfile(schema_file_out))
+        if jsonnet_support:
+            self.assertTrue(os.path.isfile(jsonnet_file_out))
 
-        parser.save(cfg2, os.path.join(outdir, 'main.yaml'), multifile=False, overwrite=True)
-        cfg4 = parser.parse_path(os.path.join(outdir, 'main.yaml'), with_meta=False)
-        self.assertEqual(namespace_to_dict(cfg1), namespace_to_dict(cfg4))
+        cfg3 = parser.parse_path(main_file_out, with_meta=False)
+        self.assertEqual(cfg1.as_dict(), cfg3.as_dict())  # TODO: cfg3.parser is dict instead of namespace, fix
+
+        parser.save(cfg2, main_file_out, multifile=False, overwrite=True)
+        cfg4 = parser.parse_path(main_file_out, with_meta=False)
+        self.assertEqual(cfg1, cfg4)
 
         if jsonschema_support:
-            cfg2.schema.__path__ = Path(os.path.join(indir, 'schema.yaml'), mode='fc')
-            parser.save(cfg2, os.path.join(outdir, 'main.yaml'), overwrite=True)
+            cfg2.schema['__path__'] = Path(os.path.join(indir, 'schema.yaml'), mode='fc')
+            parser.save(cfg2, main_file_out, overwrite=True)
             self.assertTrue(os.path.isfile(os.path.join(outdir, 'schema.yaml')))
 
 
@@ -706,6 +718,7 @@ class OutputTests(TempDirTestCase):
         parser.save(cfg, 'memory://config.yaml', multifile=False)
         path = Path('memory://config.yaml', mode='sr')
         self.assertEqual(cfg, parser.parse_string(path.get_content()))
+        self.assertRaises(NotImplementedError, lambda: parser.save(cfg, 'memory://config.yaml', multifile=True))
 
 
     def test_save_failures(self):
@@ -746,7 +759,7 @@ class OutputTests(TempDirTestCase):
         with redirect_stdout(out), self.assertRaises(SystemExit):
             parser.parse_args(['--print_config=skip_null'])
         outval = yaml.safe_load(out.getvalue())
-        self.assertEqual(outval, {'g1': {'v2': '2'}, 'v1': 1})
+        self.assertEqual(outval, {'g1': {'v2': '2'}, 'g2': {}, 'v1': 1})
 
         self.assertRaises(ParserError, lambda: parser.parse_args(['--print_config=bad']))
 
@@ -888,7 +901,7 @@ class OtherTests(unittest.TestCase):
         parser.add_argument('--n', action=ActionParser(parser=nested_parser))
         parser.set_defaults({'g1.v2': 'b', 'n.g2.v3': 'c'}, v1='a')
         cfg = parser.get_defaults()
-        self.assertEqual(namespace_to_dict(cfg), {'v1': 'a', 'g1': {'v2': 'b'}, 'n': {'g2': {'v3': 'c'}}})
+        self.assertEqual(cfg.as_dict(), {'v1': 'a', 'g1': {'v2': 'b'}, 'n': {'g2': {'v3': 'c'}}})
         self.assertEqual(parser.get_default('v1'), cfg.v1)
         self.assertEqual(parser.get_default('g1.v2'), cfg.g1.v2)
         self.assertEqual(parser.get_default('n.g2.v3'), cfg.n.g2.v3)
@@ -987,6 +1000,11 @@ class OtherTests(unittest.TestCase):
     def test_parse_known_args(self):
         parser = ArgumentParser()
         self.assertRaises(NotImplementedError, lambda: parser.parse_known_args([]))
+
+
+    def test_parse_args_invalid_args(self):
+        parser = ArgumentParser(error_handler=None)
+        self.assertRaises(ParserError, lambda: parser.parse_args([{}]))
 
 
 if __name__ == '__main__':

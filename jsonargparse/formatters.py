@@ -16,8 +16,8 @@ from .actions import (
     filter_default_actions,
 )
 from .optionals import import_ruyaml
-from .typehints import ActionTypeHint, type_to_str
-from .util import _get_env_var, _get_key_value
+from .typehints import ActionTypeHint, LazyInitBaseClass, type_to_str
+from .util import _get_env_var
 
 
 __all__ = ['DefaultHelpFormatter']
@@ -96,11 +96,13 @@ class DefaultHelpFormatter(HelpFormatter):
             params['type'] = type_str
         if 'default' in params:
             if hasattr(self, 'defaults'):
-                params['default'] = _get_key_value(self.defaults, action.dest)
+                params['default'] = self.defaults[action.dest]
             if params['default'] is None:
                 params['default'] = 'null'
             elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):
                 params['default'] = action.default.name
+            elif isinstance(params['default'], LazyInitBaseClass):
+                params['default'] = action.default.lazy_get_init_data().as_dict()
         return PercentTemplate(self._get_help_string(action)).safe_substitute(params)
 
 
@@ -152,7 +154,7 @@ class DefaultHelpFormatter(HelpFormatter):
         def set_comments(cfg, prefix='', depth=0):
             for key in cfg.keys():
                 full_key = (prefix+'.' if prefix else '')+key
-                action = _find_action(self._parser, full_key, within_subcommands=True)
+                action = _find_action(self._parser, full_key)
                 if isinstance(action, tuple):
                     action = action[0]
                 text = None

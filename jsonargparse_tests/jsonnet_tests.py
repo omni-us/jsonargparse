@@ -71,8 +71,8 @@ class JsonnetTests(TempDirTestCase):
         cfg = parser.parse_args(['--cfg', jsonnet_file])
         self.assertEqual(654, cfg.param)
         self.assertEqual(9, len(cfg.records))
-        self.assertEqual('#8', cfg.records[-2].ref)
-        self.assertEqual(15.5, cfg.records[-2].val)
+        self.assertEqual('#8', cfg.records[-2]['ref'])
+        self.assertEqual(15.5, cfg.records[-2]['val'])
 
 
     def test_ActionJsonnet(self):
@@ -83,13 +83,13 @@ class JsonnetTests(TempDirTestCase):
             action=ActionJsonnet(ext_vars='input.ext_vars', schema=json.dumps(example_schema)))
 
         cfg2 = parser.parse_args(['--input.ext_vars', '{"param": 123}', '--input.jsonnet', example_2_jsonnet])
-        self.assertEqual(123, cfg2.input.jsonnet.param)
-        self.assertEqual(9, len(cfg2.input.jsonnet.records))
-        self.assertEqual('#8', cfg2.input.jsonnet.records[-2].ref)
-        self.assertEqual(15.5, cfg2.input.jsonnet.records[-2].val)
+        self.assertEqual(123, cfg2.input.jsonnet['param'])
+        self.assertEqual(9, len(cfg2.input.jsonnet['records']))
+        self.assertEqual('#8', cfg2.input.jsonnet['records'][-2]['ref'])
+        self.assertEqual(15.5, cfg2.input.jsonnet['records'][-2]['val'])
 
         cfg1 = parser.parse_args(['--input.jsonnet', example_1_jsonnet])
-        self.assertEqual(cfg1.input.jsonnet.records, cfg2.input.jsonnet.records)
+        self.assertEqual(cfg1.input.jsonnet['records'], cfg2.input.jsonnet['records'])
 
         self.assertRaises(ParserError, lambda: parser.parse_args(['--input.ext_vars', '{"param": "a"}', '--input.jsonnet', example_2_jsonnet]))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--input.jsonnet', example_2_jsonnet]))
@@ -116,7 +116,7 @@ class JsonnetTests(TempDirTestCase):
         os.mkdir(outdir)
 
         cfg = parser.parse_args(['--ext_vars', '{"param": 123}', '--jsonnet', jsonnet_file])
-        self.assertEqual(str(cfg.jsonnet.__path__), jsonnet_file)
+        self.assertEqual(str(cfg.jsonnet['__path__']), jsonnet_file)
 
         parser.save(cfg, outyaml)
         cfg2 = parser.parse_args(['--cfg', outyaml])
@@ -156,10 +156,10 @@ class JsonnetTests(TempDirTestCase):
 
         cfg = parser.parse_args(['--ext_vars', '{"param": 123}'])
         parsed = ActionJsonnet(schema=None).parse(example_2_jsonnet, ext_vars=cfg.ext_vars)
-        self.assertEqual(123, parsed.param)
-        self.assertEqual(9, len(parsed.records))
-        self.assertEqual('#8', parsed.records[-2].ref)
-        self.assertEqual(15.5, parsed.records[-2].val)
+        self.assertEqual(123, parsed['param'])
+        self.assertEqual(9, len(parsed['records']))
+        self.assertEqual('#8', parsed['records'][-2]['ref'])
+        self.assertEqual(15.5, parsed['records'][-2]['val'])
 
         cfg2 = parser.parse_object({'ext_vars': Namespace(param=123)})
         self.assertEqual(cfg.ext_vars, cfg2.ext_vars)

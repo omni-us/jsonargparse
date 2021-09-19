@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-from jsonargparse.namespace import ArgparseNamespace, Namespace
+from jsonargparse.namespace import ArgparseNamespace, Namespace, namespace_to_dict
 
 
 class NamespaceTests(unittest.TestCase):
@@ -46,15 +46,26 @@ class NamespaceTests(unittest.TestCase):
         del ns['x.y']
         self.assertEqual(Namespace(x=Namespace()), ns)
 
+    def test_get(self):
+        ns = Namespace()
+        ns['x.y'] = 1
+        self.assertEqual(1, ns.get('x.y'))
+        self.assertEqual(Namespace(y=1), ns.get('x'))
+        self.assertEqual(2, ns.get('z', 2))
+        self.assertIsNone(ns.get('z'))
+
+    def test_pop(self):
+        ns = Namespace()
+        ns['x.y.z'] = 1
+        self.assertEqual(1, ns.pop('x.y.z'))
+        self.assertEqual(ns, Namespace(x=Namespace(y=Namespace())))
+
     def test_nested_item_invalid_set(self):
         ns = Namespace()
         with self.assertRaises(KeyError):
             ns['x.'] = 1
         with self.assertRaises(KeyError):
             ns['x .y'] = 2
-        ns['x.y'] = 3
-        with self.assertRaises(KeyError):
-            ns['x.y.z'] = 4
 
     def test_nested_key_in(self):
         ns = Namespace()
@@ -66,6 +77,8 @@ class NamespaceTests(unittest.TestCase):
         self.assertFalse('x.a' in ns)
         self.assertFalse('x.y.a' in ns)
         self.assertFalse('x.y.z.a' in ns)
+        self.assertFalse('x..y' in ns)
+        self.assertFalse(123 in ns)
 
     def test_items_generator(self):
         ns = Namespace()
@@ -94,6 +107,11 @@ class NamespaceTests(unittest.TestCase):
         values = list(ns.values())
         self.assertEqual(values, [1, 2, 3, {'x': 4, 'y': 5}])
 
+    def test_namespace_from_dict(self):
+        dic = {'a': 1, 'b': {'c': 2}}
+        ns = Namespace(dic)
+        self.assertEqual(ns, Namespace(a=1, b={'c': 2}))
+
     def test_as_dict(self):
         ns = Namespace()
         ns['w'] = 1
@@ -101,6 +119,14 @@ class NamespaceTests(unittest.TestCase):
         ns['x.z'] = 3
         self.assertEqual(ns.as_dict(), {'w': 1, 'x': {'y': 2, 'z': 3}})
         self.assertEqual(Namespace().as_dict(), {})
+
+    def test_as_flat(self):
+        ns = Namespace()
+        ns['w'] = 1
+        ns['x.y.z'] = 2
+        flat = ns.as_flat()
+        self.assertIsInstance(flat, ArgparseNamespace)
+        self.assertEqual(vars(flat), {'w': 1, 'x.y.z': 2})
 
     def test_clone(self):
         ns = Namespace()
@@ -118,6 +144,10 @@ class NamespaceTests(unittest.TestCase):
         ns_to.update(ns_from)
         self.assertEqual(ns_to, Namespace(a=1, b=None, c=3))
 
+    def test_update_invalid(self):
+        ns = Namespace()
+        self.assertRaises(KeyError, lambda: ns.update(123))
+
     def test_init_from_argparse_flat_namespace(self):
         argparse_ns = ArgparseNamespace()
         setattr(argparse_ns, 'w', 0)
@@ -130,6 +160,16 @@ class NamespaceTests(unittest.TestCase):
     def test_init_invalid(self):
         self.assertRaises(ValueError, lambda: Namespace(1))
         self.assertRaises(ValueError, lambda: Namespace(ArgparseNamespace(), x=1))
+
+    def test_namespace_to_dict(self):
+        ns = Namespace()
+        ns['w'] = 1
+        ns['x.y'] = 2
+        ns['x.z'] = 3
+        dic1 = namespace_to_dict(ns)
+        dic2 = ns.as_dict()
+        self.assertEqual(dic1, dic2)
+        self.assertFalse(dic1 is dic2)
 
 
 if __name__ == '__main__':

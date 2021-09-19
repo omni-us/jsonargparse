@@ -3,18 +3,17 @@
 import json
 import os
 import yaml
-from argparse import Action, Namespace
+from argparse import Action
 from typing import Dict, Union
 
 from .actions import _is_action_value_list
+from .namespace import Namespace, strip_meta
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     import_jsonschema,
     jsonschemaValidationError,
 )
 from .util import (
-    namespace_to_dict,
-    strip_meta,
     yamlParserError,
     yamlScannerError,
     _load_config,
@@ -92,7 +91,7 @@ class ActionJsonSchema(Action):
             try:
                 val, fpath = _load_config(val, enable_path=self._enable_path, flat_namespace=False)
                 if isinstance(val, Namespace):
-                    val = namespace_to_dict(val)
+                    val = val.as_dict()
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 self._validator.validate(val)
                 if path_meta is not None:

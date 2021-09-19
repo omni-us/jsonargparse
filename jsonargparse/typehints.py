@@ -3,9 +3,10 @@ import copy
 import inspect
 import os
 import re
+import typing
 import warnings
 import yaml
-from argparse import Action, Namespace
+from argparse import Action
 from collections.abc import Iterable as abcIterable
 from collections.abc import Mapping as abcMapping
 from collections.abc import MutableMapping as abcMutableMapping
@@ -32,12 +33,8 @@ from typing import (
     Union,
 )
 
-try:
-    from typing import Literal  # type: ignore
-except ImportError:
-    Literal = False  # type: ignore
-
 from .actions import _is_action_value_list
+from .namespace import Namespace
 from .typing import get_import_path, is_final_class, object_path_serializer, registered_types
 from .optionals import (
     argcomplete_warn_redraw_prompt,
@@ -49,9 +46,6 @@ from .util import (
     import_object,
     ParserError,
     Path,
-    namespace_to_dict,
-    get_key_value_from_flat_dict,
-    update_key_value_in_flat_dict,
     NoneType,
     yamlParserError,
     yamlScannerError,
@@ -62,6 +56,9 @@ from .util import (
 
 
 __all__ = ['ActionTypeHint', 'lazy_instance']
+
+
+Literal = getattr(typing, 'Literal', False)
 
 
 root_types = {
@@ -204,29 +201,24 @@ class ActionTypeHint(Action):
             cfg, val, opt_str = args[1:]
             if isinstance(opt_str, str):
                 if opt_str.endswith('.class_path'):
-                    cfg_dest = get_key_value_from_flat_dict(vars(cfg), self.dest)
+                    cfg_dest = cfg.get(self.dest, Namespace())
                     if cfg_dest.get('class_path') == val:
                         return
-                    elif cfg_dest.get('init_args') is not None and cfg_dest.get('init_args') != {}:
+                    elif cfg_dest.get('init_args') is not None and cfg_dest.get('init_args') != Namespace():
                         warnings.warn(
-                            'Argument ' + opt_str + '=' + val + ' implies discarding init_args ' + str(cfg_dest.get('init_args')) +
+                            'Argument ' + opt_str + '=' + val + ' implies discarding init_args ' + str(cfg_dest.get('init_args').as_dict()) +
                             ' defined for class_path ' + cfg_dest.get('class_path')
                         )
-                    val = {'class_path': val}
+                    val = Namespace(class_path=val)
                 elif '.init_args.' in opt_str:
                     match = re.match(r'.+\.init_args\.([^.]+)$', opt_str)
-                    if match and isinstance(getattr(cfg, self.dest, None), dict):
-                        init_args = getattr(cfg, self.dest).get('init_args', {})
-                        init_args[match.groups()[0]] = val
-                        val = getattr(cfg, self.dest)
-                    else:
-                        cfg_dest = get_key_value_from_flat_dict(vars(cfg), self.dest)
-                        init_args = cfg_dest.get('init_args', {})
-                        init_args[match.groups()[0]] = val
-                        val = cfg_dest
+                    cfg_dest = cfg.get(self.dest, Namespace())
+                    init_args = cfg_dest.get('init_args', Namespace())
+                    init_args[match.groups()[0]] = val
+                    val = cfg_dest
             val = self._check_type(val)
         if 'cfg_dest' in locals():
-            update_key_value_in_flat_dict(vars(args[1]), self.dest, val)
+            args[1].update(val, self.dest)
         else:
             setattr(args[1], self.dest, val)
 
@@ -257,7 +249,7 @@ class ActionTypeHint(Action):
                         raise ex
                 if path_meta is not None:
                     val['__path__'] = path_meta
-                if isinstance(val, dict) and config_path is not None:
+                if isinstance(val, (Namespace, dict)) and config_path is not None:
                     val['__path__'] = config_path
                 value[num] = val
             except (TypeError, ValueError) as ex:
@@ -266,7 +258,7 @@ class ActionTypeHint(Action):
         return value if islist else value[0]
 
 
-    def _instantiate_classes(self, val):
+    def instantiate_classes(self, val):
         sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
         return adapt_typehints(val, self._typehint, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs)
 
@@ -424,37 +416,39 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
 
     # Final class
     elif is_final_class(typehint):
-        if not isinstance(val, dict):
-            raise ValueError('Expected a Dict but got "'+str(val)+'"')
+        if isinstance(val, dict):
+            val = Namespace(val)
+        if not isinstance(val, Namespace):
+            raise ValueError('Expected a Namespace but got "'+str(val)+'"')
         val = adapt_class_type(typehint, val, serialize, instantiate_classes, sub_add_kwargs)
 
     # Subclass
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):
         if isinstance(val, typehint):
-            if isinstance(val, LazyInitBaseClass):
-                val = val.get_init_dict()
-            elif serialize:
+            if serialize:
                 val = str(val)
                 warnings.warn(
                     'Not possible to serialize an instance of ' + str(typehint.__name__) + '. It will be represented as the '
-                    'string ' + val + '. If this was set as a default, consider setting a dict or using lazy_instance.'
+                    'string ' + val + '. If this was set as a default, consider setting using lazy_instance.'
                 )
             return val
         if serialize and isinstance(val, str):
             return val
-        if not (isinstance(val, str) or (isinstance(val, dict) and 'class_path' in val) or (isinstance(val, Namespace) and hasattr(val, 'class_path'))):
-            raise ValueError('Type '+str(typehint)+' expects an str or a Dict with a class_path entry but got "'+str(val)+'"')
+        if not (isinstance(val, str) or is_class_object(val)):
+            raise ValueError('Type '+str(typehint)+' expects an str or a Dict/Namespace with a class_path entry but got "'+str(val)+'"')
         try:
-            if isinstance(val, Namespace):
-                val = namespace_to_dict(val)
             if isinstance(val, str):
                 val_class = import_object(val)
-                val = {'class_path': val}
+                val = Namespace(class_path=val)
             else:
                 val_class = import_object(val['class_path'])
+                if isinstance(val, dict):
+                    val = Namespace(val)
+                if isinstance(val.get('init_args'), dict):
+                    val['init_args'] = Namespace(val['init_args'])
             if not _issubclass(val_class, typehint):
                 raise ValueError('"'+val['class_path']+'" is not a subclass of '+typehint.__name__)
-            init_args = val.get('init_args', {})
+            init_args = val.get('init_args', Namespace())
             adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs)
             if instantiate_classes and sub_add_kwargs.get('instantiate', True):
                 val = adapted
@@ -468,9 +462,13 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
     return val
 
 
+def is_class_object(val):
+    return isinstance(val, (dict, Namespace)) and 'class_path' in val
+
+
 def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs):
     from .core import ArgumentParser
-    parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+    parser = ArgumentParser(error_handler=None)
     parser.add_class_arguments(val_class, **sub_add_kwargs)
 
     # No need to re-create the linked arg but just "inform" the corresponding parser actions that it exists upstream.
@@ -545,7 +543,7 @@ class LazyInitBaseClass:
         self._lazy_kwargs = lazy_kwargs
         self._lazy_methods = {}
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
-            if name in {'__init__', '_lazy_init', '_lazy_init_then_call_method', 'get_init_dict'}:
+            if name in {'__init__', '_lazy_init', '_lazy_init_then_call_method', 'lazy_get_init_data'}:
                 continue
             self._lazy_methods[name] = method
             setattr(self, name, partial(self._lazy_init_then_call_method, method_name=name))
@@ -559,11 +557,11 @@ class LazyInitBaseClass:
         self._lazy_init()
         return getattr(self, method_name)(*args, **kwargs)
 
-    def get_init_dict(self):
-        init_dict = {'class_path': self._lazy_class_path}
+    def lazy_get_init_data(self):
+        init = Namespace(class_path=self._lazy_class_path)
         if len(self._lazy_kwargs) > 0:
-            init_dict['init_args'] = self._lazy_kwargs
-        return init_dict
+            init['init_args'] = Namespace(self._lazy_kwargs)
+        return init
 
 
 ClassType = TypeVar('ClassType')
@@ -572,8 +570,8 @@ ClassType = TypeVar('ClassType')
 def lazy_instance(class_type: Type[ClassType], **kwargs) -> ClassType:
     """Instantiates a lazy instance of the given type.
 
-    By lazy it is meant that the init is delayed unit the first time that a
-    method of the instance is called. It also provides a `get_init_dict` method
+    By lazy it is meant that the __init__ is delayed unit the first time that a
+    method of the instance is called. It also provides a `lazy_get_init_data` method
     useful for serializing.
 
     Note: Only supported in CPython.
@@ -582,7 +580,9 @@ def lazy_instance(class_type: Type[ClassType], **kwargs) -> ClassType:
         class_type: The class to instantiate.
         **kwargs: Any keyword arguments to use for instantiation.
     """
-    class LazyInitClass(LazyInitBaseClass, class_type):  # type: ignore
-        pass
-
+    LazyInitClass = type(
+        'LazyInstance_'+class_type.__name__,
+        (LazyInitBaseClass, class_type),
+        {'__doc__': 'Class for lazy instances of '+str(class_type)},
+    )
     return LazyInitClass(class_type, kwargs)

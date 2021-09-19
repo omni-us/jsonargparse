@@ -3,10 +3,11 @@
 import json
 import yaml
 from typing import Optional, Union, Dict, Tuple, Any
-from argparse import Action, Namespace
+from argparse import Action
 
 from .actions import _is_action_value_list
 from .jsonschema import ActionJsonSchema
+from .namespace import Namespace
 from .optionals import (
     import_jsonschema,
     import_jsonnet,
@@ -14,15 +15,10 @@ from .optionals import (
     jsonschemaValidationError,
 )
 from .util import (
-    dict_to_namespace,
-    namespace_to_dict,
     yamlParserError,
     yamlScannerError,
     ParserError,
     Path,
-    _get_key_value,
-    _flat_namespace_to_dict,
-    _dict_to_flat_namespace,
 )
 
 
@@ -107,10 +103,8 @@ class ActionJsonnet(Action):
         ext_vars = {}
         if self._ext_vars is not None:
             try:
-                if isinstance(cfg, dict):
-                    cfg = _flat_namespace_to_dict(_dict_to_flat_namespace(cfg))
-                ext_vars = _get_key_value(cfg, self._ext_vars)
-            except (KeyError, AttributeError):
+                ext_vars = cfg[self._ext_vars]
+            except KeyError:
                 pass
         if not islist:
             value = [value]
@@ -129,7 +123,7 @@ class ActionJsonnet(Action):
 
     @staticmethod
     def split_ext_vars(
-        ext_vars: Optional[Union[Dict[str, Any], Namespace]],
+        ext_vars: Optional[Union[Dict[str, Any], Namespace]],  # TODO: Can this still be namespace?
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """Splits an ext_vars dict into the ext_codes and ext_vars required by jsonnet.
 
@@ -138,8 +132,6 @@ class ActionJsonnet(Action):
         """
         if ext_vars is None:
             ext_vars = {}
-        elif isinstance(ext_vars, Namespace):
-            ext_vars = namespace_to_dict(ext_vars)
         ext_codes = {k: json.dumps(v) for k, v in ext_vars.items() if not isinstance(v, str)}
         ext_vars = {k: v for k, v in ext_vars.items() if isinstance(v, str)}
         return ext_vars, ext_codes
@@ -150,7 +142,7 @@ class ActionJsonnet(Action):
         jsonnet: Union[str, Path],
         ext_vars: Union[Dict[str, Any], Namespace] = None,
         with_meta: bool = False,
-    ) -> Namespace:
+    ) -> Dict:
         """Method that can be used to parse jsonnet independent from an ArgumentParser.
 
         Args:
@@ -183,7 +175,8 @@ class ActionJsonnet(Action):
         if self._validator is not None:
             self._validator.validate(values)
         if with_meta:
-            if isinstance(values, dict) and fpath is not None:
+            #if isinstance(values, dict) and fpath is not None:
+            if fpath is not None:  # TODO: test with narchi
                 values['__path__'] = fpath
             values['__orig__'] = snippet
-        return dict_to_namespace(values)
+        return values
