@@ -77,7 +77,7 @@ default_dump_json_kwargs = {
 }
 
 
-class _ActionsContainer(SignatureArguments, argparse._ActionsContainer):
+class _ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerProperty):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
     def __init__(self, *args, **kwargs):
@@ -166,7 +166,7 @@ class _ArgumentGroup(_ActionsContainer, argparse._ArgumentGroup):
     parser = None  # type: Union[ArgumentParser, None]
 
 
-class ArgumentParser(_ActionsContainer, argparse.ArgumentParser, LoggerProperty):
+class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
     """Parser for command line, yaml/jsonnet files and environment variables."""
 
     groups = None  # type: Dict[str, argparse._ArgumentGroup]

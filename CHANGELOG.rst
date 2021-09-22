@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v3.19.4 (2021-??-??)
+--------------------
+
+Fixed
+^^^^^
+- self.logger undefined on SignatureArguments #92.
+
+
 v3.19.3 (2021-09-16)
 --------------------
 
