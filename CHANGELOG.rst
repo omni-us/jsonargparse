@@ -16,6 +16,7 @@ v3.19.4 (2021-??-??)
 Fixed
 ^^^^^
 - self.logger undefined on SignatureArguments #92.
+- Fix linking for deep targets #75.
 
 
 v3.19.3 (2021-09-16)
