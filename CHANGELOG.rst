@@ -17,6 +17,7 @@ Fixed
 ^^^^^
 - self.logger undefined on SignatureArguments #92.
 - Fix linking for deep targets #75.
+- Fix import_object failing with "not enough values to unpack" #94.
 
 
 v3.19.3 (2021-09-16)

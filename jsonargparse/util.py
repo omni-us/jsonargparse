@@ -290,7 +290,7 @@ def _issubclass(cls, class_or_tuple):
 
 def import_object(name):
     """Returns an object in a module given its dot import path."""
-    if not isinstance(name, str):
+    if not isinstance(name, str) or '.' not in name:
         raise ValueError('Expected a dot import path string')
     name_module, name_object = name.rsplit('.', 1)
     module = __import__(name_module, fromlist=[name_object])
