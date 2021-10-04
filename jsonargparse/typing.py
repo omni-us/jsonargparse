@@ -187,6 +187,10 @@ def restricted_string_type(
     )
 
 
+def _is_path_type(value, type_class):
+    return isinstance(value, Path)
+
+
 def path_type(
     mode: str,
     docstring: Optional[str] = None,
@@ -226,7 +230,7 @@ def path_type(
     restricted_type = type(name, (PathType, str), {})
     if docstring is not None:
         restricted_type.__doc__ = docstring
-    add_type(restricted_type, register_key)
+    add_type(restricted_type, register_key, type_check=_is_path_type)
 
     return restricted_type
 
@@ -288,12 +292,15 @@ def register_type(
         registered_types[uniqueness_key] = type_class
 
 
-def add_type(type_class: Type, uniqueness_key: Optional[Tuple]):
+def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Callable = None):
     assert uniqueness_key not in registered_types
     if type_class.__name__ in globals():
         raise ValueError('Type name "'+type_class.__name__+'" clashes with name already defined in jsonargparse.typing.')
     globals()[type_class.__name__] = type_class
-    register_type(type_class, type_class._type, uniqueness_key=uniqueness_key)
+    kwargs = {'uniqueness_key': uniqueness_key}
+    if type_check is not None:
+        kwargs['type_check'] = type_check  # type: ignore
+    register_type(type_class, type_class._type, **kwargs)  # type: ignore
 
 
 def final(cls):

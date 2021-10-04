@@ -442,6 +442,15 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--data=does-not-exist.yaml']))
 
 
+    def test_default_path_unregistered_type(self):
+        parser = ArgumentParser()
+        parser.add_argument('--path',
+                            type=path_type('drw', skip_check=True),
+                            default=Path('test', mode='drw', skip_check=True))
+        cfg = parser.parse_args([])
+        self.assertEqual('path: test\n', parser.dump(cfg))
+
+
     def test_class_type_with_default_config_files(self):
         config = {
             'class_path': 'calendar.Calendar',

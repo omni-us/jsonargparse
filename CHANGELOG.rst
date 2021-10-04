@@ -10,7 +10,7 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v3.19.4 (2021-??-??)
+v3.19.4 (2021-10-04)
 --------------------
 
 Fixed
@@ -18,6 +18,7 @@ Fixed
 - self.logger undefined on SignatureArguments #92.
 - Fix linking for deep targets #75.
 - Fix import_object failing with "not enough values to unpack" #94.
+- Yaml representer error when dumping unregistered default path type.
 
 
 v3.19.3 (2021-09-16)
