@@ -1,4 +1,5 @@
 """Action to support type hints."""
+
 import copy
 import inspect
 import os
@@ -39,7 +40,6 @@ from .typing import get_import_path, is_final_class, object_path_serializer, reg
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     files_completer,
-    ModuleNotFound,
 )
 from .util import (
     change_to_path_dir,
@@ -81,8 +81,13 @@ leaf_types = {
     NoneType,
 }
 
-not_subclass_types = set(k for k in registered_types.keys() if not isinstance(k, tuple))  # type: Set
+not_subclass_types: Set = set(k for k in registered_types.keys() if not isinstance(k, tuple))
 not_subclass_types = not_subclass_types.union(leaf_types).union(root_types)
+
+tuple_set_origin_types = {Tuple, tuple, Set, set, frozenset, MutableSet, abcSet, abcMutableSet}
+sequence_origin_types = {List, list, Iterable, Sequence, MutableSequence, abcIterable, abcSequence,
+                         abcMutableSequence}
+mapping_origin_types = {Dict, dict, Mapping, MutableMapping, abcMapping, abcMutableMapping}
 
 
 class ActionTypeHint(Action):
@@ -105,7 +110,7 @@ class ActionTypeHint(Action):
         """
         if typehint is not None:
             if not self.is_supported_typehint(typehint, full=True):
-                raise ValueError('Unsupported type hint '+str(typehint)+'.')
+                raise ValueError(f'Unsupported type hint {typehint}.')
             self._typehint = typehint
             self._enable_path = False if is_optional(typehint, Path) else enable_path
         elif '_typehint' not in kwargs:
@@ -154,6 +159,16 @@ class ActionTypeHint(Action):
     @staticmethod
     def is_subclass_typehint(typehint):
         return ActionTypeHint.is_class_typehint(typehint, True)
+
+
+    @staticmethod
+    def is_mapping_class_typehint(typehint, only_subclasses=False):
+        if isinstance(typehint, Action):
+            typehint = getattr(typehint, '_typehint', None)
+        typehint_origin = getattr(typehint, '__origin__', None)
+        if typehint_origin not in mapping_origin_types:
+            return False
+        return ActionTypeHint.is_class_typehint(getattr(typehint, '__args__')[1], only_subclasses=only_subclasses)
 
 
     @staticmethod
@@ -206,8 +221,8 @@ class ActionTypeHint(Action):
                         return
                     elif cfg_dest.get('init_args') is not None and cfg_dest.get('init_args') != Namespace():
                         warnings.warn(
-                            'Argument ' + opt_str + '=' + val + ' implies discarding init_args ' + str(cfg_dest.get('init_args').as_dict()) +
-                            ' defined for class_path ' + cfg_dest.get('class_path')
+                            f'Argument {opt_str}={val} implies discarding init_args {cfg_dest.get("init_args").as_dict()} '
+                            f'defined for class_path {cfg_dest.get("class_path")}'
                         )
                     val = Namespace(class_path=val)
                 elif '.init_args.' in opt_str:
@@ -231,7 +246,7 @@ class ActionTypeHint(Action):
             try:
                 orig_val = val
                 try:
-                    val, config_path = _load_config(val, enable_path=self._enable_path, flat_namespace=False)
+                    val, config_path = _load_config(val, enable_path=self._enable_path)
                 except (yamlParserError, yamlScannerError):
                     config_path = None
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
@@ -244,7 +259,7 @@ class ActionTypeHint(Action):
                         val = adapt_typehints(orig_val, self._typehint, sub_add_kwargs=sub_add_kwargs)
                     else:
                         if self._enable_path and config_path is None and isinstance(orig_val, str):
-                            msg = '\n- Expected a config path but "'+orig_val+'" either not accessible or invalid.\n- '
+                            msg = f'\n- Expected a config path but "{orig_val}" either not accessible or invalid.\n- '
                             raise type(ex)(msg+str(ex)) from ex
                         raise ex
                 if path_meta is not None:
@@ -253,14 +268,24 @@ class ActionTypeHint(Action):
                     val['__path__'] = config_path
                 value[num] = val
             except (TypeError, ValueError) as ex:
-                elem = '' if not islist else ' element '+str(num+1)
-                raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex)) from ex
+                elem = '' if not islist else f' element {num+1}'
+                raise TypeError(f'Parser key "{self.dest}"{elem}: {ex}') from ex
         return value if islist else value[0]
 
 
     def instantiate_classes(self, val):
         sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
         return adapt_typehints(val, self._typehint, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs)
+
+
+    @staticmethod
+    def get_class_parser(val_class, sub_add_kwargs=None):
+        if isinstance(val_class, str):
+            val_class = import_object(val_class)
+        from .core import ArgumentParser
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(val_class, **(sub_add_kwargs or {}))
+        return parser
 
 
     def completer(self, prefix, **kwargs):
@@ -306,19 +331,19 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             val = adapt_typehints(val, type_val, **adapt_kwargs)
         elif isinstance(val, str):
             try:
-                val = _load_config(val, enable_path=False, flat_namespace=False)[0]
+                val, _ = _load_config(val, enable_path=False)
             except (yamlParserError, yamlScannerError):
                 pass
 
     # Literal
     elif typehint_origin == Literal:
         if val not in subtypehints:
-            raise ValueError('Expected a '+str(typehint)+' but got "'+str(val)+'"')
+            raise ValueError(f'Expected a {typehint} but got "{val}"')
 
     # Basic types
     elif typehint in leaf_types:
         if not isinstance(val, typehint):
-            raise ValueError('Expected a '+str(typehint)+' but got "'+str(val)+'"')
+            raise ValueError(f'Expected a {typehint} but got "{val}"')
 
     # Registered types
     elif typehint in registered_types:
@@ -337,8 +362,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             if isinstance(val, typehint):
                 val = val.name
             else:
-                if val not in typehint:
-                    raise ValueError('Value "'+str(val)+'" is not a valid member name for the enum "'+str(typehint)+'"')
+                if val not in typehint.__members__:
+                    raise ValueError(f'Value "{val}" is not a valid member name for the enum "{typehint}"')
         elif not serialize and not isinstance(val, typehint):
             val = typehint[val]
 
@@ -351,7 +376,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             val = import_object(val)
             if (typehint in {Type, type} and not isinstance(val, type)) or \
                (typehint not in {Type, type} and not _issubclass(val, subtypehints[0])):
-                raise ValueError('Value "'+str(path)+'" is not a '+str(typehint)+'.')
+                raise ValueError(f'Value "{path}" is not a {typehint}.')
 
     # Union
     elif typehint_origin == Union:
@@ -364,19 +389,19 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 vals.append(ex)
         if all(isinstance(v, Exception) for v in vals):
             e = indent_text('\n- '.join(str(v) for v in ['']+vals))
-            raise ValueError('Value "'+str(val)+'" does not validate against any of the types in '+str(typehint)+':'+e)
+            raise ValueError(f'Value "{val}" does not validate against any of the types in {typehint}:{e}')
         val = [v for v in vals if not isinstance(v, Exception)][0]
 
     # Tuple or Set
-    elif typehint_origin in {Tuple, tuple, Set, set, frozenset, MutableSet, abcSet, abcMutableSet}:
+    elif typehint_origin in tuple_set_origin_types:
         if not isinstance(val, (list, tuple, set)):
-            raise ValueError('Expected a '+str(typehint_origin)+' but got "'+str(val)+'"')
+            raise ValueError(f'Expected a {typehint_origin} but got "{val}"')
         val = list(val)
         if subtypehints is not None:
             is_tuple = typehint_origin in {Tuple, tuple}
             is_ellipsis = is_ellipsis_tuple(typehint)
             if is_tuple and not is_ellipsis and len(val) != len(subtypehints):
-                raise ValueError('Expected a tuple with '+str(len(subtypehints))+' elements but got "'+str(val)+'"')
+                raise ValueError(f'Expected a tuple with {len(subtypehints)} elements but got "{val}"')
             for n, v in enumerate(val):
                 subtypehint = subtypehints[0 if is_ellipsis else n]
                 val[n] = adapt_typehints(v, subtypehint, **adapt_kwargs)
@@ -386,18 +411,19 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             val = tuple(val) if typehint_origin in {Tuple, tuple} else set(val)
 
     # List, Iterable or Sequence
-    elif typehint_origin in {List, list, Iterable, Sequence, MutableSequence, abcIterable, abcSequence,
-                             abcMutableSequence}:
+    elif typehint_origin in sequence_origin_types:
         if not isinstance(val, list):
-            raise ValueError('Expected a List but got "'+str(val)+'"')
+            raise ValueError(f'Expected a List but got "{val}"')
         if subtypehints is not None:
             for n, v in enumerate(val):
                 val[n] = adapt_typehints(v, subtypehints[0], **adapt_kwargs)
 
-    # Dict
-    elif typehint_origin in {Dict, dict, Mapping, MutableMapping, abcMapping, abcMutableMapping}:
+    # Dict, Mapping
+    elif typehint_origin in mapping_origin_types:
+        if isinstance(val, Namespace):
+            val = val.as_dict()
         if not isinstance(val, dict):
-            raise ValueError('Expected a Dict but got "'+str(val)+'"')
+            raise ValueError(f'Expected a Dict but got "{val}"')
         if subtypehints is not None:
             if subtypehints[0] == int:
                 cast = str if serialize else int
@@ -419,7 +445,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
         if isinstance(val, dict):
             val = Namespace(val)
         if not isinstance(val, Namespace):
-            raise ValueError('Expected a Namespace but got "'+str(val)+'"')
+            raise ValueError(f'Expected a Dict/Namespace but got "{val}"')
         val = adapt_class_type(typehint, val, serialize, instantiate_classes, sub_add_kwargs)
 
     # Subclass
@@ -428,36 +454,34 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             if serialize:
                 val = str(val)
                 warnings.warn(
-                    'Not possible to serialize an instance of ' + str(typehint.__name__) + '. It will be represented as the '
-                    'string ' + val + '. If this was set as a default, consider setting using lazy_instance.'
+                    f'Not possible to serialize an instance of {typehint.__name__}. It will be represented as the '
+                    f'string {val}. If this was set as a default, consider setting using lazy_instance.'
                 )
             return val
         if serialize and isinstance(val, str):
             return val
         if not (isinstance(val, str) or is_class_object(val)):
-            raise ValueError('Type '+str(typehint)+' expects an str or a Dict/Namespace with a class_path entry but got "'+str(val)+'"')
+            raise ValueError(f'Type {typehint} expects an str or a Dict/Namespace with a class_path entry but got "{val}"')
         try:
             if isinstance(val, str):
-                val_class = import_object(val)
                 val = Namespace(class_path=val)
-            else:
-                val_class = import_object(val['class_path'])
-                if isinstance(val, dict):
-                    val = Namespace(val)
-                if isinstance(val.get('init_args'), dict):
-                    val['init_args'] = Namespace(val['init_args'])
+            elif isinstance(val, dict):
+                val = Namespace(val)
+            val_class = import_object(val['class_path'])
+            if isinstance(val.get('init_args'), dict):
+                val['init_args'] = Namespace(val['init_args'])
             if not _issubclass(val_class, typehint):
-                raise ValueError('"'+val['class_path']+'" is not a subclass of '+typehint.__name__)
+                raise ValueError(f'"{val["class_path"]}" is not a subclass of {typehint.__name__}')
             init_args = val.get('init_args', Namespace())
             adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs)
             if instantiate_classes and sub_add_kwargs.get('instantiate', True):
                 val = adapted
-            else:
+            elif adapted is not None:
                 val['init_args'] = adapted
-        except (ImportError, ModuleNotFound, AttributeError, AssertionError, ParserError) as ex:
+        except (ImportError, AttributeError, AssertionError, ParserError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
-            e = indent_text('\n- '+str(ex))
-            raise ValueError('Problem with given class_path "'+class_path+'":'+e) from ex
+            e = indent_text(f'\n- {ex}')
+            raise ValueError(f'Problem with given class_path "{class_path}":{e}') from ex
 
     return val
 
@@ -467,9 +491,7 @@ def is_class_object(val):
 
 
 def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs):
-    from .core import ArgumentParser
-    parser = ArgumentParser(error_handler=None)
-    parser.add_class_arguments(val_class, **sub_add_kwargs)
+    parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
 
     # No need to re-create the linked arg but just "inform" the corresponding parser actions that it exists upstream.
     for target in sub_add_kwargs.get('linked_targets', []):
@@ -493,7 +515,7 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
             return init_args
         return val_class(**init_args)
     if serialize:
-        init_args = yaml.safe_load(parser.dump(init_args))
+        init_args = None if init_args == Namespace() else yaml.safe_load(parser.dump(init_args))
     else:
         init_args = parser.parse_object(init_args)
     return init_args
@@ -580,9 +602,9 @@ def lazy_instance(class_type: Type[ClassType], **kwargs) -> ClassType:
         class_type: The class to instantiate.
         **kwargs: Any keyword arguments to use for instantiation.
     """
-    LazyInitClass = type(
+    lazy_init_class = type(
         'LazyInstance_'+class_type.__name__,
         (LazyInitBaseClass, class_type),
-        {'__doc__': 'Class for lazy instances of '+str(class_type)},
+        {'__doc__': f'Class for lazy instances of {class_type}'},
     )
-    return LazyInitClass(class_type, kwargs)
+    return lazy_init_class(class_type, kwargs)

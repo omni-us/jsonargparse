@@ -6,10 +6,13 @@ import sys
 import warnings
 import yaml
 from argparse import Action, SUPPRESS, _HelpAction, _SubParsersAction
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
-from .namespace import Namespace
+from .namespace import Namespace, split_key, split_key_leaf, split_key_root
 from .optionals import FilesCompleterMethod, get_config_read_mode
+from .type_checking import ArgumentParser, _ArgumentGroup
 from .typing import path_type
 from .util import (
     DirectedGraph,
@@ -34,24 +37,22 @@ __all__ = [
 ]
 
 
-# TODO: Should _is_branch_key, _find_action, _find_parent_action, _find_parent_actions, _find_subclass_action_or_class_group be methods of ArgumentParser? Maybe a class _ParserActionMethods implemented here?
-
 def _is_branch_key(parser, key: str) -> bool:
-    root_key = key.split('.', 1)[0]
+    root_key = split_key_root(key)[0]
     for action in filter_default_actions(parser._actions):
         if isinstance(action, _ActionSubCommands) and root_key in action._name_parser_map:
             subparser = action._name_parser_map[root_key]
-            return _is_branch_key(subparser, key.split('.', 1)[1])
+            return _is_branch_key(subparser, split_key_root(key)[1])
         elif action.dest.startswith(key+'.'):
             return True
     return False
 
 
-def _find_action(
-    parser: 'jsonargparse.ArgumentParser',
+def _find_action_and_subcommand(
+    parser: 'ArgumentParser',
     dest: str,
-    exclude: Optional[Union[Type[Action], List[Type[Action]]]] = None,
-) -> Optional[Action]:
+    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
+) -> Tuple[Optional[Action], Optional[str]]:
     """Finds an action in a parser given its destination key.
 
     Args:
@@ -70,68 +71,87 @@ def _find_action(
             if isinstance(action, _ActionConfigLoad):
                 fallback_action = action
             else:
-                return action
+                return action, None
         elif isinstance(action, _ActionSubCommands):
             if dest in action._name_parser_map:
-                return action
-            elif dest.split('.', 1)[0] in action._name_parser_map:
-                subcommand, subdest = dest.split('.', 1)
+                return action, None
+            elif split_key_root(dest)[0] in action._name_parser_map:
+                subcommand, subdest = split_key_root(dest)
                 subparser = action._name_parser_map[subcommand]
-                subaction = _find_action(subparser, subdest, exclude=exclude)
-                if isinstance(subaction, tuple):
-                    subaction, subsubcommand = subaction
-                    subcommand += '.'+subsubcommand
-                return None if subaction is None else (subaction, subcommand)
-    return fallback_action
+                subaction, subsubcommand = _find_action_and_subcommand(subparser, subdest, exclude=exclude)
+                if subsubcommand is not None:
+                    subcommand += '.' + subsubcommand
+                return subaction, subcommand
+    return fallback_action, None
+
+
+def _find_action(
+    parser: 'ArgumentParser',
+    dest: str,
+    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
+) -> Optional[Action]:
+    return _find_action_and_subcommand(parser, dest, exclude=exclude)[0]
+
+
+def _find_parent_action_and_subcommand(
+    parser: 'ArgumentParser',
+    key: str,
+    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
+) -> Tuple[Optional[Action], Optional[str]]:
+    action, subcommand = _find_action_and_subcommand(parser, key, exclude=exclude)
+    if action is None and '.' in key:
+        parts = split_key(key)
+        for n in reversed(range(len(parts)-1)):
+            action, subcommand = _find_action_and_subcommand(parser, '.'.join(parts[:n+1]), exclude=exclude)
+            if action is not None:
+                break
+    return action, subcommand
 
 
 def _find_parent_action(
-    parser: 'jsonargparse.ArgumentParser',
+    parser: 'ArgumentParser',
     key: str,
-    exclude: Optional[Union[Type[Action], List[Type[Action]]]] = None,
+    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
 ) -> Optional[Action]:
-    action = _find_action(parser, key, exclude=exclude)
-    if action is None and '.' in key:
-        parts = key.split('.')
-        for n in reversed(range(len(parts)-1)):
-            action = _find_action(parser, '.'.join(parts[:n+1]), exclude=exclude)
-            if action is not None:
-                break
-    return action
+    return _find_parent_action_and_subcommand(parser, key, exclude=exclude)[0]
 
 
 def _find_parent_actions(
-    parser: 'jsonargparse.ArgumentParser',
+    parser: 'ArgumentParser',
     key: str,
-    exclude: Optional[Union[Type[Action], List[Type[Action]]]] = None,
+    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
 ) -> Optional[List[Action]]:
+    found: List[Action]
     action = _find_parent_action(parser, key, exclude=exclude)
-    if action is None:
+    if action is not None:
+        found = [action]
+    else:
         actions = filter_default_actions(parser._actions)
         if exclude is not None:
             actions = [a for a in actions if not isinstance(a, exclude)]
-        parts = key.split('.')
+        parts = split_key(key)
         for n in reversed(range(len(parts))):
             prefix = '.'.join(parts[:n+1])+'.'
-            action = [a for a in actions if a.dest.startswith(prefix)]
-            if action != []:
+            found = [a for a in actions if a.dest.startswith(prefix)]
+            if found != []:
                 break
-    return None if action == [] else action
+    return None if found == [] else found
 
 
 def _find_subclass_action_or_class_group(
-    parser: 'jsonargparse.ArgumentParser',
+    parser: 'ArgumentParser',
     key: str,
-    exclude: Optional[Union[Type[Action], List[Type[Action]]]] = None,
-) -> Optional[Union[Action, 'jsonargparse.core._ArgumentGroup']]:
+    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
+) -> Optional[Union[Action, '_ArgumentGroup']]:
     from .typehints import ActionTypeHint
     action = _find_parent_action(parser, key, exclude=exclude)
     if ActionTypeHint.is_class_typehint(action):
         return action
-    key_set = {key, key.rsplit('.', 1)[0]}
+    key_set = {key, split_key_leaf(key)[0]}
     for group in parser._action_groups:
         if getattr(group, 'dest', None) in key_set and hasattr(group, 'instantiate_class'):
             return group
+    return None
 
 
 def _is_action_value_list(action: Action) -> bool:
@@ -143,7 +163,6 @@ def _is_action_value_list(action: Action) -> bool:
     Returns:
         bool: True if produces list otherwise False.
     """
-    # TODO: Add this as a method of Action class?
     if action.nargs in {'*', '+'} or (isinstance(action.nargs, int) and action.nargs != 0):
         return True
     return False
@@ -192,23 +211,24 @@ class ActionConfigFile(Action, FilesCompleterMethod):
 
     @staticmethod
     def apply_config(parser, cfg, dest, value) -> None:
-        if dest not in cfg:
-            cfg[dest] = []
-        kwargs = {'env': False, 'defaults': False, '_skip_check': True, '_fail_no_subcommand': False}
-        try:
-            cfg_path = Path(value, mode=get_config_read_mode())
-        except TypeError as ex_path:
+        with _ActionSubCommands.not_single_subcommand():
+            if dest not in cfg:
+                cfg[dest] = []
+            kwargs = {'env': False, 'defaults': False, '_skip_check': True, '_fail_no_subcommand': False}
             try:
-                if isinstance(yaml.safe_load(value), str):
-                    raise ex_path
-                cfg_path = None
-                cfg_file = parser.parse_string(value, **kwargs)
-            except (TypeError, yamlParserError, yamlScannerError) as ex_str:
-                raise TypeError('Parser key "'+dest+'": '+str(ex_str)) from ex_str
-        else:
-            cfg_file = parser.parse_path(value, **kwargs)
-        cfg[dest].append(cfg_path)
-        cfg.update(cfg_file)
+                cfg_path: Optional[Path] = Path(value, mode=get_config_read_mode())
+            except TypeError as ex_path:
+                try:
+                    if isinstance(yaml.safe_load(value), str):
+                        raise ex_path
+                    cfg_path = None
+                    cfg_file = parser.parse_string(value, **kwargs)
+                except (TypeError, yamlParserError, yamlScannerError) as ex_str:
+                    raise TypeError(f'Parser key "{dest}": {ex_str}') from ex_str
+            else:
+                cfg_file = parser.parse_path(value, **kwargs)
+            cfg[dest].append(cfg_path)
+            cfg.update(cfg_file)
 
 
 class _ActionPrintConfig(Action):
@@ -230,7 +250,7 @@ class _ActionPrintConfig(Action):
             flags = value[0].split(',')
             invalid_flags = [f for f in flags if f not in valid_flags]
             if len(invalid_flags) > 0:
-                raise ParserError('Invalid option "'+str(invalid_flags[0])+'" for '+option_string)
+                raise ParserError(f'Invalid option "{invalid_flags[0]}" for {option_string}')
             for flag in [f for f in flags if f != '']:
                 kwargs[valid_flags[flag]] = True
         while hasattr(parser, 'parent_parser'):
@@ -271,24 +291,24 @@ class _ActionConfigLoad(Action):
             return _ActionConfigLoad(**kwargs)
         parser, namespace, value = args[:3]
         cfg_file = Namespace()
-        cfg_file[self.dest] = self._load_config(value)
-        with change_to_path_dir(cfg_file[self.dest].get('__path__')):
-            cfg_file = parser._config_from_dict(cfg_file)
-            parser._apply_actions(cfg_file)
+        cfg_file[self.dest] = self._load_config(value, parser)
         namespace.update(cfg_file)
 
-    def _load_config(self, value):
+    def _load_config(self, value, parser):
         try:
-            cfg = _load_config(value)
-            if isinstance(cfg, tuple):
-                raise TypeError('Parser key "'+self.dest+'": Unable to load config "'+str(value)+'"')
+            cfg, cfg_path = _load_config(value)
+            if not isinstance(cfg, dict):
+                raise TypeError(f'Parser key "{self.dest}": Unable to load config "{value}"')
+            with change_to_path_dir(cfg_path):
+                cfg = parser._config_from_dict(cfg, parent_key=self.dest)
+                parser._apply_actions(cfg, parent_key=self.dest)
             return cfg
         except (TypeError, yamlParserError, yamlScannerError) as ex:
             str_ex = indent_text(str(ex))
-            raise TypeError('Parser key "'+self.dest+'": Unable to load config "'+str(value)+'"\n- '+str_ex) from ex
+            raise TypeError(f'Parser key "{self.dest}": Unable to load config "{value}"\n- {str_ex}') from ex
 
-    def _check_type(self, value, cfg=None):
-        return self._load_config(value)
+    def check_type(self, value, parser):
+        return self._load_config(value, parser)
 
     def instantiate_classes(self, value):
         return self.basetype(**value)
@@ -312,7 +332,7 @@ class _ActionHelpClass(Action):
         kwargs.update({
             'nargs': 0,
             'default': SUPPRESS,
-            'help': 'Show the help for the class '+self._baseclass.__name__+' and exit.',
+            'help': f'Show the help for the class {self._baseclass.__name__} and exit.',
         })
 
     def __call__(self, *args, **kwargs):
@@ -340,7 +360,7 @@ class _ActionHelpClassPath(_ActionHelpClass):
         kwargs.update({
             'metavar': 'CLASS',
             'default': SUPPRESS,
-            'help': 'Show the help for the given subclass of '+self._basename+' and exit.',
+            'help': f'Show the help for the given subclass of {self._basename} and exit.',
         })
 
     def print_help(self, call_args, baseclass, dest):
@@ -350,7 +370,7 @@ class _ActionHelpClassPath(_ActionHelpClass):
         else:
             baseclasses = [baseclass]
         if not any(_issubclass(val_class, b) for b in baseclasses):
-            raise TypeError('Class "'+call_args[2]+'" is not a subclass of '+self._basename)
+            raise TypeError(f'Class "{call_args[2]}" is not a subclass of {self._basename}')
         super().print_help(call_args, val_class, dest+'.init_args')
 
 
@@ -361,7 +381,7 @@ class _ActionLink(Action):
         parser,
         source: Union[str, Tuple[str, ...]],
         target: str,
-        compute_fn: Callable = None,
+        compute_fn: Optional[Callable] = None,
         apply_on: str = 'parse',
     ):
         self.parser = parser
@@ -396,14 +416,15 @@ class _ActionLink(Action):
         self.target = (target, _find_parent_action(parser, target, exclude=exclude))
         for key, action in self.source + [self.target]:
             if action is None:
-                raise ValueError('No action for key "'+key+'".')
+                raise ValueError(f'No action for key "{key}".')
+        assert self.target[1] is not None
 
         from .typehints import ActionTypeHint
         is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1])
         valid_target_subclass = is_target_subclass and target.startswith(self.target[1].dest+'.init_args.')
         valid_target_leaf = self.target[1].dest == target and not is_target_subclass
         if not (valid_target_leaf or valid_target_subclass):
-            raise ValueError('Target key "'+target+'" must be for an individual argument.')
+            raise ValueError(f'Target key "{target}" must be for an individual argument.')
 
         # Replace target action with link action
         if not is_target_subclass:
@@ -434,7 +455,7 @@ class _ActionLink(Action):
             try:
                 self.instantiation_order(parser)
             except ValueError as ex:
-                raise ValueError('Invalid link '+source[0]+' --> '+target+': '+str(ex)) from ex
+                raise ValueError(f'Invalid link {source[0]} --> {target}: {ex}') from ex
 
         # Initialize link action
         link_str = target+' <-- '
@@ -443,9 +464,10 @@ class _ActionLink(Action):
         else:
             link_str += getattr(compute_fn, '__name__', str(compute_fn))+'('+', '.join(source)+')'
 
+        help_str: Optional[str]
         if is_target_subclass:
             type_attr = None
-            help_str = 'Use --'+self.target[1].dest+'.help CLASS_PATH for details.'
+            help_str = f'Use --{self.target[1].dest}.help CLASS_PATH for details.'
         else:
             type_attr = getattr(self.target[1], '_typehint', self.target[1].type)
             help_str = self.target[1].help
@@ -454,20 +476,20 @@ class _ActionLink(Action):
             [link_str],
             dest=target,
             default=SUPPRESS,
-            metavar='[applied on '+self.apply_on+']',
+            metavar=f'[applied on {self.apply_on}]',
             type=type_attr,
             help=help_str,
         )
 
     def __call__(self, *args, **kwargs):
         source = ', '.join(s[0] for s in self.source)
-        raise TypeError('Linked "'+self.target[0]+'" must be given via "'+source+'".')
+        raise TypeError(f'Linked "{self.target[0]}" must be given via "{source}".')
 
     def _check_type(self, value, cfg=None):
         return self.parser._check_value_key(self.target[1], value, self.target[0], cfg)
 
     @staticmethod
-    def apply_parsing_links(parser: 'jsonargparse.ArgumentParser', cfg: Namespace) -> None:
+    def apply_parsing_links(parser: 'ArgumentParser', cfg: Namespace) -> None:
         subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
         if subcommand:
             _ActionLink.apply_parsing_links(subparser, cfg[subcommand])
@@ -499,12 +521,12 @@ class _ActionLink(Action):
             if action.source[0][0] == action.source[0][1].dest:
                 value = action.compute_fn(source_object)
             else:
-                attr = action.source[0][0].rsplit('.', 1)[1]
+                attr = split_key_leaf(action.source[0][0])[1]
                 value = getattr(source_object, attr)
             _ActionLink.set_target_value(action, value, cfg)
 
     @staticmethod
-    def set_target_value(action: Action, value: Any, cfg: Namespace) -> None:
+    def set_target_value(action: '_ActionLink', value: Any, cfg: Namespace) -> None:
         key = action.target[0]
         cfg[key] = value
 
@@ -516,7 +538,7 @@ class _ActionLink(Action):
                 graph = DirectedGraph()
                 for action in actions:
                     source = action.source[0][1].dest
-                    target = re.sub(r'\.init_args$', '', action.target[0].rsplit('.', 1)[0])
+                    target = re.sub(r'\.init_args$', '', split_key_leaf(action.target[0])[0])
                     graph.add_edge(source, target)
                 return graph.get_topological_order()
         return []
@@ -560,10 +582,10 @@ class ActionYesNo(Action):
             self._yes_prefix = kwargs.pop('_yes_prefix') if '_yes_prefix' in kwargs else ''
             self._no_prefix = kwargs.pop('_no_prefix') if '_no_prefix' in kwargs else 'no_'
             if len(kwargs['option_strings']) == 0:
-                raise ValueError(type(self).__name__+' not intended for positional arguments  ('+kwargs['dest']+').')
+                raise ValueError(f'{type(self).__name__} not intended for positional arguments  ({kwargs["dest"]}).')
             opt_name = kwargs['option_strings'][0]
             if not opt_name.startswith('--'+self._yes_prefix):
-                raise ValueError('Expected option string to start with "--'+self._yes_prefix+'".')
+                raise ValueError(f'Expected option string to start with "--{self._yes_prefix}".')
             if self._no_prefix is not None:
                 kwargs['option_strings'] += [re.sub('^--'+self._yes_prefix, '--'+self._no_prefix, opt_name)]
             if self._no_prefix is None and 'nargs' in kwargs and kwargs['nargs'] != 1:
@@ -606,7 +628,7 @@ class ActionYesNo(Action):
         if isinstance(x, str) and x.lower() in {'true', 'yes', 'false', 'no'}:
             x = True if x.lower() in {'true', 'yes'} else False
         elif not isinstance(x, bool):
-            raise TypeError('Value not boolean: '+str(x)+'.')
+            raise TypeError(f'Value not boolean: {x}.')
         return x
 
     def completer(self, **kwargs):
@@ -619,7 +641,7 @@ class ActionParser:
 
     def __init__(
         self,
-        parser: 'jsonargparse.ArgumentParser' = None,
+        parser: 'ArgumentParser' = None,
     ):
         """Initializer for ActionParser instance.
 
@@ -640,9 +662,9 @@ class ActionParser:
         title = kwargs.pop('title', kwargs.pop('help', None))
         description = kwargs.pop('description', subparser.description)
         if len(kwargs) > 0:
-            raise ValueError('ActionParser does not accept the following parameters: '+str(set(kwargs.keys())))
+            raise ValueError(f'ActionParser does not accept the following parameters: {set(kwargs.keys())}')
         if not (len(args) == 1 and args[0][:2] == '--'):
-            raise ValueError('ActionParser only accepts a single optional key but got '+str(args))
+            raise ValueError(f'ActionParser only accepts a single optional key but got {args}')
         prefix = args[0][2:]
 
         def add_prefix(key):
@@ -656,7 +678,7 @@ class ActionParser:
 
         isect = set(option_string_actions.keys()).intersection(set(parser._option_string_actions.keys()))
         if len(isect) > 0:
-            raise ValueError('ActionParser conflicting keys: '+str(isect))
+            raise ValueError(f'ActionParser conflicting keys: {isect}')
 
         actions = []
         dest = prefix.replace('-', '_')
@@ -690,10 +712,13 @@ class ActionParser:
         return base_action_group
 
 
+single_subcommand = ContextVar('single_subcommand', default=True)
+
+
 class _ActionSubCommands(_SubParsersAction):
     """Extension of argparse._SubParsersAction to modify subcommands functionality."""
 
-    _env_prefix = None
+    _env_prefix: Optional[str] = None
 
 
     def add_parser(self, name, **kwargs):
@@ -711,8 +736,8 @@ class _ActionSubCommands(_SubParsersAction):
         if parser._subparsers is not None:
             raise ValueError('Multiple levels of subcommands must be added in level order.')
 
-        parser.prog = '%s [options] %s' % (self._prog_prefix, name)
-        parser.env_prefix = self._env_prefix+'_'+name+'_'
+        parser.prog = f'{self._prog_prefix} [options] {name}'
+        parser.env_prefix = f'{self._env_prefix}_{name}_'
         parser.parent_parser = self.parent_parser
         parser.subcommand = name
 
@@ -744,22 +769,33 @@ class _ActionSubCommands(_SubParsersAction):
             subparser = self._name_parser_map[subcommand]
             subnamespace, unk = subparser.parse_known_args(arg_strings)
             if unk:
-                raise ParserError('Unrecognized arguments: %s' % ' '.join(unk))
+                raise ParserError(f'Unrecognized arguments: {" ".join(unk)}')
             namespace.update(subnamespace, subcommand)
 
 
     @staticmethod
-    def get_subcommand(
-        parser: 'jsonargparse.ArgumentParser',
+    @contextmanager
+    def not_single_subcommand():
+        t = single_subcommand.set(False)
+        try:
+            yield
+        finally:
+            single_subcommand.reset(t)
+
+
+    @staticmethod
+    def get_subcommands(
+        parser: 'ArgumentParser',
         cfg: Namespace,
         prefix: str = '',
         fail_no_subcommand: bool = True,
-        require_single: bool = True,
-    ) -> Union[Optional[Tuple[str, Action]], Optional[Tuple[List[str], List[Action]]]]:
-        """Returns the subcommand name(s) and corresponding subparser(s)."""
+    ) -> Tuple[Optional[List[str]], Optional[List['ArgumentParser']]]:
+        """Returns subcommand names and corresponding subparsers."""
         if parser._subparsers is None:
             return None, None
         action = getattr(parser, '_subcommands_action')
+
+        require_single = single_subcommand.get()
 
         # Get subcommand settings keys
         subcommand_keys = [k for k in action.choices.keys() if isinstance(cfg.get(prefix+k), Namespace)]
@@ -769,14 +805,13 @@ class _ActionSubCommands(_SubParsersAction):
         dest = prefix + action.dest
         if dest in cfg and cfg.get(dest) is not None:
             subcommand = cfg[dest]
-        elif len(subcommand_keys) > 0:
-            if fail_no_subcommand or require_single:
-                cfg[dest] = subcommand = subcommand_keys[0]
-                if len(subcommand_keys) > 1:
-                    warnings.warn(
-                        'Multiple subcommand settings provided (' + ', '.join(subcommand_keys) + ') without an explicit "' +
-                        dest + '" key. Subcommand "' + subcommand + '" will be used.'
-                    )
+        elif len(subcommand_keys) > 0 and (fail_no_subcommand or require_single):
+            cfg[dest] = subcommand = subcommand_keys[0]
+            if len(subcommand_keys) > 1:
+                warnings.warn(
+                    f'Multiple subcommand settings provided ({", ".join(subcommand_keys)}) without an '
+                    f'explicit "{dest}" key. Subcommand "{subcommand}" will be used.'
+                )
 
         # Remove extra subcommand settings
         if subcommand and len(subcommand_keys) > 1:
@@ -790,27 +825,41 @@ class _ActionSubCommands(_SubParsersAction):
             if subcommand is None and not (fail_no_subcommand and action._required):
                 return None, None
             if action._required and subcommand not in action._name_parser_map:
-                raise KeyError('"'+dest+'" is required but not given or its value is None.')
+                raise KeyError(f'"{dest}" is required but not given or its value is None.')
 
-        if require_single:
-            return subcommand, action._name_parser_map.get(subcommand)
-        else:
-            return subcommand_keys, [action._name_parser_map.get(s) for s in subcommand_keys]
+        return subcommand_keys, [action._name_parser_map.get(s) for s in subcommand_keys]
+
+
+    @staticmethod
+    def get_subcommand(
+        parser: 'ArgumentParser',
+        cfg: Namespace,
+        prefix: str = '',
+        fail_no_subcommand: bool = True,
+    ) -> Tuple[Optional[str], Optional['ArgumentParser']]:
+        """Returns a single subcommand name and corresponding subparser."""
+        subcommands, actions = _ActionSubCommands.get_subcommands(
+            parser,
+            cfg,
+            prefix=prefix,
+            fail_no_subcommand=fail_no_subcommand,
+        )
+        return subcommands[0] if subcommands else None, actions[0] if actions else None
 
 
     @staticmethod
     def handle_subcommands(
-        parser: 'jsonargparse.ArgumentParser',
+        parser: 'ArgumentParser',
         cfg: Namespace,
         env: Optional[bool],
         defaults: bool,
-        prefix: str = '',  # TODO: Change prefix to parent_key?
+        prefix: str = '',
         fail_no_subcommand: bool = True,
-    ):
+    ) -> None:
         """Takes care of parsing subcommand values."""
 
-        subcommands, subparsers = _ActionSubCommands.get_subcommand(parser, cfg, prefix=prefix, fail_no_subcommand=fail_no_subcommand, require_single=False)
-        if not subcommands:
+        subcommands, subparsers = _ActionSubCommands.get_subcommands(parser, cfg, prefix=prefix, fail_no_subcommand=fail_no_subcommand)
+        if not subcommands or not subparsers:
             return
 
         for subcommand, subparser in zip(subcommands, subparsers):
@@ -853,7 +902,7 @@ class ActionPathList(Action, FilesCompleterMethod):
             self._type = path_type(mode)
             self._rel = rel
             if self._rel not in {'cwd', 'list'}:
-                raise ValueError('rel must be either "cwd" or "list", got '+str(self._rel)+'.')
+                raise ValueError(f'rel must be either "cwd" or "list", got {self._rel}.')
         elif '_type' not in kwargs:
             raise ValueError('Expected mode keyword argument.')
         else:
@@ -889,7 +938,7 @@ class ActionPathList(Action, FilesCompleterMethod):
                     with sys.stdin if path_list_file == '-' else open(path_list_file, 'r') as f:
                         path_list = [x.strip() for x in f.readlines()]
                 except FileNotFoundError as ex:
-                    raise TypeError('Problems reading path list: '+path_list_file+' :: '+str(ex)) from ex
+                    raise TypeError(f'Problems reading path list: {path_list_file} :: {ex}') from ex
                 cwd = os.getcwd()
                 if self._rel == 'list' and path_list_file != '-':
                     os.chdir(os.path.abspath(os.path.join(path_list_file, os.pardir)))
@@ -898,7 +947,7 @@ class ActionPathList(Action, FilesCompleterMethod):
                         try:
                             path_list[num] = self._type(val)
                         except TypeError as ex:
-                            raise TypeError('Path number '+str(num+1)+' in list '+path_list_file+', '+str(ex)) from ex
+                            raise TypeError(f'Path number {num+1} in list {path_list_file}, {ex}') from ex
                 finally:
                     os.chdir(cwd)
                 value += path_list

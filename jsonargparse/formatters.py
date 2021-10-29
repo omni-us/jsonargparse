@@ -5,6 +5,7 @@ from argparse import _HelpAction, HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MOR
 from enum import Enum
 from io import StringIO
 from string import Template
+from typing import Optional
 
 from .actions import (
     ActionConfigFile,
@@ -15,7 +16,9 @@ from .actions import (
     _find_action,
     filter_default_actions,
 )
+from .namespace import Namespace
 from .optionals import import_ruyaml
+from .type_checking import ArgumentParser, ruyamlCommentedMap
 from .typehints import ActionTypeHint, LazyInitBaseClass, type_to_str
 from .util import _get_env_var
 
@@ -44,6 +47,10 @@ class DefaultHelpFormatter(HelpFormatter):
     with :code:`default_env=True` command line options are preceded by 'ARG:' and
     the respective environment variable name is included preceded by 'ENV:'.
     """
+
+    _parser: 'ArgumentParser'
+    defaults: Optional[Namespace] = None
+
 
     def _get_help_string(self, action):
         if isinstance(action, ActionConfigFile):
@@ -95,8 +102,8 @@ class DefaultHelpFormatter(HelpFormatter):
         if type_str is not None:
             params['type'] = type_str
         if 'default' in params:
-            if hasattr(self, 'defaults'):
-                params['default'] = self.defaults[action.dest]
+            if self.defaults is not None:
+                params['default'] = self.defaults[action.dest]  # pylint: disable=unsubscriptable-object
             if params['default'] is None:
                 params['default'] = 'null'
             elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):
@@ -137,8 +144,8 @@ class DefaultHelpFormatter(HelpFormatter):
                     subparsers.update(get_subparsers(subparser, prefix=full_key))
             return subparsers
 
-        parsers = get_subparsers(self._parser)  # type: ignore
-        parsers[None] = self._parser  # type: ignore
+        parsers = get_subparsers(self._parser)
+        parsers[None] = self._parser
 
         group_titles = {}
         for prefix, parser in parsers.items():
@@ -155,8 +162,6 @@ class DefaultHelpFormatter(HelpFormatter):
             for key in cfg.keys():
                 full_key = (prefix+'.' if prefix else '')+key
                 action = _find_action(self._parser, full_key)
-                if isinstance(action, tuple):
-                    action = action[0]
                 text = None
                 if full_key in group_titles and isinstance(cfg[key], dict):
                     text = group_titles[full_key]
@@ -169,8 +174,8 @@ class DefaultHelpFormatter(HelpFormatter):
                 elif text:
                     self.set_yaml_argument_comment(text, cfg, key, depth)
 
-        if self._parser.description is not None:  # type: ignore
-            self.set_yaml_start_comment(self._parser.description, cfg)  # type: ignore
+        if self._parser.description is not None:
+            self.set_yaml_start_comment(self._parser.description, cfg)
         set_comments(cfg)
         out = StringIO()
         yaml.dump(cfg, out)
@@ -180,7 +185,7 @@ class DefaultHelpFormatter(HelpFormatter):
     def set_yaml_start_comment(
         self,
         text: str,
-        cfg: 'ruyaml.comments.CommentedMap',  # type: ignore
+        cfg: 'ruyamlCommentedMap',
     ):
         """Sets the start comment to a ruyaml object.
 
@@ -194,7 +199,7 @@ class DefaultHelpFormatter(HelpFormatter):
     def set_yaml_group_comment(
         self,
         text: str,
-        cfg: 'ruyaml.comments.CommentedMap',  # type: ignore
+        cfg: 'ruyamlCommentedMap',
         key: str,
         depth: int,
     ):
@@ -212,7 +217,7 @@ class DefaultHelpFormatter(HelpFormatter):
     def set_yaml_argument_comment(
         self,
         text: str,
-        cfg: 'ruyaml.comments.CommentedMap',  # type: ignore
+        cfg: 'ruyamlCommentedMap',
         key: str,
         depth: int,
     ):

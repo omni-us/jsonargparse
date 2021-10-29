@@ -1,6 +1,5 @@
 from argparse import (
     Action,
-    HelpFormatter,
     OPTIONAL,
     REMAINDER,
     SUPPRESS,

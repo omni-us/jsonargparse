@@ -15,14 +15,13 @@ from jsonargparse.optionals import (
     fsspec_support, import_fsspec,
     get_config_read_mode,
     ruyaml_support, import_ruyaml,
-    ModuleNotFound,
 )
 
 
 try:
     import responses
     responses_activate = responses.activate
-except (ImportError, ModuleNotFound):
+except ImportError:
     def nothing_decorator(func):
         return func
     responses = False  # type: ignore

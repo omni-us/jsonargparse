@@ -511,7 +511,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
                           base_url+name,
                           status=200)
 
-        cfg2 = parser.parse_args(['--cfg', base_url+'main.yaml'], with_meta=False)
+        cfg2 = parser.parse_args(['--cfg', base_url+'main.yaml'], with_meta=False).as_dict()
         self.assertEqual(cfg1['parser'], cfg2['parser'])
         if jsonschema_support:
             self.assertEqual(cfg1['schema'], cfg2['schema'])
@@ -649,7 +649,7 @@ class OutputTests(TempDirTestCase):
             with open(jsonnet_file_in, 'w') as output_file:
                 output_file.write(json.dumps(cfg1.jsonnet)+'\n')
 
-        cfg2 = parser.parse_path(main_file_in, with_meta=True)  # TODO: cfg2.parser is dict instead of namespace, fix
+        cfg2 = parser.parse_path(main_file_in, with_meta=True)
         self.assertEqual(cfg1.as_dict(), strip_meta(cfg2).as_dict())
         self.assertEqual(str(cfg2.parser['__path__']), 'parser.yaml')
         if jsonschema_support:
@@ -675,7 +675,7 @@ class OutputTests(TempDirTestCase):
             self.assertTrue(os.path.isfile(jsonnet_file_out))
 
         cfg3 = parser.parse_path(main_file_out, with_meta=False)
-        self.assertEqual(cfg1.as_dict(), cfg3.as_dict())  # TODO: cfg3.parser is dict instead of namespace, fix
+        self.assertEqual(cfg1.as_dict(), cfg3.as_dict())
 
         parser.save(cfg2, main_file_out, multifile=False, overwrite=True)
         cfg4 = parser.parse_path(main_file_out, with_meta=False)

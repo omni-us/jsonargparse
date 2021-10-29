@@ -1,9 +1,9 @@
 """Deprecated code."""
 
-from argparse import Namespace
 from copy import deepcopy
 from enum import Enum
 from typing import Any, Dict
+from .namespace import Namespace
 from .optionals import get_config_read_mode, set_config_read_mode
 from .typehints import ActionTypeHint
 from .typing import path_type, restricted_number_type, registered_types
@@ -93,7 +93,7 @@ def set_url_support(enabled:bool):
 
 
 def dict_to_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
-    """Converts a nested dictionary into a nested namespace.
+    """DEPRECATED: Converts a nested dictionary into a nested namespace.
 
     Args:
         cfg_dict: The configuration to process.

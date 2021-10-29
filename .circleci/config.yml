@@ -63,10 +63,6 @@ jobs:
     <<: *test-py38
     docker:
       - image: circleci/python:3.6
-  test-py35:
-    <<: *test-py38
-    docker:
-      - image: circleci/python:3.5
   codecov:
     docker:
       - image: circleci/python:3.8
@@ -77,7 +73,7 @@ jobs:
       - run:
           name: Code coverage
           command: |
-            for py in 3.5 3.6 3.7 3.8 3.9 py3; do
+            for py in 3.6 3.7 3.8 3.9 py3; do
               bash <(curl -s https://codecov.io/bash) \
                 -t $CODECOV_TOKEN_JSONARGPARSE \
                 -F py$py \
@@ -115,8 +111,6 @@ workflows:
           <<: *testreq
       - test-py36:
           <<: *testreq
-      - test-py35:
-          <<: *testreq
       - test-pypy3:
           <<: *testreq
       - codecov:
@@ -127,7 +121,6 @@ workflows:
             - test-py38
             - test-py37
             - test-py36
-            - test-py35
       - publish-pypi:
           filters:
             branches:

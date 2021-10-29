@@ -238,7 +238,7 @@ class SignatureArguments:
         group = self._create_group_if_requested(objects[0], nested_key, as_group, doc_group, instantiate=instantiate)
 
         ## Add objects arguments ##
-        added_args = []  # type: List[str]
+        added_args: List[str] = []
         if skip is None:
             skip = set()
         for (obj, func), (add_args, add_kwargs) in zip(signatures, add_types):
@@ -289,7 +289,7 @@ class SignatureArguments:
         if default == inspect_empty:
             default = param.default
         is_required = default == inspect_empty
-        skip_message = 'Skipping parameter "'+name+'" from "'+getattr(obj, '__name__', str(obj))+'" because of: '
+        skip_message = f'Skipping parameter "{name}" from "{getattr(obj, "__name__", obj)}" because of: '
         if not fail_untyped and annotation == inspect_empty:
             annotation = Any
             default = None if is_required else default
@@ -346,7 +346,7 @@ class SignatureArguments:
                     if ActionTypeHint.is_subclass_typehint(annotation):
                         help_action = _ActionHelpClassPath
                         prefix = name + '.init_args.'
-                    group.add_argument('--'+dest+'.help', action=help_action(baseclass=annotation))
+                    group.add_argument(f'--{dest}.help', action=help_action(baseclass=annotation))
                     subclass_skip = {s[len(prefix):] for s in skip if s.startswith(prefix)}
                 action = group.add_argument(opt_str, **kwargs)
                 action.sub_add_kwargs = {
@@ -358,7 +358,7 @@ class SignatureArguments:
                     action.sub_add_kwargs['skip'] = subclass_skip
                 added_args.append(dest)
         elif is_required and fail_untyped:
-            raise ValueError('Required parameter without a type for '+obj.__name__+' parameter '+name+'.')
+            raise ValueError(f'Required parameter without a type for {obj.__name__} parameter {name}.')
 
 
     def add_dataclass_arguments(
@@ -386,7 +386,7 @@ class SignatureArguments:
         """
         dataclasses = import_dataclasses('add_dataclass_arguments')
         if not is_pure_dataclass(theclass):
-            raise ValueError('Expected "theclass" argument to be a pure dataclass, given '+str(theclass))
+            raise ValueError(f'Expected "theclass" argument to be a pure dataclass, given {theclass}')
 
         doc_group, doc_params = self._gather_docstrings([theclass], get_class_init_and_base_docstrings)
         for key in ['help', 'title']:
@@ -402,11 +402,11 @@ class SignatureArguments:
                 except TypeError:
                     pass
             if not isinstance(default, theclass):
-                raise ValueError('Expected "default" argument to be an instance of "'+theclass.__name__+'" or its kwargs dict, given '+str(default))
+                raise ValueError(f'Expected "default" argument to be an instance of "{theclass.__name__}" or its kwargs dict, given {default}')
             defaults = dataclasses.asdict(default)
 
-        added_args = []  # type: List[str]
-        skip = set()  # type: Set[str]
+        added_args: List[str] = []
+        skip: Set[str] = set()
         params = inspect.signature(theclass.__init__).parameters
         for field in dataclasses.fields(theclass):
             self._add_signature_parameter(
@@ -474,7 +474,7 @@ class SignatureArguments:
             instantiate=False,
         )
 
-        added_args = []  # type: List[str]
+        added_args: List[str] = []
         if skip is None:
             skip = set()
         else:
@@ -509,7 +509,7 @@ class SignatureArguments:
                     try:
                         docstring = docstring_parse(doc)
                     except ValueError:
-                        self.logger.debug('Failed parsing docstring for '+str(base))
+                        self.logger.debug(f'Failed parsing docstring for {base}')
                     else:
                         if docstring.short_description and not doc_group:
                             doc_group = docstring.short_description

@@ -2,7 +2,6 @@
 
 from enum import Enum
 from io import StringIO
-#from jsonargparse import ArgumentParser
 from jsonargparse_tests.base import *
 
 

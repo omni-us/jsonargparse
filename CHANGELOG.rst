@@ -10,6 +10,34 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.0.0 (2021-??-??)
+-------------------
+
+Added
+^^^^^
+- New Namespace class that better supports nesting and avoids flat/dict conversions.
+- More type hints throughout the code base.
+- New unit tests to increase coverage.
+- Include dataclasses extras require for tox testing.
+
+Fixed
+^^^^^
+- Fixed issues related to conflict namespace base.
+- Fixed the parsing of Dict[int, str] type #87.
+- Fixed inner relative config with for commented tests for parse_env and CLI.
+
+Changed
+^^^^^^^
+- General refactoring and cleanup related to new Namespace class.
+- Parsed values from ActionJsonSchema and ActionJsonnet are now dict instead of Namespace.
+- Removed support for python 3.5 and related code cleanup.
+- contextvars package is now an install require for python 3.6.
+
+Deprecated
+^^^^^^^^^^
+- dict_to_namespace function will be removed in the future.
+
+
 v3.19.4 (2021-10-04)
 --------------------
 
