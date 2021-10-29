@@ -2,7 +2,7 @@
 
 from argparse import Namespace as ArgparseNamespace
 from copy import deepcopy
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, overload, Tuple, Union
 
 
 __all__ = [
@@ -15,21 +15,39 @@ __all__ = [
 meta_keys = {'__default_config__', '__path__', '__orig__'}
 
 
+def split_key(key: str) -> List[str]:
+    return key.split('.')
+
+
+def split_key_root(key: str) -> List[str]:
+    return key.split('.', 1)
+
+
+def split_key_leaf(key: str) -> List[str]:
+    return key.rsplit('.', 1)
+
+
 def is_meta_key(key: Union[str, int]) -> bool:
     if not isinstance(key, str):
         return False
-    leaf_key = key.rsplit('.', 1)[-1]
+    leaf_key = split_key_leaf(key)[-1]
     return leaf_key in meta_keys
 
 
-def strip_meta(cfg: Union['Namespace', Dict[str, Any]]) -> Union['Namespace', Dict[str, Any]]:
+@overload
+def strip_meta(cfg: 'Namespace') -> 'Namespace': ...
+@overload
+def strip_meta(cfg: Dict[str, Any]) -> Dict[str, Any]: ...
+
+
+def strip_meta(cfg):
     """Removes all metadata keys from a configuration object.
 
     Args:
         cfg: The configuration object to strip.
 
     Returns:
-        A copy of the configuration object without any metadata keys.
+        A deepcopy of the configuration object excluding all metadata keys.
     """
     cfg = deepcopy(cfg)
 
@@ -49,14 +67,7 @@ def strip_meta(cfg: Union['Namespace', Dict[str, Any]]) -> Union['Namespace', Di
 
 
 def namespace_to_dict(namespace: 'Namespace') -> Dict[str, Any]:
-    """Converts a nested namespace into a nested dictionary.
-
-    Args:
-        namespace: Object to process.
-
-    Returns:
-        The nested dictionary.
-    """
+    """Returns a deepcopy of a nested namespace converted into a nested dictionary."""
     return namespace.clone().as_dict()
 
 
@@ -67,8 +78,8 @@ class Namespace(ArgparseNamespace):
         if len(args) == 0:
             super().__init__(**kwargs)
         else:
-            if len(kwargs) != 0 or len(args) != 1 or type(args[0]) not in (ArgparseNamespace, dict):
-                raise ValueError('Expected a single positional parameter of type argparse.Namespace or dict.')
+            if len(kwargs) != 0 or len(args) != 1 or not isinstance(args[0], (ArgparseNamespace, dict)):
+                raise ValueError('Expected a single positional parameter of type Namespace or dict.')
             for key, val in (args[0].items() if type(args[0]) is dict else vars(args[0]).items()):
                 self[key] = val
 
@@ -83,26 +94,34 @@ class Namespace(ArgparseNamespace):
             - The leaf key.
             - The parent namespace object.
             - The parent namespace key.
+
+        Raises:
+            KeyError: When given invalid key.
         """
-        key_split = key.split('.')
         if ' ' in key:
-            raise KeyError('Spaces not allowed in keys: "'+key+'".')
+            raise KeyError(f'Spaces not allowed in keys: "{key}".')
+        key_split = split_key(key)
         if any(k == '' for k in key_split):
-            raise KeyError('Empty nested key: "'+key+'".')
+            raise KeyError(f'Empty nested key: "{key}".')
         leaf_key = key_split[-1]
-        parent_ns = self  # type: Optional[Namespace]
+        parent_ns: Namespace = self
         parent_key = ''
         if len(key_split) > 1:
             parent_key = '.'.join(key_split[:-1])
-            for num, subkey in enumerate(key_split[:-1]):
-                if hasattr(parent_ns, subkey):
-                    parent_ns = getattr(parent_ns, subkey)
-                    if parent_ns is not None and not isinstance(parent_ns, Namespace):
-                        parent_ns = None
-                        break
+            for subkey in key_split[:-1]:
+                if hasattr(parent_ns, subkey) or (isinstance(parent_ns, dict) and subkey in parent_ns):
+                    parent_ns = parent_ns[subkey]
+                    if parent_ns is not None and not isinstance(parent_ns, (Namespace, dict)):
+                        return leaf_key, None, parent_key
                 else:
-                    parent_ns = None
-                    break
+                    return leaf_key, None, parent_key
+        return leaf_key, parent_ns, parent_key
+
+    def _parse_required_key(self, key: str) -> Tuple[str, 'Namespace', str]:
+        """Same as _parse_key but raises KeyError if key not found."""
+        leaf_key, parent_ns, parent_key = self._parse_key(key)
+        if parent_ns is None or not hasattr(parent_ns, leaf_key):
+            raise KeyError(f'Key "{key}" not found in namespace.')
         return leaf_key, parent_ns, parent_key
 
     def _create_nested_namespace(self, key: str) -> 'Namespace':
@@ -115,7 +134,7 @@ class Namespace(ArgparseNamespace):
             The created nested namespace.
         """
         parent_ns = self
-        for key in key.split('.'):
+        for key in split_key(key):
             if not isinstance(getattr(parent_ns, key, None), Namespace):
                 setattr(parent_ns, key, Namespace())
             parent_ns = getattr(parent_ns, key)
@@ -138,9 +157,7 @@ class Namespace(ArgparseNamespace):
 
     def __getitem__(self, key: str) -> Any:
         """Gets an item from a possibly nested namespace."""
-        leaf_key, parent_ns, _ = self._parse_key(key)
-        if parent_ns is None or not hasattr(parent_ns, leaf_key):
-            raise KeyError('Key "'+key+'" not found in namespace.')
+        leaf_key, parent_ns, _ = self._parse_required_key(key)
         return getattr(parent_ns, leaf_key)
 
     def __delitem__(self, key: str) -> None:
@@ -153,10 +170,10 @@ class Namespace(ArgparseNamespace):
         if not isinstance(key, str):
             return False
         try:
-            leaf_key, parent_ns, _ = self._parse_key(key)
+            leaf_key, parent_ns, _ = self._parse_required_key(key)
         except KeyError:
             return False
-        return parent_ns and leaf_key in parent_ns.__dict__
+        return leaf_key in parent_ns.__dict__
 
     def as_dict(self) -> Dict[str, Any]:
         """Converts the nested namespaces into nested dictionaries."""
@@ -164,6 +181,10 @@ class Namespace(ArgparseNamespace):
         for key, val in vars(self).items():
             if isinstance(val, Namespace):
                 val = val.as_dict()
+            elif isinstance(val, dict) and val != {} and all(isinstance(v, Namespace) for v in val.values()):
+                val = {k: v.as_dict() for k, v in val.items()}
+            elif isinstance(val, list) and val != [] and all(isinstance(v, Namespace) for v in val):
+                val = [v.as_dict() for v in val]
             dic[key] = val
         return dic
 
@@ -203,12 +224,12 @@ class Namespace(ArgparseNamespace):
         keys = [k for k in self.keys() if not key_filter(k)]
         if branches:
             for key in [k for k in keys if '.' in k]:
-                key_split = key.split('.')
+                key_split = split_key(key)
                 for num in range(len(key_split)-1):
                     parent_key = '.'.join(key_split[:num+1])
                     if parent_key not in keys:
                         keys.append(parent_key)
-        keys.sort(key=lambda x: -len(x.split('.')))
+        keys.sort(key=lambda x: -len(split_key(x)))
         return keys
 
     def clone(self) -> 'Namespace':
@@ -216,18 +237,24 @@ class Namespace(ArgparseNamespace):
         return deepcopy(self)
 
     def update(self, value: Union['Namespace', Any], key: Optional[str] = None, only_unset: bool = False) -> 'Namespace':
-        """Sets or replaces all items from the given nested namespace."""
+        """Sets or replaces all items from the given nested namespace.
+
+        Args:
+            value: A namespace to update multiple values or other type to set in a single key.
+            key: Branch key where to set the value. Required if value is not namepace.
+            only_unset: Whether to only set the value if not set in namespace.
+        """
         if not isinstance(value, Namespace):
             if not key:
                 raise KeyError('Key is required if value not a Namespace.')
-            self[key] = value
+            if not only_unset or key not in self:
+                self[key] = value
         else:
             prefix = key+'.' if key else ''
             for key, val in value.items():
                 if not only_unset or prefix+key not in self:
                     self[prefix+key] = val
         return self
-
 
     def get(self, key: str, default: Any = None) -> Any:
         try:
@@ -236,16 +263,16 @@ class Namespace(ArgparseNamespace):
             return default
 
     def get_value_and_parent(self, key: str) -> Tuple[Any, 'Namespace', str]:
-        leaf_key, parent_ns, _ = self._parse_key(key)
+        leaf_key, parent_ns, _ = self._parse_required_key(key)
         return parent_ns[leaf_key], parent_ns, leaf_key
 
     def pop(self, key: str, default: Any = None) -> Any:
         leaf_key, parent_ns, _ = self._parse_key(key)
         if not parent_ns:
             return default
-        value = parent_ns.__dict__.pop(leaf_key, default)
-        return value
+        return parent_ns.__dict__.pop(leaf_key, default)
 
 
-import argparse
-argparse.Namespace = Namespace  # TODO: Change to temporal patch during parse
+# Temporal to provide backward compatibility in pytorch-lightning
+import yaml
+yaml.SafeDumper.add_representer(Namespace, lambda d, x: d.represent_mapping('tag:yaml.org,2002:map', x.as_dict()))

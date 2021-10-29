@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=unsubscriptable-object  TODO: remove if possible
 
 import json
 import pathlib
@@ -271,7 +270,7 @@ class TypeHintsTests(unittest.TestCase):
         parser.add_argument('--op', type=Optional[List[Calendar]])
 
         class_path = '"class_path": "calendar.Calendar"'
-        expected = [Namespace(class_path='calendar.Calendar', init_args=Namespace(firstweekday=0))]
+        expected = [{'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 0}}]
         cfg = parser.parse_args(['--op=[{'+class_path+'}]'])
         self.assertEqual(cfg['op'], expected)
         cfg = parser.parse_args(['--op=["calendar.Calendar"]'])
@@ -294,7 +293,7 @@ class TypeHintsTests(unittest.TestCase):
 
         init_args = '"init_args": {"firstweekday": 3}'
         cfg = parser.parse_args(['--op=[{'+class_path+', '+init_args+'}]'])
-        self.assertEqual(cfg['op'][0]['init_args'], Namespace(firstweekday=3))
+        self.assertEqual(cfg['op'][0]['init_args'], {'firstweekday': 3})
         cfg = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg['op'][0], Calendar)
         self.assertEqual(3, cfg['op'][0].firstweekday)
@@ -524,11 +523,9 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         parser.add_class_arguments(C, nested_key="c")
         parser.link_arguments("c", "b.init_args.a.init_args.d", compute_fn=C.fn, apply_on="instantiate")
 
-        args = parser.parse_args(["--config", config_path])
-
-        config = parser.instantiate_classes(args)
-
-        assert isinstance(config["b"].a.d, D)
+        config = parser.parse_args(["--config", config_path])
+        config_init = parser.instantiate_classes(config)
+        self.assertIsInstance(config_init["b"].a.d, D)
 
 
     def test_linking_deep_targets_mapping(self):
@@ -580,11 +577,13 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         parser.add_class_arguments(C, nested_key="c")
         parser.link_arguments("c", "b.init_args.a_map.name.init_args.d", compute_fn=C.fn, apply_on="instantiate")
 
-        args = parser.parse_args(["--config", config_path])
+        config = parser.parse_args(["--config", config_path])
+        config_init = parser.instantiate_classes(config)
+        self.assertIsInstance(config_init["b"].a_map["name"].d, D)
 
-        config = parser.instantiate_classes(args)
-
-        assert isinstance(config["b"].a_map["name"].d, D)
+        config = config.as_dict()
+        config_init = parser.instantiate_classes(config)
+        self.assertIsInstance(config_init["b"].a_map["name"].d, D)
 
 
 class OtherTests(unittest.TestCase):

@@ -26,7 +26,7 @@ fi
 ## Check files that changed ##
 FILES=( $(git status --porcelain | sed -r 's|^ |_|; s|^(.) |\1_|; s|^(R[_M]) .* ->|\1|;' | grep -E '^([MRA]|.M)') );
 PYLINT=$(which pylint pylint3 | head -n 1);
-PYLINT+=" --errors-only --disable=no-member,unsubscriptable-object";
+PYLINT+=" --errors-only --disable=no-member";
 PYFILES=();
 
 check_change_after_staged () {

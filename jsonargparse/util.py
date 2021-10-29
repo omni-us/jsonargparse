@@ -7,15 +7,14 @@ import stat
 import yaml
 import inspect
 import logging
+from argparse import Action
 from collections import defaultdict
-from typing import Optional, Union
+from typing import Any, Optional, Tuple, Union
 from contextlib import contextmanager, redirect_stderr
 from yaml.parser import ParserError as yamlParserError
 from yaml.scanner import ScannerError as yamlScannerError
 
-from .namespace import Namespace
 from .optionals import (
-    ModuleNotFound,
     url_support,
     import_requests,
     import_url_validator,
@@ -23,6 +22,7 @@ from .optionals import (
     import_fsspec,
     get_config_read_mode,
 )
+from .type_checking import ArgumentParser
 
 
 __all__ = [
@@ -46,8 +46,8 @@ class ParserError(Exception):
     pass
 
 
-def _load_config(value, enable_path=True, flat_namespace=True):
-    """Parses yaml config in a string or a path"""
+def _load_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:
+    """Parses yaml/json config in a string or a path"""
     cfg_path = None
     if isinstance(value, str) and value.strip() != '':
         parsed_val = yaml.safe_load(value)
@@ -60,29 +60,25 @@ def _load_config(value, enable_path=True, flat_namespace=True):
             pass
         else:
             value = yaml.safe_load(cfg_path.get_content())
-
-    if flat_namespace and isinstance(value, dict):  # TODO: requires rename?
-        if cfg_path is not None:
-            value['__path__'] = cfg_path
-        return value
-
+    if isinstance(value, dict) and cfg_path is not None:
+        value['__path__'] = cfg_path
     return value, cfg_path
 
 
-def usage_and_exit_error_handler(self, message: str) -> None:
+def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None:
     """Error handler to get the same behavior as in argparse.
 
     Args:
-        self (ArgumentParser): The ArgumentParser object.
+        parser: The parser object.
         message: The message describing the error being handled.
     """
-    self.print_usage(sys.stderr)
-    args = {'prog': self.prog, 'message': message}
+    parser.print_usage(sys.stderr)
+    args = {'prog': parser.prog, 'message': message}
     sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
-    self.exit(2)
+    parser.exit(2)
 
 
-def _get_env_var(parser, action) -> str:
+def _get_env_var(parser: 'ArgumentParser', action: 'Action') -> str:
     """Returns the environment variable for a given parser and action."""
     if hasattr(parser, '_parser'):
         parser = parser._parser
@@ -98,10 +94,10 @@ def _issubclass(cls, class_or_tuple):
 
 def _check_valid_dump_format(value: str):
     if value not in {'parser_mode', 'yaml', 'json_indented', 'json'}:
-        raise ValueError('Unknown output format "'+str(format)+'".')
+        raise ValueError(f'Unknown output format "{value}".')
 
 
-def import_object(name):
+def import_object(name: str):
     """Returns an object in a module given its dot import path."""
     if not isinstance(name, str) or '.' not in name:
         raise ValueError('Expected a dot import path string')
@@ -119,7 +115,7 @@ def _suppress_stderr():
 
 
 @contextmanager
-def change_to_path_dir(path):
+def change_to_path_dir(path: Optional['Path']):
     """A context manager for running code in the directory of a path."""
     chdir = path is not None and not (path.is_url or path.is_fsspec)
     if chdir:
@@ -132,11 +128,11 @@ def change_to_path_dir(path):
             os.chdir(cwd)
 
 
-def indent_text(text):
+def indent_text(text: str) -> str:
     return text.replace('\n', '\n  ')
 
 
-def known_to_fsspec(path):
+def known_to_fsspec(path: str) -> bool:
     import_fsspec('known_to_fsspec')
     from fsspec.registry import known_implementations
     for protocol in known_implementations.keys():
@@ -169,7 +165,7 @@ class DirectedGraph:
         exploring[source] = True
         for target in self.edges_dict[source]:
             if exploring[target]:
-                raise ValueError('Graph has cycles, found while checking '+self.nodes[source]+' --> '+self.nodes[target])
+                raise ValueError(f'Graph has cycles, found while checking {self.nodes[source]} --> '+self.nodes[target])
             elif not visited[target]:
                 self.topological_sort(target, exploring, visited, order)
         visited[source] = True
@@ -238,7 +234,7 @@ class Path:
                 try:
                     requests.head(abs_path).raise_for_status()
                 except requests.HTTPError as ex:
-                    raise TypeError(abs_path+' HEAD not accessible :: '+str(ex)) from ex
+                    raise TypeError(f'{abs_path} HEAD not accessible :: {ex}') from ex
         elif not skip_check and is_fsspec:
             fsspec_mode = ''.join(c for c in mode if c in {'r','w'})
             if fsspec_mode:
@@ -291,8 +287,8 @@ class Path:
         self.abs_path = abs_path
         self.cwd = cwd
         self.mode = mode
-        self.is_url = is_url  # type: bool
-        self.is_fsspec = is_fsspec  # type: bool
+        self.is_url: bool = is_url
+        self.is_fsspec: bool = is_fsspec
         self.skip_check = skip_check
 
     def __str__(self):
@@ -376,13 +372,13 @@ class LoggerProperty:
             level = logging.WARNING
             if isinstance(logger, dict) and 'level' in logger:
                 if logger['level'] not in levels:
-                    raise ValueError('Logger level must be one of '+str(levels)+'.')
+                    raise ValueError(f'Logger level must be one of {levels}.')
                 level = getattr(logging, logger['level'])
             if isinstance(logger, bool) or (isinstance(logger, dict) and 'name' not in logger):
                 try:
                     import reconplogger
                     logger = reconplogger.logger_setup(level=level)
-                except (ImportError, ModuleNotFound, ValueError):
+                except (ImportError, ValueError):
                     pass
             if not isinstance(logger, logging.Logger):
                 name = type(self).__name__

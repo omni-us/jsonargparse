@@ -75,7 +75,7 @@ def CLI(
     for name, component in comp_dict.items():
         subparser = ArgumentParser()
         subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
-        subcommands.add_subcommand(name, subparser, help=_get_help_str(component))  # type: ignore
+        subcommands.add_subcommand(name, subparser, help=_get_help_str(component))
         _add_component_to_parser(component, subparser, as_positional, config_help)
 
     if set_defaults is not None:

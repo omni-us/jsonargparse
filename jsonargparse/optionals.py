@@ -35,16 +35,14 @@ ruyaml_support = False if _ruyaml is None else True
 _config_read_mode = 'fr'
 
 
-if sys.version_info[:2] > (3, 5):
-    ModuleNotFound = ModuleNotFoundError
-else:
-    class ModuleNotFound(Exception):
-        pass
+class UndefinedException(Exception):
+    pass
+
 
 if jsonschema_support:
     from jsonschema.exceptions import ValidationError as jsonschemaValidationError
 else:
-    jsonschemaValidationError = None
+    jsonschemaValidationError = UndefinedException
 
 
 dump_preserve_order_support = True
@@ -57,72 +55,72 @@ def import_jsonschema(importer):
         import jsonschema
         from jsonschema import Draft7Validator as jsonvalidator
         return jsonschema, jsonvalidator
-    except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('jsonschema package is required by '+importer+' :: '+str(ex)) from ex
+    except ImportError as ex:
+        raise ImportError(f'jsonschema package is required by {importer} :: {ex}') from ex
 
 
 def import_jsonnet(importer):
     try:
         import _jsonnet
         return _jsonnet
-    except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('jsonnet package is required by '+importer+' :: '+str(ex)) from ex
+    except ImportError as ex:
+        raise ImportError(f'jsonnet package is required by {importer} :: {ex}') from ex
 
 
 def import_url_validator(importer):
     try:
         from validators.url import url as url_validator
         return url_validator
-    except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('validators package is required by '+importer+' :: '+str(ex)) from ex
+    except ImportError as ex:
+        raise ImportError(f'validators package is required by {importer} :: {ex}') from ex
 
 
 def import_requests(importer):
     try:
         import requests
         return requests
-    except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('requests package is required by '+importer+' :: '+str(ex)) from ex
+    except ImportError as ex:
+        raise ImportError(f'requests package is required by {importer} :: {ex}') from ex
 
 
 def import_docstring_parse(importer):
     try:
         from docstring_parser import parse as docstring_parse
         return docstring_parse
-    except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('docstring-parser package is required by '+importer+' :: '+str(ex)) from ex
+    except ImportError as ex:
+        raise ImportError(f'docstring-parser package is required by {importer} :: {ex}') from ex
 
 
 def import_argcomplete(importer):
     try:
         import argcomplete
         return argcomplete
-    except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('argcomplete package is required by '+importer+' :: '+str(ex)) from ex
+    except ImportError as ex:
+        raise ImportError(f'argcomplete package is required by {importer} :: {ex}') from ex
 
 
 def import_dataclasses(importer):
     try:
         import dataclasses
         return dataclasses
-    except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('dataclasses package is required by '+importer+' :: '+str(ex)) from ex
+    except ImportError as ex:
+        raise ImportError(f'dataclasses package is required by {importer} :: {ex}') from ex
 
 
 def import_fsspec(importer):
     try:
         import fsspec
         return fsspec
-    except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('fsspec package is required by '+importer+' :: '+str(ex)) from ex
+    except ImportError as ex:
+        raise ImportError(f'fsspec package is required by {importer} :: {ex}') from ex
 
 
 def import_ruyaml(importer):
     try:
         import ruyaml
         return ruyaml
-    except (ImportError, ModuleNotFound) as ex:
-        raise ImportError('ruyaml package is required by '+importer+' :: '+str(ex)) from ex
+    except ImportError as ex:
+        raise ImportError(f'ruyaml package is required by {importer} :: {ex}') from ex
 
 
 def set_config_read_mode(

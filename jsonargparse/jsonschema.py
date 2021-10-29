@@ -89,7 +89,7 @@ class ActionJsonSchema(Action):
             value = [value]
         for num, val in enumerate(value):
             try:
-                val, fpath = _load_config(val, enable_path=self._enable_path, flat_namespace=False)
+                val, fpath = _load_config(val, enable_path=self._enable_path)
                 if isinstance(val, Namespace):
                     val = val.as_dict()
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
@@ -101,7 +101,7 @@ class ActionJsonSchema(Action):
                 value[num] = val
             except (TypeError, ValueError, yamlParserError, yamlScannerError, jsonschemaValidationError) as ex:
                 elem = '' if not islist else ' element '+str(num+1)
-                raise TypeError('Parser key "'+self.dest+'"'+elem+': '+str(ex)) from ex
+                raise TypeError(f'Parser key "{self.dest}"{elem}: {ex}') from ex
         return value if islist else value[0]
 
 
@@ -134,5 +134,5 @@ class ActionJsonSchema(Action):
                 msg = 'value not yet valid, '
             else:
                 schema = json.dumps(self._validator.schema, indent=2, sort_keys=True).replace('\n', '\n  ')
-                msg += 'required to be valid according to schema:\n  '+schema+'\n'
+                msg += f'required to be valid according to schema:\n  {schema}\n'
             return argcomplete_warn_redraw_prompt(prefix, msg)

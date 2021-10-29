@@ -42,7 +42,7 @@ _operators1 = {
 }
 _operators2 = {v: k for k, v in _operators1.items()}
 
-registered_types = {}  # type: Dict[Tuple, Any]
+registered_types: Dict[Tuple, Any] = {}
 
 
 def create_type(
@@ -57,7 +57,7 @@ def create_type(
     if register_key in registered_types:
         registered_type = registered_types[register_key]
         if registered_type.__name__ != name:
-            raise ValueError('Same type already registered with a different name: '+registered_type.__name__+'.')
+            raise ValueError(f'Same type already registered with a different name: {registered_type.__name__}.')
         return registered_type
 
     class TypeCore:
@@ -107,7 +107,7 @@ def restricted_number_type(
        not all(isinstance(x, tuple) and len(x) == 2 for x in restrictions) or \
        not all(x[0] in _operators2 and x[1] == base_type(x[1]) for x in restrictions):
         raise ValueError('Expected restrictions to be a list of tuples each with a comparison operator '
-                         '(> >= < <= == !=) and a reference value of type '+base_type.__name__+'.')
+                         f'(> >= < <= == !=) and a reference value of type {base_type.__name__}.')
 
     register_key = (tuple(sorted(restrictions)), base_type, join)
 
@@ -129,12 +129,12 @@ def restricted_number_type(
 
     def check_value(cls, v):
         if cls._type == int and isinstance(v, float) and not float.is_integer(v):
-            raise ValueError('invalid value, '+str(v)+' not an integer')
+            raise ValueError(f'invalid value, {v} not an integer')
         vv = cls._type(v)
         check = [comparison(vv, ref) for comparison, ref in cls._restrictions]
         if (cls._join == 'and' and not all(check)) or \
            (cls._join == 'or' and not any(check)):
-            raise ValueError('invalid value, '+str(v)+' does not conform to restriction '+cls._expression)
+            raise ValueError(f'invalid value, "{v}" does not conform to restriction {cls._expression}')
 
     return create_type(
         name=name,
@@ -173,7 +173,7 @@ def restricted_string_type(
 
     def check_value(cls, v):
         if not cls._regex.match(v):
-            raise ValueError('invalid value, "'+v+'" does not match regular expression '+cls._regex.pattern)
+            raise ValueError(f'invalid value, "{v}" does not match regular expression {cls._regex.pattern}')
 
     return create_type(
         name=name,
@@ -257,7 +257,7 @@ class RegisteredType:
             return self.base_deserializer(value)
         except self.deserializer_exceptions as ex:
             type_class_name = getattr(self.type_class, '__name__', str(self.type_class))
-            raise ValueError('Not of type '+type_class_name+'. '+str(ex)) from ex
+            raise ValueError(f'Not of type {type_class_name}. {ex}') from ex
 
 
 def register_type(
@@ -282,7 +282,7 @@ def register_type(
     if type_class in registered_types:
         if type_wrapper == registered_types[type_class]:
             return
-        raise ValueError('Type "'+str(type_class)+'" already registered with different serializer and/or deserializer.')
+        raise ValueError(f'Type "{type_class}" already registered with different serializer and/or deserializer.')
     registered_types[type_class] = type_wrapper
     if uniqueness_key is not None:
         registered_types[uniqueness_key] = type_class
@@ -291,7 +291,7 @@ def register_type(
 def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Callable = None):
     assert uniqueness_key not in registered_types
     if type_class.__name__ in globals():
-        raise ValueError('Type name "'+type_class.__name__+'" clashes with name already defined in jsonargparse.typing.')
+        raise ValueError(f'Type name "{type_class.__name__}" clashes with name already defined in jsonargparse.typing.')
     globals()[type_class.__name__] = type_class
     kwargs = {'uniqueness_key': uniqueness_key}
     if type_check is not None:
@@ -350,7 +350,7 @@ def object_path_serializer(value):
             raise ValueError
         return path
     except (ValueError, AttributeError):
-        raise ValueError('Only possible to serialize an importable object, given '+str(value))
+        raise ValueError(f'Only possible to serialize an importable object, given {value}')
 
 
 register_type(
@@ -363,7 +363,7 @@ register_type(
 
 def timedelta_deserializer(value):
     def raise_error():
-        raise ValueError('Expected a string with form "h:m:s" or "d days, h:m:s" but got "'+str(value)+'"')
+        raise ValueError(f'Expected a string with form "h:m:s" or "d days, h:m:s" but got "{value}"')
     if not isinstance(value, str):
         raise_error()
     pattern = r'(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d[\.\d+]*)'
