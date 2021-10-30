@@ -1,8 +1,8 @@
-name: Python package
+name: tests
 on: [push, pull_request]
 
 jobs:
-  build:
+  unittest:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,9 +15,19 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-
       - name: Install Tox
         run: pip install tox
-
       - name: Run Tox
         run: tox -e py
+  doctest:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install requrements
+        run: pip install -e .[all,doc]
+      - name: Run doc tests
+        run: sphinx-build -M doctest sphinx sphinx/_build sphinx/README.rst

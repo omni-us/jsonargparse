@@ -1,13 +1,13 @@
-.. image:: https://circleci.com/gh/omni-us/jsonargparse.svg?style=svg
-    :target: https://circleci.com/gh/omni-us/jsonargparse
+.. image:: https://readthedocs.org/projects/jsonargparse/badge/?version=stable
+    :target: https://jsonargparse.readthedocs.io/en/stable/
+.. image:: https://github.com/omni-us/jsonargparse/actions/workflows/ci_test.yml/badge.svg
+    :target: https://github.com/omni-us/jsonargparse/
 .. image:: https://codecov.io/gh/omni-us/jsonargparse/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/omni-us/jsonargparse
 .. image:: https://sonarcloud.io/api/project_badges/measure?project=omni-us_jsonargparse&metric=alert_status
     :target: https://sonarcloud.io/dashboard?id=omni-us_jsonargparse
 .. image:: https://badge.fury.io/py/jsonargparse.svg
     :target: https://badge.fury.io/py/jsonargparse
-.. image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg
-    :target: https://github.com/omni-us/jsonargparse
 
 
 jsonargparse
@@ -39,9 +39,6 @@ Features
 - Great support of type hint annotations for automatic creation of parsers and
   minimal boilerplate command line interfaces.
 
-- Not exclusively intended for parsing command line arguments. The main focus is
-  parsing configuration files and not necessarily from a command line tool.
-
 - Support for nested namespaces which makes it possible to parse config files
   with non-flat hierarchies.
 
@@ -53,7 +50,7 @@ Features
   gentle learning curve.
 
 - Several convenient types and action classes to ease common parsing use cases
-  (paths, comparison operators, json schemas, enums ...).
+  (paths, comparison operators, json schemas, enums, regex strings, ...).
 
 - Support for command line tab argument completion using `argcomplete
   <https://pypi.org/project/argcomplete/>`__.
@@ -80,12 +77,11 @@ You can install using `pip <https://pypi.org/project/jsonargparse/>`__ as:
     pip install jsonargparse
 
 By default the only dependency that jsonargparse installs is `PyYAML
-<https://pypi.org/project/PyYAML/>`__. However, jsonargparse has several
-optional features that can be enabled by specifying any of the following extras
-requires: :code:`signatures`, :code:`jsonschema`, :code:`jsonnet`, :code:`urls`,
-:code:`argcomplete` and :code:`reconplogger`. There is also the :code:`all`
-extras require that can be used to enable all optional features. Installing
-jsonargparse with extras require is as follows:
+<https://pypi.org/project/PyYAML/>`__. However, several optional features can be
+enabled by specifying any of the following extras requires: :code:`signatures`,
+:code:`jsonschema`, :code:`jsonnet`, :code:`urls`, :code:`argcomplete` and
+:code:`reconplogger`. There is also the :code:`all` extras require to enable all
+optional features. Installing jsonargparse with extras require is as follows:
 
 .. code-block:: bash
 
@@ -121,7 +117,7 @@ There are multiple ways of using jsonargparse. The most simple way which
 requires to write the least amount of code is by using the :func:`.CLI`
 function, for example:
 
-.. code-block:: python
+.. testcode::
 
     from jsonargparse import CLI
 
@@ -146,17 +142,23 @@ Then in a shell you could run:
     $ python example.py Lucky --prize=1000
     Lucky won 1000€!
 
+.. doctest::
+    :hide:
+
+    >>> CLI(command, args=['Lucky', '--prize=1000'])
+    Lucky won 1000€!
+
 :func:`.CLI` without arguments searches for functions and classes defined in the
 same module and in the local context where :func:`.CLI` is called. Giving a
 single or a list functions/classes as first argument to :func:`.CLI` skips the
 automatic search and only includes what is given.
 
-When :func:`.CLI` receives a single class, the first arguments are used to
-instantiate the class, then a class method name must be given (i.e. methods
-become :ref:`sub-commands`) and the remaining arguments are used to run the
-class method. An example would be:
+When :func:`.CLI` receives a single class, the first arguments are for
+parameters to instantiate the class, then a class method name must be given
+(i.e. methods become :ref:`sub-commands`) and the remaining arguments are for
+parameters of the class method. An example would be:
 
-.. code-block:: python
+.. testcode::
 
     from random import randint
     from jsonargparse import CLI
@@ -192,6 +194,12 @@ Then in a shell you could run:
     $ python example.py --max_prize=1000 person Lucky
     Lucky won 632€!
 
+.. doctest::
+    :hide:
+
+    >>> CLI(Main, args=['--max_prize=1000', 'person', 'Lucky'])  # doctest: +ELLIPSIS
+    'Lucky won ...€!'
+
 If more than one function is given to :func:`.CLI`, then any of them can be
 executed via :ref:`sub-commands` similar to the single class example above, i.e.
 :code:`example.py function [arguments]` where :code:`function` is the name of
@@ -220,10 +228,9 @@ much more.
 
 The next section explains how to create an argument parser in a low level
 argparse-style. However, as parsers get more complex, being able to define them
-in a modular way becomes important. Three mechanisms are available to define
-parsers in a modular way, see respective sections
-:ref:`classes-methods-functions`, :ref:`sub-commands` and
-:ref:`parser-arguments`.
+in a modular way becomes important. Three mechanisms are available for
+modularity, see respective sections :ref:`classes-methods-functions`,
+:ref:`sub-commands` and :ref:`parser-arguments`.
 
 
 Parsers
@@ -233,22 +240,28 @@ An argument parser is created just like it is done with python's `argparse
 <https://docs.python.org/3/library/argparse.html>`__. You import the module,
 create a parser object and then add arguments to it. A simple example would be:
 
-.. code-block:: python
+.. testcode::
 
     from jsonargparse import ArgumentParser
+
     parser = ArgumentParser(
         prog='app',
-        description='Description for my app.')
+        description='Description for my app.'
+    )
 
-    parser.add_argument('--opt1',
+    parser.add_argument(
+        '--opt1',
         type=int,
         default=0,
-        help='Help for option 1.')
+        help='Help for option 1.'
+    )
 
-    parser.add_argument('--opt2',
+    parser.add_argument(
+        '--opt2',
         type=float,
         default=1.0,
-        help='Help for option 2.')
+        help='Help for option 2.'
+    )
 
 
 After creating the parser, you can use it to parse command line arguments with
@@ -258,7 +271,7 @@ illustrative purposes giving to :func:`parse_args` a list of arguments (instead
 of automatically getting them from the command line arguments), with the parser
 shown above you would observe:
 
-.. code-block:: python
+.. doctest::
 
     >>> cfg = parser.parse_args(['--opt2', '2.3'])
     >>> cfg.opt1, type(cfg.opt1)
@@ -277,17 +290,17 @@ Nested namespaces
 =================
 
 A difference with respect to the basic argparse is that it by using dot notation
-in the argument names, you can define a hierarchy of nested namespaces. So for
+in the argument names, you can define a hierarchy of nested namespaces. For
 example you could do the following:
 
-.. code-block:: python
+.. doctest::
 
     >>> parser = ArgumentParser(prog='app')
-    >>> parser.add_argument('--lev1.opt1', default='from default 1')
-    >>> parser.add_argument('--lev1.opt2', default='from default 2')
+    >>> parser.add_argument('--lev1.opt1', default='from default 1')  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument('--lev1.opt2', default='from default 2')  # doctest: +IGNORE_RESULT
     >>> cfg = parser.get_defaults()
     >>> cfg.lev1.opt1
-    'from default 2'
+    'from default 1'
     >>> cfg.lev1.opt2
     'from default 2'
 
@@ -295,7 +308,7 @@ A group of nested options can be created by using a dataclass. This has the
 advantage that the same options can be reused in multiple places of a project.
 An example analogous to the one above would be:
 
-.. code-block:: python
+.. testcode::
 
     from dataclasses import dataclass
 
@@ -327,15 +340,15 @@ creating a parser to specify patterns to search for configuration files. For
 example if a parser is created as
 :code:`ArgumentParser(default_config_files=['~/.myapp.yaml',
 '/etc/myapp.yaml'])`, when parsing if any of those two config files exist it
-will be parsed and used to override the defaults. Only the first matched config
-file is used. The default config file is always parsed first, this means that
-any command line arguments will override its values.
+will be parsed and used to override the defaults. All matched config files are
+parsed and applied in given order. The default config files are always parsed
+first, this means that any command line arguments will override its values.
 
 It is also possible to add an argument to explicitly provide a configuration
 file path. Providing a config file as an argument does not disable the parsing
 of :code:`default_config_files`. The config argument would be parsed in the
 specific position among the command line arguments. Therefore the arguments
-found after would override the values from the config file. The config argument
+found after would override the values from that config file. The config argument
 can be given multiple times, each overriding the values of the previous. Using
 the example parser from the :ref:`nested-namespaces` section above, we could
 have the following config file in yaml format:
@@ -350,16 +363,32 @@ have the following config file in yaml format:
 Then in python adding a config file argument and parsing some dummy arguments,
 the following would be observed:
 
-.. code-block:: python
+.. testsetup:: config
+
+    import os
+    import shutil
+    import tempfile
+    cwd = os.getcwd()
+    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    os.chdir(tmpdir)
+    with open('example.yaml', 'w') as f:
+        f.write('lev1:\n  opt1: from yaml 1\n  opt2: from yaml 2\n')
+
+.. testcleanup:: config
+
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
+
+.. doctest:: config
 
     >>> from jsonargparse import ArgumentParser, ActionConfigFile
     >>> parser = ArgumentParser()
-    >>> parser.add_argument('--lev1.opt1', default='from default 1')
-    >>> parser.add_argument('--lev1.opt2', default='from default 2')
-    >>> parser.add_argument('--cfg', action=ActionConfigFile)
+    >>> parser.add_argument('--lev1.opt1', default='from default 1')  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument('--lev1.opt2', default='from default 2')  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument('--config', action=ActionConfigFile)      # doctest: +IGNORE_RESULT
     >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1',
-                                 '--cfg', 'example.yaml',
-                                 '--lev1.opt2', 'from arg 2'])
+    ...                          '--config', 'example.yaml',
+    ...                          '--lev1.opt2', 'from arg 2'])
     >>> cfg.lev1.opt1
     'from yaml 1'
     >>> cfg.lev1.opt2
@@ -368,15 +397,15 @@ the following would be observed:
 Instead of providing a path to a configuration file, a string with the
 configuration content can also be provided.
 
-.. code-block:: python
+.. doctest:: config
 
-    >>> cfg = parser.parse_args(['--cfg', '{"lev1":{"opt1":"from string 1"}}'])
+    >>> cfg = parser.parse_args(['--config', '{"lev1":{"opt1":"from string 1"}}'])
     >>> cfg.lev1.opt1
     'from string 1'
 
 The config file can also be provided as an environment variable as explained in
 section :ref:`environment-variables`. The configuration file environment
-variable is the first one to be parsed. So any argument provided through an
+variable is the first one to be parsed. Any other argument provided through an
 environment variable would override the config file one.
 
 A configuration file or string can also be parsed without parsing command line
@@ -392,6 +421,10 @@ installed, the config can be printed having the help descriptions content as
 yaml comments by using :code:`--print_config=comments`. Another option is
 :code:`--print_config=skip_null` which skips entries whose value is
 :code:`null`.
+
+From within python it is also possible to serialize a config object by using
+either the :py:meth:`.ArgumentParser.dump` or :py:meth:`.ArgumentParser.save`
+mehtods.
 
 
 .. _environment-variables:
@@ -415,11 +448,18 @@ would set the environment variables as:
 Then in python the parser would use these variables, unless overridden by the
 command line arguments, that is:
 
-.. code-block:: python
+.. testsetup:: env
+
+    import os
+    from jsonargparse import ArgumentParser
+    os.environ['APP_LEV1__OPT1'] = 'from env 1'
+    os.environ['APP_LEV1__OPT2'] = 'from env 2'
+
+.. doctest:: env
 
     >>> parser = ArgumentParser(env_prefix='APP', default_env=True)
-    >>> parser.add_argument('--lev1.opt1', default='from default 1')
-    >>> parser.add_argument('--lev1.opt2', default='from default 2')
+    >>> parser.add_argument('--lev1.opt1', default='from default 1')  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument('--lev1.opt2', default='from default 2')  # doctest: +IGNORE_RESULT
     >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1'])
     >>> cfg.lev1.opt1
     'from arg 1'
@@ -435,7 +475,7 @@ environment variables, which might be useful for some use cases in which there
 is no command line call involved.
 
 If a parser includes an :class:`.ActionConfigFile` argument, then the
-environment variable for this config file will be checked before all the other
+environment variable for this config file will be parsed before all the other
 environment variables.
 
 
@@ -445,10 +485,10 @@ Classes, methods and functions
 ==============================
 
 It is good practice to write python code in which parameters have type hints and
-are described in the docstrings. To make this well written code configurable, it
-wouldn't make sense to duplicate information of types and parameter
-descriptions. To avoid this duplication, jsonargparse includes methods to
-automatically add their arguments:
+these are described in the docstrings. To make this well written code
+configurable, it wouldn't make sense to duplicate information of types and
+parameter descriptions. To avoid this duplication, jsonargparse includes methods
+to automatically add annotated parameters as arguments:
 :py:meth:`.SignatureArguments.add_class_arguments`,
 :py:meth:`.SignatureArguments.add_method_arguments`,
 :py:meth:`.SignatureArguments.add_function_arguments` and
@@ -456,57 +496,59 @@ automatically add their arguments:
 
 Take for example a class with its init and a method with docstrings as follows:
 
-.. code-block:: python
+.. testsetup:: class_method
+
+    import sys
+    sys.argv = ['', '--myclass.init.foo={}', '--myclass.method.bar=0']
+    class MyBaseClass: pass
+
+.. testcode:: class_method
 
     from typing import Dict, Union, List
 
     class MyClass(MyBaseClass):
-        def __init__(self, items: Dict[str, Union[int, List[int]]], **kwargs):
+        def __init__(self, foo: Dict[str, Union[int, List[int]]], **kwargs):
             """Initializer for MyClass.
 
             Args:
-                items: Description for items.
+                foo: Description for foo.
             """
             pass
 
-        def mymethod(self, value: float, flag: bool = False):
+        def mymethod(self, bar: float, baz: bool = False):
             """Description for mymethod.
 
             Args:
-                value: Description for value.
-                flag: Description for flag.
+                bar: Description for bar.
+                baz: Description for baz.
             """
             pass
 
 Both :code:`MyClass` and :code:`mymethod` can easily be made configurable, the
 class initialized and the method executed as follows:
 
-.. code-block:: python
+.. testcode:: class_method
 
-    from jsonargparse import ArgumentParser, namespace_to_dict
+    from jsonargparse import ArgumentParser
 
     parser = ArgumentParser()
     parser.add_class_arguments(MyClass, 'myclass.init')
     parser.add_method_arguments(MyClass, 'mymethod', 'myclass.method')
 
     cfg = parser.parse_args()
-    myclass = MyClass(**namespace_to_dict(cfg.myclass.init))
-    myclass.mymethod(**namespace_to_dict(cfg.myclass.method))
+    myclass = MyClass(**cfg.myclass.init.as_dict())
+    myclass.mymethod(**cfg.myclass.method.as_dict())
 
-The :func:`add_class_arguments` call adds to the *myclass.init* key the
+
+The :func:`add_class_arguments` call adds to the :code`myclass.init` key the
 :code:`items` argument with description as in the docstring, it is set as
 required since it does not have a default value, and when parsed it is validated
 according to its type hint, i.e., a dict with values ints or list of ints. Also
 since the init has the :code:`**kwargs` argument, the keyword arguments from
 :code:`MyBaseClass` are also added to the parser. Similarly the
-:func:`add_method_arguments` call adds to the *myclass.method* key the arguments
-:code:`value` as a required float and :code:`flag` as an optional boolean with
-default value false.
-
-Instead of using :func:`namespace_to_dict` to convert the namespaces to a
-dictionary, the :class:`.ArgumentParser` object can be instantiated with
-:code:`parse_as_dict=True` to get directly a dictionary from the parsing
-methods.
+:func:`add_method_arguments` call adds to the :code`myclass.method` key the
+arguments :code:`value` as a required float and :code:`flag` as an optional
+boolean with default value false.
 
 Instantiation of classes added as argument groups with
 :func:`add_class_arguments` can be done more simply for an entire config object
@@ -535,7 +577,13 @@ In some cases there are functions which return an instance of a class. To add
 this to a parser such that :py:meth:`.ArgumentParser.instantiate_classes` calls
 this function, the example would change to:
 
-.. code-block:: python
+.. testsetup:: class_from_function
+
+    class MyClass: pass
+    def instantiate_myclass() -> MyClass:
+        return MyClass()
+
+.. testcode:: class_from_function
 
     from jsonargparse import ArgumentParser, class_from_function
 
@@ -560,7 +608,7 @@ arguments are:
 - Arguments whose name starts with :code:`_` are considered for internal use
   and ignored.
 
-- The signature methods have a :code:`skip` parameters which can be used to
+- The signature methods have a :code:`skip` parameter which can be used to
   exclude adding some arguments, e.g.
   :code:`parser.add_method_arguments(MyClass, 'mymethod', skip={'flag'})`.
 
@@ -602,7 +650,7 @@ subclass. The compute function should accept as many positional arguments as
 there are sources and return a value of type compatible with the target. An
 example would be the following:
 
-.. code-block:: python
+.. testcode::
 
     class Model:
         def __init__(self, batch_size: int):
@@ -633,7 +681,7 @@ instantiation used by :py:meth:`.ArgumentParser.instantiate_classes` is
 automatically determined based on the links. The instantiation links must be
 a directed acyclic graph. An example would be the following:
 
-.. code-block:: python
+.. testcode::
 
     class Model:
         def __init__(self, num_classes: int):
@@ -665,7 +713,7 @@ argument to the parser. For example, an argument that can be :code:`None` or a
 float in the range :code:`(0, 1)` or a positive int could be added using a type
 hint as follows:
 
-.. code-block:: python
+.. testcode::
 
     from typing import Optional, Union
     from jsonargparse.typing import PositiveInt, OpenUnitInterval
@@ -734,7 +782,7 @@ deserializer=complex)`.
 A more useful example could be registering the :code:`datetime` class. This case
 requires to give both a serializer and a deserializer as seen below.
 
-.. code-block:: python
+.. testcode::
 
     from datetime import datetime
     from jsonargparse import ArgumentParser
@@ -751,6 +799,13 @@ requires to give both a serializer and a deserializer as seen below.
     parser = ArgumentParser()
     parser.add_argument('--datetime', type=datetime)
     parser.parse_args(['--datetime=2008-09-03T20:56:35'])
+
+.. note::
+
+    The registering of types is only intended for simple types. By default any
+    class used as a type hint is considered a sub-class (see :ref:`sub-classes`)
+    which might be good for may use cases. If a class is registered with
+    :func:`.register_type` then the sub-class option is no longer available.
 
 
 .. _sub-classes:
@@ -784,17 +839,38 @@ A simple example would be having some config file :code:`config.yaml` as:
 
 Then in python:
 
-.. code-block:: python
+.. testsetup:: subclasses
+
+    import os
+    import shutil
+    import tempfile
+    from jsonargparse import ArgumentParser
+    cwd = os.getcwd()
+    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    os.chdir(tmpdir)
+    with open('config.yaml', 'w') as f:
+        f.write('myclass:\n  calendar:\n    class_path: calendar.Calendar\n    init_args:\n      firstweekday: 1\n')
+
+.. testcleanup:: subclasses
+
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
+
+.. doctest:: subclasses
 
     >>> from calendar import Calendar
+
     >>> class MyClass:
-            def __init__(self, calendar: Calendar):
-                self.calendar = calendar
-    >>> parser = ArgumentParser(parse_as_dict=True)
-    >>> parser.add_class_arguments(MyClass, 'myclass')
+    ...     def __init__(self, calendar: Calendar):
+    ...         self.calendar = calendar
+
+    >>> parser = ArgumentParser()
+    >>> parser.add_class_arguments(MyClass, 'myclass')  # doctest: +IGNORE_RESULT
+
     >>> cfg = parser.parse_path('config.yaml')
-    >>> cfg['myclass']['calendar']
+    >>> cfg.myclass.calendar.as_dict()
     {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
+
     >>> cfg = parser.instantiate_subclasses(cfg)
     >>> cfg['myclass']['calendar'].getfirstweekday()
     1
@@ -835,7 +911,11 @@ Since there are some legitimate use cases for class instances in defaults, they
 are supported with a particular behavior and recommendations. The first approach
 is using a normal class instance, for example:
 
-.. code-block:: python
+.. testsetup:: lazy_instance
+
+    from calendar import Calendar
+
+.. testcode:: lazy_instance
 
     class MyClass:
         def __init__(
@@ -855,7 +935,7 @@ The second approach which is the recommended one is to use the special function
 :func:`.lazy_instance` to instantiate the default. Continuing with the same
 example above this would be:
 
-.. code-block:: python
+.. testcode:: lazy_instance
 
     from jsonargparse import lazy_instance
 
@@ -882,7 +962,25 @@ difference is that the init args are given directly in a dictionary without
 specifying a :code:`class_path`. Therefore, the code below would accept
 the corresponding yaml structure.
 
-.. code-block:: python
+.. testsetup:: final_classes
+
+    import os
+    import shutil
+    import tempfile
+    from calendar import Calendar
+    from jsonargparse import ArgumentParser
+    cwd = os.getcwd()
+    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    os.chdir(tmpdir)
+    with open('config.yaml', 'w') as f:
+        f.write('calendar:\n  firstweekday: 1\n')
+
+.. testcleanup:: final_classes
+
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
+
+.. testcode:: final_classes
 
     from jsonargparse.typing import final
 
@@ -916,7 +1014,7 @@ whatever :code:`dest` was set to), and the values of the sub-command will be in
 an entry with the same name as the respective sub-command. An example of
 defining a parser with sub-commands is the following:
 
-.. code-block:: python
+.. testcode::
 
     from jsonargparse import ArgumentParser
     ...
@@ -934,7 +1032,7 @@ defining a parser with sub-commands is the following:
 
 Then some examples of parsing are the following:
 
-.. code-block:: python
+.. doctest::
 
     >>> parser.parse_args(['subcomm1', '--op1', 'val1'])
     Namespace(op0=None, subcomm1=Namespace(op1='val1'), subcommand='subcomm1')
@@ -942,10 +1040,9 @@ Then some examples of parsing are the following:
     Namespace(op0='val0', subcomm2=Namespace(op2='val2'), subcommand='subcomm2')
 
 Parsing config files with :py:meth:`.ArgumentParser.parse_path` or
-:py:meth:`.ArgumentParser.parse_string` is also possible. Though there can only
-be values for one of the sub-commands. The config file is not required to
-specify a value for :code:`subcommand`. For the example parser above a valid
-yaml would be:
+:py:meth:`.ArgumentParser.parse_string` is also possible. The config file is not
+required to specify a value for :code:`subcommand`. For the example parser above
+a valid yaml would be:
 
 .. code-block:: yaml
 
@@ -984,7 +1081,9 @@ Check out the `jsonschema documentation
 The current version of jsonargparse uses Draft7Validator. Parsing an argument
 using a json schema is done like in the following example:
 
-.. code-block:: python
+.. doctest::
+
+    >>> from jsonargparse import ActionJsonSchema
 
     >>> schema = {
     ...     "type" : "object",
@@ -994,11 +1093,11 @@ using a json schema is done like in the following example:
     ...     },
     ... }
 
-    >>> from jsonargparse import ActionJsonSchema
-    >>> parser.add_argument('--op', action=ActionJsonSchema(schema=schema))
+    >>> parser = ArgumentParser()
+    >>> parser.add_argument('--json', action=ActionJsonSchema(schema=schema))  # doctest: +IGNORE_RESULT
 
-    >>> parser.parse_args(['--op', '{"price": 1.5, "name": "cookie"}'])
-    Namespace(op=Namespace(name='cookie', price=1.5))
+    >>> parser.parse_args(['--json', '{"price": 1.5, "name": "cookie"}'])
+    Namespace(json={'price': 1.5, 'name': 'cookie'})
 
 Instead of giving a json string as argument value, it is also possible to
 provide a path to a json/yaml file, which would be loaded and validated against
@@ -1021,16 +1120,32 @@ jsonargparse with the :code:`jsonnet` extras require as explained in section
 :ref:`installation`.
 
 By default an :class:`.ArgumentParser` parses configuration files as yaml.
-However, if instantiated giving as argument :code:`parser_mode='jsonnet'`, then
+However, if instantiated giving :code:`parser_mode='jsonnet'`, then
 :func:`parse_args`, :func:`parse_path` and :func:`parse_string` will expect
 config files to be in jsonnet format instead. Example:
 
-.. code-block:: python
+.. testsetup:: jsonnet
 
-    >>> from jsonargparse import ArgumentParser, ActionConfigFile
-    >>> parser = ArgumentParser(parser_mode='jsonnet')
-    >>> parser.add_argument('--cfg', action=ActionConfigFile)
-    >>> cfg = parser.parse_args(['--cfg', 'example.jsonnet'])
+    import os
+    import shutil
+    import tempfile
+    cwd = os.getcwd()
+    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    os.chdir(tmpdir)
+    with open('example.jsonnet', 'w') as f:
+        f.write('{}\n')
+
+.. testcleanup:: jsonnet
+
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
+
+.. testcode:: jsonnet
+
+    from jsonargparse import ArgumentParser, ActionConfigFile
+    parser = ArgumentParser(parser_mode='jsonnet')
+    parser.add_argument('--config', action=ActionConfigFile)
+    cfg = parser.parse_args(['--config', 'example.jsonnet'])
 
 Jsonnet files are commonly parametrized, thus requiring external variables for
 parsing. For these cases, instead of changing the parser mode away from yaml,
@@ -1040,7 +1155,7 @@ another argument can be specified as the source for any external variables
 required, which would be either a path to or a string containing a json
 dictionary of variables. Its use would be as follows:
 
-.. code-block:: python
+.. testcode:: jsonnet
 
     from jsonargparse import ArgumentParser, ActionJsonnet, ActionJsonnetExtVars
     parser = ArgumentParser()
@@ -1052,10 +1167,10 @@ dictionary of variables. Its use would be as follows:
 For example, if a jsonnet file required some external variable :code:`param`,
 then the jsonnet and the external variable could be given as:
 
-.. code-block:: python
+.. testcode:: jsonnet
 
-        cfg = parser.parse_args(['--in_ext_vars', '{"param": 123}',
-                                 '--in_jsonnet', 'path_to_jsonnet'])
+    cfg = parser.parse_args(['--in_ext_vars', '{"param": 123}',
+                             '--in_jsonnet', 'example.jsonnet'])
 
 Note that the external variables argument must be provided before the jsonnet
 path so that this dictionary already exists when parsing the jsonnet.
@@ -1092,7 +1207,27 @@ the yaml file is the following:
 To create a parser that checks that the value of :code:`databases.info` is a
 file that exists and is readable, the following could be done:
 
-.. code-block:: python
+.. testsetup:: paths
+
+    import os
+    import shutil
+    import tempfile
+    cwd = os.getcwd()
+    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    os.chdir(tmpdir)
+    os.mkdir('app')
+    os.mkdir('app/data')
+    with open('app/config.yaml', 'w') as f:
+        f.write('databases:\n  info: data/info.db\n')
+    with open('app/data/info.db', 'w') as f:
+        f.write('info\n')
+
+.. testcleanup:: paths
+
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
+
+.. testcode:: paths
 
     from jsonargparse import ArgumentParser
     from jsonargparse.typing import Path_fr
@@ -1105,12 +1240,12 @@ parsing, the value of :code:`databases.info` will be an instance of the
 :class:`.Path` class that allows to get both the original relative path as
 included in the yaml file, or the corresponding absolute path:
 
-.. code-block:: python
+.. doctest:: paths
 
     >>> str(cfg.databases.info)
     'data/info.db'
-    >>> cfg.databases.info()
-    '/YOUR_CWD/app/data/info.db'
+    >>> cfg.databases.info()  # doctest: +ELLIPSIS
+    '/.../app/data/info.db'
 
 Likewise directories can be parsed using the :class:`.Path_dw` type, which would
 require a directory to exist and be writeable. New path types can be created
@@ -1132,18 +1267,45 @@ text file or from stdin. For this the :class:`.ActionPathList` is used and as
 argument either the path to a file listing the paths is given or the special
 :code:`'-'` string for reading the list from stdin. Example:
 
-.. code-block:: python
+.. testsetup:: path_list
+
+    import os
+    import shutil
+    import tempfile
+    cwd = os.getcwd()
+    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    os.chdir(tmpdir)
+    with open('paths.lst', 'w') as f:
+        f.write('paths.lst\n')
+
+    from jsonargparse import ArgumentParser
+    parser = ArgumentParser()
+
+    import sys
+    stdin = sys.stdin
+    sys.stdin = open('paths.lst', 'r')
+
+.. testcleanup:: path_list
+
+    sys.stdin.close()
+    sys.stdin = stdin
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
+
+.. testcode:: path_list
 
     from jsonargparse import ActionPathList
     parser.add_argument('--list', action=ActionPathList(mode='fr'))
-    cfg = parser.parse_args(['--list', 'paths.lst')  # Text file with paths
-    cfg = parser.parse_args(['--list', '-')          # List from stdin
+    cfg = parser.parse_args(['--list', 'paths.lst'])  # Text file with paths
+    cfg = parser.parse_args(['--list', '-'])          # List from stdin
 
 If :code:`nargs='+'` is given to :code:`add_argument` with
 :class:`.ActionPathList` then a single list is generated including all paths in
 all provided lists.
 
-Note: the :class:`.Path` class is currently not fully supported in windows.
+.. note::
+
+    The :class:`.Path` class is currently not fully supported in windows.
 
 
 .. _parsing-urls:
@@ -1151,7 +1313,7 @@ Note: the :class:`.Path` class is currently not fully supported in windows.
 Parsing URLs
 ============
 
-The :func:`.path_type` function also supports URLs which after parsing the
+The :func:`.path_type` function also supports URLs which after parsing, the
 :py:meth:`.Path.get_content` method can be used to perform a GET request to the
 corresponding URL and retrieve its content. For this to work the *validators*
 and *requests* python packages are required. Alternatively, :func:`.path_type`
@@ -1181,7 +1343,7 @@ like the following would work:
 
 .. code-block:: bash
 
-    $ my_tool.py --cfg http://example.com/config.yaml
+    my_tool.py --config http://example.com/config.yaml
 
 
 .. _restricted-numbers:
@@ -1197,7 +1359,7 @@ predefined types are: :class:`.PositiveInt`, :class:`.NonNegativeInt`,
 :class:`.ClosedUnitInterval` and :class:`.OpenUnitInterval`. Examples of usage
 are:
 
-.. code-block:: python
+.. testcode::
 
     from jsonargparse.typing import PositiveInt, PositiveFloat, restricted_number_type
     # float larger than zero
@@ -1207,7 +1369,7 @@ are:
     parser.add_argument('--op2', type=from_0_to_10)
     # either int larger than zero or 'off' string
     def int_or_off(x): return x if x == 'off' else PositiveInt(x)
-    parser.add_argument('--op3', type=int_or_off))
+    parser.add_argument('--op3', type=int_or_off)
 
 
 .. _restricted-strings:
@@ -1221,7 +1383,7 @@ that are restricted to match a given regular expression:
 restricted so that it follows the normal email pattern. For example to add an
 argument required to be exactly four uppercase letters:
 
-.. code-block:: python
+.. testcode::
 
     from jsonargparse.typing import Email, restricted_string_type
     CodeType = restricted_string_type('CodeType', '^[A-Z]{4}$')
@@ -1237,13 +1399,19 @@ Another case of restricted values is string choices. In addition to the common
 type an :code:`Enum` class. This has the added benefit that strings are mapped
 to some desired values. For example:
 
-.. code-block:: python
+.. testsetup:: enum
 
+    from jsonargparse import ArgumentParser
+    parser = ArgumentParser()
+
+.. doctest:: enum
+
+    >>> import enum
     >>> class MyEnum(enum.Enum):
     ...     choice1 = -1
     ...     choice2 = 0
     ...     choice3 = 1
-    >>> parser.add_argument('--op', type=MyEnum)
+    >>> parser.add_argument('--op', type=MyEnum)  # doctest: +IGNORE_RESULT
     >>> parser.parse_args(['--op=choice1'])
     Namespace(op=<MyEnum.choice1: -1>)
 
@@ -1263,10 +1431,15 @@ is implemented. If given as values :code:`{'yes', 'true'}` or :code:`{'no',
 'false'}` the corresponding parsed values would be :code:`True` or
 :code:`False`. For example:
 
-.. code-block:: python
+.. testsetup:: boolean
 
-    >>> parser.add_argument('--op1', type=bool, default=False)
-    >>> parser.add_argument('--op2', type=bool, default=True)
+    from jsonargparse import ArgumentParser
+    parser = ArgumentParser()
+
+.. doctest:: boolean
+
+    >>> parser.add_argument('--op1', type=bool, default=False)  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument('--op2', type=bool, default=True)   # doctest: +IGNORE_RESULT
     >>> parser.parse_args(['--op1', 'yes', '--op2', 'false'])
     Namespace(op1=True, op2=False)
 
@@ -1274,7 +1447,12 @@ Sometimes it is also useful to define two paired options, one to set
 :code:`True` and the other to set :code:`False`. The :class:`.ActionYesNo` class
 makes this straightforward. A couple of examples would be:
 
-.. code-block:: python
+.. testsetup:: yes_no
+
+    from jsonargparse import ArgumentParser
+    parser = ArgumentParser()
+
+.. testcode:: yes_no
 
     from jsonargparse import ActionYesNo
     # --opt1 for true and --no_opt1 for false.
@@ -1298,7 +1476,7 @@ another more complex parser. For these cases an argument can be defined using
 the :class:`.ActionParser` class. An example of how to use this class is the
 following:
 
-.. code-block:: python
+.. testcode::
 
     from jsonargparse import ArgumentParser, ActionParser
     inner_parser = ArgumentParser(prog='app1')
@@ -1328,7 +1506,7 @@ checked to populate :code:`inner.node.op1`.
 
 An important detail to note is that the parsers that are given to
 :class:`.ActionParser` are internally modified. Therefore, to use the parser
-both as standalone and an inner node, it is necessary to implement a function
+both as standalone and as inner node, it is necessary to implement a function
 that instantiates the parser. This function would be used in one place to get an
 instance of the parser for standalone parsing, and in some other place use the
 function to provide an instance of the parser to :class:`.ActionParser`.
@@ -1351,7 +1529,12 @@ argcomplete compatible tools or for each `individual
 <https://kislyuk.github.io/argcomplete/#synopsis>`__ tool. A simple
 :code:`example.py` tool would be:
 
-.. code-block:: python
+.. testsetup:: tab_completion
+
+    import sys
+    sys.argv = ['']
+
+.. testcode:: tab_completion
 
     #!/usr/bin/env python3
 
@@ -1433,11 +1616,11 @@ The crucial step is installing the requirements which would be done by running:
 
 Running the unit tests can be done either using using `tox
 <https://tox.readthedocs.io/en/stable/>`__ or the :code:`setup.py` script. The
-unit tests are also installed with the package, thus can be used to in a
-production system.
+unit tests are also installed with the package, thus can be run in a production
+system.
 
 .. code-block:: bash
 
-    tox  # Run tests using tox
-    ./setup.py test_coverage  # Run tests and generate coverage report
+    tox                            # Run tests using tox
+    ./setup.py test_coverage       # Run tests and generate coverage report
     python3 -m jsonargparse_tests  # Run tests for installed package
