@@ -64,6 +64,10 @@ if [ "${#PYFILES[@]}" -gt 0 ]; then
   [ "$?" != "0" ] && exit 1;
 fi
 
+## Run doc tests ##
+sphinx-build -M doctest sphinx sphinx/_build sphinx/README.rst
+[ "$?" != "0" ] && exit 1;
+
 ## Run unit tests ##
 ./setup.py test_coverage;
 [ "$?" != "0" ] && exit 1;

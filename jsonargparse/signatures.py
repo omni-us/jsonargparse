@@ -452,9 +452,10 @@ class SignatureArguments:
             required: Whether the argument group is required.
             metavar: Variable string to show in the argument's help.
             help: Description of argument to show in the help.
+            **kwargs: Additional parameters like in add_class_arguments.
 
         Raises:
-            ValueError: When not given a class.
+            ValueError: When given an invalid base class.
         """
         if is_final_class(baseclass):
             raise ValueError("Not allowed for classes that are final.")

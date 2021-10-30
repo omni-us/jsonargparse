@@ -57,6 +57,20 @@ def skip(app, what, name, obj, would_skip, options):
 def setup(app):
     app.connect("autodoc-skip-member", skip)
 
+# doctest extensions
+import doctest
+
+IGNORE_RESULT = doctest.register_optionflag('IGNORE_RESULT')
+
+OutputChecker = doctest.OutputChecker
+class CustomOutputChecker(OutputChecker):
+    def check_output(self, want, got, optionflags):
+        if IGNORE_RESULT & optionflags:
+            return True
+        return OutputChecker.check_output(self, want, got, optionflags)
+
+doctest.OutputChecker = CustomOutputChecker
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

@@ -1,4 +1,4 @@
-.. include:: ../README.rst
+.. include:: README.rst
 
 
 API Reference
@@ -56,6 +56,13 @@ jsonargparse.jsonnet
 jsonargparse.actions
 --------------------
 .. automodule:: jsonargparse.actions
+    :members:
+    :show-inheritance:
+    :autosummary:
+
+jsonargparse.namespace
+----------------------
+.. automodule:: jsonargparse.namespace
     :members:
     :show-inheritance:
     :autosummary:
