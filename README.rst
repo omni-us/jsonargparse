@@ -553,9 +553,9 @@ boolean with default value false.
 Instantiation of classes added as argument groups with
 :func:`add_class_arguments` can be done more simply for an entire config object
 using :py:meth:`.ArgumentParser.instantiate_classes`. For the example above
-running :code:`cfg = parser.instantiate_classes(cfg)` would result in a dict in
-which :code:`cfg['myclass']['init']` would contain an instance of
-:code:`MyClass` initialized with whatever command line arguments were parsed.
+running :code:`cfg = parser.instantiate_classes(cfg)` would result in
+:code:`cfg['myclass']['init']` containing an instance of :code:`MyClass`
+initialized with whatever command line arguments were parsed.
 
 When parsing from a configuration file (see :ref:`configuration-files`) all the
 values can be given in a single config file. However, for convenience it is also

@@ -337,7 +337,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         return cfg
 
 
-    def _as_dict_if_requested(self, cfg: Namespace, skip_check: bool) -> Union[Namespace, Dict[str, Any]]:
+    def _as_dict_if_requested(self, cfg: Namespace, skip_check: bool = False) -> Union[Namespace, Dict[str, Any]]:
         return cfg.as_dict() if self._parse_as_dict and not skip_check else cfg
 
 
@@ -1079,7 +1079,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             raise type(ex)(message) from ex
 
 
-    def instantiate_subclasses(self, cfg:Union[Namespace, Dict[str, Any]]) -> Dict[str, Any]:
+    def instantiate_subclasses(self, cfg: Union[Namespace, Dict[str, Any]]) -> Union[Namespace, Dict[str, Any]]:
         """Calls instantiate_classes with instantiate_groups=False.
 
         Args:
@@ -1091,7 +1091,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         return self.instantiate_classes(cfg, instantiate_groups=False)
 
 
-    def instantiate_classes(self, cfg:Union[Namespace, Dict[str, Any]], instantiate_groups: bool = True) -> Dict[str, Any]:
+    def instantiate_classes(
+        self,
+        cfg: Union[Namespace, Dict[str, Any]],
+        instantiate_groups: bool = True,
+    ) -> Union[Namespace, Dict[str, Any]]:
         """Recursively instantiates all subclasses defined by 'class_path' and 'init_args' and class groups.
 
         Args:
@@ -1099,7 +1103,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             instantiate_groups: Whether class groups should be instantiated.
 
         Returns:
-            A configuration object with all subclasses and classes instantiated.
+            A configuration object with all subclasses and class groups instantiated.
         """
         components: List[Union[ActionTypeHint, _ActionConfigLoad, _ArgumentGroup]] = []
         for action in filter_default_actions(self._actions):
@@ -1137,7 +1141,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         if subcommand is not None and subparser is not None:
             cfg[subcommand] = subparser.instantiate_classes(cfg[subcommand], instantiate_groups=instantiate_groups)
 
-        return cfg.as_dict()
+        return self._as_dict_if_requested(cfg)
 
 
     def strip_unknown(self, cfg: Namespace) -> Namespace:
