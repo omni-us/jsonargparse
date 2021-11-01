@@ -25,6 +25,7 @@ Fixed
 - Fixed issues related to conflict namespace base.
 - Fixed the parsing of Dict[int, str] type #87.
 - Fixed inner relative config with for commented tests for parse_env and CLI.
+- init_args from default_config_files not discarded when class_path is overridden.
 
 Changed
 ^^^^^^^

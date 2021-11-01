@@ -476,6 +476,33 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertIn('firstweekday: 3\n', cfg)
 
 
+    def test_class_path_override_with_default_config_files(self):
+
+        class MyCalendar(Calendar):
+            def __init__(self, *args, param: str = '0', **kwargs):
+                super().__init__(*args, **kwargs)
+
+        import jsonargparse_tests
+        setattr(jsonargparse_tests, 'MyCalendar', MyCalendar)
+
+        config = {
+            'class_path': 'jsonargparse_tests.MyCalendar',
+            'init_args': {'firstweekday': 2, 'param': '1'},
+        }
+        config_path = os.path.join(self.tmpdir, 'config.yaml')
+        with open(config_path, 'w') as f:
+            json.dump({'cal': config}, f)
+
+        parser = ArgumentParser(error_handler=None, default_config_files=[config_path])
+        parser.add_argument('--cal', type=Optional[Calendar])
+
+        cfg = parser.instantiate_classes(parser.get_defaults())
+        self.assertIsInstance(cfg['cal'], MyCalendar)
+
+        cfg = parser.parse_args(['--cal={"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}'])
+        self.assertEqual(type(parser.instantiate_classes(cfg)['cal']), Calendar)
+
+
     def test_linking_deep_targets(self):
         class D:
             pass

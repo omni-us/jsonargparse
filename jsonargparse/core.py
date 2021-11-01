@@ -1243,7 +1243,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         Returns:
             A new object with the merged configuration.
         """
+        del_keys = []
+        for key_class_path in [k for k in cfg_from.keys() if k.endswith('.class_path')]:
+            key_init_args = key_class_path[:-len('class_path')] + 'init_args'
+            if key_class_path in cfg_to and key_init_args in cfg_to and cfg_from[key_class_path] != cfg_to[key_class_path]:
+                del_keys.append(key_init_args)
         cfg = cfg_to.clone()
+        for key in reversed(del_keys):
+            del cfg[key]
         cfg.update(cfg_from)
         return cfg
 
