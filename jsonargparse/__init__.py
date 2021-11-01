@@ -21,4 +21,4 @@ from .typehints import *
 from .util import *
 
 
-__version__ = '3.19.4'
+__version__ = '4.0.0.dev0'
