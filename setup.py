@@ -6,9 +6,22 @@ import re
 
 NAME = next(filter(lambda x: x.startswith('name = '), open('setup.cfg').readlines())).strip().split()[-1]
 NAME_TESTS = next(filter(lambda x: x.startswith('test_suite = '), open('setup.cfg').readlines())).strip().split()[-1]
-LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:|py:attr:', '', open('README.rst').read())
-LONG_DESCRIPTION = re.sub('([+|][- ]{12})[- ]{5}', r'\1', LONG_DESCRIPTION)
 CMDCLASS = {}
+
+LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:|py:attr:| *# doctest:.*', '', open('README.rst').read())
+LONG_DESCRIPTION = re.sub('([+|][- ]{12})[- ]{5}', r'\1', LONG_DESCRIPTION)
+
+LONG_DESCRIPTION_LINES = []
+skip_line = False
+for num, line in enumerate(LONG_DESCRIPTION.split('\n')):
+    if any(line.startswith('.. '+x) for x in ['doctest:: :hide:', 'testsetup::', 'testcleanup::']):
+        skip_line = True
+    elif skip_line and line != '' and not line.startswith(' '):
+        skip_line = False
+    if not skip_line:
+        LONG_DESCRIPTION_LINES.append(line)
+LONG_DESCRIPTION = '\n'.join(LONG_DESCRIPTION_LINES)
+LONG_DESCRIPTION = re.sub('(testcode::|doctest::).*', 'code-block:: python', LONG_DESCRIPTION)
 
 
 ## test_coverage target ##

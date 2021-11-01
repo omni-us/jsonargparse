@@ -142,8 +142,7 @@ Then in a shell you could run:
     $ python example.py Lucky --prize=1000
     Lucky won 1000€!
 
-.. doctest::
-    :hide:
+.. doctest:: :hide:
 
     >>> CLI(command, args=['Lucky', '--prize=1000'])
     Lucky won 1000€!
@@ -194,8 +193,7 @@ Then in a shell you could run:
     $ python example.py --max_prize=1000 person Lucky
     Lucky won 632€!
 
-.. doctest::
-    :hide:
+.. doctest:: :hide:
 
     >>> CLI(Main, args=['--max_prize=1000', 'person', 'Lucky'])  # doctest: +ELLIPSIS
     'Lucky won ...€!'
