@@ -275,7 +275,7 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(cfg['op'], expected)
         cfg = parser.parse_args(['--op=["calendar.Calendar"]'])
         self.assertEqual(cfg['op'], expected)
-        cfg = parser.instantiate_subclasses(cfg)
+        cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['op'][0], Calendar)
 
         with self.assertRaises(ParserError):
@@ -294,25 +294,25 @@ class TypeHintsTests(unittest.TestCase):
         init_args = '"init_args": {"firstweekday": 3}'
         cfg = parser.parse_args(['--op=[{'+class_path+', '+init_args+'}]'])
         self.assertEqual(cfg['op'][0]['init_args'], {'firstweekday': 3})
-        cfg = parser.instantiate_subclasses(cfg)
+        cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['op'][0], Calendar)
         self.assertEqual(3, cfg['op'][0].firstweekday)
 
         parser = ArgumentParser(parse_as_dict=True, error_handler=None)
         parser.add_argument('--n.op', type=Optional[Calendar])
         cfg = parser.parse_args(['--n.op={'+class_path+', '+init_args+'}'])
-        cfg = parser.instantiate_subclasses(cfg)
+        cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['n']['op'], Calendar)
         self.assertEqual(3, cfg['n']['op'].firstweekday)
 
         parser = ArgumentParser()
         parser.add_argument('--op', type=Calendar)
         cfg = parser.parse_args(['--op={'+class_path+', '+init_args+'}'])
-        cfg = parser.instantiate_subclasses(cfg)
+        cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['op'], Calendar)
         self.assertEqual(3, cfg['op'].firstweekday)
 
-        cfg = parser.instantiate_subclasses(parser.parse_args([]))
+        cfg = parser.instantiate_classes(parser.parse_args([]))
         self.assertIsNone(cfg['op'])
 
 
@@ -437,7 +437,7 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         cfg = parser.parse_args(['--data=data.yaml'])
         self.assertEqual('data.yaml', str(cfg['data'].pop('__path__')))
         self.assertEqual(data, cfg['data'])
-        cfg = parser.instantiate_subclasses(parser.parse_args(['--cal=cal.yaml']))
+        cfg = parser.instantiate_classes(parser.parse_args(['--cal=cal.yaml']))
         self.assertIsInstance(cfg['cal'], Calendar)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--data=does-not-exist.yaml']))
 
@@ -553,6 +553,48 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         config = parser.parse_args(["--config", config_path])
         config_init = parser.instantiate_classes(config)
         self.assertIsInstance(config_init["b"].a.d, D)
+
+
+    def test_mapping_class_typehint(self):
+        class A:
+            pass
+
+        class B:
+            def __init__(
+                self,
+                class_map: Mapping[str, A],
+                int_list: List[int],
+            ):
+                self.class_map = class_map
+                self.int_list = int_list
+
+        import jsonargparse_tests
+        setattr(jsonargparse_tests, 'A', A)
+        setattr(jsonargparse_tests, 'B', B)
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(B, 'b')
+
+        config = {
+            'b': {
+                'class_map': {
+                    'one': {'class_path': 'jsonargparse_tests.A'},
+                },
+                'int_list': [1],
+            },
+        }
+
+        cfg = parser.parse_object(config)
+        self.assertEqual(cfg.b.class_map, {'one': Namespace(class_path='jsonargparse_tests.A')})
+        self.assertEqual(cfg.b.int_list, [1])
+
+        cfg_init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg_init.b, B)
+        self.assertIsInstance(cfg_init.b.class_map, dict)
+        self.assertIsInstance(cfg_init.b.class_map['one'], A)
+
+        config['b']['int_list'] = config['b']['class_map']
+        self.assertRaises(ParserError, lambda: parser.parse_object(config))
 
 
     def test_linking_deep_targets_mapping(self):

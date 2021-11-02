@@ -323,6 +323,14 @@ An example analogous to the one above would be:
     parser = ArgumentParser()
     parser.add_argument('--lev1', type=Level1Options, default=Level1Options())
 
+The :class:`.Namespace` class is also an extension of the one from argparse. It
+has some additional features which can be seen in the API. In particular keys
+can be accessed like a dictionary either with individual keys, e.g.
+:code:`cfg['lev1']['opt1']`, or a single one, e.g. :code:`cfg['lev1.opt1']`.
+Also the class has a method :py:meth`.Namespace.as_dict` that can be used to
+represent the nested namespace as a nested dictionary useful for example for
+class instantiation.
+
 
 .. _configuration-files:
 
@@ -676,8 +684,8 @@ takes the source class instance and returns the value to set in target.
 Alternatively the key can specify a class attribute. The target key has to be a
 single argument and can be inside init_args of a subclass. The order of
 instantiation used by :py:meth:`.ArgumentParser.instantiate_classes` is
-automatically determined based on the links. The instantiation links must be
-a directed acyclic graph. An example would be the following:
+automatically determined based on the links. The instantiation links must be a
+directed acyclic graph. An example would be the following:
 
 .. testcode::
 
@@ -802,7 +810,7 @@ requires to give both a serializer and a deserializer as seen below.
 
     The registering of types is only intended for simple types. By default any
     class used as a type hint is considered a sub-class (see :ref:`sub-classes`)
-    which might be good for may use cases. If a class is registered with
+    which might be good for many use cases. If a class is registered with
     :func:`.register_type` then the sub-class option is no longer available.
 
 
@@ -820,10 +828,10 @@ class can be imported, that it is a subclass of the given type and that
 :code:`init_args` values correspond to valid arguments to instantiate it. After
 parsing, the config object will include the :code:`class_path` and
 :code:`init_args` entries. To get a config object with all sub-classes
-instantiated, the :py:meth:`.ArgumentParser.instantiate_subclasses` method is
-used. The :code:`skip` parameter of the signature methods can also be used to
-exclude arguments within subclasses. This is done by giving its relative
-destination key, i.e. as :code:`param.init_args.subparam`.
+instantiated, the :py:meth:`.ArgumentParser.instantiate_classes` method is used.
+The :code:`skip` parameter of the signature methods can also be used to exclude
+arguments within subclasses. This is done by giving its relative destination
+key, i.e. as :code:`param.init_args.subparam`.
 
 A simple example would be having some config file :code:`config.yaml` as:
 
@@ -869,8 +877,8 @@ Then in python:
     >>> cfg.myclass.calendar.as_dict()
     {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
 
-    >>> cfg = parser.instantiate_subclasses(cfg)
-    >>> cfg['myclass']['calendar'].getfirstweekday()
+    >>> cfg = parser.instantiate_classes(cfg)
+    >>> cfg.myclass.calendar.getfirstweekday()
     1
 
 In this example the :code:`class_path` points to the same class used for the
@@ -947,7 +955,7 @@ example above this would be:
 In this case the default value will still be an instance of :code:`Calendar`.
 The difference is that the parsing methods would provide a dict with
 :code:`class_path` and :code:`init_args` instead of the class instance.
-Furthermore, if :py:meth:`.ArgumentParser.instantiate_subclasses` is used a new
+Furthermore, if :py:meth:`.ArgumentParser.instantiate_classes` is used a new
 instance of the class is created thereby avoiding issues related to the
 mutability of the default.
 

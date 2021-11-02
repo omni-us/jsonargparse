@@ -16,6 +16,7 @@ v4.0.0 (2021-??-??)
 Added
 ^^^^^
 - New Namespace class that better supports nesting and avoids flat/dict conversions.
+- python 3.10 is now supported and included in circleci tests.
 - More type hints throughout the code base.
 - New unit tests to increase coverage.
 - Include dataclasses extras require for tox testing.
@@ -26,6 +27,7 @@ Fixed
 - Fixed the parsing of Dict[int, str] type #87.
 - Fixed inner relative config with for commented tests for parse_env and CLI.
 - init_args from default_config_files not discarded when class_path is overridden.
+- Problems with class instantiation for parameters of final classes.
 
 Changed
 ^^^^^^^
@@ -37,6 +39,10 @@ Changed
 Deprecated
 ^^^^^^^^^^
 - dict_to_namespace function will be removed in the future.
+
+Removed
+^^^^^^^
+- python 3.5 is no longer supported.
 
 
 v3.19.4 (2021-10-04)

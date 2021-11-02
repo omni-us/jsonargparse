@@ -145,8 +145,7 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def is_class_typehint(typehint, only_subclasses=False):
-        if isinstance(typehint, Action):
-            typehint = getattr(typehint, '_typehint', None)
+        typehint = typehint_from_action(typehint)
         typehint_origin = getattr(typehint, '__origin__', None)
         if typehint_origin == Union:
             subtypes = [a for a in typehint.__args__ if a != NoneType]
@@ -157,18 +156,28 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
+    def is_final_class_typehint(typehint):
+        typehint = typehint_from_action(typehint)
+        typehint_origin = getattr(typehint, '__origin__', None)
+        if typehint_origin == Union:
+            subtypes = [a for a in typehint.__args__ if a != NoneType]
+            if len(subtypes) == 1:
+                typehint = subtypes[0]
+        return is_final_class(typehint)
+
+
+    @staticmethod
     def is_subclass_typehint(typehint):
         return ActionTypeHint.is_class_typehint(typehint, True)
 
 
     @staticmethod
-    def is_mapping_class_typehint(typehint, only_subclasses=False):
-        if isinstance(typehint, Action):
-            typehint = getattr(typehint, '_typehint', None)
+    def is_mapping_class_typehint(typehint):
+        typehint = typehint_from_action(typehint)
         typehint_origin = getattr(typehint, '__origin__', None)
         if typehint_origin not in mapping_origin_types:
             return False
-        return ActionTypeHint.is_class_typehint(getattr(typehint, '__args__')[1], only_subclasses=only_subclasses)
+        return ActionTypeHint.is_class_typehint(getattr(typehint, '__args__')[1])
 
 
     @staticmethod
@@ -278,10 +287,20 @@ class ActionTypeHint(Action):
         return adapt_typehints(val, self._typehint, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs)
 
 
+    def get_class_and_init_args(self, value):
+        final_class = ActionTypeHint.is_final_class_typehint(self)
+        if final_class:
+            typehint_origin = getattr(self._typehint, '__origin__', None)
+            class_type = [a for a in self._typehint.__args__ if a != NoneType][0] if typehint_origin == Union else self._typehint
+            init_args = value
+        else:
+            class_type = import_object(value['class_path'])
+            init_args = value.get('init_args')
+        return class_type, init_args, final_class
+
+
     @staticmethod
     def get_class_parser(val_class, sub_add_kwargs=None):
-        if isinstance(val_class, str):
-            val_class = import_object(val_class)
         from .core import ArgumentParser
         parser = ArgumentParser(error_handler=None)
         parser.add_class_arguments(val_class, **(sub_add_kwargs or {}))
@@ -476,7 +495,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs)
             if instantiate_classes and sub_add_kwargs.get('instantiate', True):
                 val = adapted
-            elif adapted is not None:
+            elif adapted is not None and adapted != Namespace():
                 val['init_args'] = adapted
         except (ImportError, AttributeError, AssertionError, ParserError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
@@ -510,7 +529,7 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
             break
 
     if instantiate_classes:
-        init_args = parser.instantiate_subclasses(init_args)
+        init_args = parser.instantiate_classes(init_args)
         if not sub_add_kwargs.get('instantiate', True):
             return init_args
         return val_class(**init_args)
@@ -532,6 +551,12 @@ def is_optional(annotation, ref_type):
         len(annotation.__args__) == 2 and \
         any(NoneType == a for a in annotation.__args__) and \
         any(_issubclass(a, ref_type) for a in annotation.__args__)
+
+
+def typehint_from_action(action_or_typehint):
+    if isinstance(action_or_typehint, Action):
+        action_or_typehint = getattr(action_or_typehint, '_typehint', None)
+    return action_or_typehint
 
 
 def type_to_str(obj):

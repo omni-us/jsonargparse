@@ -316,7 +316,7 @@ class SignaturesTests(unittest.TestCase):
         parser.set_defaults({'cal': calendar.Calendar(firstweekday=4)})
         cfg = parser.parse_args([])
         self.assertIsInstance(cfg['cal'], calendar.Calendar)
-        cfg = parser.instantiate_subclasses(cfg)
+        cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['cal'], calendar.Calendar)
         dump = parser.dump(cfg)
         self.assertIn('cal: <calendar.Calendar object at ', dump)
@@ -650,7 +650,7 @@ class SignaturesTests(unittest.TestCase):
         cfg = parser.parse_args(['--c1={'+class_path+', '+init_args+'}'])
         self.assertEqual(cfg.c1.class_path, 'jsonargparse_tests.signatures_tests.Class1')
         self.assertEqual(cfg.c1.init_args, Namespace(a1=7, a2=2.3))
-        cfg = parser.instantiate_subclasses(cfg)
+        cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['c1'], Class1)
         self.assertEqual(7, cfg['c1'].a1)
         self.assertEqual(2.3, cfg['c1'].a2)
@@ -1136,7 +1136,7 @@ class DataclassesTests(unittest.TestCase):
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), dump['a'])
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), dump['b'])
 
-        cfg = parser.instantiate_subclasses(cfg)
+        cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['a'], self.MyDataClassA)
         self.assertIsInstance(cfg['b'], self.MyDataClassB)
         self.assertIsInstance(cfg['b'].b2, self.MyDataClassA)
@@ -1171,7 +1171,8 @@ class DataclassesTests(unittest.TestCase):
                 a1: self.MyDataClassA = self.MyDataClassA(),  # type: ignore
                 a2: self.MyDataClassB = self.MyDataClassB(),  # type: ignore
             ):
-                """MyClass description"""
+                self.a1 = a1
+                self.a2 = a2
 
         parser = ArgumentParser()
         parser.add_class_arguments(MyClass, 'g')
@@ -1183,10 +1184,10 @@ class DataclassesTests(unittest.TestCase):
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), dump['g']['a1'])
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), dump['g']['a2'])
 
-        cfg = parser.instantiate_subclasses(cfg)
-        self.assertIsInstance(cfg['g']['a1'], self.MyDataClassA)
-        self.assertIsInstance(cfg['g']['a2'], self.MyDataClassB)
-        self.assertIsInstance(cfg['g']['a2'].b2, self.MyDataClassA)
+        cfg_init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg_init.g.a1, self.MyDataClassA)
+        self.assertIsInstance(cfg_init.g.a2, self.MyDataClassB)
+        self.assertIsInstance(cfg_init.g.a2.b2, self.MyDataClassA)
 
 
     def test_dataclass_typehint_in_subclass(self):
@@ -1213,7 +1214,7 @@ class DataclassesTests(unittest.TestCase):
         self.assertEqual(cfg.c1.class_path, 'jsonargparse_tests.signatures_tests.MyClass1')
         self.assertEqual(cfg.c1.init_args.a1.b2.a1, 7)
         self.assertIsInstance(cfg.c1.init_args.a1.b2.a1, PositiveInt)
-        cfg = parser.instantiate_subclasses(cfg)
+        cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['c1'], MyClass1)
         self.assertIsInstance(cfg['c1'].a1, self.MyDataClassB)
         self.assertIsInstance(cfg['c1'].a1.b2, self.MyDataClassA)
@@ -1227,7 +1228,7 @@ class DataclassesTests(unittest.TestCase):
         cfg = parser.get_defaults().as_dict()
         self.assertEqual({'b1': 7.0, 'b2': {'a1': 1, 'a2': '2'}}, cfg['b'])
 
-        cfg = parser.instantiate_subclasses(cfg)
+        cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['b'], self.MyDataClassB)
         self.assertIsInstance(cfg['b'].b2, self.MyDataClassA)
 
@@ -1280,9 +1281,9 @@ class DataclassesTests(unittest.TestCase):
         self.assertEqual({'a': 3, 'b': '2'}, dataclasses.asdict(MyDataClassAB(a=2, b='2')))  # pylint: disable=unexpected-keyword-arg
 
 
-    def test_instantiate_classes_skip_dataclasses(self):
+    def test_instantiate_classes_dataclasses_lightning_issue_9207(self):
         # https://github.com/PyTorchLightning/pytorch-lightning/issues/9207
-        dataclasses = import_dataclasses('test_instantiate_classes_skip_dataclasses')
+        dataclasses = import_dataclasses('test_instantiate_classes_dataclasses_lightning_issue_9207')
 
         @dataclasses.dataclass
         class MyDataClass:
@@ -1292,7 +1293,7 @@ class DataclassesTests(unittest.TestCase):
             def __init__(self, data: MyDataClass):
                 self.data = data
 
-        parser = ArgumentParser(parse_as_dict=True)
+        parser = ArgumentParser()
         parser.add_class_arguments(MyClass, 'class')
         cfg = parser.parse_args([])
         cfg = parser.instantiate_classes(cfg)

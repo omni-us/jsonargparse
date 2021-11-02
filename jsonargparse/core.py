@@ -646,20 +646,24 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                         _, subparser = _ActionSubCommands.get_subcommand(self, cfg, fail_no_subcommand=False)
                         val = branch_to_namespace(val, subparser)
                     elif isinstance(action, ActionTypeHint):
-                        def subclass_branch_to_namespace(val):
+                        def class_branch_to_namespace(val):
+                            klass, init_args, final_class = action.get_class_and_init_args(val)
                             val = Namespace(val)
-                            if isinstance(val.get('init_args'), dict):
+                            if init_args is not None:
                                 sub_add_kwargs = getattr(action, 'sub_add_kwargs', None)
-                                subparser = ActionTypeHint.get_class_parser(val.get('class_path'), sub_add_kwargs=sub_add_kwargs)
-                                val['init_args'] = branch_to_namespace(val['init_args'], subparser)
+                                subparser = ActionTypeHint.get_class_parser(klass, sub_add_kwargs=sub_add_kwargs)
+                                init_args = branch_to_namespace(init_args, subparser)
+                                if final_class:
+                                    val = init_args
+                                else:
+                                    val['init_args'] = init_args
                             return val
-                        if ActionTypeHint.is_subclass_typehint(action) and isinstance(val.get('class_path'), str):
-                            val = subclass_branch_to_namespace(val)
+                        if ActionTypeHint.is_class_typehint(action):
+                            val = class_branch_to_namespace(val)
                         elif ActionTypeHint.is_mapping_class_typehint(action):
                             val = dict(val)
                             for subkey, subval in val.items():
-                                if isinstance(subval, dict) and isinstance(subval.get('class_path'), str):
-                                    val[subkey] = subclass_branch_to_namespace(subval)
+                                val[subkey] = class_branch_to_namespace(subval)
                 ns[key] = val
             return ns
 

@@ -67,7 +67,7 @@ def CLI(
         if return_parser:
             return parser
         cfg = parser.parse_args(args)
-        cfg_init = parser.instantiate_subclasses(cfg)
+        cfg_init = parser.instantiate_classes(cfg)
         return _run_component(component, cfg_init)
 
     subcommands = parser.add_subcommands(required=True)
@@ -82,10 +82,11 @@ def CLI(
         parser.set_defaults(set_defaults)
     if return_parser:
         return parser
-    cfg = parser.instantiate_subclasses(parser.parse_args(args))
-    subcommand = cfg.pop('subcommand')
+    cfg = parser.parse_args(args)
+    cfg_init = parser.instantiate_classes(cfg)
+    subcommand = cfg_init.pop('subcommand')
     component = comp_dict[subcommand]
-    return _run_component(component, cfg.get(subcommand))
+    return _run_component(component, cfg_init.get(subcommand))
 
 
 def _get_help_str(component):
