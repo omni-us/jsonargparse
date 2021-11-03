@@ -1,16 +1,17 @@
 """Collection of general functions and classes."""
 
-import os
-import re
-import sys
-import stat
-import yaml
 import inspect
 import logging
+import os
+import re
+import stat
+import sys
+import warnings
+import yaml
 from argparse import Action
 from collections import defaultdict
-from typing import Any, Optional, Tuple, Union
 from contextlib import contextmanager, redirect_stderr
+from typing import Any, Optional, Tuple, Union
 from yaml.parser import ParserError as yamlParserError
 from yaml.scanner import ScannerError as yamlScannerError
 
@@ -44,6 +45,18 @@ NoneType = type(None)
 class ParserError(Exception):
     """Error raised when parsing a value fails."""
     pass
+
+
+class JsonargparseWarning(UserWarning):
+    pass
+
+
+def warning(message, category=JsonargparseWarning, stacklevel=1):
+    warnings.warn(
+        re.sub('\n\n+', '\n\n', re.sub('\n +', '\n  ', message)),
+        category=category,
+        stacklevel=stacklevel+1,
+    )
 
 
 def _load_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:

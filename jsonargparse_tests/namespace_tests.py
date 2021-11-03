@@ -176,5 +176,14 @@ class NamespaceTests(unittest.TestCase):
         self.assertFalse(dic1 is dic2)
 
 
+    def test_use_for_kwargs(self):
+        def func(a=1, b=2, c=3):
+            return a, b, c
+
+        kwargs = Namespace(a=4, c=5)
+        val = func(**kwargs)
+        self.assertEqual(val, (4, 2, 5))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

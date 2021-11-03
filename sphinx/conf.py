@@ -57,6 +57,8 @@ def skip(app, what, name, obj, would_skip, options):
 def setup(app):
     app.connect("autodoc-skip-member", skip)
 
+os.environ['JSONARGPARSE_SKIP_DEPRECATION_PATCH'] = ''
+
 # doctest extensions
 import doctest
 

@@ -1,13 +1,16 @@
 """Deprecated code."""
 
+import functools
+import inspect
+import os
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Set
 from .namespace import Namespace
 from .optionals import get_config_read_mode, set_config_read_mode
 from .typehints import ActionTypeHint
 from .typing import path_type, restricted_number_type, registered_types
-from .util import _issubclass
+from .util import _issubclass, warning
 
 
 __all__ = [
@@ -19,11 +22,156 @@ __all__ = [
 ]
 
 
-class ActionEnum:
-    """DEPRECATED: An action based on an Enum that maps to-from strings and enum values.
+deprecation_warnings: Set[Any] = set()
 
-    Enums now should be given directly as a type.
+
+class JsonargparseDeprecationWarning(DeprecationWarning):
+    pass
+
+
+def deprecation_warning(component, message):
+    if component not in deprecation_warnings or 'JSONARGPARSE_ALL_DEPRECATION_WARNINGS' in os.environ:
+        if len(deprecation_warnings) == 0:
+            warning(
+                """
+                By default only one JsonargparseDeprecationWarning per type is shown. To see
+                all deprecation warnings set the JSONARGPARSE_ALL_DEPRECATION_WARNINGS
+                environment variable to any value and run again.
+                """,
+                JsonargparseDeprecationWarning,
+                stacklevel=1,
+            )
+        warning(message, JsonargparseDeprecationWarning, stacklevel=3)
+        deprecation_warnings.add(component)
+
+
+def deprecated(message):
+
+    def deprecated_decorator(component):
+        warning = '\n\n.. warning::\n    ' + message + '\n'
+        component.__doc__ += warning
+
+        if inspect.isclass(component):
+            @functools.wraps(component.__init__)
+            def init_wrap(self, *args, **kwargs):
+                deprecation_warning(component, message)
+                self._original_init(*args, **kwargs)
+
+            component._original_init = component.__init__
+            component.__init__ = init_wrap
+            decorated = component
+
+        else:
+            @functools.wraps(component)
+            def decorated(*args, **kwargs):
+                deprecation_warning(component, message)
+                return component(*args, **kwargs)
+
+        return decorated
+
+    return deprecated_decorator
+
+
+def parse_as_dict_patch():
+    """Adds parse_as_dict support to ArgumentParser as a patch.
+
+    This is a temporal backward compatible support for parse_as_dict to have
+    cleaner code in v4.0.0 and warn users about the deprecation and future
+    removal.
     """
+    from .core import ArgumentParser
+    assert not hasattr(ArgumentParser, '_unpatched_init')
+
+    message = """
+        patch_as_dict parameter was deprecated in v4.0.0 and will be removed in
+        v5.0.0. After removal, the parse_*, dump, save and instantiate_classes
+        methods will only return Namespace and/or accept Namespace objects. If
+        needed for some use case, config objects can be converted to a nested
+        dict using the Namespace.as_dict method.
+    """
+
+    # Patch __init__
+    def patched_init(self, *args, parse_as_dict: bool = False, **kwargs):
+        self._parse_as_dict = parse_as_dict
+        if parse_as_dict:
+            deprecation_warning(patched_init, message)
+        self._unpatched_init(*args, **kwargs)
+
+    ArgumentParser._unpatched_init = ArgumentParser.__init__
+    ArgumentParser.__init__ = patched_init
+
+    from typing import Union
+
+    # Patch parse methods
+    def patch_parse_method(method_name):
+        unpatched_method_name = '_unpatched_'+method_name
+
+        def patched_parse(self, *args, _skip_check: bool = False, **kwargs) -> Union[Namespace, Dict[str, Any]]:
+            parse_method = getattr(self, unpatched_method_name)
+            cfg = parse_method(*args, _skip_check=_skip_check, **kwargs)
+            return cfg.as_dict() if self._parse_as_dict and not _skip_check else cfg
+
+        setattr(ArgumentParser, unpatched_method_name, getattr(ArgumentParser, method_name))
+        setattr(ArgumentParser, method_name, patched_parse)
+
+    patch_parse_method('parse_args')
+    patch_parse_method('parse_object')
+    patch_parse_method('parse_env')
+    patch_parse_method('parse_string')
+
+    # Patch instantiate_classes
+    def patched_instantiate_classes(self, cfg: Union[Namespace, Dict[str, Any]], **kwargs) -> Union[Namespace, Dict[str, Any]]:
+        cfg = self._unpatched_instantiate_classes(cfg, **kwargs)
+        return cfg.as_dict() if self._parse_as_dict else cfg
+
+    ArgumentParser._unpatched_instantiate_classes = ArgumentParser.instantiate_classes
+    ArgumentParser.instantiate_classes = patched_instantiate_classes
+
+    # Patch dump
+    def patched_dump(self, cfg: Union[Namespace, Dict[str, Any]], *args, **kwargs) -> str:
+        if isinstance(cfg, dict):
+            cfg = self.parse_object(cfg, _skip_check=True)
+        return self._unpatched_dump(cfg, *args, **kwargs)
+
+    ArgumentParser._unpatched_dump = ArgumentParser.dump
+    ArgumentParser.dump = patched_dump
+
+    # Patch save
+    def patched_save(self, cfg: Union[Namespace, Dict[str, Any]], *args, multifile: bool = True, **kwargs) -> None:
+        if multifile and isinstance(cfg, dict):
+            cfg = self.parse_object(cfg, _skip_check=True)
+        return self._unpatched_save(cfg, *args, multifile=multifile, **kwargs)
+
+    ArgumentParser._unpatched_save = ArgumentParser.save
+    ArgumentParser.save = patched_save
+
+
+def instantiate_subclasses_patch():
+    from .core import ArgumentParser
+
+    @deprecated("""
+        instantiate_subclasses was deprecated in v4.0.0 and will be removed in v5.0.0.
+    """)
+    def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
+        """Calls instantiate_classes with instantiate_groups=False.
+
+        Args:
+            cfg: The configuration object to use.
+
+        Returns:
+            A configuration object with all subclasses instantiated.
+        """
+        return self.instantiate_classes(cfg, instantiate_groups=False)
+
+    ArgumentParser.instantiate_subclasses = instantiate_subclasses
+
+
+@deprecated("""
+    ActionEnum was deprecated in v3.9.0 and will be removed in v5.0.0. Enums now
+    should be given directly as a type as explained in :ref:`enums`.
+""")
+class ActionEnum:
+    """An action based on an Enum that maps to-from strings and enum values."""
 
     def __init__(self, **kwargs):
         if 'enum' in kwargs:
@@ -39,11 +187,12 @@ class ActionEnum:
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
+@deprecated("""
+    ActionOperators was deprecated in v3.0.0 and will be removed in v5.0.0. Now
+    types should be used as explained in :ref:`restricted-numbers`.
+""")
 class ActionOperators:
-    """DEPRECATED: Action to restrict a value with comparison operators.
-
-    The new alternative is explained in :ref:`restricted-numbers`.
-    """
+    """Action to restrict a value with comparison operators."""
 
     def __init__(self, **kwargs):
         if 'expr' in kwargs:
@@ -62,11 +211,12 @@ class ActionOperators:
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
+@deprecated("""
+    ActionPath was deprecated in v3.11.0 and will be removed in v5.0.0. Paths
+    now should be given directly as a type as explained in :ref:`parsing-paths`.
+""")
 class ActionPath:
-    """DEPRECATED: Action to check and store a path.
-
-    Paths now should be given directly as a type.
-    """
+    """Action to check and store a path."""
 
     def __init__(
         self,
@@ -81,19 +231,24 @@ class ActionPath:
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
+@deprecated("""
+    set_url_support was deprecated in v3.12.0 and will be removed in v5.0.0.
+    Optional config read modes should now be set using function
+    set_config_read_mode.
+""")
 def set_url_support(enabled:bool):
-    """DEPRECATED: Enables/disables URL support for config read mode.
-
-    Optional config read modes should now be set using function set_config_read_mode.
-    """
+    """Enables/disables URL support for config read mode."""
     set_config_read_mode(
         urls_enabled=enabled,
         fsspec_enabled=True if 's' in get_config_read_mode() else False,
     )
 
 
-def dict_to_namespace(cfg_dict:Dict[str, Any]) -> Namespace:
-    """DEPRECATED: Converts a nested dictionary into a nested namespace.
+@deprecated("""
+    dict_to_namespace was deprecated in v4.0.0 and will be removed in the future.
+""")
+def dict_to_namespace(cfg_dict: Dict[str, Any]) -> Namespace:
+    """Converts a nested dictionary into a nested namespace.
 
     Args:
         cfg_dict: The configuration to process.

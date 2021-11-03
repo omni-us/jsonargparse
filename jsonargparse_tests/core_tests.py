@@ -196,17 +196,6 @@ class ParsersTests(TempDirTestCase):
             del os.environ[key]
 
 
-    def test_parse_as_dict(self):
-        parser = ArgumentParser(parse_as_dict=True, default_meta=False)
-        self.assertEqual({}, parser.parse_args([]))
-        self.assertEqual({}, parser.parse_env([]))
-        self.assertEqual({}, parser.parse_string('{}'))
-        self.assertEqual({}, parser.parse_object({}))
-        with open('config.json', 'w') as f:
-            f.write('{}')
-        parser = ArgumentParser(parse_as_dict=True, default_meta=True)
-
-
 class ArgumentFeaturesTests(unittest.TestCase):
 
     def test_positionals(self):

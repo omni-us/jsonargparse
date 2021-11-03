@@ -1397,6 +1397,8 @@ argument required to be exactly four uppercase letters:
     parser.add_argument('--email', type=Email)
 
 
+.. _enums:
+
 Enum arguments
 ==============
 

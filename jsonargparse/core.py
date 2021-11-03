@@ -181,7 +181,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         version: Optional[str] = None,
         print_config: Optional[str] = '--print_config',
         parser_mode: str = 'yaml',
-        parse_as_dict: bool = False,
         default_config_files: Optional[List[str]] = None,
         default_env: bool = False,
         default_meta: bool = True,
@@ -201,7 +200,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             version: Program version string to add --version argument.
             print_config: Add this as argument to print config, set None to disable.
             parser_mode: Mode for parsing configuration files, either "yaml" or "jsonnet".
-            parse_as_dict: Whether to parse as dict instead of Namespace.
             default_config_files: Default config file locations, e.g. :code:`['~/.config/myapp/*.yaml']`.
             default_env: Set the default value on whether to parse environment variables.
             default_meta: Set the default value on whether to include metadata in config objects.
@@ -215,7 +213,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         self.required_args: Set[str] = set()
         self.save_path_content: Set[str] = set()
         self._stderr = sys.stderr
-        self._parse_as_dict = parse_as_dict
         self.default_config_files = default_config_files
         self.default_meta = default_meta
         self.default_env = default_env
@@ -337,10 +334,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         return cfg
 
 
-    def _as_dict_if_requested(self, cfg: Namespace, skip_check: bool = False) -> Union[Namespace, Dict[str, Any]]:
-        return cfg.as_dict() if self._parse_as_dict and not skip_check else cfg
-
-
     def parse_args(  # type: ignore[override]
         self,
         args: Optional[Sequence[str]] = None,
@@ -349,7 +342,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         defaults: bool = True,
         with_meta: Optional[bool] = None,
         _skip_check: bool = False,
-    ) -> Union[Namespace, Dict[str, Any]]:
+    ) -> Namespace:
         """Parses command line argument strings.
 
         All the arguments from `argparse.ArgumentParser.parse_args
@@ -391,7 +384,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         except (TypeError, KeyError) as ex:
             self.error(str(ex), ex)
 
-        return self._as_dict_if_requested(parsed_cfg, _skip_check)
+        return parsed_cfg
 
 
     def parse_object(
@@ -403,7 +396,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         with_meta: Optional[bool] = None,
         _skip_check: bool = False,
         _skip_required: bool = False,
-    ) -> Union[Namespace, Dict[str, Any]]:
+    ) -> Namespace:
         """Parses configuration given as an object.
 
         Args:
@@ -436,7 +429,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         except (TypeError, KeyError) as ex:
             self.error(str(ex), ex)
 
-        return self._as_dict_if_requested(parsed_cfg, _skip_check)
+        return parsed_cfg
 
 
     def parse_env(
@@ -446,7 +439,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         with_meta: Optional[bool] = None,
         _skip_check: bool = False,
         _skip_subcommands: bool = False,
-    ) -> Union[Namespace, Dict[str, Any]]:
+    ) -> Namespace:
         """Parses environment variables.
 
         Args:
@@ -507,7 +500,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         except (TypeError, KeyError) as ex:
             self.error(str(ex), ex)
 
-        return self._as_dict_if_requested(parsed_cfg, _skip_check)
+        return parsed_cfg
 
 
     def parse_path(
@@ -519,7 +512,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         with_meta: Optional[bool] = None,
         _skip_check: bool = False,
         _fail_no_subcommand: bool = True,
-    ) -> Union[Namespace, Dict[str, Any]]:
+    ) -> Namespace:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
         Args:
@@ -562,7 +555,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         with_meta: Optional[bool] = None,
         _skip_check: bool = False,
         _fail_no_subcommand: bool = True,
-    ) -> Union[Namespace, Dict[str, Any]]:
+    ) -> Namespace:
         """Parses configuration (yaml or jsonnet) given as a string.
 
         Args:
@@ -596,7 +589,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         except (TypeError, KeyError) as ex:
             self.error(str(ex), ex)
 
-        return self._as_dict_if_requested(parsed_cfg, _skip_check)
+        return parsed_cfg
 
 
     def _load_config_parser_mode(
@@ -605,7 +598,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         cfg_path: str = '',
         ext_vars: Optional[dict] = None,
     ) -> Namespace:
-        """Loads a configuration string (yaml or jsonnet) into a namespace .
+        """Loads a configuration string (yaml or jsonnet) into a namespace.
 
         Args:
             cfg_str: The configuration content.
@@ -732,7 +725,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
     def dump(
         self,
-        cfg: Union[Namespace, Dict[str, Any]],
+        cfg: Namespace,
         format: str = 'parser_mode',
         skip_none: bool = True,
         skip_check: bool = False,
@@ -756,10 +749,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         _check_valid_dump_format(format)
 
         cfg = deepcopy(cfg)
-        if isinstance(cfg, dict):
-            cfg = self.parse_object(cfg, _skip_check=True)
-        assert isinstance(cfg, Namespace)
-
         cfg = strip_meta(cfg)
 
         if not skip_check:
@@ -800,7 +789,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
     def save(
         self,
-        cfg: Union[Namespace, Dict[str, Any]],
+        cfg: Namespace,
         path: str,
         format: str = 'parser_mode',
         skip_none: bool = True,
@@ -854,9 +843,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
         else:
             cfg = deepcopy(cfg)
-            if isinstance(cfg, dict):
-                cfg = self.parse_object(cfg, _skip_check=True)
-            assert isinstance(cfg, Namespace)
 
             if not skip_check:
                 self.check_config(strip_meta(cfg), branch=branch)
@@ -1083,23 +1069,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             raise type(ex)(message) from ex
 
 
-    def instantiate_subclasses(self, cfg: Union[Namespace, Dict[str, Any]]) -> Union[Namespace, Dict[str, Any]]:
-        """Calls instantiate_classes with instantiate_groups=False.
-
-        Args:
-            cfg: The configuration object to use.
-
-        Returns:
-            A configuration object with all subclasses instantiated.
-        """
-        return self.instantiate_classes(cfg, instantiate_groups=False)
-
-
     def instantiate_classes(
         self,
-        cfg: Union[Namespace, Dict[str, Any]],
+        cfg: Namespace,
         instantiate_groups: bool = True,
-    ) -> Union[Namespace, Dict[str, Any]]:
+    ) -> Namespace:
         """Recursively instantiates all subclasses defined by 'class_path' and 'init_args' and class groups.
 
         Args:
@@ -1145,7 +1119,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         if subcommand is not None and subparser is not None:
             cfg[subcommand] = subparser.instantiate_classes(cfg[subcommand], instantiate_groups=instantiate_groups)
 
-        return self._as_dict_if_requested(cfg)
+        return cfg
 
 
     def strip_unknown(self, cfg: Namespace) -> Namespace:
@@ -1422,3 +1396,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             self._env_prefix = env_prefix
         else:
             raise ValueError('env_prefix has to be a string or None.')
+
+
+from .deprecated import parse_as_dict_patch, instantiate_subclasses_patch
+instantiate_subclasses_patch()
+if 'JSONARGPARSE_SKIP_DEPRECATION_PATCH' not in os.environ:
+    parse_as_dict_patch()

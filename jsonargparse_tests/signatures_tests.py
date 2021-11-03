@@ -266,24 +266,24 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_add_subclass_arguments(self):
-        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(calendar.Calendar, 'cal')
 
         cal = {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
         cfg = parser.parse_args(['--cal='+json.dumps(cal)])
-        self.assertEqual(cfg['cal'], cal)
+        self.assertEqual(cfg['cal'].as_dict(), cal)
 
         cal['init_args']['firstweekday'] = 2
         cfg = parser.parse_args(['--cal.class_path=calendar.Calendar', '--cal.init_args.firstweekday=2'])
-        self.assertEqual(cfg['cal'], cal)
+        self.assertEqual(cfg['cal'].as_dict(), cal)
 
         cal['init_args']['firstweekday'] = 3
         cfg = parser.parse_args(['--cal.class_path', 'calendar.Calendar', '--cal.init_args.firstweekday', '3'])
-        self.assertEqual(cfg['cal'], cal)
+        self.assertEqual(cfg['cal'].as_dict(), cal)
 
         cal['init_args']['firstweekday'] = 4
         cfg = parser.parse_args(['--cal.class_path=calendar.Calendar', '--cal.init_args.firstweekday=4', '--cal.class_path=calendar.Calendar'])
-        self.assertEqual(cfg['cal'], cal)
+        self.assertEqual(cfg['cal'].as_dict(), cal)
 
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"not.exist.Class"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"calendar.January"}']))
@@ -300,7 +300,7 @@ class SignaturesTests(unittest.TestCase):
             lazy_calendar = lazy_instance(calendar.Calendar, firstweekday=4)
             parser.set_defaults({'cal': lazy_calendar})
             cfg = parser.parse_string(parser.dump(parser.parse_args([])))
-            self.assertEqual(cfg['cal'], cal)
+            self.assertEqual(cfg['cal'].as_dict(), cal)
             self.assertEqual(lazy_calendar.getfirstweekday(), 4)
 
             parser.add_argument('--config', action=ActionConfigFile)
@@ -323,7 +323,7 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_add_subclass_discard_init_args(self):
-        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(calendar.Calendar, 'cal')
 
         class MyCal(calendar.Calendar):
@@ -389,12 +389,12 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_not_required_group(self):
-        parser = ArgumentParser(parse_as_dict=True, error_handler=None)
+        parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(calendar.Calendar, 'cal', required=False)
         cfg = parser.parse_args([])
-        self.assertEqual(cfg, {})
+        self.assertEqual(cfg, Namespace())
         cfg_init = parser.instantiate_classes(cfg)
-        self.assertEqual(cfg_init, {})
+        self.assertEqual(cfg_init, Namespace())
 
 
     def test_invalid_type(self):
@@ -447,7 +447,7 @@ class SignaturesTests(unittest.TestCase):
         def func(a1: Any = MyEnum.B):
             return a1
 
-        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser = ArgumentParser(error_handler=None)
         parser.add_function_arguments(func)
         cfg = parser.parse_args([])
         self.assertEqual('a1: B\n', parser.dump(cfg))
@@ -678,7 +678,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, a: int = 1):
                 self.a = a
 
-        parser = ArgumentParser(parse_as_dict=True)
+        parser = ArgumentParser()
         subcommands = parser.add_subcommands()
         subparser = ArgumentParser()
         key = "foo"
@@ -843,7 +843,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, a: int):
                 self.a = a
 
-        parser = ArgumentParser(parse_as_dict=True)
+        parser = ArgumentParser()
         subparser = ArgumentParser()
 
         subcommands = parser.add_subcommands()
@@ -853,7 +853,7 @@ class SignaturesTests(unittest.TestCase):
         subcommands.add_subcommand('cmd', subparser)
 
         cfg = parser.parse_args(['cmd', '--b=2'])
-        self.assertEqual(cfg['cmd']['foo'], {'a': 2})
+        self.assertEqual(cfg['cmd']['foo'].as_dict(), {'a': 2})
 
         cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['cmd']['foo'], Foo)
@@ -1038,7 +1038,7 @@ class SignaturesConfigTests(TempDirTestCase):
 
 
     def test_add_subclass_arguments_with_config(self):
-        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--cfg', action=ActionConfigFile)
         parser.add_subclass_arguments(calendar.Calendar, 'cal')
 
@@ -1048,11 +1048,11 @@ class SignaturesConfigTests(TempDirTestCase):
             f.write(yaml.dump({'cal': cal}))
 
         cfg = parser.parse_args(['--cfg='+cfg_path])
-        self.assertEqual(cfg['cal'], cal)
+        self.assertEqual(cfg['cal'].as_dict(), cal)
 
         cal['init_args']['firstweekday'] = 2
         cfg = parser.parse_args(['--cfg='+cfg_path, '--cal.init_args.firstweekday=2'])
-        self.assertEqual(cfg['cal'], cal)
+        self.assertEqual(cfg['cal'].as_dict(), cal)
 
 
     def test_add_class_arguments_with_config_not_found(self):

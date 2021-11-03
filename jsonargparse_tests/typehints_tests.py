@@ -101,7 +101,7 @@ class TypeHintsTests(unittest.TestCase):
 
 
     def test_dict(self):
-        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--dict', type=dict)
         self.assertEqual({}, parser.parse_args(['--dict={}'])['dict'])
         self.assertEqual({'a': 1, 'b': '2'}, parser.parse_args(['--dict={"a":1, "b":"2"}'])['dict'])
@@ -112,7 +112,7 @@ class TypeHintsTests(unittest.TestCase):
         class MyEnum(Enum):
             ab = 1
 
-        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--dict1', type=Dict[int, Optional[Union[float, MyEnum]]])
         parser.add_argument('--dict2', type=Dict[str, Union[bool, Path_fc]])
         cfg = parser.parse_args(['--dict1={"2":4.5, "6":"ab"}', '--dict2={"a":true, "b":"f"}'])
@@ -178,7 +178,7 @@ class TypeHintsTests(unittest.TestCase):
 
 
     def test_type_Any(self):
-        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--any', type=Any)
         self.assertEqual('abc', parser.parse_args(['--any=abc'])['any'])
         self.assertEqual(123, parser.parse_args(['--any=123'])['any'])
@@ -266,15 +266,15 @@ class TypeHintsTests(unittest.TestCase):
 
 
     def test_class_type(self):
-        parser = ArgumentParser(error_handler=None, parse_as_dict=True)
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--op', type=Optional[List[Calendar]])
 
         class_path = '"class_path": "calendar.Calendar"'
         expected = [{'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 0}}]
         cfg = parser.parse_args(['--op=[{'+class_path+'}]'])
-        self.assertEqual(cfg['op'], expected)
+        self.assertEqual(cfg.as_dict()['op'], expected)
         cfg = parser.parse_args(['--op=["calendar.Calendar"]'])
-        self.assertEqual(cfg['op'], expected)
+        self.assertEqual(cfg.as_dict()['op'], expected)
         cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['op'][0], Calendar)
 
@@ -293,12 +293,12 @@ class TypeHintsTests(unittest.TestCase):
 
         init_args = '"init_args": {"firstweekday": 3}'
         cfg = parser.parse_args(['--op=[{'+class_path+', '+init_args+'}]'])
-        self.assertEqual(cfg['op'][0]['init_args'], {'firstweekday': 3})
+        self.assertEqual(cfg['op'][0]['init_args'].as_dict(), {'firstweekday': 3})
         cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['op'][0], Calendar)
         self.assertEqual(3, cfg['op'][0].firstweekday)
 
-        parser = ArgumentParser(parse_as_dict=True, error_handler=None)
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--n.op', type=Optional[Calendar])
         cfg = parser.parse_args(['--n.op={'+class_path+', '+init_args+'}'])
         cfg = parser.instantiate_classes(cfg)
@@ -431,7 +431,7 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         with open('cal.yaml', 'w') as f:
             json.dump(cal, f)
 
-        parser = ArgumentParser(parse_as_dict=True, error_handler=None)
+        parser = ArgumentParser(error_handler=None)
         parser.add_argument('--data', type=Dict[str, Any], enable_path=True)
         parser.add_argument('--cal', type=Calendar, enable_path=True)
         cfg = parser.parse_args(['--data=data.yaml'])

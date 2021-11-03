@@ -56,7 +56,7 @@ def CLI(
     elif not isinstance(components, list):
         components = [components]
 
-    parser = ArgumentParser(parse_as_dict=True, default_meta=False, **kwargs)
+    parser = ArgumentParser(default_meta=False, **kwargs)
     parser.add_argument('--config', action=ActionConfigFile, help=config_help)
 
     if len(components) == 1:

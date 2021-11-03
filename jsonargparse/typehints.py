@@ -52,6 +52,7 @@ from .util import (
     indent_text,
     _issubclass,
     _load_config,
+    warning,
 )
 
 
@@ -472,10 +473,11 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
         if isinstance(val, typehint):
             if serialize:
                 val = str(val)
-                warnings.warn(
-                    f'Not possible to serialize an instance of {typehint.__name__}. It will be represented as the '
-                    f'string {val}. If this was set as a default, consider setting using lazy_instance.'
-                )
+                warning(f"""
+                    Not possible to serialize an instance of {typehint}. It will
+                    be represented as the string {val}. If this was set as a
+                    default, consider using lazy_instance.
+                """)
             return val
         if serialize and isinstance(val, str):
             return val

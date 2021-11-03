@@ -15,8 +15,10 @@ v4.0.0 (2021-??-??)
 
 Added
 ^^^^^
-- New Namespace class that better supports nesting and avoids flat/dict conversions.
+- New Namespace class that natively supports nesting and avoids flat/dict
+  conversions.
 - python 3.10 is now supported and included in circleci tests.
+- Readme changed to use doctest and tests are run in github workflow.
 - More type hints throughout the code base.
 - New unit tests to increase coverage.
 - Include dataclasses extras require for tox testing.
@@ -24,21 +26,24 @@ Added
 Fixed
 ^^^^^
 - Fixed issues related to conflict namespace base.
-- Fixed the parsing of Dict[int, str] type #87.
+- Fixed the parsing of ``Dict[int, str]`` type #87.
 - Fixed inner relative config with for commented tests for parse_env and CLI.
-- init_args from default_config_files not discarded when class_path is overridden.
+- init_args from default_config_files not discarded when class_path is
+  overridden.
 - Problems with class instantiation for parameters of final classes.
 
 Changed
 ^^^^^^^
 - General refactoring and cleanup related to new Namespace class.
-- Parsed values from ActionJsonSchema and ActionJsonnet are now dict instead of Namespace.
+- Parsed values from ActionJsonSchema/ActionJsonnet are now dict instead of
+  Namespace.
 - Removed support for python 3.5 and related code cleanup.
 - contextvars package is now an install require for python 3.6.
 
 Deprecated
 ^^^^^^^^^^
-- dict_to_namespace function will be removed in the future.
+- ArgumentParser's ``parse_as_dict`` option will be removed in v5.0.0.
+- ``dict_to_namespace`' function will be removed in a future major release.
 
 Removed
 ^^^^^^^

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import calendar
 from enum import Enum
 from io import StringIO
 from jsonargparse_tests.base import *
@@ -115,6 +116,25 @@ class DeprecatedTests(unittest.TestCase):
         dic = {'a': 1, 'b': {'c': 2}, 'd': [{'e': 3}]}
         ns2 = dict_to_namespace(dic)
         self.assertEqual(ns1, ns2)
+
+
+    def test_instantiate_subclasses(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cal', type=calendar.Calendar)
+        cfg = parser.parse_object({'cal':{'class_path': 'calendar.Calendar'}})
+        cfg_init = parser.instantiate_subclasses(cfg)
+        self.assertIsInstance(cfg_init['cal'], calendar.Calendar)
+
+
+    def test_parse_as_dict(self):
+        parser = ArgumentParser(parse_as_dict=True, default_meta=False)
+        self.assertEqual({}, parser.parse_args([]))
+        self.assertEqual({}, parser.parse_env([]))
+        self.assertEqual({}, parser.parse_string('{}'))
+        self.assertEqual({}, parser.parse_object({}))
+        with open('config.json', 'w') as f:
+            f.write('{}')
+        parser = ArgumentParser(parse_as_dict=True, default_meta=True)
 
 
 class DeprecatedTempDirTests(TempDirTestCase):

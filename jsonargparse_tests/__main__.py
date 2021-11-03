@@ -3,6 +3,7 @@
 import os
 import sys
 import unittest
+import warnings
 
 
 testing_package = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
@@ -20,6 +21,8 @@ def run_test_coverage():
     except:
         print('error: coverage package not found, run_test_coverage requires it.')
         sys.exit(True)
+    warnings.simplefilter('default')
+    os.environ['PYTHONWARNINGS'] = 'default'
     package_source = os.path.dirname(__file__.replace('_tests', ''))
     cov = coverage.Coverage(source=[package_source])
     cov.start()
