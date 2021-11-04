@@ -18,11 +18,10 @@ __all__ = [
     'ActionOperators',
     'ActionPath',
     'set_url_support',
-    'dict_to_namespace',
 ]
 
 
-deprecation_warnings: Set[Any] = set()
+shown_deprecation_warnings: Set[Any] = set()
 
 
 class JsonargparseDeprecationWarning(DeprecationWarning):
@@ -30,8 +29,9 @@ class JsonargparseDeprecationWarning(DeprecationWarning):
 
 
 def deprecation_warning(component, message):
-    if component not in deprecation_warnings or 'JSONARGPARSE_ALL_DEPRECATION_WARNINGS' in os.environ:
-        if len(deprecation_warnings) == 0:
+    all_warnings = 'JSONARGPARSE_ALL_DEPRECATION_WARNINGS' in os.environ
+    if component not in shown_deprecation_warnings or all_warnings:
+        if len(shown_deprecation_warnings) == 0 and not all_warnings:
             warning(
                 """
                 By default only one JsonargparseDeprecationWarning per type is shown. To see
@@ -42,7 +42,7 @@ def deprecation_warning(component, message):
                 stacklevel=1,
             )
         warning(message, JsonargparseDeprecationWarning, stacklevel=3)
-        deprecation_warnings.add(component)
+        shown_deprecation_warnings.add(component)
 
 
 def deprecated(message):
@@ -83,11 +83,11 @@ def parse_as_dict_patch():
     assert not hasattr(ArgumentParser, '_unpatched_init')
 
     message = """
-        patch_as_dict parameter was deprecated in v4.0.0 and will be removed in
-        v5.0.0. After removal, the parse_*, dump, save and instantiate_classes
-        methods will only return Namespace and/or accept Namespace objects. If
-        needed for some use case, config objects can be converted to a nested
-        dict using the Namespace.as_dict method.
+    ``parse_as_dict`` parameter was deprecated in v4.0.0 and will be removed in
+    v5.0.0. After removal, the parse_*, dump, save and instantiate_classes
+    methods will only return Namespace and/or accept Namespace objects. If
+    needed for some use case, config objects can be converted to a nested dict
+    using the Namespace.as_dict method.
     """
 
     # Patch __init__
@@ -242,28 +242,3 @@ def set_url_support(enabled:bool):
         urls_enabled=enabled,
         fsspec_enabled=True if 's' in get_config_read_mode() else False,
     )
-
-
-@deprecated("""
-    dict_to_namespace was deprecated in v4.0.0 and will be removed in the future.
-""")
-def dict_to_namespace(cfg_dict: Dict[str, Any]) -> Namespace:
-    """Converts a nested dictionary into a nested namespace.
-
-    Args:
-        cfg_dict: The configuration to process.
-
-    Returns:
-        The nested configuration namespace.
-    """
-    cfg_dict = deepcopy(cfg_dict)
-    def expand_dict(cfg):
-        for k, v in cfg.items():
-            if isinstance(v, dict) and all(isinstance(k, str) for k in v.keys()):
-                cfg[k] = expand_dict(v)
-            elif isinstance(v, list):
-                for nn, vv in enumerate(v):
-                    if isinstance(vv, dict) and all(isinstance(k, str) for k in vv.keys()):
-                        cfg[k][nn] = expand_dict(vv)
-        return Namespace(**cfg)
-    return expand_dict(cfg_dict)

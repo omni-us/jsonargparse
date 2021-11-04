@@ -111,13 +111,6 @@ class DeprecatedTests(unittest.TestCase):
         self.assertEqual('fr', get_config_read_mode())
 
 
-    def test_dict_to_namespace(self):
-        ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
-        dic = {'a': 1, 'b': {'c': 2}, 'd': [{'e': 3}]}
-        ns2 = dict_to_namespace(dic)
-        self.assertEqual(ns1, ns2)
-
-
     def test_instantiate_subclasses(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--cal', type=calendar.Calendar)

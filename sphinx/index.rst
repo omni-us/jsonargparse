@@ -4,96 +4,20 @@
 API Reference
 =============
 
-jsonargparse.cli
-----------------
-.. automodule:: jsonargparse.cli
-    :members:
-    :show-inheritance:
-    :autosummary:
+Even though jsonargparse has several internal modules, users are expected to
+only import from the main ``jsonargparse`` or ``jsonargparse.typing``. This
+allows doing internal refactorings without affecting dependants. Only objects
+explicity exposed in ``jsonargparse.__init__.__all__`` and
+``jsonargparse.typing.__all__`` can be considered public.
 
-jsonargparse.core
------------------
-.. automodule:: jsonargparse.core
-    :members:
-    :show-inheritance:
-    :autosummary:
 
-jsonargparse.signatures
------------------------
-.. automodule:: jsonargparse.signatures
-    :members:
-    :show-inheritance:
-    :autosummary:
+jsonargparse
+------------
+.. automodule:: jsonargparse
 
 jsonargparse.typing
 -------------------
 .. automodule:: jsonargparse.typing
-    :members:
-    :show-inheritance:
-    :autosummary:
-
-jsonargparse.typehints
-----------------------
-.. automodule:: jsonargparse.typehints
-    :members:
-    :show-inheritance:
-    :autosummary:
-
-jsonargparse.jsonschema
------------------------
-.. automodule:: jsonargparse.jsonschema
-    :members:
-    :show-inheritance:
-    :autosummary:
-
-jsonargparse.jsonnet
---------------------
-.. automodule:: jsonargparse.jsonnet
-    :members:
-    :show-inheritance:
-    :autosummary:
-
-jsonargparse.actions
---------------------
-.. automodule:: jsonargparse.actions
-    :members:
-    :show-inheritance:
-    :autosummary:
-
-jsonargparse.namespace
-----------------------
-.. automodule:: jsonargparse.namespace
-    :members:
-    :show-inheritance:
-    :autosummary:
-
-jsonargparse.formatters
------------------------
-.. automodule:: jsonargparse.formatters
-    :members:
-    :show-inheritance:
-    :autosummary:
-
-jsonargparse.optionals
-----------------------
-.. automodule:: jsonargparse.optionals
-    :members:
-    :show-inheritance:
-    :autosummary:
-
-jsonargparse.util
------------------
-.. automodule:: jsonargparse.util
-    :members:
-    :show-inheritance:
-    :autosummary:
-
-jsonargparse.deprecated
------------------------
-.. automodule:: jsonargparse.deprecated
-    :members:
-    :show-inheritance:
-    :autosummary:
 
 
 License

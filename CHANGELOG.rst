@@ -39,11 +39,11 @@ Changed
   Namespace.
 - Removed support for python 3.5 and related code cleanup.
 - contextvars package is now an install require for python 3.6.
+- Deprecations are now shown as JsonargparseDeprecationWarning.
 
 Deprecated
 ^^^^^^^^^^
 - ArgumentParser's ``parse_as_dict`` option will be removed in v5.0.0.
-- ``dict_to_namespace`' function will be removed in a future major release.
 
 Removed
 ^^^^^^^

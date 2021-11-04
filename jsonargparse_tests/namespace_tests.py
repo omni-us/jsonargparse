@@ -2,7 +2,7 @@
 
 import unittest
 import sys
-from jsonargparse.namespace import ArgparseNamespace, Namespace, namespace_to_dict
+from jsonargparse.namespace import ArgparseNamespace, Namespace, namespace_to_dict, dict_to_namespace
 
 
 class NamespaceTests(unittest.TestCase):
@@ -174,6 +174,13 @@ class NamespaceTests(unittest.TestCase):
         dic2 = ns.as_dict()
         self.assertEqual(dic1, dic2)
         self.assertFalse(dic1 is dic2)
+
+
+    def test_dict_to_namespace(self):
+        ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
+        dic = {'a': 1, 'b': {'c': 2}, 'd': [{'e': 3}]}
+        ns2 = dict_to_namespace(dic)
+        self.assertEqual(ns1, ns2)
 
 
     def test_use_for_kwargs(self):

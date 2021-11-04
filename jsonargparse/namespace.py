@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, overload, Tupl
 __all__ = [
     'Namespace',
     'namespace_to_dict',
+    'dict_to_namespace',
     'strip_meta',
 ]
 
@@ -69,6 +70,21 @@ def strip_meta(cfg):
 def namespace_to_dict(namespace: 'Namespace') -> Dict[str, Any]:
     """Returns a deepcopy of a nested namespace converted into a nested dictionary."""
     return namespace.clone().as_dict()
+
+
+def dict_to_namespace(cfg_dict: Dict[str, Any]) -> 'Namespace':
+    """Converts a nested dictionary into a nested namespace."""
+    cfg_dict = deepcopy(cfg_dict)
+    def expand_dict(cfg):
+        for k, v in cfg.items():
+            if isinstance(v, dict) and all(isinstance(k, str) for k in v.keys()):
+                cfg[k] = expand_dict(v)
+            elif isinstance(v, list):
+                for nn, vv in enumerate(v):
+                    if isinstance(vv, dict) and all(isinstance(k, str) for k in vv.keys()):
+                        cfg[k][nn] = expand_dict(vv)
+        return Namespace(**cfg)
+    return expand_dict(cfg_dict)
 
 
 class Namespace(ArgparseNamespace):

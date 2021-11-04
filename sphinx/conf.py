@@ -40,22 +40,17 @@ extensions = [
     'sphinx.ext.napoleon',
     'autodocsumm',
     'sphinx_autodoc_typehints',
-    #'sphinxarg.ext',
 ]
 
 autodoc_default_options = {
+    'members': True,
     'exclude-members': 'groups',
     'member-order': 'bysource',
+    'show-inheritance': True,
+    'autosummary': True,
     'autosummary-imported-members': False,
+    'special-members': '__init__,__call__',
 }
-
-def skip(app, what, name, obj, would_skip, options):
-    if name == "__init__" or name == "__call__":
-        return False
-    return would_skip
-
-def setup(app):
-    app.connect("autodoc-skip-member", skip)
 
 os.environ['JSONARGPARSE_SKIP_DEPRECATION_PATCH'] = ''
 
