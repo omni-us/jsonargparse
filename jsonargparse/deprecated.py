@@ -3,7 +3,6 @@
 import functools
 import inspect
 import os
-from copy import deepcopy
 from enum import Enum
 from typing import Any, Dict, Set
 from .namespace import Namespace
@@ -121,6 +120,8 @@ def parse_as_dict_patch():
 
     # Patch instantiate_classes
     def patched_instantiate_classes(self, cfg: Union[Namespace, Dict[str, Any]], **kwargs) -> Union[Namespace, Dict[str, Any]]:
+        if isinstance(cfg, dict):
+            cfg = self._config_from_dict(cfg)
         cfg = self._unpatched_instantiate_classes(cfg, **kwargs)
         return cfg.as_dict() if self._parse_as_dict else cfg
 

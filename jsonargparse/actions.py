@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
-from .namespace import Namespace, split_key, split_key_leaf, split_key_root
+from .namespace import is_empty_namespace, Namespace, split_key, split_key_leaf, split_key_root
 from .optionals import FilesCompleterMethod, get_config_read_mode
 from .type_checking import ArgumentParser, _ArgumentGroup
 from .typing import path_type
@@ -556,6 +556,28 @@ class _ActionLink(Action):
             components = after
         return ordered + components
 
+    @staticmethod
+    def strip_link_target_keys(parser, cfg):
+        def del_taget_key(target_key):
+            cfg.pop(target_key, None)
+            parent_key, _ = split_key_leaf(target_key)
+            if '.' in target_key and is_empty_namespace(cfg.get(parent_key)):
+                del cfg[parent_key]
+
+        for action in [a for a in parser._actions if isinstance(a, _ActionLink)]:
+            del_taget_key(action.target[0])
+        from .typehints import ActionTypeHint
+        for action in [a for a in parser._actions if isinstance(a, ActionTypeHint) and hasattr(a, 'sub_add_kwargs')]:
+            for key in action.sub_add_kwargs.get('linked_targets', []):
+                del_taget_key(action.dest+'.init_args.'+key)
+
+        with _ActionSubCommands.not_single_subcommand():
+            subcommands, subparsers = _ActionSubCommands.get_subcommands(parser, cfg)
+        if subcommands is not None:
+            for num, subcommand in enumerate(subcommands):
+                if subcommand in cfg:
+                    _ActionLink.strip_link_target_keys(subparsers[num], cfg[subcommand])
+
 
 class ActionYesNo(Action):
     """Paired options --[yes_prefix]opt, --[no_prefix]opt to set True or False respectively."""
@@ -838,13 +860,13 @@ class _ActionSubCommands(_SubParsersAction):
         fail_no_subcommand: bool = True,
     ) -> Tuple[Optional[str], Optional['ArgumentParser']]:
         """Returns a single subcommand name and corresponding subparser."""
-        subcommands, actions = _ActionSubCommands.get_subcommands(
+        subcommands, subparsers = _ActionSubCommands.get_subcommands(
             parser,
             cfg,
             prefix=prefix,
             fail_no_subcommand=fail_no_subcommand,
         )
-        return subcommands[0] if subcommands else None, actions[0] if actions else None
+        return subcommands[0] if subcommands else None, subparsers[0] if subparsers else None
 
 
     @staticmethod

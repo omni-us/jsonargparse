@@ -786,6 +786,9 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(11+7, cfg.b.v2)
         self.assertEqual(Namespace(), parser.parse_args([], defaults=False))
 
+        dump = yaml.safe_load(parser.dump(cfg))
+        self.assertEqual(dump, {'a': {'v1': 11, 'v2': 7}, 'b': {'v3': 2}})
+
         self.assertRaises(ParserError, lambda: parser.parse_args(['--b.v1=5']))
         self.assertRaises(ValueError, lambda: parser.link_arguments('a.v2', 'b.v1'))
         self.assertRaises(ValueError, lambda: parser.link_arguments('x', 'b.v2'))
@@ -830,6 +833,10 @@ class SignaturesTests(unittest.TestCase):
         cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
         self.assertEqual(cfg.c.init_args.firstweekday, 4)
         self.assertEqual(cfg.c.init_args.firstweekday, cfg.a.init_args.v1+cfg.a.init_args.v2)
+
+        dump = yaml.safe_load(parser.dump(cfg))
+        a_value['init_args']['v1'] = 1
+        self.assertEqual(dump, {'a': a_value, 'c': {'class_path': 'calendar.Calendar'}})
 
         self.assertRaises(ValueError, lambda: parser.link_arguments('a.init_args.v1', 'c'))
 

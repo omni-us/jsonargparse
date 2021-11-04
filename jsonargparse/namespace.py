@@ -289,6 +289,13 @@ class Namespace(ArgparseNamespace):
         return parent_ns.__dict__.pop(leaf_key, default)
 
 
+_empty_namespace = Namespace()
+
+
+def is_empty_namespace(ns):
+    return ns == _empty_namespace
+
+
 # Temporal to provide backward compatibility in pytorch-lightning
 import yaml
 yaml.SafeDumper.add_representer(Namespace, lambda d, x: d.represent_mapping('tag:yaml.org,2002:map', x.as_dict()))

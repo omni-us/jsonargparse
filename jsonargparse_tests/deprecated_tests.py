@@ -205,16 +205,5 @@ class DeprecatedTempDirTests(TempDirTestCase):
         self.assertIsNotNone(parser.parse_args(['2', 'file']).path)
 
 
-    def test_namespace_to_dict(self):
-        ns = Namespace()
-        ns['w'] = 1
-        ns['x.y'] = 2
-        ns['x.z'] = 3
-        dic1 = namespace_to_dict(ns)
-        dic2 = ns.as_dict()
-        self.assertEqual(dic1, dic2)
-        self.assertFalse(dic1 is dic2)
-
-
 if __name__ == '__main__':
     unittest.main(verbosity=2)

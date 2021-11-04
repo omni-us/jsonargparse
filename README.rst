@@ -323,11 +323,11 @@ An example analogous to the one above would be:
     parser = ArgumentParser()
     parser.add_argument('--lev1', type=Level1Options, default=Level1Options())
 
-The :class:`.Namespace` class is also an extension of the one from argparse. It
-has some additional features which can be seen in the API. In particular keys
-can be accessed like a dictionary either with individual keys, e.g.
+The :class:`.Namespace` class an extension of the one from argparse. It has some
+additional features which can be seen in the API. In particular keys can be
+accessed like a dictionary either with individual keys, e.g.
 :code:`cfg['lev1']['opt1']`, or a single one, e.g. :code:`cfg['lev1.opt1']`.
-Also the class has a method :py:meth`.Namespace.as_dict` that can be used to
+Also the class has a method :py:meth:`.Namespace.as_dict` that can be used to
 represent the nested namespace as a nested dictionary useful for example for
 class instantiation.
 
@@ -546,13 +546,13 @@ class initialized and the method executed as follows:
     myclass.mymethod(**cfg.myclass.method.as_dict())
 
 
-The :func:`add_class_arguments` call adds to the :code`myclass.init` key the
+The :func:`add_class_arguments` call adds to the :code:`myclass.init` key the
 :code:`items` argument with description as in the docstring, it is set as
 required since it does not have a default value, and when parsed it is validated
 according to its type hint, i.e., a dict with values ints or list of ints. Also
 since the init has the :code:`**kwargs` argument, the keyword arguments from
 :code:`MyBaseClass` are also added to the parser. Similarly the
-:func:`add_method_arguments` call adds to the :code`myclass.method` key the
+:func:`add_method_arguments` call adds to the :code:`myclass.method` key the
 arguments :code:`value` as a required float and :code:`flag` as an optional
 boolean with default value false.
 
@@ -1092,10 +1092,10 @@ using a json schema is done like in the following example:
     >>> from jsonargparse import ActionJsonSchema
 
     >>> schema = {
-    ...     "type" : "object",
-    ...     "properties" : {
-    ...         "price" : {"type" : "number"},
-    ...         "name" : {"type" : "string"},
+    ...     "type": "object",
+    ...     "properties": {
+    ...         "price": {"type": "number"},
+    ...         "name": {"type": "string"},
     ...     },
     ... }
 

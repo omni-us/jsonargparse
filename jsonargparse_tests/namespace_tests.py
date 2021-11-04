@@ -81,7 +81,6 @@ class NamespaceTests(unittest.TestCase):
         self.assertFalse('x..y' in ns)
         self.assertFalse(123 in ns)
 
-    @unittest.skipIf(sys.version_info[:2] < (3, 6), 'Dict insertion order only since python 3.6')
     def test_items_generator(self):
         ns = Namespace()
         ns['a'] = 1
@@ -91,7 +90,6 @@ class NamespaceTests(unittest.TestCase):
         items = list(ns.items())
         self.assertEqual(items, [('a', 1), ('b.c', 2), ('b.d', 3), ('p.q.r', {'x': 4, 'y': 5})])
 
-    @unittest.skipIf(sys.version_info[:2] < (3, 6), 'Dict insertion order only since python 3.6')
     def test_keys_generator(self):
         ns = Namespace()
         ns['a'] = 1
@@ -101,7 +99,6 @@ class NamespaceTests(unittest.TestCase):
         keys = list(ns.keys())
         self.assertEqual(keys, ['a', 'b.c', 'b.d', 'p.q.r'])
 
-    @unittest.skipIf(sys.version_info[:2] < (3, 6), 'Dict insertion order only since python 3.6')
     def test_values_generator(self):
         ns = Namespace()
         ns['a'] = 1
@@ -175,13 +172,11 @@ class NamespaceTests(unittest.TestCase):
         self.assertEqual(dic1, dic2)
         self.assertFalse(dic1 is dic2)
 
-
     def test_dict_to_namespace(self):
         ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
         dic = {'a': 1, 'b': {'c': 2}, 'd': [{'e': 3}]}
         ns2 = dict_to_namespace(dic)
         self.assertEqual(ns1, ns2)
-
 
     def test_use_for_kwargs(self):
         def func(a=1, b=2, c=3):

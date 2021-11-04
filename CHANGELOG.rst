@@ -31,6 +31,7 @@ Fixed
 - init_args from default_config_files not discarded when class_path is
   overridden.
 - Problems with class instantiation for parameters of final classes.
+- dump/save not removing linked target keys.
 
 Changed
 ^^^^^^^

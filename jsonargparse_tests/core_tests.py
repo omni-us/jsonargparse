@@ -296,6 +296,9 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(cfg.b.v2, cfg.a.v1*cfg.a.v2)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--a.v1=x']))
 
+        dump = yaml.safe_load(parser.dump(cfg))
+        self.assertEqual(dump, {'a': {'v1': 2, 'v2': -5}})
+
 
     def test_subcommands(self):
         parser_a = ArgumentParser(error_handler=None)

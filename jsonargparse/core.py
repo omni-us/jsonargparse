@@ -312,7 +312,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
         if env:
             cfg_env = self.parse_env(defaults=defaults, _skip_check=True, _skip_subcommands=True)
-            assert isinstance(cfg_env, Namespace)
             cfg = self.merge_config(cfg, cfg_env)
 
         elif defaults:
@@ -750,6 +749,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
         cfg = deepcopy(cfg)
         cfg = strip_meta(cfg)
+        _ActionLink.strip_link_target_keys(self, cfg)
 
         if not skip_check:
             self.check_config(cfg)
@@ -843,6 +843,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
         else:
             cfg = deepcopy(cfg)
+            _ActionLink.strip_link_target_keys(self, cfg)
 
             if not skip_check:
                 self.check_config(strip_meta(cfg), branch=branch)
@@ -1098,8 +1099,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         order = _ActionLink.instantiation_order(self)
         components = _ActionLink.reorder(order, components)
 
-        if isinstance(cfg, dict):
-            cfg = self._config_from_dict(cfg)
         cfg = strip_meta(cfg)
         for component in components:
             if isinstance(component, (ActionTypeHint, _ActionConfigLoad)):

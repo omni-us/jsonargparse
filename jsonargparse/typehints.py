@@ -35,7 +35,7 @@ from typing import (
 )
 
 from .actions import _is_action_value_list
-from .namespace import Namespace
+from .namespace import is_empty_namespace, Namespace
 from .typing import get_import_path, is_final_class, object_path_serializer, registered_types
 from .optionals import (
     argcomplete_warn_redraw_prompt,
@@ -229,7 +229,7 @@ class ActionTypeHint(Action):
                     cfg_dest = cfg.get(self.dest, Namespace())
                     if cfg_dest.get('class_path') == val:
                         return
-                    elif cfg_dest.get('init_args') is not None and cfg_dest.get('init_args') != Namespace():
+                    elif cfg_dest.get('init_args') is not None and not is_empty_namespace(cfg_dest.get('init_args')):
                         warnings.warn(
                             f'Argument {opt_str}={val} implies discarding init_args {cfg_dest.get("init_args").as_dict()} '
                             f'defined for class_path {cfg_dest.get("class_path")}'
@@ -497,7 +497,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs)
             if instantiate_classes and sub_add_kwargs.get('instantiate', True):
                 val = adapted
-            elif adapted is not None and adapted != Namespace():
+            elif adapted is not None and not is_empty_namespace(adapted):
                 val['init_args'] = adapted
         except (ImportError, AttributeError, AssertionError, ParserError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
@@ -536,7 +536,7 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
             return init_args
         return val_class(**init_args)
     if serialize:
-        init_args = None if init_args == Namespace() else yaml.safe_load(parser.dump(init_args))
+        init_args = None if is_empty_namespace(init_args) else yaml.safe_load(parser.dump(init_args))
     else:
         init_args = parser.parse_object(init_args)
     return init_args
