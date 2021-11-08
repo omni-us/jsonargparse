@@ -22,6 +22,7 @@ Added
 - More type hints throughout the code base.
 - New unit tests to increase coverage.
 - Include dataclasses extras require for tox testing.
+- Automatic namespace to dict for link based on target or compute_fn type.
 
 Fixed
 ^^^^^
@@ -45,6 +46,7 @@ Changed
 Deprecated
 ^^^^^^^^^^
 - ArgumentParser's ``parse_as_dict`` option will be removed in v5.0.0.
+- ArgumentParser's ``instantiate_subclasses`` method will be removed in v5.0.0.
 
 Removed
 ^^^^^^^

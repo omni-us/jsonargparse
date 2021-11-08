@@ -1,5 +1,6 @@
 """Collection of useful actions to define arguments."""
 
+import inspect
 import os
 import re
 import sys
@@ -504,9 +505,22 @@ class _ActionLink(Action):
                     args.append(cfg[key])
             except KeyError:
                 continue
+            from .typehints import ActionTypeHint
             if action.compute_fn is None:
                 value = args[0]
+                # Automatic namespace to dict based on link target type hint
+                target_key, target_action = action.target
+                if isinstance(value, Namespace) and isinstance(target_action, ActionTypeHint):
+                    if (target_key == target_action.dest and target_action.is_mapping_typehint(target_action._typehint)) or \
+                       target_action.is_init_arg_mapping_typehint(target_key, cfg):
+                        value = value.as_dict()
             else:
+                # Automatic namespace to dict based on compute_fn param type hint
+                params = list(inspect.signature(action.compute_fn).parameters.values())
+                for n, param in enumerate(params):
+                    if n < len(args) and isinstance(args[n], Namespace) and ActionTypeHint.is_mapping_typehint(param.annotation):
+                        args[n] = args[n].as_dict()
+                # Compute value
                 value = action.compute_fn(*args)
             _ActionLink.set_target_value(action, value, cfg)
 

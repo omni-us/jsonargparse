@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import unittest
-import sys
 from jsonargparse.namespace import ArgparseNamespace, Namespace, namespace_to_dict, dict_to_namespace
 
 
@@ -118,7 +117,8 @@ class NamespaceTests(unittest.TestCase):
         ns['w'] = 1
         ns['x.y'] = 2
         ns['x.z'] = 3
-        self.assertEqual(ns.as_dict(), {'w': 1, 'x': {'y': 2, 'z': 3}})
+        ns['p'] = {'q': Namespace(r=4)}
+        self.assertEqual(ns.as_dict(), {'w': 1, 'x': {'y': 2, 'z': 3}, 'p': {'q': {'r': 4}}})
         self.assertEqual(Namespace().as_dict(), {})
 
     def test_as_flat(self):

@@ -472,7 +472,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
                 default={'c': 3, 'd': 4},
                 action=ActionJsonnet(ext_vars=None))
 
-        cfg1 = parser.get_defaults().as_dict()
+        cfg1 = parser.get_defaults()
 
         base_url = 'http://example.com/'
         main_body = 'parser: '+base_url+'parser.yaml\n'
@@ -503,7 +503,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
                           base_url+name,
                           status=200)
 
-        cfg2 = parser.parse_args(['--cfg', base_url+'main.yaml'], with_meta=False).as_dict()
+        cfg2 = parser.parse_args(['--cfg', base_url+'main.yaml'], with_meta=False)
         self.assertEqual(cfg1['parser'], cfg2['parser'])
         if jsonschema_support:
             self.assertEqual(cfg1['schema'], cfg2['schema'])
@@ -659,7 +659,7 @@ class OutputTests(TempDirTestCase):
         for file in [main_file_out, parser_file_out, schema_file_out, jsonnet_file_out]:
             if os.path.isfile(file):
                 os.remove(file)
-        parser.save(cfg2.as_dict(), main_file_out)
+        parser.save(cfg2, main_file_out)
         self.assertTrue(os.path.isfile(parser_file_out))
         if jsonschema_support:
             self.assertTrue(os.path.isfile(schema_file_out))

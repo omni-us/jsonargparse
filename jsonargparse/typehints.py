@@ -34,7 +34,7 @@ from typing import (
     Union,
 )
 
-from .actions import _is_action_value_list
+from .actions import _find_action, _is_action_value_list
 from .namespace import is_empty_namespace, Namespace
 from .typing import get_import_path, is_final_class, object_path_serializer, registered_types
 from .optionals import (
@@ -182,6 +182,27 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
+    def is_mapping_typehint(typehint):
+        typehint_origin = getattr(typehint, '__origin__', typehint)
+        if typehint in mapping_origin_types or typehint_origin in mapping_origin_types or is_optional(typehint, tuple(mapping_origin_types)):
+            return True
+        return False
+
+
+    def is_init_arg_mapping_typehint(self, key, cfg):
+        result = False
+        class_path = cfg.get(f'{self.dest}.class_path')
+        if isinstance(class_path, str) and key.startswith(f'{self.dest}.init_args.') and self.is_subclass_typehint(self):
+            sub_add_kwargs = dict(self.sub_add_kwargs)
+            sub_add_kwargs.pop('linked_targets', None)
+            parser = ActionTypeHint.get_class_parser(class_path, sub_add_kwargs=sub_add_kwargs)
+            key = re.sub(f'^{self.dest}.init_args.', '', key)
+            typehint = getattr(_find_action(parser, key), '_typehint', None)
+            result = self.is_mapping_typehint(typehint)
+        return result
+
+
+    @staticmethod
     def parse_subclass_arg(parser, arg_string):
         if '.class_path' in arg_string or '.init_args.' in arg_string:
             if '.class_path' in arg_string:
@@ -303,6 +324,8 @@ class ActionTypeHint(Action):
     @staticmethod
     def get_class_parser(val_class, sub_add_kwargs=None):
         from .core import ArgumentParser
+        if isinstance(val_class, str):
+            val_class = import_object(val_class)
         parser = ArgumentParser(error_handler=None)
         parser.add_class_arguments(val_class, **(sub_add_kwargs or {}))
         return parser
@@ -440,8 +463,6 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
 
     # Dict, Mapping
     elif typehint_origin in mapping_origin_types:
-        if isinstance(val, Namespace):
-            val = val.as_dict()
         if not isinstance(val, dict):
             raise ValueError(f'Expected a Dict but got "{val}"')
         if subtypehints is not None:

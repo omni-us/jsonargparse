@@ -834,6 +834,10 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(cfg.c.init_args.firstweekday, 4)
         self.assertEqual(cfg.c.init_args.firstweekday, cfg.a.init_args.v1+cfg.a.init_args.v2)
 
+        cfg_init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg_init.a, ClassA)
+        self.assertIsInstance(cfg_init.c, calendar.Calendar)
+
         dump = yaml.safe_load(parser.dump(cfg))
         a_value['init_args']['v1'] = 1
         self.assertEqual(dump, {'a': a_value, 'c': {'class_path': 'calendar.Calendar'}})
@@ -843,6 +847,81 @@ class SignaturesTests(unittest.TestCase):
         a_value['init_args'] = {'v1': 'a', 'v2': 'b'}
         with self.assertRaises(ParserError):
             parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
+
+
+    def test_link_arguments_subclasses_with_instantiate_false(self):
+        class ClassA:
+            def __init__(
+                self,
+                v: Union[int, str] = 1,
+                c: Optional[calendar.Calendar] = None,
+            ):
+                self.c = c
+
+        from jsonargparse_tests import signatures_tests
+        setattr(signatures_tests, 'ClassA', ClassA)
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments(ClassA, 'a')
+        parser.add_subclass_arguments(calendar.Calendar, 'c', instantiate=False)
+        parser.link_arguments('c', 'a.init_args.c')
+
+        a_value = {'class_path': 'jsonargparse_tests.signatures_tests.ClassA'}
+        c_value = {
+            'class_path': 'calendar.Calendar',
+            'init_args': {
+                'firstweekday': 3,
+            },
+        }
+
+        cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c='+json.dumps(c_value)])
+        self.assertEqual(cfg.c.as_dict(), {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 3}})
+        self.assertEqual(cfg.c, cfg.a.init_args.c)
+
+        cfg_init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(cfg_init.c, Namespace)
+        self.assertIsInstance(cfg_init.a, ClassA)
+        self.assertIsInstance(cfg_init.a.c, calendar.Calendar)
+        self.assertEqual(cfg_init.a.c.firstweekday, 3)
+
+        dump = yaml.safe_load(parser.dump(cfg))
+        self.assertNotIn('c', dump['a']['init_args'])
+
+
+    def test_link_arguments_subclass_as_dict(self):
+        class ClassA:
+            def __init__(
+                self,
+                a1: dict,
+                a2: Optional[dict] = None,
+                a3: Any = None,
+            ):
+                pass
+
+        def return_dict(value: dict):
+            return value
+
+        from jsonargparse_tests import signatures_tests
+        setattr(signatures_tests, 'ClassA', ClassA)
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments(ClassA, 'a')
+        parser.add_subclass_arguments(calendar.Calendar, 'c')
+        parser.link_arguments('c', 'a.init_args.a1', compute_fn=return_dict)
+        parser.link_arguments('c', 'a.init_args.a2')
+        parser.link_arguments('c', 'a.init_args.a3')
+
+        a_value = {'class_path': 'jsonargparse_tests.signatures_tests.ClassA'}
+        c_value = {
+            'class_path': 'calendar.Calendar',
+            'init_args': {
+                'firstweekday': 3,
+            },
+        }
+
+        cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c='+json.dumps(c_value)])
+        self.assertEqual(cfg.a.init_args.a1, c_value)
+        self.assertEqual(cfg.a.init_args.a2, c_value)
 
 
     def test_link_arguments_subcommand(self):
@@ -1136,9 +1215,9 @@ class DataclassesTests(unittest.TestCase):
         parser.add_dataclass_arguments(self.MyDataClassA, 'a', default=self.MyDataClassA(), title='CustomA title')
         parser.add_dataclass_arguments(self.MyDataClassB, 'b', default=self.MyDataClassB())
 
-        cfg = parser.get_defaults().as_dict()
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), cfg['a'])
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), cfg['b'])
+        cfg = parser.get_defaults()
+        self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), cfg['a'].as_dict())
+        self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), cfg['b'].as_dict())
         dump = yaml.safe_load(parser.dump(cfg))
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), dump['a'])
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), dump['b'])
@@ -1184,9 +1263,9 @@ class DataclassesTests(unittest.TestCase):
         parser = ArgumentParser()
         parser.add_class_arguments(MyClass, 'g')
 
-        cfg = parser.get_defaults().as_dict()
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), cfg['g']['a1'])
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), cfg['g']['a2'])
+        cfg = parser.get_defaults()
+        self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), cfg['g']['a1'].as_dict())
+        self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), cfg['g']['a2'].as_dict())
         dump = yaml.safe_load(parser.dump(cfg))
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), dump['g']['a1'])
         self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), dump['g']['a2'])
@@ -1232,8 +1311,8 @@ class DataclassesTests(unittest.TestCase):
         parser = ArgumentParser()
         parser.add_argument('--b', type=self.MyDataClassB, default=self.MyDataClassB(b1=7.0))
 
-        cfg = parser.get_defaults().as_dict()
-        self.assertEqual({'b1': 7.0, 'b2': {'a1': 1, 'a2': '2'}}, cfg['b'])
+        cfg = parser.get_defaults()
+        self.assertEqual({'b1': 7.0, 'b2': {'a1': 1, 'a2': '2'}}, cfg['b'].as_dict())
 
         cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['b'], self.MyDataClassB)

@@ -468,12 +468,12 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         parser.add_argument('--op', default='from default')
         parser.add_class_arguments(MyClass, 'data')
 
-        cfg = parser.get_defaults().as_dict()
+        cfg = parser.get_defaults()
         self.assertEqual(config_path, str(cfg['__default_config__']))
-        self.assertEqual(cfg['data']['cal'], config)
-        cfg = parser.dump(cfg)
-        self.assertIn('class_path: calendar.Calendar\n', cfg)
-        self.assertIn('firstweekday: 3\n', cfg)
+        self.assertEqual(cfg.data.cal.as_dict(), config)
+        dump = parser.dump(cfg)
+        self.assertIn('class_path: calendar.Calendar\n', dump)
+        self.assertIn('firstweekday: 3\n', dump)
 
 
     def test_class_path_override_with_default_config_files(self):
@@ -650,7 +650,6 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         config_init = parser.instantiate_classes(config)
         self.assertIsInstance(config_init["b"].a_map["name"].d, D)
 
-        config = config.as_dict()
         config_init = parser.instantiate_classes(config)
         self.assertIsInstance(config_init["b"].a_map["name"].d, D)
 
