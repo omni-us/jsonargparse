@@ -27,7 +27,8 @@ Added
 Fixed
 ^^^^^
 - Fixed issues related to conflict namespace base.
-- Fixed the parsing of ``Dict[int, str]`` type #87.
+- Fixed the parsing of ``Dict[int, str]`` type `#87
+  <https://github.com/omni-us/jsonargparse/issues/87>`__.
 - Fixed inner relative config with for commented tests for parse_env and CLI.
 - init_args from default_config_files not discarded when class_path is
   overridden.
@@ -58,9 +59,12 @@ v3.19.4 (2021-10-04)
 
 Fixed
 ^^^^^
-- self.logger undefined on SignatureArguments #92.
-- Fix linking for deep targets #75.
-- Fix import_object failing with "not enough values to unpack" #94.
+- self.logger undefined on SignatureArguments `#92
+  <https://github.com/omni-us/jsonargparse/issues/92>`__.
+- Fix linking for deep targets `#75
+  <https://github.com/omni-us/jsonargparse/pull/75>`__.
+- Fix import_object failing with "not enough values to unpack" `#94
+  <https://github.com/omni-us/jsonargparse/issues/94>`__.
 - Yaml representer error when dumping unregistered default path type.
 
 
@@ -69,7 +73,8 @@ v3.19.3 (2021-09-16)
 
 Fixed
 ^^^^^
-- add_subclass_arguments with required=False failing on instantiation #83.
+- add_subclass_arguments with required=False failing on instantiation `#83
+  <https://github.com/omni-us/jsonargparse/issues/83>`__.
 
 
 v3.19.2 (2021-09-09)
@@ -77,7 +82,8 @@ v3.19.2 (2021-09-09)
 
 Fixed
 ^^^^^
-- add_subclass_arguments with required=False failing when not given #83.
+- add_subclass_arguments with required=False failing when not given `#83
+  <https://github.com/omni-us/jsonargparse/issues/83>`__.
 
 
 v3.19.1 (2021-09-03)
@@ -85,7 +91,8 @@ v3.19.1 (2021-09-03)
 
 Fixed
 ^^^^^
-- Repeated instantiation of dataclasses PyTorchLightning/pytorch-lightning#9207.
+- Repeated instantiation of dataclasses `pytorch-lightning#9207
+  <https://github.com/PyTorchLightning/pytorch-lightning/issues/9207>`__.
 
 
 v3.19.0 (2021-08-27)
@@ -93,12 +100,15 @@ v3.19.0 (2021-08-27)
 
 Added
 ^^^^^
-- ``save`` now supports saving to an fsspec path #86.
+- ``save`` now supports saving to an fsspec path `#86
+  <https://github.com/omni-us/jsonargparse/issues/86>`__.
 
 Fixed
 ^^^^^
-- Multifile save not working correctly for subclasses #63.
-- ``link_arguments`` not working for subcommands #82.
+- Multifile save not working correctly for subclasses `#63
+  <https://github.com/omni-us/jsonargparse/issues/63>`__.
+- ``link_arguments`` not working for subcommands `#82
+  <https://github.com/omni-us/jsonargparse/issues/82>`__.
 
 Changed
 ^^^^^^^
@@ -117,11 +127,15 @@ Added
 Fixed
 ^^^^^
 - Don't discard ``init_args`` with non-changing ``--*.class_path`` argument.
-- Don't ignore ``KeyError`` in call to instantiate_classes #81.
-- Optional subcommands fail with a KeyError #68.
+- Don't ignore ``KeyError`` in call to instantiate_classes `#81
+  <https://github.com/omni-us/jsonargparse/issues/81>`__.
+- Optional subcommands fail with a KeyError `#68
+  <https://github.com/omni-us/jsonargparse/issues/68>`__.
 - Conflicting namespace for subclass key in subcommand.
-- ``instantiate_classes`` not working for subcommand keys #70.
-- Proper file not found message from _ActionConfigLoad #64.
+- ``instantiate_classes`` not working for subcommand keys `#70
+  <https://github.com/omni-us/jsonargparse/issues/70>`__.
+- Proper file not found message from _ActionConfigLoad `#64
+  <https://github.com/omni-us/jsonargparse/issues/64>`__.
 - ``parse_path`` not parsing inner config files.
 
 Changed
@@ -162,12 +176,14 @@ v3.16.0 (2021-07-05)
 Added
 -----
 - ``lazy_instance`` function for serializable class type defaults.
-- Support for parsing multiple matched default config files #58.
+- Support for parsing multiple matched default config files `#58
+  <https://github.com/omni-us/jsonargparse/issues/58>`__.
 
 Fixed
 ^^^^^
 - ``--*.class_path`` and ``--*.init_args.*`` arguments not being parsed.
-- ``--help`` broken when default_config_files fail to parse #60.
+- ``--help`` broken when default_config_files fail to parse `#60
+  <https://github.com/omni-us/jsonargparse/issues/60>`__.
 - Pattern in default_config_files not using sort.
 
 
@@ -194,7 +210,8 @@ Added
 - Method ``instantiate_classes`` that instantiates subclasses and class groups.
 - Support for ``link_arguments`` that are applied on instantiation.
 - Method ``add_subclass_arguments`` now supports skipping of arguments.
-- Added support for Type in type hints #59.
+- Added support for Type in type hints `#59
+  <https://github.com/omni-us/jsonargparse/issues/59>`__.
 
 Fixed
 ^^^^^
@@ -214,7 +231,8 @@ v3.13.0 (2021-06-02)
 
 Added
 ^^^^^
-- Inner config file support for subclass type hints in signatures and CLI #57.
+- Inner config file support for subclass type hints in signatures and CLI `#57
+  <https://github.com/omni-us/jsonargparse/issues/57>`__.
 - Forward fail_untyped setting to nested subclass type hints.
 
 Fixed
@@ -276,7 +294,8 @@ v3.11.1 (2021-04-30)
 
 Fixed
 ^^^^^
-- add_dataclass_arguments not making parameters without default as required #54.
+- add_dataclass_arguments not making parameters without default as required `#54
+  <https://github.com/omni-us/jsonargparse/issues/54>`__.
 - Removed from signature add methods required option included by mistake.
 
 
@@ -317,7 +336,8 @@ Changed
 Fixed
 ^^^^^
 - ``--*.help`` option being added for non-subclass types.
-- Iterable and Sequence types not working for python>=3.7 #53.
+- Iterable and Sequence types not working for python>=3.7 `#53
+  <https://github.com/omni-us/jsonargparse/issues/53>`__.
 
 
 v3.10.0 (2021-04-19)
@@ -378,8 +398,10 @@ v3.8.1 (2021-03-22)
 
 Fixed
 ^^^^^
-- Help fails saying required args missing if default config file exists #48.
-- ActionYesNo arguments failing when parsing from environment variable #49.
+- Help fails saying required args missing if default config file exists `#48
+  <https://github.com/omni-us/jsonargparse/issues/48>`__.
+- ActionYesNo arguments failing when parsing from environment variable `#49
+  <https://github.com/omni-us/jsonargparse/issues/49>`__.
 
 
 v3.8.0 (2021-03-22)
@@ -387,18 +409,22 @@ v3.8.0 (2021-03-22)
 
 Added
 ^^^^^
-- Path class now supports home prefix '~' #45.
+- Path class now supports home prefix '~' `#45
+  <https://github.com/omni-us/jsonargparse/issues/45>`__.
 - yaml/json dump kwargs can now be changed via attributes dump_yaml_kwargs and
   dump_json_kwargs.
 
 Changed
 ^^^^^^^
 - Now by default dump/save/print_config preserve the add arguments and argument
-  groups order (only CPython>=3.6) #46.
-- ActionParser group title now defaults to None if not given #47.
-- Add argument with type Enum or type hint giving an action now raises error #45.
+  groups order (only CPython>=3.6) `#46
+  <https://github.com/omni-us/jsonargparse/issues/46>`__.
+- ActionParser group title now defaults to None if not given `#47
+  <https://github.com/omni-us/jsonargparse/issues/47>`__.
+- Add argument with type Enum or type hint giving an action now raises error
+  `#45 <https://github.com/omni-us/jsonargparse/issues/45>`__.
 - Parser help now also considers default_config_files and shows which config file
-  was loaded #47.
+  was loaded `#47 <https://github.com/omni-us/jsonargparse/issues/47>`__.
 - get_default method now also considers default_config_files.
 - get_defaults now raises ParserError if default config file not valid.
 
@@ -413,12 +439,15 @@ v3.7.0 (2021-03-17)
 Changed
 ^^^^^^^
 - ActionParser now moves all actions to the parent parser.
-- The help of ActionParser arguments is now shown in the main help #41.
+- The help of ActionParser arguments is now shown in the main help `#41
+  <https://github.com/omni-us/jsonargparse/issues/41>`__.
 
 Fixed
 ^^^^^
-- Use of required in ActionParser parsers not working #43.
-- Nested options with names including dashes not working #42.
+- Use of required in ActionParser parsers not working `#43
+  <https://github.com/omni-us/jsonargparse/issues/43>`__.
+- Nested options with names including dashes not working `#42
+  <https://github.com/omni-us/jsonargparse/issues/42>`__.
 - DefaultHelpFormatter not properly using env_prefix to show var names.
 
 
@@ -458,12 +487,14 @@ v3.5.0 (2021-02-12)
 
 Added
 ^^^^^
-- Tuples with ellipsis are now supported #40.
+- Tuples with ellipsis are now supported `#40
+  <https://github.com/omni-us/jsonargparse/issues/40>`__.
 
 Fixed
 ^^^^^
 - Using dict as type incorrectly considered as class requiring class_path.
-- Nested tuples were not working correctly #40.
+- Nested tuples were not working correctly `#40
+  <https://github.com/omni-us/jsonargparse/issues/40>`__.
 
 
 v3.4.1 (2021-02-03)
@@ -485,7 +516,8 @@ Added
 ^^^^^
 - Save with multifile=True now creates original jsonnet file for ActionJsonnet.
 - default_config_files is now a property of parser objects.
-- Table in readme to ease understanding of extras requires for optional features #38.
+- Table in readme to ease understanding of extras requires for optional features
+  `#38 <https://github.com/omni-us/jsonargparse/issues/38>`__.
 
 Changed
 ^^^^^^^
@@ -493,7 +525,8 @@ Changed
 
 Fixed
 ^^^^^
-- Better exception message when using ActionJsonSchema and jsonschema not installed #38.
+- Better exception message when using ActionJsonSchema and jsonschema not
+  installed `#38 <https://github.com/omni-us/jsonargparse/issues/38>`__.
 
 
 v3.3.2 (2021-01-22)
@@ -530,15 +563,18 @@ v3.2.1 (2020-12-30)
 
 Added
 ^^^^^
-- Automatic Optional for arguments with default None #30.
+- Automatic Optional for arguments with default None `#30
+  <https://github.com/omni-us/jsonargparse/issues/30>`__.
 - CLI now supports running methods from classes.
-- Signature arguments can now be loaded from independent config files #32.
+- Signature arguments can now be loaded from independent config files `#32
+  <https://github.com/omni-us/jsonargparse/issues/32>`__.
 - add_argument now supports enable_path for type based on jsonschema.
 - print_config can now be given as value skip_null to exclude null entries.
 
 Changed
 ^^^^^^^
-- Improved description of parser used as standalone and for ActionParser #34.
+- Improved description of parser used as standalone and for ActionParser `#34
+  <https://github.com/omni-us/jsonargparse/issues/34>`__.
 - Removed ``__cwd__`` and top level ``__path__`` that were not needed.
 
 Fixed
@@ -555,7 +591,8 @@ v3.1.0 (2020-12-09)
 
 Added
 ^^^^^
-- Support for multiple levels of subcommands #29.
+- Support for multiple levels of subcommands `#29
+  <https://github.com/omni-us/jsonargparse/issues/29>`__.
 - Default description of subcommands explaining use of ``--help``.
 
 
