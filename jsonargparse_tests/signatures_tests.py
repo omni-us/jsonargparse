@@ -295,7 +295,19 @@ class SignaturesTests(unittest.TestCase):
             parser.parse_args(['--cal.help=calendar.Calendar'])
         self.assertIn('--cal.init_args.firstweekday', out.getvalue())
 
-        if platform.python_implementation() == 'CPython':
+        if True:  # platform.python_implementation() == 'CPython':
+            class MyCalendar(calendar.Calendar):
+                init_called = False
+                getfirst = calendar.Calendar.getfirstweekday
+                def __init__(self, *args, **kwargs):
+                    self.init_called = True
+                    super().__init__(*args, **kwargs)
+
+            lazy_calendar = lazy_instance(MyCalendar, firstweekday=3)
+            self.assertFalse(lazy_calendar.init_called, '__init__ was already called but supposed to be lazy')
+            self.assertEqual(lazy_calendar.getfirstweekday(), 3)
+            self.assertTrue(lazy_calendar.init_called)
+
             cal['init_args']['firstweekday'] = 4
             lazy_calendar = lazy_instance(calendar.Calendar, firstweekday=4)
             parser.set_defaults({'cal': lazy_calendar})

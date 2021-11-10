@@ -612,15 +612,23 @@ class LazyInitBaseClass:
         self._lazy_class_path = get_import_path(class_type)
         self._lazy_kwargs = lazy_kwargs
         self._lazy_methods = {}
-        for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
-            if name in {'__init__', '_lazy_init', '_lazy_init_then_call_method', 'lazy_get_init_data'}:
+        seen_methods: Dict = {}
+        for name, _ in inspect.getmembers(class_type, predicate=inspect.isfunction):
+            method = getattr(self, name)
+            if not inspect.ismethod(method) or \
+               name in {'__init__', '_lazy_init', '_lazy_init_then_call_method', 'lazy_get_init_data'}:
                 continue
+            assert name not in self.__dict__
             self._lazy_methods[name] = method
-            setattr(self, name, partial(self._lazy_init_then_call_method, method_name=name))
+            if method in seen_methods:
+                self.__dict__[name] = seen_methods[method]
+            else:
+                self.__dict__[name] = partial(self._lazy_init_then_call_method, name)
+                seen_methods[method] = self.__dict__[name]
 
     def _lazy_init(self):
-        for name, method in self._lazy_methods.items():
-            setattr(self, name, method)
+        for name in self._lazy_methods.keys():
+            del self.__dict__[name]
         super().__init__(**self._lazy_kwargs)
 
     def _lazy_init_then_call_method(self, method_name, *args, **kwargs):
@@ -643,8 +651,6 @@ def lazy_instance(class_type: Type[ClassType], **kwargs) -> ClassType:
     By lazy it is meant that the __init__ is delayed unit the first time that a
     method of the instance is called. It also provides a `lazy_get_init_data` method
     useful for serializing.
-
-    Note: Only supported in CPython.
 
     Args:
         class_type: The class to instantiate.

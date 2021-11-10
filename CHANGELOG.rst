@@ -34,6 +34,8 @@ Fixed
   overridden.
 - Problems with class instantiation for parameters of final classes.
 - dump/save not removing linked target keys.
+- lazy_instance not working with torch.nn.Module `#96
+  <https://github.com/omni-us/jsonargparse/issues/96>`__.
 
 Changed
 ^^^^^^^
