@@ -209,7 +209,7 @@ class ActionTypeHint(Action):
                 arg_base, explicit_arg = arg_string.rsplit('.class_path', 1)
             else:
                 arg_base, init_arg = arg_string.rsplit('.init_args.', 1)
-                match = re.match(r'([\w_]+)(|=.*)$', init_arg)
+                match = re.match(r'(\w+)(|=.*)$', init_arg)
                 if match:
                     explicit_arg = match.groups()[1]
             action = parser._option_string_actions.get(arg_base)

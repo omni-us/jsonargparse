@@ -23,8 +23,6 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-            pip3 install $(ls ./dist/*.whl)[test_no_urls]
-            pypy3 -m jsonargparse_tests coverage xml coverage_pypy3.xml
             pip3 install $(ls ./dist/*.whl)[test,all]
             pypy3 -m jsonargparse_tests coverage xml coverage_pypy3_all.xml
       - persist_to_workspace:
@@ -43,8 +41,10 @@ jobs:
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             virtualenv -p python3 venv$py
             . venv$py/bin/activate
-            pip3 install $(ls ./dist/*.whl)[test_no_urls]
-            python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
+            if [ "$py" == "3.8" ]; then
+              pip3 install $(ls ./dist/*.whl)[test_no_urls]
+              python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
+            fi
             pip3 install $(ls ./dist/*.whl)[test,all]
             python3 -m jsonargparse_tests coverage xml coverage_py${py}_all.xml
       - persist_to_workspace:
@@ -78,15 +78,17 @@ jobs:
           name: Code coverage
           command: |
             for py in 3.6 3.7 3.8 3.9 3.10 py3; do
-              bash <(curl -s https://codecov.io/bash) \
-                -t $CODECOV_TOKEN_JSONARGPARSE \
-                -F py$py \
-                -f coverage_py$py.xml
-              bash <(curl -s https://codecov.io/bash) \
+              bash <(curl -s https://codecov.io/bash)
+                -v -Z \
                 -t $CODECOV_TOKEN_JSONARGPARSE \
                 -F py${py}_all \
                 -f coverage_py${py}_all.xml
             done
+            bash <(curl -s https://codecov.io/bash)
+              -v -Z \
+              -t $CODECOV_TOKEN_JSONARGPARSE \
+              -F py$py \
+              -f coverage_py3.8.xml
   publish-pypi:
     docker:
       - image: mauvilsa/docker-twine:1.11.0

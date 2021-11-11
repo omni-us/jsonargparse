@@ -511,7 +511,8 @@ class _ActionLink(Action):
                 # Automatic namespace to dict based on link target type hint
                 target_key, target_action = action.target
                 if isinstance(value, Namespace) and isinstance(target_action, ActionTypeHint):
-                    if (target_key == target_action.dest and target_action.is_mapping_typehint(target_action._typehint)) or \
+                    same_key = target_key == target_action.dest
+                    if (same_key and target_action.is_mapping_typehint(target_action._typehint)) or \
                        target_action.is_init_arg_mapping_typehint(target_key, cfg):
                         value = value.as_dict()
             else:
