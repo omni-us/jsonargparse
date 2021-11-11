@@ -78,12 +78,14 @@ jobs:
           name: Code coverage
           command: |
             for py in 3.6 3.7 3.8 3.9 3.10 py3; do
-              bash <(curl -s https://codecov.io/bash)
+              bash <(curl -s https://codecov.io/bash) \
+                -v -Z \
                 -t $CODECOV_TOKEN_JSONARGPARSE \
                 -F py${py}_all \
                 -f coverage_py${py}_all.xml
             done
-            bash <(curl -s https://codecov.io/bash)
+            bash <(curl -s https://codecov.io/bash) \
+              -v -Z \
               -t $CODECOV_TOKEN_JSONARGPARSE \
               -F py$py \
               -f coverage_py3.8.xml
