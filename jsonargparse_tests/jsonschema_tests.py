@@ -84,11 +84,11 @@ class JsonSchemaTests(TempDirTestCase):
         with open(cfg3_file, 'w') as f:
             f.write('op3:\n  n1:\n  - '+str(op2_val)+'\n')
 
-        cfg = parser.parse_path(cfg1_file).as_dict()
+        cfg = parser.parse_path(cfg1_file)
         self.assertEqual(op1_val, cfg['op1'])
         self.assertEqual(op2_val, cfg['op2'])
 
-        cfg = parser.parse_string(cfg2_str).as_dict()
+        cfg = parser.parse_string(cfg2_str)
         self.assertEqual(op1_val, cfg['op1'])
         self.assertEqual(op2_val, cfg['op2'])
 

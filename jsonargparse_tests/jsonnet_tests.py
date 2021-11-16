@@ -161,7 +161,7 @@ class JsonnetTests(TempDirTestCase):
         self.assertEqual('#8', parsed['records'][-2]['ref'])
         self.assertEqual(15.5, parsed['records'][-2]['val'])
 
-        cfg2 = parser.parse_object({'ext_vars': Namespace(param=123)})
+        cfg2 = parser.parse_object({'ext_vars': {'param': 123}})
         self.assertEqual(cfg.ext_vars, cfg2.ext_vars)
 
 

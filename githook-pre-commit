@@ -82,7 +82,7 @@ if [ "${BUMPVERSION_NEW_VERSION+x}" != "" ]; then
       sed -i "s|^v$BUMPVERSION_NEW_VERSION .*|$EXPECTED|" CHANGELOG.rst;
       git add CHANGELOG.rst;
     else
-      echo "${0##*/}: expected latest release in CHANGELOG.rst to be '$EXPECTED'" 1>&2;
+      echo "${0##*/}: Expected latest release in CHANGELOG.rst to be '$EXPECTED'. Set BUMPVERSION_UPDATE_CHANGELOG to auto update." 1>&2;
       exit 1;
     fi
   fi

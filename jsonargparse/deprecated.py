@@ -48,7 +48,7 @@ def deprecated(message):
 
     def deprecated_decorator(component):
         warning = '\n\n.. warning::\n    ' + message + '\n'
-        component.__doc__ += warning
+        component.__doc__ = ('' if component.__doc__ is None else component.__doc__) + warning
 
         if inspect.isclass(component):
             @functools.wraps(component.__init__)

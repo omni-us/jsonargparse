@@ -1,3 +1,5 @@
+"""Extensions of core argparse classes."""
+
 import argparse
 import glob
 import inspect
