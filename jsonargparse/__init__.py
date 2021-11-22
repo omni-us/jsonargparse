@@ -46,4 +46,4 @@ for module in ['cli',
 locals()['__all__'] = _all_   # Workaround because mypy does not handle dynamic __all__
 
 
-__version__ = '4.0.1'
+__version__ = '4.0.2'
