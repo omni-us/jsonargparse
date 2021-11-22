@@ -10,6 +10,21 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.0.1 (2021-11-22)
+-------------------
+
+Fixed
+^^^^^
+- Specifying init_args from the command line resulting in empty namespace when
+  no prior class_path given.
+- Fixed command line parsing of class_path and init_args options within
+  subcommand.
+- lazy_instance of final class leading to incorrect default that includes
+  class_path and init_args.
+- add_subclass_arguments not accepting a default keyword parameter.
+- Make it possible to disable deprecation warnings.
+
+
 v4.0.0 (2021-11-16)
 -------------------
 

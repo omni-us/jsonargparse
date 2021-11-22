@@ -830,7 +830,7 @@ class _ActionSubCommands(_SubParsersAction):
         """Returns subcommand names and corresponding subparsers."""
         if parser._subparsers is None:
             return None, None
-        action = getattr(parser, '_subcommands_action')
+        action = parser._subcommands_action
 
         require_single = single_subcommand.get()
 

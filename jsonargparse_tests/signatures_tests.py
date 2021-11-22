@@ -355,6 +355,29 @@ class SignaturesTests(unittest.TestCase):
             self.assertIn("discarding init_args {'firstweekday': 4} defined for class_path calendar.Calendar", str(w[0].message))
 
 
+    def test_add_subclass_init_args_without_class_path(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal1')
+        parser.add_subclass_arguments(calendar.Calendar, 'cal2', default=lazy_instance(calendar.Calendar))
+        parser.add_subclass_arguments(calendar.Calendar, 'cal3', default=lazy_instance(calendar.Calendar, firstweekday=2))
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal1.init_args.firstweekday=4']))
+        cfg = parser.parse_args(['--cal2.init_args.firstweekday=4', '--cal3.init_args.firstweekday=5'])
+        self.assertEqual(cfg.cal2.init_args, Namespace(firstweekday=4))
+        self.assertEqual(cfg.cal3.init_args, Namespace(firstweekday=5))
+
+
+    def test_add_subclass_init_args_in_subcommand(self):
+        parser = ArgumentParser(error_handler=None)
+        subcommands = parser.add_subcommands()
+        subparser = ArgumentParser()
+        subparser.add_subclass_arguments(calendar.Calendar, 'cal', default=lazy_instance(calendar.Calendar))
+        subcommands.add_subcommand('cmd', subparser)
+
+        cfg = parser.parse_args(['cmd', '--cal.init_args.firstweekday=4'])
+        self.assertEqual(cfg.cmd.cal.init_args, Namespace(firstweekday=4))
+
+
     def test_add_subclass_arguments_tuple(self):
 
         class ClassA:
@@ -542,12 +565,14 @@ class SignaturesTests(unittest.TestCase):
                 self.a2 = a2
 
         class ClassB:
-            def __init__(self, b1: str = '4', b2: ClassA = None):
+            def __init__(self, b1: str = '4', b2: ClassA = lazy_instance(ClassA, a2=-3.2)):
                 self.b1 = b1
                 self.b2 = b2
 
         parser = ArgumentParser(error_handler=None)
         parser.add_class_arguments(ClassB, 'b')
+
+        self.assertEqual(-3.2, parser.get_defaults().b.b2.a2)
         cfg = parser.parse_args(['--b.b2={"a2": 6.7}'])
         self.assertEqual(cfg.b.b2, Namespace(a1=1, a2=6.7))
         self.assertEqual(cfg, parser.parse_string(parser.dump(cfg)))
@@ -1150,6 +1175,12 @@ class SignaturesConfigTests(TempDirTestCase):
 
         cal['init_args']['firstweekday'] = 2
         cfg = parser.parse_args(['--cfg='+cfg_path, '--cal.init_args.firstweekday=2'])
+        self.assertEqual(cfg['cal'].as_dict(), cal)
+
+        parser = ArgumentParser(error_handler=None, default_config_files=['config.yaml'])
+        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+
+        cfg = parser.parse_args(['--cal.init_args.firstweekday=2'])
         self.assertEqual(cfg['cal'].as_dict(), cal)
 
 

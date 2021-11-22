@@ -15,6 +15,8 @@ from collections.abc import Set as abcSet
 from collections.abc import MutableSet as abcMutableSet
 from collections.abc import Sequence as abcSequence
 from collections.abc import MutableSequence as abcMutableSequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from enum import Enum
 from functools import partial
 from typing import (
@@ -91,6 +93,9 @@ sequence_origin_types = {List, list, Iterable, Sequence, MutableSequence, abcIte
 mapping_origin_types = {Dict, dict, Mapping, MutableMapping, abcMapping, abcMutableMapping}
 
 
+subclass_arg_parser: ContextVar = ContextVar('subclass_arg_parser')
+
+
 class ActionTypeHint(Action):
     """Action to parse a type hint."""
 
@@ -121,6 +126,8 @@ class ActionTypeHint(Action):
             self._enable_path = kwargs.pop('_enable_path')
             if 'metavar' not in kwargs:
                 kwargs['metavar'] = typehint_metavar(self._typehint)
+            if isinstance(kwargs.get('default'), LazyInitBaseClass):
+                kwargs['default'] = kwargs['default'].lazy_get_init_data()
             super().__init__(**kwargs)
 
 
@@ -203,15 +210,15 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def parse_subclass_arg(parser, arg_string):
+    def parse_subclass_arg(arg_string):
+        parser = subclass_arg_parser.get()
         if '.class_path' in arg_string or '.init_args.' in arg_string:
             if '.class_path' in arg_string:
                 arg_base, explicit_arg = arg_string.rsplit('.class_path', 1)
             else:
                 arg_base, init_arg = arg_string.rsplit('.init_args.', 1)
                 match = re.match(r'(\w+)(|=.*)$', init_arg)
-                if match:
-                    explicit_arg = match.groups()[1]
+                explicit_arg = match.groups()[1]
             action = parser._option_string_actions.get(arg_base)
             if action:
                 if explicit_arg:
@@ -220,6 +227,16 @@ class ActionTypeHint(Action):
                 else:
                     explicit_arg = None
                 return action, arg_string, explicit_arg
+        elif hasattr(parser, '_subcommands_action') and arg_string in parser._subcommands_action._name_parser_map:
+            subparser = parser._subcommands_action._name_parser_map[arg_string]
+            subclass_arg_parser.set(subparser)
+
+
+    @staticmethod
+    @contextmanager
+    def subclass_arg_context(parser):
+        subclass_arg_parser.set(parser)
+        yield
 
 
     def serialize(self, value):
@@ -244,7 +261,7 @@ class ActionTypeHint(Action):
         if self.nargs == '?' and args[2] is None:
             val = None
         else:
-            cfg, val, opt_str = args[1:]
+            parser, cfg, val, opt_str = args
             if isinstance(opt_str, str):
                 if opt_str.endswith('.class_path'):
                     cfg_dest = cfg.get(self.dest, Namespace())
@@ -257,10 +274,18 @@ class ActionTypeHint(Action):
                         )
                     val = Namespace(class_path=val)
                 elif '.init_args.' in opt_str:
-                    match = re.match(r'.+\.init_args\.([^.]+)$', opt_str)
                     cfg_dest = cfg.get(self.dest, Namespace())
-                    init_args = cfg_dest.get('init_args', Namespace())
-                    init_args[match.groups()[0]] = val
+                    if self.dest not in cfg:
+                        try:
+                            default = parser.get_default(self.dest)
+                            cfg_dest['class_path'] = default['class_path']
+                        except KeyError:
+                            pass
+                    if 'class_path' not in cfg_dest:
+                        raise ParserError(f'Found {opt_str} but not yet known to which class_path this corresponds.')
+                    if 'init_args' not in cfg_dest:
+                        cfg_dest['init_args'] = Namespace()
+                    cfg_dest['init_args'][opt_str.rsplit('.init_args.', 1)[1]] = val
                     val = cfg_dest
             val = self._check_type(val)
         if 'cfg_dest' in locals():
@@ -636,9 +661,12 @@ class LazyInitBaseClass:
         return getattr(self, method_name)(*args, **kwargs)
 
     def lazy_get_init_data(self):
+        init_args = Namespace(self._lazy_kwargs)
+        if is_final_class(self._lazy_class_type):
+            return init_args
         init = Namespace(class_path=self._lazy_class_path)
         if len(self._lazy_kwargs) > 0:
-            init['init_args'] = Namespace(self._lazy_kwargs)
+            init['init_args'] = init_args
         return init
 
 

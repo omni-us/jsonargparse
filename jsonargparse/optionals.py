@@ -46,7 +46,7 @@ else:
 
 
 dump_preserve_order_support = True
-if sys.version_info[:2] < (3, 6) or platform.python_implementation() != 'CPython':
+if platform.python_implementation() != 'CPython':
     dump_preserve_order_support = False
 
 

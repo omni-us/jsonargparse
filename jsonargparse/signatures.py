@@ -485,6 +485,8 @@ class SignatureArguments:
             'metavar': metavar,
             'help': (help % {'baseclass_name': str(baseclass)}),
         })
+        if 'default' not in kwargs:
+            kwargs['default'] = SUPPRESS
         self._add_signature_parameter(
             group,
             None,
@@ -493,7 +495,6 @@ class SignatureArguments:
             {},
             added_args,
             skip,
-            default=SUPPRESS,
             sub_configs=True,
             instantiate=instantiate,
             **kwargs

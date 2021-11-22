@@ -28,14 +28,16 @@ class JsonargparseDeprecationWarning(DeprecationWarning):
 
 
 def deprecation_warning(component, message):
-    all_warnings = 'JSONARGPARSE_ALL_DEPRECATION_WARNINGS' in os.environ
-    if component not in shown_deprecation_warnings or all_warnings:
+    env_var = os.environ.get('JSONARGPARSE_DEPRECATION_WARNINGS', '').lower()
+    show_warnings = env_var != 'off'
+    all_warnings = env_var == 'all'
+    if show_warnings and (component not in shown_deprecation_warnings or all_warnings):
         if len(shown_deprecation_warnings) == 0 and not all_warnings:
             warning(
                 """
                 By default only one JsonargparseDeprecationWarning per type is shown. To see
-                all deprecation warnings set the JSONARGPARSE_ALL_DEPRECATION_WARNINGS
-                environment variable to any value and run again.
+                all warnings set environment variable JSONARGPARSE_DEPRECATION_WARNINGS=all
+                and to disable the warnings set JSONARGPARSE_DEPRECATION_WARNINGS=off.
                 """,
                 JsonargparseDeprecationWarning,
                 stacklevel=1,

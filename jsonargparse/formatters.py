@@ -19,7 +19,7 @@ from .actions import (
 from .namespace import Namespace
 from .optionals import import_ruyaml
 from .type_checking import ArgumentParser, ruyamlCommentedMap
-from .typehints import ActionTypeHint, LazyInitBaseClass, type_to_str
+from .typehints import ActionTypeHint, type_to_str
 from .util import _get_env_var
 
 
@@ -107,9 +107,9 @@ class DefaultHelpFormatter(HelpFormatter):
             if params['default'] is None:
                 params['default'] = 'null'
             elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):
-                params['default'] = action.default.name
-            elif isinstance(params['default'], LazyInitBaseClass):
-                params['default'] = action.default.lazy_get_init_data().as_dict()
+                params['default'] = params['default'].name
+            elif isinstance(params['default'], Namespace):
+                params['default'] = params['default'].as_dict()
         return PercentTemplate(self._get_help_string(action)).safe_substitute(params)
 
 

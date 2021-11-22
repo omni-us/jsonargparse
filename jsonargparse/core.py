@@ -256,7 +256,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             namespace = self.merge_config(self.get_defaults(skip_check=True), namespace).as_flat()
 
         try:
-            with patch('argparse.Namespace', Namespace):
+            with patch('argparse.Namespace', Namespace), ActionTypeHint.subclass_arg_context(self):
                 namespace, args = self._parse_known_args(args, namespace)
         except (ArgumentError, ParserError) as ex:
             self.error(str(ex), ex)
@@ -265,7 +265,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
 
     def _parse_optional(self, arg_string):
-        subclass_arg = ActionTypeHint.parse_subclass_arg(self, arg_string)
+        subclass_arg = ActionTypeHint.parse_subclass_arg(arg_string)
         if subclass_arg:
             return subclass_arg
         if arg_string == self._print_config:
@@ -904,6 +904,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                     if action is None:
                         raise KeyError(f'No action for destination key "{dest}" to set its default.')
                     action.default = args[n][dest]
+                    if isinstance(action.default, LazyInitBaseClass):
+                        action.default = action.default.lazy_get_init_data()
         if kwargs:
             self.set_defaults(kwargs)
 
@@ -929,11 +931,13 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         Raises:
             KeyError: If key not defined in the parser.
         """
-        action = _find_action(self, dest)
-        if action is None or action.default == SUPPRESS or action.dest == SUPPRESS:
+        action, _ = _find_parent_action_and_subcommand(self, dest)
+        if action is None or dest != action.dest or action.dest == SUPPRESS:
             raise KeyError(f'No action for destination key "{dest}" to get its default.')
         default_config_files = self._get_default_config_files()
         if not default_config_files:
+            if action.default == SUPPRESS:
+                raise KeyError(f'Action for destination key "{dest}" does not specify a default.')
             return action.default
         return getattr(self.get_defaults(), action.dest)
 
@@ -951,10 +955,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         cfg = Namespace()
         for action in filter_default_actions(self._actions):
             if action.default != SUPPRESS and action.dest != SUPPRESS:
-                if isinstance(action.default, LazyInitBaseClass):
-                    cfg[action.dest] = action.default.lazy_get_init_data()
-                else:
-                    cfg[action.dest] = action.default
+                cfg[action.dest] = action.default
 
         self._logger.info('Loaded default values from parser.')
 
