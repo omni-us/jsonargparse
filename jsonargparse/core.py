@@ -15,7 +15,7 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Sequence, Set, Tuple, Type, Union
 from unittest.mock import patch
 
-from .formatters import DefaultHelpFormatter
+from .formatters import DefaultHelpFormatter, empty_help
 from .jsonnet import ActionJsonnet
 from .jsonschema import ActionJsonSchema
 from .namespace import is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
@@ -125,7 +125,7 @@ class _ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerPr
         if is_meta_key(action.dest):
             raise ValueError(f'Argument with destination name "{action.dest}" not allowed.')
         if action.help is None:
-            action.help = ' '
+            action.help = empty_help
         if action.required:
             parser.required_args.add(action.dest)
             action._required = True  # type: ignore
@@ -929,17 +929,24 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             dest: Destination key from which to get the default.
 
         Raises:
-            KeyError: If key not defined in the parser.
+            KeyError: If key or its default not defined in the parser.
         """
         action, _ = _find_parent_action_and_subcommand(self, dest)
         if action is None or dest != action.dest or action.dest == SUPPRESS:
             raise KeyError(f'No action for destination key "{dest}" to get its default.')
-        default_config_files = self._get_default_config_files()
-        if not default_config_files:
+
+        def check_suppressed_default():
             if action.default == SUPPRESS:
                 raise KeyError(f'Action for destination key "{dest}" does not specify a default.')
+
+        if not self._get_default_config_files():
+            check_suppressed_default()
             return action.default
-        return getattr(self.get_defaults(), action.dest)
+
+        defaults = self.get_defaults()
+        if action.dest not in defaults:
+            check_suppressed_default()
+        return defaults.get(action.dest)
 
 
     def get_defaults(self, skip_check: bool = False) -> Namespace:

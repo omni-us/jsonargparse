@@ -26,6 +26,9 @@ from .util import _get_env_var
 __all__ = ['DefaultHelpFormatter']
 
 
+empty_help: str = '_EMPTY_HELP_'
+
+
 class PercentTemplate(Template):
     delimiter = '%'
     pattern = r'''
@@ -53,10 +56,11 @@ class DefaultHelpFormatter(HelpFormatter):
 
 
     def _get_help_string(self, action):
+        action_help = ' ' if action.help == empty_help else action.help
         if isinstance(action, ActionConfigFile):
-            return action.help
+            return action_help
         if isinstance(action, _HelpAction):
-            help_str = action.help[0].upper() + action.help[1:]
+            help_str = action_help[0].upper() + action_help[1:]
             if help_str[-1] != '.':
                 help_str += '.'
             return help_str
@@ -64,14 +68,14 @@ class DefaultHelpFormatter(HelpFormatter):
         is_required = hasattr(action, '_required') and action._required
         if is_required:
             help_str = 'required'
-        if '%(type)' not in action.help and self._get_type_str(action) is not None:
+        if '%(type)' not in action_help and self._get_type_str(action) is not None:
             help_str += (', ' if help_str else '') + 'type: %(type)s'
-        if '%(default)' not in action.help and \
+        if '%(default)' not in action_help and \
            action.default is not SUPPRESS and \
            (action.default is not None or not is_required) and \
            (action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}):
             help_str += (', ' if help_str else '') + 'default: %(default)s'
-        return action.help + (' ('+help_str+')' if help_str else '')
+        return action_help + (' ('+help_str+')' if help_str else '')
 
 
     def _format_action_invocation(self, action):
@@ -103,7 +107,7 @@ class DefaultHelpFormatter(HelpFormatter):
             params['type'] = type_str
         if 'default' in params:
             if self.defaults is not None:
-                params['default'] = self.defaults[action.dest]  # pylint: disable=unsubscriptable-object
+                params['default'] = self.defaults.get(action.dest)
             if params['default'] is None:
                 params['default'] = 'null'
             elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):

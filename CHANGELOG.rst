@@ -10,12 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v4.0.3 (2021-11-??)
+v4.0.3 (2021-11-23)
 -------------------
 
 Fixed
 ^^^^^
 - Command line parsing of init_args failing with subclasses without a default.
+- get_default failing when destination key does not exist in default config file.
+- Fixed issue with empty help string caused by a change in argparse python 3.9.
 
 
 v4.0.2 (2021-11-22)

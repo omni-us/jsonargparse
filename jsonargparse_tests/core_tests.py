@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import calendar
 import json
 import platform
 import warnings
@@ -793,6 +794,9 @@ class ConfigFilesTests(TempDirTestCase):
             output_file.write('op1: from yaml\n')
 
         self.assertEqual(parser.get_default('op1'), 'from yaml')
+
+        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+        self.assertRaises(KeyError, lambda: parser.get_default('cal'))
 
         with open(default_config_file, 'w') as output_file:
             output_file.write('op2: v2\n')
