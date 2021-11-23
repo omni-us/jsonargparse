@@ -279,7 +279,7 @@ class ActionTypeHint(Action):
                         try:
                             default = parser.get_default(self.dest)
                             cfg_dest['class_path'] = default['class_path']
-                        except KeyError:
+                        except (KeyError, TypeError):
                             pass
                     if 'class_path' not in cfg_dest:
                         raise ParserError(f'Found {opt_str} but not yet known to which class_path this corresponds.')

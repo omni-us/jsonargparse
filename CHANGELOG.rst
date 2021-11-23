@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.0.3 (2021-11-??)
+-------------------
+
+Fixed
+^^^^^
+- Command line parsing of init_args failing with subclasses without a default.
+
+
 v4.0.2 (2021-11-22)
 -------------------
 
