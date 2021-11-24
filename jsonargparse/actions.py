@@ -14,7 +14,7 @@ from typing import Any, Callable, List, Optional, Tuple, Type, Union
 from .namespace import is_empty_namespace, Namespace, split_key, split_key_leaf, split_key_root
 from .optionals import FilesCompleterMethod, get_config_read_mode
 from .type_checking import ArgumentParser, _ArgumentGroup
-from .typing import path_type
+from .typing import get_import_path, path_type
 from .util import (
     DirectedGraph,
     yamlParserError,
@@ -355,9 +355,9 @@ class _ActionHelpClassPath(_ActionHelpClass):
 
     def update_init_kwargs(self, kwargs):
         if getattr(self._baseclass, '__origin__', None) == Union:
-            self._basename = '{'+', '.join(c.__name__ for c in self._baseclass.__args__)+'}'
+            self._basename = '{'+', '.join(get_import_path(c) for c in self._baseclass.__args__)+'}'
         else:
-            self._basename = self._baseclass.__name__
+            self._basename = get_import_path(self._baseclass)
         kwargs.update({
             'metavar': 'CLASS',
             'default': SUPPRESS,
@@ -538,6 +538,8 @@ class _ActionLink(Action):
             else:
                 attr = split_key_leaf(action.source[0][0])[1]
                 value = getattr(source_object, attr)
+                if action.compute_fn is not None:
+                    value = action.compute_fn(value)
             _ActionLink.set_target_value(action, value, cfg)
 
     @staticmethod

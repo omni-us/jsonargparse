@@ -1026,9 +1026,11 @@ class SignaturesTests(unittest.TestCase):
 
         # Link object attribute
         parser = make_parser_1()
+        parser.link_arguments('c.c2', 'b.b3', compute_fn=lambda v: f'"{v}"', apply_on='instantiate')
         cfg = parser.parse_args([])
         cfg = parser.instantiate_classes(cfg)
-        self.assertEqual(cfg['a'].a1, 6)
+        self.assertEqual(cfg.a.a1, 6)
+        self.assertEqual(cfg.b.b3, '"8"')
 
         # Link all group arguments
         parser = make_parser_1()

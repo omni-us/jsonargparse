@@ -9,7 +9,7 @@ from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 from .actions import _ActionConfigLoad, _ActionHelpClass, _ActionHelpClassPath
 from .namespace import Namespace
 from .typehints import ActionTypeHint, ClassType, is_optional
-from .typing import is_final_class
+from .typing import get_import_path, is_final_class
 from .util import _issubclass
 from .optionals import (
     dataclasses_support,
@@ -481,9 +481,10 @@ class SignatureArguments:
         else:
             skip = set(nested_key+'.init_args.'+s for s in skip)
         param = Namespace(name=nested_key, _kind=None, annotation=Union[baseclass])
+        str_baseclass = '{' + ', '.join(get_import_path(x) for x in baseclass) + '}'
         kwargs.update({
             'metavar': metavar,
-            'help': (help % {'baseclass_name': str(baseclass)}),
+            'help': (help % {'baseclass_name': str_baseclass}),
         })
         if 'default' not in kwargs:
             kwargs['default'] = SUPPRESS

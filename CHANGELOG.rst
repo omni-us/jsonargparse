@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.0.4 (2021-11-??)
+-------------------
+
+Fixed
+^^^^^
+- Linking of attributes applied on instantiation ignoring compute_fn.
+- Show full class paths in --*.help description to avoid misinterpretation.
+
+
 v4.0.3 (2021-11-23)
 -------------------
 
