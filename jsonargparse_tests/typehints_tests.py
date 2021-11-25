@@ -316,6 +316,21 @@ class TypeHintsTests(unittest.TestCase):
         self.assertIsNone(cfg['op'])
 
 
+    def test_class_type_without_defaults(self):
+        class MyCal(Calendar):
+            def __init__(self, p1: int = 1, p2: str = '2'):
+                pass
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--op', type=MyCal)
+
+        import jsonargparse_tests
+        setattr(jsonargparse_tests, 'MyCal', MyCal)
+
+        cfg = parser.parse_args(['--op.class_path=jsonargparse_tests.MyCal', '--op.init_args.p1=3'], defaults=False)
+        self.assertEqual(cfg.op, Namespace(class_path='jsonargparse_tests.MyCal', init_args=Namespace(p1=3)))
+
+
     def test_typehint_serialize_list(self):
         parser = ArgumentParser()
         action = parser.add_argument('--list', type=Union[PositiveInt, List[PositiveInt]])
@@ -365,6 +380,14 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(parser.dump(cfg), "datetime: '2008-09-03T20:56:35'\n")
         self.assertRaises(ValueError, lambda: register_type(datetime))
         register_type(uuid.UUID)
+
+
+    def test_lazy_instance_invalid_kwargs(self):
+        class MyClass:
+            def __init__(self, param: int = 1):
+                pass
+
+        self.assertRaises(ValueError, lambda: lazy_instance(MyClass, param='bad'))
 
 
 class TypeHintsTmpdirTests(TempDirTestCase):
@@ -474,6 +497,11 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         dump = parser.dump(cfg)
         self.assertIn('class_path: calendar.Calendar\n', dump)
         self.assertIn('firstweekday: 3\n', dump)
+
+        cfg = parser.parse_args([])
+        self.assertEqual(cfg.data.cal.as_dict(), config)
+        cfg = parser.parse_args(['--data.cal.class_path=calendar.Calendar'], defaults=False)
+        self.assertEqual(cfg.data.cal, Namespace(class_path='calendar.Calendar'))
 
 
     def test_class_path_override_with_default_config_files(self):

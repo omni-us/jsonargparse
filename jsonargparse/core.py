@@ -318,6 +318,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
         elif defaults:
             cfg = self.merge_config(cfg, self.get_defaults(skip_check=True))
+            ActionTypeHint.add_sub_defaults(self, cfg)
 
         if not (with_meta or (with_meta is None and self._default_meta)):
             cfg = strip_meta(cfg)
@@ -993,6 +994,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                 cfg['__default_config__'] = default_config_file
             self._logger.info(f'Parsed configuration from default path: {default_config_file}')
 
+        ActionTypeHint.add_sub_defaults(self, cfg)
+
         return cfg
 
 
@@ -1191,7 +1194,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         return help_str
 
 
-    def _apply_actions(self, cfg: Namespace, parent_key: str = '') -> None:
+    def _apply_actions(self, cfg: Namespace, parent_key: str = '', filter_fn: Callable = None) -> None:
         """Runs _check_value_key on actions present in config."""
         if parent_key:
             cfg_branch = cfg
@@ -1206,21 +1209,19 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             if key in seen_keys:
                 continue
             action, subcommand = _find_parent_action_and_subcommand(self, key)
-            if action is not None and not isinstance(action, _ActionSubCommands):
-                if subcommand is not None:
-                    action_dest = subcommand+'.'+action.dest
-                else:
-                    action_dest = action.dest
-                if action_dest == key:
-                    value = self._check_value_key(action, cfg[key], key, cfg)
-                else:
-                    value = cfg[action_dest]
-                    value = self._check_value_key(action, value, action_dest, cfg)
-                    seen_keys.update(action_dest+'.'+k for k in value.keys())
-                cfg[action_dest] = value
-                if isinstance(value, Namespace):
-                    new_keys = value.get_sorted_keys()
-                    keys += [action_dest+'.'+k for k in new_keys if action_dest+'.'+k not in keys]
+            if action is None or isinstance(action, _ActionSubCommands):
+                continue
+            action_dest = action.dest if subcommand is None else subcommand+'.'+action.dest
+            value = cfg[action_dest]
+            if filter_fn and not filter_fn(action, value):
+                continue
+            value = self._check_value_key(action, value, action_dest, cfg)
+            if action_dest != key:
+                seen_keys.update(action_dest+'.'+k for k in value.keys())
+            cfg[action_dest] = value
+            if isinstance(value, Namespace):
+                new_keys = value.get_sorted_keys()
+                keys += [action_dest+'.'+k for k in new_keys if action_dest+'.'+k not in keys]
 
 
     @staticmethod

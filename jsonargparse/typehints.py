@@ -94,6 +94,7 @@ mapping_origin_types = {Dict, dict, Mapping, MutableMapping, abcMapping, abcMuta
 
 
 subclass_arg_parser: ContextVar = ContextVar('subclass_arg_parser')
+sub_defaults: ContextVar = ContextVar('sub_defaults', default=False)
 
 
 class ActionTypeHint(Action):
@@ -237,6 +238,28 @@ class ActionTypeHint(Action):
     def subclass_arg_context(parser):
         subclass_arg_parser.set(parser)
         yield
+
+
+    @staticmethod
+    @contextmanager
+    def sub_defaults_context():
+        t = sub_defaults.set(True)
+        try:
+            yield
+        finally:
+            sub_defaults.reset(t)
+
+
+    @staticmethod
+    def add_sub_defaults(parser, cfg):
+        with ActionTypeHint.sub_defaults_context():
+            def filter_actions(action, value):
+                if value is None:
+                    return False
+                typehint = typehint_from_action(action)
+                return ActionTypeHint.is_supported_typehint(typehint, full=True)
+
+            parser._apply_actions(cfg, filter_fn=filter_actions)
 
 
     def serialize(self, value):
@@ -584,7 +607,7 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
     if serialize:
         init_args = None if is_empty_namespace(init_args) else yaml.safe_load(parser.dump(init_args))
     else:
-        init_args = parser.parse_object(init_args)
+        init_args = parser.parse_object(init_args.as_dict(), defaults=sub_defaults.get())
     return init_args
 
 
@@ -630,9 +653,21 @@ def typehint_metavar(typehint):
     return metavar
 
 
+def check_lazy_kwargs(class_type: Type, lazy_kwargs: dict):
+    if lazy_kwargs:
+        from .core import ArgumentParser
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(class_type)
+        try:
+            parser.parse_object(lazy_kwargs)
+        except ParserError as ex:
+            raise ValueError(str(ex)) from ex
+
+
 class LazyInitBaseClass:
 
     def __init__(self, class_type: Type, lazy_kwargs: dict):
+        check_lazy_kwargs(class_type, lazy_kwargs)
         self._lazy_class_type = class_type
         self._lazy_class_path = get_import_path(class_type)
         self._lazy_kwargs = lazy_kwargs

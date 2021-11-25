@@ -181,15 +181,36 @@ class CLITests(unittest.TestCase):
 
             return CLI(args=['a', 'method1', '2'])
 
-        self.assertEqual(6.7, non_empty_context_1())
-        self.assertEqual(('a', 2), non_empty_context_2())
+        with mock.patch(f'{__name__}.__name__', 'jsonargparse_tests.cli_tests'):
+            self.assertEqual(6.7, non_empty_context_1())
+            self.assertEqual(('a', 2), non_empty_context_2())
+
+
+class A:
+    def __init__(self, p1: str = 'a default'):
+        self.p1 = p1
+
+
+class B:
+    def __init__(self, a: A = A()):
+        self.a = a
+
+
+class C:
+    def __init__(self, a: A = lazy_instance(A), b: B = None):
+        self.a = a
+        self.b = b
+    def cmd_a(self):
+        print(self.a.p1)
+    def cmd_b(self):
+        print(self.b.a.p1)
 
 
 class CLITempDirTests(TempDirTestCase):
 
     def test_subclass_type_config_file(self):
         a_yaml = {
-            'class_path': 'jsonargparse_tests.A',
+            'class_path': f'{__name__}.A',
             'init_args': {'p1': 'a yaml'}
         }
 
@@ -198,26 +219,9 @@ class CLITempDirTests(TempDirTestCase):
         with open('a.yaml', 'w') as f:
             f.write(yaml.safe_dump(a_yaml))
 
-        class A:
-            def __init__(self, p1: str = 'a default'):
-                self.p1 = p1
-
-        class B:
-            def __init__(self, a: A = A()):
-                self.a = a
-
-        class C:
-            def __init__(self, a: A = lazy_instance(A), b: B = None):
-                self.a = a
-                self.b = b
-            def cmd_a(self):
-                print(self.a.p1)
-            def cmd_b(self):
-                print(self.b.a.p1)
-
-        import jsonargparse_tests
-        setattr(jsonargparse_tests, 'A', A)
-        setattr(jsonargparse_tests, 'B', B)
+        from jsonargparse_tests import cli_tests
+        setattr(cli_tests, 'A', A)
+        setattr(cli_tests, 'B', B)
 
         out = StringIO()
         with redirect_stdout(out):
@@ -227,7 +231,7 @@ class CLITempDirTests(TempDirTestCase):
         with open('config.yaml', 'w') as f:
             f.write('a: a.yaml\nb: b.yaml\n')
         with open('b.yaml', 'w') as f:
-            f.write('class_path: jsonargparse_tests.B\ninit_args:\n  a: a.yaml\n')
+            f.write(f'class_path: {__name__}.B\ninit_args:\n  a: a.yaml\n')
 
         out = StringIO()
         with redirect_stdout(out):
@@ -236,6 +240,5 @@ class CLITempDirTests(TempDirTestCase):
 
 
 if __name__ == '__main__':
-    import jsonargparse_tests.cli_tests
     __name__ = 'jsonargparse_tests.cli_tests'
     unittest.main(verbosity=2)
