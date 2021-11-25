@@ -346,8 +346,9 @@ class SignatureArguments:
                     if ActionTypeHint.is_subclass_typehint(annotation):
                         help_action = _ActionHelpClassPath
                         prefix = name + '.init_args.'
-                    group.add_argument(f'--{dest}.help', action=help_action(baseclass=annotation))
+                    help_action = group.add_argument(f'--{dest}.help', action=help_action(baseclass=annotation))
                     subclass_skip = {s[len(prefix):] for s in skip if s.startswith(prefix)}
+                    help_action.sub_add_kwargs = {'fail_untyped': fail_untyped, 'skip': subclass_skip}
                 action = group.add_argument(opt_str, **kwargs)
                 action.sub_add_kwargs = {
                     'fail_untyped': fail_untyped,

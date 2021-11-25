@@ -334,6 +334,30 @@ class SignaturesTests(unittest.TestCase):
         self.assertIn('cal: <calendar.Calendar object at ', dump)
 
 
+    def test_subclass_help(self):
+        class MyCal(calendar.Calendar):
+            def __init__(self, *args, param, **kwargs):
+                self.param = param
+                super().__init__(*args, **kwargs)
+
+        from jsonargparse_tests import signatures_tests
+        setattr(signatures_tests, 'MyCal', MyCal)
+        args = ['--cal.help=jsonargparse_tests.signatures_tests.MyCal']
+
+        parser = ArgumentParser()
+        parser.add_subclass_arguments(calendar.Calendar, 'cal', skip={'param'})
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(args)
+        self.assertIn('--cal.init_args.firstweekday', out.getvalue())
+        self.assertNotIn('param', out.getvalue())
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+        self.assertRaises(ValueError, lambda: parser.parse_args(args))
+
+
     def test_add_subclass_discard_init_args(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(calendar.Calendar, 'cal')

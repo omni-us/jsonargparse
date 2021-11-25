@@ -345,7 +345,7 @@ class _ActionHelpClass(Action):
 
     def print_help(self, call_args, val_class, dest):
         tmp = import_object('jsonargparse.ArgumentParser')()
-        tmp.add_class_arguments(val_class, dest)
+        tmp.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
         _remove_actions(tmp, (_HelpAction, _ActionHelpClass, _ActionPrintConfig))
         tmp.print_help()
         call_args[0].exit()

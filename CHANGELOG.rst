@@ -17,6 +17,8 @@ Fixed
 ^^^^^
 - Linking of attributes applied on instantiation ignoring compute_fn.
 - Show full class paths in --*.help description to avoid misinterpretation.
+- ``--*.help`` action failing when fail_untyped and/or skip is required. `#101
+  <https://github.com/omni-us/jsonargparse/issues/101>`__.
 
 
 v4.0.3 (2021-11-23)
