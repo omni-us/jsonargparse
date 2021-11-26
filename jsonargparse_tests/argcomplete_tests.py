@@ -61,7 +61,7 @@ class ArgcompleteTests(TempDirTestCase):
 
 
     @unittest.skipIf(platform.python_implementation() != 'CPython', 'only CPython supported')
-    def test_TypeCastCompleterMethod(self):
+    def test_simple_types(self):
         self.parser.add_argument('--int', type=int)
         self.parser.add_argument('--float', type=float)
         self.parser.add_argument('--pint', type=PositiveInt)

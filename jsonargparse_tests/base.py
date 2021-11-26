@@ -52,7 +52,10 @@ class TempDirTestCase(unittest.TestCase):
 
     def tearDown(self):
         os.chdir(self.cwd)
-        shutil.rmtree(self.tmpdir)
+        try:
+            shutil.rmtree(self.tmpdir)
+        except PermissionError:
+            pass
 
 
 def example_parser():
