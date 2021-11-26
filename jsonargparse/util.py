@@ -11,6 +11,7 @@ import yaml
 from argparse import Action
 from collections import defaultdict
 from contextlib import contextmanager, redirect_stderr
+from contextvars import ContextVar
 from typing import Any, Optional, Tuple, Union
 from yaml.parser import ParserError as yamlParserError
 from yaml.scanner import ScannerError as yamlScannerError
@@ -59,7 +60,7 @@ def warning(message, category=JsonargparseWarning, stacklevel=1):
     )
 
 
-def _load_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:
+def _parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:
     """Parses yaml/json config in a string or a path"""
     cfg_path = None
     if isinstance(value, str) and value.strip() != '':
@@ -117,6 +118,18 @@ def import_object(name: str):
     name_module, name_object = name.rsplit('.', 1)
     module = __import__(name_module, fromlist=[name_object])
     return getattr(module, name_object)
+
+
+lenient_check: ContextVar = ContextVar('lenient_check', default=False)
+
+
+@contextmanager
+def _lenient_check_context(caller=None):
+    t = lenient_check.set(False if caller == 'argcomplete' else True)
+    try:
+        yield
+    finally:
+        lenient_check.reset(t)
 
 
 @contextmanager

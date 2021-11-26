@@ -1136,6 +1136,46 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(cfg['a'].a2, 3)
 
 
+    def test_dict_type_nested_in_two_level_subclasses(self):
+
+        class Module:
+            pass
+
+        class Network(Module):
+            def __init__(self, sub_network: Module, some_dict: Dict[str, Any] = {}):
+                pass
+
+        class Model:
+            def __init__(self, encoder: Module):
+                pass
+
+        with mock_module(Module=Module, Network=Network, Model=Model) as module:
+
+            config = f"""model:
+              encoder:
+                class_path: {module}.Network
+                init_args:
+                  some_dict:
+                    a: 1
+                  sub_network:
+                    class_path: {module}.Network
+                    init_args:
+                      some_dict:
+                        b: 2
+                      sub_network:
+                        class_path: {module}.Module
+            """
+
+            parser = ArgumentParser(error_handler=None)
+            parser.add_argument('--config', action=ActionConfigFile)
+            parser.add_class_arguments(Model, 'model')
+
+            cfg = parser.parse_args([f'--config={config}'])
+            self.assertEqual(cfg.model.encoder.init_args.some_dict, {'a': 1})
+            self.assertEqual(cfg.model.encoder.init_args.sub_network.init_args.some_dict, {'b': 2})
+            self.assertEqual(cfg.model.as_dict(), yaml.safe_load(config)['model'])
+
+
 class SignaturesConfigTests(TempDirTestCase):
 
     def test_add_function_arguments_config(self):
@@ -1243,6 +1283,38 @@ class SignaturesConfigTests(TempDirTestCase):
         with open(os.path.join('out', 'cal.yaml')) as f:
             cal = yaml.safe_load(f.read())
             self.assertEqual({'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 0}}, cal)
+
+
+    def test_subclass_required_param_with_default_config_files(self):
+
+        class SubModule:
+            def __init__(self, p1: int, p2: int = 2, p3: int = 3):
+                pass
+
+        class Model:
+            def __init__(self, sub_module: SubModule):
+                pass
+
+        with mock_module(SubModule=SubModule, Model=Model) as module:
+
+            defaults = f"""model:
+              sub_module:
+                class_path: {module}.SubModule
+                init_args:
+                  p1: 4
+                  p2: 5
+            """
+            expected = yaml.safe_load(defaults.replace('p2: 5', 'p2: 7'))['model']
+            expected['sub_module']['init_args']['p3'] = 3
+
+            with open('defaults.yaml', 'w') as f:
+                f.write(defaults)
+
+            parser = ArgumentParser(error_handler=None, default_config_files=['defaults.yaml'])
+            parser.add_class_arguments(Model, 'model')
+
+            cfg = parser.parse_args(['--model.sub_module.init_args.p2=7'])
+            self.assertEqual(cfg.model.as_dict(), expected)
 
 
 @unittest.skipIf(not dataclasses_support, 'dataclasses package is required')

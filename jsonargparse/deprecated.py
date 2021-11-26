@@ -185,8 +185,6 @@ class ActionEnum:
             raise ValueError('Expected enum keyword argument.')
 
     def __call__(self, *args, **kwargs):
-        if 'type' in kwargs:
-            raise ValueError('ActionEnum does not allow type given to add_argument.')
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
@@ -209,8 +207,6 @@ class ActionOperators:
             raise ValueError('Expected expr keyword argument.')
 
     def __call__(self, *args, **kwargs):
-        if 'type' in kwargs:
-            raise ValueError('ActionOperators does not allow type given to add_argument.')
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
@@ -229,8 +225,6 @@ class ActionPath:
         self._type = path_type(mode, skip_check=skip_check)
 
     def __call__(self, *args, **kwargs):
-        if 'type' in kwargs:
-            raise ValueError('ActionPath does not allow type given to add_argument.')
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 

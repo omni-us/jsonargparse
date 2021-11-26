@@ -39,12 +39,10 @@ from .optionals import (
     argcomplete_support,
     dump_preserve_order_support,
     fsspec_support,
-    FilesCompleterMethod,
     get_config_read_mode,
     import_jsonnet,
     import_argcomplete,
     import_fsspec,
-    TypeCastCompleterMethod,
 )
 from .util import (
     yamlParserError,
@@ -57,6 +55,8 @@ from .util import (
     _check_valid_dump_format,
     _get_env_var,
     _suppress_stderr,
+    _lenient_check_context,
+    lenient_check,
 )
 
 
@@ -112,14 +112,6 @@ class _ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerPr
                     raise ValueError('Type hint as type does not allow providing an action.')
                 kwargs['action'] = ActionTypeHint(typehint=kwargs.pop('type'), enable_path=enable_path)
         action = super().add_argument(*args, **kwargs)
-        if not hasattr(action, 'completer') and action.type is not None:
-            completer_method = FilesCompleterMethod if isinstance(action.type, Path) else TypeCastCompleterMethod
-            action_class = action.__class__
-            action.__class__ = action_class.__class__(  # type: ignore
-                action_class.__name__ + 'WithCompleter',
-                (action_class, completer_method),
-                {}
-            )
         if isinstance(action, ActionConfigFile) and getattr(self, '_print_config', None) is not None:
             self.add_argument(self._print_config, action=_ActionPrintConfig)  # type: ignore
         if is_meta_key(action.dest):
@@ -256,7 +248,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             namespace = self.merge_config(self.get_defaults(skip_check=True), namespace).as_flat()
 
         try:
-            with patch('argparse.Namespace', Namespace), ActionTypeHint.subclass_arg_context(self):
+            with patch('argparse.Namespace', Namespace), _lenient_check_context(caller), ActionTypeHint.subclass_arg_context(self):
                 namespace, args = self._parse_known_args(args, namespace)
         except (ArgumentError, ParserError) as ex:
             self.error(str(ex), ex)
@@ -318,7 +310,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
         elif defaults:
             cfg = self.merge_config(cfg, self.get_defaults(skip_check=True))
-            ActionTypeHint.add_sub_defaults(self, cfg)
+            with _lenient_check_context():
+                ActionTypeHint.add_sub_defaults(self, cfg)
 
         if not (with_meta or (with_meta is None and self._default_meta)):
             cfg = strip_meta(cfg)
@@ -1072,7 +1065,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                     raise KeyError(f'No action for destination key "{key}" to check its value.')
 
         try:
-            if not skip_required:
+            if not skip_required and not lenient_check.get():
                 check_required(cfg, self)
             check_values(cfg)
         except (TypeError, KeyError) as ex:
@@ -1215,7 +1208,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             value = cfg[action_dest]
             if filter_fn and not filter_fn(action, value):
                 continue
-            value = self._check_value_key(action, value, action_dest, cfg)
+            with _lenient_check_context():
+                value = self._check_value_key(action, value, action_dest, cfg)
             if action_dest != key:
                 seen_keys.update(action_dest+'.'+k for k in value.keys())
             cfg[action_dest] = value

@@ -96,6 +96,7 @@ class RestrictedNumberTests(unittest.TestCase):
         parser.add_argument('--le0', type=NonNegativeFloat)
         parser.add_argument('--f10t20', type=TenToTwenty, nargs='+')
         parser.add_argument('--gt0_or_off', type=gt0_or_off)
+        parser.add_argument('--multi_gt0_or_off', type=gt0_or_off, nargs='+')
 
         self.assertEqual(0.0, parser.parse_args(['--le0', '0']).le0)
         self.assertEqual(5.6, parser.parse_args(['--le0', '5.6']).le0)
@@ -110,6 +111,10 @@ class RestrictedNumberTests(unittest.TestCase):
         self.assertEqual('off', parser.parse_args(['--gt0_or_off', 'off']).gt0_or_off)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--gt0_or_off', '0']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--gt0_or_off', 'on']))
+
+        self.assertEqual([1, 'off'], parser.parse_args(['--multi_gt0_or_off', '1', 'off']).multi_gt0_or_off)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--multi_gt0_or_off', '1', '0']))
+        self.assertRaises(ParserError, lambda: parser.parse_object({'multi_gt0_or_off': [1, 0]}))
 
 
 class RestrictedStringTests(unittest.TestCase):

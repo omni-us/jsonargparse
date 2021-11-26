@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import unittest
+from contextlib import contextmanager
 from unittest import mock
 from jsonargparse import *
 from jsonargparse.typing import *
@@ -29,6 +30,16 @@ except ImportError:
 
 
 os.environ['COLUMNS'] = '150'
+
+
+@contextmanager
+def mock_module(**kwargs):
+    __module__ = 'jsonargparse_tests'
+    for component in kwargs.values():
+        component.__module__ = __module__
+    import jsonargparse_tests
+    with mock.patch.multiple(jsonargparse_tests, create=True, **kwargs):
+        yield __module__
 
 
 class TempDirTestCase(unittest.TestCase):

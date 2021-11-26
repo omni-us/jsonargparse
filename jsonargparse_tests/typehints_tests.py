@@ -331,6 +331,31 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(cfg.op, Namespace(class_path='jsonargparse_tests.MyCal', init_args=Namespace(p1=3)))
 
 
+    def test_class_type_required_params(self):
+        class MyCal(Calendar):
+            def __init__(self, p1: int, p2: str):
+                pass
+
+        with mock_module(MyCal=MyCal) as module:
+            parser = ArgumentParser(error_handler=None)
+            parser.add_argument('--op', type=MyCal, default=lazy_instance(MyCal))
+
+            cfg = parser.get_defaults()
+            self.assertEqual(cfg.op.class_path, f'{module}.MyCal')
+            self.assertEqual(cfg.op.init_args, Namespace(p1=None, p2=None))
+
+
+    def test_invalid_init_args_in_yaml(self):
+        config = """cal:
+            class_path: calendar.Calendar
+            init_args:
+        """
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--config', action=ActionConfigFile)
+        parser.add_argument('--cal', type=Calendar)
+        self.assertRaises(ParserError, lambda: parser.parse_args([f'--config={config}']))
+
+
     def test_typehint_serialize_list(self):
         parser = ArgumentParser()
         action = parser.add_argument('--list', type=Union[PositiveInt, List[PositiveInt]])

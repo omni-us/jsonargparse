@@ -53,8 +53,9 @@ from .util import (
     yamlScannerError,
     indent_text,
     _issubclass,
-    _load_config,
+    _parse_value_or_config,
     warning,
+    lenient_check,
 )
 
 
@@ -65,6 +66,9 @@ Literal = getattr(typing, 'Literal', False)
 
 
 root_types = {
+    str,
+    int,
+    float,
     bool,
     Any,
     Literal,
@@ -325,16 +329,20 @@ class ActionTypeHint(Action):
             try:
                 orig_val = val
                 try:
-                    val, config_path = _load_config(val, enable_path=self._enable_path)
+                    val, config_path = _parse_value_or_config(val, enable_path=self._enable_path)
                 except (yamlParserError, yamlScannerError):
                     config_path = None
-                path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
+                path_meta = val.pop('__path__', None) if isinstance(val, dict) else None
                 sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
                 try:
                     with change_to_path_dir(config_path):
                         val = adapt_typehints(val, self._typehint, sub_add_kwargs=sub_add_kwargs)
                 except ValueError as ex:
-                    if isinstance(val, (int, float)) and config_path is None:
+                    val_is_int_float_or_none = isinstance(val, (int, float)) or val is None
+                    if lenient_check.get():
+                        value[num] = orig_val if val_is_int_float_or_none else val
+                        continue
+                    if val_is_int_float_or_none and config_path is None:
                         val = adapt_typehints(orig_val, self._typehint, sub_add_kwargs=sub_add_kwargs)
                     else:
                         if self._enable_path and config_path is None and isinstance(orig_val, str):
@@ -352,9 +360,14 @@ class ActionTypeHint(Action):
         return value if islist else value[0]
 
 
-    def instantiate_classes(self, val):
+    def instantiate_classes(self, value):
+        islist = _is_action_value_list(self)
+        if not islist:
+            value = [value]
         sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
-        return adapt_typehints(val, self._typehint, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs)
+        for num, val in enumerate(value):
+            value[num] = adapt_typehints(val, self._typehint, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs)
+        return value if islist else value[0]
 
 
     def get_class_and_init_args(self, value):
@@ -422,7 +435,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             val = adapt_typehints(val, type_val, **adapt_kwargs)
         elif isinstance(val, str):
             try:
-                val, _ = _load_config(val, enable_path=False)
+                val, _ = _parse_value_or_config(val, enable_path=False)
             except (yamlParserError, yamlScannerError):
                 pass
 
@@ -434,7 +447,10 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
     # Basic types
     elif typehint in leaf_types:
         if not isinstance(val, typehint):
-            raise ValueError(f'Expected a {typehint} but got "{val}"')
+            if typehint is float and isinstance(val, int):
+                val = float(val)
+            else:
+                raise ValueError(f'Expected a {typehint} but got "{val}"')
 
     # Registered types
     elif typehint in registered_types:
@@ -577,10 +593,16 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
 
 
 def is_class_object(val):
-    return isinstance(val, (dict, Namespace)) and 'class_path' in val
+    is_class = isinstance(val, (dict, Namespace)) and 'class_path'
+    if is_class:
+        keys = getattr(val, '__dict__', val).keys()
+        is_class = len(set(keys)-{'class_path', 'init_args', '__path__'}) == 0
+    return is_class
 
 
 def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs):
+    if not isinstance(init_args, Namespace):
+        raise ValueError(f'Unexpected init_args value: "{init_args}".')
     parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
 
     # No need to re-create the linked arg but just "inform" the corresponding parser actions that it exists upstream.

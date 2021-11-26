@@ -14,9 +14,9 @@ from .optionals import (
     jsonschemaValidationError,
 )
 from .util import (
+    _parse_value_or_config,
     yamlParserError,
     yamlScannerError,
-    _load_config,
 )
 
 
@@ -89,7 +89,7 @@ class ActionJsonSchema(Action):
             value = [value]
         for num, val in enumerate(value):
             try:
-                val, fpath = _load_config(val, enable_path=self._enable_path)
+                val, fpath = _parse_value_or_config(val, enable_path=self._enable_path)
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 self._validator.validate(val)
                 if path_meta is not None:

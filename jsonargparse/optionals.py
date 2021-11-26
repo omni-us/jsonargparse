@@ -169,19 +169,6 @@ class FilesCompleterMethod:
         return sorted(files_completer(prefix, **kwargs))
 
 
-class TypeCastCompleterMethod:
-    """Completer method for Action classes with a casting type."""
-    def completer(self, prefix, **kwargs):
-        if chr(int(os.environ['COMP_TYPE'])) == '?':
-            try:
-                self.type(prefix)  # pylint: disable=no-member
-                msg = 'value already valid, '
-            except ValueError:
-                msg = 'value not yet valid, '
-            msg += 'expected type '+self.type.__name__  # pylint: disable=no-member
-            return argcomplete_warn_redraw_prompt(prefix, msg)
-
-
 def argcomplete_warn_redraw_prompt(prefix, message):
     argcomplete = import_argcomplete('argcomplete_warn_redraw_prompt')
     if prefix != '':
