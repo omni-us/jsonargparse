@@ -27,6 +27,7 @@ Fixed
 - instantiate_classes failing for type hints with ``nargs='+'``.
 - Useful error message when init_args value invalid.
 - Specific error message when subclass dict has unexpected keys.
+- Removed unnecessary recursive calls causing slow parsing.
 
 
 v4.0.3 (2021-11-23)

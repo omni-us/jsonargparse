@@ -596,7 +596,7 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_class_arguments(ClassB, 'b')
 
-        self.assertEqual(-3.2, parser.get_defaults().b.b2.a2)
+        self.assertEqual(parser.get_defaults().b.b2, Namespace(a1=1, a2=-3.2))
         cfg = parser.parse_args(['--b.b2={"a2": 6.7}'])
         self.assertEqual(cfg.b.b2, Namespace(a1=1, a2=6.7))
         self.assertEqual(cfg, parser.parse_string(parser.dump(cfg)))

@@ -30,6 +30,7 @@ from .actions import (
     _ActionLink,
     _is_branch_key,
     _find_action,
+    _find_action_and_subcommand,
     _find_parent_action,
     _find_parent_action_and_subcommand,
     _is_action_value_list,
@@ -320,7 +321,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
         _ActionLink.apply_parsing_links(self, cfg)
 
-        if not skip_check:
+        if not skip_check and not lenient_check.get():
             self.check_config(cfg, skip_required=skip_required)
 
         if log_message is not None:
@@ -384,7 +385,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
     def parse_object(
         self,
-        cfg_obj: Dict[str, Any],
+        cfg_obj: Union[Namespace, Dict[str, Any]],
         cfg_base: Optional[Namespace] = None,
         env: Optional[bool] = None,
         defaults: bool = True,
@@ -407,8 +408,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            cfg = self._config_from_dict(cfg_obj)
-            self._apply_actions(cfg)
+            cfg = self._apply_actions(cfg_obj)
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -612,51 +612,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         except (yamlParserError, yamlScannerError) as ex:
             raise TypeError(f'Problems parsing config :: {ex}') from ex
 
-        cfg = self._config_from_dict(cfg_dict)
-        self._apply_actions(cfg)
+        cfg = self._apply_actions(cfg_dict)
 
         return cfg
-
-
-    def _config_from_dict(self, cfg_dict: Dict[str, Any], parent_key: str = '') -> Namespace:
-
-        def branch_to_namespace(dic, parser, parent_key=''):
-            ns = Namespace()
-            for key, val in dic.items():
-                full_key = parent_key + '.' + key if parent_key else key
-                if isinstance(val, dict):
-                    action = _find_action(parser, full_key, exclude=_ActionConfigLoad)
-                    if action is None:
-                        val = branch_to_namespace(val, parser, parent_key=full_key)
-                    elif isinstance(action, _ActionSubCommands):
-                        cfg = Namespace()
-                        cfg[full_key] = Namespace()
-                        _, subparser = _ActionSubCommands.get_subcommand(self, cfg, fail_no_subcommand=False)
-                        val = branch_to_namespace(val, subparser)
-                    elif isinstance(action, ActionTypeHint):
-                        def class_branch_to_namespace(val):
-                            klass, init_args, final_class = action.get_class_and_init_args(val)
-                            val = Namespace(val)
-                            if init_args is not None:
-                                sub_add_kwargs = getattr(action, 'sub_add_kwargs', None)
-                                subparser = ActionTypeHint.get_class_parser(klass, sub_add_kwargs=sub_add_kwargs)
-                                init_args = branch_to_namespace(init_args, subparser)
-                                if final_class:
-                                    val = init_args
-                                else:
-                                    val['init_args'] = init_args
-                            return val
-                        if ActionTypeHint.is_class_typehint(action):
-                            val = class_branch_to_namespace(val)
-                        elif ActionTypeHint.is_mapping_class_typehint(action):
-                            val = dict(val)
-                            for subkey, subval in val.items():
-                                val[subkey] = class_branch_to_namespace(subval)
-                ns[key] = val
-            return ns
-
-        with _ActionSubCommands.not_single_subcommand():
-            return branch_to_namespace(cfg_dict, self, parent_key=parent_key)
 
 
     def link_arguments(
@@ -1187,35 +1145,42 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         return help_str
 
 
-    def _apply_actions(self, cfg: Namespace, parent_key: str = '', filter_fn: Callable = None) -> None:
+    def _apply_actions(self, cfg: Union[Namespace, Dict[str, Any]], parent_key: str = '') -> Namespace:
         """Runs _check_value_key on actions present in config."""
+        if isinstance(cfg, dict):
+            cfg = Namespace(cfg)
         if parent_key:
             cfg_branch = cfg
             cfg = Namespace()
             cfg[parent_key] = cfg_branch
-        keys = cfg.get_sorted_keys()
-        seen_keys: Set[str] = set()
+            keys = [parent_key+'.'+k for k in cfg_branch.__dict__.keys()]
+        else:
+            keys = list(cfg.__dict__.keys())
+        config_keys: Set[str] = set()
         num = 0
         while num < len(keys):
             key = keys[num]
             num += 1
-            if key in seen_keys:
-                continue
-            action, subcommand = _find_parent_action_and_subcommand(self, key)
+            exclude = _ActionConfigLoad if key in config_keys else None
+            action, subcommand = _find_action_and_subcommand(self, key, exclude=exclude)
             if action is None or isinstance(action, _ActionSubCommands):
+                value = cfg[key]
+                if isinstance(value, dict):
+                    value = Namespace(value)
+                if isinstance(value, Namespace):
+                    new_keys = value.__dict__.keys()
+                    keys += [key+'.'+k for k in new_keys if key+'.'+k not in keys]
+                cfg[key] = value
                 continue
             action_dest = action.dest if subcommand is None else subcommand+'.'+action.dest
-            value = cfg[action_dest]
-            if filter_fn and not filter_fn(action, value):
-                continue
             with _lenient_check_context():
+                value = cfg[action_dest]
                 value = self._check_value_key(action, value, action_dest, cfg)
-            if action_dest != key:
-                seen_keys.update(action_dest+'.'+k for k in value.keys())
+            if isinstance(action, _ActionConfigLoad):
+                config_keys.add(action_dest)
+                keys.append(action_dest)
             cfg[action_dest] = value
-            if isinstance(value, Namespace):
-                new_keys = value.get_sorted_keys()
-                keys += [action_dest+'.'+k for k in new_keys if action_dest+'.'+k not in keys]
+        return cfg[parent_key] if parent_key else cfg
 
 
     @staticmethod
@@ -1252,6 +1217,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         Raises:
             TypeError: If the value is not valid.
         """
+        if value is None and lenient_check.get():
+            return value
         if action.choices is not None and isinstance(action, _ActionSubCommands):
             leaf_key = split_key_leaf(key)[-1]
             if leaf_key == action.dest:

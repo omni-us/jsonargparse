@@ -301,8 +301,7 @@ class _ActionConfigLoad(Action):
             if not isinstance(cfg, dict):
                 raise TypeError(f'Parser key "{self.dest}": Unable to load config "{value}"')
             with change_to_path_dir(cfg_path):
-                cfg = parser._config_from_dict(cfg, parent_key=self.dest)
-                parser._apply_actions(cfg, parent_key=self.dest)
+                cfg = parser._apply_actions(cfg, parent_key=self.dest)
             return cfg
         except (TypeError, yamlParserError, yamlScannerError) as ex:
             str_ex = indent_text(str(ex))

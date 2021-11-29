@@ -169,28 +169,8 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def is_final_class_typehint(typehint):
-        typehint = typehint_from_action(typehint)
-        typehint_origin = getattr(typehint, '__origin__', None)
-        if typehint_origin == Union:
-            subtypes = [a for a in typehint.__args__ if a != NoneType]
-            if len(subtypes) == 1:
-                typehint = subtypes[0]
-        return is_final_class(typehint)
-
-
-    @staticmethod
     def is_subclass_typehint(typehint):
         return ActionTypeHint.is_class_typehint(typehint, True)
-
-
-    @staticmethod
-    def is_mapping_class_typehint(typehint):
-        typehint = typehint_from_action(typehint)
-        typehint_origin = getattr(typehint, '__origin__', None)
-        if typehint_origin not in mapping_origin_types:
-            return False
-        return ActionTypeHint.is_class_typehint(getattr(typehint, '__args__')[1])
 
 
     @staticmethod
@@ -257,13 +237,7 @@ class ActionTypeHint(Action):
     @staticmethod
     def add_sub_defaults(parser, cfg):
         with ActionTypeHint.sub_defaults_context():
-            def filter_actions(action, value):
-                if value is None:
-                    return False
-                typehint = typehint_from_action(action)
-                return ActionTypeHint.is_supported_typehint(typehint, full=True)
-
-            parser._apply_actions(cfg, filter_fn=filter_actions)
+            parser._apply_actions(cfg)
 
 
     def serialize(self, value):
@@ -368,18 +342,6 @@ class ActionTypeHint(Action):
         for num, val in enumerate(value):
             value[num] = adapt_typehints(val, self._typehint, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs)
         return value if islist else value[0]
-
-
-    def get_class_and_init_args(self, value):
-        final_class = ActionTypeHint.is_final_class_typehint(self)
-        if final_class:
-            typehint_origin = getattr(self._typehint, '__origin__', None)
-            class_type = [a for a in self._typehint.__args__ if a != NoneType][0] if typehint_origin == Union else self._typehint
-            init_args = value
-        else:
-            class_type = import_object(value['class_path'])
-            init_args = value.get('init_args')
-        return class_type, init_args, final_class
 
 
     @staticmethod
@@ -629,7 +591,7 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
     if serialize:
         init_args = None if is_empty_namespace(init_args) else yaml.safe_load(parser.dump(init_args))
     else:
-        init_args = parser.parse_object(init_args.as_dict(), defaults=sub_defaults.get())
+        init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
     return init_args
 
 
