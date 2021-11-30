@@ -340,22 +340,21 @@ class SignaturesTests(unittest.TestCase):
                 self.param = param
                 super().__init__(*args, **kwargs)
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'MyCal', MyCal)
-        args = ['--cal.help=jsonargparse_tests.signatures_tests.MyCal']
+        with mock_module(MyCal) as module:
+            args = [f'--cal.help={module}.MyCal']
 
-        parser = ArgumentParser()
-        parser.add_subclass_arguments(calendar.Calendar, 'cal', skip={'param'})
+            parser = ArgumentParser()
+            parser.add_subclass_arguments(calendar.Calendar, 'cal', skip={'param'})
 
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(args)
-        self.assertIn('--cal.init_args.firstweekday', out.getvalue())
-        self.assertNotIn('param', out.getvalue())
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                parser.parse_args(args)
+            self.assertIn('--cal.init_args.firstweekday', out.getvalue())
+            self.assertNotIn('param', out.getvalue())
 
-        parser = ArgumentParser(error_handler=None)
-        parser.add_subclass_arguments(calendar.Calendar, 'cal')
-        self.assertRaises(ValueError, lambda: parser.parse_args(args))
+            parser = ArgumentParser(error_handler=None)
+            parser.add_subclass_arguments(calendar.Calendar, 'cal')
+            self.assertRaises(ValueError, lambda: parser.parse_args(args))
 
 
     def test_add_subclass_discard_init_args(self):
@@ -365,15 +364,12 @@ class SignaturesTests(unittest.TestCase):
         class MyCal(calendar.Calendar):
             pass
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'MyCal', MyCal)
-
-        with warnings.catch_warnings(record=True) as w:
+        with mock_module(MyCal) as module, warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             parser.parse_args([
                 '--cal.class_path=calendar.Calendar',
                 '--cal.init_args.firstweekday=4',
-                '--cal.class_path=jsonargparse_tests.signatures_tests.MyCal',
+                f'--cal.class_path={module}.MyCal',
             ])
             self.assertEqual(len(w), 1)
             self.assertIn("discarding init_args {'firstweekday': 4} defined for class_path calendar.Calendar", str(w[0].message))
@@ -414,30 +410,28 @@ class SignaturesTests(unittest.TestCase):
                 self.b1 = b1
                 self.b2 = b2
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'ClassA', ClassA)
-        setattr(signatures_tests, 'ClassB', ClassB)
-        class_path_a = 'jsonargparse_tests.signatures_tests.ClassA'
-        class_path_b = 'jsonargparse_tests.signatures_tests.ClassB'
+        with mock_module(ClassA, ClassB) as module:
+            class_path_a = f'{module}.ClassA'
+            class_path_b = f'{module}.ClassB'
 
-        parser = ArgumentParser(error_handler=None)
-        parser.add_subclass_arguments((ClassA, ClassB), 'c')
+            parser = ArgumentParser(error_handler=None)
+            parser.add_subclass_arguments((ClassA, ClassB), 'c')
 
-        cfg = parser.parse_args(['--c={"class_path": "'+class_path_a+'", "init_args": {"a1": -1}}'])
-        self.assertEqual(cfg.c.init_args.a1, -1)
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg['c'], ClassA)
+            cfg = parser.parse_args(['--c={"class_path": "'+class_path_a+'", "init_args": {"a1": -1}}'])
+            self.assertEqual(cfg.c.init_args.a1, -1)
+            cfg = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg['c'], ClassA)
 
-        cfg = parser.parse_args(['--c={"class_path": "'+class_path_b+'", "init_args": {"b1": -4.5}}'])
-        self.assertEqual(cfg.c.init_args.b1, -4.5)
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg['c'], ClassB)
+            cfg = parser.parse_args(['--c={"class_path": "'+class_path_b+'", "init_args": {"b1": -4.5}}'])
+            self.assertEqual(cfg.c.init_args.b1, -4.5)
+            cfg = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg['c'], ClassB)
 
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(['--c.help='+class_path_b])
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                parser.parse_args(['--c.help='+class_path_b])
 
-        self.assertIn('--c.init_args.b1', out.getvalue())
+            self.assertIn('--c.init_args.b1', out.getvalue())
 
 
     def test_required_group(self):
@@ -544,12 +538,9 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_class_arguments(Class2, skip={'c1.init_args.a2', 'c2'})
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'Class1', Class1)
-        class_path = 'jsonargparse_tests.signatures_tests.Class1'
-
-        cfg = parser.parse_args(['--c1='+class_path])
-        self.assertEqual(cfg.c1.init_args, Namespace(a1=1, a3='4'))
+        with mock_module(Class1) as module:
+            cfg = parser.parse_args([f'--c1={module}.Class1'])
+            self.assertEqual(cfg.c1.init_args, Namespace(a1=1, a3='4'))
 
 
     def test_skip_in_add_subclass_arguments(self):
@@ -568,16 +559,14 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(ClassA, 'c', skip={'a1', 'b2'})
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'ClassA', ClassA)
-        setattr(signatures_tests, 'ClassB', ClassB)
-        class_path_a = 'jsonargparse_tests.signatures_tests.ClassA'
-        class_path_b = 'jsonargparse_tests.signatures_tests.ClassB'
+        with mock_module(ClassA, ClassB) as module:
+            class_path_a = f'{module}.ClassA'
+            class_path_b = f'{module}.ClassB'
 
-        cfg = parser.parse_args(['--c='+class_path_a])
-        self.assertEqual(cfg.c.init_args, Namespace(a2=2.3))
-        cfg = parser.parse_args(['--c='+class_path_b])
-        self.assertEqual(cfg.c.init_args, Namespace(a2=2.3, b1=4.5))
+            cfg = parser.parse_args(['--c='+class_path_a])
+            self.assertEqual(cfg.c.init_args, Namespace(a2=2.3))
+            cfg = parser.parse_args(['--c='+class_path_b])
+            self.assertEqual(cfg.c.init_args, Namespace(a2=2.3, b1=4.5))
 
 
     def test_final_class(self):
@@ -703,35 +692,33 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_class_arguments(Class2)
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'Class1', Class1)
+        with mock_module(Class1) as module:
+            class_path = f'"class_path": "{module}.Class1"'
+            init_args = '"init_args": {"a1": 7}'
+            cfg = parser.parse_args(['--c1={'+class_path+', '+init_args+'}'])
+            self.assertEqual(cfg.c1.class_path, f'{module}.Class1')
+            self.assertEqual(cfg.c1.init_args, Namespace(a1=7, a2=2.3))
+            cfg = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg['c1'], Class1)
+            self.assertEqual(7, cfg['c1'].a1)
+            self.assertEqual(2.3, cfg['c1'].a2)
 
-        class_path = '"class_path": "jsonargparse_tests.signatures_tests.Class1"'
-        init_args = '"init_args": {"a1": 7}'
-        cfg = parser.parse_args(['--c1={'+class_path+', '+init_args+'}'])
-        self.assertEqual(cfg.c1.class_path, 'jsonargparse_tests.signatures_tests.Class1')
-        self.assertEqual(cfg.c1.init_args, Namespace(a1=7, a2=2.3))
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg['c1'], Class1)
-        self.assertEqual(7, cfg['c1'].a1)
-        self.assertEqual(2.3, cfg['c1'].a2)
+            parser = ArgumentParser(error_handler=None)
+            parser.add_class_arguments(Class2, 'c2')
 
-        parser = ArgumentParser(error_handler=None)
-        parser.add_class_arguments(Class2, 'c2')
+            cfg = parser.parse_args(['--c2={"c1": {'+class_path+', '+init_args+'}}'])
+            cfg = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg['c2'], Class2)
+            self.assertIsInstance(cfg['c2'].c1, Class1)
 
-        cfg = parser.parse_args(['--c2={"c1": {'+class_path+', '+init_args+'}}'])
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg['c2'], Class2)
-        self.assertIsInstance(cfg['c2'].c1, Class1)
+            class EmptyInitClass:
+                pass
 
-        class EmptyInitClass:
-            pass
-
-        parser = ArgumentParser(error_handler=None)
-        parser.add_class_arguments(EmptyInitClass, 'e')
-        cfg = parser.parse_args([])
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg['e'], EmptyInitClass)
+            parser = ArgumentParser(error_handler=None)
+            parser.add_class_arguments(EmptyInitClass, 'e')
+            cfg = parser.parse_args([])
+            cfg = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg['e'], EmptyInitClass)
 
 
     def test_instantiate_classes_subcommand(self):
@@ -875,9 +862,6 @@ class SignaturesTests(unittest.TestCase):
             ):
                 pass
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'ClassA', ClassA)
-
         parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(ClassA, 'a')
         parser.add_subclass_arguments(calendar.Calendar, 'c')
@@ -886,28 +870,29 @@ class SignaturesTests(unittest.TestCase):
             return v1 + v2
         parser.link_arguments(('a.init_args.v1', 'a.init_args.v2'), 'c.init_args.firstweekday', add)
 
-        a_value = {
-            'class_path': 'jsonargparse_tests.signatures_tests.ClassA',
-            'init_args': {'v2': 3},
-        }
+        with mock_module(ClassA) as module:
+            a_value = {
+                'class_path': f'{module}.ClassA',
+                'init_args': {'v2': 3},
+            }
 
-        cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
-        self.assertEqual(cfg.c.init_args.firstweekday, 4)
-        self.assertEqual(cfg.c.init_args.firstweekday, cfg.a.init_args.v1+cfg.a.init_args.v2)
+            cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
+            self.assertEqual(cfg.c.init_args.firstweekday, 4)
+            self.assertEqual(cfg.c.init_args.firstweekday, cfg.a.init_args.v1+cfg.a.init_args.v2)
 
-        cfg_init = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg_init.a, ClassA)
-        self.assertIsInstance(cfg_init.c, calendar.Calendar)
+            cfg_init = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg_init.a, ClassA)
+            self.assertIsInstance(cfg_init.c, calendar.Calendar)
 
-        dump = yaml.safe_load(parser.dump(cfg))
-        a_value['init_args']['v1'] = 1
-        self.assertEqual(dump, {'a': a_value, 'c': {'class_path': 'calendar.Calendar'}})
+            dump = yaml.safe_load(parser.dump(cfg))
+            a_value['init_args']['v1'] = 1
+            self.assertEqual(dump, {'a': a_value, 'c': {'class_path': 'calendar.Calendar'}})
 
-        self.assertRaises(ValueError, lambda: parser.link_arguments('a.init_args.v1', 'c'))
+            self.assertRaises(ValueError, lambda: parser.link_arguments('a.init_args.v1', 'c'))
 
-        a_value['init_args'] = {'v1': 'a', 'v2': 'b'}
-        with self.assertRaises(ParserError):
-            parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
+            a_value['init_args'] = {'v1': 'a', 'v2': 'b'}
+            with self.assertRaises(ParserError):
+                parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
 
 
     def test_link_arguments_subclasses_with_instantiate_false(self):
@@ -919,34 +904,32 @@ class SignaturesTests(unittest.TestCase):
             ):
                 self.c = c
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'ClassA', ClassA)
-
         parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(ClassA, 'a')
         parser.add_subclass_arguments(calendar.Calendar, 'c', instantiate=False)
         parser.link_arguments('c', 'a.init_args.c')
 
-        a_value = {'class_path': 'jsonargparse_tests.signatures_tests.ClassA'}
-        c_value = {
-            'class_path': 'calendar.Calendar',
-            'init_args': {
-                'firstweekday': 3,
-            },
-        }
+        with mock_module(ClassA) as module:
+            a_value = {'class_path': f'{module}.ClassA'}
+            c_value = {
+                'class_path': 'calendar.Calendar',
+                'init_args': {
+                    'firstweekday': 3,
+                },
+            }
 
-        cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c='+json.dumps(c_value)])
-        self.assertEqual(cfg.c.as_dict(), {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 3}})
-        self.assertEqual(cfg.c, cfg.a.init_args.c)
+            cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c='+json.dumps(c_value)])
+            self.assertEqual(cfg.c.as_dict(), {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 3}})
+            self.assertEqual(cfg.c, cfg.a.init_args.c)
 
-        cfg_init = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg_init.c, Namespace)
-        self.assertIsInstance(cfg_init.a, ClassA)
-        self.assertIsInstance(cfg_init.a.c, calendar.Calendar)
-        self.assertEqual(cfg_init.a.c.firstweekday, 3)
+            cfg_init = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg_init.c, Namespace)
+            self.assertIsInstance(cfg_init.a, ClassA)
+            self.assertIsInstance(cfg_init.a.c, calendar.Calendar)
+            self.assertEqual(cfg_init.a.c.firstweekday, 3)
 
-        dump = yaml.safe_load(parser.dump(cfg))
-        self.assertNotIn('c', dump['a']['init_args'])
+            dump = yaml.safe_load(parser.dump(cfg))
+            self.assertNotIn('c', dump['a']['init_args'])
 
 
     def test_link_arguments_subclass_as_dict(self):
@@ -962,9 +945,6 @@ class SignaturesTests(unittest.TestCase):
         def return_dict(value: dict):
             return value
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'ClassA', ClassA)
-
         parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(ClassA, 'a')
         parser.add_subclass_arguments(calendar.Calendar, 'c')
@@ -972,17 +952,18 @@ class SignaturesTests(unittest.TestCase):
         parser.link_arguments('c', 'a.init_args.a2')
         parser.link_arguments('c', 'a.init_args.a3')
 
-        a_value = {'class_path': 'jsonargparse_tests.signatures_tests.ClassA'}
-        c_value = {
-            'class_path': 'calendar.Calendar',
-            'init_args': {
-                'firstweekday': 3,
-            },
-        }
+        with mock_module(ClassA) as module:
+            a_value = {'class_path': f'{module}.ClassA'}
+            c_value = {
+                'class_path': 'calendar.Calendar',
+                'init_args': {
+                    'firstweekday': 3,
+                },
+            }
 
-        cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c='+json.dumps(c_value)])
-        self.assertEqual(cfg.a.init_args.a1, c_value)
-        self.assertEqual(cfg.a.init_args.a2, c_value)
+            cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c='+json.dumps(c_value)])
+            self.assertEqual(cfg.a.init_args.a1, c_value)
+            self.assertEqual(cfg.a.init_args.a2, c_value)
 
 
     def test_link_arguments_subcommand(self):
@@ -1023,10 +1004,6 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, c1: int = 7, c2: str = '8'):
                 self.c1 = c1
                 self.c2 = c2
-
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'ClassA', ClassA)
-        setattr(signatures_tests, 'ClassB', ClassB)
 
         def make_parser_1():
             parser = ArgumentParser(error_handler=None)
@@ -1078,13 +1055,14 @@ class SignaturesTests(unittest.TestCase):
             parser.link_arguments('d', 'c.c2', apply_on='instantiate')
 
         # Link subclass and compute function
-        parser = make_parser_2()
-        cfg = parser.parse_args([
-            '--a=jsonargparse_tests.signatures_tests.ClassA',
-            '--b=jsonargparse_tests.signatures_tests.ClassB',
-        ])
-        cfg = parser.instantiate_classes(cfg)
-        self.assertEqual(cfg['a'].a1, 6)
+        with mock_module(ClassA, ClassB) as module:
+            parser = make_parser_2()
+            cfg = parser.parse_args([
+                f'--a={module}.ClassA',
+                f'--b={module}.ClassB',
+            ])
+            cfg = parser.instantiate_classes(cfg)
+            self.assertEqual(cfg['a'].a1, 6)
 
         # Unsupported multi-source
         parser = make_parser_2()
@@ -1149,7 +1127,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, encoder: Module):
                 pass
 
-        with mock_module(Module=Module, Network=Network, Model=Model) as module:
+        with mock_module(Module, Network, Model) as module:
 
             config = f"""model:
               encoder:
@@ -1295,7 +1273,7 @@ class SignaturesConfigTests(TempDirTestCase):
             def __init__(self, sub_module: SubModule):
                 pass
 
-        with mock_module(SubModule=SubModule, Model=Model) as module:
+        with mock_module(SubModule, Model) as module:
 
             defaults = f"""model:
               sub_module:
@@ -1432,20 +1410,18 @@ class DataclassesTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_class_arguments(MyClass2)
 
-        from jsonargparse_tests import signatures_tests
-        setattr(signatures_tests, 'MyClass1', MyClass1)
-
-        class_path = '"class_path": "jsonargparse_tests.signatures_tests.MyClass1"'
-        init_args = '"init_args": {"a1": {"b2": {"a1": 7}}}'
-        cfg = parser.parse_args(['--c1={'+class_path+', '+init_args+'}'])
-        self.assertEqual(cfg.c1.class_path, 'jsonargparse_tests.signatures_tests.MyClass1')
-        self.assertEqual(cfg.c1.init_args.a1.b2.a1, 7)
-        self.assertIsInstance(cfg.c1.init_args.a1.b2.a1, PositiveInt)
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg['c1'], MyClass1)
-        self.assertIsInstance(cfg['c1'].a1, self.MyDataClassB)
-        self.assertIsInstance(cfg['c1'].a1.b2, self.MyDataClassA)
-        self.assertIsInstance(cfg['c1'].a1.b1, PositiveFloat)
+        with mock_module(MyClass1, MyClass2) as module:
+            class_path = f'"class_path": "{module}.MyClass1"'
+            init_args = '"init_args": {"a1": {"b2": {"a1": 7}}}'
+            cfg = parser.parse_args(['--c1={'+class_path+', '+init_args+'}'])
+            self.assertEqual(cfg.c1.class_path, f'{module}.MyClass1')
+            self.assertEqual(cfg.c1.init_args.a1.b2.a1, 7)
+            self.assertIsInstance(cfg.c1.init_args.a1.b2.a1, PositiveInt)
+            cfg = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg['c1'], MyClass1)
+            self.assertIsInstance(cfg['c1'].a1, self.MyDataClassB)
+            self.assertIsInstance(cfg['c1'].a1.b2, self.MyDataClassA)
+            self.assertIsInstance(cfg['c1'].a1.b1, PositiveFloat)
 
 
     def test_dataclass_add_argument_type(self):

@@ -33,12 +33,12 @@ os.environ['COLUMNS'] = '150'
 
 
 @contextmanager
-def mock_module(**kwargs):
+def mock_module(*args):
     __module__ = 'jsonargparse_tests'
-    for component in kwargs.values():
+    for component in args:
         component.__module__ = __module__
     import jsonargparse_tests
-    with mock.patch.multiple(jsonargparse_tests, create=True, **kwargs):
+    with mock.patch.multiple(jsonargparse_tests, create=True, **{c.__name__: c for c in args}):
         yield __module__
 
 

@@ -324,11 +324,9 @@ class TypeHintsTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--op', type=MyCal)
 
-        import jsonargparse_tests
-        setattr(jsonargparse_tests, 'MyCal', MyCal)
-
-        cfg = parser.parse_args(['--op.class_path=jsonargparse_tests.MyCal', '--op.init_args.p1=3'], defaults=False)
-        self.assertEqual(cfg.op, Namespace(class_path='jsonargparse_tests.MyCal', init_args=Namespace(p1=3)))
+        with mock_module(MyCal) as module:
+            cfg = parser.parse_args([f'--op.class_path={module}.MyCal', '--op.init_args.p1=3'], defaults=False)
+            self.assertEqual(cfg.op, Namespace(class_path=f'{module}.MyCal', init_args=Namespace(p1=3)))
 
 
     def test_class_type_required_params(self):
@@ -336,7 +334,7 @@ class TypeHintsTests(unittest.TestCase):
             def __init__(self, p1: int, p2: str):
                 pass
 
-        with mock_module(MyCal=MyCal) as module:
+        with mock_module(MyCal) as module:
             parser = ArgumentParser(error_handler=None)
             parser.add_argument('--op', type=MyCal, default=lazy_instance(MyCal))
 
@@ -535,25 +533,23 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             def __init__(self, *args, param: str = '0', **kwargs):
                 super().__init__(*args, **kwargs)
 
-        import jsonargparse_tests
-        setattr(jsonargparse_tests, 'MyCalendar', MyCalendar)
+        with mock_module(MyCalendar) as module:
+            config = {
+                'class_path': f'{module}.MyCalendar',
+                'init_args': {'firstweekday': 2, 'param': '1'},
+            }
+            config_path = os.path.join(self.tmpdir, 'config.yaml')
+            with open(config_path, 'w') as f:
+                json.dump({'cal': config}, f)
 
-        config = {
-            'class_path': 'jsonargparse_tests.MyCalendar',
-            'init_args': {'firstweekday': 2, 'param': '1'},
-        }
-        config_path = os.path.join(self.tmpdir, 'config.yaml')
-        with open(config_path, 'w') as f:
-            json.dump({'cal': config}, f)
+            parser = ArgumentParser(error_handler=None, default_config_files=[config_path])
+            parser.add_argument('--cal', type=Optional[Calendar])
 
-        parser = ArgumentParser(error_handler=None, default_config_files=[config_path])
-        parser.add_argument('--cal', type=Optional[Calendar])
+            cfg = parser.instantiate_classes(parser.get_defaults())
+            self.assertIsInstance(cfg['cal'], MyCalendar)
 
-        cfg = parser.instantiate_classes(parser.get_defaults())
-        self.assertIsInstance(cfg['cal'], MyCalendar)
-
-        cfg = parser.parse_args(['--cal={"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}'])
-        self.assertEqual(type(parser.instantiate_classes(cfg)['cal']), Calendar)
+            cfg = parser.parse_args(['--cal={"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}'])
+            self.assertEqual(type(parser.instantiate_classes(cfg)['cal']), Calendar)
 
 
     def test_linking_deep_targets(self):
@@ -575,37 +571,31 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             def fn(self) -> D:
                 return D()
 
-        config = {
-            "b": {
-                "class_path": "jsonargparse_tests.BSub",
-                "init_args": {
-                    "a": {
-                        "class_path": "jsonargparse_tests.A",
+        with mock_module(D, A, BSuper, BSub, C) as module:
+            config = {
+                "b": {
+                    "class_path": f"{module}.BSub",
+                    "init_args": {
+                        "a": {
+                            "class_path": f"{module}.A",
+                        },
                     },
                 },
-            },
-            "c": {},
-        }
-        config_path = os.path.join(self.tmpdir, 'config.yaml')
-        with open(config_path, 'w') as f:
-            yaml.safe_dump(config, f)
+                "c": {},
+            }
+            config_path = os.path.join(self.tmpdir, 'config.yaml')
+            with open(config_path, 'w') as f:
+                yaml.safe_dump(config, f)
 
-        import jsonargparse_tests
-        setattr(jsonargparse_tests, 'D', D)
-        setattr(jsonargparse_tests, 'A', A)
-        setattr(jsonargparse_tests, 'BSuper', BSuper)
-        setattr(jsonargparse_tests, 'BSub', BSub)
-        setattr(jsonargparse_tests, 'C', C)
+            parser = ArgumentParser()
+            parser.add_argument("--config", action=ActionConfigFile)
+            parser.add_subclass_arguments(BSuper, nested_key="b", required=True)
+            parser.add_class_arguments(C, nested_key="c")
+            parser.link_arguments("c", "b.init_args.a.init_args.d", compute_fn=C.fn, apply_on="instantiate")
 
-        parser = ArgumentParser()
-        parser.add_argument("--config", action=ActionConfigFile)
-        parser.add_subclass_arguments(BSuper, nested_key="b", required=True)
-        parser.add_class_arguments(C, nested_key="c")
-        parser.link_arguments("c", "b.init_args.a.init_args.d", compute_fn=C.fn, apply_on="instantiate")
-
-        config = parser.parse_args(["--config", config_path])
-        config_init = parser.instantiate_classes(config)
-        self.assertIsInstance(config_init["b"].a.d, D)
+            config = parser.parse_args(["--config", config_path])
+            config_init = parser.instantiate_classes(config)
+            self.assertIsInstance(config_init["b"].a.d, D)
 
 
     def test_mapping_class_typehint(self):
@@ -621,33 +611,30 @@ class TypeHintsTmpdirTests(TempDirTestCase):
                 self.class_map = class_map
                 self.int_list = int_list
 
-        import jsonargparse_tests
-        setattr(jsonargparse_tests, 'A', A)
-        setattr(jsonargparse_tests, 'B', B)
+        with mock_module(A, B) as module:
+            parser = ArgumentParser(error_handler=None)
+            parser.add_class_arguments(B, 'b')
 
-        parser = ArgumentParser(error_handler=None)
-        parser.add_class_arguments(B, 'b')
-
-        config = {
-            'b': {
-                'class_map': {
-                    'one': {'class_path': 'jsonargparse_tests.A'},
+            config = {
+                'b': {
+                    'class_map': {
+                        'one': {'class_path': f'{module}.A'},
+                    },
+                    'int_list': [1],
                 },
-                'int_list': [1],
-            },
-        }
+            }
 
-        cfg = parser.parse_object(config)
-        self.assertEqual(cfg.b.class_map, {'one': Namespace(class_path='jsonargparse_tests.A')})
-        self.assertEqual(cfg.b.int_list, [1])
+            cfg = parser.parse_object(config)
+            self.assertEqual(cfg.b.class_map, {'one': Namespace(class_path=f'{module}.A')})
+            self.assertEqual(cfg.b.int_list, [1])
 
-        cfg_init = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg_init.b, B)
-        self.assertIsInstance(cfg_init.b.class_map, dict)
-        self.assertIsInstance(cfg_init.b.class_map['one'], A)
+            cfg_init = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg_init.b, B)
+            self.assertIsInstance(cfg_init.b.class_map, dict)
+            self.assertIsInstance(cfg_init.b.class_map['one'], A)
 
-        config['b']['int_list'] = config['b']['class_map']
-        self.assertRaises(ParserError, lambda: parser.parse_object(config))
+            config['b']['int_list'] = config['b']['class_map']
+            self.assertRaises(ParserError, lambda: parser.parse_object(config))
 
 
     def test_linking_deep_targets_mapping(self):
@@ -669,42 +656,36 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             def fn(self) -> D:
                 return D()
 
-        config = {
-            "b": {
-                "class_path": "jsonargparse_tests.BSub",
-                "init_args": {
-                    "a_map": {
-                        "name": {
-                            "class_path": "jsonargparse_tests.A",
+        with mock_module(D, A, BSuper, BSub, C) as module:
+            config = {
+                "b": {
+                    "class_path": f"{module}.BSub",
+                    "init_args": {
+                        "a_map": {
+                            "name": {
+                                "class_path": f"{module}.A",
+                            },
                         },
                     },
                 },
-            },
-            "c": {},
-        }
-        config_path = os.path.join(self.tmpdir, 'config.yaml')
-        with open(config_path, 'w') as f:
-            yaml.safe_dump(config, f)
+                "c": {},
+            }
+            config_path = os.path.join(self.tmpdir, 'config.yaml')
+            with open(config_path, 'w') as f:
+                yaml.safe_dump(config, f)
 
-        import jsonargparse_tests
-        setattr(jsonargparse_tests, 'D', D)
-        setattr(jsonargparse_tests, 'A', A)
-        setattr(jsonargparse_tests, 'BSuper', BSuper)
-        setattr(jsonargparse_tests, 'BSub', BSub)
-        setattr(jsonargparse_tests, 'C', C)
+            parser = ArgumentParser()
+            parser.add_argument("--config", action=ActionConfigFile)
+            parser.add_subclass_arguments(BSuper, nested_key="b", required=True)
+            parser.add_class_arguments(C, nested_key="c")
+            parser.link_arguments("c", "b.init_args.a_map.name.init_args.d", compute_fn=C.fn, apply_on="instantiate")
 
-        parser = ArgumentParser()
-        parser.add_argument("--config", action=ActionConfigFile)
-        parser.add_subclass_arguments(BSuper, nested_key="b", required=True)
-        parser.add_class_arguments(C, nested_key="c")
-        parser.link_arguments("c", "b.init_args.a_map.name.init_args.d", compute_fn=C.fn, apply_on="instantiate")
+            config = parser.parse_args(["--config", config_path])
+            config_init = parser.instantiate_classes(config)
+            self.assertIsInstance(config_init["b"].a_map["name"].d, D)
 
-        config = parser.parse_args(["--config", config_path])
-        config_init = parser.instantiate_classes(config)
-        self.assertIsInstance(config_init["b"].a_map["name"].d, D)
-
-        config_init = parser.instantiate_classes(config)
-        self.assertIsInstance(config_init["b"].a_map["name"].d, D)
+            config_init = parser.instantiate_classes(config)
+            self.assertIsInstance(config_init["b"].a_map["name"].d, D)
 
 
 class OtherTests(unittest.TestCase):

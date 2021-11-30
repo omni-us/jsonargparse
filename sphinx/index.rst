@@ -1,5 +1,6 @@
 .. include:: README.rst
 
+.. include:: ../CONTRIBUTING.rst
 
 API Reference
 =============
