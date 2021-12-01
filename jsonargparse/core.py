@@ -1134,7 +1134,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                     config_files = defaults['__default_config__']
                     if isinstance(config_files, list):
                         config_files = [str(x) for x in config_files]
-                    note = f'default values below will be ones overridden by the contents of: {config_files}'
+                    note = f'default values below are the ones overridden by the contents of: {config_files}'
                     self.formatter_class.defaults = defaults
             except ParserError as ex:
                 note = f'tried getting defaults considering default_config_files but failed due to: {ex}'
