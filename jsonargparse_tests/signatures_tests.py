@@ -1087,6 +1087,40 @@ class SignaturesTests(unittest.TestCase):
             parser.link_arguments('g.b.b2', 'g.a.a1', apply_on='instantiate')
 
 
+    def test_class_from_function(self):
+
+        def get_calendar() -> calendar.Calendar:
+            return calendar.Calendar()
+
+        class Foo:
+            @classmethod
+            def get_foo(cls) -> 'Foo':
+                return cls()
+
+        def closure_get_foo():
+            def get_foo() -> 'Foo':
+                return Foo()
+            return get_foo
+
+        for function, class_type in [
+            (get_calendar, calendar.Calendar),
+            (Foo.get_foo, Foo),
+            (closure_get_foo(), Foo),
+        ]:
+            with self.subTest(str((function, class_type))):
+                cls = class_from_function(function)
+                self.assertTrue(issubclass(cls, class_type))
+                self.assertIsInstance(cls(), class_type)
+
+
+    def test_invalid_class_from_function(self):
+
+        def get_unknown() -> 'Unknown':  # type: ignore
+            return None
+
+        self.assertRaises(ValueError, lambda: class_from_function(get_unknown))
+
+
     def test_add_class_from_function_arguments(self):
 
         def get_calendar(a1: str, a2: int = 2) -> calendar.Calendar:

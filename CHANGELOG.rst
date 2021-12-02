@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.?.? (2021-12-??)
+-------------------
+
+Fixed
+^^^^^
+- ``class_from_function`` missing dereference of string return type `#105
+  <https://github.com/omni-us/jsonargparse/issues/105>`__.
+
+
 v4.0.4 (2021-11-29)
 -------------------
 

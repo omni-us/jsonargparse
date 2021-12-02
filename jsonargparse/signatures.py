@@ -614,11 +614,18 @@ def class_from_function(func: Callable[..., ClassType]) -> Type[ClassType]:
     Args:
         func: A function that returns an instance of a class. It must have a return type annotation.
     """
+    func_return = inspect.signature(func).return_annotation
+    if isinstance(func_return, str):
+        caller_frame = inspect.currentframe().f_back  # type: ignore
+        func_return = caller_frame.f_locals.get(func_return) or caller_frame.f_globals.get(func_return)  # type: ignore
+        if func_return is None:
+            raise ValueError(f'Unable to dereference {func_return} the return type of {func}.')
+
     @wraps(func)
     def __new__(cls, *args, **kwargs):
         return func(*args, **kwargs)
 
-    class ClassFromFunction(inspect.signature(func).return_annotation, ClassFromFunctionBase):  # type: ignore
+    class ClassFromFunction(func_return, ClassFromFunctionBase):  # type: ignore
         pass
 
     ClassFromFunction.__new__ = __new__  # type: ignore
