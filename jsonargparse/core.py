@@ -3,13 +3,10 @@
 import argparse
 import glob
 import inspect
-import json
 import logging
 import os
 import re
 import sys
-import yaml
-from argparse import ArgumentError, Action, SUPPRESS
 from contextlib import redirect_stderr
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Sequence, Set, Tuple, Type, Union
@@ -18,6 +15,7 @@ from unittest.mock import patch
 from .formatters import DefaultHelpFormatter, empty_help
 from .jsonnet import ActionJsonnet
 from .jsonschema import ActionJsonSchema
+from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context
 from .namespace import is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
 from .typehints import ActionTypeHint, LazyInitBaseClass
@@ -38,22 +36,19 @@ from .actions import (
 )
 from .optionals import (
     argcomplete_support,
-    dump_preserve_order_support,
     fsspec_support,
+    omegaconf_support,
     get_config_read_mode,
     import_jsonnet,
     import_argcomplete,
     import_fsspec,
 )
 from .util import (
-    yamlParserError,
-    yamlScannerError,
     ParserError,
     usage_and_exit_error_handler,
     change_to_path_dir,
     Path,
     LoggerProperty,
-    _check_valid_dump_format,
     _get_env_var,
     _suppress_stderr,
     _lenient_check_context,
@@ -62,18 +57,6 @@ from .util import (
 
 
 __all__ = ['ArgumentParser']
-
-
-default_dump_yaml_kwargs = {
-    'default_flow_style': False,
-    'allow_unicode': True,
-    'sort_keys': False if dump_preserve_order_support else True,
-}
-
-default_dump_json_kwargs = {
-    'ensure_ascii': False,
-    'sort_keys': False if dump_preserve_order_support else True,
-}
 
 
 class _ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerProperty):
@@ -194,7 +177,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             logger: Configures the logger, see :class:`.LoggerProperty`.
             version: Program version string to add --version argument.
             print_config: Add this as argument to print config, set None to disable.
-            parser_mode: Mode for parsing configuration files, either "yaml" or "jsonnet".
+            parser_mode: Mode for parsing configuration files, either ``'yaml'`` or ``'jsonnet'``.
             default_config_files: Default config file locations, e.g. :code:`['~/.config/myapp/*.yaml']`.
             default_env: Set the default value on whether to parse environment variables.
             default_meta: Set the default value on whether to include metadata in config objects.
@@ -219,12 +202,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         self._print_config = print_config
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version, help='Print version and exit.')
-        if parser_mode not in {'yaml', 'jsonnet'}:
-            raise ValueError('The only accepted values for parser_mode are {"yaml", "jsonnet"}.')
+        if parser_mode not in loaders:
+            raise ValueError(f'The only accepted values for parser_mode are {set(loaders.keys())}.')
         if parser_mode == 'jsonnet':
             import_jsonnet('parser_mode=jsonnet')
-        self.dump_yaml_kwargs = dict(default_dump_yaml_kwargs)
-        self.dump_json_kwargs = dict(default_dump_json_kwargs)
 
 
     ## Parsing methods ##
@@ -249,9 +230,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             namespace = self.merge_config(self.get_defaults(skip_check=True), namespace).as_flat()
 
         try:
-            with patch('argparse.Namespace', Namespace), _lenient_check_context(caller), ActionTypeHint.subclass_arg_context(self):
+            with patch('argparse.Namespace', Namespace), _lenient_check_context(caller), ActionTypeHint.subclass_arg_context(self), load_value_context(self.parser_mode):
                 namespace, args = self._parse_known_args(args, namespace)
-        except (ArgumentError, ParserError) as ex:
+        except (argparse.ArgumentError, ParserError) as ex:
             self.error(str(ex), ex)
 
         return namespace, args
@@ -322,7 +303,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         _ActionLink.apply_parsing_links(self, cfg)
 
         if not skip_check and not lenient_check.get():
-            self.check_config(cfg, skip_required=skip_required)
+            with load_value_context(self.parser_mode):
+                self.check_config(cfg, skip_required=skip_required)
 
         if log_message is not None:
             self._logger.info(log_message)
@@ -359,7 +341,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         """
         if argcomplete_support:
             argcomplete = import_argcomplete('parse_args')
-            argcomplete.autocomplete(self)
+            with load_value_context(self.parser_mode):
+                argcomplete.autocomplete(self)
 
         try:
             with _suppress_stderr():
@@ -427,6 +410,38 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         return parsed_cfg
 
 
+    def _load_env_vars(self, env: Dict[str, str], defaults: bool) -> Namespace:
+        cfg = Namespace()
+        actions = filter_default_actions(self._actions)
+        for action in actions:
+            env_var = _get_env_var(self, action)
+            if env_var in env and isinstance(action, ActionConfigFile):
+                ActionConfigFile.apply_config(self, cfg, action.dest, env[env_var])
+        for action in actions:
+            env_var = _get_env_var(self, action)
+            if env_var in env and isinstance(action, _ActionSubCommands):
+                env_val = env[env_var]
+                if env_val in action.choices:
+                    cfg[action.dest] = subcommand = self._check_value_key(action, env_val, action.dest, cfg)
+                    pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, _skip_check=True)  # type: ignore
+                    for k, v in vars(pcfg).items():
+                        cfg[subcommand+'.'+k] = v
+        for action in actions:
+            env_var = _get_env_var(self, action)
+            if env_var in env and not isinstance(action, ActionConfigFile):
+                env_val = env[env_var]
+                if _is_action_value_list(action):
+                    if re.match('^ *\\[.+,.+] *$', env_val):
+                        try:
+                            env_val = load_value(env_val)
+                        except get_loader_exceptions():
+                            env_val = [env_val]  # type: ignore
+                    else:
+                        env_val = [env_val]  # type: ignore
+                cfg[action.dest] = self._check_value_key(action, env_val, action.dest, cfg)
+        return cfg
+
+
     def parse_env(
         self,
         env: Dict[str, str] = None,
@@ -451,34 +466,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         try:
             if env is None:
                 env = dict(os.environ)
-            cfg = Namespace()
-            actions = filter_default_actions(self._actions)
-            for action in actions:
-                env_var = _get_env_var(self, action)
-                if env_var in env and isinstance(action, ActionConfigFile):
-                    ActionConfigFile.apply_config(self, cfg, action.dest, env[env_var])
-            for action in actions:
-                env_var = _get_env_var(self, action)
-                if env_var in env and isinstance(action, _ActionSubCommands):
-                    env_val = env[env_var]
-                    if env_val in action.choices:
-                        cfg[action.dest] = subcommand = self._check_value_key(action, env_val, action.dest, cfg)
-                        pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, _skip_check=True)  # type: ignore
-                        for k, v in vars(pcfg).items():
-                            cfg[subcommand+'.'+k] = v
-            for action in actions:
-                env_var = _get_env_var(self, action)
-                if env_var in env and not isinstance(action, ActionConfigFile):
-                    env_val = env[env_var]
-                    if _is_action_value_list(action):
-                        if re.match('^ *\\[.+,.+] *$', env_val):
-                            try:
-                                env_val = yaml.safe_load(env_val)
-                            except (yamlParserError, yamlScannerError):
-                                env_val = [env_val]  # type: ignore
-                        else:
-                            env_val = [env_val]  # type: ignore
-                    cfg[action.dest] = self._check_value_key(action, env_val, action.dest, cfg)
+            with load_value_context(self.parser_mode):
+                cfg = self._load_env_vars(env=env, defaults=defaults)
 
             self._apply_actions(cfg)
 
@@ -569,7 +558,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            cfg = self._load_config_parser_mode(cfg_str, cfg_path, ext_vars)
+            with load_value_context(self.parser_mode):
+                cfg = self._load_config_parser_mode(cfg_str, cfg_path, ext_vars)
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -608,8 +598,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             _jsonnet = import_jsonnet('_load_config_parser_mode')
             cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)
         try:
-            cfg_dict = yaml.safe_load(cfg_str)
-        except (yamlParserError, yamlScannerError) as ex:
+            cfg_dict = load_value(cfg_str)
+        except get_loader_exceptions() as ex:
             raise TypeError(f'Problems parsing config :: {ex}') from ex
 
         cfg = self._apply_actions(cfg_dict)
@@ -688,10 +678,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
         Args:
             cfg: The configuration object to dump.
-            format: The output format: "yaml", "json", "json_indented" or "parser_mode".
+            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'`` or ``'parser_mode'``.
             skip_none: Whether to exclude entries whose value is None.
             skip_check: Whether to skip parser checking.
-            yaml_comments: Whether to add help content as comments.
+            yaml_comments: Whether to add help content as comments. ``yaml_comments=True`` implies ``format='yaml'``.
 
         Returns:
             The configuration in yaml or json format.
@@ -699,19 +689,20 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
-        _check_valid_dump_format(format)
+        check_valid_dump_format(format)
 
         cfg = deepcopy(cfg)
         cfg = strip_meta(cfg)
         _ActionLink.strip_link_target_keys(self, cfg)
 
         if not skip_check:
-            self.check_config(cfg)
+            with load_value_context(self.parser_mode):
+                self.check_config(cfg)
 
         def cleanup_actions(cfg, actions, prefix=''):
             for action in filter_default_actions(actions):
                 action_dest = prefix + action.dest
-                if (action.help == SUPPRESS and not isinstance(action, _ActionConfigLoad)) or \
+                if (action.help == argparse.SUPPRESS and not isinstance(action, _ActionConfigLoad)) or \
                    isinstance(action, ActionConfigFile) or \
                    (skip_none and action_dest in cfg and cfg[action_dest] is None):
                     cfg.pop(action_dest, None)
@@ -725,20 +716,10 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                         value = action.serialize(value)
                         cfg.update(value, action_dest)
 
-        cleanup_actions(cfg, self._actions)
+        with load_value_context(self.parser_mode):
+            cleanup_actions(cfg, self._actions)
 
-        if format == 'parser_mode':
-            format = 'yaml' if self.parser_mode == 'yaml' else 'json_indented'
-        if format == 'yaml':
-            dump = yaml.safe_dump(cfg.as_dict(), **self.dump_yaml_kwargs)  # type: ignore
-            if yaml_comments:
-                formatter = self.formatter_class(self.prog)
-                dump = formatter.add_yaml_comments(dump)
-            return dump
-        elif format == 'json_indented':
-            return json.dumps(cfg.as_dict(), indent=2, **self.dump_json_kwargs)+'\n'  # type: ignore
-        else:
-            return json.dumps(cfg.as_dict(), separators=(',', ':'), **self.dump_json_kwargs)  # type: ignore
+        return dump_using_format(self, cfg.as_dict(), 'yaml_comments' if yaml_comments else format)
 
 
     def save(
@@ -766,7 +747,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
-        _check_valid_dump_format(format)
+        check_valid_dump_format(format)
 
         def check_overwrite(path):
             if not overwrite and os.path.isfile(path()):
@@ -800,7 +781,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             _ActionLink.strip_link_target_keys(self, cfg)
 
             if not skip_check:
-                self.check_config(strip_meta(cfg), branch=branch)
+                with load_value_context(self.parser_mode):
+                    self.check_config(strip_meta(cfg), branch=branch)
 
             def save_paths(cfg):
                 for key in cfg.get_sorted_keys():
@@ -815,10 +797,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                                 val_out = val_out.as_dict()
                             if '__orig__' in val:
                                 val_str = val['__orig__']
-                            elif str(val_path).lower().endswith('.json'):
-                                val_str = json.dumps(val_out, indent=2, **self.dump_json_kwargs)+'\n'
                             else:
-                                val_str = yaml.safe_dump(val_out, **self.dump_yaml_kwargs)
+                                is_json = str(val_path).lower().endswith('.json')
+                                val_str = dump_using_format(self, val_out, 'json_indented' if is_json else format)
                             with open(val_path(), 'w') as f:
                                 f.write(val_str)
                             cfg[key] = os.path.basename(val_path())
@@ -884,11 +865,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             KeyError: If key or its default not defined in the parser.
         """
         action, _ = _find_parent_action_and_subcommand(self, dest)
-        if action is None or dest != action.dest or action.dest == SUPPRESS:
+        if action is None or dest != action.dest or action.dest == argparse.SUPPRESS:
             raise KeyError(f'No action for destination key "{dest}" to get its default.')
 
         def check_suppressed_default():
-            if action.default == SUPPRESS:
+            if action.default == argparse.SUPPRESS:
                 raise KeyError(f'Action for destination key "{dest}" does not specify a default.')
 
         if not self._get_default_config_files():
@@ -913,14 +894,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         """
         cfg = Namespace()
         for action in filter_default_actions(self._actions):
-            if action.default != SUPPRESS and action.dest != SUPPRESS:
+            if action.default != argparse.SUPPRESS and action.dest != argparse.SUPPRESS:
                 cfg[action.dest] = action.default
 
         self._logger.info('Loaded default values from parser.')
 
         default_config_files = self._get_default_config_files()
         for default_config_file in default_config_files:
-            with change_to_path_dir(default_config_file):
+            with change_to_path_dir(default_config_file), load_value_context(self.parser_mode):
                 cfg_file = self._load_config_parser_mode(default_config_file.get_content())
                 try:
                     self.print_config_skip = True
@@ -1025,7 +1006,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         try:
             if not skip_required and not lenient_check.get():
                 check_required(cfg, self)
-            check_values(cfg)
+            with load_value_context(self.parser_mode):
+                check_values(cfg)
         except (TypeError, KeyError) as ex:
             prefix = 'Configuration check failed :: '
             message = ex.args[0]
@@ -1072,10 +1054,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                     pass
                 else:
                     if value is not None:
-                        parent[key] = component.instantiate_classes(value)
+                        with load_value_context(self.parser_mode):
+                            parent[key] = component.instantiate_classes(value)
                         _ActionLink.apply_instantiation_links(self, cfg, component.dest)
             else:
-                component.instantiate_class(component, cfg)
+                with load_value_context(self.parser_mode):
+                    component.instantiate_class(component, cfg)
                 _ActionLink.apply_instantiation_links(self, cfg, component.dest)
 
         subcommand, subparser = _ActionSubCommands.get_subcommand(self, cfg, fail_no_subcommand=False)
@@ -1175,7 +1159,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             action_dest = action.dest if subcommand is None else subcommand+'.'+action.dest
             with _lenient_check_context():
                 value = cfg[action_dest]
-                value = self._check_value_key(action, value, action_dest, cfg)
+                with load_value_context(self.parser_mode):
+                    value = self._check_value_key(action, value, action_dest, cfg)
             if isinstance(action, _ActionConfigLoad):
                 config_keys.add(action_dest)
                 keys.append(action_dest)
@@ -1206,7 +1191,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         return cfg
 
 
-    def _check_value_key(self, action: Action, value: Any, key: str, cfg: Namespace) -> Any:
+    def _check_value_key(self, action: argparse.Action, value: Any, key: str, cfg: Namespace) -> Any:
         """Checks the value for a given action.
 
         Args:
@@ -1367,6 +1352,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             self._env_prefix = env_prefix
         else:
             raise ValueError('env_prefix has to be a string or None.')
+
+
+if omegaconf_support:
+    from .loaders_dumpers import set_loader
+    from .optionals import get_omegaconf_loader
+    set_loader('omegaconf', get_omegaconf_loader())
 
 
 from .deprecated import parse_as_dict_patch, instantiate_subclasses_patch

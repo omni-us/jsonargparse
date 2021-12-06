@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 
+import logging
+import os
 import stat
 import pathlib
-import logging
 import platform
+import unittest
 import zipfile
-from jsonargparse_tests.base import *
+from jsonargparse import LoggerProperty, null_logger, Path
+from jsonargparse.optionals import fsspec_support, import_fsspec, url_support
 from jsonargparse.util import _suppress_stderr
+from jsonargparse_tests.base import responses, responses_activate, TempDirTestCase
 
 
 @unittest.skipIf(os.name != 'posix' or platform.python_implementation() != 'CPython',
@@ -128,7 +132,7 @@ class PathTests(TempDirTestCase):
 
 
     def test_tilde_home(self):
-        with mock.patch.dict(os.environ, {'HOME': self.tmpdir}):
+        with unittest.mock.patch.dict(os.environ, {'HOME': self.tmpdir}):
             home = Path('~', 'dr')
             path = Path('~/'+self.file_rw, 'frw')
             self.assertEqual(str(home), '~')

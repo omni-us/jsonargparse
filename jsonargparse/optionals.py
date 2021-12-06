@@ -3,7 +3,7 @@
 import locale
 import os
 import platform
-import sys
+from contextlib import contextmanager
 from importlib.util import find_spec
 
 
@@ -22,6 +22,7 @@ _argcomplete = find_spec('argcomplete')
 _dataclasses = find_spec('dataclasses')
 _fsspec = find_spec('fsspec')
 _ruyaml = find_spec('ruyaml')
+_omegaconf = find_spec('omegaconf')
 
 jsonschema_support = False if _jsonschema is None else True
 jsonnet_support = False if _jsonnet is None else True
@@ -31,6 +32,7 @@ argcomplete_support = False if _argcomplete is None else True
 dataclasses_support = False if _dataclasses is None else True
 fsspec_support = False if _fsspec is None else True
 ruyaml_support = False if _ruyaml is None else True
+omegaconf_support = False if _omegaconf is None else True
 
 _config_read_mode = 'fr'
 
@@ -50,77 +52,67 @@ if platform.python_implementation() != 'CPython':
     dump_preserve_order_support = False
 
 
-def import_jsonschema(importer):
+@contextmanager
+def missing_package_raise(package, importer):
     try:
+        yield None
+    except ImportError as ex:
+        raise ImportError(f'{package} package is required by {importer} :: {ex}') from ex
+
+
+def import_jsonschema(importer):
+    with missing_package_raise('jsonschema', importer):
         import jsonschema
         from jsonschema import Draft7Validator as jsonvalidator
-        return jsonschema, jsonvalidator
-    except ImportError as ex:
-        raise ImportError(f'jsonschema package is required by {importer} :: {ex}') from ex
+    return jsonschema, jsonvalidator
 
 
 def import_jsonnet(importer):
-    try:
+    with missing_package_raise('jsonnet', importer):
         import _jsonnet
-        return _jsonnet
-    except ImportError as ex:
-        raise ImportError(f'jsonnet package is required by {importer} :: {ex}') from ex
+    return _jsonnet
 
 
 def import_url_validator(importer):
-    try:
+    with missing_package_raise('validators', importer):
         from validators.url import url as url_validator
-        return url_validator
-    except ImportError as ex:
-        raise ImportError(f'validators package is required by {importer} :: {ex}') from ex
+    return url_validator
 
 
 def import_requests(importer):
-    try:
+    with missing_package_raise('requests', importer):
         import requests
-        return requests
-    except ImportError as ex:
-        raise ImportError(f'requests package is required by {importer} :: {ex}') from ex
+    return requests
 
 
 def import_docstring_parse(importer):
-    try:
+    with missing_package_raise('docstring-parser', importer):
         from docstring_parser import parse as docstring_parse
-        return docstring_parse
-    except ImportError as ex:
-        raise ImportError(f'docstring-parser package is required by {importer} :: {ex}') from ex
+    return docstring_parse
 
 
 def import_argcomplete(importer):
-    try:
+    with missing_package_raise('argcomplete', importer):
         import argcomplete
-        return argcomplete
-    except ImportError as ex:
-        raise ImportError(f'argcomplete package is required by {importer} :: {ex}') from ex
+    return argcomplete
 
 
 def import_dataclasses(importer):
-    try:
+    with missing_package_raise('dataclasses', importer):
         import dataclasses
-        return dataclasses
-    except ImportError as ex:
-        raise ImportError(f'dataclasses package is required by {importer} :: {ex}') from ex
+    return dataclasses
 
 
 def import_fsspec(importer):
-    try:
+    with missing_package_raise('fsspec', importer):
         import fsspec
-        return fsspec
-    except ImportError as ex:
-        raise ImportError(f'fsspec package is required by {importer} :: {ex}') from ex
+    return fsspec
 
 
 def import_ruyaml(importer):
-    try:
+    with missing_package_raise('ruyaml', importer):
         import ruyaml
-        return ruyaml
-    except ImportError as ex:
-        raise ImportError(f'ruyaml package is required by {importer} :: {ex}') from ex
+    return ruyaml
 
 
 def set_config_read_mode(
@@ -180,3 +172,21 @@ def argcomplete_warn_redraw_prompt(prefix, message):
             pass
     _ = '_' if locale.getlocale()[1] != 'UTF-8' else '\xa0'
     return [_+message.replace(' ', _), '']
+
+
+def get_omegaconf_loader():
+    """Returns a yaml loader function based on OmegaConf which supports variable interpolation."""
+    import io
+    from .loaders_dumpers import yaml_load
+    with missing_package_raise('omegaconf', 'get_omegaconf_loader'):
+        from omegaconf import OmegaConf
+
+    def omegaconf_load(value):
+        value_pyyaml = yaml_load(value)
+        if isinstance(value_pyyaml, (str, int, float, bool)) or value_pyyaml is None:
+            return value_pyyaml
+        value_omegaconf = OmegaConf.to_object(OmegaConf.load(io.StringIO(value)))
+        str_ref = {k: None for k in [value]}
+        return value_pyyaml if value_omegaconf == str_ref else value_omegaconf
+
+    return omegaconf_load

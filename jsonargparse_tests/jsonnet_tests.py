@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
 
-import re
 import json
+import os
+import re
+import unittest
 from io import StringIO
-from jsonargparse_tests.base import *
+from jsonargparse import (
+    ActionConfigFile,
+    ActionJsonnet,
+    ActionJsonnetExtVars,
+    ActionJsonSchema,
+    ArgumentParser,
+    strip_meta,
+    ParserError,
+)
+from jsonargparse.optionals import jsonnet_support
+from jsonargparse_tests.base import TempDirTestCase
 
 
 example_1_jsonnet = '''

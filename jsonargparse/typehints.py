@@ -4,9 +4,7 @@ import copy
 import inspect
 import os
 import re
-import typing
 import warnings
-import yaml
 from argparse import Action
 from collections.abc import Iterable as abcIterable
 from collections.abc import Mapping as abcMapping
@@ -37,6 +35,7 @@ from typing import (
 )
 
 from .actions import _find_action, _is_action_value_list
+from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import is_empty_namespace, Namespace
 from .typing import get_import_path, is_final_class, object_path_serializer, registered_types
 from .optionals import (
@@ -49,8 +48,6 @@ from .util import (
     ParserError,
     Path,
     NoneType,
-    yamlParserError,
-    yamlScannerError,
     indent_text,
     _issubclass,
     _parse_value_or_config,
@@ -59,10 +56,10 @@ from .util import (
 )
 
 
-__all__ = ['ActionTypeHint', 'lazy_instance']
+__all__ = ['lazy_instance']
 
 
-Literal = getattr(typing, 'Literal', False)
+Literal = getattr(__import__('typing'), 'Literal', False)
 
 
 root_types = {
@@ -304,7 +301,7 @@ class ActionTypeHint(Action):
                 orig_val = val
                 try:
                     val, config_path = _parse_value_or_config(val, enable_path=self._enable_path)
-                except (yamlParserError, yamlScannerError):
+                except get_loader_exceptions():
                     config_path = None
                 path_meta = val.pop('__path__', None) if isinstance(val, dict) else None
                 sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
@@ -374,7 +371,7 @@ class ActionTypeHint(Action):
                     raise ValueError()
                 self._check_type(prefix)
                 msg = 'value already valid, '
-            except (TypeError, ValueError, yamlParserError, yamlScannerError):
+            except (TypeError, ValueError) + get_loader_exceptions():
                 msg = 'value not yet valid, '
             msg += 'expected type '+type_to_str(self._typehint)
             return argcomplete_warn_redraw_prompt(prefix, msg)
@@ -398,7 +395,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
         elif isinstance(val, str):
             try:
                 val, _ = _parse_value_or_config(val, enable_path=False)
-            except (yamlParserError, yamlScannerError):
+            except get_loader_exceptions():
                 pass
 
     # Literal
@@ -589,7 +586,7 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
             return init_args
         return val_class(**init_args)
     if serialize:
-        init_args = None if is_empty_namespace(init_args) else yaml.safe_load(parser.dump(init_args))
+        init_args = None if is_empty_namespace(init_args) else load_value(parser.dump(init_args))
     else:
         init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
     return init_args

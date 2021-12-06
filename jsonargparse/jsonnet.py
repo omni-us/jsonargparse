@@ -1,24 +1,19 @@
 """Actions to support jsonnet."""
 
 import json
-import yaml
 from typing import Optional, Union, Dict, Tuple, Any
 from argparse import Action
 
 from .actions import _is_action_value_list
 from .jsonschema import ActionJsonSchema
+from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context
 from .optionals import (
     import_jsonschema,
     import_jsonnet,
     get_config_read_mode,
     jsonschemaValidationError,
 )
-from .util import (
-    yamlParserError,
-    yamlScannerError,
-    ParserError,
-    Path,
-)
+from .util import ParserError, Path
 
 
 __all__ = [
@@ -68,10 +63,11 @@ class ActionJsonnet(Action):
             if schema is not None:
                 jsonvalidator = import_jsonschema('ActionJsonnet')[1]
                 if isinstance(schema, str):
-                    try:
-                        schema = yaml.safe_load(schema)
-                    except (yamlParserError, yamlScannerError) as ex:
-                        raise ValueError(f'Problems parsing schema :: {ex}') from ex
+                    with load_value_context('yaml'):
+                        try:
+                            schema = load_value(schema)
+                        except get_loader_exceptions() as ex:
+                            raise ValueError(f'Problems parsing schema :: {ex}') from ex
                 jsonvalidator.check_schema(schema)
                 self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             else:
@@ -114,7 +110,7 @@ class ActionJsonnet(Action):
                 elif self._validator is not None:
                     self._validator.validate(val)
                 value[num] = val
-            except (TypeError, RuntimeError, yamlParserError, yamlScannerError, jsonschemaValidationError) as ex:
+            except (TypeError, RuntimeError, jsonschemaValidationError) + get_loader_exceptions() as ex:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError(f'Parser key "{self.dest}"{elem}: {ex}') from ex
         return value if islist else value[0]
@@ -166,7 +162,8 @@ class ActionJsonnet(Action):
             fname = jsonnet(absolute=False) if isinstance(jsonnet, Path) else jsonnet
             snippet = fpath.get_content()
         try:
-            values = yaml.safe_load(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
+            with load_value_context('yaml'):
+                values = load_value(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
         except RuntimeError as ex:
             raise ParserError(f'Problems evaluating jsonnet "{fname}" :: {ex}') from ex
         if self._validator is not None:

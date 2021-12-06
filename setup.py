@@ -40,7 +40,7 @@ CMDCLASS['test_coverage'] = CoverageCommand
 try:
     from sphinx.setup_command import BuildDoc
     CMDCLASS['build_sphinx'] = BuildDoc  # type: ignore
-except:
+except ImportError:
     print('warning: sphinx package not found, build_sphinx target will not be available.')
 
 

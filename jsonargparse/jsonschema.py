@@ -2,22 +2,18 @@
 
 import json
 import os
-import yaml
 from argparse import Action
 from typing import Dict, Union
 
 from .actions import _is_action_value_list
+from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context
 from .namespace import strip_meta
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     import_jsonschema,
     jsonschemaValidationError,
 )
-from .util import (
-    _parse_value_or_config,
-    yamlParserError,
-    yamlScannerError,
-)
+from .util import _parse_value_or_config
 
 
 __all__ = ['ActionJsonSchema']
@@ -46,10 +42,11 @@ class ActionJsonSchema(Action):
         """
         if schema is not None:
             if isinstance(schema, str):
-                try:
-                    schema = yaml.safe_load(schema)
-                except (yamlParserError, yamlScannerError) as ex:
-                    raise ValueError('Problems parsing schema :: '+str(ex)) from ex
+                with load_value_context('yaml'):
+                    try:
+                        schema = load_value(schema)
+                    except get_loader_exceptions() as ex:
+                        raise ValueError(f'Problems parsing schema :: {ex}') from ex
             jsonvalidator = import_jsonschema('ActionJsonSchema')[1]
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
@@ -97,7 +94,7 @@ class ActionJsonSchema(Action):
                 if isinstance(val, dict) and fpath is not None:
                     val['__path__'] = fpath
                 value[num] = val
-            except (TypeError, ValueError, yamlParserError, yamlScannerError, jsonschemaValidationError) as ex:
+            except (TypeError, ValueError, jsonschemaValidationError) + get_loader_exceptions() as ex:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError(f'Parser key "{self.dest}"{elem}: {ex}') from ex
         return value if islist else value[0]
@@ -126,9 +123,9 @@ class ActionJsonSchema(Action):
             try:
                 if prefix.strip() == '':
                     raise ValueError()
-                self._validator.validate(yaml.safe_load(prefix))
+                self._validator.validate(load_value(prefix))
                 msg = 'value already valid, '
-            except (ValueError, yamlParserError, yamlScannerError, jsonschemaValidationError):
+            except (ValueError, jsonschemaValidationError) + get_loader_exceptions():
                 msg = 'value not yet valid, '
             else:
                 schema = json.dumps(self._validator.schema, indent=2, sort_keys=True).replace('\n', '\n  ')

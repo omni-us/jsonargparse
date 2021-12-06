@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import pathlib
 import sys
+import unittest
 import uuid
 import yaml
 from calendar import Calendar
 from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
-from jsonargparse_tests.base import *
-from jsonargparse.typehints import is_optional, Literal
+from jsonargparse import ActionConfigFile, ArgumentParser, CLI, lazy_instance, Namespace, ParserError, Path
+from jsonargparse.typehints import ActionTypeHint, is_optional, Literal
+from jsonargparse.typing import (
+    Email,
+    NotEmptyStr,
+    OpenUnitInterval,
+    Path_drw,
+    Path_fc,
+    Path_fr,
+    path_type,
+    PositiveInt,
+    register_type,
+)
+from jsonargparse_tests.base import mock_module, TempDirTestCase
 
 
 class TypeHintsTests(unittest.TestCase):

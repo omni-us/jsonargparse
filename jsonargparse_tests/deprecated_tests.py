@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
 import calendar
+import os
+import unittest
 from enum import Enum
 from io import StringIO
-from jsonargparse_tests.base import *
+from jsonargparse import ActionConfigFile, ArgumentParser, get_config_read_mode, ParserError, Path, set_url_support
+from jsonargparse.deprecated import ActionEnum, ActionPath, ActionOperators
+from jsonargparse.optionals import url_support
+from jsonargparse_tests.base import TempDirTestCase
 
 
 class DeprecatedTests(unittest.TestCase):

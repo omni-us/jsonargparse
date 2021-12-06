@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 
-import sys
+import os
 import pathlib
 import platform
+import sys
+import unittest
+from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from enum import Enum
-from typing import List, Optional
 from io import BytesIO, StringIO
-from contextlib import redirect_stdout, redirect_stderr
-from jsonargparse_tests.base import *
+from typing import List, Optional
+from jsonargparse import *
+from jsonargparse.typing import *
+from jsonargparse.optionals import argcomplete_support, import_argcomplete, jsonschema_support
+from jsonargparse.loaders_dumpers import load_value_context
+from jsonargparse_tests.base import TempDirTestCase
 
 
 @unittest.skipIf(not argcomplete_support, 'argcomplete package is required')
@@ -33,6 +39,9 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['_ARGCOMPLETE_COMP_WORDBREAKS'] = " \t\n\"'><=;|&(:"
         os.environ['COMP_TYPE'] = str(ord('?'))   # ='63'  str(ord('\t'))='9'
         self.parser = ArgumentParser(error_handler=lambda x: x.exit(2))
+        stack = ExitStack()
+        stack.enter_context(load_value_context('yaml'))
+        self.addCleanup(stack.close)
 
 
     def test_complete_nested_one_option(self):
@@ -183,7 +192,7 @@ class ArgcompleteTests(TempDirTestCase):
                 self.assertEqual(out.getvalue(), b'')
                 self.assertIn(expected, err.getvalue())
 
-                with mock.patch('os.popen') as popen_mock:
+                with unittest.mock.patch('os.popen') as popen_mock:
                     popen_mock.side_effect = ValueError
                     with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
                         self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)

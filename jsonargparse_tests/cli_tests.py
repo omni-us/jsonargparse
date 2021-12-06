@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
+import unittest
 import yaml
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
-from jsonargparse_tests.base import *
+from jsonargparse import ArgumentParser, CLI, lazy_instance
+from jsonargparse.optionals import docstring_parser_support, ruyaml_support
+from jsonargparse_tests.base import TempDirTestCase
 
 
 class CLITests(unittest.TestCase):
@@ -181,7 +184,7 @@ class CLITests(unittest.TestCase):
 
             return CLI(args=['a', 'method1', '2'])
 
-        with mock.patch(f'{__name__}.__name__', 'jsonargparse_tests.cli_tests'):
+        with unittest.mock.patch(f'{__name__}.__name__', 'jsonargparse_tests.cli_tests'):
             self.assertEqual(6.7, non_empty_context_1())
             self.assertEqual(('a', 2), non_empty_context_2())
 

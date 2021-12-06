@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import pathlib
+import unittest
 from io import StringIO
-from jsonargparse_tests.base import *
-from jsonargparse import ArgumentParser
+from jsonargparse import ActionConfigFile, ActionParser, ActionPathList, ActionYesNo, ArgumentParser, ParserError
+from jsonargparse_tests.base import TempDirTestCase
+from jsonargparse_tests.core_tests import example_parser
 
 
 class SimpleActionsTests(unittest.TestCase):

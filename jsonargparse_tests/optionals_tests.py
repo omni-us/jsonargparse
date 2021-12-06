@@ -1,7 +1,28 @@
 #!/usr/bin/env python3
 
-from jsonargparse_tests.base import *
-from jsonargparse.optionals import _url_validator, _requests
+import unittest
+from jsonargparse import get_config_read_mode, set_config_read_mode
+from jsonargparse.optionals import (
+    argcomplete_support,
+    dataclasses_support,
+    docstring_parser_support,
+    fsspec_support,
+    import_argcomplete,
+    import_dataclasses,
+    import_docstring_parse,
+    import_fsspec,
+    import_jsonnet,
+    import_jsonschema,
+    import_requests,
+    import_ruyaml,
+    import_url_validator,
+    jsonnet_support,
+    jsonschema_support,
+    ruyaml_support,
+    url_support,
+    _requests,
+    _url_validator,
+)
 
 
 class JsonSchemaSupportTests(unittest.TestCase):

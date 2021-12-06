@@ -2,16 +2,29 @@
 
 import calendar
 import json
-import platform
+import os
+import unittest
 import warnings
 import yaml
 from contextlib import redirect_stdout
 from enum import Enum
 from io import StringIO
 from typing import Any, Dict, List, Optional, Tuple, Union
-from jsonargparse_tests.base import *
+from jsonargparse import (
+    ActionConfigFile,
+    ArgumentParser,
+    class_from_function,
+    compose_dataclasses,
+    lazy_instance,
+    Namespace,
+    ParserError,
+    strip_meta,
+)
 from jsonargparse.actions import _find_action
+from jsonargparse.optionals import dataclasses_support, docstring_parser_support, import_dataclasses
+from jsonargparse.typing import final, OpenUnitInterval, PositiveFloat, PositiveInt
 from jsonargparse.util import _suppress_stderr
+from jsonargparse_tests.base import mock_module, TempDirTestCase
 
 
 class SignaturesTests(unittest.TestCase):
@@ -773,7 +786,7 @@ class SignaturesTests(unittest.TestCase):
                 """
                 pass
 
-        with mock.patch('docstring_parser.parse') as docstring_parse:
+        with unittest.mock.patch('docstring_parser.parse') as docstring_parse:
             docstring_parse.side_effect = ValueError
             parser = ArgumentParser(error_handler=None)
             parser.add_class_arguments(Class1)

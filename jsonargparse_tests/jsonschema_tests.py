@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
-import re
 import json
+import os
 import platform
+import re
+import unittest
 from io import StringIO
-from jsonargparse_tests.base import *
+from jsonargparse import ActionConfigFile, ActionJsonSchema, ArgumentParser, ParserError
+from jsonargparse.optionals import jsonschema_support
+from jsonargparse_tests.base import TempDirTestCase
 
 
 schema1 = {

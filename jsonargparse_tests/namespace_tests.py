@@ -70,15 +70,15 @@ class NamespaceTests(unittest.TestCase):
     def test_nested_key_in(self):
         ns = Namespace()
         ns['x.y.z'] = 1
-        self.assertTrue('x' in ns)
-        self.assertTrue('x.y' in ns)
-        self.assertTrue('x.y.z' in ns)
-        self.assertFalse('a' in ns)
-        self.assertFalse('x.a' in ns)
-        self.assertFalse('x.y.a' in ns)
-        self.assertFalse('x.y.z.a' in ns)
-        self.assertFalse('x..y' in ns)
-        self.assertFalse(123 in ns)
+        self.assertIn('x', ns)
+        self.assertIn('x.y', ns)
+        self.assertIn('x.y.z', ns)
+        self.assertNotIn('a', ns)
+        self.assertNotIn('x.a', ns)
+        self.assertNotIn('x.y.a', ns)
+        self.assertNotIn('x.y.z.a', ns)
+        self.assertNotIn('x..y', ns)
+        self.assertNotIn(123, ns)
 
     def test_items_generator(self):
         ns = Namespace()

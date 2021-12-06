@@ -7,15 +7,13 @@ import re
 import stat
 import sys
 import warnings
-import yaml
 from argparse import Action
 from collections import defaultdict
 from contextlib import contextmanager, redirect_stderr
 from contextvars import ContextVar
 from typing import Any, Optional, Tuple, Union
-from yaml.parser import ParserError as yamlParserError
-from yaml.scanner import ScannerError as yamlScannerError
 
+from .loaders_dumpers import load_value
 from .optionals import (
     url_support,
     import_requests,
@@ -64,7 +62,7 @@ def _parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, O
     """Parses yaml/json config in a string or a path"""
     cfg_path = None
     if isinstance(value, str) and value.strip() != '':
-        parsed_val = yaml.safe_load(value)
+        parsed_val = load_value(value)
         if not isinstance(parsed_val, str):
             value = parsed_val
     if enable_path and isinstance(value, str):
@@ -73,14 +71,14 @@ def _parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, O
         except TypeError:
             pass
         else:
-            value = yaml.safe_load(cfg_path.get_content())
+            value = load_value(cfg_path.get_content())
     if isinstance(value, dict) and cfg_path is not None:
         value['__path__'] = cfg_path
     return value, cfg_path
 
 
 def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None:
-    """Error handler to get the same behavior as in argparse.
+    """Error handler that prints the usage and exits with error code 2 (same behavior as argparse).
 
     Args:
         parser: The parser object.
@@ -104,11 +102,6 @@ def _get_env_var(parser: 'ArgumentParser', action: 'Action') -> str:
 def _issubclass(cls, class_or_tuple):
     """Extension of issubclass that supports non-class argument."""
     return inspect.isclass(cls) and issubclass(cls, class_or_tuple)
-
-
-def _check_valid_dump_format(value: str):
-    if value not in {'parser_mode', 'yaml', 'json_indented', 'json'}:
-        raise ValueError(f'Unknown output format "{value}".')
 
 
 def import_object(name: str):

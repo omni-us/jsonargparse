@@ -21,7 +21,7 @@ def run_tests():
 def run_test_coverage():
     try:
         import coverage
-    except:
+    except ImportError:
         print('error: coverage package not found, run_test_coverage requires it.')
         sys.exit(True)
     package_source = os.path.dirname(__file__.replace('_tests', ''))

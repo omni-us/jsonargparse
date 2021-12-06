@@ -5,20 +5,18 @@ import os
 import re
 import sys
 import warnings
-import yaml
 from argparse import Action, SUPPRESS, _HelpAction, _SubParsersAction
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
+from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import is_empty_namespace, Namespace, split_key, split_key_leaf, split_key_root
 from .optionals import FilesCompleterMethod, get_config_read_mode
 from .type_checking import ArgumentParser, _ArgumentGroup
 from .typing import get_import_path, path_type
 from .util import (
     DirectedGraph,
-    yamlParserError,
-    yamlScannerError,
     ParserError,
     import_object,
     change_to_path_dir,
@@ -220,11 +218,11 @@ class ActionConfigFile(Action, FilesCompleterMethod):
                 cfg_path: Optional[Path] = Path(value, mode=get_config_read_mode())
             except TypeError as ex_path:
                 try:
-                    if isinstance(yaml.safe_load(value), str):
+                    if isinstance(load_value(value), str):
                         raise ex_path
                     cfg_path = None
                     cfg_file = parser.parse_string(value, **kwargs)
-                except (TypeError, yamlParserError, yamlScannerError) as ex_str:
+                except (TypeError,) + get_loader_exceptions() as ex_str:
                     raise TypeError(f'Parser key "{dest}": {ex_str}') from ex_str
             else:
                 cfg_file = parser.parse_path(value, **kwargs)
@@ -303,7 +301,7 @@ class _ActionConfigLoad(Action):
             with change_to_path_dir(cfg_path):
                 cfg = parser._apply_actions(cfg, parent_key=self.dest)
             return cfg
-        except (TypeError, yamlParserError, yamlScannerError) as ex:
+        except (TypeError,) + get_loader_exceptions() as ex:
             str_ex = indent_text(str(ex))
             raise TypeError(f'Parser key "{self.dest}": Unable to load config "{value}"\n- {str_ex}') from ex
 

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+import os
+import unittest
 from io import StringIO
-from jsonargparse_tests.base import *
+from jsonargparse import ActionConfigFile, ActionParser, ActionYesNo, ArgumentParser
+from jsonargparse_tests.base import TempDirTestCase
 
 
 class DefaultFormatterTests(unittest.TestCase):

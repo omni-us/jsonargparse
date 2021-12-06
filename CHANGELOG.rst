@@ -10,8 +10,17 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v4.?.? (2021-12-??)
+v4.1.? (2021-12-??)
 -------------------
+
+Added
+^^^^^
+- ``set_loader`` function to allow replacing default yaml loader or adding a
+  new parser mode.
+- ``set_dumper`` function to allow changing default dump formats or adding new
+  named dump formats.
+- ``parser_mode='omegaconf'`` option to use OmegaConf as a loader, adding
+  variable interpolation support.
 
 Fixed
 ^^^^^

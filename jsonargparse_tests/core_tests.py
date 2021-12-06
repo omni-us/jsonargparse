@@ -2,17 +2,90 @@
 
 import calendar
 import json
+import os
 import platform
+import unittest
 import warnings
 import yaml
 from io import StringIO
 from contextlib import redirect_stdout
 from collections import OrderedDict
 from random import randint, shuffle
-from jsonargparse_tests.base import *
-from jsonargparse.optionals import dump_preserve_order_support
+from jsonargparse import (
+    ActionConfigFile,
+    ActionJsonnet,
+    ActionJsonSchema,
+    ActionParser,
+    ActionYesNo,
+    ArgumentParser,
+    Namespace,
+    ParserError,
+    Path,
+    set_config_read_mode,
+    SUPPRESS,
+    strip_meta,
+    usage_and_exit_error_handler,
+)
 from jsonargparse.namespace import meta_keys
+from jsonargparse.optionals import (
+    docstring_parser_support,
+    dump_preserve_order_support,
+    fsspec_support,
+    jsonnet_support,
+    jsonschema_support,
+    ruyaml_support,
+    url_support,
+)
+from jsonargparse.typing import NotEmptyStr, Path_fc, Path_fr, PositiveFloat, PositiveInt
 from jsonargparse.util import _suppress_stderr
+from jsonargparse_tests.base import TempDirTestCase, responses, responses_activate
+
+
+def example_parser():
+    """Creates a simple parser for doing tests."""
+    parser = ArgumentParser(prog='app', default_meta=False, error_handler=None)
+
+    group_one = parser.add_argument_group('Group 1', name='group1')
+    group_one.add_argument('--bools.def_false',
+        default=False,
+        nargs='?',
+        action=ActionYesNo)
+    group_one.add_argument('--bools.def_true',
+        default=True,
+        nargs='?',
+        action=ActionYesNo)
+
+    group_two = parser.add_argument_group('Group 2', name='group2')
+    group_two.add_argument('--lev1.lev2.opt1',
+        default='opt1_def')
+    group_two.add_argument('--lev1.lev2.opt2',
+        default='opt2_def')
+
+    group_three = parser.add_argument_group('Group 3')
+    group_three.add_argument('--nums.val1',
+        type=int,
+        default=1)
+    group_three.add_argument('--nums.val2',
+        type=float,
+        default=2.0)
+
+    return parser
+
+
+example_yaml = '''
+lev1:
+  lev2:
+    opt1: opt1_yaml
+    opt2: opt2_yaml
+
+nums:
+  val1: -1
+'''
+
+example_env = {
+    'APP_LEV1__LEV2__OPT1': 'opt1_env',
+    'APP_NUMS__VAL1': '0'
+}
 
 
 class ParsersTests(TempDirTestCase):

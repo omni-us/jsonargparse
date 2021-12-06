@@ -3,11 +3,26 @@
 import os
 import pathlib
 import pickle
-import jsonargparse.typing
+import unittest
 from datetime import timedelta
 from typing import Callable
-from jsonargparse.typing import RegisteredType
-from jsonargparse_tests.base import *
+from jsonargparse import ArgumentParser, CLI, Namespace, ParserError
+from jsonargparse.typing import (
+    ClosedUnitInterval,
+    Email,
+    NonNegativeFloat,
+    NonNegativeInt,
+    OpenUnitInterval,
+    Path_fr,
+    path_type,
+    PositiveFloat,
+    PositiveInt,
+    RegisteredType,
+    registered_types,
+    restricted_number_type,
+    restricted_string_type,
+)
+from jsonargparse_tests.base import TempDirTestCase
 
 
 class RestrictedNumberTests(unittest.TestCase):
@@ -165,6 +180,7 @@ class PathTypeTests(TempDirTestCase):
 class OtherTests(unittest.TestCase):
 
     def test_pickle_module_types(self):
+        import jsonargparse.typing
         for otype in registered_types.values():
             if isinstance(otype, RegisteredType) or hasattr(jsonargparse.typing, otype.__name__):
                 if isinstance(otype, RegisteredType):

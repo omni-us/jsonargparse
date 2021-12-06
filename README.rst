@@ -323,8 +323,8 @@ An example analogous to the one above would be:
     parser = ArgumentParser()
     parser.add_argument('--lev1', type=Level1Options, default=Level1Options())
 
-The :class:`.Namespace` class an extension of the one from argparse. It has some
-additional features which can be seen in the API. In particular keys can be
+The :class:`.Namespace` class is an extension of the one from argparse. It has
+some additional features which can be seen in the API. In particular keys can be
 accessed like a dictionary either with individual keys, e.g.
 :code:`cfg['lev1']['opt1']`, or a single one, e.g. :code:`cfg['lev1.opt1']`.
 Also the class has a method :py:meth:`.Namespace.as_dict` that can be used to
@@ -347,8 +347,9 @@ example if a parser is created as
 :code:`ArgumentParser(default_config_files=['~/.myapp.yaml',
 '/etc/myapp.yaml'])`, when parsing if any of those two config files exist it
 will be parsed and used to override the defaults. All matched config files are
-parsed and applied in given order. The default config files are always parsed
-first, this means that any command line arguments will override its values.
+parsed and applied in the given order. The default config files are always
+parsed first, this means that any command line argument will override its
+values.
 
 It is also possible to add an argument to explicitly provide a configuration
 file path. Providing a config file as an argument does not disable the parsing
@@ -419,7 +420,10 @@ arguments. The methods for this are :py:meth:`.ArgumentParser.parse_path` and
 :py:meth:`.ArgumentParser.parse_string` to parse a config file or a config
 string respectively.
 
-Parsers that have an :class:`.ActionConfigFile` also include a
+Serialization
+-------------
+
+Parsers that have an :class:`.ActionConfigFile` argument also include a
 :code:`--print_config` option. This is useful particularly for command line
 tools with a large set of options to create an initial config file including all
 default values. If the `ruyaml <https://ruyaml.readthedocs.io>`__ package is
@@ -430,7 +434,33 @@ yaml comments by using :code:`--print_config=comments`. Another option is
 
 From within python it is also possible to serialize a config object by using
 either the :py:meth:`.ArgumentParser.dump` or :py:meth:`.ArgumentParser.save`
-mehtods.
+methods. Three formats with a particular style are supported: ``yaml``, ``json``
+and ``json_indented``. It is possible to add more dumping formats by using the
+:func:`.set_dumper` function. For example to allow dumping using PyYAML's
+``default_flow_style`` do the following:
+
+.. testcode::
+
+    import yaml
+    from jsonargparse import set_dumper
+
+    def custom_yaml_dump(data):
+        return yaml.safe_dump(data, default_flow_style=True)
+
+    set_dumper('yaml_custom', custom_yaml_dump)
+
+.. _custom-loaders:
+
+Custom loaders
+--------------
+
+The ``yaml`` parser mode (see :py:meth:`.ArgumentParser.__init__`) uses for
+loading a subclass of `yaml.SafeLoader
+<https://pyyaml.docsforge.com/master/api/yaml/loader/SafeLoader/>`__ with a
+single modification to match float's scientific notation casting, e.g.
+:code:`float('1e-3') == 0.001`. It is possible to replace the default yaml
+loader or add a loader as a new parser mode via the :func:`.set_loader`
+function.
 
 
 .. _environment-variables:
@@ -768,6 +798,78 @@ Some notes about this support are:
   supported yet.
 
 
+.. _restricted-numbers:
+
+Restricted numbers
+------------------
+
+It is quite common that when parsing a number, its range should be limited. To
+ease these cases the module :code:`jsonargparse.typing` includes some predefined
+types and a function :func:`.restricted_number_type` to define new types. The
+predefined types are: :class:`.PositiveInt`, :class:`.NonNegativeInt`,
+:class:`.PositiveFloat`, :class:`.NonNegativeFloat`,
+:class:`.ClosedUnitInterval` and :class:`.OpenUnitInterval`. Examples of usage
+are:
+
+.. testcode::
+
+    from jsonargparse.typing import PositiveInt, PositiveFloat, restricted_number_type
+    # float larger than zero
+    parser.add_argument('--op1', type=PositiveFloat)
+    # between 0 and 10
+    from_0_to_10 = restricted_number_type('from_0_to_10', int, [('>=', 0), ('<=', 10)])
+    parser.add_argument('--op2', type=from_0_to_10)
+    # either int larger than zero or 'off' string
+    def int_or_off(x): return x if x == 'off' else PositiveInt(x)
+    parser.add_argument('--op3', type=int_or_off)
+
+
+.. _restricted-strings:
+
+Restricted strings
+------------------
+
+Similar to the restricted numbers, there is a function to create string types
+that are restricted to match a given regular expression:
+:func:`.restricted_string_type`. A predefined type is :class:`.Email` which is
+restricted so that it follows the normal email pattern. For example to add an
+argument required to be exactly four uppercase letters:
+
+.. testcode::
+
+    from jsonargparse.typing import Email, restricted_string_type
+    CodeType = restricted_string_type('CodeType', '^[A-Z]{4}$')
+    parser.add_argument('--code', type=CodeType)
+    parser.add_argument('--email', type=Email)
+
+
+.. _enums:
+
+Enum arguments
+--------------
+
+Another case of restricted values is string choices. In addition to the common
+:code:`choices` given as a list of strings, it is also possible to provide as
+type an :code:`Enum` class. This has the added benefit that strings are mapped
+to some desired values. For example:
+
+.. testsetup:: enum
+
+    from jsonargparse import ArgumentParser
+    parser = ArgumentParser()
+
+.. doctest:: enum
+
+    >>> import enum
+    >>> class MyEnum(enum.Enum):
+    ...     choice1 = -1
+    ...     choice2 = 0
+    ...     choice3 = 1
+    >>> parser.add_argument('--op', type=MyEnum)  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(['--op=choice1'])
+    Namespace(op=<MyEnum.choice1: -1>)
+
+
 .. _registering-types:
 
 Registering types
@@ -1002,6 +1104,80 @@ the corresponding yaml structure.
 
     calendar:
       firstweekday: 1
+
+
+Variable interpolation
+======================
+
+One of the possible reasons to add a parser mode (see :ref:`custom-loaders`) can
+be to have support for variable interpolation in yaml files. Any library could
+be used to implement a loader and configure a mode for it. Without needing to
+implement a loader function, an :code:`omegaconf` parser mode is available out
+of the box when this package is installed.
+
+Take for example a yaml file as:
+
+.. code-block:: yaml
+
+    server:
+      host: localhost
+      port: 80
+    client:
+      url: http://${server.host}:${server.port}/
+
+.. testsetup:: omegaconf
+
+    example = """
+    server:
+      host: localhost
+      port: 80
+    client:
+      url: http://${server.host}:${server.port}/
+    """
+    import os
+    import shutil
+    import tempfile
+    cwd = os.getcwd()
+    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    os.chdir(tmpdir)
+    with open('example.yaml', 'w') as f:
+        f.write(example)
+    from dataclasses import dataclass
+    from jsonargparse import ArgumentParser, ActionConfigFile
+
+.. testcleanup:: omegaconf
+
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
+
+This yaml could be parsed as follows:
+
+.. doctest:: omegaconf
+
+    >>> @dataclass
+    ... class ServerOptions:
+    ...     host: str
+    ...     port: int
+
+    >>> @dataclass
+    ... class ClientOptions:
+    ...     url: str
+
+    >>> parser = ArgumentParser(parser_mode='omegaconf')
+    >>> parser.add_argument('--server', type=ServerOptions)       # doctest: +IGNORE_RESULT
+    >>> parser.add_argument('--client', type=ClientOptions)       # doctest: +IGNORE_RESULT
+    >>> parser.add_argument('--config', action=ActionConfigFile)  # doctest: +IGNORE_RESULT
+
+    >>> cfg = parser.parse_args(['--config=example.yaml'])
+    >>> cfg.client.url
+    'http://localhost:80/'
+
+.. note::
+
+    The :code:`parser_mode='omegaconf'` provides support for `OmegaConf's
+    <https://omegaconf.readthedocs.io/>`__ variable interpolation in a single
+    yaml file. Is is not possible to do interpolation across multiple yaml files
+    or in an isolated individual command line argument.
 
 
 .. _sub-commands:
@@ -1350,78 +1526,6 @@ like the following would work:
 .. code-block:: bash
 
     my_tool.py --config http://example.com/config.yaml
-
-
-.. _restricted-numbers:
-
-Restricted numbers
-==================
-
-It is quite common that when parsing a number, its range should be limited. To
-ease these cases the module :code:`jsonargparse.typing` includes some predefined
-types and a function :func:`.restricted_number_type` to define new types. The
-predefined types are: :class:`.PositiveInt`, :class:`.NonNegativeInt`,
-:class:`.PositiveFloat`, :class:`.NonNegativeFloat`,
-:class:`.ClosedUnitInterval` and :class:`.OpenUnitInterval`. Examples of usage
-are:
-
-.. testcode::
-
-    from jsonargparse.typing import PositiveInt, PositiveFloat, restricted_number_type
-    # float larger than zero
-    parser.add_argument('--op1', type=PositiveFloat)
-    # between 0 and 10
-    from_0_to_10 = restricted_number_type('from_0_to_10', int, [('>=', 0), ('<=', 10)])
-    parser.add_argument('--op2', type=from_0_to_10)
-    # either int larger than zero or 'off' string
-    def int_or_off(x): return x if x == 'off' else PositiveInt(x)
-    parser.add_argument('--op3', type=int_or_off)
-
-
-.. _restricted-strings:
-
-Restricted strings
-==================
-
-Similar to the restricted numbers, there is a function to create string types
-that are restricted to match a given regular expression:
-:func:`.restricted_string_type`. A predefined type is :class:`.Email` which is
-restricted so that it follows the normal email pattern. For example to add an
-argument required to be exactly four uppercase letters:
-
-.. testcode::
-
-    from jsonargparse.typing import Email, restricted_string_type
-    CodeType = restricted_string_type('CodeType', '^[A-Z]{4}$')
-    parser.add_argument('--code', type=CodeType)
-    parser.add_argument('--email', type=Email)
-
-
-.. _enums:
-
-Enum arguments
-==============
-
-Another case of restricted values is string choices. In addition to the common
-:code:`choices` given as a list of strings, it is also possible to provide as
-type an :code:`Enum` class. This has the added benefit that strings are mapped
-to some desired values. For example:
-
-.. testsetup:: enum
-
-    from jsonargparse import ArgumentParser
-    parser = ArgumentParser()
-
-.. doctest:: enum
-
-    >>> import enum
-    >>> class MyEnum(enum.Enum):
-    ...     choice1 = -1
-    ...     choice2 = 0
-    ...     choice3 = 1
-    >>> parser.add_argument('--op', type=MyEnum)  # doctest: +IGNORE_RESULT
-    >>> parser.parse_args(['--op=choice1'])
-    Namespace(op=<MyEnum.choice1: -1>)
 
 
 .. _boolean-arguments:
