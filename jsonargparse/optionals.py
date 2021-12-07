@@ -13,26 +13,16 @@ __all__ = [
 ]
 
 
-_jsonschema = jsonvalidator = find_spec('jsonschema')
-_jsonnet = find_spec('_jsonnet')
-_url_validator = find_spec('validators')
-_requests = find_spec('requests')
-_docstring_parser = find_spec('docstring_parser')
-_argcomplete = find_spec('argcomplete')
-_dataclasses = find_spec('dataclasses')
-_fsspec = find_spec('fsspec')
-_ruyaml = find_spec('ruyaml')
-_omegaconf = find_spec('omegaconf')
-
-jsonschema_support = False if _jsonschema is None else True
-jsonnet_support = False if _jsonnet is None else True
-url_support = False if any(x is None for x in [_url_validator, _requests]) else True
-docstring_parser_support = False if _docstring_parser is None else True
-argcomplete_support = False if _argcomplete is None else True
-dataclasses_support = False if _dataclasses is None else True
-fsspec_support = False if _fsspec is None else True
-ruyaml_support = False if _ruyaml is None else True
-omegaconf_support = False if _omegaconf is None else True
+jsonschema_support = find_spec('jsonschema') is not None
+jsonnet_support = find_spec('_jsonnet') is not None
+url_support = False if any(find_spec(x) is None for x in ['validators', 'requests']) else True
+docstring_parser_support = find_spec('docstring_parser') is not None
+argcomplete_support = find_spec('argcomplete') is not None
+dataclasses_support = find_spec('dataclasses') is not None
+fsspec_support = find_spec('fsspec') is not None
+ruyaml_support = find_spec('ruyaml') is not None
+omegaconf_support = find_spec('omegaconf') is not None
+dump_preserve_order_support = platform.python_implementation() == 'CPython'
 
 _config_read_mode = 'fr'
 
@@ -47,9 +37,8 @@ else:
     jsonschemaValidationError = UndefinedException
 
 
-dump_preserve_order_support = True
-if platform.python_implementation() != 'CPython':
-    dump_preserve_order_support = False
+def get_jsonschema_exceptions():
+    return (jsonschemaValidationError,)
 
 
 @contextmanager

@@ -180,9 +180,8 @@ class PathTypeTests(TempDirTestCase):
 class OtherTests(unittest.TestCase):
 
     def test_pickle_module_types(self):
-        import jsonargparse.typing
         for otype in registered_types.values():
-            if isinstance(otype, RegisteredType) or hasattr(jsonargparse.typing, otype.__name__):
+            if isinstance(otype, RegisteredType) or hasattr(__import__('jsonargparse.typing'), otype.__name__):
                 if isinstance(otype, RegisteredType):
                     otype = otype.type_class
                 with self.subTest(str(otype)):

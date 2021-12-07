@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+from importlib.util import find_spec
 from jsonargparse import get_config_read_mode, set_config_read_mode
 from jsonargparse.optionals import (
     argcomplete_support,
@@ -20,8 +21,6 @@ from jsonargparse.optionals import (
     jsonschema_support,
     ruyaml_support,
     url_support,
-    _requests,
-    _url_validator,
 )
 
 
@@ -63,11 +62,11 @@ class UrlSupportTests(unittest.TestCase):
 
     @unittest.skipIf(url_support, 'validators and requests packages should not be installed')
     def test_url_support_false(self):
-        if _url_validator is None:
+        if find_spec('validators') is None:
             with self.assertRaises(ImportError) as context:
                 import_url_validator('test_url_support_false')
                 self.assertIn('test_url_support_false', context.msg)
-        if _requests is None:
+        if find_spec('requests') is None:
             with self.assertRaises(ImportError) as context:
                 import_requests('test_url_support_false')
                 self.assertIn('test_url_support_false', context.msg)

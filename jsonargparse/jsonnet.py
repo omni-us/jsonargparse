@@ -11,7 +11,7 @@ from .optionals import (
     import_jsonschema,
     import_jsonnet,
     get_config_read_mode,
-    jsonschemaValidationError,
+    get_jsonschema_exceptions,
 )
 from .util import ParserError, Path
 
@@ -110,7 +110,7 @@ class ActionJsonnet(Action):
                 elif self._validator is not None:
                     self._validator.validate(val)
                 value[num] = val
-            except (TypeError, RuntimeError, jsonschemaValidationError) + get_loader_exceptions() as ex:
+            except (TypeError, RuntimeError) + get_jsonschema_exceptions() + get_loader_exceptions() as ex:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError(f'Parser key "{self.dest}"{elem}: {ex}') from ex
         return value if islist else value[0]

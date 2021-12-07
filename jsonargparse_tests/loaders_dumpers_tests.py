@@ -36,7 +36,7 @@ class LoadersTests(unittest.TestCase):
         self.assertEqual(1e-3, parser.parse_args(['--num=1e-3']).num)
 
 
-    @unittest.skipIf(not dump_preserve_order_support or not find_spec('omegaconf'), 'omegaconf package is required')
+    @unittest.skipIf(not dump_preserve_order_support or not find_spec('omegaconf'), 'omegaconf package and CPython required')
     def test_set_loader_omegaconf(self):
         parser = ArgumentParser(error_handler=None, parser_mode='omegaconf')
         parser.add_argument('--server.host', type=str)

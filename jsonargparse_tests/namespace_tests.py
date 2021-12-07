@@ -170,7 +170,7 @@ class NamespaceTests(unittest.TestCase):
         dic1 = namespace_to_dict(ns)
         dic2 = ns.as_dict()
         self.assertEqual(dic1, dic2)
-        self.assertFalse(dic1 is dic2)
+        self.assertIsNot(dic1, dic2)
 
     def test_dict_to_namespace(self):
         ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])

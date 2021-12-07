@@ -10,8 +10,8 @@ from .loaders_dumpers import get_loader_exceptions, load_value, load_value_conte
 from .namespace import strip_meta
 from .optionals import (
     argcomplete_warn_redraw_prompt,
+    get_jsonschema_exceptions,
     import_jsonschema,
-    jsonschemaValidationError,
 )
 from .util import _parse_value_or_config
 
@@ -94,7 +94,7 @@ class ActionJsonSchema(Action):
                 if isinstance(val, dict) and fpath is not None:
                     val['__path__'] = fpath
                 value[num] = val
-            except (TypeError, ValueError, jsonschemaValidationError) + get_loader_exceptions() as ex:
+            except (TypeError, ValueError) + get_jsonschema_exceptions() + get_loader_exceptions() as ex:
                 elem = '' if not islist else ' element '+str(num+1)
                 raise TypeError(f'Parser key "{self.dest}"{elem}: {ex}') from ex
         return value if islist else value[0]
@@ -125,7 +125,7 @@ class ActionJsonSchema(Action):
                     raise ValueError()
                 self._validator.validate(load_value(prefix))
                 msg = 'value already valid, '
-            except (ValueError, jsonschemaValidationError) + get_loader_exceptions():
+            except (ValueError,) + get_jsonschema_exceptions() + get_loader_exceptions():
                 msg = 'value not yet valid, '
             else:
                 schema = json.dumps(self._validator.schema, indent=2, sort_keys=True).replace('\n', '\n  ')
