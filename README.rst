@@ -460,7 +460,26 @@ loading a subclass of `yaml.SafeLoader
 single modification to match float's scientific notation casting, e.g.
 :code:`float('1e-3') == 0.001`. It is possible to replace the default yaml
 loader or add a loader as a new parser mode via the :func:`.set_loader`
-function.
+function. For example if you need a custom PyYAML loader it can be registered
+and used as follows:
+
+.. testcode::
+
+    import yaml
+    from jsonargparse import ArgumentParser, set_loader
+
+    class CustomLoader(yaml.SafeLoader):
+        ...
+
+    def custom_yaml_load(stream):
+        return yaml.load(stream, Loader=CustomLoader)
+
+    set_loader('yaml_custom', custom_yaml_load)
+
+    parser = ArgumentParser(parser_mode='yaml_custom')
+
+When setting a loader based on a library different from PyYAML, the `exceptions`
+that it raises when there are failures should be given to :func:`.set_loader`.
 
 
 .. _environment-variables:

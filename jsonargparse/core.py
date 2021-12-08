@@ -177,7 +177,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             logger: Configures the logger, see :class:`.LoggerProperty`.
             version: Program version string to add --version argument.
             print_config: Add this as argument to print config, set None to disable.
-            parser_mode: Mode for parsing configuration files, either ``'yaml'`` or ``'jsonnet'``.
+            parser_mode: Mode for parsing configuration files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
             default_config_files: Default config file locations, e.g. :code:`['~/.config/myapp/*.yaml']`.
             default_env: Set the default value on whether to parse environment variables.
             default_meta: Set the default value on whether to include metadata in config objects.
@@ -678,7 +678,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
         Args:
             cfg: The configuration object to dump.
-            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'`` or ``'parser_mode'``.
+            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via :func:`.set_dumper`.
             skip_none: Whether to exclude entries whose value is None.
             skip_check: Whether to skip parser checking.
             yaml_comments: Whether to add help content as comments. ``yaml_comments=True`` implies ``format='yaml'``.
@@ -738,7 +738,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         Args:
             cfg: The configuration object to save.
             path: Path to the location where to save config.
-            format: The output format: "yaml", "json", "json_indented" or "parser_mode".
+            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via :func:`.set_dumper`.
             skip_none: Whether to exclude entries whose value is None.
             skip_check: Whether to skip parser checking.
             overwrite: Whether to overwrite existing files.
