@@ -17,6 +17,7 @@ Fixed
 ^^^^^
 - Bad config merging in ``handle_subcommands`` pytorch-lightning#10859
   <https://github.com/PyTorchLightning/pytorch-lightning/issues/10859>`__.
+- Unit tests failing with argcomplete>=2.0.0.
 
 
 v4.1.0 (2021-12-06)

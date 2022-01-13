@@ -5,9 +5,9 @@ import pathlib
 import platform
 import sys
 import unittest
-from contextlib import ExitStack, redirect_stderr, redirect_stdout
+from contextlib import ExitStack, redirect_stderr
 from enum import Enum
-from io import BytesIO, StringIO
+from io import StringIO
 from typing import List, Optional
 from jsonargparse import *
 from jsonargparse.typing import *
@@ -50,10 +50,10 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_LINE'] = 'tool.py --group1'
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out = BytesIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-        self.assertEqual(out.getvalue(), b'--group1.op')
+        out = StringIO()
+        with self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
+        self.assertEqual(out.getvalue(), '--group1.op')
 
 
     def test_complete_nested_two_options(self):
@@ -63,10 +63,10 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_LINE'] = 'tool.py --group2'
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out = BytesIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-        self.assertEqual(out.getvalue(), b'--group2.op1\x0b--group2.op2')
+        out = StringIO()
+        with self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
+        self.assertEqual(out.getvalue(), '--group2.op1\x0b--group2.op2')
 
 
     @unittest.skipIf(platform.python_implementation() != 'CPython', 'only CPython supported')
@@ -91,10 +91,10 @@ class ArgcompleteTests(TempDirTestCase):
             os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
             with self.subTest(os.environ['COMP_LINE']):
-                out, err = BytesIO(), StringIO()
-                with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-                self.assertEqual(out.getvalue(), b'')
+                out, err = StringIO(), StringIO()
+                with redirect_stderr(err), self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
+                self.assertEqual(out.getvalue(), '')
                 self.assertIn(expected, err.getvalue())
 
 
@@ -104,15 +104,15 @@ class ArgcompleteTests(TempDirTestCase):
         pathlib.Path('file1').touch()
         pathlib.Path('config.yaml').touch()
 
-        for arg, expected in [('--cfg=',  b'config.yaml\x0bfile1'),
-                              ('--cfg=c', b'config.yaml')]:
+        for arg, expected in [('--cfg=',  'config.yaml\x0bfile1'),
+                              ('--cfg=c', 'config.yaml')]:
             os.environ['COMP_LINE'] = 'tool.py '+arg
             os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
             with self.subTest(os.environ['COMP_LINE']):
-                out = BytesIO()
-                with redirect_stdout(out), self.assertRaises(SystemExit):
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                out = StringIO()
+                with self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(expected, out.getvalue())
 
 
@@ -121,20 +121,20 @@ class ArgcompleteTests(TempDirTestCase):
         self.parser.add_argument('--op2', nargs='?', action=ActionYesNo)
         self.parser.add_argument('--with-op3', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
 
-        for arg, expected in [('--op1', b'--op1'),
-                              ('--no_op1', b'--no_op1'),
-                              ('--op2', b'--op2'),
-                              ('--no_op2', b'--no_op2'),
-                              ('--op2=', b'true\x0bfalse\x0byes\x0bno'),
-                              ('--with-op3', b'--with-op3'),
-                              ('--without-op3', b'--without-op3')]:
+        for arg, expected in [('--op1',         '--op1'),
+                              ('--no_op1',      '--no_op1'),
+                              ('--op2',         '--op2'),
+                              ('--no_op2',      '--no_op2'),
+                              ('--op2=',        'true\x0bfalse\x0byes\x0bno'),
+                              ('--with-op3',    '--with-op3'),
+                              ('--without-op3', '--without-op3')]:
             os.environ['COMP_LINE'] = 'tool.py '+arg
             os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
             with self.subTest(os.environ['COMP_LINE']):
-                out = BytesIO()
-                with redirect_stdout(out), self.assertRaises(SystemExit):
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                out = StringIO()
+                with self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(expected, out.getvalue())
 
 
@@ -149,10 +149,10 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_LINE'] = 'tool.py --enum=ab'
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out = BytesIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-        self.assertEqual(out.getvalue(), b'abc\x0babd')
+        out = StringIO()
+        with self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
+        self.assertEqual(out.getvalue(), 'abc\x0babd')
 
 
     def test_optional(self):
@@ -163,15 +163,15 @@ class ArgcompleteTests(TempDirTestCase):
         self.parser.add_argument('--enum', type=Optional[MyEnum])
         self.parser.add_argument('--bool', type=Optional[bool])
 
-        for arg, expected in [('--enum=', b'A\x0bB\x0bnull'),
-                              ('--bool=', b'true\x0bfalse\x0bnull')]:
+        for arg, expected in [('--enum=', 'A\x0bB\x0bnull'),
+                              ('--bool=', 'true\x0bfalse\x0bnull')]:
             os.environ['COMP_LINE'] = 'tool.py '+arg
             os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
             with self.subTest(os.environ['COMP_LINE']):
-                out = BytesIO()
-                with redirect_stdout(out), self.assertRaises(SystemExit):
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                out = StringIO()
+                with self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(expected, out.getvalue())
 
 
@@ -186,27 +186,27 @@ class ArgcompleteTests(TempDirTestCase):
             os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
             with self.subTest(os.environ['COMP_LINE']):
-                out, err = BytesIO(), StringIO()
-                with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-                self.assertEqual(out.getvalue(), b'')
+                out, err = StringIO(), StringIO()
+                with redirect_stderr(err), self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
+                self.assertEqual(out.getvalue(), '')
                 self.assertIn(expected, err.getvalue())
 
                 with unittest.mock.patch('os.popen') as popen_mock:
                     popen_mock.side_effect = ValueError
-                    with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
-                        self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-                    self.assertEqual(out.getvalue(), b'')
+                    with redirect_stderr(err), self.assertRaises(SystemExit):
+                        self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
+                    self.assertEqual(out.getvalue(), '')
                     self.assertIn(expected, err.getvalue())
 
         os.environ['COMP_LINE'] = 'tool.py --json='
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out, err = BytesIO(), StringIO()
-        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        out, err = StringIO(), StringIO()
+        with redirect_stderr(err), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
         self.assertEqual(err.getvalue(), '')
-        self.assertIn('value not yet valid', out.getvalue().decode('utf-8').replace('\xa0', ' ').replace('_', ' '))
+        self.assertIn('value not yet valid', out.getvalue().replace('\xa0', ' ').replace('_', ' '))
 
 
     def test_list(self):
@@ -215,20 +215,20 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_LINE'] = "tool.py --list='[1, 2, 3]'"
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out, err = BytesIO(), StringIO()
-        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-        self.assertEqual(out.getvalue(), b'')
+        out, err = StringIO(), StringIO()
+        with redirect_stderr(err), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
+        self.assertEqual(out.getvalue(), '')
         self.assertIn('value already valid, expected type List[int]', err.getvalue())
 
         os.environ['COMP_LINE'] = 'tool.py --list='
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out, err = BytesIO(), StringIO()
-        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+        out, err = StringIO(), StringIO()
+        with redirect_stderr(err), self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
         self.assertEqual(err.getvalue(), '')
-        self.assertIn('value not yet valid', out.getvalue().decode('utf-8').replace('\xa0', ' ').replace('_', ' '))
+        self.assertIn('value not yet valid', out.getvalue().replace('\xa0', ' ').replace('_', ' '))
 
 
     def test_bool(self):
@@ -236,10 +236,10 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_LINE'] = 'tool.py --bool='
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out = BytesIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
-        self.assertEqual(b'true\x0bfalse', out.getvalue())
+        out = StringIO()
+        with self.assertRaises(SystemExit):
+            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
+        self.assertEqual(out.getvalue(), 'true\x0bfalse')
 
 
     @unittest.skipIf(os.name != 'posix', 'Path class currently only supported in posix systems')
@@ -248,16 +248,16 @@ class ArgcompleteTests(TempDirTestCase):
         pathlib.Path('file1').touch()
         pathlib.Path('file2').touch()
 
-        for arg, expected in [('--path=',  b'null\x0bfile1\x0bfile2'),
-                              ('--path=n', b'null'),
-                              ('--path=f', b'file1\x0bfile2')]:
+        for arg, expected in [('--path=',  'null\x0bfile1\x0bfile2'),
+                              ('--path=n', 'null'),
+                              ('--path=f', 'file1\x0bfile2')]:
             os.environ['COMP_LINE'] = 'tool.py '+arg
             os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
             with self.subTest(os.environ['COMP_LINE']):
-                out = BytesIO()
-                with redirect_stdout(out), self.assertRaises(SystemExit):
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=sys.stdout)
+                out = StringIO()
+                with self.assertRaises(SystemExit):
+                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(expected, out.getvalue())
 
 
