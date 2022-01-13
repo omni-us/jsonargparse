@@ -908,7 +908,7 @@ class _ActionSubCommands(_SubParsersAction):
 
             # Update all subcommand settings
             if subnamespace is not None:
-                cfg.update(subnamespace, prefix+subcommand, only_unset=True)
+                cfg[prefix+subcommand] = subparser.merge_config(cfg.get(prefix+subcommand, Namespace()), subnamespace)
 
             # Handle inner subcommands
             if subparser._subparsers is not None:

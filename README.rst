@@ -478,7 +478,7 @@ and used as follows:
 
     parser = ArgumentParser(parser_mode='yaml_custom')
 
-When setting a loader based on a library different from PyYAML, the `exceptions`
+When setting a loader based on a library different from PyYAML, the ``exceptions``
 that it raises when there are failures should be given to :func:`.set_loader`.
 
 

@@ -702,6 +702,36 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             self.assertIsInstance(config_init["b"].a_map["name"].d, D)
 
 
+    def test_subcommand_with_subclass_default_override_lightning_issue_10859(self):
+
+        class Arch:
+            def __init__(self, a: int = 1):
+                pass
+
+        class ArchB(Arch):
+            def __init__(self, a: int = 2, b: int = 3):
+                pass
+
+        class ArchC(Arch):
+            def __init__(self, a: int = 4, c: int = 5):
+                pass
+
+        parser = ArgumentParser(error_handler=None)
+        parser_subcommands = parser.add_subcommands()
+        subparser = ArgumentParser()
+        subparser.add_argument('--arch', type=Arch)
+
+        with mock_module(Arch, ArchB, ArchC) as module:
+            default = {'class_path': f'{module}.ArchB'}
+            value = {'class_path': f'{module}.ArchC', 'init_args': {'a': 10, 'c': 11}}
+
+            subparser.set_defaults(arch=default)
+            parser_subcommands.add_subcommand('fit', subparser)
+
+            cfg = parser.parse_args(['fit', f'--arch={json.dumps(value)}'])
+            self.assertEqual(cfg.fit.arch.as_dict(), value)
+
+
 class OtherTests(unittest.TestCase):
 
     def test_is_optional(self):

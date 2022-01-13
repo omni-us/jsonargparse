@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.1.1 (2022-01-??)
+-------------------
+
+Fixed
+^^^^^
+- Bad config merging in ``handle_subcommands`` pytorch-lightning#10859
+  <https://github.com/PyTorchLightning/pytorch-lightning/issues/10859>`__.
+
+
 v4.1.0 (2021-12-06)
 -------------------
 
