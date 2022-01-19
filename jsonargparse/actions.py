@@ -244,12 +244,12 @@ class _ActionPrintConfig(Action):
                          dest=dest,
                          default=default,
                          nargs=1,
-                         metavar='[={comments,skip_null}+]',
+                         metavar='[={comments,skip_null,skip_default}+]',
                          help='Print configuration and exit.')
 
     def __call__(self, parser, namespace, value, option_string=None):
         kwargs = {'subparser': parser, 'key': None, 'skip_none': False, 'skip_check': True}
-        valid_flags = {'': None, 'comments': 'yaml_comments', 'skip_null': 'skip_none'}
+        valid_flags = {'': None, 'comments': 'yaml_comments', 'skip_default': 'skip_default', 'skip_null': 'skip_none'}
         if value is not None:
             flags = value[0].split(',')
             invalid_flags = [f for f in flags if f not in valid_flags]

@@ -660,6 +660,25 @@ class OutputTests(TempDirTestCase):
         self.assertRaises(ValueError, lambda: parser.dump(cfg, format='invalid'))
 
 
+    def test_dump_skip_default(self):
+        parser = ArgumentParser()
+        parser.add_argument('--op1', default=123)
+        parser.add_argument('--op2', default='abc')
+        self.assertEqual(parser.dump(parser.get_defaults(), skip_default=True), '{}\n')
+        self.assertEqual(parser.dump(Namespace(op1=123, op2='xyz'), skip_default=True), 'op2: xyz\n')
+
+
+    def test_dump_skip_default_nested(self):
+        parser = ArgumentParser()
+        parser.add_argument('--g1.op1', type=int, default=123)
+        parser.add_argument('--g1.op2', type=str, default='abc')
+        parser.add_argument('--g2.op1', type=int, default=987)
+        parser.add_argument('--g2.op2', type=str, default='xyz')
+        self.assertEqual(parser.dump(parser.get_defaults(), skip_default=True), '{}\n')
+        self.assertEqual(parser.dump(parser.parse_args(['--g1.op1=0']), skip_default=True), 'g1:\n  op1: 0\n')
+        self.assertEqual(parser.dump(parser.parse_args(['--g2.op2=pqr']), skip_default=True), 'g2:\n  op2: pqr\n')
+
+
     @unittest.skipIf(not dump_preserve_order_support,
                      'Dump preserve order only supported in python>=3.6 and CPython')
     def test_dump_order(self):

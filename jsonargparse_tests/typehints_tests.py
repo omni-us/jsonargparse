@@ -503,6 +503,31 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: lazy_instance(MyClass, param='bad'))
 
 
+    def test_dump_skip_default(self):
+        class MyCalendar(Calendar):
+            def __init__(self, *args, param: str = '0', **kwargs):
+                super().__init__(*args, **kwargs)
+
+        with mock_module(MyCalendar) as module:
+            parser = ArgumentParser()
+            parser.add_argument('--g1.op1', default=123)
+            parser.add_argument('--g1.op2', default='abc')
+            parser.add_argument('--g2.op1', default=4.5)
+            parser.add_argument('--g2.op2', type=Calendar, default=lazy_instance(Calendar, firstweekday=2))
+
+            cfg = parser.get_defaults()
+            dump = parser.dump(cfg, skip_default=True)
+            self.assertEqual(dump, '{}\n')
+
+            cfg.g2.op2.class_path = f'{module}.MyCalendar'
+            dump = parser.dump(cfg, skip_default=True)
+            self.assertEqual(dump, 'g2:\n  op2:\n    class_path: jsonargparse_tests.MyCalendar\n    init_args:\n      firstweekday: 2\n')
+
+            cfg.g2.op2.init_args.firstweekday = 0
+            dump = parser.dump(cfg, skip_default=True)
+            self.assertEqual(dump, 'g2:\n  op2:\n    class_path: jsonargparse_tests.MyCalendar\n')
+
+
 class TypeHintsTmpdirTests(TempDirTestCase):
 
     def test_path(self):
