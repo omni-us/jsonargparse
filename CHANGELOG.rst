@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.6.0 (2022-04-??)
+-------------------
+
+Added
+^^^^^
+- Dump option to exclude entries whose value is the same as the default `#91
+  <https://github.com/omni-us/jsonargparse/issues/91>`__.
+
+
 v4.5.0 (2022-03-29)
 -------------------
 

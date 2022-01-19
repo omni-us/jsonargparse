@@ -17,7 +17,7 @@ from .jsonschema import ActionJsonSchema
 from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context, yaml_load
 from .namespace import is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
-from .typehints import ActionTypeHint
+from .typehints import ActionTypeHint, is_class_object
 from .actions import (
     ActionParser,
     ActionConfigFile,
@@ -658,6 +658,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         cfg: Namespace,
         format: str = 'parser_mode',
         skip_none: bool = True,
+        skip_default: bool = False,
         skip_check: bool = False,
         yaml_comments: bool = False,
     ) -> str:
@@ -667,6 +668,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             cfg: The configuration object to dump.
             format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via :func:`.set_dumper`.
             skip_none: Whether to exclude entries whose value is None.
+            skip_default: Whether to exclude entries whose value is the same as the default.
             skip_check: Whether to skip parser checking.
             yaml_comments: Whether to add help content as comments. ``yaml_comments=True`` implies ``format='yaml'``.
 
@@ -686,28 +688,57 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             with load_value_context(self.parser_mode):
                 self.check_config(cfg)
 
-        def cleanup_actions(cfg, actions, prefix=''):
-            for action in filter_default_actions(actions):
-                action_dest = prefix + action.dest
-                if (action.help == argparse.SUPPRESS and not isinstance(action, _ActionConfigLoad)) or \
-                   isinstance(action, ActionConfigFile) or \
-                   (skip_none and action_dest in cfg and cfg[action_dest] is None):
-                    cfg.pop(action_dest, None)
-                elif isinstance(action, _ActionSubCommands):
-                    cfg.pop(action_dest, None)
-                    for key, subparser in action.choices.items():
-                        cleanup_actions(cfg, subparser._actions, prefix=prefix+key+'.')
-                elif isinstance(action, ActionTypeHint):
-                    value = cfg.get(action_dest)
-                    if value is not None:
-                        value = action.serialize(value, dump_kwargs={'skip_check': skip_check, 'skip_none': skip_none})
-                        cfg.update(value, action_dest)
-
         with load_value_context(self.parser_mode):
-            cleanup_actions(cfg, self._actions)
+            dump_kwargs = {'skip_check': skip_check, 'skip_none': skip_none}
+            self._dump_cleanup_actions(cfg, self._actions, dump_kwargs)
+
+        cfg = cfg.as_dict()
+
+        if skip_default:
+            self._dump_delete_default_entries(cfg, self.get_defaults().as_dict())
 
         with formatter_context(self):
-            return dump_using_format(self, cfg.as_dict(), 'yaml_comments' if yaml_comments else format)
+            return dump_using_format(self, cfg, 'yaml_comments' if yaml_comments else format)
+
+
+    def _dump_cleanup_actions(self, cfg, actions, dump_kwargs, prefix=''):
+        skip_none = dump_kwargs['skip_none']
+        for action in filter_default_actions(actions):
+            action_dest = prefix + action.dest
+            if (action.help == argparse.SUPPRESS and not isinstance(action, _ActionConfigLoad)) or \
+               isinstance(action, ActionConfigFile) or \
+               (skip_none and action_dest in cfg and cfg[action_dest] is None):
+                cfg.pop(action_dest, None)
+            elif isinstance(action, _ActionSubCommands):
+                cfg.pop(action_dest, None)
+                for key, subparser in action.choices.items():
+                    self._dump_cleanup_actions(cfg, subparser._actions, dump_kwargs, prefix=prefix+key+'.')
+            elif isinstance(action, ActionTypeHint):
+                value = cfg.get(action_dest)
+                if value is not None:
+                    value = action.serialize(value, dump_kwargs=dump_kwargs)
+                    cfg.update(value, action_dest)
+
+
+    def _dump_delete_default_entries(self, subcfg, subdefaults):
+        for key in list(subcfg.keys()):
+            if key in subdefaults:
+                val = subcfg[key]
+                default = subdefaults[key]
+                class_object_val = None
+                if is_class_object(val):
+                    if val['class_path'] != default.get('class_path'):
+                        parser = ActionTypeHint.get_class_parser(val['class_path'])
+                        default = {'init_args': parser.get_defaults().as_dict()}
+                    class_object_val = val
+                    val = val['init_args']
+                    default = default.get('init_args')
+                if val == default:
+                    del subcfg[key]
+                elif isinstance(val, dict) and isinstance(default, dict):
+                    self._dump_delete_default_entries(val, default)
+                    if class_object_val and class_object_val.get('init_args') == {}:
+                        del class_object_val['init_args']
 
 
     def save(
@@ -891,7 +922,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         cfg = Namespace()
         for action in filter_default_actions(self._actions):
             if action.default != argparse.SUPPRESS and action.dest != argparse.SUPPRESS:
-                cfg[action.dest] = action.default
+                cfg[action.dest] = deepcopy(action.default)
 
         self._logger.info('Loaded default values from parser.')
 
