@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.1.2 (2022-01-??)
+-------------------
+
+Fixed
+^^^^^
+- Namespace TypeError with non-str inputs `#116
+  <https://github.com/omni-us/jsonargparse/issues/116>`__.
+
+
 v4.1.1 (2022-01-13)
 -------------------
 
@@ -18,8 +27,6 @@ Fixed
 - Bad config merging in ``handle_subcommands`` pytorch-lightning#10859
   <https://github.com/PyTorchLightning/pytorch-lightning/issues/10859>`__.
 - Unit tests failing with argcomplete>=2.0.0.
-- Namespace TypeError with non-str inputs `#116
-  <https://github.com/omni-us/jsonargparse/issues/116>`__.
 
 
 v4.1.0 (2021-12-06)
