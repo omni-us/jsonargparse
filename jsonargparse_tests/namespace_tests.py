@@ -54,6 +54,19 @@ class NamespaceTests(unittest.TestCase):
         self.assertEqual(2, ns.get('z', 2))
         self.assertIsNone(ns.get('z'))
 
+    def test_get_non_str_key(self):
+        ns = Namespace()
+        for key in [None, True, False, 1, 2.3]:
+            with self.subTest(str(key)):
+                self.assertIsNone(ns.get(key))
+                self.assertEqual(ns.get(key, 'abc'), 'abc')
+
+    def test_contains_non_str_key(self):
+        ns = Namespace()
+        for key in [None, True, False, 1, 2.3]:
+            with self.subTest(str(key)):
+                self.assertFalse(key in ns)
+
     def test_pop(self):
         ns = Namespace()
         ns['x.y.z'] = 1

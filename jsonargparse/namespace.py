@@ -275,7 +275,7 @@ class Namespace(ArgparseNamespace):
     def get(self, key: str, default: Any = None) -> Any:
         try:
             return self[key]
-        except KeyError:
+        except (KeyError, TypeError):
             return default
 
     def get_value_and_parent(self, key: str) -> Tuple[Any, 'Namespace', str]:
