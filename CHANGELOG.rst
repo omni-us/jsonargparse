@@ -17,6 +17,8 @@ Fixed
 ^^^^^
 - Namespace TypeError with non-str inputs `#116
   <https://github.com/omni-us/jsonargparse/issues/116>`__.
+- ``print_config`` failing on subclass with required arguments `#115
+  <https://github.com/omni-us/jsonargparse/issues/115>`__.
 
 
 v4.1.1 (2022-01-13)

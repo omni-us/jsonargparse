@@ -713,7 +713,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                 elif isinstance(action, ActionTypeHint):
                     value = cfg.get(action_dest)
                     if value is not None:
-                        value = action.serialize(value)
+                        value = action.serialize(value, dump_kwargs={'skip_check': skip_check, 'skip_none': skip_none})
                         cfg.update(value, action_dest)
 
         with load_value_context(self.parser_mode):

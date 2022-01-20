@@ -237,11 +237,12 @@ class ActionTypeHint(Action):
             parser._apply_actions(cfg)
 
 
-    def serialize(self, value):
+    def serialize(self, value, dump_kwargs=None):
         sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
-        if _is_action_value_list(self):
-            return [adapt_typehints(v, self._typehint, serialize=True, sub_add_kwargs=sub_add_kwargs) for v in value]
-        return adapt_typehints(value, self._typehint, serialize=True, sub_add_kwargs=sub_add_kwargs)
+        with dump_kwargs_context(dump_kwargs):
+            if _is_action_value_list(self):
+                return [adapt_typehints(v, self._typehint, serialize=True, sub_add_kwargs=sub_add_kwargs) for v in value]
+            return adapt_typehints(value, self._typehint, serialize=True, sub_add_kwargs=sub_add_kwargs)
 
 
     def __call__(self, *args, **kwargs):
@@ -559,6 +560,15 @@ def is_class_object(val):
     return is_class
 
 
+dump_kwargs: ContextVar = ContextVar('dump_kwargs', default={})
+
+
+@contextmanager
+def dump_kwargs_context(kwargs):
+    dump_kwargs.set(kwargs if kwargs else {})
+    yield
+
+
 def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs):
     if not isinstance(init_args, Namespace):
         raise ValueError(f'Unexpected init_args value: "{init_args}".')
@@ -586,7 +596,7 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
             return init_args
         return val_class(**init_args)
     if serialize:
-        init_args = None if is_empty_namespace(init_args) else load_value(parser.dump(init_args))
+        init_args = None if is_empty_namespace(init_args) else load_value(parser.dump(init_args, **dump_kwargs.get()))
     else:
         init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
     return init_args

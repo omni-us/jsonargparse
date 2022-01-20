@@ -818,6 +818,33 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(outval['g'], {'a1': {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 0}}, 'a2': 7})
 
 
+    def test_print_config_subclass_required_param_issue_115(self):
+        class Class(object):
+            def __init__(self, arg1: float):
+                pass
+
+        class BaseClass(object):
+            def __init__(self):
+                pass
+
+        class SubClass(BaseClass):
+            def __init__(self, arg1: int, arg2: int = 1):
+                pass
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument("--config", action=ActionConfigFile)
+        parser.add_class_arguments(Class, 'class')
+        parser.add_subclass_arguments(BaseClass, 'subclass')
+
+        with mock_module(BaseClass, SubClass) as module:
+            args = [f'--subclass={module}.SubClass', '--print_config']
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                parser.parse_args(args)
+            expected = f'class:\n  arg1: null\nsubclass:\n  class_path: {module}.SubClass\n  init_args:\n    arg1: null\n    arg2: 1\n'
+            self.assertEqual(out.getvalue(), expected)
+
+
     def test_link_arguments(self):
 
         class ClassA:
