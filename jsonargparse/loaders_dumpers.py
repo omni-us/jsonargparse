@@ -18,6 +18,7 @@ __all__ = [
 
 
 load_value_mode: ContextVar = ContextVar('load_value_mode')
+regex_curly_comma = re.compile(' *[{},] *')
 
 
 @contextmanager
@@ -47,7 +48,12 @@ DefaultLoader.add_implicit_resolver(
 
 
 def yaml_load(stream):
-    return yaml.load(stream, Loader=DefaultLoader)
+    value = yaml.load(stream, Loader=DefaultLoader)
+    if isinstance(value, dict) and all(v is None for v in value.values()):
+        keys = set(k for k in regex_curly_comma.split(stream) if k)
+        if len(keys) > 0 and keys == set(value.keys()):
+            value = stream
+    return value
 
 
 loaders: Dict[str, Callable] = {

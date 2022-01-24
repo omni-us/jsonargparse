@@ -456,12 +456,15 @@ Custom loaders
 
 The ``yaml`` parser mode (see :py:meth:`.ArgumentParser.__init__`) uses for
 loading a subclass of `yaml.SafeLoader
-<https://pyyaml.docsforge.com/master/api/yaml/loader/SafeLoader/>`__ with a
-single modification to match float's scientific notation casting, e.g.
-:code:`float('1e-3') == 0.001`. It is possible to replace the default yaml
-loader or add a loader as a new parser mode via the :func:`.set_loader`
-function. For example if you need a custom PyYAML loader it can be registered
-and used as follows:
+<https://pyyaml.docsforge.com/master/api/yaml/loader/SafeLoader/>`__ with two
+modifications. First, it supports float's scientific notation, e.g. ``'1e-3' =>
+0.001`` (unlike default PyYAML which considers ``'1e-3'`` a string). Second,
+text within curly braces is considered a string, e.g. ``'{text}' (unlike default
+PyYAML which parses this as ``{'text': None}``).
+
+It is possible to replace the yaml loader or add a loader as a new parser mode
+via the :func:`.set_loader` function. For example if you need a custom PyYAML
+loader it can be registered and used as follows:
 
 .. testcode::
 

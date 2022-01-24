@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.1.3 (2022-01-??)
+-------------------
+
+Fixed
+^^^^^
+- String within curly braces parsed as dict due to yaml spec implicit values.
+
+
 v4.1.2 (2022-01-20)
 -------------------
 
