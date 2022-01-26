@@ -44,7 +44,7 @@ class LoadersTests(unittest.TestCase):
 
 
     @unittest.skipIf(not dump_preserve_order_support or not find_spec('omegaconf'), 'omegaconf package and CPython required')
-    def test_set_loader_omegaconf(self):
+    def test_parser_mode_omegaconf(self):
         parser = ArgumentParser(error_handler=None, parser_mode='omegaconf')
         parser.add_argument('--server.host', type=str)
         parser.add_argument('--server.port', type=int)
@@ -64,6 +64,25 @@ class LoadersTests(unittest.TestCase):
         cfg = parser.parse_args([f'--config={yaml_dump(config)}'])
         self.assertEqual(cfg.client.url, 'http://localhost:80/')
         self.assertIn('url: http://localhost:80/', parser.dump(cfg))
+
+
+    @unittest.skipIf(not dump_preserve_order_support or not find_spec('omegaconf'), 'omegaconf package and CPython required')
+    def test_parser_mode_omegaconf_in_subcommands(self):
+        subparser = ArgumentParser()
+        subparser.add_argument('--config', action=ActionConfigFile)
+        subparser.add_argument('--source', type=str)
+        subparser.add_argument('--target', type=str)
+
+        parser = ArgumentParser(error_handler=None, parser_mode='omegaconf')
+        subcommands = parser.add_subcommands()
+        subcommands.add_subcommand('sub', subparser)
+
+        config = {
+            'source': 'hello',
+            'target': '${source}',
+        }
+        cfg = parser.parse_args(['sub', f'--config={yaml_dump(config)}'])
+        self.assertEqual(cfg.sub.target, 'hello')
 
 
 if __name__ == '__main__':

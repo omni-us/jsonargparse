@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.1.4 (2022-01-??)
+-------------------
+
+Fixed
+^^^^^
+- Subcommand parsers not using the parent's ``parser_mode``.
+
+
 v4.1.3 (2022-01-24)
 -------------------
 
