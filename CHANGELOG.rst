@@ -16,6 +16,7 @@ v4.1.4 (2022-01-??)
 Fixed
 ^^^^^
 - Subcommand parsers not using the parent's ``parser_mode``.
+- Namespace __setitem__ failing when key corresponds to a nested dict.
 
 
 v4.1.3 (2022-01-24)

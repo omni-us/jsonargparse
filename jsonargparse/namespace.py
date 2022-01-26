@@ -169,7 +169,10 @@ class Namespace(ArgparseNamespace):
         leaf_key, parent_ns, parent_key = self._parse_key(key)
         if parent_ns is None:
             parent_ns = self._create_nested_namespace(parent_key)
-        setattr(parent_ns, leaf_key, item)
+        if isinstance(parent_ns, dict):
+            parent_ns[leaf_key] = item
+        else:
+            setattr(parent_ns, leaf_key, item)
 
     def __getitem__(self, key: str) -> Any:
         """Gets an item from a possibly nested namespace."""

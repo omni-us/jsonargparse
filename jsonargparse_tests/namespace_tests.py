@@ -61,6 +61,11 @@ class NamespaceTests(unittest.TestCase):
                 self.assertIsNone(ns.get(key))
                 self.assertEqual(ns.get(key, 'abc'), 'abc')
 
+    def test_set_item_nested_dict(self):
+        ns = Namespace(d={'a': 1})
+        ns['d.b'] = 2
+        self.assertEqual(2, ns['d']['b'])
+
     def test_contains_non_str_key(self):
         ns = Namespace()
         for key in [None, True, False, 1, 2.3]:
