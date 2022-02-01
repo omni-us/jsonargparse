@@ -10,13 +10,21 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.1.5 (2022-02-??)
+-------------------
+
+Fixed
+^^^^^
+- Optional Enum types incorrectly adding a ``--*.help`` argument.
+
+
 v4.1.4 (2022-01-26)
 -------------------
 
 Fixed
 ^^^^^
 - Subcommand parsers not using the parent's ``parser_mode``.
-- Namespace __setitem__ failing when key corresponds to a nested dict.
+- Namespace ``__setitem__`` failing when key corresponds to a nested dict.
 
 
 v4.1.3 (2022-01-24)
@@ -43,7 +51,7 @@ v4.1.1 (2022-01-13)
 
 Fixed
 ^^^^^
-- Bad config merging in ``handle_subcommands`` pytorch-lightning#10859
+- Bad config merging in ``handle_subcommands`` `pytorch-lightning#10859
   <https://github.com/PyTorchLightning/pytorch-lightning/issues/10859>`__.
 - Unit tests failing with argcomplete>=2.0.0.
 

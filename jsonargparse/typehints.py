@@ -162,7 +162,10 @@ class ActionTypeHint(Action):
             return all(ActionTypeHint.is_class_typehint(s, only_subclasses) for s in subtypes)
         if only_subclasses and is_final_class(typehint):
             return False
-        return inspect.isclass(typehint) and typehint not in not_subclass_types and typehint_origin is None
+        return inspect.isclass(typehint) and \
+            typehint not in not_subclass_types and \
+            typehint_origin is None and \
+            not _issubclass(typehint, Enum)
 
 
     @staticmethod
