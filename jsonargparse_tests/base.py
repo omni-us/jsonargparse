@@ -1,3 +1,4 @@
+import inspect
 import os
 import shutil
 import tempfile
@@ -23,6 +24,12 @@ def mock_module(*args):
     __module__ = 'jsonargparse_tests'
     for component in args:
         component.__module__ = __module__
+        component.__qualname__ = component.__name__
+        if inspect.isclass(component):
+            methods = [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != '_']
+            for method in [getattr(component, m) for m in methods]:
+                method.__module__ = __module__
+                method.__qualname__ = component.__name__+'.'+method.__name__
     import jsonargparse_tests
     with unittest.mock.patch.multiple(jsonargparse_tests, create=True, **{c.__name__: c for c in args}):
         yield __module__

@@ -1,5 +1,6 @@
 """Collection of types and type generators."""
 
+import inspect
 import operator
 import re
 import uuid
@@ -339,18 +340,18 @@ register_type(uuid.UUID)
 
 
 def get_import_path(value):
-    return value.__module__+'.'+value.__name__
+    return value.__module__+'.'+value.__qualname__
 
 
 def object_path_serializer(value):
     try:
         path = get_import_path(value)
         reimported = import_object(path)
-        if value != reimported:
+        if value is not reimported:
             raise ValueError
         return path
-    except (ValueError, AttributeError):
-        raise ValueError(f'Only possible to serialize an importable object, given {value}')
+    except Exception as ex:
+        raise ValueError(f'Only possible to serialize an importable object, given {value}: {ex}') from ex
 
 
 register_type(

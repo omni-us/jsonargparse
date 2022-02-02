@@ -12,6 +12,7 @@ from jsonargparse.typing import (
     Email,
     NonNegativeFloat,
     NonNegativeInt,
+    object_path_serializer,
     OpenUnitInterval,
     Path_fr,
     path_type,
@@ -22,7 +23,7 @@ from jsonargparse.typing import (
     restricted_number_type,
     restricted_string_type,
 )
-from jsonargparse_tests.base import TempDirTestCase
+from jsonargparse_tests.base import mock_module, TempDirTestCase
 
 
 class RestrictedNumberTests(unittest.TestCase):
@@ -200,6 +201,32 @@ class OtherTests(unittest.TestCase):
         self.assertEqual(CallableType.serializer(CLI), 'jsonargparse.cli.CLI')
         self.assertRaises(ValueError, lambda: CallableType.serializer(lambda: None))
         self.assertRaises(ValueError, lambda: CallableType.serializer(Namespace(__module__='jsonargparse.cli', __name__='CLI')))
+
+
+    def test_serialize_class_method_path(self):
+        class MyClass:
+            @staticmethod
+            def my_method1():
+                pass
+            def my_method2(self):
+                pass
+
+        with mock_module(MyClass) as module:
+            self.assertEqual(object_path_serializer(MyClass.my_method1), f'{module}.MyClass.my_method1')
+            self.assertEqual(object_path_serializer(MyClass.my_method2), f'{module}.MyClass.my_method2')
+
+
+    def test_object_path_serializer_reimport_differs(self):
+        class MyClass:
+            pass
+
+        with mock_module(MyClass) as module:
+            class FakeMyClass:
+                pass
+
+            FakeMyClass.__module__ = module
+            FakeMyClass.__qualname__ = MyClass.__qualname__
+            self.assertRaises(ValueError, lambda: object_path_serializer(FakeMyClass))
 
 
     def test_timedelta(self):

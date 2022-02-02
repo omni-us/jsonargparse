@@ -109,8 +109,14 @@ def import_object(name: str):
     if not isinstance(name, str) or '.' not in name:
         raise ValueError('Expected a dot import path string')
     name_module, name_object = name.rsplit('.', 1)
-    module = __import__(name_module, fromlist=[name_object])
-    return getattr(module, name_object)
+    try:
+        parent = __import__(name_module, fromlist=[name_object])
+    except ModuleNotFoundError as ex:
+        if '.' not in name_module:
+            raise ex
+        name_module, name_object1 = name_module.rsplit('.', 1)
+        parent = getattr(__import__(name_module, fromlist=[name_object1]), name_object1)
+    return getattr(parent, name_object)
 
 
 lenient_check: ContextVar = ContextVar('lenient_check', default=False)

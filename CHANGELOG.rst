@@ -10,8 +10,12 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v4.1.5 (2022-02-??)
+v4.2.0 (2022-02-??)
 -------------------
+
+Added
+^^^^^
+- ``object_path_serializer`` and ``import_object`` support class methods #99.
 
 Fixed
 ^^^^^
