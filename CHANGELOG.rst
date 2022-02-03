@@ -16,6 +16,7 @@ v4.2.0 (2022-02-??)
 Added
 ^^^^^
 - ``object_path_serializer`` and ``import_object`` support class methods #99.
+- ``parser_mode`` is now a property that when set, propagates to subparsers.
 
 Fixed
 ^^^^^

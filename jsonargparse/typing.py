@@ -1,6 +1,5 @@
 """Collection of types and type generators."""
 
-import inspect
 import operator
 import re
 import uuid

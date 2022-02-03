@@ -202,10 +202,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         self._print_config = print_config
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version, help='Print version and exit.')
-        if parser_mode not in loaders:
-            raise ValueError(f'The only accepted values for parser_mode are {set(loaders.keys())}.')
-        if parser_mode == 'jsonnet':
-            import_jsonnet('parser_mode=jsonnet')
 
 
     ## Parsing methods ##
@@ -1352,6 +1348,31 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             self._env_prefix = env_prefix
         else:
             raise ValueError('env_prefix has to be a string or None.')
+
+
+    @property
+    def parser_mode(self) -> str:
+        """Mode for parsing configuration files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
+
+        :getter: Returns the current parser mode.
+        :setter: Sets the parser mode.
+
+        Raises:
+            ValueError: If an invalid value is given.
+        """
+        return self._parser_mode
+
+
+    @parser_mode.setter
+    def parser_mode(self, parser_mode: str):
+        if parser_mode not in loaders:
+            raise ValueError(f'The only accepted values for parser_mode are {set(loaders.keys())}.')
+        if parser_mode == 'jsonnet':
+            import_jsonnet('parser_mode=jsonnet')
+        self._parser_mode = parser_mode
+        if self._subparsers:
+            for subparser in self._subcommands_action._name_parser_map.values():
+                subparser.parser_mode = parser_mode  # type: ignore
 
 
 if omegaconf_support:

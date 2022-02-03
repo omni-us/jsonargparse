@@ -85,5 +85,18 @@ class LoadersTests(unittest.TestCase):
         self.assertEqual(cfg.sub.target, 'hello')
 
 
+    def test_parser_mode_subparsers(self):
+        subparser = ArgumentParser()
+        parser = ArgumentParser()
+        subcommands = parser.add_subcommands()
+        subcommands.add_subcommand('sub', subparser)
+
+        with unittest.mock.patch.dict('jsonargparse.loaders_dumpers.loaders'):
+            set_loader('custom', yaml.safe_load)
+            parser.parser_mode = 'custom'
+            self.assertEqual('custom', parser.parser_mode)
+            self.assertEqual('custom', subparser.parser_mode)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
