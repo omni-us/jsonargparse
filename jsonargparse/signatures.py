@@ -123,9 +123,9 @@ class SignatureArguments:
             raise ValueError('Expected "themethod" argument to be a callable member of the class.')
 
         skip_first = not isinstance(inspect.getattr_static(theclass, themethod), staticmethod)
-        themethod = getattr(theclass, themethod)
+        themethods = [getattr(x, themethod) for x in inspect.getmro(theclass) if hasattr(x, themethod)]
 
-        return self._add_signature_arguments([themethod],
+        return self._add_signature_arguments(themethods,
                                              nested_key,
                                              as_group,
                                              as_positional,

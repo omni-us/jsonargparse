@@ -573,7 +573,7 @@ Take for example a class with its init and a method with docstrings as follows:
             """
             pass
 
-        def mymethod(self, bar: float, baz: bool = False):
+        def mymethod(self, bar: float, baz: bool = False, **kwargs):
             """Description for mymethod.
 
             Args:
@@ -606,7 +606,8 @@ since the init has the :code:`**kwargs` argument, the keyword arguments from
 :code:`MyBaseClass` are also added to the parser. Similarly the
 :func:`add_method_arguments` call adds to the :code:`myclass.method` key the
 arguments :code:`value` as a required float and :code:`flag` as an optional
-boolean with default value false.
+boolean with default value false. Because of the `**kwargs`, arguments from
+:code:`MyBaseClass.method`, if it exists.
 
 Instantiation of classes added as argument groups with
 :func:`add_class_arguments` can be done more simply for an entire config object

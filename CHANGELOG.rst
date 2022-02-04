@@ -17,6 +17,8 @@ Added
 ^^^^^
 - ``object_path_serializer`` and ``import_object`` support class methods #99.
 - ``parser_mode`` is now a property that when set, propagates to subparsers.
+- ``add_method_arguments`` also add parameters from same method of parent
+  classes when ``*args`` or ``**kwargs`` present.
 
 Fixed
 ^^^^^

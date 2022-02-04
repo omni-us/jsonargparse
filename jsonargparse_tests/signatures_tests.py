@@ -241,6 +241,23 @@ class SignaturesTests(unittest.TestCase):
                 self.assertNotEqual(key.split('.')[1]+' description', _find_action(parser, key).help)
 
 
+    def test_add_method_arguments_parent_classes(self):
+        class MyClass:
+            def mymethod(self, p1: str = '1'):
+                return p1
+
+        class MySubClass(MyClass):
+            def mymethod(self, *args, p2: int = 2, **kwargs):
+                p1 = super().mymethod(**kwargs)
+                return p1, p2
+
+        parser = ArgumentParser()
+        added_args = parser.add_method_arguments(MySubClass, 'mymethod', 'm')
+
+        self.assertIn('m', parser.groups)
+        self.assertEqual(set(added_args), {'m.p1', 'm.p2'})
+
+
     def test_add_function_arguments(self):
 
         def func(a1 = '1',
