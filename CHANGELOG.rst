@@ -23,6 +23,7 @@ Added
 Fixed
 ^^^^^
 - Optional Enum types incorrectly adding a ``--*.help`` argument.
+- Specific errors for invalid value for ``--*.help class_path``.
 
 
 v4.1.4 (2022-01-26)

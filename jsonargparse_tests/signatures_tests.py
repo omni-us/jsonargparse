@@ -317,6 +317,7 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"not.exist.Class"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"calendar.January"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cal.help=calendar.January']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal.help=calendar.does_not_exist']))
         self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(calendar.January, 'jan'))
 
         out = StringIO()

@@ -362,13 +362,16 @@ class _ActionHelpClassPath(_ActionHelpClass):
         })
 
     def print_help(self, call_args, baseclass, dest):
-        val_class = import_object(call_args[2])
+        try:
+            val_class = import_object(call_args[2])
+        except Exception as ex:
+            raise TypeError(f'{call_args[3]}: {ex}')
         if getattr(self._baseclass, '__origin__', None) == Union:
             baseclasses = self._baseclass.__args__
         else:
             baseclasses = [baseclass]
         if not any(_issubclass(val_class, b) for b in baseclasses):
-            raise TypeError(f'Class "{call_args[2]}" is not a subclass of {self._basename}')
+            raise TypeError(f'{call_args[3]}: Class "{call_args[2]}" is not a subclass of {self._basename}')
         super().print_help(call_args, val_class, dest+'.init_args')
 
 

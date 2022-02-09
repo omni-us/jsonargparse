@@ -107,7 +107,9 @@ def _issubclass(cls, class_or_tuple):
 def import_object(name: str):
     """Returns an object in a module given its dot import path."""
     if not isinstance(name, str) or '.' not in name:
-        raise ValueError('Expected a dot import path string')
+        raise ValueError(f'Expected a dot import path string: {name}')
+    if not all(x.isidentifier() for x in name.split('.')):
+        raise ValueError(f'Unexpected import path format: {name}')
     name_module, name_object = name.rsplit('.', 1)
     try:
         parent = __import__(name_module, fromlist=[name_object])
