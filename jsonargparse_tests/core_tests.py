@@ -3,7 +3,9 @@
 import calendar
 import json
 import os
+import pickle
 import platform
+import sys
 import unittest
 import warnings
 import yaml
@@ -1075,6 +1077,13 @@ class OtherTests(unittest.TestCase):
     def test_parse_args_invalid_args(self):
         parser = ArgumentParser(error_handler=None)
         self.assertRaises(ParserError, lambda: parser.parse_args([{}]))
+
+
+    @unittest.skipIf(sys.version_info[:2] == (3, 6), 'loggers not pickleable in python 3.6')
+    def test_pickle_parser(self):
+        parser1 = example_parser()
+        parser2 = pickle.loads(pickle.dumps(parser1))
+        self.assertEqual(parser1.get_defaults(), parser2.get_defaults())
 
 
 if __name__ == '__main__':

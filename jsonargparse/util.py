@@ -7,7 +7,6 @@ import re
 import stat
 import sys
 import warnings
-from argparse import Action
 from collections import defaultdict
 from contextlib import contextmanager, redirect_stderr
 from contextvars import ContextVar
@@ -34,8 +33,9 @@ __all__ = [
 ]
 
 
-null_logger = logging.Logger('jsonargparse_null_logger')
+null_logger = logging.getLogger('jsonargparse_null_logger')
 null_logger.addHandler(logging.NullHandler())
+null_logger.parent = None
 
 
 NoneType = type(None)
@@ -56,6 +56,10 @@ def warning(message, category=JsonargparseWarning, stacklevel=1):
         category=category,
         stacklevel=stacklevel+1,
     )
+
+
+def identity(value):
+    return value
 
 
 def _parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:
@@ -88,15 +92,6 @@ def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None
     args = {'prog': parser.prog, 'message': message}
     sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
     parser.exit(2)
-
-
-def _get_env_var(parser: 'ArgumentParser', action: 'Action') -> str:
-    """Returns the environment variable for a given parser and action."""
-    if hasattr(parser, '_parser'):
-        parser = parser._parser
-    env_var = (parser._env_prefix+'_' if parser._env_prefix else '') + action.dest
-    env_var = env_var.replace('.', '__').upper()
-    return env_var
 
 
 def _issubclass(cls, class_or_tuple):

@@ -7,12 +7,11 @@ import logging
 import os
 import re
 import sys
-from contextlib import redirect_stderr
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Sequence, Set, Tuple, Type, Union
 from unittest.mock import patch
 
-from .formatters import DefaultHelpFormatter, empty_help
+from .formatters import DefaultHelpFormatter, empty_help, formatter_context, get_env_var
 from .jsonnet import ActionJsonnet
 from .jsonschema import ActionJsonSchema
 from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context
@@ -44,12 +43,12 @@ from .optionals import (
     import_fsspec,
 )
 from .util import (
+    identity,
     ParserError,
     usage_and_exit_error_handler,
     change_to_path_dir,
     Path,
     LoggerProperty,
-    _get_env_var,
     _suppress_stderr,
     _lenient_check_context,
     lenient_check,
@@ -67,6 +66,7 @@ class _ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerPr
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.register('type', None, identity)
         self.register('action', 'parsers', _ActionSubCommands)
 
 
@@ -182,20 +182,15 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             default_env: Set the default value on whether to parse environment variables.
             default_meta: Set the default value on whether to include metadata in config objects.
         """
-        class FormatterClass(formatter_class):  # type: ignore
-            _parser = self
-
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, formatter_class=formatter_class, **kwargs)
         if self.groups is None:
             self.groups = {}
         self.required_args: Set[str] = set()
         self.save_path_content: Set[str] = set()
-        self._stderr = sys.stderr
         self.default_config_files = default_config_files
         self.default_meta = default_meta
         self.default_env = default_env
         self.env_prefix = env_prefix
-        self.formatter_class = FormatterClass
         self.parser_mode = parser_mode
         self.logger = logger
         self.error_handler = error_handler
@@ -410,11 +405,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         cfg = Namespace()
         actions = filter_default_actions(self._actions)
         for action in actions:
-            env_var = _get_env_var(self, action)
+            env_var = get_env_var(self, action)
             if env_var in env and isinstance(action, ActionConfigFile):
                 ActionConfigFile.apply_config(self, cfg, action.dest, env[env_var])
         for action in actions:
-            env_var = _get_env_var(self, action)
+            env_var = get_env_var(self, action)
             if env_var in env and isinstance(action, _ActionSubCommands):
                 env_val = env[env_var]
                 if env_val in action.choices:
@@ -423,7 +418,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                     for k, v in vars(pcfg).items():
                         cfg[subcommand+'.'+k] = v
         for action in actions:
-            env_var = _get_env_var(self, action)
+            env_var = get_env_var(self, action)
             if env_var in env and not isinstance(action, ActionConfigFile):
                 env_val = env[env_var]
                 if _is_action_value_list(action):
@@ -715,7 +710,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         with load_value_context(self.parser_mode):
             cleanup_actions(cfg, self._actions)
 
-        return dump_using_format(self, cfg.as_dict(), 'yaml_comments' if yaml_comments else format)
+        with formatter_context(self):
+            return dump_using_format(self, cfg.as_dict(), 'yaml_comments' if yaml_comments else format)
 
 
     def save(
@@ -806,7 +802,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                             f.write(val.get_content())
                         cfg[key] = type(val)(str(val_path))
 
-            with change_to_path_dir(path_fc):
+            with change_to_path_dir(path_fc), formatter_context(self):
                 save_paths(cfg)
             dump_kwargs['skip_check'] = True
             with open(path_fc(), 'w') as f:
@@ -933,7 +929,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         """Logs error message if a logger is set, calls the error handler and raises a ParserError."""
         self._logger.error(message)
         if self._error_handler is not None:
-            with redirect_stderr(self._stderr):
+            with _suppress_stderr():
                 self._error_handler(self, message)
         if ex is None:
             raise ParserError(message)
@@ -1106,6 +1102,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
 
     def format_help(self) -> str:
+        defaults = None
         if len(self._default_config_files) > 0:
             note = 'no existing default config file found.'
             try:
@@ -1115,13 +1112,12 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                     if isinstance(config_files, list):
                         config_files = [str(x) for x in config_files]
                     note = f'default values below are the ones overridden by the contents of: {config_files}'
-                    self.formatter_class.defaults = defaults
             except ParserError as ex:
                 note = f'tried getting defaults considering default_config_files but failed due to: {ex}'
             group = self._default_config_files_group
             group.description = f'{self._default_config_files}, Note: {note}'
-        help_str = super().format_help()
-        self.formatter_class.defaults = None
+        with formatter_context(self, defaults):
+            help_str = super().format_help()
         return help_str
 
 

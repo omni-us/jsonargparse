@@ -10,6 +10,15 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.3.0 (2022-02-??)
+-------------------
+
+Changed
+^^^^^^^
+- ``ArgumentParser`` objects are now pickleable `pytorch-lightning#12011
+  <https://github.com/PyTorchLightning/pytorch-lightning/pull/12011>`__.
+
+
 v4.2.0 (2022-02-09)
 -------------------
 

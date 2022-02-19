@@ -1,11 +1,13 @@
 """Formatter classes."""
 
 import re
-from argparse import _HelpAction, HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
+from argparse import Action, _HelpAction, HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
+from contextlib import contextmanager
+from contextvars import ContextVar
 from enum import Enum
 from io import StringIO
 from string import Template
-from typing import Optional
+from typing import Optional, Union
 
 from .actions import (
     ActionConfigFile,
@@ -20,13 +22,27 @@ from .namespace import Namespace
 from .optionals import import_ruyaml
 from .type_checking import ArgumentParser, ruyamlCommentedMap
 from .typehints import ActionTypeHint, type_to_str
-from .util import _get_env_var
 
 
 __all__ = ['DefaultHelpFormatter']
 
 
 empty_help: str = '_EMPTY_HELP_'
+
+
+formatter_parser: ContextVar = ContextVar('formatter_parser')
+formatter_defaults: ContextVar = ContextVar('formatter_defaults')
+
+
+@contextmanager
+def formatter_context(parser: 'ArgumentParser', defaults: Optional[Namespace] = None):
+    prev_parser = formatter_parser.set(parser)
+    prev_defaults = formatter_defaults.set(defaults)
+    try:
+        yield
+    finally:
+        formatter_parser.reset(prev_parser)
+        formatter_defaults.reset(prev_defaults)
 
 
 class PercentTemplate(Template):
@@ -50,10 +66,6 @@ class DefaultHelpFormatter(HelpFormatter):
     with :code:`default_env=True` command line options are preceded by 'ARG:' and
     the respective environment variable name is included preceded by 'ENV:'.
     """
-
-    _parser: 'ArgumentParser'
-    defaults: Optional[Namespace] = None
-
 
     def _get_help_string(self, action):
         action_help = ' ' if action.help == empty_help else action.help
@@ -79,11 +91,12 @@ class DefaultHelpFormatter(HelpFormatter):
 
 
     def _format_action_invocation(self, action):
-        if action.option_strings == [] or action.default == SUPPRESS or not self._parser.default_env:
+        parser = formatter_parser.get()
+        if action.option_strings == [] or action.default == SUPPRESS or not parser.default_env:
             return super()._format_action_invocation(action)
         extr = ''
-        if self._parser.default_env:
-            extr += '\n  ENV:   ' + _get_env_var(self, action)
+        if parser.default_env:
+            extr += '\n  ENV:   ' + get_env_var(self, action)
         return 'ARG:   ' + super()._format_action_invocation(action) + extr
 
 
@@ -106,8 +119,9 @@ class DefaultHelpFormatter(HelpFormatter):
         if type_str is not None:
             params['type'] = type_str
         if 'default' in params:
-            if self.defaults is not None:
-                params['default'] = self.defaults.get(action.dest)
+            defaults = formatter_defaults.get()
+            if defaults is not None:
+                params['default'] = defaults.get(action.dest)
             if params['default'] is None:
                 params['default'] = 'null'
             elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):
@@ -148,8 +162,9 @@ class DefaultHelpFormatter(HelpFormatter):
                     subparsers.update(get_subparsers(subparser, prefix=full_key))
             return subparsers
 
-        parsers = get_subparsers(self._parser)
-        parsers[None] = self._parser
+        parser = formatter_parser.get()
+        parsers = get_subparsers(parser)
+        parsers[None] = parser
 
         group_titles = {}
         for parser_key, parser in parsers.items():
@@ -165,7 +180,7 @@ class DefaultHelpFormatter(HelpFormatter):
         def set_comments(cfg, prefix='', depth=0):
             for key in cfg.keys():
                 full_key = (prefix+'.' if prefix else '')+key
-                action = _find_action(self._parser, full_key)
+                action = _find_action(parser, full_key)
                 text = None
                 if full_key in group_titles and isinstance(cfg[key], dict):
                     text = group_titles[full_key]
@@ -178,8 +193,8 @@ class DefaultHelpFormatter(HelpFormatter):
                 elif text:
                     self.set_yaml_argument_comment(text, cfg, key, depth)
 
-        if self._parser.description is not None:
-            self.set_yaml_start_comment(self._parser.description, cfg)
+        if parser.description is not None:
+            self.set_yaml_start_comment(parser.description, cfg)
         set_comments(cfg)
         out = StringIO()
         yaml.dump(cfg, out)
@@ -234,3 +249,12 @@ class DefaultHelpFormatter(HelpFormatter):
             depth: The nested level of the argument.
         """
         cfg.yaml_set_comment_before_after_key(key, before='\n'+text, indent=2*depth)
+
+
+def get_env_var(parser_or_formatter: Union['ArgumentParser', DefaultHelpFormatter], action: Action) -> str:
+    """Returns the environment variable for a given parser or formatter and action."""
+    if isinstance(parser_or_formatter, DefaultHelpFormatter):
+        parser_or_formatter = formatter_parser.get()
+    env_var = (parser_or_formatter._env_prefix+'_' if parser_or_formatter._env_prefix else '') + action.dest
+    env_var = env_var.replace('.', '__').upper()
+    return env_var
