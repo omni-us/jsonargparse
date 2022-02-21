@@ -507,7 +507,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         with change_to_path_dir(fpath):
             cfg_str = fpath.get_content()
             parsed_cfg = self.parse_string(cfg_str,
-                                           cfg_path,
+                                           os.path.basename(cfg_path),
                                            ext_vars,
                                            env,
                                            defaults,

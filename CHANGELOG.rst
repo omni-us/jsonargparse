@@ -13,6 +13,13 @@ section of releases.
 v4.3.0 (2022-02-??)
 -------------------
 
+Fixed
+^^^^^
+- Dumper for ``jsonnet`` should be json instead of yaml `#123
+  <https://github.com/omni-us/jsonargparse/issues/123>`__.
+- ``jsonnet`` import path not working correctly `#122
+  <https://github.com/omni-us/jsonargparse/issues/122>`__.
+
 Changed
 ^^^^^^^
 - ``ArgumentParser`` objects are now pickleable `pytorch-lightning#12011

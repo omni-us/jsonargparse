@@ -112,6 +112,7 @@ dumpers: Dict[str, Callable] = {
     'yaml_comments': yaml_comments_dump,
     'json': json_dump,
     'json_indented': json_indented_dump,
+    'jsonnet': json_indented_dump,
 }
 
 
