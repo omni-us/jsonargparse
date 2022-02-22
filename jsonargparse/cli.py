@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 from .actions import ActionConfigFile
 from .core import ArgumentParser
 from .optionals import docstring_parser_support, import_docstring_parse
+from .util import default_config_option_help
 
 
 __all__ = ['CLI']
@@ -13,7 +14,7 @@ __all__ = ['CLI']
 def CLI(
     components: Union[Callable, Type, List[Union[Callable, Type]]] = None,
     args: List[str] = None,
-    config_help: str = 'Path to a configuration file in json or yaml format.',
+    config_help: str = default_config_option_help,
     set_defaults: Optional[Dict[str, Any]] = None,
     as_positional: bool = True,
     return_parser: bool = False,

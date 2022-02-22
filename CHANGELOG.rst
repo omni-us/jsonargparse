@@ -18,6 +18,7 @@ Added
 - Subcommands now also consider parent parser's ``default_config_files``
   `pytorch-lightning#11622
   <https://github.com/PyTorchLightning/pytorch-lightning/pull/11622>`__.
+- Automatically added group config load options are now shown in the help #121.
 
 Fixed
 ^^^^^

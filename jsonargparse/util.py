@@ -41,6 +41,9 @@ null_logger.parent = None
 NoneType = type(None)
 
 
+default_config_option_help = 'Path to a configuration file.'
+
+
 class ParserError(Exception):
     """Error raised when parsing a value fails."""
     pass

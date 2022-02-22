@@ -16,6 +16,7 @@ from .optionals import FilesCompleterMethod, get_config_read_mode
 from .type_checking import ArgumentParser, _ArgumentGroup
 from .typing import get_import_path, path_type
 from .util import (
+    default_config_option_help,
     DirectedGraph,
     ParserError,
     import_object,
@@ -280,7 +281,8 @@ class _ActionConfigLoad(Action):
             self._basetype = basetype
         else:
             self.basetype = kwargs.pop('_basetype', None)
-            kwargs['help'] = SUPPRESS
+            kwargs['metavar'] = 'CONFIG'
+            kwargs['help'] = default_config_option_help
             kwargs['default'] = SUPPRESS
             super().__init__(**kwargs)
 
