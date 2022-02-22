@@ -13,6 +13,12 @@ section of releases.
 v4.3.0 (2022-02-??)
 -------------------
 
+Added
+^^^^^
+- Subcommands now also consider parent parser's ``default_config_files``
+  `pytorch-lightning#11622
+  <https://github.com/PyTorchLightning/pytorch-lightning/pull/11622>`__.
+
 Fixed
 ^^^^^
 - Dumper for ``jsonnet`` should be json instead of yaml `#123

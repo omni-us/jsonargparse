@@ -751,7 +751,20 @@ class ActionParser:
         return base_action_group
 
 
-single_subcommand = ContextVar('single_subcommand', default=True)
+single_subcommand: ContextVar = ContextVar('single_subcommand', default=True)
+
+parent_parsers: ContextVar = ContextVar('parent_parsers', default=[])
+
+
+@contextmanager
+def parent_parsers_context(key, parser):
+    prev = parent_parsers.get()
+    curr = prev + [(key, parser)]
+    t = parent_parsers.set(curr)
+    try:
+        yield
+    finally:
+        parent_parsers.reset(t)
 
 
 class _ActionSubCommands(_SubParsersAction):
@@ -905,19 +918,20 @@ class _ActionSubCommands(_SubParsersAction):
         for subcommand, subparser in zip(subcommands, subparsers):
             # Merge environment variable values and default values
             subnamespace = None
-            if env:
-                subnamespace = subparser.parse_env(defaults=defaults, _skip_check=True)
-            elif defaults:
-                subnamespace = subparser.get_defaults(skip_check=True)
+            key = prefix + subcommand
+            with parent_parsers_context(key, parser):
+                if env:
+                    subnamespace = subparser.parse_env(defaults=defaults, _skip_check=True)
+                elif defaults:
+                    subnamespace = subparser.get_defaults(skip_check=True)
 
             # Update all subcommand settings
             if subnamespace is not None:
-                cfg[prefix+subcommand] = subparser.merge_config(cfg.get(prefix+subcommand, Namespace()), subnamespace)
+                cfg[key] = subparser.merge_config(cfg.get(key, Namespace()), subnamespace)
 
             # Handle inner subcommands
             if subparser._subparsers is not None:
-                prefix = prefix + subcommand + '.'
-                _ActionSubCommands.handle_subcommands(subparser, cfg, env, defaults, prefix, fail_no_subcommand=fail_no_subcommand)
+                _ActionSubCommands.handle_subcommands(subparser, cfg, env, defaults, key+'.', fail_no_subcommand=fail_no_subcommand)
 
 
 class ActionPathList(Action, FilesCompleterMethod):

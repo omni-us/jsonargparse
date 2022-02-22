@@ -32,6 +32,7 @@ from .actions import (
     _find_parent_action_and_subcommand,
     _is_action_value_list,
     filter_default_actions,
+    parent_parsers,
 )
 from .optionals import (
     argcomplete_support,
@@ -835,13 +836,21 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             self.set_defaults(kwargs)
 
 
-    def _get_default_config_files(self) -> List[Path]:
-        default_config_files: List[Path] = []
+    def _get_default_config_files(self) -> List[Tuple[Optional[str], Path]]:
+        default_config_files = []
+
+        for key, parser in parent_parsers.get():
+            for pattern in parser.default_config_files:
+                files = sorted(glob.glob(os.path.expanduser(pattern)))
+                default_config_files += [(key, v) for v in files]
+
         for pattern in self.default_config_files:
-            default_config_files += sorted(glob.glob(os.path.expanduser(pattern)))
+            files = sorted(glob.glob(os.path.expanduser(pattern)))
+            default_config_files += [(None, x) for x in files]
+
         if len(default_config_files) > 0:
             try:
-                return [Path(x, mode=get_config_read_mode()) for x in default_config_files]
+                return [(k, Path(v, mode=get_config_read_mode())) for k, v in default_config_files]
             except TypeError:
                 pass
         return []
@@ -892,9 +901,11 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         self._logger.info('Loaded default values from parser.')
 
         default_config_files = self._get_default_config_files()
-        for default_config_file in default_config_files:
+        for key, default_config_file in default_config_files:
             with change_to_path_dir(default_config_file), load_value_context(self.parser_mode):
                 cfg_file = self._load_config_parser_mode(default_config_file.get_content())
+                if key is not None:
+                    cfg_file = cfg_file.get(key)
                 try:
                     self.print_config_skip = True
                     cfg_file = self._parse_common(

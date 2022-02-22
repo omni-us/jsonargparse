@@ -1387,6 +1387,32 @@ class SignaturesConfigTests(TempDirTestCase):
             self.assertEqual(cfg.model.as_dict(), expected)
 
 
+    def test_parent_parser_default_config_files_lightning_issue_11622(self):
+        # https://github.com/PyTorchLightning/pytorch-lightning/issues/11622
+
+        with open('default.yaml', 'w') as f:
+            f.write('fit:\n  model:\n    foo: 123')
+
+        class Foo:
+            def __init__(self, foo: int):
+                self.foo = foo
+
+        parser = ArgumentParser(default_config_files=["default.yaml"], error_handler=None)
+        parser.add_argument('--config', action=ActionConfigFile)
+        subcommands = parser.add_subcommands()
+
+        subparser = ArgumentParser()
+        subparser.add_class_arguments(Foo, nested_key="model")
+        subcommands.add_subcommand("fit", subparser)
+
+        subparser = ArgumentParser()
+        subparser.add_class_arguments(Foo, nested_key="model")
+        subcommands.add_subcommand("test", subparser)
+
+        cfg = parser.parse_args(['fit'])
+        self.assertEqual(cfg.fit.model.foo, 123)
+
+
 @unittest.skipIf(not dataclasses_support, 'dataclasses package is required')
 class DataclassesTests(unittest.TestCase):
 
