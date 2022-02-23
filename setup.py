@@ -4,10 +4,7 @@ from setuptools import setup, Command
 import re
 
 
-NAME = next(filter(lambda x: x.startswith('name = '), open('setup.cfg').readlines())).strip().split()[-1]
-NAME_TESTS = next(filter(lambda x: x.startswith('test_suite = '), open('setup.cfg').readlines())).strip().split()[-1]
-CMDCLASS = {}
-
+## Use README.rst for the package long description ##
 LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:|py:attr:| *# doctest:.*', '', open('README.rst').read())
 LONG_DESCRIPTION = re.sub('([+|][- ]{12})[- ]{5}', r'\1', LONG_DESCRIPTION)
 
@@ -25,6 +22,9 @@ LONG_DESCRIPTION = re.sub('(testcode::|doctest::).*', 'code-block:: python', LON
 
 
 ## test_coverage target ##
+NAME_TESTS = next(filter(lambda x: x.startswith('test_suite = '), open('setup.cfg').readlines())).strip().split()[-1]
+CMDCLASS = {}
+
 class CoverageCommand(Command):
     description = 'run test coverage and generate html report'
     user_options = []  # type: ignore
@@ -45,6 +45,4 @@ except ImportError:
 
 
 ## Run setuptools setup ##
-setup(long_description=LONG_DESCRIPTION,
-      package_data={NAME: ['*.pyi']},
-      cmdclass=CMDCLASS)
+setup(long_description=LONG_DESCRIPTION, cmdclass=CMDCLASS)
