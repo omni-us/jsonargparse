@@ -68,7 +68,7 @@ example_schema = {
 class JsonnetTests(TempDirTestCase):
 
     def test_parser_mode_jsonnet(self):
-        parser = ArgumentParser(parser_mode='jsonnet')
+        parser = ArgumentParser(parser_mode='jsonnet', error_handler=None)
         parser.add_argument('--cfg',
             action=ActionConfigFile)
         parser.add_argument('--param',
@@ -85,6 +85,8 @@ class JsonnetTests(TempDirTestCase):
         self.assertEqual(9, len(cfg.records))
         self.assertEqual('#8', cfg.records[-2]['ref'])
         self.assertEqual(15.5, cfg.records[-2]['val'])
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '{}}']))
 
 
     def test_parser_mode_jsonnet_import_issue_122(self):

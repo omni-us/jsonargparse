@@ -1,5 +1,6 @@
 """Code related to loading and dumping."""
 
+import inspect
 import json
 import re
 import yaml
@@ -7,7 +8,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Callable, Dict, Tuple, Type
 
-from .optionals import dump_preserve_order_support
+from .optionals import dump_preserve_order_support, import_jsonnet
 from .type_checking import ArgumentParser
 
 
@@ -56,16 +57,31 @@ def yaml_load(stream):
     return value
 
 
+def jsonnet_load(stream, path='', ext_vars=None):
+    from .jsonnet import ActionJsonnet
+    ext_vars, ext_codes = ActionJsonnet.split_ext_vars(ext_vars)
+    _jsonnet = import_jsonnet('jsonnet_load')
+    try:
+        val = _jsonnet.evaluate_snippet(path, stream, ext_vars=ext_vars, ext_codes=ext_codes)
+    except RuntimeError as ex:
+        try:
+            return yaml_load(stream)
+        except pyyaml_exceptions:
+            raise ValueError(str(ex)) from ex
+    return yaml_load(val)
+
+
 loaders: Dict[str, Callable] = {
     'yaml': yaml_load,
-    'jsonnet': yaml_load,
+    'jsonnet': jsonnet_load,
 }
 
 pyyaml_exceptions = (yaml.parser.ParserError, yaml.scanner.ScannerError)
+jsonnet_exceptions = pyyaml_exceptions + (ValueError,)
 
 loader_exceptions: Dict[str, Tuple[Type[Exception], ...]] = {
     'yaml': pyyaml_exceptions,
-    'jsonnet': pyyaml_exceptions,
+    'jsonnet': jsonnet_exceptions,
 }
 
 
@@ -73,8 +89,12 @@ def get_loader_exceptions():
     return loader_exceptions[load_value_mode.get()]
 
 
-def load_value(value: str):
-    return loaders[load_value_mode.get()](value)
+def load_value(value: str, **kwargs):
+    loader = loaders[load_value_mode.get()]
+    if kwargs:
+        params = set(list(inspect.signature(loader).parameters)[1:])
+        kwargs = {k: v for k, v in kwargs.items() if k in params}
+    return loader(value, **kwargs)
 
 
 dump_yaml_kwargs = {

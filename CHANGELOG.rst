@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.3.1 (2022-??-??)
+-------------------
+
+Fixed
+^^^^^
+- Incorrect use of ``yaml_load`` with jsonnet parser mode #125.
+
+
 v4.3.0 (2022-02-22)
 -------------------
 

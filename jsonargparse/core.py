@@ -585,12 +585,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         Raises:
             TypeError: If there is an invalid value according to the parser.
         """
-        if self.parser_mode == 'jsonnet':
-            ext_vars, ext_codes = ActionJsonnet.split_ext_vars(ext_vars)
-            _jsonnet = import_jsonnet('_load_config_parser_mode')
-            cfg_str = _jsonnet.evaluate_snippet(cfg_path, cfg_str, ext_vars=ext_vars, ext_codes=ext_codes)
         try:
-            cfg_dict = load_value(cfg_str)
+            cfg_dict = load_value(cfg_str, path=cfg_path, ext_vars=ext_vars)
         except get_loader_exceptions() as ex:
             raise TypeError(f'Problems parsing config :: {ex}') from ex
 
