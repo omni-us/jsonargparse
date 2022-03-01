@@ -17,6 +17,8 @@ Fixed
 ^^^^^
 - Incorrect use of ``yaml_load`` with jsonnet parser mode #125.
 - Load of subconfigs not correctly changing working directory #125.
+- Regression introduced in commit 97e4567 fixed and updated unit test to prevent
+  it #128.
 - ``--print_config`` fails for subcommands when ``default_env=True`` #126.
 
 

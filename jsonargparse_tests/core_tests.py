@@ -10,7 +10,7 @@ import unittest
 import warnings
 import yaml
 from io import StringIO
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from collections import OrderedDict
 from random import randint, shuffle
 from jsonargparse import (
@@ -1036,11 +1036,13 @@ class OtherTests(unittest.TestCase):
 
 
     def test_usage_and_exit_error_handler(self):
-        with _suppress_stderr():
+        err = StringIO()
+        with redirect_stderr(err):
             parser = ArgumentParser()
             parser.add_argument('--val', type=int)
             self.assertEqual(8, parser.parse_args(['--val', '8']).val)
             self.assertRaises(SystemExit, lambda: parser.parse_args(['--val', 'eight']))
+        self.assertIn('Parser key "val":', err.getvalue())
 
 
     def test_error_handler_property(self):

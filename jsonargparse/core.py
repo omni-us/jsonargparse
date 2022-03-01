@@ -936,8 +936,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         """Logs error message if a logger is set, calls the error handler and raises a ParserError."""
         self._logger.error(message)
         if self._error_handler is not None:
-            with _suppress_stderr():
-                self._error_handler(self, message)
+            self._error_handler(self, message)
         if ex is None:
             raise ParserError(message)
         else:
