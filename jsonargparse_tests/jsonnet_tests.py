@@ -108,6 +108,26 @@ class JsonnetTests(TempDirTestCase):
         self.assertEqual(str(cfg.cfg[0]), config_path)
 
 
+    def test_parser_mode_jsonnet_subconfigs_issue_125(self):
+        os.mkdir('conf')
+        with open(os.path.join('conf', 'name.libsonnet'), 'w') as f:
+            f.write('"Mike"')
+        config_path = os.path.join('conf', 'test.jsonnet')
+        with open(config_path, 'w') as f:
+            f.write('local name = import "name.libsonnet"; {"name": name, "prize": 80}')
+
+        class Class:
+            def __init__(self, name: str = 'Lucky', prize: int = 100):
+                pass
+
+        parser = ArgumentParser(parser_mode='jsonnet', error_handler=None)
+        parser.add_class_arguments(Class, 'group', sub_configs=True)
+
+        cfg = parser.parse_args([f'--group={config_path}'])
+        self.assertEqual(cfg.group.name, 'Mike')
+        self.assertEqual(cfg.group.prize, 80)
+
+
     def test_ActionJsonnet(self):
         parser = ArgumentParser(default_meta=False, error_handler=None)
         parser.add_argument('--input.ext_vars',
