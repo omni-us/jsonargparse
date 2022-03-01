@@ -16,6 +16,7 @@ v4.3.1 (2022-??-??)
 Fixed
 ^^^^^
 - Incorrect use of ``yaml_load`` with jsonnet parser mode #125.
+- ``--print_config`` fails for subcommands when ``default_env=True`` #126.
 
 
 v4.3.0 (2022-02-22)

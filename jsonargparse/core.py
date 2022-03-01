@@ -279,7 +279,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             cfg = self.merge_config(cfg, cfg_base)
 
         if env:
-            cfg_env = self.parse_env(defaults=defaults, _skip_check=True, _skip_subcommands=True)
+            with _ActionPrintConfig.skip_print_config():
+                cfg_env = self.parse_env(defaults=defaults, _skip_check=True, _skip_subcommands=True)
             cfg = self.merge_config(cfg, cfg_env)
 
         elif defaults:
@@ -903,16 +904,15 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                 if key is not None:
                     cfg_file = cfg_file.get(key)
                 try:
-                    self.print_config_skip = True
-                    cfg_file = self._parse_common(
-                        cfg=cfg_file,
-                        env=None,
-                        defaults=False,
-                        with_meta=None,
-                        skip_check=skip_check,
-                        skip_required=True,
-                    )
-                    delattr(self, 'print_config_skip')
+                    with _ActionPrintConfig.skip_print_config():
+                        cfg_file = self._parse_common(
+                            cfg=cfg_file,
+                            env=None,
+                            defaults=False,
+                            with_meta=None,
+                            skip_check=skip_check,
+                            skip_required=True,
+                        )
                 except (TypeError, KeyError, ParserError) as ex:
                     raise ParserError(f'Problem in default config file "{default_config_file}" :: {ex.args[0]}') from ex
             cfg = self.merge_config(cfg_file, cfg)

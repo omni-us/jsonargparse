@@ -523,6 +523,21 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(cfg, Namespace(subcommand=None))
 
 
+    def test_subcommand_print_config_default_env_issue_126(self):
+        subparser = ArgumentParser()
+        subparser.add_argument('--config', action=ActionConfigFile)
+        subparser.add_argument('--o', type=int, default=1)
+
+        parser = ArgumentParser(error_handler=None, default_env=True)
+        subcommands = parser.add_subcommands()
+        subcommands.add_subcommand('a', subparser)
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['a', '--print_config'])
+        self.assertEqual(yaml.safe_load(out.getvalue()), {'o': 1})
+
+
     @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
     @responses_activate
     def test_urls(self):
