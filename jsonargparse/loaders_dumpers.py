@@ -31,7 +31,7 @@ def load_value_context(mode):
         load_value_mode.reset(t)
 
 
-class DefaultLoader(yaml.SafeLoader):
+class DefaultLoader(getattr(yaml, 'CSafeLoader', yaml.SafeLoader)):  # type: ignore
     pass
 
 

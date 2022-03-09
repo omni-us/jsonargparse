@@ -10,6 +10,14 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.4.0 (2022-03-??)
+-------------------
+
+Changed
+^^^^^^^
+- Use yaml.CSafeLoader if available.
+
+
 v4.3.1 (2022-03-01)
 -------------------
 

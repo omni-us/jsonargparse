@@ -68,7 +68,7 @@ def identity(value):
 def _parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:
     """Parses yaml/json config in a string or a path"""
     cfg_path = None
-    if enable_path and isinstance(value, str):
+    if enable_path and type(value) is str:
         try:
             cfg_path = Path(value, mode=get_config_read_mode())
         except TypeError:
@@ -76,9 +76,9 @@ def _parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, O
         else:
             with change_to_path_dir(cfg_path):
                 value = load_value(cfg_path.get_content())
-    if isinstance(value, str) and value.strip() != '':
+    if type(value) is str and value.strip() != '':
         parsed_val = load_value(value)
-        if not isinstance(parsed_val, str):
+        if type(parsed_val) is not str:
             value = parsed_val
     if isinstance(value, dict) and cfg_path is not None:
         value['__path__'] = cfg_path
