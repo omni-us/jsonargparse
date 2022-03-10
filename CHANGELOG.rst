@@ -13,6 +13,12 @@ section of releases.
 v4.4.0 (2022-03-??)
 -------------------
 
+Added
+^^^^^
+- Environment variables to enable features without code change:
+    - ``JSONARGPARSE_DEFAULT_ENV`` to enable environment variable parsing.
+    - ``JSONARGPARSE_DEBUG`` to print of stack trace on parse failure.
+
 Changed
 ^^^^^^^
 - Use yaml.CSafeLoader if available.

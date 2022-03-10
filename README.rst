@@ -524,9 +524,10 @@ command line arguments, that is:
     >>> cfg.lev1.opt2
     'from env 2'
 
-Note that when creating the parser, :code:`default_env=True` was given. By
-default :py:meth:`.ArgumentParser.parse_args` does not check environment
-variables, so it has to be enabled explicitly.
+Note that when creating the parser, ``default_env=True`` was given. By default
+:py:meth:`.ArgumentParser.parse_args` does not parse environment variables. If
+``default_env`` is left unset, environment variable parsing can also be enabled
+by setting in your shell ``JSONARGPARSE_DEFAULT_ENV=true``.
 
 There is also the :py:meth:`.ArgumentParser.parse_env` function to only parse
 environment variables, which might be useful for some use cases in which there
@@ -1697,8 +1698,16 @@ completion and use it as follows:
 
 .. _logging:
 
-Logging
-=======
+Troubleshooting and logging
+===========================
+
+The standard behavior for the parse methods, when they fail, is to print a short
+message and terminate the process with a non-zero exit code. This is problematic
+during development since there is not enough information to track down the root
+of the problem. Without the need to change the source code, this default
+behavior can be changed such that in case of failure, a ParseError exception is
+raised and the full stack trace is printed. This is done by setting the
+``JSONARGPARSE_DEBUG`` environment variable to any value.
 
 The parsers from jsonargparse log some basic events, though by default this is
 disabled. To enable it the :code:`logger` argument should be set when creating

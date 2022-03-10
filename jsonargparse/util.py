@@ -88,6 +88,9 @@ def _parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, O
 def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None:
     """Error handler that prints the usage and exits with error code 2 (same behavior as argparse).
 
+    If the JSONARGPARSE_DEBUG environment variable is set, exit is skipped,
+    allowing ParserError to be raised instead.
+
     Args:
         parser: The parser object.
         message: The message describing the error being handled.
@@ -95,7 +98,8 @@ def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None
     parser.print_usage(sys.stderr)
     args = {'prog': parser.prog, 'message': message}
     sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
-    parser.exit(2)
+    if 'JSONARGPARSE_DEBUG' not in os.environ:
+        parser.exit(2)
 
 
 def _issubclass(cls, class_or_tuple):
