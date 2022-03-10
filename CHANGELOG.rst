@@ -21,7 +21,7 @@ Added
 
 Changed
 ^^^^^^^
-- Use yaml.CSafeLoader if available.
+- Use yaml.CSafeLoader for yaml loading if available.
 
 
 v4.3.1 (2022-03-01)
@@ -29,11 +29,14 @@ v4.3.1 (2022-03-01)
 
 Fixed
 ^^^^^
-- Incorrect use of ``yaml_load`` with jsonnet parser mode #125.
-- Load of subconfigs not correctly changing working directory #125.
+- Incorrect use of ``yaml_load`` with jsonnet parser mode `#125
+  <https://github.com/omni-us/jsonargparse/issues/125>`__.
+- Load of subconfigs not correctly changing working directory `#125
+  <https://github.com/omni-us/jsonargparse/issues/125>`__.
 - Regression introduced in commit 97e4567 fixed and updated unit test to prevent
-  it #128.
-- ``--print_config`` fails for subcommands when ``default_env=True`` #126.
+  it `#128 <https://github.com/omni-us/jsonargparse/issues/128>`__.
+- ``--print_config`` fails for subcommands when ``default_env=True`` `#126
+  <https://github.com/omni-us/jsonargparse/issues/126>`__.
 
 
 v4.3.0 (2022-02-22)
