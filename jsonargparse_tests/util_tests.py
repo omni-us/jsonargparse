@@ -9,8 +9,7 @@ import unittest
 import zipfile
 from jsonargparse import LoggerProperty, null_logger, Path
 from jsonargparse.optionals import fsspec_support, import_fsspec, url_support
-from jsonargparse.util import _suppress_stderr
-from jsonargparse_tests.base import responses, responses_activate, TempDirTestCase
+from jsonargparse_tests.base import responses, responses_activate, suppress_stderr, TempDirTestCase
 
 
 @unittest.skipIf(os.name != 'posix' or platform.python_implementation() != 'CPython',
@@ -255,7 +254,7 @@ class LoggingPropertyTests(unittest.TestCase):
     def test_logger_levels(self):
         levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         for num, level in enumerate(levels):
-            with self.subTest(level), _suppress_stderr():
+            with self.subTest(level), suppress_stderr():
                 test = self.TestClass(logger={'level': level})
                 with self.assertLogs(level=level) as log:
                     getattr(test.logger, level.lower())(self.log_message)

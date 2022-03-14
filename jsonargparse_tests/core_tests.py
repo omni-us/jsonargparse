@@ -39,7 +39,6 @@ from jsonargparse.optionals import (
     url_support,
 )
 from jsonargparse.typing import NotEmptyStr, Path_fc, Path_fr, PositiveFloat, PositiveInt
-from jsonargparse.util import _suppress_stderr
 from jsonargparse_tests.base import TempDirTestCase, responses, responses_activate
 
 
@@ -1101,6 +1100,14 @@ class OtherTests(unittest.TestCase):
         parser1 = example_parser()
         parser2 = pickle.loads(pickle.dumps(parser1))
         self.assertEqual(parser1.get_defaults(), parser2.get_defaults())
+
+
+    def test_unrecognized_arguments(self):
+        parser = ArgumentParser()
+        err = StringIO()
+        with redirect_stderr(err):
+            self.assertRaises(SystemExit, lambda: parser.parse_args(['--unrecognized']))
+        self.assertIn('Unrecognized arguments:', err.getvalue())
 
 
 if __name__ == '__main__':

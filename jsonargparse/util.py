@@ -8,7 +8,7 @@ import stat
 import sys
 import warnings
 from collections import defaultdict
-from contextlib import contextmanager, redirect_stderr
+from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Optional, Tuple, Union
 
@@ -134,14 +134,6 @@ def _lenient_check_context(caller=None):
         yield
     finally:
         lenient_check.reset(t)
-
-
-@contextmanager
-def _suppress_stderr():
-    """A context manager that redirects stderr to devnull."""
-    with open(os.devnull, 'w') as fnull:
-        with redirect_stderr(fnull):
-            yield None
 
 
 @contextmanager

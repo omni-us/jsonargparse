@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 import unittest
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stderr
 
 
 try:
@@ -33,6 +33,14 @@ def mock_module(*args):
     import jsonargparse_tests
     with unittest.mock.patch.multiple(jsonargparse_tests, create=True, **{c.__name__: c for c in args}):
         yield __module__
+
+
+@contextmanager
+def suppress_stderr():
+    """A context manager that redirects stderr to devnull."""
+    with open(os.devnull, 'w') as fnull:
+        with redirect_stderr(fnull):
+            yield None
 
 
 class TempDirTestCase(unittest.TestCase):

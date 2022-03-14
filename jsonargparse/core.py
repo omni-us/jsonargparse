@@ -50,7 +50,6 @@ from .util import (
     change_to_path_dir,
     Path,
     LoggerProperty,
-    _suppress_stderr,
     _lenient_check_context,
     lenient_check,
 )
@@ -338,10 +337,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                 argcomplete.autocomplete(self)
 
         try:
-            with _suppress_stderr():
-                cfg, unk = self.parse_known_args(args=args)
-                if unk:
-                    self.error(f'Unrecognized arguments: {" ".join(unk)}')
+            cfg, unk = self.parse_known_args(args=args)
+            if unk:
+                self.error(f'Unrecognized arguments: {" ".join(unk)}')
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,

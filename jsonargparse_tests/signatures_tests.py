@@ -23,8 +23,7 @@ from jsonargparse import (
 from jsonargparse.actions import _find_action
 from jsonargparse.optionals import dataclasses_support, docstring_parser_support, import_dataclasses
 from jsonargparse.typing import final, OpenUnitInterval, PositiveFloat, PositiveInt
-from jsonargparse.util import _suppress_stderr
-from jsonargparse_tests.base import mock_module, TempDirTestCase
+from jsonargparse_tests.base import mock_module, suppress_stderr, TempDirTestCase
 
 
 class SignaturesTests(unittest.TestCase):
@@ -664,7 +663,7 @@ class SignaturesTests(unittest.TestCase):
 
     def test_logger_debug(self):
 
-        with _suppress_stderr():
+        with suppress_stderr():
 
             class Class1:
                 def __init__(self,

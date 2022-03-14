@@ -19,6 +19,11 @@ Added
     - ``JSONARGPARSE_DEFAULT_ENV`` to enable environment variable parsing.
     - ``JSONARGPARSE_DEBUG`` to print of stack trace on parse failure.
 
+Fixed
+^^^^^
+- No error message for unrecognized arguments `pytorch-lightning#12303
+  <https://github.com/PyTorchLightning/pytorch-lightning/issues/12303>`__.
+
 Changed
 ^^^^^^^
 - Use yaml.CSafeLoader for yaml loading if available.
