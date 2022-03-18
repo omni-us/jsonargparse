@@ -49,6 +49,10 @@ class ParserError(Exception):
     pass
 
 
+class DebugException(Exception):
+    pass
+
+
 class JsonargparseWarning(UserWarning):
     pass
 
@@ -98,7 +102,9 @@ def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None
     parser.print_usage(sys.stderr)
     args = {'prog': parser.prog, 'message': message}
     sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
-    if 'JSONARGPARSE_DEBUG' not in os.environ:
+    if 'JSONARGPARSE_DEBUG' in os.environ:
+        raise DebugException('jsonargparse debug enabled, thus raising exception instead of exit.')
+    else:
         parser.exit(2)
 
 

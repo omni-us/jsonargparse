@@ -39,6 +39,7 @@ from jsonargparse.optionals import (
     url_support,
 )
 from jsonargparse.typing import NotEmptyStr, Path_fc, Path_fr, PositiveFloat, PositiveInt
+from jsonargparse.util import DebugException
 from jsonargparse_tests.base import TempDirTestCase, responses, responses_activate
 
 
@@ -1042,6 +1043,14 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(8, parser.parse_args(['--val', '8']).val)
             self.assertRaises(SystemExit, lambda: parser.parse_args(['--val', 'eight']))
         self.assertIn('Parser key "val":', err.getvalue())
+
+
+    @unittest.mock.patch.dict(os.environ, {'JSONARGPARSE_DEBUG': ''})
+    def test_debug_usage_and_exit_error_handler(self):
+        parser = ArgumentParser()
+        parser.add_argument('--int', type=int)
+        with self.assertRaises(DebugException):
+            parser.parse_args(['--int=invalid'])
 
 
     def test_error_handler_property(self):
