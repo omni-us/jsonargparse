@@ -211,7 +211,7 @@ method [arguments]`. For more details about the automatic adding of arguments
 from classes and functions and the use of configuration files refer to section
 :ref:`classes-methods-functions`.
 
-This simple way of usage is similar and inspired by `Fire
+This simple way of usage is similar to and inspired by `Fire
 <https://pypi.org/project/fire/>`__. However, there are fundamental differences.
 First, the purpose is not allowing to call any python object from the command
 line. It is only intended for running functions and classes specifically written
@@ -280,6 +280,40 @@ shown above you would observe:
 If the parsing fails the standard behavior is that the usage is printed and the
 program is terminated. Alternatively you can initialize the parser with
 :code:`error_handler=None` in which case a :class:`.ParserError` is raised.
+
+Capturing parsers
+-----------------
+
+It can be common practice to have a function that implements an entire CLI or a
+function that constructs a parser conditionally based on some parameters and
+then parses. For example, one might have:
+
+.. testcode::
+
+    from jsonargparse import ArgumentParser
+
+    def main_cli():
+        parser = ArgumentParser()
+        ...
+        cfg = parser.parse_args()
+        ...
+
+    if __name__ == '__main__':
+        main_cli()
+
+For some use cases it is necessary to get an instance of the parser object,
+without doing any parsing. For instance `sphinx-argparse
+<https://sphinx-argparse.readthedocs.io/en/stable/>`__ can be used to include
+the help of CLIs in automatically generated documentation of a package. To use
+sphinx-argparse it is necessary to have a function that returns the parser.
+Having a CLI function this could be easily implemented as follows:
+
+.. testcode::
+
+    from jsonargparse import capture_parser
+
+    def get_parser():
+        return capture_parser(main_cli)
 
 
 .. _nested-namespaces:

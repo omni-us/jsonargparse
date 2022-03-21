@@ -6,6 +6,7 @@ import platform
 from contextlib import contextmanager
 from importlib.util import find_spec
 
+from .namespace import Namespace
 
 __all__ = [
     'get_config_read_mode',
@@ -148,6 +149,21 @@ class FilesCompleterMethod:
     """Completer method for Action classes that should complete files."""
     def completer(self, prefix, **kwargs):
         return sorted(files_completer(prefix, **kwargs))
+
+
+def argcomplete_autocomplete(parser):
+    if argcomplete_support:
+        argcomplete = import_argcomplete('parse_args')
+        from .loaders_dumpers import load_value_context
+        with load_value_context(parser.parser_mode):
+            argcomplete.autocomplete(parser)
+
+
+def argcomplete_namespace(caller, parser, namespace):
+    if caller == 'argcomplete':
+        namespace.__class__ = Namespace
+        namespace = parser.merge_config(parser.get_defaults(skip_check=True), namespace).as_flat()
+    return namespace
 
 
 def argcomplete_warn_redraw_prompt(prefix, message):

@@ -10,7 +10,7 @@ import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
 
 from .loaders_dumpers import load_value
 from .optionals import (
@@ -25,11 +25,12 @@ from .type_checking import ArgumentParser
 
 
 __all__ = [
-    'ParserError',
-    'null_logger',
-    'usage_and_exit_error_handler',
-    'Path',
+    'capture_parser',
     'LoggerProperty',
+    'null_logger',
+    'ParserError',
+    'Path',
+    'usage_and_exit_error_handler',
 ]
 
 
@@ -63,6 +64,51 @@ def warning(message, category=JsonargparseWarning, stacklevel=1):
         category=category,
         stacklevel=stacklevel+1,
     )
+
+
+class CaptureParserException(Exception):
+    def __init__(self, parser: Optional[ArgumentParser]):
+        self.parser = parser
+        super().__init__('' if parser else 'No parse_args call to capture the parser.')
+
+
+parser_captured: ContextVar = ContextVar('parser_captured', default=False)
+
+
+@contextmanager
+def capture_parser_context():
+    t = parser_captured.set(True)
+    try:
+        yield
+    finally:
+        parser_captured.reset(t)
+
+
+def capture_parser(function: Callable, *args, **kwargs) -> ArgumentParser:
+    """Returns the parser object used within the execution of a function.
+
+    The function execution is stopped on the start of the call to parse_args. No
+    parsing is done or execution of instructions after the parse_args.
+
+    Args:
+        function: A callable that internally creates a parser and calls parse_args.
+        *args: Positional arguments used to run the function.
+        **kwargs: Keyword arguments used to run the function.
+
+    Raises:
+        CaptureParserException: If the function does not call parse_args.
+    """
+    try:
+        with capture_parser_context():
+            function(*args, **kwargs)
+    except CaptureParserException as ex:
+        return ex.parser
+    raise CaptureParserException(None)
+
+
+def return_parser_if_captured(parser: ArgumentParser):
+    if parser_captured.get():
+        raise CaptureParserException(parser)
 
 
 def identity(value):

@@ -239,3 +239,9 @@ def set_url_support(enabled:bool):
         urls_enabled=enabled,
         fsspec_enabled=True if 's' in get_config_read_mode() else False,
     )
+
+
+cli_return_parser_message = """
+    The return_parser parameter was deprecated in v4.5.0 and will be removed in
+    v5.0.0. Instead of this use function capture_parser.
+"""

@@ -35,13 +35,13 @@ from .actions import (
     parent_parsers,
 )
 from .optionals import (
-    argcomplete_support,
+    argcomplete_autocomplete,
+    argcomplete_namespace,
     fsspec_support,
-    omegaconf_support,
     get_config_read_mode,
-    import_jsonnet,
-    import_argcomplete,
     import_fsspec,
+    import_jsonnet,
+    omegaconf_support,
 )
 from .util import (
     identity,
@@ -52,6 +52,7 @@ from .util import (
     LoggerProperty,
     _lenient_check_context,
     lenient_check,
+    return_parser_if_captured,
 )
 
 
@@ -216,9 +217,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         if namespace is None:
             namespace = Namespace()
 
-        if caller == 'argcomplete':
-            namespace.__class__ = Namespace
-            namespace = self.merge_config(self.get_defaults(skip_check=True), namespace).as_flat()
+        namespace = argcomplete_namespace(caller, self, namespace)
 
         try:
             with patch('argparse.Namespace', Namespace), _lenient_check_context(caller), ActionTypeHint.subclass_arg_context(self), load_value_context(self.parser_mode):
@@ -331,10 +330,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
-        if argcomplete_support:
-            argcomplete = import_argcomplete('parse_args')
-            with load_value_context(self.parser_mode):
-                argcomplete.autocomplete(self)
+        return_parser_if_captured(self)
+        argcomplete_autocomplete(self)
 
         try:
             cfg, unk = self.parse_known_args(args=args)

@@ -10,6 +10,22 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
+v4.5.0 (2022-03-??)
+-------------------
+
+Added
+^^^^^
+- ``capture_parser`` function to get the parser object from a cli function.
+
+Changed
+^^^^^^^
+- Moved argcomplete code from core to optionals module.
+
+Deprecated
+^^^^^^^^^^
+- ``CLI``'s ``return_parser`` parameter will be removed in v5.0.0.
+
+
 v4.4.0 (2022-03-18)
 -------------------
 
@@ -145,7 +161,7 @@ v4.0.4 (2021-11-29)
 Fixed
 ^^^^^
 - Linking of attributes applied on instantiation ignoring compute_fn.
-- Show full class paths in --*.help description to avoid misinterpretation.
+- Show full class paths in ``--*.help`` description to avoid misinterpretation.
 - ``--*.help`` action failing when fail_untyped and/or skip is required. `#101
   <https://github.com/omni-us/jsonargparse/issues/101>`__.
 - Raise exception if lazy_instance called with invalid lazy_kwargs.

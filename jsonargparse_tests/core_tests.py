@@ -39,7 +39,7 @@ from jsonargparse.optionals import (
     url_support,
 )
 from jsonargparse.typing import NotEmptyStr, Path_fc, Path_fr, PositiveFloat, PositiveInt
-from jsonargparse.util import DebugException
+from jsonargparse.util import CaptureParserException, capture_parser, DebugException
 from jsonargparse_tests.base import TempDirTestCase, responses, responses_activate
 
 
@@ -1049,7 +1049,8 @@ class OtherTests(unittest.TestCase):
     def test_debug_usage_and_exit_error_handler(self):
         parser = ArgumentParser()
         parser.add_argument('--int', type=int)
-        with self.assertRaises(DebugException):
+        err = StringIO()
+        with redirect_stderr(err), self.assertRaises(DebugException):
             parser.parse_args(['--int=invalid'])
 
 
@@ -1117,6 +1118,20 @@ class OtherTests(unittest.TestCase):
         with redirect_stderr(err):
             self.assertRaises(SystemExit, lambda: parser.parse_args(['--unrecognized']))
         self.assertIn('Unrecognized arguments:', err.getvalue())
+
+
+    def test_capture_parser(self):
+        def parse_args(args=[]):
+            parser = ArgumentParser()
+            parser.add_argument('--int', type=int, default=1)
+            return parser.parse_args(args)
+
+        parser = capture_parser(parse_args, ['--int=2'])
+        self.assertIsInstance(parser, ArgumentParser)
+        self.assertEqual(parser.get_defaults(), Namespace(int=1))
+
+        with self.assertRaises(CaptureParserException):
+            capture_parser(lambda: None)
 
 
 if __name__ == '__main__':

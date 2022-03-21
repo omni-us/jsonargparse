@@ -4,6 +4,7 @@ import inspect
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 from .actions import ActionConfigFile
 from .core import ArgumentParser
+from .deprecated import cli_return_parser_message, deprecation_warning
 from .optionals import docstring_parser_support, import_docstring_parse
 from .util import default_config_option_help
 
@@ -34,7 +35,7 @@ def CLI(
         config_help: Help string for config file option in help.
         set_defaults: Dictionary of values to override components defaults.
         as_positional: Whether to add required parameters as positional arguments.
-        return_parser: Whether to return the parser instead of parsing and running.
+        return_parser: ``[DEPRECATED]`` Whether to return the parser instead of parsing and running.
         **kwargs: Used to instantiate :class:`.ArgumentParser`.
 
     Returns:
@@ -66,6 +67,7 @@ def CLI(
         if set_defaults is not None:
             parser.set_defaults(set_defaults)
         if return_parser:
+            deprecation_warning(CLI, cli_return_parser_message)
             return parser
         cfg = parser.parse_args(args)
         cfg_init = parser.instantiate_classes(cfg)
