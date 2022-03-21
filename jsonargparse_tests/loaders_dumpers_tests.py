@@ -98,5 +98,27 @@ class LoadersTests(unittest.TestCase):
             self.assertEqual('custom', subparser.parser_mode)
 
 
+    def test_dump_header_yaml(self):
+        parser = ArgumentParser()
+        parser.add_argument('--int', type=int, default=1)
+        parser.dump_header = ['line 1', 'line 2']
+        dump = parser.dump(parser.get_defaults())
+        self.assertEqual(dump, '# line 1\n# line 2\nint: 1\n')
+
+
+    def test_dump_header_json(self):
+        parser = ArgumentParser()
+        parser.add_argument('--int', type=int, default=1)
+        parser.dump_header = ['line 1', 'line 2']
+        dump = parser.dump(parser.get_defaults(), format='json')
+        self.assertEqual(dump, '{"int":1}')
+
+
+    def test_dump_header_invalid(self):
+        parser = ArgumentParser()
+        with self.assertRaises(ValueError):
+            parser.dump_header = True
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

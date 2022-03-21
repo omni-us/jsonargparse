@@ -160,6 +160,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         version: Optional[str] = None,
         print_config: Optional[str] = '--print_config',
         parser_mode: str = 'yaml',
+        dump_header: Optional[List[str]] = None,
         default_config_files: Optional[List[str]] = None,
         default_env: bool = yaml_load(os.environ.get('JSONARGPARSE_DEFAULT_ENV', 'False')),
         default_meta: bool = True,
@@ -179,6 +180,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             version: Program version string to add --version argument.
             print_config: Add this as argument to print config, set None to disable.
             parser_mode: Mode for parsing configuration files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
+            dump_header: Header to include as comment when dumping a config object.
             default_config_files: Default config file locations, e.g. :code:`['~/.config/myapp/*.yaml']`.
             default_env: Set the default value on whether to parse environment variables.
             default_meta: Set the default value on whether to include metadata in config objects.
@@ -193,6 +195,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         self.default_env = default_env
         self.env_prefix = env_prefix
         self.parser_mode = parser_mode
+        self.dump_header = dump_header
         self.logger = logger
         self.error_handler = error_handler
         self._print_config = print_config
@@ -1370,6 +1373,26 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         if self._subparsers:
             for subparser in self._subcommands_action._name_parser_map.values():
                 subparser.parser_mode = parser_mode  # type: ignore
+
+
+    @property
+    def dump_header(self) -> Optional[List[str]]:
+        """Header to include as comment when dumping a config object.
+
+        :getter: Returns the current dump header.
+        :setter: Sets the dump header.
+
+        Raises:
+            ValueError: If an invalid value is given.
+        """
+        return self._dump_header
+
+
+    @dump_header.setter
+    def dump_header(self, dump_header: Optional[List[str]]):
+        if not (dump_header is None or (isinstance(dump_header, list) and all(isinstance(x, str) for x in dump_header))):
+            raise ValueError('Expected dump_header to be None or a list of strings.')
+        self._dump_header = dump_header
 
 
 if omegaconf_support:

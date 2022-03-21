@@ -135,6 +135,12 @@ dumpers: Dict[str, Callable] = {
     'jsonnet': json_indented_dump,
 }
 
+comment_prefix: Dict[str,str] = {
+    'yaml': '# ',
+    'yaml_comments': '# ',
+    'jsonnet': '// ',
+}
+
 
 def check_valid_dump_format(dump_format: str):
     if dump_format not in {'parser_mode'}.union(set(dumpers.keys())):
@@ -145,7 +151,12 @@ def dump_using_format(parser: 'ArgumentParser', data: dict, dump_format: str) ->
     if dump_format == 'parser_mode':
         dump_format = parser.parser_mode if parser.parser_mode in dumpers else 'yaml'
     args = (data, parser) if dump_format == 'yaml_comments' else (data,)
-    return dumpers[dump_format](*args)
+    dump = dumpers[dump_format](*args)
+    if parser.dump_header and comment_prefix.get(dump_format):
+        prefix = comment_prefix[dump_format]
+        header = '\n'.join(prefix + line for line in parser.dump_header)
+        dump = f'{header}\n{dump}'
+    return dump
 
 
 def set_loader(mode: str, loader_fn: Callable[[str], Any], exceptions: Tuple[Type[Exception], ...] = pyyaml_exceptions):

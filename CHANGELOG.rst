@@ -16,6 +16,8 @@ v4.5.0 (2022-03-??)
 Added
 ^^^^^
 - ``capture_parser`` function to get the parser object from a cli function.
+- ``dump_header`` property to set header for yaml/jsonnet dumpers `#79
+  <https://github.com/omni-us/jsonargparse/issues/79>`__.
 
 Changed
 ^^^^^^^
