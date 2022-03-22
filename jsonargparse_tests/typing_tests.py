@@ -5,14 +5,12 @@ import pathlib
 import pickle
 import unittest
 from datetime import timedelta
-from typing import Callable
-from jsonargparse import ArgumentParser, CLI, Namespace, ParserError
+from jsonargparse import ArgumentParser, ParserError
 from jsonargparse.typing import (
     ClosedUnitInterval,
     Email,
     NonNegativeFloat,
     NonNegativeInt,
-    object_path_serializer,
     OpenUnitInterval,
     Path_fr,
     path_type,
@@ -23,6 +21,7 @@ from jsonargparse.typing import (
     restricted_number_type,
     restricted_string_type,
 )
+from jsonargparse.util import object_path_serializer
 from jsonargparse_tests.base import mock_module, TempDirTestCase
 
 
@@ -192,15 +191,6 @@ class OtherTests(unittest.TestCase):
 
     def test_name_clash(self):
         self.assertRaises(ValueError, lambda: restricted_string_type('List', '^clash$'))
-
-
-    def test_Callable(self):
-        CallableType = registered_types[Callable]
-        self.assertEqual(CallableType.deserializer('jsonargparse.CLI'), CLI)
-        self.assertRaises(ValueError, lambda: CallableType.deserializer(None))
-        self.assertEqual(CallableType.serializer(CLI), 'jsonargparse.cli.CLI')
-        self.assertRaises(ValueError, lambda: CallableType.serializer(lambda: None))
-        self.assertRaises(ValueError, lambda: CallableType.serializer(Namespace(__module__='jsonargparse.cli', __name__='CLI')))
 
 
     def test_serialize_class_method_path(self):

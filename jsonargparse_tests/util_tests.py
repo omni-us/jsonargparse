@@ -7,8 +7,9 @@ import pathlib
 import platform
 import unittest
 import zipfile
-from jsonargparse import LoggerProperty, null_logger, Path
+from jsonargparse import ArgumentParser, LoggerProperty, null_logger, Path
 from jsonargparse.optionals import fsspec_support, import_fsspec, url_support
+from jsonargparse.util import get_import_path, import_object
 from jsonargparse_tests.base import responses, responses_activate, suppress_stderr, TempDirTestCase
 
 
@@ -268,6 +269,21 @@ class LoggingPropertyTests(unittest.TestCase):
     def test_failure_cases(self):
         self.assertRaises(ValueError, lambda: self.TestClass(logger={'level': 'invalid'}))
         self.assertRaises(ValueError, lambda: self.TestClass(logger=self.TestClass))
+
+
+class ImportFunctionsTests(unittest.TestCase):
+
+    def test_import_object_invalid(self):
+        self.assertRaises(ValueError, lambda: import_object(True))
+        self.assertRaises(ValueError, lambda: import_object('jsonargparse-tests.os'))
+
+
+    def test_get_import_path(self):
+        self.assertEqual(get_import_path(ArgumentParser), 'jsonargparse.ArgumentParser')
+        self.assertEqual(get_import_path(ArgumentParser.merge_config), 'jsonargparse.ArgumentParser.merge_config')
+        from email.mime.base import MIMEBase
+        self.assertEqual(get_import_path(MIMEBase), 'email.mime.base.MIMEBase')
+
 
 
 if __name__ == '__main__':

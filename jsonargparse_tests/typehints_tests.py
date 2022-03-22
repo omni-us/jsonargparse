@@ -267,16 +267,65 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual('uuid: '+str(id1)+'\nuuids:\n- '+str(id1)+'\n- '+str(id2)+'\n', parser.dump(cfg))
 
 
-    def test_Callable(self):
+    def test_Callable_with_function_path(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--callable', type=Callable)
         parser.add_argument('--list', type=List[Callable])
 
         cfg = parser.parse_args(['--callable=jsonargparse.CLI'])
         self.assertEqual(CLI, cfg.callable)
-        self.assertEqual(parser.dump(cfg), 'callable: jsonargparse.cli.CLI\n')
+        self.assertEqual(parser.dump(cfg), 'callable: jsonargparse.CLI\n')
         self.assertEqual([CLI], parser.parse_args(['--list=[jsonargparse.CLI]']).list)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--callable=jsonargparse.not_exist']))
+
+
+    def test_Callable_with_class_path(self):
+        class MyFunc1:
+            def __init__(self, p1: int = 1):
+                self.p1 = p1
+            def __call__(self):
+                return self.p1
+
+        class MyFunc2(MyFunc1):
+            pass
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--callable', type=Callable)
+
+        with mock_module(MyFunc1, MyFunc2) as module:
+            value = {'class_path': f'{module}.MyFunc2', 'init_args': {'p1': 1}}
+            cfg = parser.parse_args([f'--callable={module}.MyFunc2'])
+            self.assertEqual(cfg.callable.as_dict(), value)
+            value = {'class_path': f'{module}.MyFunc1', 'init_args': {'p1': 2}}
+            cfg = parser.parse_args([f'--callable={json.dumps(value)}'])
+            self.assertEqual(cfg.callable.as_dict(), value)
+            self.assertEqual(yaml.safe_load(parser.dump(cfg))['callable'], value)
+            cfg_init = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg_init.callable, MyFunc1)
+            self.assertEqual(cfg_init.callable(), 2)
+
+            self.assertRaises(ParserError, lambda: parser.parse_args(['--callable={}']))
+            self.assertRaises(ParserError, lambda: parser.parse_args(['--callable=jsonargparse.SUPPRESS']))
+            self.assertRaises(ParserError, lambda: parser.parse_args(['--callable=calendar.Calendar']))
+            value = {'class_path': f'{module}.MyFunc1', 'key': 'val'}
+            self.assertRaises(ParserError, lambda: parser.parse_args([f'--callable={json.dumps(value)}']))
+
+
+    def test_typed_Callable_with_function_path(self):
+        def my_func_1(p: int) -> str:
+            return str(p)
+
+        def my_func_2(p: str) -> int:
+            return int(p)
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--callable', type=Callable[[int], str])
+
+        with mock_module(my_func_1, my_func_2) as module:
+            cfg = parser.parse_args([f'--callable={module}.my_func_1'])
+            self.assertEqual(my_func_1, cfg.callable)
+            cfg = parser.parse_args([f'--callable={module}.my_func_2'])
+            self.assertEqual(my_func_2, cfg.callable)  # Currently callable types are ignored
 
 
     def test_class_type(self):

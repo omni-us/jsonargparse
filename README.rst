@@ -306,7 +306,8 @@ without doing any parsing. For instance `sphinx-argparse
 <https://sphinx-argparse.readthedocs.io/en/stable/>`__ can be used to include
 the help of CLIs in automatically generated documentation of a package. To use
 sphinx-argparse it is necessary to have a function that returns the parser.
-Having a CLI function this could be easily implemented as follows:
+Having a CLI function this could be easily implemented with
+:func:`.capture_parser` as follows:
 
 .. testcode::
 
@@ -314,6 +315,11 @@ Having a CLI function this could be easily implemented as follows:
 
     def get_parser():
         return capture_parser(main_cli)
+
+.. note::
+
+    The official way to obtain the parser for command line tool based on
+    :func:`.CLI` is by using :func:`.capture_parser`.
 
 
 .. _nested-namespaces:
@@ -852,8 +858,12 @@ Some notes about this support are:
   default :code:`Optional[str] = None` would be shown in the help as
   :code:`type: Union[str, null], default: null`.
 
-- :code:`Callable` has an experimental partial implementation and not officially
-  supported yet.
+- :code:`Callable` is supported by either giving a dot import path to a callable
+  object, or by giving a dict with a ``class_path`` and optionally ``init_args``
+  entries specifying a class that once instantiated is callable. Running
+  :py:meth:`.ArgumentParser.instantiate_classes` will instantiate the callable
+  classes. Currently the callable's arguments and return types are ignored and
+  not validated.
 
 
 .. _restricted-numbers:

@@ -138,8 +138,8 @@ def _parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, O
 def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None:
     """Error handler that prints the usage and exits with error code 2 (same behavior as argparse).
 
-    If the JSONARGPARSE_DEBUG environment variable is set, exit is skipped,
-    allowing ParserError to be raised instead.
+    If the JSONARGPARSE_DEBUG environment variable is set, instead of exit, a
+    DebugException is raised.
 
     Args:
         parser: The parser object.
@@ -174,6 +174,48 @@ def import_object(name: str):
         name_module, name_object1 = name_module.rsplit('.', 1)
         parent = getattr(__import__(name_module, fromlist=[name_object1]), name_object1)
     return getattr(parent, name_object)
+
+
+def import_module_leaf(name: str):
+    """Similar to __import__(name) but returns the leaf module instead of the root."""
+    if '.' in name:
+        name_parent, name_leaf = name.rsplit('.', 1)
+        parent = __import__(name_parent, fromlist=[name_leaf])
+        module = getattr(parent, name_leaf)
+    else:
+        module = __import__(name)
+    return module
+
+
+def get_import_path(value):
+    """Returns the shortest dot import path for the given object."""
+    path = value.__module__ + '.' + value.__qualname__
+    if '.' in value.__module__:
+        module_parts = value.__module__.split('.')
+        for num in range(len(module_parts)):
+            module_path = '.'.join(module_parts[:num+1])
+            module = import_module_leaf(module_path)
+            if '.' in value.__qualname__:
+                obj_name, attr = value.__qualname__.rsplit('.', 1)
+                obj = getattr(module, obj_name, None)
+                if getattr(obj, attr, None) is value:
+                    path = module_path + '.' + value.__qualname__
+                    break
+            elif getattr(module, value.__qualname__, None) is value:
+                path = module_path + '.' + value.__qualname__
+                break
+    return path
+
+
+def object_path_serializer(value):
+    try:
+        path = get_import_path(value)
+        reimported = import_object(path)
+        if value is not reimported:
+            raise ValueError
+        return path
+    except Exception as ex:
+        raise ValueError(f'Only possible to serialize an importable object, given {value}: {ex}') from ex
 
 
 lenient_check: ContextVar = ContextVar('lenient_check', default=False)

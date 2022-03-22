@@ -14,10 +14,11 @@ from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import is_empty_namespace, Namespace, split_key, split_key_leaf, split_key_root
 from .optionals import FilesCompleterMethod, get_config_read_mode
 from .type_checking import ArgumentParser, _ArgumentGroup
-from .typing import get_import_path, path_type
+from .typing import path_type
 from .util import (
     default_config_option_help,
     DirectedGraph,
+    get_import_path,
     ParserError,
     import_object,
     change_to_path_dir,

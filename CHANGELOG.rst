@@ -18,10 +18,19 @@ Added
 - ``capture_parser`` function to get the parser object from a cli function.
 - ``dump_header`` property to set header for yaml/jsonnet dumpers `#79
   <https://github.com/omni-us/jsonargparse/issues/79>`__.
+- ``Callable`` type now supports callable classes `#110
+  <https://github.com/omni-us/jsonargparse/issues/110>`__.
+
+Fixed
+^^^^^
+- Bug in check for ``class_path``, ``init_args`` dicts.
+- Module mocks in cli_tests.py.
 
 Changed
 ^^^^^^^
 - Moved argcomplete code from core to optionals module.
+- ``Callable`` no longer a simple registered type.
+- Import paths are now serialized as its shortest form.
 
 Deprecated
 ^^^^^^^^^^

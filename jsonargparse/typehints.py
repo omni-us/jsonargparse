@@ -6,19 +6,14 @@ import os
 import re
 import warnings
 from argparse import Action
-from collections.abc import Iterable as abcIterable
-from collections.abc import Mapping as abcMapping
-from collections.abc import MutableMapping as abcMutableMapping
-from collections.abc import Set as abcSet
-from collections.abc import MutableSet as abcMutableSet
-from collections.abc import Sequence as abcSequence
-from collections.abc import MutableSequence as abcMutableSequence
+from collections import abc
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import Enum
 from functools import partial
 from typing import (
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -37,14 +32,16 @@ from typing import (
 from .actions import _find_action, _is_action_value_list
 from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import is_empty_namespace, Namespace
-from .typing import get_import_path, is_final_class, object_path_serializer, registered_types
+from .typing import is_final_class, registered_types
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     files_completer,
 )
 from .util import (
     change_to_path_dir,
+    get_import_path,
     import_object,
+    object_path_serializer,
     ParserError,
     Path,
     NoneType,
@@ -71,10 +68,11 @@ root_types = {
     Literal,
     Type, type,
     Union,
-    List, list, Iterable, Sequence, MutableSequence, abcIterable, abcSequence, abcMutableSequence,
+    List, list, Iterable, Sequence, MutableSequence, abc.Iterable, abc.Sequence, abc.MutableSequence,
     Tuple, tuple,
-    Set, set, frozenset, MutableSet, abcMutableSet,
-    Dict, dict, Mapping, MutableMapping, abcMapping, abcMutableMapping,
+    Set, set, frozenset, MutableSet, abc.MutableSet,
+    Dict, dict, Mapping, MutableMapping, abc.Mapping, abc.MutableMapping,
+    Callable, abc.Callable,
 }
 
 leaf_types = {
@@ -88,10 +86,11 @@ leaf_types = {
 not_subclass_types: Set = set(k for k in registered_types.keys() if not isinstance(k, tuple))
 not_subclass_types = not_subclass_types.union(leaf_types).union(root_types)
 
-tuple_set_origin_types = {Tuple, tuple, Set, set, frozenset, MutableSet, abcSet, abcMutableSet}
-sequence_origin_types = {List, list, Iterable, Sequence, MutableSequence, abcIterable, abcSequence,
-                         abcMutableSequence}
-mapping_origin_types = {Dict, dict, Mapping, MutableMapping, abcMapping, abcMutableMapping}
+tuple_set_origin_types = {Tuple, tuple, Set, set, frozenset, MutableSet, abc.Set, abc.MutableSet}
+sequence_origin_types = {List, list, Iterable, Sequence, MutableSequence, abc.Iterable, abc.Sequence,
+                         abc.MutableSequence}
+mapping_origin_types = {Dict, dict, Mapping, MutableMapping, abc.Mapping, abc.MutableMapping}
+callable_origin_types = {Callable, abc.Callable}
 
 
 subclass_arg_parser: ContextVar = ContextVar('subclass_arg_parser')
@@ -508,6 +507,41 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                     kwargs = adapt_kwargs
                 val[k] = adapt_typehints(v, subtypehints[1], **kwargs)
 
+    # Callable
+    elif typehint_origin in callable_origin_types or typehint in callable_origin_types:
+        if serialize:
+            if is_class_object(val):
+                class_path = val['class_path']
+                init_args = val.get('init_args', Namespace())
+                val['init_args'] = adapt_class_type(class_path, init_args, True, False, sub_add_kwargs)
+            else:
+                val = object_path_serializer(val)
+        else:
+            try:
+                if isinstance(val, str):
+                    val_obj = import_object(val)
+                    if inspect.isclass(val_obj):
+                        val = {'class_path': val}
+                    elif callable(val_obj):
+                        val = val_obj
+                    else:
+                        raise ImportError(f'Unexpected import object {val_obj}')
+                if isinstance(val, (dict, Namespace)):
+                    if not is_class_object(val):
+                        raise ImportError(f'Dict must include a class_path and optionally init_args, but got {val}')
+                    val = Namespace(val)
+                    val_class = import_object(val.class_path)
+                    if not (inspect.isclass(val_class) and callable(lazy_instance(val_class))):  # TODO: how to check callable without instance?
+                        raise ImportError(f'"{val.class_path}" is not a callable class.')
+                    init_args = val.get('init_args', Namespace())
+                    adapted = adapt_class_type(val_class, init_args, False, instantiate_classes, sub_add_kwargs)
+                    if instantiate_classes and sub_add_kwargs.get('instantiate', True):
+                        val = adapted
+                    elif adapted is not None and not is_empty_namespace(adapted):
+                        val['init_args'] = adapted
+            except (ImportError, AttributeError, ParserError) as ex:
+                raise ValueError(f'Type {typehint} expects a function or a callable class: {ex}')
+
     # Final class
     elif is_final_class(typehint):
         if isinstance(val, dict):
@@ -520,12 +554,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):
         if isinstance(val, typehint):
             if serialize:
-                val = str(val)
-                warning(f"""
-                    Not possible to serialize an instance of {typehint}. It will
-                    be represented as the string {val}. If this was set as a
-                    default, consider using lazy_instance.
-                """)
+                val = serialize_class_instance(val)
             return val
         if serialize and isinstance(val, str):
             return val
@@ -537,8 +566,6 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
             elif isinstance(val, dict):
                 val = Namespace(val)
             val_class = import_object(val['class_path'])
-            if isinstance(val.get('init_args'), dict):
-                val['init_args'] = Namespace(val['init_args'])
             if not _issubclass(val_class, typehint):
                 raise ValueError(f'"{val["class_path"]}" is not a subclass of {typehint.__name__}')
             init_args = val.get('init_args', Namespace())
@@ -556,7 +583,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
 
 
 def is_class_object(val):
-    is_class = isinstance(val, (dict, Namespace)) and 'class_path'
+    is_class = isinstance(val, (dict, Namespace)) and 'class_path' in val
     if is_class:
         keys = getattr(val, '__dict__', val).keys()
         is_class = len(set(keys)-{'class_path', 'init_args', '__path__'}) == 0
@@ -573,8 +600,8 @@ def dump_kwargs_context(kwargs):
 
 
 def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs):
-    if not isinstance(init_args, Namespace):
-        raise ValueError(f'Unexpected init_args value: "{init_args}".')
+    if isinstance(init_args, dict):
+        init_args = Namespace(init_args)
     parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
 
     # No need to re-create the linked arg but just "inform" the corresponding parser actions that it exists upstream.
@@ -645,6 +672,17 @@ def typehint_metavar(typehint):
         enum = typehint.__args__[0]
         metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
     return metavar
+
+
+def serialize_class_instance(val):
+    type_val = type(val)
+    val = str(val)
+    warning(f"""
+        Not possible to serialize an instance of {type_val}. It will be
+        represented as the string {val}. If this was set as a default, consider
+        using lazy_instance.
+    """)
+    return val
 
 
 def check_lazy_kwargs(class_type: Type, lazy_kwargs: dict):

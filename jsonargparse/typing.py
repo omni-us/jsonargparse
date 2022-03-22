@@ -5,7 +5,7 @@ import re
 import uuid
 from datetime import timedelta
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
-from .util import import_object, Path
+from .util import Path
 
 
 __all__ = [
@@ -336,29 +336,6 @@ Path_drw = path_type('drw', docstring='str pointing to a directory that exists a
 
 register_type(complex)
 register_type(uuid.UUID)
-
-
-def get_import_path(value):
-    return value.__module__+'.'+value.__qualname__
-
-
-def object_path_serializer(value):
-    try:
-        path = get_import_path(value)
-        reimported = import_object(path)
-        if value is not reimported:
-            raise ValueError
-        return path
-    except Exception as ex:
-        raise ValueError(f'Only possible to serialize an importable object, given {value}: {ex}') from ex
-
-
-register_type(
-    Callable,
-    type_check=lambda v, t: callable(v),
-    serializer=object_path_serializer,
-    deserializer=lambda x: x if callable(x) else import_object(x),
-)
 
 
 def timedelta_deserializer(value):

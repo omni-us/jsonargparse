@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+import sys
 import unittest
 import yaml
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from jsonargparse import ArgumentParser, CLI, lazy_instance
 from jsonargparse.optionals import docstring_parser_support, ruyaml_support
-from jsonargparse_tests.base import TempDirTestCase
+from jsonargparse_tests.base import mock_module, TempDirTestCase
 
 
 class CLITests(unittest.TestCase):
@@ -165,7 +166,9 @@ class CLITests(unittest.TestCase):
         def empty_context():
             CLI()
 
-        self.assertRaises(ValueError, empty_context)
+        with unittest.mock.patch('inspect.getmodule') as mock_getmodule:
+            mock_getmodule.return_value = sys.modules['jsonargparse.core']
+            self.assertRaises(ValueError, empty_context)
 
 
     def test_non_empty_context(self):
@@ -184,64 +187,59 @@ class CLITests(unittest.TestCase):
 
             return CLI(args=['a', 'method1', '2'])
 
-        with unittest.mock.patch(f'{__name__}.__name__', 'jsonargparse_tests.cli_tests'):
+        with unittest.mock.patch('inspect.getmodule') as mock_getmodule:
+            mock_getmodule.return_value = sys.modules['jsonargparse.core']
             self.assertEqual(6.7, non_empty_context_1())
             self.assertEqual(('a', 2), non_empty_context_2())
-
-
-class A:
-    def __init__(self, p1: str = 'a default'):
-        self.p1 = p1
-
-
-class B:
-    def __init__(self, a: A = A()):
-        self.a = a
-
-
-class C:
-    def __init__(self, a: A = lazy_instance(A), b: B = None):
-        self.a = a
-        self.b = b
-    def cmd_a(self):
-        print(self.a.p1)
-    def cmd_b(self):
-        print(self.b.a.p1)
 
 
 class CLITempDirTests(TempDirTestCase):
 
     def test_subclass_type_config_file(self):
-        a_yaml = {
-            'class_path': f'{__name__}.A',
-            'init_args': {'p1': 'a yaml'}
-        }
+        class A:
+            def __init__(self, p1: str = 'a default'):
+                self.p1 = p1
 
-        with open('config.yaml', 'w') as f:
-            f.write('a: a.yaml\n')
-        with open('a.yaml', 'w') as f:
-            f.write(yaml.safe_dump(a_yaml))
+        class B:
+            def __init__(self, a: A = A()):
+                self.a = a
 
-        from jsonargparse_tests import cli_tests
-        setattr(cli_tests, 'A', A)
-        setattr(cli_tests, 'B', B)
+        class C:
+            def __init__(self, a: A = lazy_instance(A), b: B = None):
+                self.a = a
+                self.b = b
+            def cmd_a(self):
+                print(self.a.p1)
+            def cmd_b(self):
+                print(self.b.a.p1)
 
-        out = StringIO()
-        with redirect_stdout(out):
-            CLI(C, args=['--config=config.yaml', 'cmd_a'])
-        self.assertEqual('a yaml\n', out.getvalue())
 
-        with open('config.yaml', 'w') as f:
-            f.write('a: a.yaml\nb: b.yaml\n')
-        with open('b.yaml', 'w') as f:
-            f.write(f'class_path: {__name__}.B\ninit_args:\n  a: a.yaml\n')
+        with mock_module(A, B) as module:
+            a_yaml = {
+                'class_path': f'{module}.A',
+                'init_args': {'p1': 'a yaml'}
+            }
 
-        out = StringIO()
-        with redirect_stdout(out):
-            CLI(C, args=['--config=config.yaml', 'cmd_b'])
-        self.assertEqual('a yaml\n', out.getvalue())
+            with open('config.yaml', 'w') as f:
+                f.write('a: a.yaml\n')
+            with open('a.yaml', 'w') as f:
+                f.write(yaml.safe_dump(a_yaml))
+
+            out = StringIO()
+            with redirect_stdout(out):
+                CLI(C, args=['--config=config.yaml', 'cmd_a'])
+            self.assertEqual('a yaml\n', out.getvalue())
+
+            with open('config.yaml', 'w') as f:
+                f.write('a: a.yaml\nb: b.yaml\n')
+            with open('b.yaml', 'w') as f:
+                f.write(f'class_path: {module}.B\ninit_args:\n  a: a.yaml\n')
+
+            out = StringIO()
+            with redirect_stdout(out):
+                CLI(C, args=['--config=config.yaml', 'cmd_b'])
+            self.assertEqual('a yaml\n', out.getvalue())
 
 
 if __name__ == '__main__':
-    __name__ = 'jsonargparse_tests.cli_tests'
     unittest.main(verbosity=2)

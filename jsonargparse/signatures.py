@@ -9,8 +9,8 @@ from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 from .actions import _ActionConfigLoad, _ActionHelpClass, _ActionHelpClassPath
 from .namespace import Namespace
 from .typehints import ActionTypeHint, ClassType, is_optional
-from .typing import get_import_path, is_final_class
-from .util import _issubclass
+from .typing import is_final_class
+from .util import get_import_path, _issubclass
 from .optionals import (
     dataclasses_support,
     docstring_parser_support,
