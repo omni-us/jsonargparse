@@ -10,6 +10,7 @@ import yaml
 from calendar import Calendar
 from datetime import datetime
 from enum import Enum
+from io import StringIO
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
 from jsonargparse import ActionConfigFile, ArgumentParser, CLI, lazy_instance, Namespace, ParserError, Path
 from jsonargparse.typehints import ActionTypeHint, is_optional, Literal
@@ -90,6 +91,28 @@ class TypeHintsTests(unittest.TestCase):
                 parser.add_argument('--list', type=list_type[int])
                 cfg = parser.parse_args(['--list=[1, 2]'])
                 self.assertEqual([1, 2], cfg.list)
+
+
+    def test_enum(self):
+        class MyEnum(Enum):
+            A = 1
+            B = 2
+            C = 3
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--enum', type=MyEnum, default=MyEnum.C, help='Description')
+
+        for val in ['A', 'B', 'C']:
+            self.assertEqual(MyEnum[val], parser.parse_args(['--enum='+val]).enum)
+        for val in ['X', 'b', 2]:
+            self.assertRaises(ParserError, lambda: parser.parse_args(['--enum='+str(val)]))
+
+        cfg = parser.parse_args(['--enum=C'], with_meta=False)
+        self.assertEqual('enum: C\n', parser.dump(cfg))
+
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertIn('Description (type: MyEnum, default: C)', help_str.getvalue())
 
 
     def test_list_enum(self):
@@ -269,7 +292,7 @@ class TypeHintsTests(unittest.TestCase):
 
     def test_Callable_with_function_path(self):
         parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--callable', type=Callable)
+        parser.add_argument('--callable', type=Callable, default=lazy_instance)
         parser.add_argument('--list', type=List[Callable])
 
         cfg = parser.parse_args(['--callable=jsonargparse.CLI'])
@@ -277,6 +300,10 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(parser.dump(cfg), 'callable: jsonargparse.CLI\n')
         self.assertEqual([CLI], parser.parse_args(['--list=[jsonargparse.CLI]']).list)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--callable=jsonargparse.not_exist']))
+
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('(type: Callable, default: jsonargparse.lazy_instance)', out.getvalue())
 
 
     def test_Callable_with_class_path(self):
@@ -558,6 +585,9 @@ class TypeHintsTmpdirTests(TempDirTestCase):
                             default=Path('test', mode='drw', skip_check=True))
         cfg = parser.parse_args([])
         self.assertEqual('path: test\n', parser.dump(cfg))
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('(type: Path_drw_skip_check, default: test)', out.getvalue())
 
 
     def test_class_type_with_default_config_files(self):

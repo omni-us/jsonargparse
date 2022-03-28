@@ -127,9 +127,18 @@ class ActionTypeHint(Action):
             self._enable_path = kwargs.pop('_enable_path')
             if 'metavar' not in kwargs:
                 kwargs['metavar'] = typehint_metavar(self._typehint)
-            if isinstance(kwargs.get('default'), LazyInitBaseClass):
-                kwargs['default'] = kwargs['default'].lazy_get_init_data()
             super().__init__(**kwargs)
+            self.normalize_default()
+
+
+    def normalize_default(self):
+        default = self.default
+        if isinstance(default, LazyInitBaseClass):
+            self.default = default.lazy_get_init_data()
+        elif is_enum_type(self._typehint) and isinstance(default, Enum):
+            self.default = default.name
+        elif is_callable_type(self._typehint) and callable(default) and not inspect.isclass(default):
+            self.default = get_import_path(default)
 
 
     @staticmethod
@@ -638,11 +647,24 @@ def is_ellipsis_tuple(typehint):
 
 def is_optional(annotation, ref_type):
     """Checks whether a type annotation is an optional for one type class."""
-    return hasattr(annotation, '__origin__') and \
-        annotation.__origin__ == Union and \
+    return getattr(annotation, '__origin__', None) == Union and \
         len(annotation.__args__) == 2 and \
         any(NoneType == a for a in annotation.__args__) and \
         any(_issubclass(a, ref_type) for a in annotation.__args__)
+
+
+def is_enum_type(annotation):
+    return _issubclass(annotation, Enum) or \
+        (getattr(annotation, '__origin__', None) == Union and
+         any(_issubclass(a, Enum) for a in annotation.__args__))
+
+
+def is_callable_type(annotation):
+    def is_callable(a):
+        return getattr(a, '__origin__', a) in callable_origin_types or a in callable_origin_types
+    return is_callable(annotation) or \
+        (getattr(annotation, '__origin__', None) == Union and
+         any(is_callable(a) for a in annotation.__args__))
 
 
 def typehint_from_action(action_or_typehint):

@@ -31,6 +31,8 @@ Changed
 - Moved argcomplete code from core to optionals module.
 - ``Callable`` no longer a simple registered type.
 - Import paths are now serialized as its shortest form.
+- ``Callable`` default now shown in help as full import path.
+- Moved typehint code from core to typehint module.
 
 Deprecated
 ^^^^^^^^^^

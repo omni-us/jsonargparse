@@ -4,7 +4,6 @@ import re
 from argparse import Action, _HelpAction, HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
 from contextlib import contextmanager
 from contextvars import ContextVar
-from enum import Enum
 from io import StringIO
 from string import Template
 from typing import Optional, Union
@@ -83,7 +82,7 @@ class DefaultHelpFormatter(HelpFormatter):
         if '%(type)' not in action_help and self._get_type_str(action) is not None:
             help_str += (', ' if help_str else '') + 'type: %(type)s'
         if '%(default)' not in action_help and \
-           action.default is not SUPPRESS and \
+           action.default != SUPPRESS and \
            (action.default is not None or not is_required) and \
            (action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}):
             help_str += (', ' if help_str else '') + 'default: %(default)s'
@@ -106,26 +105,20 @@ class DefaultHelpFormatter(HelpFormatter):
 
     def _expand_help(self, action):
         params = dict(vars(action), prog=self._prog)
-        for name in list(params):
-            if params[name] is SUPPRESS:
-                del params[name]
-        for name in list(params):
-            if hasattr(params[name], '__name__'):
-                params[name] = params[name].__name__
         if params.get('choices') is not None:
             choices_str = ', '.join([str(c) for c in params['choices']])
             params['choices'] = choices_str
         type_str = self._get_type_str(action)
         if type_str is not None:
             params['type'] = type_str
-        if 'default' in params:
+        if params.get('default') == SUPPRESS:
+            del params['default']
+        elif 'default' in params:
             defaults = formatter_defaults.get()
             if defaults is not None:
                 params['default'] = defaults.get(action.dest)
             if params['default'] is None:
                 params['default'] = 'null'
-            elif isinstance(params['default'], Enum) and hasattr(params['default'], 'name'):
-                params['default'] = params['default'].name
             elif isinstance(params['default'], Namespace):
                 params['default'] = params['default'].as_dict()
         return PercentTemplate(self._get_help_string(action)).safe_substitute(params)

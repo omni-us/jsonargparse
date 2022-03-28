@@ -17,7 +17,7 @@ from .jsonschema import ActionJsonSchema
 from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context, yaml_load
 from .namespace import is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
-from .typehints import ActionTypeHint, LazyInitBaseClass
+from .typehints import ActionTypeHint
 from .actions import (
     ActionParser,
     ActionConfigFile,
@@ -825,8 +825,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                     if action is None:
                         raise KeyError(f'No action for destination key "{dest}" to set its default.')
                     action.default = args[n][dest]
-                    if isinstance(action.default, LazyInitBaseClass):
-                        action.default = action.default.lazy_get_init_data()
+                    if isinstance(action, ActionTypeHint):
+                        action.normalize_default()
         if kwargs:
             self.set_defaults(kwargs)
 
