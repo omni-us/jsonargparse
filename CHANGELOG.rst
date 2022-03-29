@@ -10,7 +10,7 @@ only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
 
-v4.5.0 (2022-03-??)
+v4.5.0 (2022-03-29)
 -------------------
 
 Added
