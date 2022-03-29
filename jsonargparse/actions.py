@@ -474,11 +474,11 @@ class _ActionLink(Action):
                 raise ValueError(f'Invalid link {source[0]} --> {target}: {ex}') from ex
 
         # Initialize link action
-        link_str = target+' <-- '
         if compute_fn is None:
-            link_str += source[0]
+            link_str = source[0]
         else:
-            link_str += getattr(compute_fn, '__name__', str(compute_fn))+'('+', '.join(source)+')'
+            link_str = getattr(compute_fn, '__name__', str(compute_fn))+'('+', '.join(source)+')'
+        link_str += ' --> ' + target
 
         help_str: Optional[str]
         if is_target_subclass:
@@ -514,13 +514,15 @@ class _ActionLink(Action):
         for action in parser._links_group._group_actions:
             if action.apply_on != 'parse':
                 continue
+            from .typehints import ActionTypeHint
             try:
                 args = []
-                for key, _ in action.source:
-                    args.append(cfg[key])
+                for source_key, source_action in action.source:
+                    if ActionTypeHint.is_subclass_typehint(source_action[0]) and source_key not in cfg:
+                        parser.logger.debug(f'Link {action.option_strings[0]} ignored since source {source_action[0]._typehint} does not have that parameter.')
+                    args.append(cfg[source_key])
             except KeyError:
                 continue
-            from .typehints import ActionTypeHint
             if action.compute_fn is None:
                 value = args[0]
                 # Automatic namespace to dict based on link target type hint
@@ -538,29 +540,38 @@ class _ActionLink(Action):
                         args[n] = args[n].as_dict()
                 # Compute value
                 value = action.compute_fn(*args)
-            _ActionLink.set_target_value(action, value, cfg)
+            _ActionLink.set_target_value(action, value, cfg, parser.logger)
 
     @staticmethod
     def apply_instantiation_links(parser, cfg, source):
         if not hasattr(parser, '_links_group'):
             return
         for action in parser._links_group._group_actions:
-            if action.apply_on != 'instantiate' or source != action.source[0][1].dest:
+            source_key, source_action = action.source[0]
+            if action.apply_on != 'instantiate' or source != source_action.dest:
                 continue
             source_object = cfg[source]
-            if action.source[0][0] == action.source[0][1].dest:
+            if source_key == source_action.dest:
                 value = action.compute_fn(source_object)
             else:
-                attr = split_key_leaf(action.source[0][0])[1]
+                attr = split_key_leaf(source_key)[1]
+                from .typehints import ActionTypeHint
+                if ActionTypeHint.is_subclass_typehint(source_action) and not hasattr(source_object, attr):
+                    parser.logger.debug(f'Link {action.option_strings[0]} ignored since source {source_action._typehint} does not have that parameter.')
+                    continue
                 value = getattr(source_object, attr)
                 if action.compute_fn is not None:
                     value = action.compute_fn(value)
-            _ActionLink.set_target_value(action, value, cfg)
+            _ActionLink.set_target_value(action, value, cfg, parser.logger)
 
     @staticmethod
-    def set_target_value(action: '_ActionLink', value: Any, cfg: Namespace) -> None:
-        key = action.target[0]
-        cfg[key] = value
+    def set_target_value(action: '_ActionLink', value: Any, cfg: Namespace, logger) -> None:
+        target_key, target_action = action.target
+        from .typehints import ActionTypeHint
+        if ActionTypeHint.is_subclass_typehint(target_action) and target_key not in cfg:
+            logger.debug(f'Link {action.option_strings[0]} ignored since target {target_action._typehint} does not have that parameter.')  # type: ignore
+            return
+        cfg[target_key] = value
 
     @staticmethod
     def instantiation_order(parser):

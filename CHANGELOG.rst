@@ -33,6 +33,9 @@ Changed
 - Import paths are now serialized as its shortest form.
 - ``Callable`` default now shown in help as full import path.
 - Moved typehint code from core to typehint module.
+- Ignore argument links when source/target subclass does not have parameter
+  `#129 <https://github.com/omni-us/jsonargparse/issues/129>`__.
+- Swapped order of argument links in help to ``source --> target``.
 
 Deprecated
 ^^^^^^^^^^

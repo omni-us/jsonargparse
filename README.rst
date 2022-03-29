@@ -57,11 +57,11 @@ Features
 
 - Configuration values are overridden based on the following precedence.
 
-  - **Parsing command line:** command line arguments (might include config file)
-    > environment variables > default config file > defaults.
-  - **Parsing files:** config file > environment variables > default config file
-    > defaults.
-  - **Parsing environment:** environment variables > default config file >
+  - **Parsing command line:** command line arguments (might include config
+    files) > environment variables > default config files > defaults.
+  - **Parsing files:** config file > environment variables > default config
+    files > defaults.
+  - **Parsing environment:** environment variables > default config files >
     defaults.
 
 
