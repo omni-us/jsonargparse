@@ -1145,36 +1145,37 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_link_arguments_subclass_missing_param_issue_129(self):
-        class ClassA:
-            def __init__(self, a1: int = 1):
-                self.a1 = a1
+        with suppress_stderr():
+            class ClassA:
+                def __init__(self, a1: int = 1):
+                    self.a1 = a1
 
-        class ClassB:
-            def __init__(self, b1: int = 2):
-                self.b1 = b1
+            class ClassB:
+                def __init__(self, b1: int = 2):
+                    self.b1 = b1
 
-        with mock_module(ClassA, ClassB) as module, self.assertLogs(level='DEBUG') as log, suppress_stderr():
             parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
-            parser.add_subclass_arguments(ClassA, 'a', default=lazy_instance(ClassA))
-            parser.add_subclass_arguments(ClassB, 'b', default=lazy_instance(ClassB))
-            parser.link_arguments('a.init_args.a2', 'b.init_args.b1', apply_on='parse')
-            parser.link_arguments('a.init_args.a1', 'b.init_args.b2', apply_on='parse')
+            with mock_module(ClassA, ClassB) as module, self.assertLogs(level='DEBUG') as log:
+                parser.add_subclass_arguments(ClassA, 'a', default=lazy_instance(ClassA))
+                parser.add_subclass_arguments(ClassB, 'b', default=lazy_instance(ClassB))
+                parser.link_arguments('a.init_args.a2', 'b.init_args.b1', apply_on='parse')
+                parser.link_arguments('a.init_args.a1', 'b.init_args.b2', apply_on='parse')
 
-            cfg = parser.parse_args([f'--a={module}.ClassA', f'--b={module}.ClassB'])
-            self.assertTrue(any('a.init_args.a2 --> b.init_args.b1 ignored since source' in x for x in log.output))
-            self.assertTrue(any('a.init_args.a1 --> b.init_args.b2 ignored since target' in x for x in log.output))
+                parser.parse_args([f'--a={module}.ClassA', f'--b={module}.ClassB'])
+                self.assertTrue(any('a.init_args.a2 --> b.init_args.b1 ignored since source' in x for x in log.output))
+                self.assertTrue(any('a.init_args.a1 --> b.init_args.b2 ignored since target' in x for x in log.output))
 
-        with mock_module(ClassA, ClassB) as module, self.assertLogs(level='DEBUG') as log, suppress_stderr():
             parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
-            parser.add_subclass_arguments(ClassA, 'a', default=lazy_instance(ClassA))
-            parser.add_subclass_arguments(ClassB, 'b', default=lazy_instance(ClassB))
-            parser.link_arguments('a.init_args.a2', 'b.init_args.b1', apply_on='instantiate')
-            parser.link_arguments('a.init_args.a1', 'b.init_args.b2', apply_on='instantiate')
+            with mock_module(ClassA, ClassB) as module, self.assertLogs(level='DEBUG') as log:
+                parser.add_subclass_arguments(ClassA, 'a', default=lazy_instance(ClassA))
+                parser.add_subclass_arguments(ClassB, 'b', default=lazy_instance(ClassB))
+                parser.link_arguments('a.init_args.a2', 'b.init_args.b1', apply_on='instantiate')
+                parser.link_arguments('a.init_args.a1', 'b.init_args.b2', apply_on='instantiate')
 
-            cfg = parser.parse_args([f'--a={module}.ClassA', f'--b={module}.ClassB'])
-            cfg_init = parser.instantiate_classes(cfg)
-            self.assertTrue(any('a.init_args.a2 --> b.init_args.b1 ignored since source' in x for x in log.output))
-            self.assertTrue(any('a.init_args.a1 --> b.init_args.b2 ignored since target' in x for x in log.output))
+                cfg = parser.parse_args([f'--a={module}.ClassA', f'--b={module}.ClassB'])
+                parser.instantiate_classes(cfg)
+                self.assertTrue(any('a.init_args.a2 --> b.init_args.b1 ignored since source' in x for x in log.output))
+                self.assertTrue(any('a.init_args.a1 --> b.init_args.b2 ignored since target' in x for x in log.output))
 
 
     def test_class_from_function(self):
