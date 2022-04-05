@@ -53,7 +53,7 @@ class PercentTemplate(Template):
     (?P<braced>[_a-z][_a-z0-9]*)\)s|
     (?P<invalid>)
     )
-    '''
+    '''  # type: ignore
 
 
 class DefaultHelpFormatter(HelpFormatter):
@@ -86,6 +86,8 @@ class DefaultHelpFormatter(HelpFormatter):
            (action.default is not None or not is_required) and \
            (action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}):
             help_str += (', ' if help_str else '') + 'default: %(default)s'
+        if isinstance(action, ActionTypeHint):
+            help_str += action.extra_help()
         return action_help + (' ('+help_str+')' if help_str else '')
 
 
@@ -247,7 +249,9 @@ class DefaultHelpFormatter(HelpFormatter):
 def get_env_var(parser_or_formatter: Union['ArgumentParser', DefaultHelpFormatter], action: Action) -> str:
     """Returns the environment variable for a given parser or formatter and action."""
     if isinstance(parser_or_formatter, DefaultHelpFormatter):
-        parser_or_formatter = formatter_parser.get()
-    env_var = (parser_or_formatter._env_prefix+'_' if parser_or_formatter._env_prefix else '') + action.dest
+        parser = formatter_parser.get()
+    else:
+        parser = parser_or_formatter
+    env_var = (parser.env_prefix+'_' if parser.env_prefix else '') + action.dest
     env_var = env_var.replace('.', '__').upper()
     return env_var

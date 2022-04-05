@@ -102,7 +102,7 @@ def capture_parser(function: Callable, *args, **kwargs) -> ArgumentParser:
         with capture_parser_context():
             function(*args, **kwargs)
     except CaptureParserException as ex:
-        return ex.parser
+        return ex.parser  # type: ignore
     raise CaptureParserException(None)
 
 

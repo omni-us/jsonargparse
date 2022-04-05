@@ -8,7 +8,7 @@ import warnings
 from argparse import Action, SUPPRESS, _HelpAction, _SubParsersAction
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Callable, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import is_empty_namespace, Namespace, split_key, split_key_leaf, split_key_root
@@ -18,7 +18,6 @@ from .typing import path_type
 from .util import (
     default_config_option_help,
     DirectedGraph,
-    get_import_path,
     ParserError,
     import_object,
     change_to_path_dir,
@@ -177,7 +176,8 @@ def _remove_actions(parser, types):
             actions.remove(action)
 
     remove(parser._actions)
-    remove(parser._action_groups[1]._group_actions)
+    for action_group in parser._action_groups:
+        remove(action_group._group_actions)
 
 
 def filter_default_actions(actions):
@@ -329,6 +329,8 @@ class _ActionConfigLoad(Action):
 
 class _ActionHelpClass(Action):
 
+    sub_add_kwargs: Dict[str, Any] = {}
+
     def __init__(self, baseclass=None, **kwargs):
         if baseclass is not None:
             if getattr(baseclass, '__origin__', None) == Union:
@@ -358,7 +360,7 @@ class _ActionHelpClass(Action):
     def print_help(self, call_args, val_class, dest):
         tmp = import_object('jsonargparse.ArgumentParser')()
         tmp.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
-        _remove_actions(tmp, (_HelpAction, _ActionHelpClass, _ActionPrintConfig))
+        _remove_actions(tmp, (_HelpAction, _ActionHelpClass, _ActionPrintConfig, _ActionConfigLoad))
         tmp.print_help()
         call_args[0].exit()
 
@@ -367,9 +369,9 @@ class _ActionHelpClassPath(_ActionHelpClass):
 
     def update_init_kwargs(self, kwargs):
         if getattr(self._baseclass, '__origin__', None) == Union:
-            self._basename = '{'+', '.join(get_import_path(c) for c in self._baseclass.__args__)+'}'
+            self._basename = '{'+', '.join(c.__name__ for c in self._baseclass.__args__ if c != NoneType)+'}'
         else:
-            self._basename = get_import_path(self._baseclass)
+            self._basename = self._baseclass.__name__
         kwargs.update({
             'metavar': 'CLASS',
             'default': SUPPRESS,
@@ -377,8 +379,9 @@ class _ActionHelpClassPath(_ActionHelpClass):
         })
 
     def print_help(self, call_args, baseclass, dest):
+        from .typehints import resolve_class_path_by_name
         try:
-            val_class = import_object(call_args[2])
+            val_class = import_object(resolve_class_path_by_name(baseclass, call_args[2]))
         except Exception as ex:
             raise TypeError(f'{call_args[3]}: {ex}')
         if getattr(self._baseclass, '__origin__', None) == Union:
@@ -421,12 +424,12 @@ class _ActionLink(Action):
             self.source = [(source[0], _find_subclass_action_or_class_group(parser, source[0], exclude=exclude))]
             if self.source[0][1] is None:
                 raise ValueError('Links applied on instantiation require source to be a subclass action or a class group.')
-            if '.' in self.source[0][1].dest:
+            if '.' in self.source[0][1].dest:  # type: ignore
                 raise ValueError('Links applied on instantiation only supported for first level objects.')
             if source[0] == self.source[0][1].dest and compute_fn is None:
                 raise ValueError('Links applied on instantiation with object as source requires a compute function.')
         else:
-            self.source = [(s, _find_parent_actions(parser, s, exclude=exclude)) for s in source]
+            self.source = [(s, _find_parent_actions(parser, s, exclude=exclude)) for s in source]  # type: ignore
 
         # Set and check target action
         self.target = (target, _find_parent_action(parser, target, exclude=exclude))
@@ -508,10 +511,10 @@ class _ActionLink(Action):
     def apply_parsing_links(parser: 'ArgumentParser', cfg: Namespace) -> None:
         subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
         if subcommand:
-            _ActionLink.apply_parsing_links(subparser, cfg[subcommand])
+            _ActionLink.apply_parsing_links(subparser, cfg[subcommand])  # type: ignore
         if not hasattr(parser, '_links_group'):
             return
-        for action in parser._links_group._group_actions:
+        for action in parser._links_group._group_actions:  # type: ignore
             if action.apply_on != 'parse':
                 continue
             from .typehints import ActionTypeHint
@@ -870,7 +873,7 @@ class _ActionSubCommands(_SubParsersAction):
         fail_no_subcommand: bool = True,
     ) -> Tuple[Optional[List[str]], Optional[List['ArgumentParser']]]:
         """Returns subcommand names and corresponding subparsers."""
-        if parser._subparsers is None:
+        if parser._subcommands_action is None:
             return None, None
         action = parser._subcommands_action
 
@@ -901,12 +904,12 @@ class _ActionSubCommands(_SubParsersAction):
             subcommand_keys = [subcommand]
 
         if fail_no_subcommand:
-            if subcommand is None and not (fail_no_subcommand and action._required):
+            if subcommand is None and not (fail_no_subcommand and action._required):  # type: ignore
                 return None, None
-            if action._required and subcommand not in action._name_parser_map:
+            if action._required and subcommand not in action._name_parser_map:  # type: ignore
                 raise KeyError(f'"{dest}" is required but not given or its value is None.')
 
-        return subcommand_keys, [action._name_parser_map.get(s) for s in subcommand_keys]
+        return subcommand_keys, [action._name_parser_map.get(s) for s in subcommand_keys]  # type: ignore
 
 
     @staticmethod

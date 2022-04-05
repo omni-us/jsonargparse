@@ -175,8 +175,8 @@ class SignaturesTests(unittest.TestCase):
         class ClassA:
             def __new__(cls, a1: int = 1, a2: float = 2.3):
                 obj = object.__new__(cls)
-                obj.a1 = a1
-                obj.a2 = a2
+                obj.a1 = a1  # type: ignore
+                obj.a2 = a2  # type: ignore
                 return obj
 
         parser = ArgumentParser(error_handler=None)

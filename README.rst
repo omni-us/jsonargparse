@@ -1051,26 +1051,60 @@ Then in python:
     >>> cfg.myclass.calendar.getfirstweekday()
     1
 
-In this example the :code:`class_path` points to the same class used for the
-type. But a subclass of :code:`Calendar` with an extended list of init
-parameters would also work. The help of the parser does not show details for a
-type class since this depends on the subclass. To get help details for a
-particular subclass there is a specific help option that receives the import
-path. If there is some subclass of :code:`Calendar` which can be imported from
-:code:`mycode.MyCalendar`, then it would be possible to see the corresponding
-:code:`init_args` details by running the tool from the command line as:
+In this example the ``class_path`` points to the same class used for the type.
+But a subclass of ``Calendar`` with an extended set of init parameters would
+also work.
+
+An individual argument can also be added having as type a class, i.e.
+``parser.add_argument('--calendar', type=Calendar)``. There is also another
+method :py:meth:`.SignatureArguments.add_subclass_arguments` which does the same
+as ``add_argument``, but has some added benefits: 1) the argument is added in a
+new group automatically; 2) the argument values can be given in an independent
+config file by specifying a path to it; and 3) by default sets a useful
+``metavar`` and ``help`` strings.
+
+Command line
+------------
+
+The help of the parser does not show details for a type class since this depends
+on the subclass. To get details for a particular subclass there is a specific
+help option that receives the import path. Take for example a parser defined as:
+
+.. testcode::
+
+    from calendar import Calendar
+    from jsonargparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument('--calendar', type=Calendar)
+
+The help for a corresponding subclass could be printed as:
 
 .. code-block:: bash
 
-    python tool.py --myclass.calendar.help mycode.MyCalendar
+    python tool.py --calendar.help calendar.TextCalendar
 
-An individual argument can also be added having as type a class, i.e.
-:code:`parser.add_argument('--calendar', type=Calendar)`. There is also another
-method :py:meth:`.SignatureArguments.add_subclass_arguments` which does the same
-as :code:`add_argument`, but has some added benefits: 1) the argument is added
-in a new group automatically; 2) the argument values can be given in an
-independent config file by specifying a path to it; and 3) by default sets a
-useful :code:`metavar` and :code:`help` strings.
+In the command line, a subclass can be specified through multiple command line
+arguments:
+
+.. code-block:: bash
+
+    python tool.py \
+      --calendar.class_path calendar.TextCalendar \
+      --calendar.init_args.firstweekday 1
+
+For convenience, the arguments can be somewhat shorter by omitting
+``.class_path`` and ``.init_args`` and only specifying the name of the subclass
+instead of the full import path.
+
+.. code-block:: bash
+
+    python tool.py --calendar TextCalendar --calendar.firstweekday 1
+
+Specifying the name of the subclass works for subclasses in modules that have
+been imported before parsing. Abstract classes and private classes (module or
+name starting with ``'_'``) are not considered. All the subclasses resolvable by
+its name can be seen in the general help ``python tool.py --help``.
 
 Default values
 --------------

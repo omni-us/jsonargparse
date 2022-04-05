@@ -27,7 +27,7 @@ __all__ = [
 
 
 kinds = inspect._ParameterKind
-inspect_empty = inspect._empty  # type: ignore
+inspect_empty = inspect._empty
 
 
 class SignatureArguments:
@@ -359,7 +359,7 @@ class SignatureArguments:
                     action.sub_add_kwargs['skip'] = subclass_skip
                 added_args.append(dest)
         elif is_required and fail_untyped:
-            raise ValueError(f'Required parameter without a type for {obj.__name__} parameter {name}.')
+            raise ValueError(f'Required parameter without a type for {obj} parameter "{name}".')
 
 
     def add_dataclass_arguments(

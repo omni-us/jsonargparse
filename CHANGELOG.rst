@@ -9,6 +9,10 @@ follow `Semantic Versioning <https://semver.org/>`_
 only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
 
+The semantic versioning only considers the public API as described in
+:ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
+paths are considered internals and can change in any moment.
+
 
 v4.6.0 (2022-04-??)
 -------------------
@@ -17,6 +21,15 @@ Added
 ^^^^^
 - Dump option to exclude entries whose value is the same as the default `#91
   <https://github.com/omni-us/jsonargparse/issues/91>`__.
+- Support specifying ``class_path`` only by name for known subclasses `#84
+  <https://github.com/omni-us/jsonargparse/issues/84>`__.
+- ``add_argument`` with subclass type now also adds ``--*.help`` option.
+- Support shorter subclass command line arguments by not requiring to have
+  ``.init_args.``.
+
+Changed
+^^^^^^^
+- ``class_path``'s on parse are now normalized to shortest form.
 
 
 v4.5.0 (2022-03-29)

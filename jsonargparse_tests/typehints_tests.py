@@ -8,8 +8,10 @@ import unittest
 import uuid
 import yaml
 from calendar import Calendar
+from contextlib import redirect_stdout
 from datetime import datetime
 from enum import Enum
+from gzip import GzipFile
 from io import StringIO
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
 from jsonargparse import ActionConfigFile, ArgumentParser, CLI, lazy_instance, Namespace, ParserError, Path
@@ -417,6 +419,8 @@ class TypeHintsTests(unittest.TestCase):
         with mock_module(MyCal) as module:
             cfg = parser.parse_args([f'--op.class_path={module}.MyCal', '--op.init_args.p1=3'], defaults=False)
             self.assertEqual(cfg.op, Namespace(class_path=f'{module}.MyCal', init_args=Namespace(p1=3)))
+            cfg = parser.parse_args(['--op.class_path', f'{module}.MyCal', '--op.init_args.p1', '3'], defaults=False)
+            self.assertEqual(cfg.op, Namespace(class_path=f'{module}.MyCal', init_args=Namespace(p1=3)))
 
 
     def test_class_type_required_params(self):
@@ -431,6 +435,62 @@ class TypeHintsTests(unittest.TestCase):
             cfg = parser.get_defaults()
             self.assertEqual(cfg.op.class_path, f'{module}.MyCal')
             self.assertEqual(cfg.op.init_args, Namespace(p1=None, p2=None))
+            self.assertRaises(ParserError, lambda: parser.parse_args([f'--op={module}.MyCal']))
+
+
+    def test_class_type_subclass_given_by_name_issue_84(self):
+        class LocalCalendar(Calendar):
+            pass
+
+        parser = ArgumentParser()
+        parser.add_argument('--op', type=Union[Calendar, GzipFile, None])
+        cfg = parser.parse_args(['--op=TextCalendar'])
+        self.assertEqual(cfg.op.class_path, 'calendar.TextCalendar')
+
+        out = StringIO()
+        parser.print_help(out)
+        for class_path in ['calendar.Calendar', 'calendar.TextCalendar', 'gzip.GzipFile']:
+            self.assertIn(class_path, out.getvalue())
+        self.assertNotIn('LocalCalendar', out.getvalue())
+
+        class HTMLCalendar(Calendar):
+            pass
+
+        with mock_module(HTMLCalendar) as module, self.assertWarns(UserWarning) as warn:
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                parser.parse_args(['--op.help=HTMLCalendar'])
+            self.assertIn('--op.init_args.firstweekday', out.getvalue())
+            self.assertIn(f'Resolved "HTMLCalendar" to "{module}.HTMLCalendar"', str(warn.warnings[0].message))
+            self.assertIn(f'{module}.HTMLCalendar', str(warn.warnings[0].message))
+
+
+    def test_class_type_subclass_short_init_args(self):
+        parser = ArgumentParser()
+        parser.add_argument('--op', type=Calendar)
+        cfg = parser.parse_args(['--op=TextCalendar', '--op.firstweekday=2'])
+        self.assertEqual(cfg.op.class_path, 'calendar.TextCalendar')
+        self.assertEqual(cfg.op.init_args, Namespace(firstweekday=2))
+
+
+    def test_class_type_subclass_nested_full_init_args(self):
+        class Class:
+            def __init__(self, cal: Calendar, p1: int = 0):
+                self.cal = cal
+
+        with mock_module(Class) as module:
+            parser = ArgumentParser()
+            parser.add_argument('--op', type=Class)
+            cfg = parser.parse_args([
+                f'--op={module}.Class',
+                '--op.init_args.p1=1',
+                '--op.init_args.cal=calendar.TextCalendar',
+                '--op.init_args.cal.init_args.firstweekday=2',
+            ])
+            self.assertEqual(cfg.op.class_path, f'{module}.Class')
+            self.assertEqual(cfg.op.init_args.p1, 1)
+            self.assertEqual(cfg.op.init_args.cal.class_path, 'calendar.TextCalendar')
+            self.assertEqual(cfg.op.init_args.cal.init_args, Namespace(firstweekday=2))
 
 
     def test_invalid_init_args_in_yaml(self):

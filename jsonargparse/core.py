@@ -25,6 +25,7 @@ from .actions import (
     _ActionPrintConfig,
     _ActionConfigLoad,
     _ActionLink,
+    _ActionHelpClassPath,
     _is_branch_key,
     _find_action,
     _find_action_and_subcommand,
@@ -88,13 +89,15 @@ class _ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerPr
             return ActionParser._move_parser_actions(parser, args, kwargs)
         if 'type' in kwargs:
             if is_pure_dataclass(kwargs['type']):
-                theclass = kwargs.pop('type')
                 nested_key = re.sub('^--', '', args[0])
-                super().add_dataclass_arguments(theclass, nested_key, **kwargs)
+                super().add_dataclass_arguments(kwargs['type'], nested_key, **kwargs)
                 return _find_action(parser, nested_key)
             if ActionTypeHint.is_supported_typehint(kwargs['type']):
                 if 'action' in kwargs:
                     raise ValueError('Type hint as type does not allow providing an action.')
+                if ActionTypeHint.is_subclass_typehint(kwargs['type']):
+                    dest = re.sub('^--', '', args[0])
+                    super().add_argument(f'--{dest}.help', action=_ActionHelpClassPath(baseclass=kwargs['type']))  # type: ignore
                 kwargs['action'] = ActionTypeHint(typehint=kwargs.pop('type'), enable_path=enable_path)
         action = super().add_argument(*args, **kwargs)
         if isinstance(action, ActionConfigFile) and getattr(self, '_print_config', None) is not None:
@@ -148,6 +151,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
 
     formatter_class: Type[DefaultHelpFormatter]  # type: ignore
     groups: Optional[Dict[str, '_ArgumentGroup']] = None
+    _subcommands_action: Optional[_ActionSubCommands] = None
 
 
     def __init__(
@@ -414,7 +418,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                 env_val = env[env_var]
                 if env_val in action.choices:
                     cfg[action.dest] = subcommand = self._check_value_key(action, env_val, action.dest, cfg)
-                    pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, _skip_check=True)  # type: ignore
+                    pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, _skip_check=True)
                     for k, v in vars(pcfg).items():
                         cfg[subcommand+'.'+k] = v
         for action in actions:
@@ -1236,7 +1240,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
             if leaf_key == action.dest:
                 return value
             subparser = action._name_parser_map[leaf_key]
-            subparser.check_config(value)  # type: ignore
+            subparser.check_config(value)
         elif isinstance(action, _ActionConfigLoad):
             if isinstance(value, str):
                 fpath = None
@@ -1401,9 +1405,9 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         if parser_mode == 'jsonnet':
             import_jsonnet('parser_mode=jsonnet')
         self._parser_mode = parser_mode
-        if self._subparsers:
+        if self._subcommands_action:
             for subparser in self._subcommands_action._name_parser_map.values():
-                subparser.parser_mode = parser_mode  # type: ignore
+                subparser.parser_mode = parser_mode
 
 
     @property

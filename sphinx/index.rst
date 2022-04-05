@@ -2,6 +2,8 @@
 
 .. include:: ../CONTRIBUTING.rst
 
+.. _api-ref:
+
 API Reference
 =============
 

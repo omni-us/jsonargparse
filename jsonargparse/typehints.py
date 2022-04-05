@@ -6,11 +6,13 @@ import os
 import re
 import warnings
 from argparse import Action
-from collections import abc
+from collections import abc, defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
+from copy import deepcopy
 from enum import Enum
 from functools import partial
+from types import FunctionType
 from typing import (
     Any,
     Callable,
@@ -29,7 +31,7 @@ from typing import (
     Union,
 )
 
-from .actions import _find_action, _is_action_value_list
+from .actions import _find_action, _find_parent_action, _is_action_value_list
 from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import is_empty_namespace, Namespace
 from .typing import is_final_class, registered_types
@@ -162,23 +164,26 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def is_class_typehint(typehint, only_subclasses=False):
+    def is_class_typehint(typehint, only_subclasses=False, all_subtypes=True):
         typehint = typehint_from_action(typehint)
+        if typehint is None:
+            return False
         typehint_origin = getattr(typehint, '__origin__', None)
         if typehint_origin == Union:
             subtypes = [a for a in typehint.__args__ if a != NoneType]
-            return all(ActionTypeHint.is_class_typehint(s, only_subclasses) for s in subtypes)
+            test = all if all_subtypes else any
+            return test(ActionTypeHint.is_class_typehint(s, only_subclasses) for s in subtypes)
         if only_subclasses and is_final_class(typehint):
             return False
         return inspect.isclass(typehint) and \
             typehint not in not_subclass_types and \
             typehint_origin is None and \
-            not _issubclass(typehint, Enum)
+            not _issubclass(typehint, (Path, Enum))
 
 
     @staticmethod
-    def is_subclass_typehint(typehint):
-        return ActionTypeHint.is_class_typehint(typehint, True)
+    def is_subclass_typehint(typehint, all_subtypes=True):
+        return ActionTypeHint.is_class_typehint(typehint, only_subclasses=True, all_subtypes=all_subtypes)
 
 
     @staticmethod
@@ -205,22 +210,17 @@ class ActionTypeHint(Action):
     @staticmethod
     def parse_subclass_arg(arg_string):
         parser = subclass_arg_parser.get()
-        if '.class_path' in arg_string or '.init_args.' in arg_string:
-            if '.class_path' in arg_string:
-                arg_base, explicit_arg = arg_string.rsplit('.class_path', 1)
-            else:
-                arg_base, init_arg = arg_string.rsplit('.init_args.', 1)
-                match = re.match(r'(\w+)(|=.*)$', init_arg)
-                explicit_arg = match.groups()[1]
-            action = parser._option_string_actions.get(arg_base)
-            if action:
-                if explicit_arg:
-                    arg_string = arg_string[:-len(explicit_arg)]
-                    explicit_arg = explicit_arg[1:]
-                else:
-                    explicit_arg = None
-                return action, arg_string, explicit_arg
-        elif hasattr(parser, '_subcommands_action') and arg_string in parser._subcommands_action._name_parser_map:
+        action = None
+        if arg_string.startswith('--'):
+            arg_base, explicit_arg = (arg_string, None)
+            if '=' in arg_string:
+                arg_base, explicit_arg = arg_string.split('=', 1)
+            if '.' in arg_base and arg_base not in parser._option_string_actions:
+                action = _find_parent_action(parser, arg_base[2:])
+
+        if ActionTypeHint.is_subclass_typehint(action, all_subtypes=False):
+            return action, arg_base, explicit_arg
+        elif parser._subcommands_action and arg_string in parser._subcommands_action._name_parser_map:
             subparser = parser._subcommands_action._name_parser_map[arg_string]
             subclass_arg_parser.set(subparser)
 
@@ -272,19 +272,10 @@ class ActionTypeHint(Action):
             val = None
         else:
             parser, cfg, val, opt_str = args
-            if isinstance(opt_str, str):
-                if opt_str.endswith('.class_path'):
-                    cfg_dest = cfg.get(self.dest, Namespace())
-                    if cfg_dest.get('class_path') == val:
-                        return
-                    elif cfg_dest.get('init_args') is not None and not is_empty_namespace(cfg_dest.get('init_args')):
-                        warnings.warn(
-                            f'Argument {opt_str}={val} implies discarding init_args {cfg_dest.get("init_args").as_dict()} '
-                            f'defined for class_path {cfg_dest.get("class_path")}'
-                        )
-                    val = Namespace(class_path=val)
-                elif '.init_args.' in opt_str:
-                    cfg_dest = cfg.get(self.dest, Namespace())
+            if isinstance(opt_str, str) and opt_str.startswith(f'--{self.dest}.'):
+                sub_opt = opt_str[len(f'--{self.dest}.'):]
+                if sub_opt != 'class_path':
+                    cfg_dest = deepcopy(cfg.get(self.dest, Namespace()))
                     if self.dest not in cfg:
                         try:
                             default = parser.get_default(self.dest)
@@ -293,15 +284,12 @@ class ActionTypeHint(Action):
                             pass
                     if 'class_path' not in cfg_dest:
                         raise ParserError(f'Found {opt_str} but not yet known to which class_path this corresponds.')
-                    if 'init_args' not in cfg_dest:
-                        cfg_dest['init_args'] = Namespace()
-                    cfg_dest['init_args'][opt_str.rsplit('.init_args.', 1)[1]] = val
+                    if not sub_opt.startswith('init_args.'):
+                        sub_opt = 'init_args.' + sub_opt
+                    cfg_dest[sub_opt] = val
                     val = cfg_dest
-            val = self._check_type(val)
-        if 'cfg_dest' in locals():
-            args[1].update(val, self.dest)
-        else:
-            setattr(args[1], self.dest, val)
+            val = self._check_type(val, cfg=cfg)
+        args[1].update(val, self.dest)
 
 
     def _check_type(self, value, cfg=None):
@@ -317,16 +305,17 @@ class ActionTypeHint(Action):
                     config_path = None
                 path_meta = val.pop('__path__', None) if isinstance(val, dict) else None
                 sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
+                prev_val = cfg.get(self.dest) if cfg else None
                 try:
                     with change_to_path_dir(config_path):
-                        val = adapt_typehints(val, self._typehint, sub_add_kwargs=sub_add_kwargs)
+                        val = adapt_typehints(val, self._typehint, prev_val=prev_val, sub_add_kwargs=sub_add_kwargs)
                 except ValueError as ex:
                     val_is_int_float_or_none = isinstance(val, (int, float)) or val is None
                     if lenient_check.get():
                         value[num] = orig_val if val_is_int_float_or_none else val
                         continue
                     if val_is_int_float_or_none and config_path is None:
-                        val = adapt_typehints(orig_val, self._typehint, sub_add_kwargs=sub_add_kwargs)
+                        val = adapt_typehints(orig_val, self._typehint, prev_val=prev_val, sub_add_kwargs=sub_add_kwargs)
                     else:
                         if self._enable_path and config_path is None and isinstance(orig_val, str):
                             msg = f'\n- Expected a config path but "{orig_val}" either not accessible or invalid.\n- '
@@ -363,6 +352,15 @@ class ActionTypeHint(Action):
         return parser
 
 
+    def extra_help(self):
+        extra = ''
+        if self.is_subclass_typehint(self, all_subtypes=False):
+            class_paths = get_all_subclass_paths(self._typehint)
+            if class_paths:
+                extra = ', known class paths: '+', '.join(class_paths)
+        return extra
+
+
     def completer(self, prefix, **kwargs):
         """Used by argcomplete, validates value and shows expected type."""
         if self._typehint == bool:
@@ -389,11 +387,12 @@ class ActionTypeHint(Action):
             return argcomplete_warn_redraw_prompt(prefix, msg)
 
 
-def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, sub_add_kwargs=None):
+def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, prev_val=None, sub_add_kwargs=None):
 
     adapt_kwargs = {
         'serialize': serialize,
         'instantiate_classes': instantiate_classes,
+        'prev_val': prev_val,
         'sub_add_kwargs': sub_add_kwargs or {},
     }
     subtypehints = getattr(typehint, '__args__', None)
@@ -540,8 +539,9 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                         raise ImportError(f'Dict must include a class_path and optionally init_args, but got {val}')
                     val = Namespace(val)
                     val_class = import_object(val.class_path)
-                    if not (inspect.isclass(val_class) and callable(lazy_instance(val_class))):  # TODO: how to check callable without instance?
+                    if not (inspect.isclass(val_class) and callable_instances(val_class)):
                         raise ImportError(f'"{val.class_path}" is not a callable class.')
+                    val['class_path'] = get_import_path(val_class)
                     init_args = val.get('init_args', Namespace())
                     adapted = adapt_class_type(val_class, init_args, False, instantiate_classes, sub_add_kwargs)
                     if instantiate_classes and sub_add_kwargs.get('instantiate', True):
@@ -574,9 +574,18 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, s
                 val = Namespace(class_path=val)
             elif isinstance(val, dict):
                 val = Namespace(val)
-            val_class = import_object(val['class_path'])
+            val_class = import_object(resolve_class_path_by_name(typehint, val['class_path']))
             if not _issubclass(val_class, typehint):
-                raise ValueError(f'"{val["class_path"]}" is not a subclass of {typehint.__name__}')
+                raise ValueError(f'"{val["class_path"]}" is not a subclass of {typehint}')
+            val['class_path'] = class_path = get_import_path(val_class)
+            if isinstance(prev_val, Namespace) and 'class_path' in prev_val and 'init_args' not in val:
+                prev_class_path = prev_val['class_path']
+                prev_init_args = prev_val.get('init_args')
+                if prev_class_path != class_path and not (prev_init_args is None or is_empty_namespace(prev_init_args)):
+                    warnings.warn(
+                        f'Changing class_path to {class_path} implies discarding init_args {prev_init_args.as_dict()} '
+                        f'defined for class_path {prev_class_path}.'
+                    )
             init_args = val.get('init_args', Namespace())
             adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs)
             if instantiate_classes and sub_add_kwargs.get('instantiate', True):
@@ -597,6 +606,51 @@ def is_class_object(val):
         keys = getattr(val, '__dict__', val).keys()
         is_class = len(set(keys)-{'class_path', 'init_args', '__path__'}) == 0
     return is_class
+
+
+def get_all_subclass_paths(cls: Type) -> List[str]:
+    subclass_list = []
+
+    def is_local(cl):
+        return '.<locals>.' in getattr(cl, '__qualname__', '.<locals>.')
+
+    def is_private(class_path):
+        return '._' in class_path
+
+    def add_subclasses(cl):
+        class_path = get_import_path(cl)
+        if not (inspect.isabstract(cl) or is_local(cl) or is_private(class_path)):
+            subclass_list.append(class_path)
+        for subclass in cl.__subclasses__() if hasattr(cl, '__subclasses__') else []:
+            add_subclasses(subclass)
+
+    if getattr(cls, '__origin__', None) == Union:
+        for arg in cls.__args__:
+            if ActionTypeHint.is_subclass_typehint(arg):
+                add_subclasses(arg)
+    else:
+        add_subclasses(cls)
+
+    return subclass_list
+
+
+def resolve_class_path_by_name(cls: Type, name: str) -> str:
+    class_path = name
+    if '.' not in class_path:
+        subclass_dict = defaultdict(list)
+        for subclass in get_all_subclass_paths(cls):
+            subclass_name = subclass.rsplit('.', 1)[1]
+            subclass_dict[subclass_name].append(subclass)
+        if name in subclass_dict:
+            name_subclasses = subclass_dict[name]
+            class_path = name_subclasses[-1]
+            if len(name_subclasses) > 1:
+                class_paths = ', '.join(name_subclasses)
+                warnings.warn(
+                    f'Resolved "{name}" to "{class_path}". Found {len(class_paths)} subclasses of {cls} '
+                    f'with that name: {class_paths}. Give the full class path to avoid ambiguity.'
+                )
+    return class_path
 
 
 dump_kwargs: ContextVar = ContextVar('dump_kwargs', default={})
@@ -705,6 +759,11 @@ def serialize_class_instance(val):
         using lazy_instance.
     """)
     return val
+
+
+def callable_instances(cls: Type):
+    # https://stackoverflow.com/a/71568161/2732151
+    return isinstance(getattr(cls, '__call__', None), FunctionType)
 
 
 def check_lazy_kwargs(class_type: Type, lazy_kwargs: dict):
