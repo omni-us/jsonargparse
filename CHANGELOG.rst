@@ -26,6 +26,7 @@ Added
 - ``add_argument`` with subclass type now also adds ``--*.help`` option.
 - Support shorter subclass command line arguments by not requiring to have
   ``.init_args.``.
+- Support for ``Literal`` backport from typing_extensions on python 3.7.
 
 Changed
 ^^^^^^^

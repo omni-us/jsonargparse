@@ -4,6 +4,7 @@ import copy
 import inspect
 import os
 import re
+import sys
 import warnings
 from argparse import Action
 from collections import abc, defaultdict
@@ -38,6 +39,7 @@ from .typing import is_final_class, registered_types
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     files_completer,
+    typing_extensions_import,
 )
 from .util import (
     change_to_path_dir,
@@ -58,7 +60,7 @@ from .util import (
 __all__ = ['lazy_instance']
 
 
-Literal = getattr(__import__('typing'), 'Literal', False)
+Literal = False if sys.version_info[:2] == (3, 6) else typing_extensions_import('Literal')
 
 
 root_types = {

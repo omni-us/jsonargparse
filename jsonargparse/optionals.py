@@ -3,6 +3,7 @@
 import locale
 import os
 import platform
+import typing
 from contextlib import contextmanager
 from importlib.util import find_spec
 
@@ -14,6 +15,7 @@ __all__ = [
 ]
 
 
+typing_extensions_support = find_spec('typing_extensions') is not None
 jsonschema_support = find_spec('jsonschema') is not None
 jsonnet_support = find_spec('_jsonnet') is not None
 url_support = False if any(find_spec(x) is None for x in ['validators', 'requests']) else True
@@ -26,6 +28,13 @@ omegaconf_support = find_spec('omegaconf') is not None
 dump_preserve_order_support = platform.python_implementation() == 'CPython'
 
 _config_read_mode = 'fr'
+
+
+def typing_extensions_import(name):
+    if typing_extensions_support and not hasattr(typing, name):
+        return getattr(__import__('typing_extensions'), name)
+    else:
+        return getattr(typing, name, False)
 
 
 class UndefinedException(Exception):

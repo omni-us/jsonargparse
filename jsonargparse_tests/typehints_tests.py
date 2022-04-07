@@ -232,7 +232,7 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual('[[[', parser.parse_args(['--any=[[['])['any'])
 
 
-    @unittest.skipIf(sys.version_info[:2] < (3, 8), 'Literal introduced in python 3.8')
+    @unittest.skipIf(not Literal, 'Literal introduced in python 3.8 or backported in typing_extensions')
     def test_Literal(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--str', type=Literal['a', 'b'])
