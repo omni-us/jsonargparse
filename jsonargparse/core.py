@@ -341,7 +341,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         argcomplete_autocomplete(self)
 
         try:
-            cfg, unk = self.parse_known_args(args=args)
+            cfg, unk = self.parse_known_args(args=args, namespace=namespace)
             if unk:
                 self.error(f'Unrecognized arguments: {" ".join(unk)}')
 
@@ -351,7 +351,6 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                 defaults=defaults,
                 with_meta=with_meta,
                 skip_check=_skip_check,
-                cfg_base=namespace,
                 log_message='Parsed command line arguments.',
             )
 

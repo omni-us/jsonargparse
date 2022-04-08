@@ -288,6 +288,9 @@ class ActionTypeHint(Action):
                         raise ParserError(f'Found {opt_str} but not yet known to which class_path this corresponds.')
                     if not sub_opt.startswith('init_args.'):
                         sub_opt = 'init_args.' + sub_opt
+                    if len(sub_opt.split('.', 2)) == 3:
+                        val = NestedArg(key=sub_opt[len('init_args.'):], val=val)
+                        sub_opt = 'init_args'
                     cfg_dest[sub_opt] = val
                     val = cfg_dest
             val = self._check_type(val, cfg=cfg)
@@ -589,7 +592,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                         f'defined for class_path {prev_class_path}.'
                     )
             init_args = val.get('init_args', Namespace())
-            adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs)
+            adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
             if instantiate_classes and sub_add_kwargs.get('instantiate', True):
                 val = adapted
             elif adapted is not None and not is_empty_namespace(adapted):
@@ -610,6 +613,12 @@ def is_class_object(val):
     return is_class
 
 
+class NestedArg:
+    def __init__(self, key, val):
+        self.key = key
+        self.val = val
+
+
 def get_all_subclass_paths(cls: Type) -> List[str]:
     subclass_list = []
 
@@ -621,7 +630,9 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
 
     def add_subclasses(cl):
         class_path = get_import_path(cl)
-        if not (inspect.isabstract(cl) or is_local(cl) or is_private(class_path)):
+        if is_local(cl) or issubclass(cl, LazyInitBaseClass):
+            return
+        if not (inspect.isabstract(cl) or is_private(class_path)):
             subclass_list.append(class_path)
         for subclass in cl.__subclasses__() if hasattr(cl, '__subclasses__') else []:
             add_subclasses(subclass)
@@ -664,7 +675,7 @@ def dump_kwargs_context(kwargs):
     yield
 
 
-def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs):
+def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs, prev_val=None):
     if isinstance(init_args, dict):
         init_args = Namespace(init_args)
     parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
@@ -692,6 +703,9 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
         return val_class(**init_args)
     if serialize:
         init_args = None if is_empty_namespace(init_args) else load_value(parser.dump(init_args, **dump_kwargs.get()))
+    elif isinstance(init_args, NestedArg):
+        prev_val = prev_val.init_args.clone()
+        init_args = parser.parse_args([f'--{init_args.key}={init_args.val}'], namespace=prev_val, defaults=sub_defaults.get())
     else:
         init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
     return init_args

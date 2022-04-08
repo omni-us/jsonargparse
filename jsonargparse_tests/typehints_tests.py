@@ -473,24 +473,25 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(cfg.op.init_args, Namespace(firstweekday=2))
 
 
-    def test_class_type_subclass_nested_full_init_args(self):
+    def test_class_type_subclass_nested_init_args(self):
         class Class:
             def __init__(self, cal: Calendar, p1: int = 0):
                 self.cal = cal
 
-        with mock_module(Class) as module:
-            parser = ArgumentParser()
-            parser.add_argument('--op', type=Class)
-            cfg = parser.parse_args([
-                f'--op={module}.Class',
-                '--op.init_args.p1=1',
-                '--op.init_args.cal=calendar.TextCalendar',
-                '--op.init_args.cal.init_args.firstweekday=2',
-            ])
-            self.assertEqual(cfg.op.class_path, f'{module}.Class')
-            self.assertEqual(cfg.op.init_args.p1, 1)
-            self.assertEqual(cfg.op.init_args.cal.class_path, 'calendar.TextCalendar')
-            self.assertEqual(cfg.op.init_args.cal.init_args, Namespace(firstweekday=2))
+        for full in ['init_args.', '']:
+            with self.subTest('full' if full else 'short'), mock_module(Class) as module:
+                parser = ArgumentParser()
+                parser.add_argument('--op', type=Class)
+                cfg = parser.parse_args([
+                    f'--op={module}.Class',
+                    f'--op.{full}p1=1',
+                    f'--op.{full}cal=calendar.TextCalendar',
+                    f'--op.{full}cal.{full}firstweekday=2',
+                ])
+                self.assertEqual(cfg.op.class_path, f'{module}.Class')
+                self.assertEqual(cfg.op.init_args.p1, 1)
+                self.assertEqual(cfg.op.init_args.cal.class_path, 'calendar.TextCalendar')
+                self.assertEqual(cfg.op.init_args.cal.init_args, Namespace(firstweekday=2))
 
 
     def test_invalid_init_args_in_yaml(self):

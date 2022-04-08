@@ -105,11 +105,12 @@ class ParsersTests(TempDirTestCase):
     def test_parse_object(self):
         parser = example_parser()
 
-        cfg = parser.parse_object(yaml.safe_load(example_yaml))
+        base = Namespace(**{'nums.val2': 3.4})
+        cfg = parser.parse_object(yaml.safe_load(example_yaml), cfg_base=base)
         self.assertEqual('opt1_yaml', cfg.lev1.lev2.opt1)
         self.assertEqual('opt2_yaml', cfg.lev1.lev2.opt2)
         self.assertEqual(-1,  cfg.nums.val1)
-        self.assertEqual(2.0, cfg.nums.val2)
+        self.assertEqual(3.4, cfg.nums.val2)
         self.assertEqual(False, cfg.bools.def_false)
         self.assertEqual(True,  cfg.bools.def_true)
 
