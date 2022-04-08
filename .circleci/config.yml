@@ -121,12 +121,12 @@ workflows:
           <<: *testreq
       - test-py36:
           <<: *testreq
-      - test-pypy3:
-          <<: *testreq
+      #- test-pypy3:
+      #    <<: *testreq
       - codecov:
           <<: *testreq
           requires:
-            - test-pypy3
+            #- test-pypy3
             - test-py310
             - test-py39
             - test-py38
