@@ -494,6 +494,20 @@ class TypeHintsTests(unittest.TestCase):
                 self.assertEqual(cfg.op.init_args.cal.init_args, Namespace(firstweekday=2))
 
 
+    def test_class_type_subclass_nested_help(self):
+        class Class:
+            def __init__(self, cal: Calendar, p1: int = 0):
+                self.cal = cal
+
+        with mock_module(Class) as module:
+            parser = ArgumentParser()
+            parser.add_argument('--op', type=Class)
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                parser.parse_args([f'--op.help={module}.Class', '--op.init_args.cal.help=TextCalendar'])
+            self.assertIn('--op.init_args.cal.init_args.firstweekday', out.getvalue())
+
+
     def test_invalid_init_args_in_yaml(self):
         config = """cal:
             class_path: calendar.Calendar

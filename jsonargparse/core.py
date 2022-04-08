@@ -214,12 +214,14 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
         caller = inspect.getmodule(inspect.stack()[1][0]).__package__
         if caller not in {'jsonargparse', 'argcomplete'}:
             raise NotImplementedError('parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.')
+
         if args is None:
             args = sys.argv[1:]
         else:
             args = list(args)
             if not all(isinstance(a, str) for a in args):
                 self.error(f'All arguments are expected to be strings: {args}')
+        self.args = args
 
         if namespace is None:
             namespace = Namespace()

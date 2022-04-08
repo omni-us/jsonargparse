@@ -358,11 +358,22 @@ class _ActionHelpClass(Action):
         self.print_help(args, self._baseclass, dest)
 
     def print_help(self, call_args, val_class, dest):
-        tmp = import_object('jsonargparse.ArgumentParser')()
-        tmp.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
-        _remove_actions(tmp, (_HelpAction, _ActionHelpClass, _ActionPrintConfig, _ActionConfigLoad))
-        tmp.print_help()
-        call_args[0].exit()
+        subparser = import_object('jsonargparse.ArgumentParser')()
+        subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
+        _remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
+        args = self.get_extra_args(call_args[0].args)
+        if args:
+            subparser.parse_args(args)
+        else:
+            subparser.print_help()
+            call_args[0].exit()
+
+    def get_extra_args(self, args):
+        opt_str = self.option_strings[0]
+        for num, arg in enumerate(args):
+            if arg.split('=', 1)[0] == opt_str:
+                break
+        return [a for a in args[num+1:] if a.split('=', 1)[0].endswith('help')]
 
 
 class _ActionHelpClassPath(_ActionHelpClass):
