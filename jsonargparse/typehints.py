@@ -656,13 +656,12 @@ def resolve_class_path_by_name(cls: Type, name: str) -> str:
             subclass_dict[subclass_name].append(subclass)
         if name in subclass_dict:
             name_subclasses = subclass_dict[name]
-            class_path = name_subclasses[-1]
             if len(name_subclasses) > 1:
-                class_paths = ', '.join(name_subclasses)
-                warnings.warn(
-                    f'Resolved "{name}" to "{class_path}". Found {len(class_paths)} subclasses of {cls} '
-                    f'with that name: {class_paths}. Give the full class path to avoid ambiguity.'
+                raise ValueError(
+                    f'Multiple subclasses with name {name}. Give the full class path to '
+                    f'avoid ambiguity: {", ".join(name_subclasses)}.'
                 )
+            class_path = name_subclasses[0]
     return class_path
 
 

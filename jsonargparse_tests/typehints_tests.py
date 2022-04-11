@@ -3,12 +3,13 @@
 import json
 import os
 import pathlib
+import re
 import sys
 import unittest
 import uuid
 import yaml
 from calendar import Calendar
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime
 from enum import Enum
 from gzip import GzipFile
@@ -456,13 +457,12 @@ class TypeHintsTests(unittest.TestCase):
         class HTMLCalendar(Calendar):
             pass
 
-        with mock_module(HTMLCalendar) as module, self.assertWarns(UserWarning) as warn:
-            out = StringIO()
-            with redirect_stdout(out), self.assertRaises(SystemExit):
+        with mock_module(HTMLCalendar) as module:
+            err = StringIO()
+            with redirect_stderr(err), self.assertRaises(SystemExit):
                 parser.parse_args(['--op.help=HTMLCalendar'])
-            self.assertIn('--op.init_args.firstweekday', out.getvalue())
-            self.assertIn(f'Resolved "HTMLCalendar" to "{module}.HTMLCalendar"', str(warn.warnings[0].message))
-            self.assertIn(f'{module}.HTMLCalendar', str(warn.warnings[0].message))
+            self.assertIn('Give the full class path to avoid ambiguity', err.getvalue())
+            self.assertIn(f'{module}.HTMLCalendar', err.getvalue())
 
 
     def test_class_type_subclass_short_init_args(self):
@@ -499,13 +499,22 @@ class TypeHintsTests(unittest.TestCase):
             def __init__(self, cal: Calendar, p1: int = 0):
                 self.cal = cal
 
-        with mock_module(Class) as module:
-            parser = ArgumentParser()
-            parser.add_argument('--op', type=Class)
-            out = StringIO()
-            with redirect_stdout(out), self.assertRaises(SystemExit):
-                parser.parse_args([f'--op.help={module}.Class', '--op.init_args.cal.help=TextCalendar'])
-            self.assertIn('--op.init_args.cal.init_args.firstweekday', out.getvalue())
+        parser = ArgumentParser()
+        parser.add_argument('--op', type=Class)
+
+        for pattern in [r'[\s=]', r'\s']:
+            with self.subTest('" "' if '=' in pattern else '"="'), mock_module(Class) as module:
+                out = StringIO()
+                args = re.split(pattern, f'--op.help={module}.Class --op.init_args.cal.help=TextCalendar')
+                with redirect_stdout(out), self.assertRaises(SystemExit):
+                    parser.parse_args(args)
+                self.assertIn('--op.init_args.cal.init_args.firstweekday', out.getvalue())
+
+        with self.subTest('invalid'), mock_module(Class) as module:
+            err = StringIO()
+            with redirect_stderr(err), self.assertRaises(SystemExit):
+                parser.parse_args([f'--op.help={module}.Class', '--op.init_args.p1=1'])
+            self.assertIn('Expected a nested --*.help option', err.getvalue())
 
 
     def test_invalid_init_args_in_yaml(self):

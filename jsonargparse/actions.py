@@ -364,6 +364,7 @@ class _ActionHelpClass(Action):
         args = self.get_extra_args(call_args[0].args)
         if args:
             subparser.parse_args(args)
+            raise ParserError(f'Expected a nested --*.help option, got: {args}.')
         else:
             subparser.print_help()
             call_args[0].exit()
@@ -371,9 +372,12 @@ class _ActionHelpClass(Action):
     def get_extra_args(self, args):
         opt_str = self.option_strings[0]
         for num, arg in enumerate(args):
-            if arg.split('=', 1)[0] == opt_str:
+            parts = arg.split('=', 1)
+            if parts[0] == opt_str:
+                if len(parts) == 1:
+                    num += 1
                 break
-        return [a for a in args[num+1:] if a.split('=', 1)[0].endswith('help')]
+        return args[num+1:]
 
 
 class _ActionHelpClassPath(_ActionHelpClass):
