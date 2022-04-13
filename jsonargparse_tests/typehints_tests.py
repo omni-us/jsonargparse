@@ -87,6 +87,13 @@ class TypeHintsTests(unittest.TestCase):
         self.assertIsNone(parser.parse_args(['--op=null']).op)
 
 
+    def test_str_not_timestamp_issue_135(self):
+        parser = ArgumentParser()
+        parser.add_argument('foo', type=str)
+        self.assertEqual('2022-04-12', parser.parse_args(['2022-04-12']).foo)
+        self.assertEqual('2022-04-32', parser.parse_args(['2022-04-32']).foo)
+
+
     def test_list(self):
         for list_type in [Iterable, List, Sequence]:
             with self.subTest(str(list_type)):

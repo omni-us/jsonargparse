@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.6.1 (2022-04-??)
+-------------------
+
+Fixed
+^^^^^
+- Failing to parse strings that look like timestamps `#135
+  <https://github.com/omni-us/jsonargparse/issues/135>`__.
+
+
 v4.6.0 (2022-04-11)
 -------------------
 
