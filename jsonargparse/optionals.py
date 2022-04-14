@@ -31,7 +31,7 @@ _config_read_mode = 'fr'
 
 
 def typing_extensions_import(name):
-    if typing_extensions_support and not hasattr(typing, name):
+    if typing_extensions_support:
         return getattr(__import__('typing_extensions'), name)
     else:
         return getattr(typing, name, False)

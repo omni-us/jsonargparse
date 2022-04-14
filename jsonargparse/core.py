@@ -18,6 +18,7 @@ from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loa
 from .namespace import is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
 from .typehints import ActionTypeHint, is_class_object
+from .typing import is_final_class
 from .actions import (
     ActionParser,
     ActionConfigFile,
@@ -57,10 +58,10 @@ from .util import (
 )
 
 
-__all__ = ['ArgumentParser']
+__all__ = ['ActionsContainer', 'ArgumentParser']
 
 
-class _ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerProperty):
+class ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerProperty):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
     _action_groups: Sequence['_ArgumentGroup']  # type: ignore
@@ -88,9 +89,14 @@ class _ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerPr
                 raise ValueError('Parser cannot be added as a subparser of itself.')
             return ActionParser._move_parser_actions(parser, args, kwargs)
         if 'type' in kwargs:
-            if is_pure_dataclass(kwargs['type']):
+            if is_final_class(kwargs['type']) or is_pure_dataclass(kwargs['type']):
+                theclass = kwargs.pop('type')
                 nested_key = re.sub('^--', '', args[0])
-                super().add_dataclass_arguments(kwargs['type'], nested_key, **kwargs)
+                if is_final_class(theclass):
+                    kwargs.pop('help', None)
+                    self.add_class_arguments(theclass, nested_key, **kwargs)
+                else:
+                    self.add_dataclass_arguments(theclass, nested_key, **kwargs)
                 return _find_action(parser, nested_key)
             if ActionTypeHint.is_supported_typehint(kwargs['type']):
                 if 'action' in kwargs:
@@ -140,13 +146,13 @@ class _ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerPr
         return group
 
 
-class _ArgumentGroup(_ActionsContainer, argparse._ArgumentGroup):
+class _ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     """Extension of argparse._ArgumentGroup to support additional functionalities."""
     dest: Optional[str] = None
     parser: Optional['ArgumentParser'] = None
 
 
-class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
+class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
     """Parser for command line, yaml/jsonnet files and environment variables."""
 
     formatter_class: Type[DefaultHelpFormatter]  # type: ignore
@@ -1021,8 +1027,8 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                 if action is None:
                     if _is_branch_key(self, key) or key.endswith('.class_path') or '.init_args' in key:
                         continue
-                    action = _find_parent_action(self, key)
-                    if action and not ActionTypeHint.is_class_typehint(action, only_subclasses=True):
+                    action = _find_parent_action(self, key, exclude=_ActionConfigLoad)
+                    if action and not ActionTypeHint.is_subclass_typehint(action):
                         continue
                 if action is not None:
                     if val is None and skip_none:
@@ -1030,7 +1036,7 @@ class ArgumentParser(_ActionsContainer, argparse.ArgumentParser):
                     try:
                         self._check_value_key(action, val, key, ccfg)
                     except TypeError as ex:
-                        if not (val == {} and ActionTypeHint.is_class_typehint(action) and key not in self.required_args):
+                        if not (val == {} and ActionTypeHint.is_subclass_typehint(action) and key not in self.required_args):
                             raise ex
                 else:
                     raise KeyError(f'No action for destination key "{key}" to check its value.')

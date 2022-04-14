@@ -14,13 +14,19 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
-v4.6.1 (2022-04-??)
+v4.7.0 (2022-04-??)
 -------------------
 
 Fixed
 ^^^^^
 - Failing to parse strings that look like timestamps `#135
   <https://github.com/omni-us/jsonargparse/issues/135>`__.
+
+Changed
+^^^^^^^
+- Final classes now added as group of actions instead of one typehint action.
+- ``@final`` decorator now an import from typing_extensions if available.
+- Exporting ``ActionsContainer`` to show respective methods in documentation.
 
 
 v4.6.0 (2022-04-11)

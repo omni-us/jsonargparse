@@ -1,10 +1,14 @@
 """Collection of types and type generators."""
 
 import operator
+import platform
 import re
+import sys
 import uuid
 from datetime import timedelta
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
+from .namespace import Namespace
+from .optionals import typing_extensions_import
 from .util import Path
 
 
@@ -299,15 +303,17 @@ def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Call
     register_type(type_class, type_class._type, **kwargs)  # type: ignore
 
 
-def final(cls):
-    """Decorator to make a class `final` meaning that it shouldn't be subclassed."""
-    setattr(cls, '_final_class', True)
-    return cls
+final = typing_extensions_import('final')
+if not getattr(final(Namespace()), '__final__', False):
+    def final(cls):  # pylint: disable=function-redefined
+        """Decorator to make a class `final` meaning that it shouldn't be subclassed."""
+        setattr(cls, '__final__', True)
+        return cls
 
 
 def is_final_class(cls):
-    """Checks whether a class was decorated as `final`."""
-    return getattr(cls, '_final_class', False)
+    """Checks whether a class is final, i.e. decorated with ``final``."""
+    return getattr(cls, '__final__', False)
 
 
 PositiveInt        = restricted_number_type('PositiveInt',        int, ('>', 0),

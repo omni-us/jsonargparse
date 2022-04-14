@@ -153,7 +153,7 @@ class ActionTypeHint(Action):
             getattr(typehint, '__origin__', None) in root_types or \
             typehint in registered_types or \
             _issubclass(typehint, Enum) or \
-            ActionTypeHint.is_class_typehint(typehint)
+            ActionTypeHint.is_subclass_typehint(typehint)
         if full and supported:
             typehint_origin = getattr(typehint, '__origin__', typehint)
             if typehint_origin in root_types and typehint_origin != Literal:
@@ -166,7 +166,7 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def is_class_typehint(typehint, only_subclasses=False, all_subtypes=True):
+    def is_subclass_typehint(typehint, all_subtypes=True):
         typehint = typehint_from_action(typehint)
         if typehint is None:
             return False
@@ -174,18 +174,11 @@ class ActionTypeHint(Action):
         if typehint_origin == Union:
             subtypes = [a for a in typehint.__args__ if a != NoneType]
             test = all if all_subtypes else any
-            return test(ActionTypeHint.is_class_typehint(s, only_subclasses) for s in subtypes)
-        if only_subclasses and is_final_class(typehint):
-            return False
+            return test(ActionTypeHint.is_subclass_typehint(s) for s in subtypes)
         return inspect.isclass(typehint) and \
             typehint not in not_subclass_types and \
             typehint_origin is None and \
             not _issubclass(typehint, (Path, Enum))
-
-
-    @staticmethod
-    def is_subclass_typehint(typehint, all_subtypes=True):
-        return ActionTypeHint.is_class_typehint(typehint, only_subclasses=True, all_subtypes=all_subtypes)
 
 
     @staticmethod
@@ -555,14 +548,6 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                         val['init_args'] = adapted
             except (ImportError, AttributeError, ParserError) as ex:
                 raise ValueError(f'Type {typehint} expects a function or a callable class: {ex}')
-
-    # Final class
-    elif is_final_class(typehint):
-        if isinstance(val, dict):
-            val = Namespace(val)
-        if not isinstance(val, Namespace):
-            raise ValueError(f'Expected a Dict/Namespace but got "{val}"')
-        val = adapt_class_type(typehint, val, serialize, instantiate_classes, sub_add_kwargs)
 
     # Subclass
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):

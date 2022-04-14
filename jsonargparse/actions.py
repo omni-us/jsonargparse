@@ -145,7 +145,7 @@ def _find_subclass_action_or_class_group(
 ) -> Optional[Union[Action, '_ArgumentGroup']]:
     from .typehints import ActionTypeHint
     action = _find_parent_action(parser, key, exclude=exclude)
-    if ActionTypeHint.is_class_typehint(action):
+    if ActionTypeHint.is_subclass_typehint(action):
         return action
     key_set = {key, split_key_leaf(key)[0]}
     for group in parser._action_groups:
@@ -181,7 +181,7 @@ def _remove_actions(parser, types):
 
 
 def filter_default_actions(actions):
-    default = (_HelpAction, _ActionHelpClass, _ActionPrintConfig)
+    default = (_HelpAction, _ActionHelpClassPath, _ActionPrintConfig)
     if isinstance(actions, list):
         return [a for a in actions if not isinstance(a, default)]
     return {k: a for k, a in actions.items() if not isinstance(a, default)}
@@ -327,7 +327,7 @@ class _ActionConfigLoad(Action):
         return self.basetype(**value)
 
 
-class _ActionHelpClass(Action):
+class _ActionHelpClassPath(Action):
 
     sub_add_kwargs: Dict[str, Any] = {}
 
@@ -344,10 +344,14 @@ class _ActionHelpClass(Action):
             super().__init__(**kwargs)
 
     def update_init_kwargs(self, kwargs):
+        if getattr(self._baseclass, '__origin__', None) == Union:
+            self._basename = '{'+', '.join(c.__name__ for c in self._baseclass.__args__ if c != NoneType)+'}'
+        else:
+            self._basename = self._baseclass.__name__
         kwargs.update({
-            'nargs': 0,
+            'metavar': 'CLASS',
             'default': SUPPRESS,
-            'help': f'Show the help for the class {self._baseclass.__name__} and exit.',
+            'help': f'Show the help for the given subclass of {self._basename} and exit.',
         })
 
     def __call__(self, *args, **kwargs):
@@ -357,7 +361,19 @@ class _ActionHelpClass(Action):
         dest = re.sub('\\.help$', '',  self.dest)
         self.print_help(args, self._baseclass, dest)
 
-    def print_help(self, call_args, val_class, dest):
+    def print_help(self, call_args, baseclass, dest):
+        from .typehints import resolve_class_path_by_name
+        try:
+            val_class = import_object(resolve_class_path_by_name(baseclass, call_args[2]))
+        except Exception as ex:
+            raise TypeError(f'{call_args[3]}: {ex}')
+        if getattr(self._baseclass, '__origin__', None) == Union:
+            baseclasses = self._baseclass.__args__
+        else:
+            baseclasses = [baseclass]
+        if not any(_issubclass(val_class, b) for b in baseclasses):
+            raise TypeError(f'{call_args[3]}: Class "{call_args[2]}" is not a subclass of {self._basename}')
+        dest += '.init_args'
         subparser = import_object('jsonargparse.ArgumentParser')()
         subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
         _remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
@@ -378,34 +394,6 @@ class _ActionHelpClass(Action):
                     num += 1
                 break
         return args[num+1:]
-
-
-class _ActionHelpClassPath(_ActionHelpClass):
-
-    def update_init_kwargs(self, kwargs):
-        if getattr(self._baseclass, '__origin__', None) == Union:
-            self._basename = '{'+', '.join(c.__name__ for c in self._baseclass.__args__ if c != NoneType)+'}'
-        else:
-            self._basename = self._baseclass.__name__
-        kwargs.update({
-            'metavar': 'CLASS',
-            'default': SUPPRESS,
-            'help': f'Show the help for the given subclass of {self._basename} and exit.',
-        })
-
-    def print_help(self, call_args, baseclass, dest):
-        from .typehints import resolve_class_path_by_name
-        try:
-            val_class = import_object(resolve_class_path_by_name(baseclass, call_args[2]))
-        except Exception as ex:
-            raise TypeError(f'{call_args[3]}: {ex}')
-        if getattr(self._baseclass, '__origin__', None) == Union:
-            baseclasses = self._baseclass.__args__
-        else:
-            baseclasses = [baseclass]
-        if not any(_issubclass(val_class, b) for b in baseclasses):
-            raise TypeError(f'{call_args[3]}: Class "{call_args[2]}" is not a subclass of {self._basename}')
-        super().print_help(call_args, val_class, dest+'.init_args')
 
 
 class _ActionLink(Action):

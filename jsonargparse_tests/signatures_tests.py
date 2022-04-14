@@ -626,6 +626,7 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--b.b2={"bad": "value"}']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--b.b2="bad"']))
         self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(ClassA, 'a'))
+        self.assertRaises(ValueError, lambda: parser.add_class_arguments(ClassA, 'a', default=ClassA()))
 
 
     def test_basic_subtypes(self):

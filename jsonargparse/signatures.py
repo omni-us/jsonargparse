@@ -6,9 +6,9 @@ from argparse import SUPPRESS
 from functools import wraps
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
-from .actions import _ActionConfigLoad, _ActionHelpClass, _ActionHelpClassPath
+from .actions import _ActionConfigLoad, _ActionHelpClassPath
 from .namespace import Namespace
-from .typehints import ActionTypeHint, ClassType, is_optional
+from .typehints import ActionTypeHint, ClassType, is_optional, LazyInitBaseClass
 from .typing import is_final_class
 from .util import get_import_path, _issubclass
 from .optionals import (
@@ -39,6 +39,7 @@ class SignatureArguments:
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
+        default: Optional[LazyInitBaseClass] = None,
         skip: Optional[Set[str]] = None,
         instantiate: bool = True,
         fail_untyped: bool = True,
@@ -54,6 +55,7 @@ class SignatureArguments:
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
+            default: Default value used to override parameter defaults. Must be lazy_instance.
             skip: Names of parameters that should be skipped.
             instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
@@ -67,22 +69,36 @@ class SignatureArguments:
             ValueError: When there are required parameters without at least one valid type.
         """
         if not inspect.isclass(theclass):
-            raise ValueError('Expected "theclass" argument to be a class object.')
+            raise ValueError(f'Expected "theclass" parameter to be a class type, got: {theclass}.')
+        if default and not (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass)):
+            raise ValueError(f'Expected "default" parameter to be a lazy instance of the class, got: {default}.')
 
         skip_first = not _issubclass(theclass, ClassFromFunctionBase)
 
-        return self._add_signature_arguments(inspect.getmro(theclass),
-                                             nested_key,
-                                             as_group,
-                                             as_positional,
-                                             skip,
-                                             fail_untyped,
-                                             sub_configs=sub_configs,
-                                             docs_func=get_class_init_and_base_docstrings,
-                                             sign_func=get_class_signature_functions,
-                                             instantiate=instantiate,
-                                             linked_targets=linked_targets,
-                                             skip_first=skip_first)
+        added_args = self._add_signature_arguments(
+            inspect.getmro(theclass),
+            nested_key,
+            as_group,
+            as_positional,
+            skip,
+            fail_untyped,
+            sub_configs=sub_configs,
+            docs_func=get_class_init_and_base_docstrings,
+            sign_func=get_class_signature_functions,
+            instantiate=instantiate,
+            linked_targets=linked_targets,
+            skip_first=skip_first,
+        )
+
+        if default:
+            skip = skip or set()
+            prefix = nested_key+'.' if nested_key else ''
+            defaults = default.lazy_get_init_data().as_dict()
+            if defaults:
+                defaults = {prefix+k: v for k, v in defaults.items() if k not in skip}
+                self.set_defaults(**defaults)  # type: ignore
+
+        return added_args
 
 
     def add_method_arguments(
@@ -322,15 +338,16 @@ class SignatureArguments:
                 annotation = Optional[annotation]
         elif not as_positional:
             kwargs['required'] = True
-        is_class_typehint = False
+        is_subclass_typehint = False
         if annotation in {str, int, float, bool} or \
            _issubclass(annotation, (str, int, float)) or \
+           is_final_class(annotation) or \
            is_pure_dataclass(annotation):
             kwargs['type'] = annotation
         elif annotation != inspect_empty:
             try:
-                is_class_typehint = ActionTypeHint.is_class_typehint(annotation)
-                enable_path = is_class_typehint and sub_configs
+                is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation)
+                enable_path = is_subclass_typehint and sub_configs
                 kwargs['action'] = ActionTypeHint(typehint=annotation, enable_path=enable_path)
             except ValueError as ex:
                 self.logger.debug(skip_message+str(ex))  # type: ignore
@@ -340,13 +357,9 @@ class SignatureArguments:
                 self.logger.debug(skip_message+'Argument already added.')  # type: ignore
             else:
                 opt_str = dest if is_required and as_positional else '--'+dest
-                if is_class_typehint:
-                    help_action = _ActionHelpClass
-                    prefix = name + '.'
-                    if ActionTypeHint.is_subclass_typehint(annotation):
-                        help_action = _ActionHelpClassPath
-                        prefix = name + '.init_args.'
-                    help_action = group.add_argument(f'--{dest}.help', action=help_action(baseclass=annotation))
+                if is_subclass_typehint:
+                    help_action = group.add_argument(f'--{dest}.help', action=_ActionHelpClassPath(baseclass=annotation))
+                    prefix = name + '.init_args.'
                     subclass_skip = {s[len(prefix):] for s in skip if s.startswith(prefix)}
                     help_action.sub_add_kwargs = {'fail_untyped': fail_untyped, 'skip': subclass_skip}
                 action = group.add_argument(opt_str, **kwargs)
@@ -355,7 +368,7 @@ class SignatureArguments:
                     'sub_configs': sub_configs,
                     'instantiate': instantiate,
                 }
-                if is_class_typehint and len(subclass_skip) > 0:
+                if is_subclass_typehint and len(subclass_skip) > 0:
                     action.sub_add_kwargs['skip'] = subclass_skip
                 added_args.append(dest)
         elif is_required and fail_untyped:
