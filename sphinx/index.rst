@@ -23,14 +23,9 @@ jsonargparse.typing
 .. automodule:: jsonargparse.typing
 
 
-License
-=======
-
-.. include:: ../LICENSE.rst
-
-
 Index
 =====
 
 * :ref:`changelog`
+* :ref:`license`
 * :ref:`genindex`

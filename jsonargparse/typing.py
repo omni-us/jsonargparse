@@ -1,9 +1,7 @@
 """Collection of types and type generators."""
 
 import operator
-import platform
 import re
-import sys
 import uuid
 from datetime import timedelta
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
