@@ -156,11 +156,14 @@ class ActionTypeHint(Action):
             ActionTypeHint.is_subclass_typehint(typehint)
         if full and supported:
             typehint_origin = getattr(typehint, '__origin__', typehint)
-            if typehint_origin in root_types and typehint_origin != Literal:
+            if typehint not in root_types and typehint_origin in root_types and typehint_origin != Literal:
                 for typehint in getattr(typehint, '__args__', []):
-                    if typehint == Ellipsis or (typehint_origin == type and isinstance(typehint, TypeVar)):
-                        continue
-                    if not (typehint in leaf_types or ActionTypeHint.is_supported_typehint(typehint, full=True)):
+                    if not (
+                        typehint == Ellipsis or
+                        (typehint_origin == type and isinstance(typehint, TypeVar)) or
+                        typehint in leaf_types or
+                        ActionTypeHint.is_supported_typehint(typehint, full=True)
+                    ):
                         return False
         return supported
 

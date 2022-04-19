@@ -486,6 +486,9 @@ class LoggerProperty:
         elif isinstance(logger, (bool, str, dict)) and logger:
             levels = {'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'}
             level = logging.WARNING
+            if isinstance(logger, dict) and len(set(logger.keys())-{'name', 'level'}) > 0:
+                value = {k: v for k, v in logger.items() if k not in {'name', 'level'}}
+                raise ValueError(f'Unexpected logger value {value}.')
             if isinstance(logger, dict) and 'level' in logger:
                 if logger['level'] not in levels:
                     raise ValueError(f'Logger level must be one of {levels}.')

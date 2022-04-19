@@ -269,6 +269,7 @@ class LoggingPropertyTests(unittest.TestCase):
     def test_failure_cases(self):
         self.assertRaises(ValueError, lambda: self.TestClass(logger={'level': 'invalid'}))
         self.assertRaises(ValueError, lambda: self.TestClass(logger=self.TestClass))
+        self.assertRaises(ValueError, lambda: self.TestClass(logger={'invalid': 'value'}))
 
 
 class ImportFunctionsTests(unittest.TestCase):

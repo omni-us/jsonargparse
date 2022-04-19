@@ -21,12 +21,14 @@ Fixed
 ^^^^^
 - Failing to parse strings that look like timestamps `#135
   <https://github.com/omni-us/jsonargparse/issues/135>`__.
+- Correctly consider nested mapping type without args as supported.
 
 Changed
 ^^^^^^^
 - Final classes now added as group of actions instead of one typehint action.
 - ``@final`` decorator now an import from typing_extensions if available.
 - Exporting ``ActionsContainer`` to show respective methods in documentation.
+- Raise ValueError when logger property given dict with unexpected key.
 
 
 v4.6.0 (2022-04-11)

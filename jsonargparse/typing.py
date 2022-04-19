@@ -304,7 +304,7 @@ def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Call
 final = typing_extensions_import('final')
 if not getattr(final(Namespace()), '__final__', False):
     def final(cls):  # pylint: disable=function-redefined
-        """Decorator to make a class `final` meaning that it shouldn't be subclassed."""
+        """Decorator to make a class `final`, i.e. it shouldn't be subclassed."""
         setattr(cls, '__final__', True)
         return cls
 

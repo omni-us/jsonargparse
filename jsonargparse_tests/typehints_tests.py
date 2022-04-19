@@ -255,6 +255,13 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--false=true']))
 
 
+    def test_nested_mapping_without_args(self):
+        parser = ArgumentParser()
+        parser.add_argument('--map', type=Mapping[str, Union[int, Mapping]])
+        self.assertEqual(parser.parse_args(['--map={"a": 1}']).map, {"a": 1})
+        self.assertEqual(parser.parse_args(['--map={"b": {"c": 2}}']).map, {"b": {"c": 2}})
+
+
     def _test_typehint_non_parameterized_types(self, type):
         parser = ArgumentParser(error_handler=None)
         ActionTypeHint.is_supported_typehint(type, full=True)
