@@ -3,6 +3,7 @@
 import json
 import os
 import pathlib
+import random
 import re
 import sys
 import unittest
@@ -27,6 +28,7 @@ from jsonargparse.typing import (
     path_type,
     PositiveInt,
     register_type,
+    restricted_number_type,
 )
 from jsonargparse_tests.base import mock_module, TempDirTestCase
 
@@ -222,6 +224,21 @@ class TypeHintsTests(unittest.TestCase):
         cfg = parser.parse_args(['--complex=(2+3j)'])
         self.assertEqual(cfg.complex, 2+3j)
         self.assertEqual(parser.dump(cfg), 'complex: (2+3j)\n')
+
+
+    def test_restricted_number_type(self):
+        limit_val = random.randint(100, 10000)
+        larger_than = restricted_number_type(f'larger_than_{limit_val}', int, ('>', limit_val))
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--val', type=larger_than, default=limit_val+1, help='Description')
+
+        self.assertEqual(limit_val+1, parser.parse_args([f'--val={limit_val+1}']).val)
+        self.assertRaises(ParserError, lambda: parser.parse_args([f'--val={limit_val-1}']))
+
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertIn(f'Description (type: larger_than_{limit_val}, default: {limit_val+1})', help_str.getvalue())
 
 
     def test_type_Any(self):

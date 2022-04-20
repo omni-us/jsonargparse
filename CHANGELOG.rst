@@ -22,6 +22,7 @@ Fixed
 - Failing to parse strings that look like timestamps `#135
   <https://github.com/omni-us/jsonargparse/issues/135>`__.
 - Correctly consider nested mapping type without args as supported.
+- New registered types incorrectly considered as class type.
 
 Changed
 ^^^^^^^

@@ -87,8 +87,7 @@ leaf_types = {
     NoneType,
 }
 
-not_subclass_types: Set = set(k for k in registered_types.keys() if not isinstance(k, tuple))
-not_subclass_types = not_subclass_types.union(leaf_types).union(root_types)
+leaf_or_root_types = leaf_types.union(root_types)
 
 tuple_set_origin_types = {Tuple, tuple, Set, set, frozenset, MutableSet, abc.Set, abc.MutableSet}
 sequence_origin_types = {List, list, Iterable, Sequence, MutableSequence, abc.Iterable, abc.Sequence,
@@ -179,7 +178,8 @@ class ActionTypeHint(Action):
             test = all if all_subtypes else any
             return test(ActionTypeHint.is_subclass_typehint(s) for s in subtypes)
         return inspect.isclass(typehint) and \
-            typehint not in not_subclass_types and \
+            typehint not in leaf_or_root_types and \
+            typehint not in registered_types and \
             typehint_origin is None and \
             not _issubclass(typehint, (Path, Enum))
 
