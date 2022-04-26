@@ -21,7 +21,7 @@ from jsonargparse import (
     strip_meta,
 )
 from jsonargparse.actions import _find_action
-from jsonargparse.optionals import dataclasses_support, docstring_parser_support, import_dataclasses
+from jsonargparse.optionals import dataclasses_support, docstring_parser_support, import_dataclasses, import_docstring_parse
 from jsonargparse.typing import final, OpenUnitInterval, PositiveFloat, PositiveInt
 from jsonargparse_tests.base import mock_module, suppress_stderr, TempDirTestCase
 
@@ -805,7 +805,8 @@ class SignaturesTests(unittest.TestCase):
                 pass
 
         with unittest.mock.patch('docstring_parser.parse') as docstring_parse:
-            docstring_parse.side_effect = ValueError
+            DocstringParseError = import_docstring_parse('test_docstring_parse_fail')[1]
+            docstring_parse.side_effect = DocstringParseError
             parser = ArgumentParser(error_handler=None)
             parser.add_class_arguments(Class1)
 

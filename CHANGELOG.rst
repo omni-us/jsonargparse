@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.7.1 (2022-04-26)
+-------------------
+
+Fixed
+^^^^^
+- Properly catch exceptions when parsing docstrings `pytorch-lightning#12883
+  <https://github.com/PyTorchLightning/pytorch-lightning/issues/12883>`__.
+
+
 v4.7.0 (2022-04-20)
 -------------------
 

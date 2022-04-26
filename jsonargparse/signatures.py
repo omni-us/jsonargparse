@@ -520,13 +520,13 @@ class SignatureArguments:
         doc_group = None
         doc_params = {}
         if docstring_parser_support:
-            docstring_parse = import_docstring_parse('_gather_docstrings')
+            docstring_parse, DocstringParseError = import_docstring_parse('_gather_docstrings')
             for base in objects:
                 for doc in docs_func(base):
                     try:
                         docstring = docstring_parse(doc)
-                    except ValueError:
-                        self.logger.debug(f'Failed parsing docstring for {base}')
+                    except (ValueError, DocstringParseError) as ex:
+                        self.logger.debug(f'Failed parsing docstring for {base}: {ex}')
                     else:
                         if docstring.short_description and not doc_group:
                             doc_group = docstring.short_description

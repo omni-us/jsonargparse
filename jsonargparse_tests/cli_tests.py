@@ -6,7 +6,7 @@ import yaml
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from jsonargparse import ArgumentParser, CLI, lazy_instance
-from jsonargparse.optionals import docstring_parser_support, ruyaml_support
+from jsonargparse.optionals import docstring_parser_support, import_docstring_parse, ruyaml_support
 from jsonargparse_tests.base import mock_module, TempDirTestCase
 
 
@@ -73,6 +73,14 @@ class CLITests(unittest.TestCase):
         self.assertIn('m1', out.getvalue())
         if docstring_parser_support:
             self.assertIn('Description of method1:', out.getvalue())
+
+            with unittest.mock.patch('docstring_parser.parse') as docstring_parse:
+                DocstringParseError = import_docstring_parse('test_docstring_parse_fail')[1]
+                docstring_parse.side_effect = DocstringParseError
+                out = StringIO()
+                with redirect_stdout(out), self.assertRaises(SystemExit):
+                    CLI(Class1, args=['x', 'method1', '--help'])
+                self.assertNotIn('Description of method1:', out.getvalue())
 
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):

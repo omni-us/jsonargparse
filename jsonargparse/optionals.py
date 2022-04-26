@@ -87,7 +87,8 @@ def import_requests(importer):
 def import_docstring_parse(importer):
     with missing_package_raise('docstring-parser', importer):
         from docstring_parser import parse as docstring_parse
-    return docstring_parse
+        from docstring_parser import ParseError as DocstringParseError
+    return docstring_parse, DocstringParseError
 
 
 def import_argcomplete(importer):
