@@ -75,7 +75,7 @@ class CLITests(unittest.TestCase):
             self.assertIn('Description of method1:', out.getvalue())
 
             with unittest.mock.patch('docstring_parser.parse') as docstring_parse:
-                DocstringParseError = import_docstring_parse('test_docstring_parse_fail')[1]
+                DocstringParseError = import_docstring_parse('test_docstring_parse_fail', True)[1]
                 docstring_parse.side_effect = DocstringParseError
                 out = StringIO()
                 with redirect_stdout(out), self.assertRaises(SystemExit):

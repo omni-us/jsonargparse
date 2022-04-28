@@ -95,7 +95,7 @@ def CLI(
 def _get_help_str(component):
     help_str = str(component)
     if docstring_parser_support:
-        docstring_parse, DocstringParseError = import_docstring_parse('_get_help_str')
+        docstring_parse, DocstringParseError = import_docstring_parse('_get_help_str', True)
         description = None
         try:
             if inspect.isclass(component):

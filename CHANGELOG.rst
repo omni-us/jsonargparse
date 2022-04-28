@@ -14,6 +14,16 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.7.2 (2022-04-??)
+-------------------
+
+Fixed
+^^^^^
+- Make ``import_docstring_parse`` backward compatible to support released
+  versions of ``LightningCLI`` `pytorch-lightning#12918
+  <https://github.com/PyTorchLightning/pytorch-lightning/pull/12918>`__.
+
+
 v4.7.1 (2022-04-26)
 -------------------
 

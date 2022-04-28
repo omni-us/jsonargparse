@@ -805,7 +805,7 @@ class SignaturesTests(unittest.TestCase):
                 pass
 
         with unittest.mock.patch('docstring_parser.parse') as docstring_parse:
-            DocstringParseError = import_docstring_parse('test_docstring_parse_fail')[1]
+            DocstringParseError = import_docstring_parse('test_docstring_parse_fail', True)[1]
             docstring_parse.side_effect = DocstringParseError
             parser = ArgumentParser(error_handler=None)
             parser.add_class_arguments(Class1)
