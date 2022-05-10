@@ -7,6 +7,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from jsonargparse import ArgumentParser, CLI, lazy_instance
 from jsonargparse.optionals import docstring_parser_support, import_docstring_parse, ruyaml_support
+from jsonargparse.typing import final
 from jsonargparse_tests.base import mock_module, TempDirTestCase
 
 
@@ -247,6 +248,36 @@ class CLITempDirTests(TempDirTestCase):
             with redirect_stdout(out):
                 CLI(C, args=['--config=config.yaml', 'cmd_b'])
             self.assertEqual('a yaml\n', out.getvalue())
+
+
+    def test_final_and_subclass_type_config_file(self):
+        class A:
+            def __init__(self, p1: str = 'a default'):
+                self.p1 = p1
+
+        @final
+        class B:
+            def __init__(self, a: A):
+                self.a = a
+
+        def run(b: B):
+            return b.a.p1
+
+        with mock_module(A) as module:
+            a_yaml = {
+                'class_path': f'{module}.A',
+                'init_args': {'p1': 'a yaml'}
+            }
+
+            with open('config.yaml', 'w') as f:
+                f.write('b: b.yaml\n')
+            with open('b.yaml', 'w') as f:
+                f.write('a: a.yaml\n')
+            with open('a.yaml', 'w') as f:
+                f.write(yaml.safe_dump(a_yaml))
+
+            out = CLI(run, args=['--config=config.yaml'])
+            self.assertEqual('a yaml', out)
 
 
 if __name__ == '__main__':

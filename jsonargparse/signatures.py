@@ -339,9 +339,10 @@ class SignatureArguments:
         elif not as_positional:
             kwargs['required'] = True
         is_subclass_typehint = False
+        is_final_class_typehint = is_final_class(annotation)
         if annotation in {str, int, float, bool} or \
            _issubclass(annotation, (str, int, float)) or \
-           is_final_class(annotation) or \
+           is_final_class_typehint or \
            is_pure_dataclass(annotation):
             kwargs['type'] = annotation
         elif annotation != inspect_empty:
@@ -357,19 +358,22 @@ class SignatureArguments:
                 self.logger.debug(skip_message+'Argument already added.')  # type: ignore
             else:
                 opt_str = dest if is_required and as_positional else '--'+dest
+                sub_add_kwargs = {
+                    'fail_untyped': fail_untyped,
+                    'sub_configs': sub_configs,
+                    'instantiate': instantiate,
+                }
                 if is_subclass_typehint:
                     help_action = group.add_argument(f'--{dest}.help', action=_ActionHelpClassPath(baseclass=annotation))
                     prefix = name + '.init_args.'
                     subclass_skip = {s[len(prefix):] for s in skip if s.startswith(prefix)}
                     help_action.sub_add_kwargs = {'fail_untyped': fail_untyped, 'skip': subclass_skip}
+                elif is_final_class_typehint:
+                    kwargs.update(sub_add_kwargs)
                 action = group.add_argument(opt_str, **kwargs)
-                action.sub_add_kwargs = {
-                    'fail_untyped': fail_untyped,
-                    'sub_configs': sub_configs,
-                    'instantiate': instantiate,
-                }
+                action.sub_add_kwargs = sub_add_kwargs
                 if is_subclass_typehint and len(subclass_skip) > 0:
-                    action.sub_add_kwargs['skip'] = subclass_skip
+                    action.sub_add_kwargs['skip'] = subclass_skip  # type: ignore
                 added_args.append(dest)
         elif is_required and fail_untyped:
             raise ValueError(f'Required parameter without a type for {obj} parameter "{name}".')
