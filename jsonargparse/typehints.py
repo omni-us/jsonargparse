@@ -149,12 +149,12 @@ class ActionTypeHint(Action):
         """Whether the given type hint is supported."""
         supported = \
             typehint in root_types or \
-            getattr(typehint, '__origin__', None) in root_types or \
+            get_typehint_origin(typehint) in root_types or \
             typehint in registered_types or \
             _issubclass(typehint, Enum) or \
             ActionTypeHint.is_subclass_typehint(typehint)
         if full and supported:
-            typehint_origin = getattr(typehint, '__origin__', typehint)
+            typehint_origin = get_typehint_origin(typehint) or typehint
             if typehint not in root_types and typehint_origin in root_types and typehint_origin != Literal:
                 for typehint in getattr(typehint, '__args__', []):
                     if not (
@@ -172,7 +172,7 @@ class ActionTypeHint(Action):
         typehint = typehint_from_action(typehint)
         if typehint is None:
             return False
-        typehint_origin = getattr(typehint, '__origin__', None)
+        typehint_origin = get_typehint_origin(typehint)
         if typehint_origin == Union:
             subtypes = [a for a in typehint.__args__ if a != NoneType]
             test = all if all_subtypes else any
@@ -186,7 +186,7 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def is_mapping_typehint(typehint):
-        typehint_origin = getattr(typehint, '__origin__', typehint)
+        typehint_origin = get_typehint_origin(typehint) or typehint
         if typehint in mapping_origin_types or typehint_origin in mapping_origin_types or is_optional(typehint, tuple(mapping_origin_types)):
             return True
         return False
@@ -397,7 +397,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
         'sub_add_kwargs': sub_add_kwargs or {},
     }
     subtypehints = getattr(typehint, '__args__', None)
-    typehint_origin = getattr(typehint, '__origin__', typehint)
+    typehint_origin = get_typehint_origin(typehint) or typehint
 
     # Any
     if typehint == Any:
@@ -625,7 +625,7 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
         for subclass in cl.__subclasses__() if hasattr(cl, '__subclasses__') else []:
             add_subclasses(subclass)
 
-    if getattr(cls, '__origin__', None) == Union:
+    if get_typehint_origin(cls) == Union:
         for arg in cls.__args__:
             if ActionTypeHint.is_subclass_typehint(arg):
                 add_subclasses(arg)
@@ -698,13 +698,19 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
     return init_args
 
 
+def get_typehint_origin(typehint):
+    if not hasattr(typehint, '__origin__') and get_import_path(typehint.__class__) == 'types.UnionType':
+        return Union
+    return getattr(typehint, '__origin__', None)
+
+
 def is_ellipsis_tuple(typehint):
     return typehint.__origin__ in {Tuple, tuple} and len(typehint.__args__) > 1 and typehint.__args__[1] == Ellipsis
 
 
 def is_optional(annotation, ref_type):
     """Checks whether a type annotation is an optional for one type class."""
-    return getattr(annotation, '__origin__', None) == Union and \
+    return get_typehint_origin(annotation) == Union and \
         len(annotation.__args__) == 2 and \
         any(NoneType == a for a in annotation.__args__) and \
         any(_issubclass(a, ref_type) for a in annotation.__args__)
@@ -712,15 +718,15 @@ def is_optional(annotation, ref_type):
 
 def is_enum_type(annotation):
     return _issubclass(annotation, Enum) or \
-        (getattr(annotation, '__origin__', None) == Union and
+        (get_typehint_origin(annotation) == Union and
          any(_issubclass(a, Enum) for a in annotation.__args__))
 
 
 def is_callable_type(annotation):
     def is_callable(a):
-        return getattr(a, '__origin__', a) in callable_origin_types or a in callable_origin_types
+        return (get_typehint_origin(a) or a) in callable_origin_types or a in callable_origin_types
     return is_callable(annotation) or \
-        (getattr(annotation, '__origin__', None) == Union and
+        (get_typehint_origin(annotation) == Union and
          any(is_callable(a) for a in annotation.__args__))
 
 

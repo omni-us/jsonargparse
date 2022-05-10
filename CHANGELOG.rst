@@ -20,6 +20,8 @@ v4.7.3 (2022-05-??)
 Fixed
 ^^^^^
 - ``sub_add_kwargs`` not propagated for parameters of final classes.
+- New union syntax not working `#136
+  <https://github.com/omni-us/jsonargparse/issues/136>`__.
 
 
 v4.7.2 (2022-04-29)

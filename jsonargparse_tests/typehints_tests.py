@@ -324,6 +324,15 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual('uuid: '+str(id1)+'\nuuids:\n- '+str(id1)+'\n- '+str(id2)+'\n', parser.dump(cfg))
 
 
+    @unittest.skipIf(sys.version_info[:2] < (3, 10), 'new union syntax introduced in python 3.10')
+    def test_union_new_syntax(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--str', type=eval('int | None'))
+        self.assertEqual(123, parser.parse_args(['--str=123']).str)
+        self.assertIsNone(parser.parse_args(['--str=null']).str)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--str=abc']))
+
+
     def test_Callable_with_function_path(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--callable', type=Callable, default=lazy_instance)
