@@ -548,7 +548,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             if not isinstance(prev_val, list):
                 try:
                     prev_val = [adapt_typehints(prev_val, subtypehints[0], **adapt_kwargs)]
-                except Exception as ex:
+                except Exception:
                     pass
             if isinstance(prev_val, list):
                 val = prev_val + (val if isinstance(val, list) else [val])
