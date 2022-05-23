@@ -6,7 +6,7 @@ from argparse import SUPPRESS
 from functools import wraps
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
-from .actions import _ActionConfigLoad, _ActionHelpClassPath
+from .actions import _ActionConfigLoad, _ActionHelpClassPath, _find_action
 from .namespace import Namespace
 from .typehints import ActionTypeHint, ClassType, is_optional, LazyInitBaseClass
 from .typing import is_final_class
@@ -340,6 +340,8 @@ class SignatureArguments:
             kwargs['required'] = True
         is_subclass_typehint = False
         is_final_class_typehint = is_final_class(annotation)
+        dest = (nested_key+'.' if nested_key else '') + name
+        args = [dest if is_required and as_positional else '--'+dest]
         if annotation in {str, int, float, bool} or \
            _issubclass(annotation, (str, int, float)) or \
            is_final_class_typehint or \
@@ -348,32 +350,36 @@ class SignatureArguments:
         elif annotation != inspect_empty:
             try:
                 is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation)
-                enable_path = is_subclass_typehint and sub_configs
-                kwargs['action'] = ActionTypeHint(typehint=annotation, enable_path=enable_path)
+                kwargs['type'] = annotation
+                sub_add_kwargs = None
+                if is_subclass_typehint:
+                    prefix = name + '.init_args.'
+                    subclass_skip = {s[len(prefix):] for s in skip if s.startswith(prefix)}
+                    sub_add_kwargs = {'fail_untyped': fail_untyped, 'skip': subclass_skip}
+                args = ActionTypeHint.prepare_add_argument(
+                    args=args,
+                    kwargs=kwargs,
+                    enable_path=is_subclass_typehint and sub_configs,
+                    container=group,
+                    sub_add_kwargs=sub_add_kwargs,
+                )
             except ValueError as ex:
                 self.logger.debug(skip_message+str(ex))  # type: ignore
         if 'type' in kwargs or 'action' in kwargs:
-            dest = (nested_key+'.' if nested_key else '') + name
             if dest in added_args:
                 self.logger.debug(skip_message+'Argument already added.')  # type: ignore
             else:
-                opt_str = dest if is_required and as_positional else '--'+dest
                 sub_add_kwargs = {
                     'fail_untyped': fail_untyped,
                     'sub_configs': sub_configs,
                     'instantiate': instantiate,
                 }
-                if is_subclass_typehint:
-                    help_action = group.add_argument(f'--{dest}.help', action=_ActionHelpClassPath(baseclass=annotation))
-                    prefix = name + '.init_args.'
-                    subclass_skip = {s[len(prefix):] for s in skip if s.startswith(prefix)}
-                    help_action.sub_add_kwargs = {'fail_untyped': fail_untyped, 'skip': subclass_skip}
-                elif is_final_class_typehint:
+                if is_final_class_typehint:
                     kwargs.update(sub_add_kwargs)
-                action = group.add_argument(opt_str, **kwargs)
+                action = group.add_argument(*args, **kwargs)
                 action.sub_add_kwargs = sub_add_kwargs
                 if is_subclass_typehint and len(subclass_skip) > 0:
-                    action.sub_add_kwargs['skip'] = subclass_skip  # type: ignore
+                    action.sub_add_kwargs['skip'] = subclass_skip
                 added_args.append(dest)
         elif is_required and fail_untyped:
             raise ValueError(f'Required parameter without a type for {obj} parameter "{name}".')

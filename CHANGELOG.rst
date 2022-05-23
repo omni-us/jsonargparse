@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.8.0 (2022-05-??)
+-------------------
+
+Added
+^^^^^
+- Support append to lists both from command line and config file `#85
+  <https://github.com/omni-us/jsonargparse/issues/85>`__.
+
+
 v4.7.3 (2022-05-10)
 -------------------
 

@@ -858,6 +858,37 @@ Some notes about this support are:
   not validated.
 
 
+.. _list-append:
+
+List append
+-----------
+
+As detailed before, arguments with ``List`` type are supported. By default when
+specifying an argument value, the previous value is replaced, and this also
+holds for lists. Thus, a parse such as ``parser.parse_args(['--list=[1]',
+'--list=[2, 3]'])`` would result in a final value of ``[2, 3]``. However, in
+some cases it might be desided to append to the list instead of replacing. This
+can be achieved by adding ``+`` as suffix to the argument key, for example:
+
+.. testsetup:: append
+
+    from jsonargparse import ArgumentParser
+    from typing import List
+    parser = ArgumentParser()
+
+.. doctest:: append
+
+    >>> parser.add_argument('--list', type=List[int])  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(['--list=[1]', '--list+=[2, 3]'])
+    Namespace(list=[1, 2, 3])
+    >>> parser.parse_args(['--list=[4]', '--list+=5'])
+    Namespace(list=[4, 5])
+
+Appending works for any list element type. List elements with class type (see
+:ref:`sub-classes`) is supported and the short notation for ``init_args`` when
+used gets applied to the last element of the list.
+
+
 .. _restricted-numbers:
 
 Restricted numbers
