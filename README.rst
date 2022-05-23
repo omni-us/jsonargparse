@@ -884,9 +884,25 @@ can be achieved by adding ``+`` as suffix to the argument key, for example:
     >>> parser.parse_args(['--list=[4]', '--list+=5'])
     Namespace(list=[4, 5])
 
-Appending works for any list element type. List elements with class type (see
-:ref:`sub-classes`) is supported and the short notation for ``init_args`` when
-used gets applied to the last element of the list.
+Append is also supported in config files. For instance the following two config
+files would first assign a list and then append to this list:
+
+.. code-block:: yaml
+
+    # config1.yaml
+    list:
+    - 1
+
+.. code-block:: yaml
+
+    # config2.yaml
+    list+:
+    - 2
+    - 3
+
+Appending works for any type for the list elements. List elements with class
+type is also supported and the short notation for ``init_args`` when used (see
+:ref:`sub-classes`), gets applied to the last element of the list.
 
 
 .. _restricted-numbers:
