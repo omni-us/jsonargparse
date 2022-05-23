@@ -259,8 +259,15 @@ class TypeHintsTests(unittest.TestCase):
         subparser.add_class_arguments(A, 'a')
         subcommands = parser.add_subcommands()
         subcommands.add_subcommand('cmd', subparser)
-        cfg = parser.parse_args(['cmd', '--a.cals+=Calendar', '--a.cals+=TextCalendar'])
+        cfg = parser.parse_args([
+            'cmd',
+            '--a.cals+=Calendar',
+            '--a.cals.firstweekday=3',
+            '--a.cals+=TextCalendar',
+            '--a.cals.firstweekday=1',
+        ])
         self.assertEqual(['calendar.Calendar', 'calendar.TextCalendar'], [x.class_path for x in cfg.cmd.a.cals])
+        self.assertEqual([3, 1], [x.init_args.firstweekday for x in cfg.cmd.a.cals])
         cfg = parser.parse_args(['cmd', f'--a={json.dumps(cfg.cmd.a.as_dict())}', '--a.cals.firstweekday=4'])
         self.assertEqual(Namespace(firstweekday=4), cfg.cmd.a.cals[-1].init_args)
 
