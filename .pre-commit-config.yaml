@@ -1,0 +1,96 @@
+fail_fast: true
+
+repos:
+
+- repo: local
+  hooks:
+
+  - name: twine check [on bumpversion]
+    id: ./setup.py bdist_wheel && twine check dist/*.whl
+    entry: bash -c '
+      if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
+        echo skipped;
+      else
+        ./setup.py bdist_wheel;
+        twine check dist/*.whl;
+      fi'
+    language: system
+    pass_filenames: false
+    verbose: true
+
+  - name: changelog [on bumpversion]
+    id: fail on CHANGELOG.rst not updated, or update CHANGELOG.rst if BUMPVERSION_UPDATE_CHANGELOG set
+    entry: bash -c '
+      if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
+        echo skipped;
+      else
+        CHANGELOG=$(grep -E "^v.+\..+\..+ \(....-..-..\)" CHANGELOG.rst | head -n 1);
+        EXPECTED="v$BUMPVERSION_NEW_VERSION ($(date -u +%Y-%m-%d))";
+        if [ "$CHANGELOG" != "$EXPECTED" ] && [ $(echo $BUMPVERSION_NEW_VERSION | grep -cE "[0-9.]+(\.dev|rc)[0-9]+") = 0 ]; then
+          if [ ! -z "${BUMPVERSION_UPDATE_CHANGELOG+x}" ] && [ $(grep -c "^v$BUMPVERSION_NEW_VERSION " CHANGELOG.rst) = 1 ]; then
+            sed -i "s|^v$BUMPVERSION_NEW_VERSION .*|$EXPECTED|" CHANGELOG.rst;
+            git add CHANGELOG.rst;
+          else
+            echo "Expected latest release in CHANGELOG.rst to be $EXPECTED. Set BUMPVERSION_UPDATE_CHANGELOG to auto update.";
+            exit 1;
+          fi
+        fi
+      fi'
+    language: system
+    pass_filenames: false
+    verbose: true
+
+  - name: circleci config
+    id: circleci config validate -c .circleci/config.yml
+    entry: circleci config validate -c
+    language: system
+    files: .circleci/config.yml
+    verbose: true
+
+  - name: mypy
+    id: mypy jsonargparse/*.py jsonargparse_tests/*.py
+    entry: bash -c "mypy jsonargparse/*.py jsonargparse_tests/*.py"
+    language: system
+    types: [python]
+    pass_filenames: false
+    verbose: true
+
+  - name: pycodestyle
+    id: pycodestyle
+    entry: pycodestyle
+    language: system
+    types: [python]
+    verbose: true
+
+  - name: pylint
+    id: pylint --errors-only --disable=no-member
+    entry: pylint --errors-only --disable=no-member
+    language: system
+    types: [python]
+    verbose: true
+
+  - name: tox [on bumpversion]
+    id: tox
+    entry: bash -c '
+      if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
+        echo skipped;
+      else
+        tox;
+      fi'
+    language: system
+    pass_filenames: false
+    verbose: true
+
+  - name: doctest
+    id: sphinx-build -M doctest sphinx sphinx/_build sphinx/README.rst
+    entry: sphinx-build -M doctest sphinx sphinx/_build sphinx/README.rst
+    language: system
+    pass_filenames: false
+    verbose: true
+
+  - name: coverage
+    id: ./setup.py test_coverage
+    entry: ./setup.py test_coverage
+    language: system
+    pass_filenames: false
+    verbose: true

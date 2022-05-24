@@ -22,6 +22,10 @@ Added
 - Support append to lists both from command line and config file `#85
   <https://github.com/omni-us/jsonargparse/issues/85>`__.
 
+Changed
+^^^^^^^
+- Replaced custom pre-commit script with a .pre-commit-config.yaml config.
+
 
 v4.7.3 (2022-05-10)
 -------------------
