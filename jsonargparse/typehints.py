@@ -1,6 +1,5 @@
 """Action to support type hints."""
 
-import copy
 import inspect
 import os
 import re
@@ -32,7 +31,7 @@ from typing import (
     Union,
 )
 
-from .actions import _find_action, _find_parent_action, _is_action_value_list
+from .actions import _ActionHelpClassPath, _find_action, _find_parent_action, _is_action_value_list
 from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import is_empty_namespace, Namespace
 from .typing import is_final_class, registered_types
@@ -131,6 +130,7 @@ class ActionTypeHint(Action):
             if 'metavar' not in kwargs:
                 kwargs['metavar'] = typehint_metavar(self._typehint)
             super().__init__(**kwargs)
+            self._supports_append = self.supports_append(self._typehint)
             self.normalize_default()
 
 
@@ -142,6 +142,21 @@ class ActionTypeHint(Action):
             self.default = default.name
         elif is_callable_type(self._typehint) and callable(default) and not inspect.isclass(default):
             self.default = get_import_path(default)
+
+
+    @staticmethod
+    def prepare_add_argument(args, kwargs, enable_path, container, sub_add_kwargs=None):
+        if 'action' in kwargs:
+            raise ValueError('Providing both type and action allowed.')
+        typehint = kwargs.pop('type')
+        if ActionTypeHint.supports_append(typehint):
+            args = tuple(list(args)+[args[0]+'+'])
+        if ActionTypeHint.is_subclass_typehint(typehint):
+            help_action = container.add_argument(args[0]+'.help', action=_ActionHelpClassPath(baseclass=typehint))
+            if sub_add_kwargs:
+                help_action.sub_add_kwargs = sub_add_kwargs
+        kwargs['action'] = ActionTypeHint(typehint=typehint, enable_path=enable_path)
+        return args
 
 
     @staticmethod
@@ -246,6 +261,28 @@ class ActionTypeHint(Action):
             parser._apply_actions(cfg)
 
 
+    @staticmethod
+    def supports_append(action):
+        typehint = typehint_from_action(action)
+        typehint_origin = get_typehint_origin(typehint)
+        return typehint and (
+            typehint_origin in sequence_origin_types or
+            (
+                typehint_origin == Union and
+                any(get_typehint_origin(x) in sequence_origin_types for x in typehint.__args__)
+            )
+        )
+
+    @staticmethod
+    def apply_appends(parser, cfg):
+        for key in [k for k in cfg.keys() if k.endswith('+')]:
+            action = _find_action(parser, key[:-1])
+            if ActionTypeHint.supports_append(action):
+                val = action._check_type(cfg[key], append=True, cfg=cfg)
+                cfg[key[:-1]] = val
+                cfg.pop(key)
+
+
     def serialize(self, value, dump_kwargs=None):
         sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
         with dump_kwargs_context(dump_kwargs):
@@ -280,20 +317,27 @@ class ActionTypeHint(Action):
                             cfg_dest['class_path'] = default['class_path']
                         except (KeyError, TypeError):
                             pass
-                    if 'class_path' not in cfg_dest:
+                    if not(
+                        ('class_path' in cfg_dest and not isinstance(cfg_dest, list)) or
+                        (self._supports_append and cfg_dest and isinstance(cfg_dest, list) and 'class_path' in cfg_dest[-1])
+                    ):
                         raise ParserError(f'Found {opt_str} but not yet known to which class_path this corresponds.')
                     if not sub_opt.startswith('init_args.'):
                         sub_opt = 'init_args.' + sub_opt
                     if len(sub_opt.split('.', 2)) == 3:
                         val = NestedArg(key=sub_opt[len('init_args.'):], val=val)
                         sub_opt = 'init_args'
-                    cfg_dest[sub_opt] = val
+                    if isinstance(cfg_dest, list):
+                        cfg_dest[-1][sub_opt] = val
+                    else:
+                        cfg_dest[sub_opt] = val
                     val = cfg_dest
-            val = self._check_type(val, cfg=cfg)
+            append = opt_str == f'--{self.dest}+'
+            val = self._check_type(val, append=append, cfg=cfg)
         args[1].update(val, self.dest)
 
 
-    def _check_type(self, value, cfg=None):
+    def _check_type(self, value, append=False, cfg=None):
         islist = _is_action_value_list(self)
         if not islist:
             value = [value]
@@ -305,23 +349,32 @@ class ActionTypeHint(Action):
                 except get_loader_exceptions():
                     config_path = None
                 path_meta = val.pop('__path__', None) if isinstance(val, dict) else None
-                sub_add_kwargs = getattr(self, 'sub_add_kwargs', {})
-                prev_val = cfg.get(self.dest) if cfg else None
+                kwargs = {
+                    'sub_add_kwargs': getattr(self, 'sub_add_kwargs', {}),
+                    'prev_val': cfg.get(self.dest) if cfg else None,
+                    'append': append,
+                }
                 try:
                     with change_to_path_dir(config_path):
-                        val = adapt_typehints(val, self._typehint, prev_val=prev_val, sub_add_kwargs=sub_add_kwargs)
+                        val = adapt_typehints(val, self._typehint, **kwargs)
                 except ValueError as ex:
                     val_is_int_float_or_none = isinstance(val, (int, float)) or val is None
                     if lenient_check.get():
                         value[num] = orig_val if val_is_int_float_or_none else val
                         continue
                     if val_is_int_float_or_none and config_path is None:
-                        val = adapt_typehints(orig_val, self._typehint, prev_val=prev_val, sub_add_kwargs=sub_add_kwargs)
+                        val = adapt_typehints(orig_val, self._typehint, **kwargs)
                     else:
                         if self._enable_path and config_path is None and isinstance(orig_val, str):
                             msg = f'\n- Expected a config path but "{orig_val}" either not accessible or invalid.\n- '
                             raise type(ex)(msg+str(ex)) from ex
                         raise ex
+
+                if not append and self._supports_append:
+                    prev_val = kwargs.get('prev_val')
+                    if isinstance(prev_val, list) and not_append_diff(prev_val, val) and get_typehint_origin(self._typehint) == Union:
+                        warnings.warn(f'Replacing list value "{prev_val}" with "{val}". To append to a list use "{self.dest}+".')
+
                 if path_meta is not None:
                     val['__path__'] = path_meta
                 if isinstance(val, (Namespace, dict)) and config_path is not None:
@@ -388,15 +441,16 @@ class ActionTypeHint(Action):
             return argcomplete_warn_redraw_prompt(prefix, msg)
 
 
-def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, prev_val=None, sub_add_kwargs=None):
+def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, prev_val=None, append=False, sub_add_kwargs=None):
 
     adapt_kwargs = {
         'serialize': serialize,
         'instantiate_classes': instantiate_classes,
         'prev_val': prev_val,
+        'append': append,
         'sub_add_kwargs': sub_add_kwargs or {},
     }
-    subtypehints = getattr(typehint, '__args__', None)
+    subtypehints = get_typehint_subtypes(typehint, append=append)
     typehint_origin = get_typehint_origin(typehint) or typehint
 
     # Any
@@ -490,6 +544,14 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
 
     # List, Iterable or Sequence
     elif typehint_origin in sequence_origin_types:
+        if append and prev_val is not None:
+            if not isinstance(prev_val, list):
+                try:
+                    prev_val = [adapt_typehints(prev_val, subtypehints[0], **adapt_kwargs)]
+                except Exception:
+                    pass
+            if isinstance(prev_val, list):
+                val = prev_val + (val if isinstance(val, list) else [val])
         if not isinstance(val, list):
             raise ValueError(f'Expected a List but got "{val}"')
         if subtypehints is not None:
@@ -506,7 +568,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                 val = {cast(k): v for k, v in val.items()}
             for k, v in val.items():
                 if "linked_targets" in adapt_kwargs["sub_add_kwargs"]:
-                    kwargs = copy.deepcopy(adapt_kwargs)
+                    kwargs = deepcopy(adapt_kwargs)
                     sub_add_kwargs = kwargs["sub_add_kwargs"]
                     sub_add_kwargs["linked_targets"] = {t[len(k + "."):] for t in sub_add_kwargs["linked_targets"]
                                                         if t.startswith(k + ".")}
@@ -696,6 +758,20 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
     else:
         init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
     return init_args
+
+
+def not_append_diff(val1, val2):
+    if isinstance(val1, list) and isinstance(val2, list):
+        val1 = [x.get('class_path') if is_class_object(x) else x for x in val1]
+        val2 = [x.get('class_path') if is_class_object(x) else x for x in val2]
+    return val1 != val2
+
+
+def get_typehint_subtypes(typehint, append):
+    subtypes = getattr(typehint, '__args__', None)
+    if append and subtypes:
+        subtypes = sorted(subtypes, key=lambda x: get_typehint_origin(x) not in sequence_origin_types)
+    return subtypes
 
 
 def get_typehint_origin(typehint):

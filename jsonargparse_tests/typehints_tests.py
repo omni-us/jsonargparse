@@ -8,6 +8,7 @@ import re
 import sys
 import unittest
 import uuid
+import warnings
 import yaml
 from calendar import Calendar
 from contextlib import redirect_stderr, redirect_stdout
@@ -224,6 +225,51 @@ class TypeHintsTests(unittest.TestCase):
         cfg = parser.parse_args(['--complex=(2+3j)'])
         self.assertEqual(cfg.complex, 2+3j)
         self.assertEqual(parser.dump(cfg), 'complex: (2+3j)\n')
+
+
+    def test_list_append(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--val', type=Union[int, str, List[int]])
+        self.assertEqual(0, parser.parse_args(['--val+=0']).val)
+        self.assertEqual([1, 2, 3], parser.parse_args(['--val+=1', '--val+=2', '--val+=3']).val)
+        self.assertEqual([1, 2, 3], parser.parse_args(['--val=[1,2]', '--val+=3']).val)
+        self.assertEqual(1, parser.parse_args(['--val=a', '--val+=1']).val)
+        with warnings.catch_warnings(record=True) as w:
+            self.assertEqual(3, parser.parse_args(['--val=[1,2]', '--val=3']).val)
+            self.assertIn('Replacing list value "[1, 2]" with "3"', str(w[0].message))
+
+
+    def test_list_append_config(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        parser.add_argument('--val', type=List[int], default=[1, 2])
+        self.assertEqual([3, 4], parser.parse_args(['--cfg', 'val: [3, 4]']).val)
+        self.assertEqual([1, 2, 3], parser.parse_args(['--cfg', 'val+: 3']).val)
+        self.assertEqual([1, 2, 3, 4], parser.parse_args(['--cfg', 'val+: [3, 4]']).val)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', 'val+: a']))
+
+
+    def test_list_append_subcommand_subclass(self):
+        class A:
+            def __init__(self, cals: Union[Calendar, List[Calendar]] = None):
+                self.cals = cals
+
+        parser = ArgumentParser(error_handler=None)
+        subparser = ArgumentParser()
+        subparser.add_class_arguments(A, 'a')
+        subcommands = parser.add_subcommands()
+        subcommands.add_subcommand('cmd', subparser)
+        cfg = parser.parse_args([
+            'cmd',
+            '--a.cals+=Calendar',
+            '--a.cals.firstweekday=3',
+            '--a.cals+=TextCalendar',
+            '--a.cals.firstweekday=1',
+        ])
+        self.assertEqual(['calendar.Calendar', 'calendar.TextCalendar'], [x.class_path for x in cfg.cmd.a.cals])
+        self.assertEqual([3, 1], [x.init_args.firstweekday for x in cfg.cmd.a.cals])
+        cfg = parser.parse_args(['cmd', f'--a={json.dumps(cfg.cmd.a.as_dict())}', '--a.cals.firstweekday=4'])
+        self.assertEqual(Namespace(firstweekday=4), cfg.cmd.a.cals[-1].init_args)
 
 
     def test_restricted_number_type(self):

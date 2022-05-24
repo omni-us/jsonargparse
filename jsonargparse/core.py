@@ -26,7 +26,6 @@ from .actions import (
     _ActionPrintConfig,
     _ActionConfigLoad,
     _ActionLink,
-    _ActionHelpClassPath,
     _is_branch_key,
     _find_action,
     _find_action_and_subcommand,
@@ -99,12 +98,12 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerPro
                     self.add_dataclass_arguments(theclass, nested_key, **kwargs)
                 return _find_action(parser, nested_key)
             if ActionTypeHint.is_supported_typehint(kwargs['type']):
-                if 'action' in kwargs:
-                    raise ValueError('Type hint as type does not allow providing an action.')
-                if ActionTypeHint.is_subclass_typehint(kwargs['type']):
-                    dest = re.sub('^--', '', args[0])
-                    super().add_argument(f'--{dest}.help', action=_ActionHelpClassPath(baseclass=kwargs['type']))  # type: ignore
-                kwargs['action'] = ActionTypeHint(typehint=kwargs.pop('type'), enable_path=enable_path)
+                args = ActionTypeHint.prepare_add_argument(
+                    args=args,
+                    kwargs=kwargs,
+                    enable_path=enable_path,
+                    container=super(),
+                )
         action = super().add_argument(*args, **kwargs)
         if isinstance(action, ActionConfigFile) and getattr(self, '_print_config', None) is not None:
             self.add_argument(self._print_config, action=_ActionPrintConfig)  # type: ignore
@@ -298,6 +297,8 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
 
         elif defaults:
             cfg = self.merge_config(cfg, self.get_defaults(skip_check=True))
+            with load_value_context(self.parser_mode):
+                ActionTypeHint.apply_appends(self, cfg)
             with _lenient_check_context():
                 ActionTypeHint.add_sub_defaults(self, cfg)
 
