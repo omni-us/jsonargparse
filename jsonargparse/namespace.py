@@ -260,7 +260,7 @@ class Namespace(ArgparseNamespace):
 
         Args:
             value: A namespace to update multiple values or other type to set in a single key.
-            key: Branch key where to set the value. Required if value is not namepace.
+            key: Branch key where to set the value. Required if value is not namespace.
             only_unset: Whether to only set the value if not set in namespace.
         """
         if not isinstance(value, Namespace):
