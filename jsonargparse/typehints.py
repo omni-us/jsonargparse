@@ -552,11 +552,13 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                     pass
             if isinstance(prev_val, list):
                 val = prev_val + (val if isinstance(val, list) else [val])
+                prev_val = prev_val + [None] * (len(val) if isinstance(val, list) else 1)
         if not isinstance(val, list):
             raise ValueError(f'Expected a List but got "{val}"')
         if subtypehints is not None:
             for n, v in enumerate(val):
-                val[n] = adapt_typehints(v, subtypehints[0], **adapt_kwargs)
+                adapt_kwargs_n = {**adapt_kwargs, 'prev_val': prev_val[n]} if isinstance(prev_val, list) else adapt_kwargs
+                val[n] = adapt_typehints(v, subtypehints[0], **adapt_kwargs_n)
 
     # Dict, Mapping
     elif typehint_origin in mapping_origin_types:

@@ -5,7 +5,7 @@ import unittest
 import yaml
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
-from jsonargparse import ArgumentParser, CLI, lazy_instance
+from jsonargparse import ArgumentParser, capture_parser, CLI, lazy_instance
 from jsonargparse.optionals import docstring_parser_support, import_docstring_parse, ruyaml_support
 from jsonargparse.typing import final
 from jsonargparse_tests.base import mock_module, TempDirTestCase
@@ -18,7 +18,11 @@ class CLITests(unittest.TestCase):
             return a1
 
         self.assertEqual(1.2, CLI(function, args=['1.2']))
-        parser = CLI(function, return_parser=True, set_defaults={'a1': 3.4})
+
+        def run_cli():
+            CLI(function, set_defaults={'a1': 3.4})
+
+        parser = capture_parser(run_cli)
         self.assertIsInstance(parser, ArgumentParser)
         self.assertEqual(3.4, parser.get_defaults().a1)
 
@@ -33,7 +37,11 @@ class CLITests(unittest.TestCase):
         functions = [cmd1, cmd2]
         self.assertEqual(5, CLI(functions, args=['cmd1', '5']))
         self.assertEqual('Y', CLI(functions, args=['cmd2', '--a2=Y']))
-        parser = CLI(functions, return_parser=True, set_defaults={'cmd2.a2': 'Z'})
+
+        def run_cli():
+            CLI(functions, set_defaults={'cmd2.a2': 'Z'})
+
+        parser = capture_parser(run_cli)
         self.assertIsInstance(parser, ArgumentParser)
         self.assertEqual('Z', parser.parse_args(['cmd2'])['cmd2']['a2'])
 

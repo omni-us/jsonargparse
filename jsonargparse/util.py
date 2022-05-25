@@ -10,7 +10,8 @@ import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Callable, Optional, Tuple, Union
+from types import BuiltinFunctionType, FunctionType, ModuleType
+from typing import Any, Callable, Optional, Tuple, Type, Union
 
 from .loaders_dumpers import load_value
 from .optionals import (
@@ -30,6 +31,7 @@ __all__ = [
     'null_logger',
     'ParserError',
     'Path',
+    'register_unresolvable_import_paths',
     'usage_and_exit_error_handler',
 ]
 
@@ -187,11 +189,34 @@ def import_module_leaf(name: str):
     return module
 
 
+unresolvable_import_paths = {}
+
+
+def register_unresolvable_import_paths(*modules: ModuleType):
+    """Saves import paths of module objects for which its import path is unresolvable from the object alone.
+
+    Objects with unresolvable import paths have the __module__ attribute set to None.
+    """
+    for module in modules:
+        for val in vars(module).values():
+            if getattr(val, '__module__', None) is None and \
+               getattr(val, '__name__', None) and \
+               type(val) in {BuiltinFunctionType, FunctionType, Type}:
+                unresolvable_import_paths[val] = f'{module.__name__}.{val.__name__}'
+
+
 def get_import_path(value):
     """Returns the shortest dot import path for the given object."""
-    path = value.__module__ + '.' + value.__qualname__
-    if '.' in value.__module__:
-        module_parts = value.__module__.split('.')
+    module_path = getattr(value, '__module__', None)
+    if module_path is None:
+        path = unresolvable_import_paths.get(value)
+        if not path:
+            raise ValueError(f'Not possible to determine the import path for object {value}.')
+        module_path = path.rsplit('.', 1)[0]
+    else:
+        path = module_path + '.' + value.__qualname__
+    if '.' in module_path:
+        module_parts = module_path.split('.')
         for num in range(len(module_parts)):
             module_path = '.'.join(module_parts[:num+1])
             module = import_module_leaf(module_path)

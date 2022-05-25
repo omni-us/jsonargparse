@@ -3,9 +3,10 @@
 import calendar
 import os
 import unittest
+import warnings
 from enum import Enum
 from io import StringIO
-from jsonargparse import ActionConfigFile, ArgumentParser, get_config_read_mode, ParserError, Path, set_url_support
+from jsonargparse import ActionConfigFile, ArgumentParser, CLI, get_config_read_mode, ParserError, Path, set_url_support
 from jsonargparse.deprecated import ActionEnum, ActionPath, ActionOperators
 from jsonargparse.optionals import url_support
 from jsonargparse_tests.base import TempDirTestCase
@@ -21,7 +22,8 @@ class DeprecatedTests(unittest.TestCase):
             C = 3
 
         parser = ArgumentParser(error_handler=None)
-        action = ActionEnum(enum=MyEnum)
+        with warnings.catch_warnings(record=True):
+            action = ActionEnum(enum=MyEnum)
         parser.add_argument('--enum',
             action=action,
             default=MyEnum.C,
@@ -55,8 +57,9 @@ class DeprecatedTests(unittest.TestCase):
 
     def test_ActionOperators(self):
         parser = ArgumentParser(prog='app', error_handler=None)
-        parser.add_argument('--le0',
-            action=ActionOperators(expr=('<', 0)))
+        with warnings.catch_warnings(record=True):
+            parser.add_argument('--le0',
+                action=ActionOperators(expr=('<', 0)))
         parser.add_argument('--gt1.a.le4',
             action=ActionOperators(expr=[('>', 1.0), ('<=', 4.0)], join='and', type=float))
         parser.add_argument('--lt5.o.ge10.o.eq7',
@@ -100,7 +103,8 @@ class DeprecatedTests(unittest.TestCase):
     @unittest.skipIf(not url_support, 'validators and requests packages are required')
     def test_url_support_true(self):
         self.assertEqual('fr', get_config_read_mode())
-        set_url_support(True)
+        with warnings.catch_warnings(record=True):
+            set_url_support(True)
         self.assertEqual('fur', get_config_read_mode())
         set_url_support(False)
         self.assertEqual('fr', get_config_read_mode())
@@ -120,8 +124,29 @@ class DeprecatedTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--cal', type=calendar.Calendar)
         cfg = parser.parse_object({'cal':{'class_path': 'calendar.Calendar'}})
-        cfg_init = parser.instantiate_subclasses(cfg)
+        with warnings.catch_warnings(record=True):
+            cfg_init = parser.instantiate_subclasses(cfg)
         self.assertIsInstance(cfg_init['cal'], calendar.Calendar)
+
+
+    def test_single_function_cli(self):
+        def function(a1: float):
+            return a1
+
+        with warnings.catch_warnings(record=True):
+            parser = CLI(function, return_parser=True, set_defaults={'a1': 3.4})
+        self.assertIsInstance(parser, ArgumentParser)
+
+
+    def test_multiple_functions_cli(self):
+        def cmd1(a1: int):
+            return a1
+
+        def cmd2(a2: str = 'X'):
+            return a2
+
+        parser = CLI([cmd1, cmd2], return_parser=True, set_defaults={'cmd2.a2': 'Z'})
+        self.assertIsInstance(parser, ArgumentParser)
 
 
 class DeprecatedTempDirTests(TempDirTestCase):
@@ -129,7 +154,8 @@ class DeprecatedTempDirTests(TempDirTestCase):
     def test_parse_as_dict(self):
         with open('config.json', 'w') as f:
             f.write('{}')
-        parser = ArgumentParser(parse_as_dict=True, default_meta=False)
+        with warnings.catch_warnings(record=True):
+            parser = ArgumentParser(parse_as_dict=True, default_meta=False)
         self.assertEqual({}, parser.parse_args([]))
         self.assertEqual({}, parser.parse_env([]))
         self.assertEqual({}, parser.parse_string('{}'))
@@ -151,7 +177,8 @@ class DeprecatedTempDirTests(TempDirTestCase):
 
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--cfg', action=ActionConfigFile)
-        parser.add_argument('--file', action=ActionPath(mode='fr'))
+        with warnings.catch_warnings(record=True):
+            parser.add_argument('--file', action=ActionPath(mode='fr'))
         parser.add_argument('--dir', action=ActionPath(mode='drw'))
         parser.add_argument('--files', nargs='+', action=ActionPath(mode='fr'))
 

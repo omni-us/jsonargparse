@@ -1202,6 +1202,15 @@ and ``init_args`` instead of the class instance. Furthermore, if
 class is created thereby avoiding issues related to the mutability of the
 default.
 
+.. note::
+
+    In python there can be some classes or functions for which it is not
+    possible to determine its import path from the object alone. When using one
+    of these as a default would cause a failure when serializing because what
+    gets saved in the config file is the import path. To overcome this problem
+    use the :func:`.register_unresolvable_import_paths` function giving it the
+    module from where the respective object can be imported.
+
 Final classes
 -------------
 

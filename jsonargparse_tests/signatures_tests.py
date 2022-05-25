@@ -360,7 +360,9 @@ class SignaturesTests(unittest.TestCase):
         self.assertIsInstance(cfg['cal'], calendar.Calendar)
         cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['cal'], calendar.Calendar)
-        dump = parser.dump(cfg)
+        with warnings.catch_warnings(record=True) as w:
+            dump = parser.dump(cfg)
+            self.assertIn('Not possible to serialize an instance of', str(w[0].message))
         self.assertIn('cal: <calendar.Calendar object at ', dump)
 
 

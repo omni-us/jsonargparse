@@ -21,10 +21,16 @@ Added
 ^^^^^
 - Support append to lists both from command line and config file `#85
   <https://github.com/omni-us/jsonargparse/issues/85>`__.
+- New ``register_unresolvable_import_paths`` function to allow getting the
+  import paths of objects that don't have a proper ``__module__`` attribute
+  `pytorch-lightning#13092
+  <https://github.com/PyTorchLightning/pytorch-lightning/issues/13092>`__.
 
 Changed
 ^^^^^^^
-- Replaced custom pre-commit script with a .pre-commit-config.yaml config.
+- Replaced custom pre-commit script with a .pre-commit-config.yaml file.
+- All warnings are now catched in unit tests.
+- Moved ``return_parser`` tests to deprecated tests module.
 
 
 v4.7.3 (2022-05-10)

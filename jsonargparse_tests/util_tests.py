@@ -9,8 +9,8 @@ import unittest
 import zipfile
 from jsonargparse import ArgumentParser, LoggerProperty, null_logger, Path
 from jsonargparse.optionals import fsspec_support, import_fsspec, url_support
-from jsonargparse.util import get_import_path, import_object
-from jsonargparse_tests.base import responses, responses_activate, suppress_stderr, TempDirTestCase
+from jsonargparse.util import get_import_path, import_object, register_unresolvable_import_paths
+from jsonargparse_tests.base import mock_module, responses, responses_activate, suppress_stderr, TempDirTestCase
 
 
 @unittest.skipIf(os.name != 'posix' or platform.python_implementation() != 'CPython',
@@ -285,6 +285,16 @@ class ImportFunctionsTests(unittest.TestCase):
         from email.mime.base import MIMEBase
         self.assertEqual(get_import_path(MIMEBase), 'email.mime.base.MIMEBase')
 
+
+    def test_register_unresolvable_import_paths(self):
+        def func():
+            pass
+
+        with mock_module(func) as module_name:
+            func.__module__ = None
+            self.assertRaises(ValueError, lambda: get_import_path(func))
+            register_unresolvable_import_paths(__import__(module_name))
+            self.assertEqual(get_import_path(func), f'{module_name}.func')
 
 
 if __name__ == '__main__':
