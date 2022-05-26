@@ -12,6 +12,7 @@ import warnings
 import yaml
 from calendar import Calendar
 from contextlib import redirect_stderr, redirect_stdout
+from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from gzip import GzipFile
@@ -557,6 +558,37 @@ class TypeHintsTests(unittest.TestCase):
         cfg = parser.parse_args(['--op=TextCalendar', '--op.firstweekday=2'])
         self.assertEqual(cfg.op.class_path, 'calendar.TextCalendar')
         self.assertEqual(cfg.op.init_args, Namespace(firstweekday=2))
+
+
+    def test_class_type_config_merge_init_args(self):
+        class MyCal(Calendar):
+            def __init__(self, param_a: int = 1, param_b: str = 'x', **kwargs):
+                super().__init__(**kwargs)
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        parser.add_argument('--cal', type=Calendar)
+
+        with mock_module(MyCal) as module:
+            config1 = {
+                'cal': {
+                    'class_path': f'{module}.MyCal',
+                    'init_args': {
+                        'firstweekday': 2,
+                        'param_b': 'y',
+                    }
+                }
+            }
+            config2 = deepcopy(config1)
+            config2['cal']['init_args'] = {
+                'param_a': 2,
+                'firstweekday': 3,
+            }
+            expected = deepcopy(config1['cal'])
+            expected['init_args'].update(config2['cal']['init_args'])
+
+            cfg = parser.parse_args([f'--cfg={yaml.safe_dump(config1)}', f'--cfg={yaml.safe_dump(config2)}'])
+            self.assertEqual(cfg.cal.as_dict(), expected)
 
 
     def test_class_type_subclass_nested_init_args(self):

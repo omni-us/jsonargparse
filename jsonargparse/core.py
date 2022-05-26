@@ -1196,10 +1196,9 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
                 cfg[key] = value
                 continue
             action_dest = action.dest if subcommand is None else subcommand+'.'+action.dest
-            with _lenient_check_context():
-                value = cfg[action_dest]
-                with load_value_context(self.parser_mode):
-                    value = self._check_value_key(action, value, action_dest, cfg)
+            value = cfg[action_dest]
+            with _lenient_check_context(), load_value_context(self.parser_mode):
+                value = self._check_value_key(action, value, action_dest, cfg)
             if isinstance(action, _ActionConfigLoad):
                 config_keys.add(action_dest)
                 keys.append(action_dest)

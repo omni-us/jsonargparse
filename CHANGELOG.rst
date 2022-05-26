@@ -25,6 +25,8 @@ Added
   import paths of objects that don't have a proper ``__module__`` attribute
   `pytorch-lightning#13092
   <https://github.com/PyTorchLightning/pytorch-lightning/issues/13092>`__.
+- New unit test for merge of config file ``init_args`` when ``class_path`` does
+  not change `#89 <https://github.com/omni-us/jsonargparse/issues/89>`__.
 
 Changed
 ^^^^^^^
