@@ -14,6 +14,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.8.1 (2022-05-??)
+-------------------
+
+Fixed
+^^^^^
+- ActionsContainer not calling ``LoggerProperty.__init__``.
+
+
 v4.8.0 (2022-05-26)
 -------------------
 

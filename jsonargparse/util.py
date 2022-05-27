@@ -483,10 +483,11 @@ class Path:
 class LoggerProperty:
     """Class designed to be inherited by other classes to add a logger property."""
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """Initializer for LoggerProperty class."""
         if not hasattr(self, '_logger'):
             self.logger = None
+        super().__init__(*args, **kwargs)
 
 
     @property

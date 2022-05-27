@@ -70,7 +70,7 @@ class NamespaceTests(unittest.TestCase):
         ns = Namespace()
         for key in [None, True, False, 1, 2.3]:
             with self.subTest(str(key)):
-                self.assertFalse(key in ns)
+                self.assertNotIn(key, ns)
 
     def test_pop(self):
         ns = Namespace()

@@ -95,14 +95,14 @@ def CLI(
 def _get_help_str(component):
     help_str = str(component)
     if docstring_parser_support:
-        docstring_parse, DocstringParseError = import_docstring_parse('_get_help_str', True)
+        docstring_parse, docstring_error = import_docstring_parse('_get_help_str', True)
         description = None
         try:
             if inspect.isclass(component):
                 description = docstring_parse(component.__init__.__doc__).short_description
             if description is None:
                 description = docstring_parse(component.__doc__).short_description
-        except (ValueError, DocstringParseError):
+        except (ValueError, docstring_error):
             pass
         if description is not None:
             help_str = description

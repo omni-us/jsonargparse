@@ -60,7 +60,7 @@ from .util import (
 __all__ = ['ActionsContainer', 'ArgumentParser']
 
 
-class ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerProperty):
+class ActionsContainer(SignatureArguments, LoggerProperty, argparse._ActionsContainer):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
     _action_groups: Sequence['_ArgumentGroup']  # type: ignore
@@ -126,7 +126,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer, LoggerPro
         are supported. Additionally it accepts:
 
         Args:
-            name: Name of the group. If set the group object will be included in the parser.groups dict.
+            name: Name of the group. If set, the group object will be included in the parser.groups dict.
 
         Returns:
             The group object.
@@ -183,10 +183,10 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
 
         Args:
             env_prefix: Prefix for environment variables.
-            error_handler: Handler for parsing errors, set to None to simply raise exception.
+            error_handler: Handler for parsing errors, if None raises :class:`.ParserError` exception.
             formatter_class: Class for printing help messages.
             logger: Configures the logger, see :class:`.LoggerProperty`.
-            version: Program version string to add --version argument.
+            version: Program version which will be printed by the --version argument.
             print_config: Add this as argument to print config, set None to disable.
             parser_mode: Mode for parsing configuration files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
             dump_header: Header to include as comment when dumping a config object.
