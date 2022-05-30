@@ -49,7 +49,7 @@ from .util import (
     Path,
     NoneType,
     indent_text,
-    _issubclass,
+    is_subclass,
     _parse_value_or_config,
     warning,
     lenient_check,
@@ -166,7 +166,7 @@ class ActionTypeHint(Action):
             typehint in root_types or \
             get_typehint_origin(typehint) in root_types or \
             typehint in registered_types or \
-            _issubclass(typehint, Enum) or \
+            is_subclass(typehint, Enum) or \
             ActionTypeHint.is_subclass_typehint(typehint)
         if full and supported:
             typehint_origin = get_typehint_origin(typehint) or typehint
@@ -196,7 +196,7 @@ class ActionTypeHint(Action):
             typehint not in leaf_or_root_types and \
             typehint not in registered_types and \
             typehint_origin is None and \
-            not _issubclass(typehint, (Path, Enum))
+            not is_subclass(typehint, (Path, Enum))
 
 
     @staticmethod
@@ -421,7 +421,7 @@ class ActionTypeHint(Action):
             return ['true', 'false']
         elif is_optional(self._typehint, bool):
             return ['true', 'false', 'null']
-        elif _issubclass(self._typehint, Enum):
+        elif is_subclass(self._typehint, Enum):
             enum = self._typehint
             return list(enum.__members__.keys())
         elif is_optional(self._typehint, Enum):
@@ -456,7 +456,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
     # Any
     if typehint == Any:
         type_val = type(val)
-        if type_val in registered_types or _issubclass(type_val, Enum):
+        if type_val in registered_types or is_subclass(type_val, Enum):
             val = adapt_typehints(val, type_val, **adapt_kwargs)
         elif isinstance(val, str):
             try:
@@ -489,7 +489,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             val = registered_type.deserializer(val)
 
     # Enum
-    elif _issubclass(typehint, Enum):
+    elif is_subclass(typehint, Enum):
         if serialize:
             if isinstance(val, typehint):
                 val = val.name
@@ -507,7 +507,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             path = val
             val = import_object(val)
             if (typehint in {Type, type} and not isinstance(val, type)) or \
-               (typehint not in {Type, type} and not _issubclass(val, subtypehints[0])):
+               (typehint not in {Type, type} and not is_subclass(val, subtypehints[0])):
                 raise ValueError(f'Value "{path}" is not a {typehint}.')
 
     # Union
@@ -632,7 +632,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             elif isinstance(val, dict):
                 val = Namespace(val)
             val_class = import_object(resolve_class_path_by_name(typehint, val['class_path']))
-            if not _issubclass(val_class, typehint):
+            if not is_subclass(val_class, typehint):
                 raise ValueError(f'"{val["class_path"]}" is not a subclass of {typehint}')
             val['class_path'] = class_path = get_import_path(val_class)
             if isinstance(prev_val, Namespace) and 'class_path' in prev_val and 'init_args' not in val:
@@ -791,13 +791,13 @@ def is_optional(annotation, ref_type):
     return get_typehint_origin(annotation) == Union and \
         len(annotation.__args__) == 2 and \
         any(NoneType == a for a in annotation.__args__) and \
-        any(_issubclass(a, ref_type) for a in annotation.__args__)
+        any(is_subclass(a, ref_type) for a in annotation.__args__)
 
 
 def is_enum_type(annotation):
-    return _issubclass(annotation, Enum) or \
+    return is_subclass(annotation, Enum) or \
         (get_typehint_origin(annotation) == Union and
-         any(_issubclass(a, Enum) for a in annotation.__args__))
+         any(is_subclass(a, Enum) for a in annotation.__args__))
 
 
 def is_callable_type(annotation):
@@ -815,25 +815,35 @@ def typehint_from_action(action_or_typehint):
 
 
 def type_to_str(obj):
-    if _issubclass(obj, (bool, int, float, str, Enum)):
+    if obj in {bool, tuple} or is_subclass(obj, (int, float, str, Enum)):
         return obj.__name__
     elif obj is not None:
-        return re.sub(r'[a-z_.]+\.', '', str(obj)).replace('NoneType', 'null')
+        return re.sub(r'[A-Za-z0-9_<>.]+\.', '', str(obj)).replace('NoneType', 'null')
+
+
+def literal_to_str(val):
+    return 'null' if val is None else str(val)
 
 
 def typehint_metavar(typehint):
     """Generates a metavar for some types."""
     metavar = None
+    typehint_origin = get_typehint_origin(typehint) or typehint
     if typehint == bool:
         metavar = '{true,false}'
     elif is_optional(typehint, bool):
         metavar = '{true,false,null}'
-    elif _issubclass(typehint, Enum):
+    elif typehint_origin == Literal:
+        args = typehint.__args__
+        metavar = literal_to_str(args[0]) if len(args) == 1 else '{'+','.join(literal_to_str(a) for a in args)+'}'
+    elif is_subclass(typehint, Enum):
         enum = typehint
         metavar = '{'+','.join(list(enum.__members__.keys()))+'}'
     elif is_optional(typehint, Enum):
         enum = typehint.__args__[0]
         metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
+    elif typehint_origin in tuple_set_origin_types:
+        metavar = '[ITEM,...]'
     return metavar
 
 

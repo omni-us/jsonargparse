@@ -25,7 +25,7 @@ from .util import (
     indent_text,
     Path,
     _parse_value_or_config,
-    _issubclass,
+    is_subclass,
 )
 
 
@@ -245,7 +245,7 @@ class _ActionPrintConfig(Action):
                          default=default,
                          nargs=1,
                          metavar='[={comments,skip_null,skip_default}+]',
-                         help='Print configuration and exit.')
+                         help='Print the configuration after applying all other arguments and exit.')
 
     def __call__(self, parser, namespace, value, option_string=None):
         kwargs = {'subparser': parser, 'key': None, 'skip_none': False, 'skip_check': True}
@@ -349,7 +349,7 @@ class _ActionHelpClassPath(Action):
         else:
             self._basename = self._baseclass.__name__
         kwargs.update({
-            'metavar': 'CLASS',
+            'metavar': 'CLASS_NAME_OR_PATH',
             'default': SUPPRESS,
             'help': f'Show the help for the given subclass of {self._basename} and exit.',
         })
@@ -371,7 +371,7 @@ class _ActionHelpClassPath(Action):
             baseclasses = self._baseclass.__args__
         else:
             baseclasses = [baseclass]
-        if not any(_issubclass(val_class, b) for b in baseclasses):
+        if not any(is_subclass(val_class, b) for b in baseclasses):
             raise TypeError(f'{call_args[3]}: Class "{call_args[2]}" is not a subclass of {self._basename}')
         dest += '.init_args'
         subparser = import_object('jsonargparse.ArgumentParser')()
@@ -741,7 +741,7 @@ class ActionParser:
         def add_prefix(key):
             return re.sub('^--', '--'+prefix+'.', key)
 
-        required_args = set(prefix+'.'+x for x in subparser.required_args)
+        required_args = {prefix+'.'+x for x in subparser.required_args}
 
         option_string_actions = {}
         for key, action in filter_default_actions(subparser._option_string_actions).items():
@@ -1021,7 +1021,7 @@ class ActionPathList(Action, FilesCompleterMethod):
             value = []
             for path_list_file in path_list_files:
                 try:
-                    with sys.stdin if path_list_file == '-' else open(path_list_file, 'r') as f:
+                    with sys.stdin if path_list_file == '-' else open(path_list_file) as f:
                         path_list = [x.strip() for x in f.readlines()]
                 except FileNotFoundError as ex:
                     raise TypeError(f'Problems reading path list: {path_list_file} :: {ex}') from ex

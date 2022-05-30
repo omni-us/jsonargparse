@@ -51,22 +51,22 @@ remove_implicit_resolver(DefaultLoader, 'tag:yaml.org,2002:float')
 
 
 DefaultLoader.add_implicit_resolver(
-    u'tag:yaml.org,2002:float',
-    re.compile(u'''^(?:
+    'tag:yaml.org,2002:float',
+    re.compile('''^(?:
      [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
     |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
     |\\.[0-9_]+(?:[eE][-+][0-9]+)?
     |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
     |[-+]?\\.(?:inf|Inf|INF)
     |\\.(?:nan|NaN|NAN))$''', re.X),
-    list(u'-+0123456789.'),
+    list('-+0123456789.'),
 )
 
 
 def yaml_load(stream):
     value = yaml.load(stream, Loader=DefaultLoader)
     if isinstance(value, dict) and all(v is None for v in value.values()):
-        keys = set(k for k in regex_curly_comma.split(stream) if k)
+        keys = {k for k in regex_curly_comma.split(stream) if k}
         if len(keys) > 0 and keys == set(value.keys()):
             value = stream
     return value

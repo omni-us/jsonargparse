@@ -10,7 +10,7 @@ from .actions import _ActionConfigLoad
 from .namespace import Namespace
 from .typehints import ActionTypeHint, ClassType, is_optional, LazyInitBaseClass
 from .typing import is_final_class
-from .util import get_import_path, _issubclass
+from .util import get_import_path, is_subclass
 from .optionals import (
     dataclasses_support,
     docstring_parser_support,
@@ -73,7 +73,7 @@ class SignatureArguments:
         if default and not (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass)):
             raise ValueError(f'Expected "default" parameter to be a lazy instance of the class, got: {default}.')
 
-        skip_first = not _issubclass(theclass, ClassFromFunctionBase)
+        skip_first = not is_subclass(theclass, ClassFromFunctionBase)
 
         added_args = self._add_signature_arguments(
             inspect.getmro(theclass),
@@ -343,7 +343,7 @@ class SignatureArguments:
         dest = (nested_key+'.' if nested_key else '') + name
         args = [dest if is_required and as_positional else '--'+dest]
         if annotation in {str, int, float, bool} or \
-           _issubclass(annotation, (str, int, float)) or \
+           is_subclass(annotation, (str, int, float)) or \
            is_final_class_typehint or \
            is_pure_dataclass(annotation):
             kwargs['type'] = annotation
@@ -455,8 +455,8 @@ class SignatureArguments:
         skip: Optional[Set[str]] = None,
         instantiate: bool = True,
         required: bool = False,
-        metavar: str = '{"class_path":...[,"init_args":...]}',
-        help: str = 'Dictionary with "class_path" and "init_args" for any subclass of %(baseclass_name)s.',
+        metavar: str = 'CONFIG | CLASS_NAME_OR_PATH | .ARG_NAME VALUE',
+        help: str = 'One or more arguments specifying "class_path" and "init_args" for any subclass of %(baseclass_name)s.',
         **kwargs
     ):
         """Adds arguments to allow specifying any subclass of the given base class.
@@ -503,7 +503,7 @@ class SignatureArguments:
         if skip is None:
             skip = set()
         else:
-            skip = set(nested_key+'.init_args.'+s for s in skip)
+            skip = {nested_key+'.init_args.'+s for s in skip}
         param = Namespace(name=nested_key, _kind=None, annotation=Union[baseclass])
         str_baseclass = '{' + ', '.join(get_import_path(x) for x in baseclass) + '}'
         kwargs.update({

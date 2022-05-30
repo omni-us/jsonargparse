@@ -91,6 +91,19 @@ class DefaultHelpFormatter(HelpFormatter):
         return action_help + (' ('+help_str+')' if help_str else '')
 
 
+    def _format_usage(self, *args, **kwargs):
+        usage = super()._format_usage(*args, **kwargs)
+        parser = formatter_parser.get()
+        for key in parser.required_args:
+            try:
+                default = parser.get_default(key)
+            except KeyError:
+                default = None
+            if default is None and f'[--{key} ' in usage:
+                usage = re.sub(f'\\[(--{key} [^\\]]+)]', r'\1', usage, count=1)
+        return usage
+
+
     def _format_action_invocation(self, action):
         parser = formatter_parser.get()
         if action.option_strings == [] or action.default == SUPPRESS or not parser.default_env:
@@ -167,7 +180,7 @@ class DefaultHelpFormatter(HelpFormatter):
             for group in parser._action_groups:
                 actions = filter_default_actions(group._group_actions)
                 actions = [a for a in actions if not isinstance(a, (_ActionConfigLoad, ActionConfigFile, _ActionSubCommands))]
-                keys = set(re.sub(r'\.?[^.]+$', '', a.dest) for a in actions)
+                keys = {re.sub(r'\.?[^.]+$', '', a.dest) for a in actions}
                 for key in keys:
                     full_key = prefix + key if key != '' else parser_key
                     group_titles[full_key] = group.title

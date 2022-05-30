@@ -14,12 +14,20 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
-v4.8.1 (2022-05-??)
+v4.9.0 (2022-05-??)
 -------------------
 
 Fixed
 ^^^^^
 - ActionsContainer not calling ``LoggerProperty.__init__``.
+
+Changed
+^^^^^^^
+- ``Literal`` options now shown in metavar like choices `#106
+  <https://github.com/omni-us/jsonargparse/issues/106>`__.
+- ``tuple`` metavar now shown as ``[ITEM,...]``.
+- Required arguments with ``None`` default now shown without brackets in usage.
+- Improved description of ``--print_config`` in help.
 
 
 v4.8.0 (2022-05-26)

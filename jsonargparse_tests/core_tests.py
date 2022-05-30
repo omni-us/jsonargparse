@@ -317,6 +317,10 @@ class ArgumentFeaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_string('{"lev1":{"req2":"val4"}}'))
         self.assertRaises(ParserError, lambda: parser.parse_env({}))
 
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('[-h] --req1 REQ1 --lev1.req2 REQ2', out.getvalue())
+
         parser = ArgumentParser(default_env=True)
         parser.add_argument('--req1', required=True)
         parser.add_argument('--cfg', action=ActionConfigFile)

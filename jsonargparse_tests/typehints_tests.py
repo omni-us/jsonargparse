@@ -190,6 +190,19 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=["2", "a", "b"]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple={"a":1, "b":"2"}']))
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('--tuple [ITEM,...]  (type: Tuple[Union[int, MyEnum], Path_fc, NotEmptyStr], default: null)', out.getvalue())
+
+
+    def test_tuple_untyped(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--tuple', type=tuple)
+        cfg = parser.parse_args(['--tuple=[1, "a", True]'])
+        self.assertEqual((1, 'a', True), cfg.tuple)
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('--tuple [ITEM,...]  (type: tuple, default: null)', out.getvalue())
 
 
     def test_nested_tuples(self):
@@ -307,16 +320,24 @@ class TypeHintsTests(unittest.TestCase):
     @unittest.skipIf(not Literal, 'Literal introduced in python 3.8 or backported in typing_extensions')
     def test_Literal(self):
         parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--str', type=Literal['a', 'b'])
+        parser.add_argument('--str', type=Literal['a', 'b', None])
+        parser.add_argument('--int', type=Literal[3, 4])
         parser.add_argument('--true', type=Literal[True])
         parser.add_argument('--false', type=Literal[False])
         self.assertEqual('a', parser.parse_args(['--str=a']).str)
         self.assertEqual('b', parser.parse_args(['--str=b']).str)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--str=x']))
+        self.assertIsNone(parser.parse_args(['--str=null']).str)
+        self.assertEqual(4, parser.parse_args(['--int=4']).int)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--int=5']))
         self.assertIs(True, parser.parse_args(['--true=true']).true)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--true=false']))
         self.assertIs(False, parser.parse_args(['--false=false']).false)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--false=true']))
+        out = StringIO()
+        parser.print_help(out)
+        for value in ['--str {a,b,null}', '--int {3,4}', '--true True', '--false False']:
+            self.assertIn(value, out.getvalue())
 
 
     def test_nested_mapping_without_args(self):

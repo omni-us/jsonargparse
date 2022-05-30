@@ -9,7 +9,7 @@ from .namespace import Namespace
 from .optionals import get_config_read_mode, set_config_read_mode
 from .typehints import ActionTypeHint
 from .typing import path_type, restricted_number_type, registered_types
-from .util import _issubclass, warning
+from .util import is_subclass, warning
 
 
 __all__ = [
@@ -178,7 +178,7 @@ class ActionEnum:
 
     def __init__(self, **kwargs):
         if 'enum' in kwargs:
-            if not _issubclass(kwargs['enum'], Enum):
+            if not is_subclass(kwargs['enum'], Enum):
                 raise ValueError('Expected enum to be an subclass of Enum.')
             self._type = kwargs['enum']
         else:

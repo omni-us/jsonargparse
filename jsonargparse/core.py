@@ -652,7 +652,8 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         """
         if 'description' not in kwargs:
             kwargs['description'] = 'For more details of each subcommand add it as argument followed by --help.'
-        subcommands: _ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore
+        with formatter_context(self):
+            subcommands: _ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore
         if required:
             self.required_args.add(dest)
         subcommands._required = required  # type: ignore
@@ -904,7 +905,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
             KeyError: If key or its default not defined in the parser.
         """
         action, _ = _find_parent_action_and_subcommand(self, dest)
-        if action is None or dest != action.dest or action.dest == argparse.SUPPRESS:
+        if action is None or dest != action.dest:
             raise KeyError(f'No action for destination key "{dest}" to get its default.')
 
         def check_suppressed_default():
@@ -1076,7 +1077,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
                 components.append(action)
 
         if instantiate_groups:
-            skip = set(c.dest for c in components)
+            skip = {c.dest for c in components}
             groups = [g for g in self._action_groups if hasattr(g, 'instantiate_class') and g.dest not in skip]
             components.extend(groups)
 
@@ -1166,6 +1167,11 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         with formatter_context(self, defaults):
             help_str = super().format_help()
         return help_str
+
+
+    def print_usage(self, file=None):
+        with formatter_context(self):
+            return super().print_usage(file)
 
 
     def _apply_actions(self, cfg: Union[Namespace, Dict[str, Any]], parent_key: str = '') -> Namespace:

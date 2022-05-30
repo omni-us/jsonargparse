@@ -110,8 +110,7 @@ class ActionJsonSchema(Action):
                 if 'default' in subschema:
                     instance.setdefault(prop, subschema['default'])
 
-            for error in validate_properties(validator, properties, instance, schema):
-                yield error
+            yield from validate_properties(validator, properties, instance, schema)
 
         jsonschema = import_jsonschema('ActionJsonSchema')[0]
         return jsonschema.validators.extend(validator_class, {'properties': set_defaults})

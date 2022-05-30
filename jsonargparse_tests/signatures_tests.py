@@ -471,6 +471,9 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(calendar.Calendar, None, required=True))
         parser.add_subclass_arguments(calendar.Calendar, 'cal', required=True)
         self.assertRaises(ParserError, lambda: parser.parse_args([]))
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('[-h] [--cal.help CLASS_NAME_OR_PATH] --cal ', out.getvalue())
 
 
     def test_not_required_group(self):
