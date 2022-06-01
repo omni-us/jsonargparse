@@ -235,6 +235,7 @@ Tutorials
 - `"jsonargparse - Say goodbye to configuration hassles"
   <https://2022.pycon.de/program/XK73C3/>`__  by Marianne Stecklina at PyCon DE
   & PyData Berlin 2022
+
     - Presentation video: https://youtu.be/2gDf2S0nHKg
     - GitHub repository: https://github.com/stecklin/pycon22-jsonargparse
 
