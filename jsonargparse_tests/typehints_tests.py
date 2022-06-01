@@ -244,10 +244,11 @@ class TypeHintsTests(unittest.TestCase):
     def test_list_append(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--val', type=Union[int, str, List[int]])
-        self.assertEqual(0, parser.parse_args(['--val+=0']).val)
-        self.assertEqual([1, 2, 3], parser.parse_args(['--val+=1', '--val+=2', '--val+=3']).val)
+        self.assertEqual(0, parser.parse_args(['--val=0']).val)
+        self.assertEqual([0], parser.parse_args(['--val+=0']).val)
+        self.assertEqual([1, 2, 3], parser.parse_args(['--val=1', '--val+=2', '--val+=3']).val)
         self.assertEqual([1, 2, 3], parser.parse_args(['--val=[1,2]', '--val+=3']).val)
-        self.assertEqual(1, parser.parse_args(['--val=a', '--val+=1']).val)
+        self.assertEqual([1], parser.parse_args(['--val=a', '--val+=1']).val)
         with warnings.catch_warnings(record=True) as w:
             self.assertEqual(3, parser.parse_args(['--val=[1,2]', '--val=3']).val)
             self.assertIn('Replacing list value "[1, 2]" with "3"', str(w[0].message))

@@ -220,12 +220,26 @@ many features designed to help in creating convenient argument parsers such as:
 (:ref:`parsing-paths`, :ref:`restricted-numbers`, :ref:`restricted-strings`) and
 much more.
 
-The next section explains how to create an argument parser in a low level
+Section :ref:`parsers` explains how to create an argument parser in a low level
 argparse-style. However, as parsers get more complex, being able to define them
 in a modular way becomes important. Three mechanisms are available for
 modularity, see respective sections :ref:`classes-methods-functions`,
 :ref:`sub-commands` and :ref:`parser-arguments`.
 
+
+.. _tutorials:
+
+Tutorials
+=========
+
+- `"jsonargparse - Say goodbye to configuration hassles"
+  <https://2022.pycon.de/program/XK73C3/>`__  by Marianne Stecklina at PyCon DE
+  & PyData Berlin 2022
+    - Presentation video: https://youtu.be/2gDf2S0nHKg
+    - GitHub repository: https://github.com/stecklin/pycon22-jsonargparse
+
+
+.. _parsers:
 
 Parsers
 =======
@@ -839,10 +853,10 @@ Some notes about this support are:
   config files and environment variables, tuples and sets are represented as an
   array.
 
-- ``dataclasses`` are supported as a type but without any nesting and for pure
-  data classes. By pure it is meant that it only inherits from data classes. Not
-  a mixture of normal classes and data classes. Data classes as fields of other
-  data classes is supported.
+- ``dataclasses`` are supported as a type but only for pure data classes and not
+  nested in a type. By pure it is meant that the class only inherits from data
+  classes. Not a mixture of normal classes and data classes. Data classes as
+  fields of other data classes is supported.
 
 - To set a value to ``None`` it is required to use ``null`` since this is how
   json/yaml defines it. To avoid confusion in the help, ``NoneType`` is

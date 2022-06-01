@@ -14,12 +14,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
-v4.9.0 (2022-05-??)
+v4.9.0 (2022-06-??)
 -------------------
 
 Fixed
 ^^^^^
 - ActionsContainer not calling ``LoggerProperty.__init__``.
+- For type ``Union[type, List[type]`` when previous value is ``None`` then
+  ``--arg+=elem`` should result in a list with single element.
 
 Changed
 ^^^^^^^

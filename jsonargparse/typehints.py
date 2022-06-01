@@ -544,15 +544,16 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
 
     # List, Iterable or Sequence
     elif typehint_origin in sequence_origin_types:
-        if append and prev_val is not None:
-            if not isinstance(prev_val, list):
+        if append:
+            if prev_val is None:
+                prev_val = []
+            elif not isinstance(prev_val, list):
                 try:
                     prev_val = [adapt_typehints(prev_val, subtypehints[0], **adapt_kwargs)]
                 except Exception:
-                    pass
-            if isinstance(prev_val, list):
-                val = prev_val + (val if isinstance(val, list) else [val])
-                prev_val = prev_val + [None] * (len(val) if isinstance(val, list) else 1)
+                    prev_val = []
+            val = prev_val + (val if isinstance(val, list) else [val])
+            prev_val = prev_val + [None] * (len(val) if isinstance(val, list) else 1)
         if not isinstance(val, list):
             raise ValueError(f'Expected a List but got "{val}"')
         if subtypehints is not None:
