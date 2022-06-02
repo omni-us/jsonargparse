@@ -30,7 +30,7 @@ jobs:
       - name: Install Tox
         run: pip install tox
       - name: Run Tox
-        run: JSONARGPARSE_OMEGACONF_FULL_TEST= tox -e py
+        run: tox -e omegaconf
   doctest:
     runs-on: ubuntu-20.04
     steps:
