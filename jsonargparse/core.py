@@ -171,7 +171,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         parser_mode: str = 'yaml',
         dump_header: Optional[List[str]] = None,
         default_config_files: Optional[List[str]] = None,
-        default_env: bool = yaml_load(os.environ.get('JSONARGPARSE_DEFAULT_ENV', 'False')),
+        default_env: bool = False,
         default_meta: bool = True,
         **kwargs
     ):
@@ -697,21 +697,23 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         cfg = strip_meta(cfg)
         _ActionLink.strip_link_target_keys(self, cfg)
 
-        if not skip_check:
-            with load_value_context(self.parser_mode):
+        with load_value_context(self.parser_mode):
+            if not skip_check:
                 self.check_config(cfg)
 
-        with load_value_context(self.parser_mode):
             dump_kwargs = {'skip_check': skip_check, 'skip_none': skip_none}
             self._dump_cleanup_actions(cfg, self._actions, dump_kwargs)
 
-        cfg = cfg.as_dict()
+            cfg_dict = cfg.as_dict()
 
-        if skip_default:
-            self._dump_delete_default_entries(cfg, self.get_defaults().as_dict())
+            if skip_default:
+                defaults = self.get_defaults(skip_check=True)
+                _ActionLink.strip_link_target_keys(self, defaults)
+                self._dump_cleanup_actions(defaults, self._actions, {'skip_check': True, 'skip_none': skip_none})
+                self._dump_delete_default_entries(cfg_dict, defaults.as_dict())
 
         with formatter_context(self):
-            return dump_using_format(self, cfg, 'yaml_comments' if yaml_comments else format)
+            return dump_using_format(self, cfg_dict, 'yaml_comments' if yaml_comments else format)
 
 
     def _dump_cleanup_actions(self, cfg, actions, dump_kwargs, prefix=''):
@@ -744,7 +746,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
                         parser = ActionTypeHint.get_class_parser(val['class_path'])
                         default = {'init_args': parser.get_defaults().as_dict()}
                     class_object_val = val
-                    val = val['init_args']
+                    val = val.get('init_args')
                     default = default.get('init_args')
                 if val == default:
                     del subcfg[key]
@@ -1337,6 +1339,9 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
     def default_env(self) -> bool:
         """Whether by default environment variables parsing is enabled.
 
+        If the JSONARGPARSE_DEFAULT_ENV environment variable is set to true or
+        false, that value will take precedence.
+
         :getter: Returns the current default environment variables parsing setting.
         :setter: Sets the default environment variables parsing setting.
 
@@ -1348,7 +1353,9 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
 
     @default_env.setter
     def default_env(self, default_env:bool):
-        if isinstance(default_env, bool):
+        if os.environ.get('JSONARGPARSE_DEFAULT_ENV', '').lower() in {'true', 'false'}:
+            self._default_env = yaml_load(os.environ.get('JSONARGPARSE_DEFAULT_ENV'))
+        elif isinstance(default_env, bool):
             self._default_env = default_env
         else:
             raise ValueError('default_env has to be a boolean.')

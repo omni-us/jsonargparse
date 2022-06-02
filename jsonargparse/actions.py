@@ -461,7 +461,7 @@ class _ActionLink(Action):
         if target in parser.required_args:
             parser.required_args.remove(target)
         if is_target_subclass:
-            sub_add_kwargs = getattr(self.target[1], 'sub_add_kwargs')
+            sub_add_kwargs = getattr(self.target[1], 'sub_add_kwargs', {})
             if 'linked_targets' not in sub_add_kwargs:
                 sub_add_kwargs['linked_targets'] = set()
             subtarget = target.split('.init_args.', 1)[1]

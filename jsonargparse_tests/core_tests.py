@@ -154,6 +154,16 @@ class ParsersTests(TempDirTestCase):
         self.assertTrue(parser.default_env)
         parser.default_env = False
         self.assertFalse(parser.default_env)
+        with unittest.mock.patch.dict(os.environ, {'JSONARGPARSE_DEFAULT_ENV': 'True'}):
+            parser = ArgumentParser()
+            self.assertTrue(parser.default_env)
+            parser.default_env = False
+            self.assertTrue(parser.default_env)
+        with unittest.mock.patch.dict(os.environ, {'JSONARGPARSE_DEFAULT_ENV': 'False'}):
+            parser = ArgumentParser(default_env=True)
+            self.assertFalse(parser.default_env)
+            parser.default_env = True
+            self.assertFalse(parser.default_env)
 
 
     def test_parse_string(self):
