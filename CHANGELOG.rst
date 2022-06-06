@@ -14,14 +14,18 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
-v4.9.1 (2022-06-??)
--------------------
+v4.10.0 (2022-06-??)
+--------------------
 
 Fixed
 ^^^^^
 - ``dump`` with ``skip_default=True`` not working for subclasses without
   ``init_args`` and when a default value requires serializing.
 - ``JSONARGPARSE_DEFAULT_ENV`` should have precedence over given value.
+
+Changed
+^^^^^^^
+- ``logger`` property no longer accepts ``None`` as value.
 
 
 v4.9.0 (2022-06-01)

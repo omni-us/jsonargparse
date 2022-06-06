@@ -483,10 +483,9 @@ class Path:
 class LoggerProperty:
     """Class designed to be inherited by other classes to add a logger property."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, logger: Union[bool, str, dict, logging.Logger] = False, **kwargs):
         """Initializer for LoggerProperty class."""
-        if not hasattr(self, '_logger'):
-            self.logger = None
+        self.logger = logger
         super().__init__(*args, **kwargs)
 
 
@@ -506,8 +505,8 @@ class LoggerProperty:
 
 
     @logger.setter
-    def logger(self, logger):
-        if logger is None or (isinstance(logger, bool) and not logger):
+    def logger(self, logger: Union[bool, str, dict, logging.Logger]):
+        if logger is False:
             self._logger = null_logger
         elif isinstance(logger, (bool, str, dict)) and logger:
             levels = {'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'}
@@ -539,6 +538,6 @@ class LoggerProperty:
                 logger.setLevel(level)
             self._logger = logger
         elif not isinstance(logger, logging.Logger):
-            raise ValueError('Expected logger to be an instance of logging.Logger or bool or str or dict or None.')
+            raise ValueError('Expected logger to be an instance of logging.Logger, bool, str or dict.')
         else:
             self._logger = logger

@@ -165,7 +165,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         env_prefix: Optional[str] = None,
         error_handler: Optional[Callable[['ArgumentParser', str], None]] = usage_and_exit_error_handler,
         formatter_class: Type[DefaultHelpFormatter] = DefaultHelpFormatter,
-        logger: Optional[Union[bool, Dict[str, str], logging.Logger]] = None,
+        logger: Union[bool, str, dict, logging.Logger] = False,
         version: Optional[str] = None,
         print_config: Optional[str] = '--print_config',
         parser_mode: str = 'yaml',
