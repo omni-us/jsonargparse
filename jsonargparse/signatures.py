@@ -1,4 +1,4 @@
-"""Metods to add arguments based on class/method/function signatures."""
+"""Methods to add arguments based on class/method/function signatures."""
 
 import inspect
 import re

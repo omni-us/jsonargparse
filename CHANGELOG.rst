@@ -63,7 +63,7 @@ Added
 Changed
 ^^^^^^^
 - Replaced custom pre-commit script with a .pre-commit-config.yaml file.
-- All warnings are now catched in unit tests.
+- All warnings are now caught in unit tests.
 - Moved ``return_parser`` tests to deprecated tests module.
 
 

@@ -882,7 +882,7 @@ As detailed before, arguments with ``List`` type are supported. By default when
 specifying an argument value, the previous value is replaced, and this also
 holds for lists. Thus, a parse such as ``parser.parse_args(['--list=[1]',
 '--list=[2, 3]'])`` would result in a final value of ``[2, 3]``. However, in
-some cases it might be desided to append to the list instead of replacing. This
+some cases it might be decided to append to the list instead of replacing. This
 can be achieved by adding ``+`` as suffix to the argument key, for example:
 
 .. testsetup:: append
@@ -1700,7 +1700,7 @@ Boolean arguments
 
 Parsing boolean arguments is very common, however, the original argparse only
 has a limited support for them, via ``store_true`` and ``store_false``.
-Futhermore unexperienced users might mistakenly use ``type=bool`` which would
+Furthermore unexperienced users might mistakenly use ``type=bool`` which would
 not provide the intended behavior.
 
 With jsonargparse adding an argument with ``type=bool`` the intended action is
