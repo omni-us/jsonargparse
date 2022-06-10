@@ -596,11 +596,8 @@ It is good practice to write python code in which parameters have type hints and
 these are described in the docstrings. To make this well written code
 configurable, it wouldn't make sense to duplicate information of types and
 parameter descriptions. To avoid this duplication, jsonargparse includes methods
-to automatically add annotated parameters as arguments:
-:py:meth:`.SignatureArguments.add_class_arguments`,
-:py:meth:`.SignatureArguments.add_method_arguments`,
-:py:meth:`.SignatureArguments.add_function_arguments` and
-:py:meth:`.SignatureArguments.add_dataclass_arguments`.
+to automatically add annotated parameters as arguments, see
+:class:`.SignatureArguments`.
 
 Take for example a class with its init and a method with docstrings as follows:
 
@@ -621,16 +618,17 @@ Take for example a class with its init and a method with docstrings as follows:
             Args:
                 foo: Description for foo.
             """
-            pass
+            super().__init__(**kwargs)
+            ...
 
-        def mymethod(self, bar: float, baz: bool = False, **kwargs):
+        def mymethod(self, bar: float, baz: bool = False):
             """Description for mymethod.
 
             Args:
                 bar: Description for bar.
                 baz: Description for baz.
             """
-            pass
+            ...
 
 Both ``MyClass`` and ``mymethod`` can easily be made configurable, the class
 initialized and the method executed as follows:
@@ -649,27 +647,25 @@ initialized and the method executed as follows:
 
 
 The :func:`add_class_arguments` call adds to the ``myclass.init`` key the
-``items`` argument with description as in the docstring, it is set as required
-since it does not have a default value, and when parsed it is validated
-according to its type hint, i.e., a dict with values ints or list of ints. Also
-since the init has the ``**kwargs`` argument, the keyword arguments from
-``MyBaseClass`` are also added to the parser. Similarly the
-:func:`add_method_arguments` call adds to the ``myclass.method`` key the
-arguments ``value`` as a required float and ``flag`` as an optional boolean with
-default value false. Because of the `**kwargs`, arguments from
-``MyBaseClass.method``, if it exists.
+``items`` argument with description as in the docstring, sets it as required
+since it lacks a default value. When parsed, it is validated according to the
+type hint, i.e., a dict with values ints or list of ints. Also since the init
+has the ``**kwargs`` argument, the keyword arguments from ``MyBaseClass`` are
+also added to the parser. Similarly, the :func:`add_method_arguments` call adds
+to the ``myclass.method`` key, the arguments ``value`` as a required float and
+``flag`` as an optional boolean with default value false.
 
-Instantiation of classes added as argument groups with
-:func:`add_class_arguments` can be done more simply for an entire config object
-using :py:meth:`.ArgumentParser.instantiate_classes`. For the example above
-running ``cfg = parser.instantiate_classes(cfg)`` would result in
-``cfg['myclass']['init']`` containing an instance of ``MyClass`` initialized
-with whatever command line arguments were parsed.
+Instantiation of several classes added with :func:`add_class_arguments` can be
+done more simply for an entire config object using
+:py:meth:`.ArgumentParser.instantiate_classes`. For the example above running
+``cfg = parser.instantiate_classes(cfg)`` would result in ``cfg.myclass.init``
+containing an instance of ``MyClass`` initialized with whatever command line
+arguments were parsed.
 
 When parsing from a configuration file (see :ref:`configuration-files`) all the
-values can be given in a single config file. However, for convenience it is also
-possible that the values for each of the groups created by the calls to the add
-signature methods can be parsed from independent files. This means that for the
+values can be given in a single config file. For convenience it is also possible
+that the values for each of the argument groups created by the calls to add
+signatures methods can be parsed from independent files. This means that for the
 example above there could be one general config file with contents:
 
 .. code-block:: yaml
@@ -678,9 +674,8 @@ example above there could be one general config file with contents:
       init: myclass.yaml
       method: mymethod.yaml
 
-Then the files ``myclass.yaml`` and ``mymethod.yaml`` would only include the
-settings for each of the instantiation of the class and the call to the method
-respectively.
+Then the files ``myclass.yaml`` and ``mymethod.yaml`` would include the settings
+for the instantiation of the class and the call to the method respectively.
 
 In some cases there are functions which return an instance of a class. To add
 this to a parser such that :py:meth:`.ArgumentParser.instantiate_classes` calls
@@ -700,22 +695,22 @@ this function, the example would change to:
     dynamic_class = class_from_function(instantiate_myclass)
     parser.add_class_arguments(dynamic_class, 'myclass.init')
 
-A wide range of type hints are supported. For exact details go to section
-:ref:`type-hints`. Some notes about the support for automatic adding of
-arguments are:
+.. note::
 
-- All positional arguments must have a type, otherwise the add arguments
+    :func:`.class_from_function` requires the input function to have a return
+    type annotation that must be the class type it returns.
+
+A wide range of type hints are supported for the signature parameters. For exact
+details go to section :ref:`type-hints`. Some notes about the add signature
+methods are:
+
+- All positional only parameters must have a type, otherwise the add arguments
   functions raise an exception.
 
-- Keyword arguments are ignored if they don't have at least one type that is
+- Keyword parameters are ignored if they don't have at least one type that is
   supported.
 
-- Recursive adding of arguments from base classes only considers the presence of
-  ``*args`` and ``**kwargs``. It does not check the code to identify if
-  ``super().__init__`` is called or with which arguments.
-
-- Arguments whose name starts with ``_`` are considered for internal use and
-  ignored.
+- Parameters whose name starts with ``_`` are considered internal and ignored.
 
 - The signature methods have a ``skip`` parameter which can be used to exclude
   adding some arguments, e.g. ``parser.add_method_arguments(MyClass, 'mymethod',
@@ -723,20 +718,120 @@ arguments are:
 
 .. note::
 
-    Since keyword arguments with unsupported types are ignored, during
-    development it might be desired to know which arguments are ignored and the
-    specific reason. This can be done by initializing :class:`.ArgumentParser`
-    with ``logger={'level': 'DEBUG'}``. For more details about logging go to
-    section :ref:`logging`.
+    To get parameter docstrings in the parser help, the `docstring-parser
+    <https://pypi.org/project/docstring-parser/>`__ package is required. This
+    package is included when installing jsonargparse with the ``signatures``
+    extras require as explained in section :ref:`installation`.
+
+
+Parameter resolvers
+-------------------
+
+Two techniques are implemented for resolving signature parameters. One makes use
+of python's `Abstract Syntax Trees (AST)
+<https://docs.python.org/3/library/ast.html>`__ library and the other is based
+on assumptions of class inheritance. First it is attempted to get parameters
+using the AST resolver. Only when AST fails, the assumptions resolver is used as
+fallback.
 
 .. note::
 
-    For all features described above to work, one optional package is required:
-    `docstring-parser <https://pypi.org/project/docstring-parser/>`__ to get the
-    argument descriptions from the docstrings. This package is included when
-    jsonargparse is installed using the ``signatures`` extras require as
-    explained in section :ref:`installation`.
+    To debug issues related to parameter resolving it is recommended to install
+    the `reconplogger <https://pypi.org/project/reconplogger/>`__ package and
+    set the ``JSONARGPARSE_DEBUG`` before running the code, see :ref:`logging`.
 
+Assumptions resolver
+^^^^^^^^^^^^^^^^^^^^
+
+The assumptions resolver only considers classes. Whenever the class ``__init__``
+has ``*args`` and/or ``**kwargs``, it assumes these are directly forwarded to
+the next parent class, i.e. the ``__init__`` includes a line like
+``super().__init__(*args, **kwargs)``. Since the source code is not analyzed,
+the found parameters will be incorrect if the code does not follow this pattern.
+
+AST resolver
+^^^^^^^^^^^^
+
+The AST resolver analyzes the source code and tries to figure out how the
+``*args`` and ``**kwargs`` are used to further find more accepted parameters.
+This type of resolving is limited to a few specific cases since there are
+endless possibilities for what code can do. The supported cases are illustrated
+below. Bear in mind that the code does not need to be exactly like this. The
+important detail is how ``*args`` and ``**kwargs`` are used, not other
+parameters, or the names of variables, or the complexity of the code that is
+unrelated to these variables.
+
+.. testsetup:: ast_resolver
+
+    class BaseClass: pass
+
+.. testcode:: ast_resolver
+
+    # Cases for functions
+
+    def calls_a_function(*args, **kwargs):
+        a_function(*args, **kwargs)
+
+    def calls_a_method(*args, **kwargs):
+        an_instance = SomeClass()
+        an_instance.a_method(*args, **kwargs)
+
+    def calls_a_static_method(*args, **kwargs):
+        an_instance = SomeClass()
+        an_instance.a_static_method(*args, **kwargs)
+
+    def calls_a_class_method(*args, **kwargs):
+        SomeClass.a_class_method(*args, **kwargs)
+
+    # Cases for classes
+
+    class PassThrough(BaseClass):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+    class CallMethod:
+        def __init__(self, *args, **kwargs):
+            self.a_method(*args, **kwargs)
+
+    class CallCallable:
+        def __init__(self, *args, **kwargs):
+            a_callable(*args, **kwargs)
+
+    class AttributeUseInMethod:
+        def __init__(self, **kwargs):
+            self._kwargs = kwargs
+
+        def a_method(self):
+            a_callable(**kwargs)
+
+    class DictUpdateUseInMethod:
+        def __init__(self, **kwargs):
+            self._kwargs = dict(p1=1)
+            self._kwargs.update(**kwargs)
+            # Could also be: self._kwargs = dict(p1=1, **kwargs)
+
+        def a_method(self):
+            a_callable(**kwargs)
+
+There can be other parameters apart from ``*args`` and ``**kwargs``, thus in the
+cases above the signatures can be for example like ``name(p1: int, k1: str =
+'a', **kws)``. Also when internally calling some function or instantiating a
+class, there can also be additional parameters. For example in:
+
+.. testcode::
+
+    def calls_a_function(*args, **kwargs):
+        a_function(*args, param=1, **kwargs)
+
+The ``param`` parameter would be excluded from the resolved parameters because
+it is internally hard coded.
+
+.. note::
+
+    The supported cases are limited and it is highly encouraged that people
+    create issues requesting the support for new cases. However, note that when
+    a case is highly convoluted it could be a symptom that the respective code
+    is in need of refactoring.
 
 .. _argument-linking:
 
@@ -1259,7 +1354,7 @@ corresponding yaml structure.
 
     @final
     class FinalCalendar(Calendar):
-        pass
+        ...
 
     parser = ArgumentParser()
     parser.add_argument('--calendar', type=FinalCalendar)
@@ -1850,12 +1945,14 @@ raised and the full stack trace is printed. This is done by setting the
 ``JSONARGPARSE_DEBUG`` environment variable to any value.
 
 The parsers from jsonargparse log some basic events, though by default this is
-disabled. To enable it the ``logger`` argument should be set when creating an
+disabled. To enable, the ``logger`` argument should be set when creating an
 :class:`.ArgumentParser` object. The intended use is to give as value an already
-existing logger object which is used for the whole application. Though for
-convenience to enable a default logger the ``logger`` argument can also receive
-``True`` or a string which sets the name of the logger or a dictionary that can
-include the name and the level, e.g. :code:`{"name": "myapp", "level":
-"ERROR"}`. If `reconplogger <https://pypi.org/project/reconplogger/>`__ is
-installed, setting ``logger`` to ``True`` or a dictionary without specifying a
-name, then the reconplogger is used.
+existing logger object which is used for the whole application. For convenience,
+to enable a default logger the ``logger`` argument can also receive ``True`` or
+a string which sets the name of the logger or a dictionary that can include the
+name and the level, e.g. :code:`{"name": "myapp", "level": "ERROR"}`. If
+`reconplogger <https://pypi.org/project/reconplogger/>`__ is installed, setting
+``logger`` to ``True`` or a dictionary without specifying a name, then the
+reconplogger is used. If reconplogger is installed and the
+``JSONARGPARSE_DEBUG`` environment variable is set, then the logging level
+becomes ``DEBUG``.

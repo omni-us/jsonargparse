@@ -17,6 +17,12 @@ paths are considered internals and can change in any moment.
 v4.10.0 (2022-06-??)
 --------------------
 
+Added
+^^^^^
+- Signature parameters resolved by inspecting the source code with ASTs
+  `pytorch-lightning#11653
+  <https://github.com/PyTorchLightning/pytorch-lightning/issues/11653>`__.
+
 Fixed
 ^^^^^
 - ``dump`` with ``skip_default=True`` not working for subclasses without
@@ -26,6 +32,11 @@ Fixed
 Changed
 ^^^^^^^
 - ``logger`` property no longer accepts ``None`` as value.
+- ``dataclasses`` no longer an optional, now an install require on python 3.6.
+- Parameters of type ``POSITIONAL_OR_KEYWORD`` now considered ``KEYWORD`` `#98
+  <https://github.com/omni-us/jsonargparse/issues/98>`__.
+- Some refactoring mostly related to the new AST support.
+- ``JSONARGPARSE_DEBUG`` now also sets the reconplogger level to ``DEBUG``.
 
 
 v4.9.0 (2022-06-01)

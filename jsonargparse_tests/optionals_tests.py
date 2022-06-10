@@ -5,11 +5,9 @@ from importlib.util import find_spec
 from jsonargparse import get_config_read_mode, set_config_read_mode
 from jsonargparse.optionals import (
     argcomplete_support,
-    dataclasses_support,
     docstring_parser_support,
     fsspec_support,
     import_argcomplete,
-    import_dataclasses,
     import_docstring_parse,
     import_fsspec,
     import_jsonnet,
@@ -98,20 +96,6 @@ class ArgcompleteSupportTests(unittest.TestCase):
         with self.assertRaises(ImportError) as context:
             import_argcomplete('test_argcomplete_support_false')
             self.assertIn('test_argcomplete_support_false', context.msg)
-
-
-class DataclassesSupportTests(unittest.TestCase):
-
-    @unittest.skipIf(not dataclasses_support, 'dataclasses package is required')
-    def test_dataclasses_support_true(self):
-        import_dataclasses('test_dataclasses_support_true')
-
-
-    @unittest.skipIf(dataclasses_support, 'dataclasses package should not be installed')
-    def test_dataclasses_support_false(self):
-        with self.assertRaises(ImportError) as context:
-            import_dataclasses('test_dataclasses_support_false')
-            self.assertIn('test_dataclasses_support_false', context.msg)
 
 
 class FsspecSupportTests(unittest.TestCase):

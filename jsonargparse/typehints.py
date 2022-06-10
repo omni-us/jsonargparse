@@ -42,17 +42,19 @@ from .optionals import (
 )
 from .util import (
     change_to_path_dir,
+    ClassType,
     get_import_path,
     import_object,
-    object_path_serializer,
-    ParserError,
-    Path,
-    NoneType,
     indent_text,
     is_subclass,
-    _parse_value_or_config,
-    warning,
+    iter_to_set_str,
     lenient_check,
+    NoneType,
+    object_path_serializer,
+    ParserError,
+    _parse_value_or_config,
+    Path,
+    warning,
 )
 
 
@@ -836,13 +838,13 @@ def typehint_metavar(typehint):
         metavar = '{true,false,null}'
     elif typehint_origin == Literal:
         args = typehint.__args__
-        metavar = literal_to_str(args[0]) if len(args) == 1 else '{'+','.join(literal_to_str(a) for a in args)+'}'
+        metavar = iter_to_set_str(literal_to_str(a) for a in args)
     elif is_subclass(typehint, Enum):
         enum = typehint
-        metavar = '{'+','.join(list(enum.__members__.keys()))+'}'
+        metavar = iter_to_set_str(enum.__members__)
     elif is_optional(typehint, Enum):
         enum = typehint.__args__[0]
-        metavar = '{'+','.join(list(enum.__members__.keys())+['null'])+'}'
+        metavar = iter_to_set_str(list(enum.__members__.keys())+['null'])
     elif typehint_origin in tuple_set_origin_types:
         metavar = '[ITEM,...]'
     return metavar
@@ -914,9 +916,6 @@ class LazyInitBaseClass:
         if len(self._lazy_kwargs) > 0:
             init['init_args'] = init_args
         return init
-
-
-ClassType = TypeVar('ClassType')
 
 
 def lazy_instance(class_type: Type[ClassType], **kwargs) -> ClassType:

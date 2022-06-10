@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import calendar
+import dataclasses
 import json
 import os
 import unittest
@@ -21,7 +22,7 @@ from jsonargparse import (
     strip_meta,
 )
 from jsonargparse.actions import _find_action
-from jsonargparse.optionals import dataclasses_support, docstring_parser_support, import_dataclasses, import_docstring_parse
+from jsonargparse.optionals import docstring_parser_support, import_docstring_parse
 from jsonargparse.typing import final, OpenUnitInterval, PositiveFloat, PositiveInt
 from jsonargparse_tests.base import mock_module, suppress_stderr, TempDirTestCase
 
@@ -45,6 +46,7 @@ class SignaturesTests(unittest.TestCase):
                 """Class1 short description
 
                 Args:
+                    c1_a2: c1_a2 description
                     c1_a3: c1_a3 description
                 """
                 super().__init__()
@@ -54,11 +56,6 @@ class SignaturesTests(unittest.TestCase):
                 return self.c1_a1
 
         class Class2(Class1):
-            """Class2 short description
-
-            Args:
-                c1_a2: c1_a2 description
-            """
             def __init__(self,
                          c2_a0,
                          c3_a4,
@@ -154,13 +151,17 @@ class SignaturesTests(unittest.TestCase):
         ## Test positional without type ##
         self.assertRaises(ValueError, lambda: parser.add_class_arguments(Class2))
 
-        ## Test no arguments added ##
+
+    def test_add_class_without_valid_args(self):
         class NoValidArgs:
             def __init__(self, a0=None):
                 pass
 
+        parser = ArgumentParser()
         self.assertEqual([], parser.add_class_arguments(NoValidArgs))
 
+
+    def test_add_function_with_dict_int_keys_arg(self):
         def func(a1: Union[int, Dict[int, int]] = 1):
             pass
 
@@ -689,30 +690,8 @@ class SignaturesTests(unittest.TestCase):
             with self.assertLogs(level='DEBUG') as log:
                 parser.add_class_arguments(Class2, skip={'c2_a2'})
                 self.assertEqual(1, len(log.output))
-                self.assertIn('"c2_a2" from "Class2"', log.output[0])
+                self.assertIn('"c2_a2" from "Class2.__init__"', log.output[0])
                 self.assertIn('Parameter requested to be skipped', log.output[0])
-
-            class Class3(Class1):
-                def __init__(self, *args):
-                    pass
-
-            parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
-            with self.assertLogs(level='DEBUG') as log:
-                parser.add_class_arguments(Class3)
-                self.assertEqual(1, len(log.output))
-                self.assertIn('"c1_a2" from "Class1"', log.output[0])
-                self.assertIn('Keyword parameter but **kwargs not propagated', log.output[0])
-
-            class Class4(Class1):
-                def __init__(self, **kwargs):
-                    pass
-
-            parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
-            with self.assertLogs(level='DEBUG') as log:
-                parser.add_class_arguments(Class4)
-                self.assertEqual(1, len(log.output))
-                self.assertIn('"c1_a1" from "Class1"', log.output[0])
-                self.assertIn('Positional parameter but *args not propagated', log.output[0])
 
 
     def test_instantiate_classes(self):
@@ -1453,14 +1432,12 @@ class SignaturesConfigTests(TempDirTestCase):
         self.assertEqual(cfg.fit.model.foo, 123)
 
 
-@unittest.skipIf(not dataclasses_support, 'dataclasses package is required')
 class DataclassesTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.dataclasses = import_dataclasses('SignaturesTests')
 
-        @cls.dataclasses.dataclass
+        @dataclasses.dataclass
         class MyDataClassA:
             """MyDataClassA description
 
@@ -1471,7 +1448,7 @@ class DataclassesTests(unittest.TestCase):
             a1: PositiveInt = PositiveInt(1)
             a2: str = '2'
 
-        @cls.dataclasses.dataclass
+        @dataclasses.dataclass
         class MyDataClassB:
             """MyDataClassB description
 
@@ -1493,11 +1470,11 @@ class DataclassesTests(unittest.TestCase):
         parser.add_dataclass_arguments(self.MyDataClassB, 'b', default=self.MyDataClassB())
 
         cfg = parser.get_defaults()
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), cfg['a'].as_dict())
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), cfg['b'].as_dict())
+        self.assertEqual(dataclasses.asdict(self.MyDataClassA()), cfg['a'].as_dict())
+        self.assertEqual(dataclasses.asdict(self.MyDataClassB()), cfg['b'].as_dict())
         dump = yaml.safe_load(parser.dump(cfg))
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), dump['a'])
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), dump['b'])
+        self.assertEqual(dataclasses.asdict(self.MyDataClassA()), dump['a'])
+        self.assertEqual(dataclasses.asdict(self.MyDataClassB()), dump['b'])
 
         cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['a'], self.MyDataClassA)
@@ -1541,11 +1518,11 @@ class DataclassesTests(unittest.TestCase):
         parser.add_class_arguments(MyClass, 'g')
 
         cfg = parser.get_defaults()
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), cfg['g']['a1'].as_dict())
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), cfg['g']['a2'].as_dict())
+        self.assertEqual(dataclasses.asdict(self.MyDataClassA()), cfg['g']['a1'].as_dict())
+        self.assertEqual(dataclasses.asdict(self.MyDataClassB()), cfg['g']['a2'].as_dict())
         dump = yaml.safe_load(parser.dump(cfg))
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassA()), dump['g']['a1'])
-        self.assertEqual(self.dataclasses.asdict(self.MyDataClassB()), dump['g']['a2'])
+        self.assertEqual(dataclasses.asdict(self.MyDataClassA()), dump['g']['a1'])
+        self.assertEqual(dataclasses.asdict(self.MyDataClassB()), dump['g']['a2'])
 
         cfg_init = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg_init.g.a1, self.MyDataClassA)
@@ -1596,7 +1573,7 @@ class DataclassesTests(unittest.TestCase):
 
     def test_dataclass_add_argument_type_some_required(self):
 
-        @self.dataclasses.dataclass
+        @dataclasses.dataclass
         class MyDataClass:
             a1: str
             a2: float = 1.2
@@ -1610,10 +1587,10 @@ class DataclassesTests(unittest.TestCase):
 
     def test_dataclass_field_default_factory(self):
 
-        @self.dataclasses.dataclass
+        @dataclasses.dataclass
         class MyDataClass:
-            a1: List[int] = self.dataclasses.field(default_factory=lambda: [1, 2, 3])
-            a2: Dict[str, float] = self.dataclasses.field(default_factory=lambda: {'a': 1.2, 'b': 3.4})
+            a1: List[int] = dataclasses.field(default_factory=lambda: [1, 2, 3])
+            a2: Dict[str, float] = dataclasses.field(default_factory=lambda: {'a': 1.2, 'b': 3.4})
 
         parser = ArgumentParser()
         parser.add_class_arguments(MyDataClass)
@@ -1624,7 +1601,6 @@ class DataclassesTests(unittest.TestCase):
 
 
     def test_compose_dataclasses(self):
-        dataclasses = import_dataclasses('test_compose_dataclasses')
 
         @dataclasses.dataclass
         class MyDataClassA:
@@ -1644,7 +1620,6 @@ class DataclassesTests(unittest.TestCase):
 
     def test_instantiate_classes_dataclasses_lightning_issue_9207(self):
         # https://github.com/PyTorchLightning/pytorch-lightning/issues/9207
-        dataclasses = import_dataclasses('test_instantiate_classes_dataclasses_lightning_issue_9207')
 
         @dataclasses.dataclass
         class MyDataClass:

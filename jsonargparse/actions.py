@@ -23,6 +23,7 @@ from .util import (
     change_to_path_dir,
     NoneType,
     indent_text,
+    iter_to_set_str,
     Path,
     _parse_value_or_config,
     is_subclass,
@@ -345,7 +346,7 @@ class _ActionHelpClassPath(Action):
 
     def update_init_kwargs(self, kwargs):
         if getattr(self._baseclass, '__origin__', None) == Union:
-            self._basename = '{'+', '.join(c.__name__ for c in self._baseclass.__args__ if c != NoneType)+'}'
+            self._basename = iter_to_set_str(c.__name__ for c in self._baseclass.__args__ if c != NoneType)
         else:
             self._basename = self._baseclass.__name__
         kwargs.update({

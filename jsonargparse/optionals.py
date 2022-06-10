@@ -1,5 +1,6 @@
 """Code related to optional dependencies."""
 
+import inspect
 import locale
 import os
 import platform
@@ -21,7 +22,6 @@ jsonnet_support = find_spec('_jsonnet') is not None
 url_support = False if any(find_spec(x) is None for x in ['validators', 'requests']) else True
 docstring_parser_support = find_spec('docstring_parser') is not None
 argcomplete_support = find_spec('argcomplete') is not None
-dataclasses_support = find_spec('dataclasses') is not None
 fsspec_support = find_spec('fsspec') is not None
 ruyaml_support = find_spec('ruyaml') is not None
 omegaconf_support = find_spec('omegaconf') is not None
@@ -97,12 +97,6 @@ def import_argcomplete(importer):
     return argcomplete
 
 
-def import_dataclasses(importer):
-    with missing_package_raise('dataclasses', importer):
-        import dataclasses
-    return dataclasses
-
-
 def import_fsspec(importer):
     with missing_package_raise('fsspec', importer):
         import fsspec
@@ -147,6 +141,21 @@ def set_config_read_mode(
 def get_config_read_mode() -> str:
     """Returns the current config reading mode."""
     return _config_read_mode
+
+
+def parse_docs(component, parent, logger):
+    docs = []
+    if docstring_parser_support:
+        docstring_parse, docstring_error = import_docstring_parse('parse_docs', True)
+        doc_sources = [component]
+        if inspect.isclass(parent) and component.__name__ == '__init__':
+            doc_sources = [parent] + doc_sources
+        for src in doc_sources:
+            try:
+                docs.append(docstring_parse(src.__doc__))
+            except (ValueError, docstring_error) as ex:
+                logger.debug(f'Failed parsing docstring for {src}: {ex}')
+    return docs
 
 
 files_completer = None

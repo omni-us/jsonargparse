@@ -50,7 +50,6 @@ from .util import (
     usage_and_exit_error_handler,
     change_to_path_dir,
     Path,
-    LoggerProperty,
     _lenient_check_context,
     lenient_check,
     return_parser_if_captured,
@@ -60,7 +59,7 @@ from .util import (
 __all__ = ['ActionsContainer', 'ArgumentParser']
 
 
-class ActionsContainer(SignatureArguments, LoggerProperty, argparse._ActionsContainer):
+class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
     _action_groups: Sequence['_ArgumentGroup']  # type: ignore

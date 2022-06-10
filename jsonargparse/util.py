@@ -10,8 +10,9 @@ import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
+from functools import wraps
 from types import BuiltinFunctionType, FunctionType, ModuleType
-from typing import Any, Callable, Optional, Tuple, Type, Union
+from typing import Any, Callable, Optional, Tuple, Type, TypeVar, Union
 
 from .loaders_dumpers import load_value
 from .optionals import (
@@ -27,6 +28,7 @@ from .type_checking import ArgumentParser
 
 __all__ = [
     'capture_parser',
+    'class_from_function',
     'LoggerProperty',
     'null_logger',
     'ParserError',
@@ -269,6 +271,13 @@ def change_to_path_dir(path: Optional['Path']):
             os.chdir(cwd)
 
 
+def iter_to_set_str(val, sep=','):
+    val = list(val)
+    if len(val) == 1:
+        return str(val[0])
+    return '{'+sep.join(str(x) for x in val)+'}'
+
+
 def indent_text(text: str) -> str:
     return text.replace('\n', '\n  ')
 
@@ -312,6 +321,40 @@ class DirectedGraph:
         visited[source] = True
         exploring[source] = False
         order.insert(0, source)
+
+
+class ClassFromFunctionBase:
+    wrapped_function: Callable
+
+
+ClassType = TypeVar('ClassType')
+
+
+def class_from_function(func: Callable[..., ClassType]) -> Type[ClassType]:
+    """Creates a dynamic class which if instantiated is equivalent to calling func.
+
+    Args:
+        func: A function that returns an instance of a class. It must have a return type annotation.
+    """
+    func_return = inspect.signature(func).return_annotation
+    if isinstance(func_return, str):
+        caller_frame = inspect.currentframe().f_back  # type: ignore
+        func_return = caller_frame.f_locals.get(func_return) or caller_frame.f_globals.get(func_return)  # type: ignore
+        if func_return is None:
+            raise ValueError(f'Unable to dereference {func_return} the return type of {func}.')
+
+    @wraps(func)
+    def __new__(cls, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    class ClassFromFunction(func_return, ClassFromFunctionBase):  # type: ignore
+        pass
+
+    ClassFromFunction.wrapped_function = func
+    ClassFromFunction.__new__ = __new__  # type: ignore
+    ClassFromFunction.__doc__ = func.__doc__
+    ClassFromFunction.__name__ = func.__name__
+    return ClassFromFunction
 
 
 class Path:
@@ -541,3 +584,7 @@ class LoggerProperty:
             raise ValueError('Expected logger to be an instance of logging.Logger, bool, str or dict.')
         else:
             self._logger = logger
+
+
+if 'JSONARGPARSE_DEBUG' in os.environ:  # pragma: no cover
+    os.environ['LOGGER_LEVEL'] = 'DEBUG'
