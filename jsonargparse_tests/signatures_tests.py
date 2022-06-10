@@ -474,7 +474,7 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args([]))
         out = StringIO()
         parser.print_help(out)
-        self.assertIn('[-h] [--cal.help CLASS_NAME_OR_PATH] --cal ', out.getvalue())
+        self.assertIn('[-h] [--cal.help CLASS_PATH_OR_NAME] --cal ', out.getvalue())
 
 
     def test_not_required_group(self):

@@ -400,7 +400,7 @@ class SignatureArguments(LoggerProperty):
         skip: Optional[Set[str]] = None,
         instantiate: bool = True,
         required: bool = False,
-        metavar: str = 'CONFIG | CLASS_NAME_OR_PATH | .ARG_NAME VALUE',
+        metavar: str = 'CONFIG | CLASS_PATH_OR_NAME | .INIT_ARG_NAME VALUE',
         help: str = 'One or more arguments specifying "class_path" and "init_args" for any subclass of %(baseclass_name)s.',
         **kwargs
     ):

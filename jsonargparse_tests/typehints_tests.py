@@ -657,6 +657,41 @@ class TypeHintsTests(unittest.TestCase):
             self.assertIn('Expected a nested --*.help option', err.getvalue())
 
 
+    def test_class_type_unresolved_parameters(self):
+
+        class Class:
+            def __init__(self, p1: int = 1, p2: str = '2', **kwargs):
+                self.kwargs = kwargs
+
+        with mock_module(Class) as module:
+
+            config = f"""cls:
+              class_path: {module}.Class
+              init_args:
+                  p1: 5
+                  __unresolved__:
+                    p2: '6'
+                    p3: 7.0
+            """
+            expected = Namespace(p1=5, p2='6', __unresolved__={'p3': 7.0})
+
+            parser = ArgumentParser(error_handler=None)
+            parser.add_argument('--config', action=ActionConfigFile)
+            parser.add_argument('--cls', type=Class)
+
+            cfg = parser.parse_args([f'--config={config}'])
+            self.assertEqual(cfg.cls.init_args, expected)
+            cfg_init = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg_init.cls, Class)
+            self.assertEqual(cfg_init.cls.kwargs, expected.__unresolved__)
+
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                parser.parse_args([f'--config={config}', '--print_config'])
+            init_args = yaml.safe_load(out.getvalue())['cls']['init_args']
+            self.assertEqual(init_args, expected.as_dict())
+
+
     def test_invalid_init_args_in_yaml(self):
         config = """cal:
             class_path: calendar.Calendar

@@ -413,7 +413,7 @@ class ActionTypeHint(Action):
         if self.is_subclass_typehint(self, all_subtypes=False):
             class_paths = get_all_subclass_paths(self._typehint)
             if class_paths:
-                extra = ', known class paths: '+', '.join(class_paths)
+                extra = ', known subclasses: '+', '.join(class_paths)
         return extra
 
 
@@ -751,17 +751,26 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
             break
 
     if instantiate_classes:
+        unresolved = init_args.pop('__unresolved__', {})
         init_args = parser.instantiate_classes(init_args)
         if not sub_add_kwargs.get('instantiate', True):
             return init_args
-        return val_class(**init_args)
+        return val_class(**{**init_args, **unresolved})
+
     if serialize:
         init_args = None if is_empty_namespace(init_args) else load_value(parser.dump(init_args, **dump_kwargs.get()))
     elif isinstance(init_args, NestedArg):
         prev_val = prev_val.init_args.clone()
         init_args = parser.parse_args([f'--{init_args.key}={init_args.val}'], namespace=prev_val, defaults=sub_defaults.get())
     else:
+        unresolved = init_args.pop('__unresolved__')
+        if isinstance(unresolved, dict):
+            for key in list(unresolved):
+                if _find_action(parser, key):
+                    init_args[key] = unresolved.pop(key)
         init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
+        if unresolved:
+            init_args.__unresolved__ = unresolved
     return init_args
 
 

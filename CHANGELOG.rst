@@ -22,6 +22,8 @@ Added
 - Signature parameters resolved by inspecting the source code with ASTs
   `pytorch-lightning#11653
   <https://github.com/PyTorchLightning/pytorch-lightning/issues/11653>`__.
+- Support init args for unresolved parameters in subclasses `#114
+  <https://github.com/omni-us/jsonargparse/issues/114>`__.
 
 Fixed
 ^^^^^

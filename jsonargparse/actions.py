@@ -350,7 +350,7 @@ class _ActionHelpClassPath(Action):
         else:
             self._basename = self._baseclass.__name__
         kwargs.update({
-            'metavar': 'CLASS_NAME_OR_PATH',
+            'metavar': 'CLASS_PATH_OR_NAME',
             'default': SUPPRESS,
             'help': f'Show the help for the given subclass of {self._basename} and exit.',
         })

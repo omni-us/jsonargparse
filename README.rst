@@ -677,29 +677,6 @@ example above there could be one general config file with contents:
 Then the files ``myclass.yaml`` and ``mymethod.yaml`` would include the settings
 for the instantiation of the class and the call to the method respectively.
 
-In some cases there are functions which return an instance of a class. To add
-this to a parser such that :py:meth:`.ArgumentParser.instantiate_classes` calls
-this function, the example would change to:
-
-.. testsetup:: class_from_function
-
-    class MyClass: pass
-    def instantiate_myclass() -> MyClass:
-        return MyClass()
-
-.. testcode:: class_from_function
-
-    from jsonargparse import ArgumentParser, class_from_function
-
-    parser = ArgumentParser()
-    dynamic_class = class_from_function(instantiate_myclass)
-    parser.add_class_arguments(dynamic_class, 'myclass.init')
-
-.. note::
-
-    :func:`.class_from_function` requires the input function to have a return
-    type annotation that must be the class type it returns.
-
 A wide range of type hints are supported for the signature parameters. For exact
 details go to section :ref:`type-hints`. Some notes about the add signature
 methods are:
@@ -723,6 +700,31 @@ methods are:
     package is included when installing jsonargparse with the ``signatures``
     extras require as explained in section :ref:`installation`.
 
+Classes from functions
+----------------------
+
+In some cases there are functions which return an instance of a class. To add
+this to a parser such that :py:meth:`.ArgumentParser.instantiate_classes` calls
+this function, the example above would change to:
+
+.. testsetup:: class_from_function
+
+    class MyClass: pass
+    def instantiate_myclass() -> MyClass:
+        return MyClass()
+
+.. testcode:: class_from_function
+
+    from jsonargparse import ArgumentParser, class_from_function
+
+    parser = ArgumentParser()
+    dynamic_class = class_from_function(instantiate_myclass)
+    parser.add_class_arguments(dynamic_class, 'myclass.init')
+
+.. note::
+
+    :func:`.class_from_function` requires the input function to have a return
+    type annotation that must be the class type it returns.
 
 Parameter resolvers
 -------------------
@@ -740,14 +742,65 @@ fallback.
     the `reconplogger <https://pypi.org/project/reconplogger/>`__ package and
     set the ``JSONARGPARSE_DEBUG`` before running the code, see :ref:`logging`.
 
+Unresolved parameters
+^^^^^^^^^^^^^^^^^^^^^
+
+The parameter resolvers make a best effort to determine the correct names and
+types that the parser should accept. However, there can be cases not yet
+supported or cases for which it would be impossible to support. To somewhat
+overcome these limitations, there is a special key ``__unresolved__`` that can
+be used to provide arguments that will not be validated during parsing, but will
+be used for class instantiation.
+
+Take for example the following parsing and instantiation:
+
+.. testsetup:: unresolved
+
+    import sys
+    import jsonargparse_tests
+    sys.argv = ['', '--myclass=MyClass']
+
+    class MyClass:
+        def __init__(self, foo: int = 0, **kwargs):
+            super().__init__(**kwargs)
+            ...
+
+    MyClass.__module__ = 'jsonargparse_tests'
+    jsonargparse_tests.MyClass = MyClass
+
+.. testcode:: unresolved
+
+    from jsonargparse import ArgumentParser, lazy_instance
+
+    parser = ArgumentParser()
+    parser.add_argument('--myclass', type=MyClass)
+    cfg = parser.parse_args()
+    cfg_init = parser.instantiate_classes(cfg)
+
+If ``MyClass.__init__`` has ``**kwargs`` with some unresolved parameters, the
+following could be a valid config file:
+
+.. code-block:: yaml
+
+    class_path: MyClass
+    init_args:
+      foo: 1
+      __unresolved__:
+        bar: 2
+
+The value for ``bar`` will not be validated, but the class will be instantiated
+as ``MyClass(foo=1, bar=2)``.
+
 Assumptions resolver
 ^^^^^^^^^^^^^^^^^^^^
 
-The assumptions resolver only considers classes. Whenever the class ``__init__``
-has ``*args`` and/or ``**kwargs``, it assumes these are directly forwarded to
-the next parent class, i.e. the ``__init__`` includes a line like
-``super().__init__(*args, **kwargs)``. Since the source code is not analyzed,
-the found parameters will be incorrect if the code does not follow this pattern.
+The assumptions resolver only considers classes. Whenever the ``__init__``
+method has ``*args`` and/or ``**kwargs``, the resolver assumes that these are
+directly forwarded to the next parent class, i.e. ``__init__`` includes a line
+like ``super().__init__(*args, **kwargs)``. Thus, it blindly collects the
+``__init__`` parameters of parent classes. The collected parameters will be
+incorrect if the code does not follow this pattern. This is why it is only used
+as fallback when the AST resolver fails.
 
 AST resolver
 ^^^^^^^^^^^^
@@ -832,6 +885,7 @@ it is internally hard coded.
     create issues requesting the support for new cases. However, note that when
     a case is highly convoluted it could be a symptom that the respective code
     is in need of refactoring.
+
 
 .. _argument-linking:
 
