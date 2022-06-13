@@ -16,17 +16,18 @@ from .optionals import FilesCompleterMethod, get_config_read_mode
 from .type_checking import ArgumentParser, _ArgumentGroup
 from .typing import path_type
 from .util import (
+    change_to_path_dir,
     default_config_option_help,
     DirectedGraph,
-    ParserError,
     import_object,
-    change_to_path_dir,
-    NoneType,
     indent_text,
-    iter_to_set_str,
-    Path,
-    _parse_value_or_config,
     is_subclass,
+    iter_to_set_str,
+    lenient_check_context,
+    NoneType,
+    parse_value_or_config,
+    ParserError,
+    Path,
 )
 
 
@@ -249,7 +250,7 @@ class _ActionPrintConfig(Action):
                          help='Print the configuration after applying all other arguments and exit.')
 
     def __call__(self, parser, namespace, value, option_string=None):
-        kwargs = {'subparser': parser, 'key': None, 'skip_none': False, 'skip_check': True}
+        kwargs = {'subparser': parser, 'key': None, 'skip_none': False, 'skip_check': False}
         valid_flags = {'': None, 'comments': 'yaml_comments', 'skip_default': 'skip_default', 'skip_null': 'skip_none'}
         if value is not None:
             flags = value[0].split(',')
@@ -279,7 +280,8 @@ class _ActionPrintConfig(Action):
             subparser = parser.print_config.pop('subparser')
             if key is not None:
                 cfg = cfg[key]
-            sys.stdout.write(subparser.dump(cfg, **parser.print_config))
+            with lenient_check_context():
+                sys.stdout.write(subparser.dump(cfg, **parser.print_config))
             delattr(parser, 'print_config')
             parser.exit()
 
@@ -311,7 +313,7 @@ class _ActionConfigLoad(Action):
 
     def _load_config(self, value, parser):
         try:
-            cfg, cfg_path = _parse_value_or_config(value)
+            cfg, cfg_path = parse_value_or_config(value)
             if not isinstance(cfg, dict):
                 raise TypeError(f'Parser key "{self.dest}": Unable to load config "{value}"')
             with change_to_path_dir(cfg_path):

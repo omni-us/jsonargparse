@@ -7,11 +7,11 @@ from argparse import SUPPRESS
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from .actions import _ActionConfigLoad
-from .ast_analysis import get_parameters, ParamData
+from .optionals import parse_docs
+from .parameter_resolvers import get_signature_parameters, ParamData
 from .typehints import ActionTypeHint, is_optional, LazyInitBaseClass
 from .typing import is_final_class
 from .util import get_import_path, is_subclass, iter_to_set_str, LoggerProperty
-from .optionals import parse_docs
 
 __all__ = [
     'compose_dataclasses',
@@ -216,7 +216,7 @@ class SignatureArguments(LoggerProperty):
         Raises:
             ValueError: When there are required parameters without at least one valid type.
         """
-        params = get_parameters(function_or_class, method_name, logger=self.logger)
+        params = get_signature_parameters(function_or_class, method_name, logger=self.logger)
 
         ## Create group if requested ##
         doc_group = get_doc_short_description(function_or_class, method_name, self.logger)
@@ -379,7 +379,7 @@ class SignatureArguments(LoggerProperty):
             defaults = dataclasses.asdict(default)
 
         added_args: List[str] = []
-        params = {p.name: p for p in get_parameters(theclass, None, logger=self.logger)}
+        params = {p.name: p for p in get_signature_parameters(theclass, None, logger=self.logger)}
         for field in dataclasses.fields(theclass):
             self._add_signature_parameter(
                 group,

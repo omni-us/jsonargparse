@@ -52,7 +52,7 @@ from .util import (
     NoneType,
     object_path_serializer,
     ParserError,
-    _parse_value_or_config,
+    parse_value_or_config,
     Path,
     warning,
 )
@@ -319,11 +319,8 @@ class ActionTypeHint(Action):
                             cfg_dest['class_path'] = default['class_path']
                         except (KeyError, TypeError):
                             pass
-                    if not(
-                        ('class_path' in cfg_dest and not isinstance(cfg_dest, list)) or
-                        (self._supports_append and cfg_dest and isinstance(cfg_dest, list) and 'class_path' in cfg_dest[-1])
-                    ):
-                        raise ParserError(f'Found {opt_str} but not yet known to which class_path this corresponds.')
+                    if isinstance(cfg_dest, str):
+                        cfg_dest = Namespace(class_path=cfg_dest)
                     if not sub_opt.startswith('init_args.'):
                         sub_opt = 'init_args.' + sub_opt
                     if len(sub_opt.split('.', 2)) == 3:
@@ -347,7 +344,7 @@ class ActionTypeHint(Action):
             try:
                 orig_val = val
                 try:
-                    val, config_path = _parse_value_or_config(val, enable_path=self._enable_path)
+                    val, config_path = parse_value_or_config(val, enable_path=self._enable_path)
                 except get_loader_exceptions():
                     config_path = None
                 path_meta = val.pop('__path__', None) if isinstance(val, dict) else None
@@ -462,7 +459,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             val = adapt_typehints(val, type_val, **adapt_kwargs)
         elif isinstance(val, str):
             try:
-                val, _ = _parse_value_or_config(val, enable_path=False)
+                val, _ = parse_value_or_config(val, enable_path=False)
             except get_loader_exceptions():
                 pass
 
@@ -757,20 +754,21 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
             return init_args
         return val_class(**{**init_args, **unresolved})
 
+    if isinstance(init_args, NestedArg):
+        prev_val = prev_val.init_args.clone()
+        return parser.parse_args([f'--{init_args.key}={init_args.val}'], namespace=prev_val, defaults=sub_defaults.get())
+
+    unresolved = init_args.pop('__unresolved__', None)
     if serialize:
         init_args = None if is_empty_namespace(init_args) else load_value(parser.dump(init_args, **dump_kwargs.get()))
-    elif isinstance(init_args, NestedArg):
-        prev_val = prev_val.init_args.clone()
-        init_args = parser.parse_args([f'--{init_args.key}={init_args.val}'], namespace=prev_val, defaults=sub_defaults.get())
     else:
-        unresolved = init_args.pop('__unresolved__')
         if isinstance(unresolved, dict):
             for key in list(unresolved):
                 if _find_action(parser, key):
                     init_args[key] = unresolved.pop(key)
         init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
-        if unresolved:
-            init_args.__unresolved__ = unresolved
+    if unresolved:
+        init_args['__unresolved__'] = load_value(unresolved) if isinstance(unresolved, str) else unresolved
     return init_args
 
 

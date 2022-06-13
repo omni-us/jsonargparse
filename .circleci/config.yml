@@ -14,21 +14,6 @@ jobs:
           paths:
             - ./dist/*.whl
             - ./dist/*.tar.gz
-  test-pypy3:
-    docker:
-      - image: pypy:3
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: Run unit tests
-          command: |
-            pip3 install $(ls ./dist/*.whl)[test,all]
-            pypy3 -m jsonargparse_tests coverage xml coverage_pypy3_all.xml
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./coverage_*.xml
   test-py38: &test-py38
     docker:
       - image: circleci/python:3.8
@@ -84,7 +69,6 @@ jobs:
                 -F py$py \
                 -f coverage_py${py}.xml
             done
-            #for py in 3.6 3.7 3.8 3.9 3.10 py3; do
             for py in 3.6 3.7 3.8 3.9 3.10; do
               bash <(curl -s https://codecov.io/bash) \
                 -Z \
@@ -122,12 +106,9 @@ workflows:
           <<: *testreq
       - test-py36:
           <<: *testreq
-      #- test-pypy3:
-      #    <<: *testreq
       - codecov:
           <<: *testreq
           requires:
-            #- test-pypy3
             - test-py310
             - test-py39
             - test-py38

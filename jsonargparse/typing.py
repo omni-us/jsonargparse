@@ -5,8 +5,7 @@ import re
 import uuid
 from datetime import timedelta
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
-from .namespace import Namespace
-from .optionals import typing_extensions_import
+from .optionals import final
 from .util import Path
 
 
@@ -299,14 +298,6 @@ def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Call
     if type_check is not None:
         kwargs['type_check'] = type_check  # type: ignore
     register_type(type_class, type_class._type, **kwargs)  # type: ignore
-
-
-final = typing_extensions_import('final')
-if not getattr(final(Namespace()), '__final__', False):
-    def final(cls):  # pylint: disable=function-redefined
-        """Decorator to make a class `final`, i.e. it shouldn't be subclassed."""
-        setattr(cls, '__final__', True)
-        return cls
 
 
 def is_final_class(cls):

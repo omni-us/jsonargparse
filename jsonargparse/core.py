@@ -50,7 +50,7 @@ from .util import (
     usage_and_exit_error_handler,
     change_to_path_dir,
     Path,
-    _lenient_check_context,
+    lenient_check_context,
     lenient_check,
     return_parser_if_captured,
 )
@@ -233,7 +233,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         namespace = argcomplete_namespace(caller, self, namespace)
 
         try:
-            with patch('argparse.Namespace', Namespace), _lenient_check_context(caller), ActionTypeHint.subclass_arg_context(self), load_value_context(self.parser_mode):
+            with patch('argparse.Namespace', Namespace), lenient_check_context(caller), ActionTypeHint.subclass_arg_context(self), load_value_context(self.parser_mode):
                 namespace, args = self._parse_known_args(args, namespace)
         except (argparse.ArgumentError, ParserError) as ex:
             self.error(str(ex), ex)
@@ -298,7 +298,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
             cfg = self.merge_config(cfg, self.get_defaults(skip_check=True))
             with load_value_context(self.parser_mode):
                 ActionTypeHint.apply_appends(self, cfg)
-            with _lenient_check_context():
+            with lenient_check_context():
                 ActionTypeHint.add_sub_defaults(self, cfg)
 
         if not (with_meta or (with_meta is None and self._default_meta)):
@@ -1204,7 +1204,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
                 continue
             action_dest = action.dest if subcommand is None else subcommand+'.'+action.dest
             value = cfg[action_dest]
-            with _lenient_check_context(), load_value_context(self.parser_mode):
+            with lenient_check_context(), load_value_context(self.parser_mode):
                 value = self._check_value_key(action, value, action_dest, cfg)
             if isinstance(action, _ActionConfigLoad):
                 config_keys.add(action_dest)

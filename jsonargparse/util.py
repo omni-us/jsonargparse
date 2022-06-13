@@ -119,7 +119,7 @@ def identity(value):
     return value
 
 
-def _parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:
+def parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:
     """Parses yaml/json config in a string or a path"""
     cfg_path = None
     if enable_path and type(value) is str:
@@ -249,7 +249,7 @@ lenient_check: ContextVar = ContextVar('lenient_check', default=False)
 
 
 @contextmanager
-def _lenient_check_context(caller=None):
+def lenient_check_context(caller=None):
     t = lenient_check.set(False if caller == 'argcomplete' else True)
     try:
         yield
@@ -586,5 +586,5 @@ class LoggerProperty:
             self._logger = logger
 
 
-if 'JSONARGPARSE_DEBUG' in os.environ:  # pragma: no cover
-    os.environ['LOGGER_LEVEL'] = 'DEBUG'
+if 'JSONARGPARSE_DEBUG' in os.environ:
+    os.environ['LOGGER_LEVEL'] = 'DEBUG'  # pragma: no cover

@@ -13,7 +13,7 @@ def run_tests():
     filter_action = 'default'
     warnings.simplefilter(filter_action)
     os.environ['PYTHONWARNINGS'] = filter_action
-    tests = unittest.defaultTestLoader.discover(testing_package, pattern='*_tests.py')
+    tests = unittest.defaultTestLoader.discover(testing_package)
     if not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful():
         sys.exit(True)
 

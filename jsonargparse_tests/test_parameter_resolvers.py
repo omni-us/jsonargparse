@@ -5,8 +5,8 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import patch
 from jsonargparse import class_from_function, Namespace
-from jsonargparse.ast_analysis import get_parameters
 from jsonargparse.optionals import docstring_parser_support
+from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
 
 
 class ClassA:
@@ -209,128 +209,128 @@ logger.level = logging.DEBUG
 
 class GetClassParametersTests(unittest.TestCase):
 
-    def test_get_parameters_class_no_inheritance_unused_kwargs(self):
-        params = get_parameters(ClassA)
+    def test_get_params_class_no_inheritance_unused_kwargs(self):
+        params = get_params(ClassA)
         assert_params(self, params, ['ka1', 'ka2'])
         with source_unavailable():
-            self.assertEqual(params, get_parameters(ClassA))
+            self.assertEqual(params, get_params(ClassA))
 
-    def test_get_parameters_class_with_inheritance_hard_coded_kwargs(self):
-        assert_params(self, get_parameters(ClassB), ['pkb1', 'kb1', 'kb2', 'ka1'])
+    def test_get_params_class_with_inheritance_hard_coded_kwargs(self):
+        assert_params(self, get_params(ClassB), ['pkb1', 'kb1', 'kb2', 'ka1'])
         with source_unavailable():
-            assert_params(self, get_parameters(ClassB), ['pkb1', 'kb1', 'kb2', 'ka1', 'ka2'])
+            assert_params(self, get_params(ClassB), ['pkb1', 'kb1', 'kb2', 'ka1', 'ka2'])
 
-    def test_get_parameters_class_with_inheritance_unused_args(self):
-        assert_params(self, get_parameters(ClassC), ['kc1', 'pkb1', 'kb1', 'kb2', 'ka1'])
+    def test_get_params_class_with_inheritance_unused_args(self):
+        assert_params(self, get_params(ClassC), ['kc1', 'pkb1', 'kb1', 'kb2', 'ka1'])
         with source_unavailable():
-            assert_params(self, get_parameters(ClassC), ['kc1', 'pkb1', 'kb1', 'kb2', 'ka1', 'ka2'])
+            assert_params(self, get_params(ClassC), ['kc1', 'pkb1', 'kb1', 'kb2', 'ka1', 'ka2'])
 
-    def test_get_parameters_class_with_inheritance_parent_without_init(self):
-        params = get_parameters(ClassD)
+    def test_get_params_class_with_inheritance_parent_without_init(self):
+        params = get_params(ClassD)
         assert_params(self, params, ['kd1', 'ka1', 'ka2'])
         with source_unavailable():
-            self.assertEqual(params, get_parameters(ClassD))
+            self.assertEqual(params, get_params(ClassD))
 
-    def test_get_parameters_class_with_kwargs_in_dict_attribute(self):
-        assert_params(self, get_parameters(ClassE), ['ke1', 'pk1', 'k2'])
-        assert_params(self, get_parameters(ClassF), ['ksmf1', 'pk1', 'k2'])
+    def test_get_params_class_with_kwargs_in_dict_attribute(self):
+        assert_params(self, get_params(ClassE), ['ke1', 'pk1', 'k2'])
+        assert_params(self, get_params(ClassF), ['ksmf1', 'pk1', 'k2'])
         with source_unavailable():
-            assert_params(self, get_parameters(ClassE), ['ke1'])
-            assert_params(self, get_parameters(ClassF), [])
+            assert_params(self, get_params(ClassE), ['ke1'])
+            assert_params(self, get_params(ClassF), [])
 
-    def test_get_parameters_class_kwargs_in_attr_method_conditioned_on_arg(self):
-        assert_params(self, get_parameters(ClassG), ['func', 'kmg1', 'kmg3'])
+    def test_get_params_class_kwargs_in_attr_method_conditioned_on_arg(self):
+        assert_params(self, get_params(ClassG), ['func', 'kmg1', 'kmg3'])
         with source_unavailable():
-            assert_params(self, get_parameters(ClassG), ['func'])
+            assert_params(self, get_params(ClassG), ['func'])
 
     def test_class_from_function(self):
         class_a = class_from_function(function_return_class_c)
-        params = get_parameters(class_a)
+        params = get_params(class_a)
         assert_params(self, params, ['pk1', 'k2', 'pkb1', 'kb2', 'ka1'])
         with source_unavailable():
-            params = get_parameters(class_a)
+            params = get_params(class_a)
             assert_params(self, params, ['pk1', 'k2'])
 
 
 class GetMethodParametersTests(unittest.TestCase):
 
-    def test_get_parameters_method_no_args_no_kwargs(self):
-        params = get_parameters(ClassA, 'method_a')
+    def test_get_params_method_no_args_no_kwargs(self):
+        params = get_params(ClassA, 'method_a')
         assert_params(self, params, ['pma1', 'pma2', 'kma1'])
         with source_unavailable():
-            self.assertEqual(params, get_parameters(ClassA, 'method_a'))
+            self.assertEqual(params, get_params(ClassA, 'method_a'))
 
-    def test_get_parameters_method_call_super_method(self):
-        assert_params(self, get_parameters(ClassD, 'method_d'), ['pmd1', 'kmd1', 'pma1', 'pma2', 'kma1'])
+    def test_get_params_method_call_super_method(self):
+        assert_params(self, get_params(ClassD, 'method_d'), ['pmd1', 'kmd1', 'pma1', 'pma2', 'kma1'])
         with source_unavailable():
-            assert_params(self, get_parameters(ClassD, 'method_d'), ['pmd1', 'kmd1'])
+            assert_params(self, get_params(ClassD, 'method_d'), ['pmd1', 'kmd1'])
 
-    def test_get_parameters_staticmethod_call_function_return_class_c(self):
-        params = get_parameters(ClassD.staticmethod_d)
-        self.assertEqual(params, get_parameters(ClassD, 'staticmethod_d'))
+    def test_get_params_staticmethod_call_function_return_class_c(self):
+        params = get_params(ClassD.staticmethod_d)
+        self.assertEqual(params, get_params(ClassD, 'staticmethod_d'))
         assert_params(self, params, ['ksmd1', 'pkb1', 'kb2', 'ka1'])
         with source_unavailable():
-            params = get_parameters(ClassD.staticmethod_d)
-            self.assertEqual(params, get_parameters(ClassD, 'staticmethod_d'))
+            params = get_params(ClassD.staticmethod_d)
+            self.assertEqual(params, get_params(ClassD, 'staticmethod_d'))
             assert_params(self, params, ['ksmd1'])
 
-    def test_get_parameters_classmethod_make_class(self):
-        assert_params(self, get_parameters(ClassB.make), ['pkcm1', 'kcm1', 'kb1', 'kb2', 'ka1'])
+    def test_get_params_classmethod_make_class(self):
+        assert_params(self, get_params(ClassB.make), ['pkcm1', 'kcm1', 'kb1', 'kb2', 'ka1'])
         with source_unavailable():
-            assert_params(self, get_parameters(ClassB.make), ['pkcm1', 'kcm1'])
+            assert_params(self, get_params(ClassB.make), ['pkcm1', 'kcm1'])
 
 
 class GetFunctionParametersTests(unittest.TestCase):
 
-    def test_get_parameters_function_no_args_no_kwargs(self):
-        params = get_parameters(function_no_args_no_kwargs)
+    def test_get_params_function_no_args_no_kwargs(self):
+        params = get_params(function_no_args_no_kwargs)
         self.assertEqual(['pk1', 'k2'], [p.name for p in params])
         with source_unavailable():
-            self.assertEqual(params, get_parameters(function_no_args_no_kwargs))
+            self.assertEqual(params, get_params(function_no_args_no_kwargs))
 
-    def test_get_parameters_function_return_class_c(self):
-        assert_params(self, get_parameters(function_return_class_c), ['pk1', 'k2', 'pkb1', 'kb2', 'ka1'])
+    def test_get_params_function_return_class_c(self):
+        assert_params(self, get_params(function_return_class_c), ['pk1', 'k2', 'pkb1', 'kb2', 'ka1'])
         with source_unavailable():
-            assert_params(self, get_parameters(function_return_class_c), ['pk1', 'k2'])
+            assert_params(self, get_params(function_return_class_c), ['pk1', 'k2'])
 
-    def test_get_parameters_function_call_classmethod(self):
-        assert_params(self, get_parameters(function_make_class_b), ['k1', 'pkcm1', 'kcm1', 'kb1', 'kb2', 'ka1'])
+    def test_get_params_function_call_classmethod(self):
+        assert_params(self, get_params(function_make_class_b), ['k1', 'pkcm1', 'kcm1', 'kb1', 'kb2', 'ka1'])
         with source_unavailable():
-            assert_params(self, get_parameters(function_make_class_b), ['k1'])
+            assert_params(self, get_params(function_make_class_b), ['k1'])
 
 
 class OtherTests(unittest.TestCase):
 
     def test_unsupported_type_of_assign(self):
         with self.assertLogs(logger, level='DEBUG') as log:
-            get_parameters(ClassU1, logger=logger)
+            get_params(ClassU1, logger=logger)
             self.assertIn('Unsupported type of assign', log.output[0])
 
     def test_unsupported_kwarg_as_keyword(self):
         with self.assertLogs(logger, level='DEBUG') as log:
-            get_parameters(ClassU2, logger=logger)
+            get_params(ClassU2, logger=logger)
             self.assertIn('kwargs given as keyword parameter not supported', log.output[0])
 
     def test_unsupported_super_with_arbitrary_params(self):
         with self.assertLogs(logger, level='DEBUG') as log:
-            get_parameters(ClassU3, logger=logger)
+            get_params(ClassU3, logger=logger)
             self.assertIn('super with arbitrary parameters not supported', log.output[0])
 
     def test_unsupported_self_attr_not_found_in_members(self):
         with self.assertLogs(logger, level='DEBUG') as log:
-            get_parameters(ClassU4, logger=logger)
+            get_params(ClassU4, logger=logger)
             self.assertIn('Did not find use of self._ka in members of', log.output[0])
 
     def test_unsupported_kwarg_attr_as_keyword(self):
         with self.assertLogs(logger, level='DEBUG') as log:
-            get_parameters(ClassU5, logger=logger)
+            get_params(ClassU5, logger=logger)
             self.assertIn('kwargs attribute given as keyword parameter not supported', log.output[0])
 
-    def test_get_parameters_failures(self):
-        self.assertRaises(ValueError, lambda: get_parameters('invalid'))
-        self.assertRaises(ValueError, lambda: get_parameters(Param, 'p1'))
-        self.assertRaises(AttributeError, lambda: get_parameters(Param, 'p2'))
-        self.assertRaises(Exception, lambda: get_parameters(function_with_bug))
+    def test_get_params_failures(self):
+        self.assertRaises(ValueError, lambda: get_params('invalid'))
+        self.assertRaises(ValueError, lambda: get_params(Param, 'p1'))
+        self.assertRaises(AttributeError, lambda: get_params(Param, 'p2'))
+        self.assertRaises(Exception, lambda: get_params(function_with_bug))
 
 
 if __name__ == '__main__':

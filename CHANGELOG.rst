@@ -30,6 +30,10 @@ Fixed
 - ``dump`` with ``skip_default=True`` not working for subclasses without
   ``init_args`` and when a default value requires serializing.
 - ``JSONARGPARSE_DEFAULT_ENV`` should have precedence over given value.
+- Giving an invalid class path and then init args would print a misleading error
+  message about the init arg instead of the class.
+- In some cases ``print_config`` could output invalid values. Now a lenient
+  check is done while dumping.
 
 Changed
 ^^^^^^^
@@ -37,8 +41,9 @@ Changed
 - ``dataclasses`` no longer an optional, now an install require on python 3.6.
 - Parameters of type ``POSITIONAL_OR_KEYWORD`` now considered ``KEYWORD`` `#98
   <https://github.com/omni-us/jsonargparse/issues/98>`__.
-- Some refactoring mostly related to the new AST support.
+- Some refactoring mostly related but not limited to the new AST support.
 - ``JSONARGPARSE_DEBUG`` now also sets the reconplogger level to ``DEBUG``.
+- Renamed the test files to follow the more standard ``test_*.py`` pattern.
 
 
 v4.9.0 (2022-06-01)

@@ -13,7 +13,7 @@ from .optionals import (
     get_jsonschema_exceptions,
     import_jsonschema,
 )
-from .util import _parse_value_or_config
+from .util import parse_value_or_config
 
 
 __all__ = ['ActionJsonSchema']
@@ -86,7 +86,7 @@ class ActionJsonSchema(Action):
             value = [value]
         for num, val in enumerate(value):
             try:
-                val, fpath = _parse_value_or_config(val, enable_path=self._enable_path)
+                val, fpath = parse_value_or_config(val, enable_path=self._enable_path)
                 path_meta = val.pop('__path__') if isinstance(val, dict) and '__path__' in val else None
                 self._validator.validate(val)
                 if path_meta is not None:

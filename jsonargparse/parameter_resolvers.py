@@ -314,14 +314,18 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
 
     def get_node_component(self, node) -> Tuple[Type, Optional[str]]:
         function_or_class = method_or_property = None
+        module = inspect.getmodule(self.component)
         if isinstance(node.func, ast.Name):
-            function_or_class = getattr(inspect.getmodule(self.component), node.func.id)
+            assert hasattr(module, node.func.id), f'No attribute {node.func.id!r} in {module}'
+            function_or_class = getattr(module, node.func.id)
         elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
             if self.parent and ast.dump(node.func.value) == ast.dump(ast_variable_load(self.self_name)):
                 function_or_class = self.parent
                 method_or_property = node.func.attr
             else:
-                container = getattr(inspect.getmodule(self.component), node.func.value.id)
+                assert hasattr(module, node.func.value.id), f'No attribute {node.func.value.id!r} in {module}'
+                container = getattr(module, node.func.value.id)
+                assert hasattr(container, node.func.attr), f'No attribute {node.func.attr!r} in {node.func.value.id!r} of {module}'
                 function_or_class = getattr(container, node.func.attr)
         assert function_or_class, f'Component not supported: {ast_str(node)}'
         return function_or_class, method_or_property
@@ -337,7 +341,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     self.logger.debug(f'kwargs attribute given as keyword parameter not supported: {ast_str(node)}')
                 else:
                     get_param_args = self.get_node_component(node)
-                    params = get_parameters(*get_param_args, logger=self.logger)
+                    params = get_signature_parameters(*get_param_args, logger=self.logger)
             params = remove_given_parameters(node, params)
         return params
 
@@ -364,14 +368,14 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     self.logger.debug(f'kwargs given as keyword parameter not supported: {ast_str(node)}')
                 elif not self.parent:
                     get_param_args = self.get_node_component(node)
-                    params = get_parameters(*get_param_args, logger=self.logger)
+                    params = get_signature_parameters(*get_param_args, logger=self.logger)
                 elif self.parent and ast_is_super_call(node):
                     if not ast_is_supported_super_call(node, self.parent, self.self_name):
                         self.logger.debug(f'super with arbitrary parameters not supported: {ast_str(node)}')
                     else:
                         next_class, next_method = get_next_mro_class_and_method(self.parent, node.func.attr)  # type: ignore
                         if next_method:
-                            params = get_parameters(next_class, next_method, logger=self.logger)
+                            params = get_signature_parameters(next_class, next_method, logger=self.logger)
                 args, kwargs = split_args_and_kwargs(remove_given_parameters(node, params))
             elif isinstance(node, ast.Assign):
                 self_attr = self.parent and ast_is_attr_assign(node, self.self_name)
@@ -438,12 +442,24 @@ def get_parameters_by_assumptions(
     return params
 
 
-def get_parameters(
+def get_signature_parameters(
     function_or_class: Union[Callable, Type],
     method_or_property: Optional[str] = None,
     logger: Union[bool, str, dict, logging.Logger] = True,
 ) -> ParamList:
-    """Get a callable's parameters by inspecting its AST or by inheritance assumptions if source not available."""
+    """Get parameters by inspecting ASTs or by inheritance assumptions if source not available.
+
+    In contrast to inspect.signature, it follows the use of *args and **kwargs
+    attempting to find all accepted named parameters.
+
+    Args:
+        function_or_class: The callable object from which to get the signature
+            parameters.
+        method_or_property: For classes, the name of the method or property from
+            which to get the signature parameters. If not provided it returns
+            the parameters for ``__init__``.
+        logger: Useful for debugging. Only logs at ``DEBUG`` level.
+    """
     try:
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
         return visitor.get_parameters()

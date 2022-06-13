@@ -7,7 +7,7 @@ import os
 import unittest
 import warnings
 import yaml
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from enum import Enum
 from io import StringIO
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -819,6 +819,12 @@ class SignaturesTests(unittest.TestCase):
 
         outval = yaml.safe_load(out.getvalue())
         self.assertEqual(outval['g'], {'a1': {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 0}}, 'a2': 7})
+
+        err = StringIO()
+        with redirect_stderr(err), self.assertRaises(SystemExit):
+            parser.parse_args(['--g.a1=calendar.Calendar', '--g.a1.invalid=1', '--print_config'])
+
+        self.assertIn('No action for destination key "invalid"', err.getvalue())
 
 
     def test_print_config_subclass_required_param_issue_115(self):

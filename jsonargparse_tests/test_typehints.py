@@ -582,6 +582,15 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(cfg.op.init_args, Namespace(firstweekday=2))
 
 
+    def test_class_type_invalid_class_name_then_init_args(self):
+        parser = ArgumentParser()
+        parser.add_argument('--cal', type=Calendar)
+        err = StringIO()
+        with redirect_stderr(err), self.assertRaises(SystemExit):
+            parser.parse_args(['--cal=NotCalendarSubclass', '--cal.firstweekday=2'])
+        self.assertIn('NotCalendarSubclass', err.getvalue())
+
+
     def test_class_type_config_merge_init_args(self):
         class MyCal(Calendar):
             def __init__(self, param_a: int = 1, param_b: str = 'x', **kwargs):
@@ -658,7 +667,6 @@ class TypeHintsTests(unittest.TestCase):
 
 
     def test_class_type_unresolved_parameters(self):
-
         class Class:
             def __init__(self, p1: int = 1, p2: str = '2', **kwargs):
                 self.kwargs = kwargs
@@ -684,6 +692,9 @@ class TypeHintsTests(unittest.TestCase):
             cfg_init = parser.instantiate_classes(cfg)
             self.assertIsInstance(cfg_init.cls, Class)
             self.assertEqual(cfg_init.cls.kwargs, expected.__unresolved__)
+
+            cfg = parser.parse_args([f'--cls=Class', f'--cls.__unresolved__={expected.__unresolved__}'])
+            self.assertEqual(cfg.cls.init_args.__unresolved__, expected.__unresolved__)
 
             out = StringIO()
             with redirect_stdout(out), self.assertRaises(SystemExit):
