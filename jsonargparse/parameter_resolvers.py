@@ -7,7 +7,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
-from .util import ClassFromFunctionBase, is_subclass, LoggerProperty
+from .util import ClassFromFunctionBase, is_subclass, LoggerProperty, parse_logger
 from .optionals import parse_docs
 
 
@@ -460,11 +460,12 @@ def get_signature_parameters(
             the parameters for ``__init__``.
         logger: Useful for debugging. Only logs at ``DEBUG`` level.
     """
+    logger = parse_logger(logger, 'get_signature_parameters')
     try:
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
         return visitor.get_parameters()
     except SourceNotAvailable as ex:
-        LoggerProperty(logger=logger).logger.debug(
+        logger.debug(
             'Source not available, falling back to parameters by assumptions: '
             f'function_or_class={function_or_class} method_or_property={method_or_property} :: {ex}'
         )

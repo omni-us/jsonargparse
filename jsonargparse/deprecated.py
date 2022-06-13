@@ -245,3 +245,8 @@ cli_return_parser_message = """
     The return_parser parameter was deprecated in v4.5.0 and will be removed in
     v5.0.0. Instead of this use function capture_parser.
 """
+
+logger_property_none_message = """
+    Setting the logger property to None was deprecated in v4.10.0 and will raise
+    an exception in v5.0.0. Use False instead.
+"""

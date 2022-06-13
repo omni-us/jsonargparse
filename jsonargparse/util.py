@@ -16,12 +16,14 @@ from typing import Any, Callable, Optional, Tuple, Type, TypeVar, Union
 
 from .loaders_dumpers import load_value
 from .optionals import (
-    url_support,
+    fsspec_support,
+    get_config_read_mode,
+    import_fsspec,
+    import_reconplogger,
     import_requests,
     import_url_validator,
-    fsspec_support,
-    import_fsspec,
-    get_config_read_mode,
+    reconplogger_support,
+    url_support,
 )
 from .type_checking import ArgumentParser
 
@@ -38,6 +40,7 @@ __all__ = [
 ]
 
 
+logging_levels = {'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'}
 null_logger = logging.getLogger('jsonargparse_null_logger')
 null_logger.addHandler(logging.NullHandler())
 null_logger.parent = None
@@ -523,6 +526,44 @@ class Path:
             raise ValueError('Both modes "d" and "s" not possible.')
 
 
+def setup_default_logger(data, level, caller):
+    name = caller
+    if isinstance(data, str):
+        name = data
+    elif isinstance(data, dict) and 'name' in data:
+        name = data['name']
+    logger = logging.getLogger(name)
+    logger.parent = None
+    if len(logger.handlers) == 0:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        logger.addHandler(handler)
+    level = getattr(logging, level)
+    for handler in logger.handlers:
+        handler.setLevel(level)
+    return logger
+
+
+def parse_logger(logger: Union[bool, str, dict, logging.Logger], caller):
+    if not isinstance(logger, (bool, str, dict, logging.Logger)):
+        raise ValueError(f'Expected logger to be an instance of (bool, str, dict, logging.Logger), but got {logger}.')
+    if isinstance(logger, dict) and len(set(logger.keys())-{'name', 'level'}) > 0:
+        value = {k: v for k, v in logger.items() if k not in {'name', 'level'}}
+        raise ValueError(f'Unexpected data to configure logger: {value}.')
+    if logger is False:
+        return null_logger
+    level = 'WARNING'
+    if isinstance(logger, dict) and 'level' in logger:
+        level = logger['level']
+    if level not in logging_levels:
+        raise ValueError(f'Got logger level {level!r} but must be one of {logging_levels}.')
+    if (logger is True or (isinstance(logger, dict) and 'name' not in logger)) and reconplogger_support:
+        logger = import_reconplogger('parse_logger').logger_setup(level=level)
+    if not isinstance(logger, logging.Logger):
+        logger = setup_default_logger(logger, level, caller)
+    return logger
+
+
 class LoggerProperty:
     """Class designed to be inherited by other classes to add a logger property."""
 
@@ -539,51 +580,20 @@ class LoggerProperty:
         :getter: Returns the current logger.
         :setter: Sets the given logging.Logger as logger or sets the default logger
                  if given True/str(logger name)/dict(name, level), or disables logging
-                 if given False/None.
+                 if given False.
 
         Raises:
             ValueError: If an invalid logger value is given.
         """
         return self._logger
 
-
     @logger.setter
     def logger(self, logger: Union[bool, str, dict, logging.Logger]):
-        if logger is False:
-            self._logger = null_logger
-        elif isinstance(logger, (bool, str, dict)) and logger:
-            levels = {'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'}
-            level = logging.WARNING
-            if isinstance(logger, dict) and len(set(logger.keys())-{'name', 'level'}) > 0:
-                value = {k: v for k, v in logger.items() if k not in {'name', 'level'}}
-                raise ValueError(f'Unexpected logger value {value}.')
-            if isinstance(logger, dict) and 'level' in logger:
-                if logger['level'] not in levels:
-                    raise ValueError(f'Logger level must be one of {levels}.')
-                level = getattr(logging, logger['level'])
-            if isinstance(logger, bool) or (isinstance(logger, dict) and 'name' not in logger):
-                try:
-                    import reconplogger
-                    logger = reconplogger.logger_setup(level=level)
-                except (ImportError, ValueError):
-                    pass
-            if not isinstance(logger, logging.Logger):
-                name = type(self).__name__
-                if isinstance(logger, str):
-                    name = logger
-                elif isinstance(logger, dict) and 'name' in logger:
-                    name = logger['name']
-                logger = logging.getLogger(name)
-                if len(logger.handlers) == 0:
-                    handler = logging.StreamHandler()
-                    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-                    logger.addHandler(handler)
-                logger.setLevel(level)
-            self._logger = logger
-        elif not isinstance(logger, logging.Logger):
-            raise ValueError('Expected logger to be an instance of logging.Logger, bool, str or dict.')
-        else:
-            self._logger = logger
+        if logger is None:
+            from .deprecated import deprecation_warning, logger_property_none_message
+            deprecation_warning(LoggerProperty, logger_property_none_message)
+            logger = False
+        self._logger = parse_logger(logger, type(self).__name__)
 
 
 if 'JSONARGPARSE_DEBUG' in os.environ:

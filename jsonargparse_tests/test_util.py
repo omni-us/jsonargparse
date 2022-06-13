@@ -8,7 +8,7 @@ import platform
 import unittest
 import zipfile
 from jsonargparse import ArgumentParser, LoggerProperty, null_logger, Path
-from jsonargparse.optionals import fsspec_support, import_fsspec, url_support
+from jsonargparse.optionals import fsspec_support, import_fsspec, reconplogger_support, url_support
 from jsonargparse.util import get_import_path, import_object, register_unresolvable_import_paths
 from jsonargparse_tests.base import mock_module, responses, responses_activate, suppress_stderr, TempDirTestCase
 
@@ -206,8 +206,8 @@ class LoggingPropertyTests(unittest.TestCase):
 
     def setUp(self):
         class TestClass(LoggerProperty):
-            def __init__(self, logger=None):
-                self.logger = logger
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
 
         self.TestClass = TestClass
         self.log_message = 'Testing log message'
@@ -215,8 +215,8 @@ class LoggingPropertyTests(unittest.TestCase):
 
     def test_logger_true(self):
         test = self.TestClass(logger=True)
-        self.assertEqual(test.logger.level, logging.WARNING)
-        self.assertEqual(test.logger.name, 'TestClass')
+        self.assertEqual(test.logger.handlers[0].level, logging.WARNING)
+        self.assertEqual(test.logger.name, 'plain_logger' if reconplogger_support else 'TestClass')
 
 
     def test_logger_false(self):
@@ -257,7 +257,7 @@ class LoggingPropertyTests(unittest.TestCase):
         for num, level in enumerate(levels):
             with self.subTest(level), suppress_stderr():
                 test = self.TestClass(logger={'level': level})
-                with self.assertLogs(level=level) as log:
+                with self.assertLogs(logger=test.logger, level=level) as log:
                     getattr(test.logger, level.lower())(self.log_message)
                     self.assertEqual(len(log.output), 1)
                     self.assertIn(self.log_message, log.output[0])

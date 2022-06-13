@@ -25,6 +25,7 @@ argcomplete_support = find_spec('argcomplete') is not None
 fsspec_support = find_spec('fsspec') is not None
 ruyaml_support = find_spec('ruyaml') is not None
 omegaconf_support = find_spec('omegaconf') is not None
+reconplogger_support = find_spec('reconplogger') is not None
 dump_preserve_order_support = platform.python_implementation() == 'CPython'
 
 _config_read_mode = 'fr'
@@ -115,6 +116,12 @@ def import_ruyaml(importer):
     with missing_package_raise('ruyaml', importer):
         import ruyaml
     return ruyaml
+
+
+def import_reconplogger(importer):
+    with missing_package_raise('reconplogger', importer):
+        import reconplogger
+    return reconplogger
 
 
 def set_config_read_mode(

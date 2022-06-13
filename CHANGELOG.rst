@@ -34,16 +34,20 @@ Fixed
   message about the init arg instead of the class.
 - In some cases ``print_config`` could output invalid values. Now a lenient
   check is done while dumping.
+- Resolved some issues related to the logger property and reconplogger.
 
 Changed
 ^^^^^^^
-- ``logger`` property no longer accepts ``None`` as value.
 - ``dataclasses`` no longer an optional, now an install require on python 3.6.
 - Parameters of type ``POSITIONAL_OR_KEYWORD`` now considered ``KEYWORD`` `#98
   <https://github.com/omni-us/jsonargparse/issues/98>`__.
 - Some refactoring mostly related but not limited to the new AST support.
 - ``JSONARGPARSE_DEBUG`` now also sets the reconplogger level to ``DEBUG``.
 - Renamed the test files to follow the more standard ``test_*.py`` pattern.
+
+Deprecated
+^^^^^^^^^^
+- ``logger`` property will no longer accept ``None`` in v5.0.0.
 
 
 v4.9.0 (2022-06-01)

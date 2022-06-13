@@ -9,6 +9,7 @@ from io import StringIO
 from jsonargparse import ActionConfigFile, ArgumentParser, CLI, get_config_read_mode, ParserError, Path, set_url_support
 from jsonargparse.deprecated import ActionEnum, ActionPath, ActionOperators
 from jsonargparse.optionals import url_support
+from jsonargparse.util import LoggerProperty
 from jsonargparse_tests.base import TempDirTestCase
 
 
@@ -147,6 +148,11 @@ class DeprecatedTests(unittest.TestCase):
 
         parser = CLI([cmd1, cmd2], return_parser=True, set_defaults={'cmd2.a2': 'Z'})
         self.assertIsInstance(parser, ArgumentParser)
+
+
+    def test_logger_property_none(self):
+        with warnings.catch_warnings(record=True):
+            LoggerProperty(logger=None)
 
 
 class DeprecatedTempDirTests(TempDirTestCase):

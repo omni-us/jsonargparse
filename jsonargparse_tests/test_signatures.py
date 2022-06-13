@@ -687,7 +687,7 @@ class SignaturesTests(unittest.TestCase):
                     pass
 
             parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
-            with self.assertLogs(level='DEBUG') as log:
+            with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
                 parser.add_class_arguments(Class2, skip={'c2_a2'})
                 self.assertEqual(1, len(log.output))
                 self.assertIn('"c2_a2" from "Class2.__init__"', log.output[0])
@@ -1147,7 +1147,7 @@ class SignaturesTests(unittest.TestCase):
                     self.b1 = b1
 
             parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
-            with mock_module(ClassA, ClassB) as module, self.assertLogs(level='DEBUG') as log:
+            with mock_module(ClassA, ClassB) as module, self.assertLogs(logger=parser.logger, level='DEBUG') as log:
                 parser.add_subclass_arguments(ClassA, 'a', default=lazy_instance(ClassA))
                 parser.add_subclass_arguments(ClassB, 'b', default=lazy_instance(ClassB))
                 parser.link_arguments('a.init_args.a2', 'b.init_args.b1', apply_on='parse')
@@ -1158,7 +1158,7 @@ class SignaturesTests(unittest.TestCase):
                 self.assertTrue(any('a.init_args.a1 --> b.init_args.b2 ignored since target' in x for x in log.output))
 
             parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
-            with mock_module(ClassA, ClassB) as module, self.assertLogs(level='DEBUG') as log:
+            with mock_module(ClassA, ClassB) as module, self.assertLogs(logger=parser.logger, level='DEBUG') as log:
                 parser.add_subclass_arguments(ClassA, 'a', default=lazy_instance(ClassA))
                 parser.add_subclass_arguments(ClassB, 'b', default=lazy_instance(ClassB))
                 parser.link_arguments('a.init_args.a2', 'b.init_args.b1', apply_on='instantiate')
