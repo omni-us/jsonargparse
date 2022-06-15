@@ -1028,7 +1028,12 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
                 val = cfg[key]
                 action = _find_action(self, key)
                 if action is None:
-                    if _is_branch_key(self, key) or key.endswith('.class_path') or '.init_args' in key:
+                    if (
+                        _is_branch_key(self, key) or
+                        key.endswith('.class_path') or
+                        key.endswith('.unresolved_init_args') or
+                        '.init_args' in key
+                    ):
                         continue
                     action = _find_parent_action(self, key, exclude=_ActionConfigLoad)
                     if action and not ActionTypeHint.is_subclass_typehint(action):

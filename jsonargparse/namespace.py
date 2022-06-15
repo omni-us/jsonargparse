@@ -194,6 +194,10 @@ class Namespace(ArgparseNamespace):
             return False
         return leaf_key in parent_ns.__dict__
 
+    def __bool__(self) -> bool:
+        """Returns False if namespace is empty, otherwise True."""
+        return bool(self.__dict__)
+
     def as_dict(self) -> Dict[str, Any]:
         """Converts the nested namespaces into nested dictionaries."""
         dic = {}
@@ -290,13 +294,6 @@ class Namespace(ArgparseNamespace):
         if not parent_ns:
             return default
         return parent_ns.__dict__.pop(leaf_key, default)
-
-
-_empty_namespace = Namespace()
-
-
-def is_empty_namespace(ns):
-    return ns == _empty_namespace
 
 
 # Temporal to provide backward compatibility in pytorch-lightning

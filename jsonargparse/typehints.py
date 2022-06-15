@@ -33,7 +33,7 @@ from typing import (
 
 from .actions import _ActionHelpClassPath, _find_action, _find_parent_action, _is_action_value_list
 from .loaders_dumpers import get_loader_exceptions, load_value
-from .namespace import is_empty_namespace, Namespace
+from .namespace import Namespace, split_key_root
 from .typing import is_final_class, registered_types
 from .optionals import (
     argcomplete_warn_redraw_prompt,
@@ -321,9 +321,9 @@ class ActionTypeHint(Action):
                             pass
                     if isinstance(cfg_dest, str):
                         cfg_dest = Namespace(class_path=cfg_dest)
-                    if not sub_opt.startswith('init_args.'):
+                    if split_key_root(sub_opt)[0] not in {'init_args', 'unresolved_init_args'}:
                         sub_opt = 'init_args.' + sub_opt
-                    if len(sub_opt.split('.', 2)) == 3:
+                    if sub_opt.startswith('init_args.') and '.' in sub_opt[len('init_args.'):]:
                         val = NestedArg(key=sub_opt[len('init_args.'):], val=val)
                         sub_opt = 'init_args'
                     if isinstance(cfg_dest, list):
@@ -584,9 +584,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
     elif typehint_origin in callable_origin_types or typehint in callable_origin_types:
         if serialize:
             if is_class_object(val):
-                class_path = val['class_path']
-                init_args = val.get('init_args', Namespace())
-                val['init_args'] = adapt_class_type(class_path, init_args, True, False, sub_add_kwargs)
+                val = adapt_class_type(val, True, False, sub_add_kwargs)
             else:
                 val = object_path_serializer(val)
         else:
@@ -607,12 +605,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                     if not (inspect.isclass(val_class) and callable_instances(val_class)):
                         raise ImportError(f'"{val.class_path}" is not a callable class.')
                     val['class_path'] = get_import_path(val_class)
-                    init_args = val.get('init_args', Namespace())
-                    adapted = adapt_class_type(val_class, init_args, False, instantiate_classes, sub_add_kwargs)
-                    if instantiate_classes and sub_add_kwargs.get('instantiate', True):
-                        val = adapted
-                    elif adapted is not None and not is_empty_namespace(adapted):
-                        val['init_args'] = adapted
+                    val = adapt_class_type(val, False, instantiate_classes, sub_add_kwargs)
             except (ImportError, AttributeError, ParserError) as ex:
                 raise ValueError(f'Type {typehint} expects a function or a callable class: {ex}')
 
@@ -638,17 +631,12 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             if isinstance(prev_val, Namespace) and 'class_path' in prev_val and 'init_args' not in val:
                 prev_class_path = prev_val['class_path']
                 prev_init_args = prev_val.get('init_args')
-                if prev_class_path != class_path and not (prev_init_args is None or is_empty_namespace(prev_init_args)):
+                if prev_class_path != class_path and prev_init_args:
                     warnings.warn(
                         f'Changing class_path to {class_path} implies discarding init_args {prev_init_args.as_dict()} '
                         f'defined for class_path {prev_class_path}.'
                     )
-            init_args = val.get('init_args', Namespace())
-            adapted = adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
-            if instantiate_classes and sub_add_kwargs.get('instantiate', True):
-                val = adapted
-            elif adapted is not None and not is_empty_namespace(adapted):
-                val['init_args'] = adapted
+            val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
         except (ImportError, AttributeError, AssertionError, ParserError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
             e = indent_text(f'\n- {ex}')
@@ -661,7 +649,7 @@ def is_class_object(val):
     is_class = isinstance(val, (dict, Namespace)) and 'class_path' in val
     if is_class:
         keys = getattr(val, '__dict__', val).keys()
-        is_class = len(set(keys)-{'class_path', 'init_args', '__path__'}) == 0
+        is_class = len(set(keys)-{'class_path', 'init_args', 'unresolved_init_args', '__path__'}) == 0
     return is_class
 
 
@@ -726,9 +714,8 @@ def dump_kwargs_context(kwargs):
     yield
 
 
-def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_add_kwargs, prev_val=None):
-    if isinstance(init_args, dict):
-        init_args = Namespace(init_args)
+def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev_val=None):
+    val_class = import_object(value['class_path'])
     parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
 
     # No need to re-create the linked arg but just "inform" the corresponding parser actions that it exists upstream.
@@ -747,29 +734,41 @@ def adapt_class_type(val_class, init_args, serialize, instantiate_classes, sub_a
 
             break
 
+    unresolved = value.pop('unresolved_init_args', {})
+    init_args = value.get('init_args', Namespace())
+    if isinstance(init_args, dict):
+        value['init_args'] = init_args = Namespace(init_args)
+
     if instantiate_classes:
-        unresolved = init_args.pop('__unresolved__', {})
         init_args = parser.instantiate_classes(init_args)
         if not sub_add_kwargs.get('instantiate', True):
-            return init_args
+            if init_args:
+                value['init_args'] = init_args
+            return value
         return val_class(**{**init_args, **unresolved})
 
     if isinstance(init_args, NestedArg):
-        prev_val = prev_val.init_args.clone()
-        return parser.parse_args([f'--{init_args.key}={init_args.val}'], namespace=prev_val, defaults=sub_defaults.get())
+        value['init_args'] = parser.parse_args(
+            [f'--{init_args.key}={init_args.val}'],
+            namespace=prev_val.init_args.clone(),
+            defaults=sub_defaults.get(),
+        )
+        return value
 
-    unresolved = init_args.pop('__unresolved__', None)
     if serialize:
-        init_args = None if is_empty_namespace(init_args) else load_value(parser.dump(init_args, **dump_kwargs.get()))
+        if init_args:
+            value['init_args'] = load_value(parser.dump(init_args, **dump_kwargs.get()))
     else:
-        if isinstance(unresolved, dict):
-            for key in list(unresolved):
+        if unresolved:
+            for key in list(unresolved.keys()):
                 if _find_action(parser, key):
                     init_args[key] = unresolved.pop(key)
         init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
+        if init_args:
+            value['init_args'] = init_args
     if unresolved:
-        init_args['__unresolved__'] = load_value(unresolved) if isinstance(unresolved, str) else unresolved
-    return init_args
+        value['unresolved_init_args'] = {k: load_value(v) if isinstance(v, str) else v for k, v in unresolved.items()}
+    return value
 
 
 def not_append_diff(val1, val2):

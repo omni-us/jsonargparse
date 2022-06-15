@@ -36,7 +36,7 @@ Fixed
   check is done while dumping.
 - Resolved some issues related to the logger property and reconplogger.
 
-Changed
+-Changed
 ^^^^^^^
 - ``dataclasses`` no longer an optional, now an install require on python 3.6.
 - Parameters of type ``POSITIONAL_OR_KEYWORD`` now considered ``KEYWORD`` `#98
@@ -44,6 +44,7 @@ Changed
 - Some refactoring mostly related but not limited to the new AST support.
 - ``JSONARGPARSE_DEBUG`` now also sets the reconplogger level to ``DEBUG``.
 - Renamed the test files to follow the more standard ``test_*.py`` pattern.
+- Now ``bool(Namespace())`` evaluates to ``False``.
 
 Deprecated
 ^^^^^^^^^^

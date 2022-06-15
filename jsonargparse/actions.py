@@ -11,7 +11,7 @@ from contextvars import ContextVar
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from .loaders_dumpers import get_loader_exceptions, load_value
-from .namespace import is_empty_namespace, Namespace, split_key, split_key_leaf, split_key_root
+from .namespace import Namespace, split_key, split_key_leaf, split_key_root
 from .optionals import FilesCompleterMethod, get_config_read_mode
 from .type_checking import ArgumentParser, _ArgumentGroup
 from .typing import path_type
@@ -613,7 +613,7 @@ class _ActionLink(Action):
         def del_taget_key(target_key):
             cfg.pop(target_key, None)
             parent_key, _ = split_key_leaf(target_key)
-            if '.' in target_key and is_empty_namespace(cfg.get(parent_key)):
+            if '.' in target_key and parent_key in cfg and not cfg[parent_key]:
                 del cfg[parent_key]
 
         for action in [a for a in parser._actions if isinstance(a, _ActionLink)]:

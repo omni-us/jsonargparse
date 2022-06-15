@@ -732,9 +732,8 @@ Parameter resolvers
 Two techniques are implemented for resolving signature parameters. One makes use
 of python's `Abstract Syntax Trees (AST)
 <https://docs.python.org/3/library/ast.html>`__ library and the other is based
-on assumptions of class inheritance. First it is attempted to get parameters
-using the AST resolver. Only when AST fails, the assumptions resolver is used as
-fallback.
+on assumptions of class inheritance. The AST resolver is used first and only
+when AST fails, the assumptions resolver is used as fallback.
 
 .. note::
 
@@ -770,7 +769,7 @@ Take for example the following parsing and instantiation:
 
 .. testcode:: unresolved
 
-    from jsonargparse import ArgumentParser, lazy_instance
+    from jsonargparse import ArgumentParser
 
     parser = ArgumentParser()
     parser.add_argument('--myclass', type=MyClass)
@@ -855,7 +854,7 @@ unrelated to these variables.
             self._kwargs = kwargs
 
         def a_method(self):
-            a_callable(**kwargs)
+            a_callable(**self._kwargs)
 
     class DictUpdateUseInMethod:
         def __init__(self, **kwargs):
@@ -864,7 +863,7 @@ unrelated to these variables.
             # Could also be: self._kwargs = dict(p1=1, **kwargs)
 
         def a_method(self):
-            a_callable(**kwargs)
+            a_callable(**self._kwargs)
 
 There can be other parameters apart from ``*args`` and ``**kwargs``, thus in the
 cases above the signatures can be for example like ``name(p1: int, k1: str =
