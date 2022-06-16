@@ -1031,7 +1031,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
                     if (
                         _is_branch_key(self, key) or
                         key.endswith('.class_path') or
-                        key.endswith('.unresolved_init_args') or
+                        key.endswith('.dict_kwargs') or
                         '.init_args' in key
                     ):
                         continue

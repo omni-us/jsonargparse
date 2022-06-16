@@ -321,11 +321,13 @@ class ActionTypeHint(Action):
                             pass
                     if isinstance(cfg_dest, str):
                         cfg_dest = Namespace(class_path=cfg_dest)
-                    if split_key_root(sub_opt)[0] not in {'init_args', 'unresolved_init_args'}:
+                    if split_key_root(sub_opt)[0] not in {'init_args', 'dict_kwargs'}:
                         sub_opt = 'init_args.' + sub_opt
                     if sub_opt.startswith('init_args.') and '.' in sub_opt[len('init_args.'):]:
                         val = NestedArg(key=sub_opt[len('init_args.'):], val=val)
                         sub_opt = 'init_args'
+                    elif sub_opt.startswith('dict_kwargs.') and isinstance(val, str):
+                        val = load_value(val)
                     if isinstance(cfg_dest, list):
                         cfg_dest[-1][sub_opt] = val
                     else:
@@ -649,7 +651,7 @@ def is_class_object(val):
     is_class = isinstance(val, (dict, Namespace)) and 'class_path' in val
     if is_class:
         keys = getattr(val, '__dict__', val).keys()
-        is_class = len(set(keys)-{'class_path', 'init_args', 'unresolved_init_args', '__path__'}) == 0
+        is_class = len(set(keys)-{'class_path', 'init_args', 'dict_kwargs', '__path__'}) == 0
     return is_class
 
 
@@ -734,7 +736,7 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
 
             break
 
-    unresolved = value.pop('unresolved_init_args', {})
+    unresolved = value.pop('dict_kwargs', {})
     init_args = value.get('init_args', Namespace())
     if isinstance(init_args, dict):
         value['init_args'] = init_args = Namespace(init_args)
@@ -759,15 +761,22 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
         if init_args:
             value['init_args'] = load_value(parser.dump(init_args, **dump_kwargs.get()))
     else:
-        if unresolved:
+        if isinstance(unresolved, str):
+            unresolved = load_value(unresolved)
+        if isinstance(unresolved, (dict, Namespace)):
             for key in list(unresolved.keys()):
                 if _find_action(parser, key):
                     init_args[key] = unresolved.pop(key)
+            if isinstance(unresolved, Namespace):
+                unresolved = dict(unresolved)
+        elif unresolved:
+            init_args['dict_kwargs'] = unresolved
+            unresolved = None
         init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
         if init_args:
             value['init_args'] = init_args
     if unresolved:
-        value['unresolved_init_args'] = {k: load_value(v) if isinstance(v, str) else v for k, v in unresolved.items()}
+        value['dict_kwargs'] = unresolved
     return value
 
 

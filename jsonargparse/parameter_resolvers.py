@@ -366,9 +366,6 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 params = []
                 if kwarg.arg:
                     self.logger.debug(f'kwargs given as keyword parameter not supported: {ast_str(node)}')
-                elif not self.parent:
-                    get_param_args = self.get_node_component(node)
-                    params = get_signature_parameters(*get_param_args, logger=self.logger)
                 elif self.parent and ast_is_super_call(node):
                     if not ast_is_supported_super_call(node, self.parent, self.self_name):
                         self.logger.debug(f'super with arbitrary parameters not supported: {ast_str(node)}')
@@ -376,6 +373,9 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                         next_class, next_method = get_next_mro_class_and_method(self.parent, node.func.attr)  # type: ignore
                         if next_method:
                             params = get_signature_parameters(next_class, next_method, logger=self.logger)
+                else:
+                    get_param_args = self.get_node_component(node)
+                    params = get_signature_parameters(*get_param_args, logger=self.logger)
                 args, kwargs = split_args_and_kwargs(remove_given_parameters(node, params))
             elif isinstance(node, ast.Assign):
                 self_attr = self.parent and ast_is_attr_assign(node, self.self_name)

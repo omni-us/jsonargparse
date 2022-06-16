@@ -672,19 +672,18 @@ class TypeHintsTests(unittest.TestCase):
                 self.kwargs = kwargs
 
         with mock_module(Class) as module:
-
             config = f"""cls:
               class_path: {module}.Class
               init_args:
                   p1: 5
-              unresolved_init_args:
+              dict_kwargs:
                   p2: '6'
                   p3: 7.0
             """
             expected = Namespace(
                 class_path=f'{module}.Class',
                 init_args=Namespace(p1=5, p2='6'),
-                unresolved_init_args={'p3': 7.0},
+                dict_kwargs={'p3': 7.0},
             )
 
             parser = ArgumentParser(error_handler=None)
@@ -695,16 +694,36 @@ class TypeHintsTests(unittest.TestCase):
             self.assertEqual(cfg.cls, expected)
             cfg_init = parser.instantiate_classes(cfg)
             self.assertIsInstance(cfg_init.cls, Class)
-            self.assertEqual(cfg_init.cls.kwargs, expected.unresolved_init_args)
+            self.assertEqual(cfg_init.cls.kwargs, expected.dict_kwargs)
 
-            cfg = parser.parse_args([f'--cls=Class', f'--cls.unresolved_init_args.p3=7.0'])
-            self.assertEqual(cfg.cls.unresolved_init_args, expected.unresolved_init_args)
+            cfg = parser.parse_args(['--cls=Class', '--cls.dict_kwargs.p3=7.0'])
+            self.assertEqual(cfg.cls.dict_kwargs, expected.dict_kwargs)
+
+            with self.assertRaises(ParserError):
+                parser.parse_args(['--cls=Class', '--cls.dict_kwargs=1'])
 
             out = StringIO()
             with redirect_stdout(out), self.assertRaises(SystemExit):
                 parser.parse_args([f'--config={config}', '--print_config'])
             data = yaml.safe_load(out.getvalue())['cls']
             self.assertEqual(data, expected.as_dict())
+
+
+    def test_class_type_unresolved_name_clash(self):
+        class Class:
+            def __init__(self, dict_kwargs: int = 1, **kwargs):
+                self.kwargs = kwargs
+
+        with mock_module(Class) as module:
+            parser = ArgumentParser()
+            parser.add_argument('--cls', type=Class)
+            args = [f'--cls={module}.Class', '--cls.dict_kwargs=2']
+            cfg = parser.parse_args(args)
+            self.assertEqual(cfg.cls.init_args.as_dict(), {'dict_kwargs': 2})
+            args.append('--cls.dict_kwargs.p1=3')
+            cfg = parser.parse_args(args)
+            self.assertEqual(cfg.cls.init_args.as_dict(), {'dict_kwargs': 2})
+            self.assertEqual(cfg.cls.dict_kwargs, {'p1': 3})
 
 
     def test_invalid_init_args_in_yaml(self):

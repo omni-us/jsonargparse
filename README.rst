@@ -747,9 +747,11 @@ Unresolved parameters
 The parameter resolvers make a best effort to determine the correct names and
 types that the parser should accept. However, there can be cases not yet
 supported or cases for which it would be impossible to support. To somewhat
-overcome these limitations, there is a special key ``__unresolved__`` that can
-be used to provide arguments that will not be validated during parsing, but will
-be used for class instantiation.
+overcome these limitations, there is a special key ``dict_kwargs`` that can be
+used to provide arguments that will not be validated during parsing, but will be
+used for class instantiation. It is called ``dict_kwargs`` because there are use
+cases in which ``**kwargs`` is used just as a dict, thus it also serves that
+purpose.
 
 Take for example the following parsing and instantiation:
 
@@ -784,8 +786,8 @@ following could be a valid config file:
     class_path: MyClass
     init_args:
       foo: 1
-      __unresolved__:
-        bar: 2
+    dict_kwargs:
+      bar: 2
 
 The value for ``bar`` will not be validated, but the class will be instantiated
 as ``MyClass(foo=1, bar=2)``.

@@ -172,6 +172,13 @@ def function_no_args_no_kwargs(pk1: str, k2: int = 1):
         k2: help for k2
     """
 
+def function_with_kwargs(k1: bool = True, **kwds):
+    """
+    Args:
+        k1: help for k1
+    """
+    return function_no_args_no_kwargs(**kwds)
+
 def function_return_class_c(pk1: str, k2: int = 1, **ka):
     """
     Args:
@@ -287,6 +294,11 @@ class GetFunctionParametersTests(unittest.TestCase):
         self.assertEqual(['pk1', 'k2'], [p.name for p in params])
         with source_unavailable():
             self.assertEqual(params, get_params(function_no_args_no_kwargs))
+
+    def test_get_params_function_with_kwargs(self):
+        assert_params(self, get_params(function_with_kwargs), ['k1', 'pk1', 'k2'])
+        with source_unavailable():
+            assert_params(self, get_params(function_with_kwargs), ['k1'])
 
     def test_get_params_function_return_class_c(self):
         assert_params(self, get_params(function_return_class_c), ['pk1', 'k2', 'pkb1', 'kb2', 'ka1'])

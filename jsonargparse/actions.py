@@ -380,7 +380,7 @@ class _ActionHelpClassPath(Action):
         subparser = import_object('jsonargparse.ArgumentParser')()
         subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
         _remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
-        args = self.get_extra_args(call_args[0].args)
+        args = self.get_args_after_opt(call_args[0].args)
         if args:
             subparser.parse_args(args)
             raise ParserError(f'Expected a nested --*.help option, got: {args}.')
@@ -388,7 +388,7 @@ class _ActionHelpClassPath(Action):
             subparser.print_help()
             call_args[0].exit()
 
-    def get_extra_args(self, args):
+    def get_args_after_opt(self, args):
         opt_str = self.option_strings[0]
         for num, arg in enumerate(args):
             parts = arg.split('=', 1)
