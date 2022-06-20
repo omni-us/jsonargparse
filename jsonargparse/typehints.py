@@ -49,6 +49,7 @@ from .util import (
     is_subclass,
     iter_to_set_str,
     lenient_check,
+    lenient_check_context,
     NoneType,
     object_path_serializer,
     ParserError,
@@ -238,6 +239,15 @@ class ActionTypeHint(Action):
         elif parser._subcommands_action and arg_string in parser._subcommands_action._name_parser_map:
             subparser = parser._subcommands_action._name_parser_map[arg_string]
             subclass_arg_parser.set(subparser)
+
+
+    @staticmethod
+    def discard_init_args_on_class_path_change(parser, cfg_to, cfg_from):
+        for action in [a for a in parser._actions if ActionTypeHint.is_subclass_typehint(a)]:
+            val_to = cfg_to.get(action.dest)
+            val_from = cfg_from.get(action.dest)
+            if is_subclass_spec(val_to) and is_subclass_spec(val_from):
+                discard_init_args_on_class_path_change(action, val_to, val_from)
 
 
     @staticmethod
@@ -585,7 +595,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
     # Callable
     elif typehint_origin in callable_origin_types or typehint in callable_origin_types:
         if serialize:
-            if is_class_object(val):
+            if is_subclass_spec(val):
                 val = adapt_class_type(val, True, False, sub_add_kwargs)
             else:
                 val = object_path_serializer(val)
@@ -600,12 +610,11 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                     else:
                         raise ImportError(f'Unexpected import object {val_obj}')
                 if isinstance(val, (dict, Namespace)):
-                    if not is_class_object(val):
+                    if not is_subclass_spec(val):
                         raise ImportError(f'Dict must include a class_path and optionally init_args, but got {val}')
-                    val = Namespace(val)
-                    val_class = import_object(val.class_path)
+                    val_class = import_object(val['class_path'])
                     if not (inspect.isclass(val_class) and callable_instances(val_class)):
-                        raise ImportError(f'"{val.class_path}" is not a callable class.')
+                        raise ImportError(f'{val["class_path"]!r} is not a callable class.')
                     val['class_path'] = get_import_path(val_class)
                     val = adapt_class_type(val, False, instantiate_classes, sub_add_kwargs)
             except (ImportError, AttributeError, ParserError) as ex:
@@ -619,25 +628,25 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             return val
         if serialize and isinstance(val, str):
             return val
-        if not (isinstance(val, str) or is_class_object(val)):
-            raise ValueError(f'Type {typehint} expects an str or a Dict/Namespace with a class_path entry but got "{val}"')
+
+        val_input = val
+        val = subclass_spec_as_namespace(val)
+        if not is_subclass_spec(val) and prev_val and 'class_path' in prev_val:
+            if 'init_args' in val:
+                val['class_path'] = prev_val['class_path']
+            else:
+                val = Namespace(class_path=prev_val['class_path'], init_args=val)
+        if not is_subclass_spec(val):
+            raise ValueError(
+                f'Type {typehint} expects: a class path (str); or a dict with a class_path entry; '
+                f'or a dict with init_args (if class path given previously). Got "{val_input}".'
+            )
+
         try:
-            if isinstance(val, str):
-                val = Namespace(class_path=val)
-            elif isinstance(val, dict):
-                val = Namespace(val)
             val_class = import_object(resolve_class_path_by_name(typehint, val['class_path']))
             if not is_subclass(val_class, typehint):
                 raise ValueError(f'"{val["class_path"]}" is not a subclass of {typehint}')
-            val['class_path'] = class_path = get_import_path(val_class)
-            if isinstance(prev_val, Namespace) and 'class_path' in prev_val and 'init_args' not in val:
-                prev_class_path = prev_val['class_path']
-                prev_init_args = prev_val.get('init_args')
-                if prev_class_path != class_path and prev_init_args:
-                    warnings.warn(
-                        f'Changing class_path to {class_path} implies discarding init_args {prev_init_args.as_dict()} '
-                        f'defined for class_path {prev_class_path}.'
-                    )
+            val['class_path'] = get_import_path(val_class)
             val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
         except (ImportError, AttributeError, AssertionError, ParserError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
@@ -647,12 +656,22 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
     return val
 
 
-def is_class_object(val):
+def is_subclass_spec(val):
     is_class = isinstance(val, (dict, Namespace)) and 'class_path' in val
     if is_class:
         keys = getattr(val, '__dict__', val).keys()
         is_class = len(set(keys)-{'class_path', 'init_args', 'dict_kwargs', '__path__'}) == 0
     return is_class
+
+
+def subclass_spec_as_namespace(val):
+    if isinstance(val, str):
+        return Namespace(class_path=val)
+    if isinstance(val, dict):
+        val = Namespace(val)
+    if 'init_args' in val and isinstance(val['init_args'], dict):
+        val['init_args'] = Namespace(val['init_args'])
+    return val
 
 
 class NestedArg:
@@ -716,8 +735,34 @@ def dump_kwargs_context(kwargs):
     yield
 
 
+def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
+    if prev_val and 'init_args' in prev_val and prev_val['class_path'] != value.class_path:
+        parser = parser_or_action
+        if isinstance(parser_or_action, ActionTypeHint):
+            sub_add_kwargs = getattr(parser_or_action, 'sub_add_kwargs', {})
+            parser = ActionTypeHint.get_class_parser(value.class_path, sub_add_kwargs)
+        prev_val = subclass_spec_as_namespace(prev_val)
+        del_args = {}
+        for key, val in list(prev_val.init_args.__dict__.items()):
+            action = _find_action(parser, key)
+            if action:
+                with lenient_check_context(lenient=False):
+                    try:
+                        parser._check_value_key(action, val, key, Namespace())
+                    except Exception:
+                        action = None
+            if not action:
+                del_args[key] = prev_val.init_args.pop(key)
+        if del_args:
+            warnings.warn(
+                f'Due to class_path change from {prev_val.class_path!r} to {value.class_path!r}, '
+                f'discarding init_args: {del_args}.'
+            )
+
+
 def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev_val=None):
-    val_class = import_object(value['class_path'])
+    value = subclass_spec_as_namespace(value)
+    val_class = import_object(value.class_path)
     parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
 
     # No need to re-create the linked arg but just "inform" the corresponding parser actions that it exists upstream.
@@ -736,10 +781,10 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
 
             break
 
-    unresolved = value.pop('dict_kwargs', {})
+    discard_init_args_on_class_path_change(parser, prev_val, value)
+
+    dict_kwargs = value.pop('dict_kwargs', {})
     init_args = value.get('init_args', Namespace())
-    if isinstance(init_args, dict):
-        value['init_args'] = init_args = Namespace(init_args)
 
     if instantiate_classes:
         init_args = parser.instantiate_classes(init_args)
@@ -747,7 +792,7 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
             if init_args:
                 value['init_args'] = init_args
             return value
-        return val_class(**{**init_args, **unresolved})
+        return val_class(**{**init_args, **dict_kwargs})
 
     if isinstance(init_args, NestedArg):
         value['init_args'] = parser.parse_args(
@@ -761,29 +806,29 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
         if init_args:
             value['init_args'] = load_value(parser.dump(init_args, **dump_kwargs.get()))
     else:
-        if isinstance(unresolved, str):
-            unresolved = load_value(unresolved)
-        if isinstance(unresolved, (dict, Namespace)):
-            for key in list(unresolved.keys()):
+        if isinstance(dict_kwargs, str):
+            dict_kwargs = load_value(dict_kwargs)
+        if isinstance(dict_kwargs, (dict, Namespace)):
+            for key in list(dict_kwargs.keys()):
                 if _find_action(parser, key):
-                    init_args[key] = unresolved.pop(key)
-            if isinstance(unresolved, Namespace):
-                unresolved = dict(unresolved)
-        elif unresolved:
-            init_args['dict_kwargs'] = unresolved
-            unresolved = None
+                    init_args[key] = dict_kwargs.pop(key)
+            if isinstance(dict_kwargs, Namespace):
+                dict_kwargs = dict(dict_kwargs)
+        elif dict_kwargs:
+            init_args['dict_kwargs'] = dict_kwargs
+            dict_kwargs = None
         init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
         if init_args:
             value['init_args'] = init_args
-    if unresolved:
-        value['dict_kwargs'] = unresolved
+    if dict_kwargs:
+        value['dict_kwargs'] = dict_kwargs
     return value
 
 
 def not_append_diff(val1, val2):
     if isinstance(val1, list) and isinstance(val2, list):
-        val1 = [x.get('class_path') if is_class_object(x) else x for x in val1]
-        val2 = [x.get('class_path') if is_class_object(x) else x for x in val2]
+        val1 = [x.get('class_path') if is_subclass_spec(x) else x for x in val1]
+        val2 = [x.get('class_path') if is_subclass_spec(x) else x for x in val2]
     return val1 != val2
 
 

@@ -24,6 +24,8 @@ Added
   <https://github.com/PyTorchLightning/pytorch-lightning/issues/11653>`__.
 - Support init args for unresolved parameters in subclasses `#114
   <https://github.com/omni-us/jsonargparse/issues/114>`__.
+- Allow providing a config with ``init_args`` but no ``class_path`` `#113
+  <https://github.com/omni-us/jsonargparse/issues/113>`__.
 
 Fixed
 ^^^^^
@@ -35,6 +37,7 @@ Fixed
 - In some cases ``print_config`` could output invalid values. Now a lenient
   check is done while dumping.
 - Resolved some issues related to the logger property and reconplogger.
+- Single dash ``'-'`` incorrectly parsed as ``[None]``.
 
 -Changed
 ^^^^^^^
@@ -45,6 +48,8 @@ Fixed
 - ``JSONARGPARSE_DEBUG`` now also sets the reconplogger level to ``DEBUG``.
 - Renamed the test files to follow the more standard ``test_*.py`` pattern.
 - Now ``bool(Namespace())`` evaluates to ``False``.
+- When a ``class_path`` is overridden, now only the config values that the new
+  subclass doesn't accept are discarded.
 
 Deprecated
 ^^^^^^^^^^

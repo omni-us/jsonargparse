@@ -622,6 +622,27 @@ class TypeHintsTests(unittest.TestCase):
             self.assertEqual(cfg.cal.as_dict(), expected)
 
 
+    def test_init_args_without_class_path(self):
+        parser = ArgumentParser()
+        parser.add_argument('--config', action=ActionConfigFile)
+        parser.add_argument('--cal', type=Calendar)
+
+        config = """cal:
+          class_path: TextCalendar
+          init_args:
+            firstweekday: 2
+        """
+        cal = """init_args:
+            firstweekday: 3
+        """
+
+        cfg = parser.parse_args([f'--config={config}', f'--cal={cal}'])
+        self.assertEqual(cfg.cal.init_args, Namespace(firstweekday=3))
+
+        cfg = parser.parse_args([f'--config={config}', f'--cal={cfg.cal.init_args.as_dict()}'])
+        self.assertEqual(cfg.cal.init_args, Namespace(firstweekday=3))
+
+
     def test_class_type_subclass_nested_init_args(self):
         class Class:
             def __init__(self, cal: Calendar, p1: int = 0):
@@ -965,7 +986,10 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             cfg = parser.instantiate_classes(parser.get_defaults())
             self.assertIsInstance(cfg['cal'], MyCalendar)
 
-            cfg = parser.parse_args(['--cal={"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}'])
+            with warnings.catch_warnings(record=True) as w:
+                cfg = parser.parse_args(['--cal={"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}'])
+                self.assertIn("discarding init_args: {'param': '1'}", str(w[0].message))
+            self.assertEqual(cfg.cal.init_args, Namespace(firstweekday=3))
             self.assertEqual(type(parser.instantiate_classes(cfg)['cal']), Calendar)
 
 
@@ -1131,7 +1155,9 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             subparser.set_defaults(arch=default)
             parser_subcommands.add_subcommand('fit', subparser)
 
-            cfg = parser.parse_args(['fit', f'--arch={json.dumps(value)}'])
+            with warnings.catch_warnings(record=True) as w:
+                cfg = parser.parse_args(['fit', f'--arch={json.dumps(value)}'])
+                self.assertIn("discarding init_args: {'b': 3}", str(w[0].message))
             self.assertEqual(cfg.fit.arch.as_dict(), value)
 
 

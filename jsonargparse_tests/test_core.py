@@ -13,6 +13,7 @@ from io import StringIO
 from contextlib import redirect_stderr, redirect_stdout
 from collections import OrderedDict
 from random import randint, shuffle
+from typing import Optional
 from jsonargparse import (
     ActionConfigFile,
     ActionJsonnet,
@@ -447,7 +448,6 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'))
 
         with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
             cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
             self.assertEqual(cfg.subcommand, 'a')
             self.assertFalse(hasattr(cfg, 'b'))
@@ -1057,9 +1057,12 @@ class OtherTests(unittest.TestCase):
 
 
     def test_merge_config(self):
+        parser = ArgumentParser()
+        for key in [1, 2, 3]:
+            parser.add_argument(f'--op{key}', type=Optional[int])
         cfg_from = Namespace(op1=1, op2=None)
         cfg_to = Namespace(op1=None, op2=2, op3=3)
-        cfg = ArgumentParser.merge_config(cfg_from, cfg_to)
+        cfg = parser.merge_config(cfg_from, cfg_to)
         self.assertEqual(cfg, Namespace(op1=1, op2=None, op3=3))
 
 

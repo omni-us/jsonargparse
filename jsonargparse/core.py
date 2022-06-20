@@ -17,7 +17,7 @@ from .jsonschema import ActionJsonSchema
 from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context, yaml_load
 from .namespace import is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
-from .typehints import ActionTypeHint, is_class_object
+from .typehints import ActionTypeHint, is_subclass_spec
 from .typing import is_final_class
 from .actions import (
     ActionParser,
@@ -570,7 +570,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
                 with_meta=with_meta,
                 skip_check=_skip_check,
                 fail_no_subcommand=_fail_no_subcommand,
-                log_message=(f'Parsed {self.parser_mode} string.'),
+                log_message=f'Parsed {self.parser_mode} string.',
             )
 
         except (TypeError, KeyError) as ex:
@@ -740,7 +740,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
                 val = subcfg[key]
                 default = subdefaults[key]
                 class_object_val = None
-                if is_class_object(val):
+                if is_subclass_spec(val):
                     if val['class_path'] != default.get('class_path'):
                         parser = ActionTypeHint.get_class_parser(val['class_path'])
                         default = {'init_args': parser.get_defaults().as_dict()}
@@ -1218,8 +1218,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         return cfg[parent_key] if parent_key else cfg
 
 
-    @staticmethod
-    def merge_config(cfg_from: Namespace, cfg_to: Namespace) -> Namespace:
+    def merge_config(self, cfg_from: Namespace, cfg_to: Namespace) -> Namespace:
         """Merges the first configuration into the second configuration.
 
         Args:
@@ -1229,14 +1228,8 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         Returns:
             A new object with the merged configuration.
         """
-        del_keys = []
-        for key_class_path in [k for k in cfg_from.keys() if k.endswith('.class_path')]:
-            key_init_args = key_class_path[:-len('class_path')] + 'init_args'
-            if key_class_path in cfg_to and key_init_args in cfg_to and cfg_from[key_class_path] != cfg_to[key_class_path]:
-                del_keys.append(key_init_args)
         cfg = cfg_to.clone()
-        for key in reversed(del_keys):
-            del cfg[key]
+        ActionTypeHint.discard_init_args_on_class_path_change(self, cfg, cfg_from)
         cfg.update(cfg_from)
         return cfg
 

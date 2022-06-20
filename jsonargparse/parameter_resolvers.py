@@ -23,7 +23,7 @@ class ParamData:
 
 
 ParamList = List[ParamData]
-parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]
+parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]  # type: ignore
 kinds = inspect._ParameterKind
 
 

@@ -394,18 +394,26 @@ class SignaturesTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(calendar.Calendar, 'cal')
 
-        class MyCal(calendar.Calendar):
-            pass
+        class CalA(calendar.Calendar):
+            def __init__(self, pa: str = 'a', pc: str = '', **kwds):
+                super().__init__(**kwds)
 
-        with mock_module(MyCal) as module, warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            parser.parse_args([
-                '--cal.class_path=calendar.Calendar',
-                '--cal.init_args.firstweekday=4',
-                f'--cal.class_path={module}.MyCal',
+        class CalB(calendar.Calendar):
+            def __init__(self, pb: str = 'b', pc: int = 4, **kwds):
+                super().__init__(**kwds)
+
+        with mock_module(CalA, CalB) as module, warnings.catch_warnings(record=True) as w:
+            cfg = parser.parse_args([
+                f'--cal.class_path={module}.CalA',
+                '--cal.init_args.pa=A',
+                '--cal.init_args.pc=X',
+                '--cal.init_args.firstweekday=3',
+                f'--cal.class_path={module}.CalB',
+                '--cal.init_args.pb=B',
             ])
-            self.assertEqual(len(w), 1)
-            self.assertIn("discarding init_args {'firstweekday': 4} defined for class_path calendar.Calendar", str(w[0].message))
+            self.assertEqual(cfg.cal.class_path, f'{module}.CalB')
+            self.assertEqual(cfg.cal.init_args, Namespace(pb='B', pc=4, firstweekday=3))
+            self.assertIn("discarding init_args: {'pa': 'A', 'pc': 'X'}", str(w[0].message))
 
 
     def test_add_subclass_init_args_without_class_path(self):

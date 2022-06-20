@@ -5,7 +5,7 @@ import yaml
 from importlib.util import find_spec
 from typing import List
 from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader, ParserError
-from jsonargparse.loaders_dumpers import yaml_dump
+from jsonargparse.loaders_dumpers import load_value, load_value_context, yaml_dump
 from jsonargparse.optionals import dump_preserve_order_support
 
 
@@ -118,6 +118,12 @@ class LoadersTests(unittest.TestCase):
         parser = ArgumentParser()
         with self.assertRaises(ValueError):
             parser.dump_header = True
+
+
+    def test_load_value_dash(self):
+        with load_value_context('yaml'):
+            self.assertEqual('-', load_value('-'))
+            self.assertEqual(' -  ', load_value(' -  '))
 
 
 if __name__ == '__main__':

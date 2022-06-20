@@ -64,7 +64,10 @@ DefaultLoader.add_implicit_resolver(
 
 
 def yaml_load(stream):
-    value = yaml.load(stream, Loader=DefaultLoader)
+    if stream.strip() == '-':
+        value = stream
+    else:
+        value = yaml.load(stream, Loader=DefaultLoader)
     if isinstance(value, dict) and all(v is None for v in value.values()):
         keys = {k for k in regex_curly_comma.split(stream) if k}
         if len(keys) > 0 and keys == set(value.keys()):

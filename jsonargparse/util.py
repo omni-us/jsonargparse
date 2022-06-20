@@ -252,8 +252,8 @@ lenient_check: ContextVar = ContextVar('lenient_check', default=False)
 
 
 @contextmanager
-def lenient_check_context(caller=None):
-    t = lenient_check.set(False if caller == 'argcomplete' else True)
+def lenient_check_context(caller=None, lenient=True):
+    t = lenient_check.set(False if caller == 'argcomplete' else lenient)
     try:
         yield
     finally:
