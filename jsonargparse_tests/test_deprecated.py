@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import calendar
 import os
 import unittest
 import warnings
+from calendar import Calendar
 from enum import Enum
 from io import StringIO
 from jsonargparse import ActionConfigFile, ArgumentParser, CLI, get_config_read_mode, ParserError, Path, set_url_support
@@ -123,11 +123,11 @@ class DeprecatedTests(unittest.TestCase):
 
     def test_instantiate_subclasses(self):
         parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--cal', type=calendar.Calendar)
+        parser.add_argument('--cal', type=Calendar)
         cfg = parser.parse_object({'cal':{'class_path': 'calendar.Calendar'}})
         with warnings.catch_warnings(record=True):
             cfg_init = parser.instantiate_subclasses(cfg)
-        self.assertIsInstance(cfg_init['cal'], calendar.Calendar)
+        self.assertIsInstance(cfg_init['cal'], Calendar)
 
 
     def test_single_function_cli(self):

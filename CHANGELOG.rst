@@ -39,7 +39,7 @@ Fixed
 - Resolved some issues related to the logger property and reconplogger.
 - Single dash ``'-'`` incorrectly parsed as ``[None]``.
 
--Changed
+Changed
 ^^^^^^^
 - ``dataclasses`` no longer an optional, now an install require on python 3.6.
 - Parameters of type ``POSITIONAL_OR_KEYWORD`` now considered ``KEYWORD`` `#98

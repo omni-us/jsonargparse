@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import calendar
 import json
 import os
 import pickle
@@ -10,6 +9,7 @@ import unittest
 import warnings
 import yaml
 from io import StringIO
+from calendar import Calendar
 from contextlib import redirect_stderr, redirect_stdout
 from collections import OrderedDict
 from random import randint, shuffle
@@ -919,7 +919,7 @@ class ConfigFilesTests(TempDirTestCase):
 
         self.assertEqual(parser.get_default('op1'), 'from yaml')
 
-        parser.add_subclass_arguments(calendar.Calendar, 'cal')
+        parser.add_subclass_arguments(Calendar, 'cal')
         self.assertRaises(KeyError, lambda: parser.get_default('cal'))
 
         with open(default_config_file, 'w') as output_file:
