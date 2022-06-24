@@ -312,7 +312,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         self.visit(self.component_node)
         return self.values_found
 
-    def get_node_component(self, node) -> Tuple[Type, Optional[str]]:
+    def get_node_component(self, node) -> Optional[Tuple[Type, Optional[str]]]:
         function_or_class = method_or_property = None
         module = inspect.getmodule(self.component)
         if isinstance(node.func, ast.Name):
@@ -327,7 +327,9 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 container = getattr(module, node.func.value.id)
                 assert hasattr(container, node.func.attr), f'No attribute {node.func.attr!r} in {node.func.value.id!r} of {module}'
                 function_or_class = getattr(container, node.func.attr)
-        assert function_or_class, f'Component not supported: {ast_str(node)}'
+        if not function_or_class:
+            self.logger.debug(f'Component not supported: {ast_str(node)}')
+            return None
         return function_or_class, method_or_property
 
     def match_call_that_uses_attr(self, node, attr_name):
@@ -341,7 +343,8 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     self.logger.debug(f'kwargs attribute given as keyword parameter not supported: {ast_str(node)}')
                 else:
                     get_param_args = self.get_node_component(node)
-                    params = get_signature_parameters(*get_param_args, logger=self.logger)
+                    if get_param_args:
+                        params = get_signature_parameters(*get_param_args, logger=self.logger)
             params = remove_given_parameters(node, params)
         return params
 
@@ -375,7 +378,8 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                             params = get_signature_parameters(next_class, next_method, logger=self.logger)
                 else:
                     get_param_args = self.get_node_component(node)
-                    params = get_signature_parameters(*get_param_args, logger=self.logger)
+                    if get_param_args:
+                        params = get_signature_parameters(*get_param_args, logger=self.logger)
                 args, kwargs = split_args_and_kwargs(remove_given_parameters(node, params))
             elif isinstance(node, ast.Assign):
                 self_attr = self.parent and ast_is_attr_assign(node, self.self_name)

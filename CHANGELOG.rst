@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.10.1 (2022-06-??)
+--------------------
+
+Fixed
+^^^^^
+- "Component not supported" crash instead of no parameters `#141
+  <https://github.com/omni-us/jsonargparse/issues/141>`__.
+
+
 v4.10.0 (2022-06-21)
 --------------------
 

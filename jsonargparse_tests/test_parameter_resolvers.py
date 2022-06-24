@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import calendar
 import logging
 import unittest
 from contextlib import contextmanager
+from random import shuffle
 from unittest.mock import patch
 from jsonargparse import class_from_function, Namespace
 from jsonargparse.optionals import docstring_parser_support
@@ -197,6 +199,11 @@ def function_make_class_b(*args, k1: str = '-', **kwargs):
 def function_with_bug(**kws):
     return does_not_exist(**kws)  # pylint: disable=undefined-variable
 
+def function_unsupported_component(**kwds):
+    select = ['Text', 'HTML', '']
+    shuffle(select)
+    getattr(calendar, f'{select[0]}Calendar')(**kwds)
+
 
 @contextmanager
 def source_unavailable():
@@ -312,6 +319,11 @@ class GetFunctionParametersTests(unittest.TestCase):
 
 
 class OtherTests(unittest.TestCase):
+
+    def test_unsupported_component(self):
+        with self.assertLogs(logger, level='DEBUG') as log:
+            self.assertEqual([], get_params(function_unsupported_component, logger=logger))
+            self.assertIn('Component not supported', log.output[0])
 
     def test_unsupported_type_of_assign(self):
         with self.assertLogs(logger, level='DEBUG') as log:
