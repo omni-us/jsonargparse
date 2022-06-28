@@ -126,17 +126,20 @@ class DefaultHelpFormatter(HelpFormatter):
         type_str = self._get_type_str(action)
         if type_str is not None:
             params['type'] = type_str
+        orig_default = action.default
         if params.get('default') == SUPPRESS:
             del params['default']
         elif 'default' in params:
             defaults = formatter_defaults.get()
             if defaults is not None:
-                params['default'] = defaults.get(action.dest)
+                params['default'] = action.default = defaults.get(action.dest)
             if params['default'] is None:
                 params['default'] = 'null'
             elif isinstance(params['default'], Namespace):
                 params['default'] = params['default'].as_dict()
-        return PercentTemplate(self._get_help_string(action)).safe_substitute(params)
+        help_str = PercentTemplate(self._get_help_string(action)).safe_substitute(params)
+        action.default = orig_default
+        return help_str
 
 
     def _get_type_str(self, action):

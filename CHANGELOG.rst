@@ -21,6 +21,8 @@ Fixed
 ^^^^^
 - "Component not supported" crash instead of no parameters `#141
   <https://github.com/omni-us/jsonargparse/issues/141>`__.
+- Default from ``default_config_files`` not shown in help when argument has no
+  default.
 
 
 v4.10.0 (2022-06-21)
