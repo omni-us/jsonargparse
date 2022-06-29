@@ -428,6 +428,40 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(cfg.cal3.init_args, Namespace(firstweekday=5))
 
 
+    def test_add_subclass_merge_init_args_in_full_config(self):
+        class ModelBaseClass():
+            def __init__(self, batch_size: int=0):
+                self.batch_size = batch_size
+
+        class ModelClass(ModelBaseClass):
+            def __init__(self, image_size: int=0, **kwargs):
+                super().__init__(**kwargs)
+                self.image_size = image_size
+
+        with mock_module(ModelBaseClass, ModelClass) as module:
+            parser = ArgumentParser(error_handler=None)
+            parser.add_subclass_arguments(ModelBaseClass, 'model')
+            parser.add_argument('--config', action=ActionConfigFile)
+
+            model = yaml.safe_dump({
+                'class_path': 'ModelClass',
+                'init_args': {
+                    'image_size': 10
+                }
+            })
+            config = yaml.safe_dump({
+                'model': {
+                    'init_args': {
+                        'batch_size': 5
+                    }
+                }
+            })
+
+            cfg = parser.parse_args([f'--model={model}', f'--config={config}'])
+            self.assertEqual(cfg.model.class_path, f'{module}.ModelClass')
+            self.assertEqual(cfg.model.init_args, Namespace(batch_size=5, image_size=10))
+
+
     def test_add_subclass_init_args_in_subcommand(self):
         parser = ArgumentParser(error_handler=None)
         subcommands = parser.add_subcommands()

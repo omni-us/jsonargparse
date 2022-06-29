@@ -72,7 +72,7 @@ def namespace_to_dict(namespace: 'Namespace') -> Dict[str, Any]:
     return namespace.clone().as_dict()
 
 
-def dict_to_namespace(cfg_dict: Dict[str, Any]) -> 'Namespace':
+def dict_to_namespace(cfg_dict: Union[Dict[str, Any], 'Namespace']) -> 'Namespace':
     """Converts a nested dictionary into a nested namespace."""
     cfg_dict = deepcopy(cfg_dict)
     def expand_dict(cfg):

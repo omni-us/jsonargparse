@@ -23,6 +23,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/141>`__.
 - Default from ``default_config_files`` not shown in help when argument has no
   default.
+- Only ``init_args`` in later config overwrites instead of updates `#142
+  <https://github.com/omni-us/jsonargparse/issues/142>`__.
 
 
 v4.10.0 (2022-06-21)

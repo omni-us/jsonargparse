@@ -5,7 +5,7 @@ import os
 import pathlib
 import unittest
 from io import StringIO
-from jsonargparse import ActionConfigFile, ActionParser, ActionPathList, ActionYesNo, ArgumentParser, ParserError
+from jsonargparse import ActionConfigFile, ActionParser, ActionPathList, ActionYesNo, ArgumentParser, ParserError, strip_meta
 from jsonargparse_tests.base import TempDirTestCase
 from jsonargparse_tests.test_core import example_parser
 
@@ -160,8 +160,10 @@ class ActionParserTests(TempDirTestCase):
 
         ## Check ActionParser with parse_path
         expected = {'opt1': 'opt1_yaml', 'inner2': {'opt2': 'opt2_yaml', 'inner3': {'opt3': 'opt3_yaml'}}}
-        cfg = parser.parse_path(yaml_main_file, with_meta=False)
-        self.assertEqual(expected, cfg.as_dict())
+        cfg = parser.parse_path(yaml_main_file)
+        self.assertEqual(str(cfg.inner2.__path__), 'inner2.yaml')
+        self.assertEqual(str(cfg.inner2.inner3.__path__), 'inner3.yaml')
+        self.assertEqual(expected, strip_meta(cfg).as_dict())
         with open(yaml_main_file, 'w') as output_file:
             output_file.write(parser.dump(cfg))
         cfg2 = parser.parse_path(yaml_main_file, with_meta=False)

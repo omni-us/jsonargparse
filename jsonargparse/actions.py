@@ -214,7 +214,7 @@ class ActionConfigFile(Action, FilesCompleterMethod):
 
     @staticmethod
     def apply_config(parser, cfg, dest, value) -> None:
-        with _ActionSubCommands.not_single_subcommand():
+        with _ActionSubCommands.not_single_subcommand(), previous_config_context(cfg):
             if dest not in cfg:
                 cfg[dest] = []
             kwargs = {'env': False, 'defaults': False, '_skip_check': True, '_fail_no_subcommand': False}
@@ -232,6 +232,18 @@ class ActionConfigFile(Action, FilesCompleterMethod):
                 cfg_file = parser.parse_path(value, **kwargs)
             cfg[dest].append(cfg_path)
             cfg.update(cfg_file)
+
+
+previous_config: ContextVar = ContextVar('previous_config', default=None)
+
+
+@contextmanager
+def previous_config_context(cfg):
+    token = previous_config.set(cfg)
+    try:
+        yield
+    finally:
+        previous_config.reset(token)
 
 
 print_config_skip: ContextVar = ContextVar('print_config_skip', default=False)

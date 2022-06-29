@@ -15,7 +15,7 @@ from .formatters import DefaultHelpFormatter, empty_help, formatter_context, get
 from .jsonnet import ActionJsonnet
 from .jsonschema import ActionJsonSchema
 from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context, yaml_load
-from .namespace import is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
+from .namespace import dict_to_namespace, is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
 from .typehints import ActionTypeHint, is_subclass_spec
 from .typing import is_final_class
@@ -34,6 +34,7 @@ from .actions import (
     _is_action_value_list,
     filter_default_actions,
     parent_parsers,
+    previous_config,
 )
 from .optionals import (
     argcomplete_autocomplete,
@@ -496,8 +497,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         env: Optional[bool] = None,
         defaults: bool = True,
         with_meta: Optional[bool] = None,
-        _skip_check: bool = False,
-        _fail_no_subcommand: bool = True,
+        **kwargs,
     ) -> Namespace:
         """Parses a configuration file (yaml or jsonnet) given its path.
 
@@ -517,14 +517,15 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         fpath = Path(cfg_path, mode=get_config_read_mode())
         with change_to_path_dir(fpath):
             cfg_str = fpath.get_content()
-            parsed_cfg = self.parse_string(cfg_str,
-                                           os.path.basename(cfg_path),
-                                           ext_vars,
-                                           env,
-                                           defaults,
-                                           with_meta=with_meta,
-                                           _skip_check=_skip_check,
-                                           _fail_no_subcommand=_fail_no_subcommand)
+            parsed_cfg = self.parse_string(
+                cfg_str,
+                os.path.basename(cfg_path),
+                ext_vars,
+                env,
+                defaults,
+                with_meta,
+                **kwargs,
+            )
 
         self._logger.info(f'Parsed {self.parser_mode} from path: {cfg_path}')
 
@@ -561,7 +562,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         """
         try:
             with load_value_context(self.parser_mode):
-                cfg = self._load_config_parser_mode(cfg_str, cfg_path, ext_vars)
+                cfg = self._load_config_parser_mode(cfg_str, cfg_path, ext_vars, previous_config.get())
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -584,6 +585,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         cfg_str: str,
         cfg_path: str = '',
         ext_vars: Optional[dict] = None,
+        prev_cfg: Optional[Namespace] = None,
     ) -> Namespace:
         """Loads a configuration string (yaml or jsonnet) into a namespace.
 
@@ -599,10 +601,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
             cfg_dict = load_value(cfg_str, path=cfg_path, ext_vars=ext_vars)
         except get_loader_exceptions() as ex:
             raise TypeError(f'Problems parsing config :: {ex}') from ex
-
-        cfg = self._apply_actions(cfg_dict)
-
-        return cfg
+        return self._apply_actions(cfg_dict, prev_cfg=prev_cfg)
 
 
     def link_arguments(
@@ -1180,7 +1179,12 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
             return super().print_usage(file)
 
 
-    def _apply_actions(self, cfg: Union[Namespace, Dict[str, Any]], parent_key: str = '') -> Namespace:
+    def _apply_actions(
+        self,
+        cfg: Union[Namespace, Dict[str, Any]],
+        parent_key: str = '',
+        prev_cfg: Optional[Namespace] = None,
+    ) -> Namespace:
         """Runs _check_value_key on actions present in config."""
         if isinstance(cfg, dict):
             cfg = Namespace(cfg)
@@ -1191,6 +1195,12 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
             keys = [parent_key+'.'+k for k in cfg_branch.__dict__.keys()]
         else:
             keys = list(cfg.__dict__.keys())
+
+        if prev_cfg:
+            prev_cfg = prev_cfg.clone().update(dict_to_namespace(cfg))
+        else:
+            prev_cfg = cfg
+
         config_keys: Set[str] = set()
         num = 0
         while num < len(keys):
@@ -1210,7 +1220,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
             action_dest = action.dest if subcommand is None else subcommand+'.'+action.dest
             value = cfg[action_dest]
             with lenient_check_context(), load_value_context(self.parser_mode):
-                value = self._check_value_key(action, value, action_dest, cfg)
+                value = self._check_value_key(action, value, action_dest, prev_cfg)
             if isinstance(action, _ActionConfigLoad):
                 config_keys.add(action_dest)
                 keys.append(action_dest)
