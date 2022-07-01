@@ -25,6 +25,7 @@ class ParamData:
 ParamList = List[ParamData]
 parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]  # type: ignore
 kinds = inspect._ParameterKind
+ast_assign_type: Tuple[Type[ast.AST], ...] = (ast.AnnAssign, ast.Assign)
 
 
 class SourceNotAvailable(Exception):
@@ -60,14 +61,18 @@ def ast_attribute_load(container, name):
 
 
 def ast_is_assign_with_value(node, value) -> bool:
-    return isinstance(node, ast.Assign) and ast.dump(node.value) == ast.dump(value)
+    return isinstance(node, ast_assign_type) and ast.dump(node.value) == ast.dump(value)
+
+
+def ast_get_assign_targets(node):
+    return node.targets if isinstance(node, ast.Assign) else [node.target]
 
 
 dict_ast = ast.dump(ast_variable_load('dict'))
 
 
 def ast_is_dict_assign(node):
-    return isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) and ast.dump(node.value.func) == dict_ast
+    return isinstance(node, ast_assign_type) and isinstance(node.value, ast.Call) and ast.dump(node.value.func) == dict_ast
 
 
 def ast_is_dict_assign_with_value(node, value):
@@ -111,7 +116,7 @@ def ast_is_supported_super_call(node, parent, self_name) -> bool:
 
 
 def ast_is_attr_assign(node, container):
-    for target in node.targets if isinstance(node, ast.Assign) else []:
+    for target in ast_get_assign_targets(node) if isinstance(node, ast_assign_type) else []:
         if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) and target.value.id == container:
             return target.attr
     return False
@@ -288,11 +293,14 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 do_generic_visit = False
         if do_generic_visit:
             if ast_is_dict_assign(node):
-                for target in [deepcopy(t) for t in node.targets]:
+                for target in [deepcopy(t) for t in ast_get_assign_targets(node)]:
                     target.ctx = ast.Load()
                     self.dict_assigns[ast.dump(target)] = node
             else:
                 self.generic_visit(node)
+
+    def visit_AnnAssign(self, node):
+        self.visit_Assign(node)
 
     def visit_Call(self, node):
         for key, value in self.find_values.items():
@@ -381,7 +389,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     if get_param_args:
                         params = get_signature_parameters(*get_param_args, logger=self.logger)
                 args, kwargs = split_args_and_kwargs(remove_given_parameters(node, params))
-            elif isinstance(node, ast.Assign):
+            elif isinstance(node, ast_assign_type):
                 self_attr = self.parent and ast_is_attr_assign(node, self.self_name)
                 if self_attr:
                     kwargs = self.get_parameters_attr_use_in_members(self_attr)

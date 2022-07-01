@@ -14,6 +14,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.10.2 (2022-07-??)
+--------------------
+
+Fixed
+^^^^^
+- AST resolver fails for ``self._kwargs`` assign when a type hint is added.
+
+
 v4.10.1 (2022-06-29)
 --------------------
 

@@ -5,6 +5,7 @@ import logging
 import unittest
 from contextlib import contextmanager
 from random import shuffle
+from typing import Any, Dict
 from unittest.mock import patch
 from jsonargparse import class_from_function, Namespace
 from jsonargparse.optionals import docstring_parser_support
@@ -92,9 +93,25 @@ class ClassE:
     def start(self):
         return function_no_args_no_kwargs(**self._kwd)
 
-class ClassF:
+class ClassF1:
     def __init__(self, **kw):
         self._ini = dict(k2=4)
+        self._ini.update(**kw)
+
+    def _run(self):
+        self.staticmethod_f(**self._ini)
+
+    @staticmethod
+    def staticmethod_f(ksmf1: str = 'w', **kw):
+        """
+        Args:
+            ksmf1: help for ksmf1
+        """
+        return function_no_args_no_kwargs(**kw)
+
+class ClassF2:
+    def __init__(self, **kw):
+        self._ini: Dict[str, Any] = dict(k2=4)
         self._ini.update(**kw)
 
     def _run(self):
@@ -247,10 +264,11 @@ class GetClassParametersTests(unittest.TestCase):
 
     def test_get_params_class_with_kwargs_in_dict_attribute(self):
         assert_params(self, get_params(ClassE), ['ke1', 'pk1', 'k2'])
-        assert_params(self, get_params(ClassF), ['ksmf1', 'pk1', 'k2'])
+        assert_params(self, get_params(ClassF1), ['ksmf1', 'pk1', 'k2'])
+        assert_params(self, get_params(ClassF2), ['ksmf1', 'pk1', 'k2'])
         with source_unavailable():
             assert_params(self, get_params(ClassE), ['ke1'])
-            assert_params(self, get_params(ClassF), [])
+            assert_params(self, get_params(ClassF1), [])
 
     def test_get_params_class_kwargs_in_attr_method_conditioned_on_arg(self):
         assert_params(self, get_params(ClassG), ['func', 'kmg1', 'kmg3'])
