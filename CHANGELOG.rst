@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.10.3 (2022-07-??)
+--------------------
+
+Fixed
+^^^^^
+- Method resolution order not working correctly in parameter resolvers `#143
+  <https://github.com/omni-us/jsonargparse/issues/143>`__.
+
+
 v4.10.2 (2022-07-01)
 --------------------
 

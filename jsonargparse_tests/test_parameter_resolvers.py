@@ -154,6 +154,33 @@ class ClassG:
             kmg3: help for kmg3
         """
 
+class ClassM1:
+    def __init__(self, km1: int = 1):
+        """
+        Args:
+            km1: help for km1
+        """
+
+class ClassM2(ClassM1):
+    def __init__(self, km2: int = 2, **kwargs):
+        """
+        Args:
+            km2: help for km2
+        """
+        super().__init__(**kwargs)
+
+class ClassM3(ClassM1):
+    def __init__(self, km3: int=0, **kwargs):
+        """
+        Args:
+            km3: help for km3
+        """
+        super().__init__(**kwargs)
+
+class ClassM(ClassM2, ClassM3):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
 class ClassU1:
     def __init__(self, k1: int = 1, **ka):
         data = Namespace()
@@ -275,7 +302,12 @@ class GetClassParametersTests(unittest.TestCase):
         with source_unavailable():
             assert_params(self, get_params(ClassG), ['func'])
 
-    def test_class_from_function(self):
+    def test_get_params_method_resolution_order(self):
+        assert_params(self, get_params(ClassM), ['km2', 'km3', 'km1'])
+        with source_unavailable():
+            assert_params(self, get_params(ClassM), ['km2', 'km3', 'km1'])
+
+    def test_get_params_class_from_function(self):
         class_a = class_from_function(function_return_class_c)
         params = get_params(class_a)
         assert_params(self, params, ['pk1', 'k2', 'pkb1', 'kb2', 'ka1'])

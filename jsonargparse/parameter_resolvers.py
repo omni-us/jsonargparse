@@ -3,6 +3,8 @@ import inspect
 import logging
 import textwrap
 from collections import defaultdict
+from contextlib import contextmanager
+from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
@@ -216,13 +218,33 @@ def has_dunder_new_method(cls, attr_name):
     )
 
 
-def get_next_mro_class_and_method(parent, method_name):
-    classes = inspect.getmro(parent)[1:]
-    for num, cls in enumerate(c for c in classes if c is not object):
+current_mro: ContextVar = ContextVar('current_mro', default=(None, None))
+
+
+@contextmanager
+def mro_context(parent):
+    token = None
+    if parent:
+        classes, idx = current_mro.get()
+        if not classes or classes[idx] is not parent:
+            classes = [c for c in inspect.getmro(parent) if c is not object]
+            token = current_mro.set((classes, 0))
+    try:
+        yield
+    finally:
+        if token:
+            current_mro.reset(token)
+
+
+def get_mro_parameters(method_name, get_parameters_fn, logger):
+    classes, idx = current_mro.get()
+    for num, cls in enumerate(classes[idx+1:], start=idx+1):
         method = getattr(cls, method_name, None)
-        if method and not any(method is getattr(c, method_name, None) for c in classes[num+1:]):
-            return cls, method
-    return None, None
+        remainder = classes[num+1:] + [object]
+        if method and not any(method is getattr(c, method_name, None) for c in remainder):
+            current_mro.set((classes, num))
+            return get_parameters_fn(cls, method, logger=logger)
+    return []
 
 
 def get_component_and_parent(
@@ -381,9 +403,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     if not ast_is_supported_super_call(node, self.parent, self.self_name):
                         self.logger.debug(f'super with arbitrary parameters not supported: {ast_str(node)}')
                     else:
-                        next_class, next_method = get_next_mro_class_and_method(self.parent, node.func.attr)  # type: ignore
-                        if next_method:
-                            params = get_signature_parameters(next_class, next_method, logger=self.logger)
+                        params = get_mro_parameters(node.func.attr, get_signature_parameters, self.logger)  # type: ignore
                 else:
                     get_param_args = self.get_node_component(node)
                     if get_param_args:
@@ -430,7 +450,8 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             return []
         params, args_idx, kwargs_idx = get_signature_parameters_and_indexes(self.component, self.parent, self.logger)
         if args_idx >= 0 or kwargs_idx >= 0:
-            args, kwargs = self.get_parameters_args_and_kwargs()
+            with mro_context(self.parent):
+                args, kwargs = self.get_parameters_args_and_kwargs()
             params = replace_args_and_kwargs(params, args, kwargs)
         return params
 
@@ -444,9 +465,9 @@ def get_parameters_by_assumptions(
     params, args_idx, kwargs_idx = get_signature_parameters_and_indexes(component, parent, logger)
 
     if parent and (args_idx >= 0 or kwargs_idx >= 0):
-        next_class, next_method = get_next_mro_class_and_method(parent, method_name)
-        if next_method:
-            subparams = get_parameters_by_assumptions(next_class, next_method.__name__, logger)
+        with mro_context(parent):
+            subparams = get_mro_parameters(method_name, get_parameters_by_assumptions, logger)
+        if subparams:
             args, kwargs = split_args_and_kwargs(subparams)
             params = replace_args_and_kwargs(params, args, kwargs)
 
