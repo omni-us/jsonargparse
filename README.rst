@@ -1693,9 +1693,9 @@ Environment variables
 The jsonargparse parsers can also get values from environment variables. The
 parser checks existing environment variables whose name is of the form
 ``[PREFIX_][LEV__]*OPT``, that is, all in upper case, first a prefix (set by
-``env_prefix``, or if unset the ``prog`` without extension) followed by
-underscore and then the argument name replacing dots with two underscores. Using
-the parser from the :ref:`nested-namespaces` section above, in your shell you
+``env_prefix``, or if unset the ``prog`` without extension or none if set to False)
+followed by underscore and then the argument name replacing dots with two underscores.
+Using the parser from the :ref:`nested-namespaces` section above, in your shell you
 would set the environment variables as:
 
 .. code-block:: bash

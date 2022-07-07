@@ -166,6 +166,24 @@ class ParsersTests(TempDirTestCase):
             self.assertFalse(parser.default_env)
 
 
+    def test_env_prefix(self):
+        parser = ArgumentParser(env_prefix=True, default_env=True, error_handler=None)
+        parser.add_argument("--test_arg", type=str, required=True, help="Test argument")
+        with self.assertRaises(ParserError):
+            with unittest.mock.patch.dict(os.environ, {'TEST_ARG': 'one'}):
+                parser.parse_args([])
+        prefix = os.path.splitext(parser.prog)[0].upper()
+        with unittest.mock.patch.dict(os.environ, {f'{prefix}_TEST_ARG': 'one'}):
+            cfg = parser.parse_args([])
+            self.assertEqual('one', cfg.test_arg)
+
+        parser = ArgumentParser(env_prefix=False, default_env=True)
+        parser.add_argument("--test_arg", type=str, required=True, help="Test argument")
+        with unittest.mock.patch.dict(os.environ, {'TEST_ARG': 'one'}):
+            cfg = parser.parse_args([])
+            self.assertEqual('one', cfg.test_arg)
+
+
     def test_parse_string(self):
         parser = example_parser()
 

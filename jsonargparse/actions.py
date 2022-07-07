@@ -817,7 +817,7 @@ def parent_parsers_context(key, parser):
 class _ActionSubCommands(_SubParsersAction):
     """Extension of argparse._SubParsersAction to modify subcommands functionality."""
 
-    _env_prefix: Optional[str] = None
+    _env_prefix: Union[bool, str] = True
 
 
     def add_parser(self, name, **kwargs):

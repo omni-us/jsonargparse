@@ -250,3 +250,8 @@ logger_property_none_message = """
     Setting the logger property to None was deprecated in v4.10.0 and will raise
     an exception in v5.0.0. Use False instead.
 """
+
+env_prefix_property_none_message = """
+    Setting the env_prefix property to None was deprecated in v4.11.0 and will raise
+    an exception in v5.0.0. Use True instead.
+"""

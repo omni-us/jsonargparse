@@ -14,6 +14,20 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.11.0 (2022-07-??)
+--------------------
+
+Added
+^^^^^
+- ``env_prefix`` property now also accepts boolean. If set to False,
+when default env feature is enabled, it won't add any prefix when reading
+parameters from environment variables.
+
+Deprecated
+^^^^^^^^^^
+- ``env_prefix`` property will no longer accept ``None`` in v5.0.0.
+
+
 v4.10.3 (2022-07-??)
 --------------------
 
