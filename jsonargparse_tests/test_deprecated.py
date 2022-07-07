@@ -171,6 +171,12 @@ class DeprecatedTests(unittest.TestCase):
             self.assertIn(' Setting the logger property to None was deprecated', str(w[-1].message))
 
 
+    def test_env_prefix_none(self):
+        with catch_warnings(record=True) as w:
+            ArgumentParser(env_prefix=None)
+            self.assertIn('env_prefix', str(w[-1].message))
+
+
 class DeprecatedTempDirTests(TempDirTestCase):
 
     def test_parse_as_dict(self):

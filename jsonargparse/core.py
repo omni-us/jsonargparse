@@ -162,7 +162,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
     def __init__(
         self,
         *args,
-        env_prefix: Optional[str] = None,
+        env_prefix: Union[bool, str] = True,
         error_handler: Optional[Callable[['ArgumentParser', str], None]] = usage_and_exit_error_handler,
         formatter_class: Type[DefaultHelpFormatter] = DefaultHelpFormatter,
         logger: Union[bool, str, dict, logging.Logger] = False,
@@ -1390,7 +1390,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
 
 
     @property
-    def env_prefix(self) -> Optional[str]:
+    def env_prefix(self) -> Union[bool, str]:
         """The environment variables prefix property.
 
         :getter: Returns the current environment variables prefix.
@@ -1399,12 +1399,17 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         Raises:
             ValueError: If an invalid value is given.
         """
-        return self._env_prefix
+        return self._env_prefix  # type: ignore
 
 
     @env_prefix.setter
-    def env_prefix(self, env_prefix: Optional[str]):
-        if env_prefix is None:
+    def env_prefix(self, env_prefix: Union[bool, str]):
+        if env_prefix is False:
+            self._env_prefix = None
+        elif env_prefix in {True, None}:
+            if env_prefix is None:
+                from .deprecated import deprecation_warning, env_prefix_property_none_message
+                deprecation_warning(ArgumentParser, env_prefix_property_none_message)
             self._env_prefix = os.path.splitext(self.prog)[0]
         elif isinstance(env_prefix, str):
             self._env_prefix = env_prefix
