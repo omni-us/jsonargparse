@@ -16,7 +16,7 @@ if responses_available:
 else:
     def nothing_decorator(func):
         return func
-    responses_activate = nothing_decorator
+    responses_activate = nothing_decorator  # type: ignore
 
 
 is_posix = os.name == 'posix'
