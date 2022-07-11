@@ -11,36 +11,27 @@ jobs:
         python: [3.6, 3.8]
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-          cache-dependency-path: "**/setup.cfg"
-      - name: Install Tox
-        run: pip install tox
-      - name: Run Tox
-        run: tox -e py
+      - run: pip install tox
+      - run: tox -e py
   unittest-omegaconf:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install Tox
-        run: pip install tox
-      - name: Run Tox
-        run: tox -e omegaconf
+      - run: pip install tox
+      - run: tox -e omegaconf
   doctest:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install requirements
-        run: pip install -e .[all,doc]
+      - run: pip install -e .[all,doc]
       - name: Run doc tests
         run: sphinx-build -M doctest sphinx sphinx/_build sphinx/README.rst
