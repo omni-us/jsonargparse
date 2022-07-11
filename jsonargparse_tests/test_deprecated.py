@@ -2,18 +2,28 @@
 
 import os
 import unittest
-import warnings
 from calendar import Calendar
 from enum import Enum
 from io import StringIO
+from warnings import catch_warnings
 from jsonargparse import ActionConfigFile, ArgumentParser, CLI, get_config_read_mode, ParserError, Path, set_url_support
-from jsonargparse.deprecated import ActionEnum, ActionPath, ActionOperators
+from jsonargparse.deprecated import ActionEnum, ActionPath, ActionOperators, deprecation_warning
 from jsonargparse.optionals import url_support
 from jsonargparse.util import LoggerProperty
 from jsonargparse_tests.base import TempDirTestCase
 
 
 class DeprecatedTests(unittest.TestCase):
+
+    def test_deprecation_warning(self):
+        with unittest.mock.patch('jsonargparse.deprecated.shown_deprecation_warnings', return_value=lambda: set()):
+            with catch_warnings(record=True) as w:
+                message = 'Deprecation warning'
+                deprecation_warning(None, message)
+                self.assertEqual(2, len(w))
+                self.assertIn('only one JsonargparseDeprecationWarning per type is shown', str(w[0].message))
+                self.assertEqual(message, str(w[1].message))
+
 
     def test_ActionEnum(self):
 
@@ -23,8 +33,9 @@ class DeprecatedTests(unittest.TestCase):
             C = 3
 
         parser = ArgumentParser(error_handler=None)
-        with warnings.catch_warnings(record=True):
+        with catch_warnings(record=True) as w:
             action = ActionEnum(enum=MyEnum)
+            self.assertIn('ActionEnum was deprecated', str(w[-1].message))
         parser.add_argument('--enum',
             action=action,
             default=MyEnum.C,
@@ -58,9 +69,10 @@ class DeprecatedTests(unittest.TestCase):
 
     def test_ActionOperators(self):
         parser = ArgumentParser(prog='app', error_handler=None)
-        with warnings.catch_warnings(record=True):
+        with catch_warnings(record=True) as w:
             parser.add_argument('--le0',
                 action=ActionOperators(expr=('<', 0)))
+            self.assertIn('ActionOperators was deprecated', str(w[-1].message))
         parser.add_argument('--gt1.a.le4',
             action=ActionOperators(expr=[('>', 1.0), ('<=', 4.0)], join='and', type=float))
         parser.add_argument('--lt5.o.ge10.o.eq7',
@@ -104,8 +116,9 @@ class DeprecatedTests(unittest.TestCase):
     @unittest.skipIf(not url_support, 'validators and requests packages are required')
     def test_url_support_true(self):
         self.assertEqual('fr', get_config_read_mode())
-        with warnings.catch_warnings(record=True):
+        with catch_warnings(record=True) as w:
             set_url_support(True)
+            self.assertIn('set_url_support was deprecated', str(w[-1].message))
         self.assertEqual('fur', get_config_read_mode())
         set_url_support(False)
         self.assertEqual('fr', get_config_read_mode())
@@ -125,8 +138,9 @@ class DeprecatedTests(unittest.TestCase):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--cal', type=Calendar)
         cfg = parser.parse_object({'cal':{'class_path': 'calendar.Calendar'}})
-        with warnings.catch_warnings(record=True):
+        with catch_warnings(record=True) as w:
             cfg_init = parser.instantiate_subclasses(cfg)
+            self.assertIn('instantiate_subclasses was deprecated', str(w[-1].message))
         self.assertIsInstance(cfg_init['cal'], Calendar)
 
 
@@ -134,8 +148,9 @@ class DeprecatedTests(unittest.TestCase):
         def function(a1: float):
             return a1
 
-        with warnings.catch_warnings(record=True):
+        with catch_warnings(record=True) as w:
             parser = CLI(function, return_parser=True, set_defaults={'a1': 3.4})
+            self.assertIn('return_parser parameter was deprecated', str(w[-1].message))
         self.assertIsInstance(parser, ArgumentParser)
 
 
@@ -151,8 +166,9 @@ class DeprecatedTests(unittest.TestCase):
 
 
     def test_logger_property_none(self):
-        with warnings.catch_warnings(record=True):
+        with catch_warnings(record=True) as w:
             LoggerProperty(logger=None)
+            self.assertIn(' Setting the logger property to None was deprecated', str(w[-1].message))
 
 
 class DeprecatedTempDirTests(TempDirTestCase):
@@ -160,8 +176,9 @@ class DeprecatedTempDirTests(TempDirTestCase):
     def test_parse_as_dict(self):
         with open('config.json', 'w') as f:
             f.write('{}')
-        with warnings.catch_warnings(record=True):
+        with catch_warnings(record=True) as w:
             parser = ArgumentParser(parse_as_dict=True, default_meta=False)
+            self.assertIn('``parse_as_dict`` parameter was deprecated', str(w[-1].message))
         self.assertEqual({}, parser.parse_args([]))
         self.assertEqual({}, parser.parse_env([]))
         self.assertEqual({}, parser.parse_string('{}'))
@@ -183,8 +200,9 @@ class DeprecatedTempDirTests(TempDirTestCase):
 
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--cfg', action=ActionConfigFile)
-        with warnings.catch_warnings(record=True):
+        with catch_warnings(record=True) as w:
             parser.add_argument('--file', action=ActionPath(mode='fr'))
+            self.assertIn('ActionPath was deprecated', str(w[-1].message))
         parser.add_argument('--dir', action=ActionPath(mode='drw'))
         parser.add_argument('--files', nargs='+', action=ActionPath(mode='fr'))
 

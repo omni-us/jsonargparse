@@ -2,18 +2,17 @@
 
 import os
 import pathlib
-import platform
 import sys
 import unittest
 from contextlib import ExitStack, redirect_stderr
 from enum import Enum
 from io import StringIO
 from typing import List, Optional
-from jsonargparse import *
-from jsonargparse.typing import *
+from jsonargparse import ActionConfigFile, ActionJsonSchema, ActionYesNo, ArgumentParser
+from jsonargparse.typing import Email, Path_fr, PositiveFloat, PositiveInt
 from jsonargparse.optionals import argcomplete_support, import_argcomplete, jsonschema_support
 from jsonargparse.loaders_dumpers import load_value_context
-from jsonargparse_tests.base import TempDirTestCase
+from jsonargparse_tests.base import is_cpython, is_posix, TempDirTestCase
 
 
 @unittest.skipIf(not argcomplete_support, 'argcomplete package is required')
@@ -69,7 +68,7 @@ class ArgcompleteTests(TempDirTestCase):
         self.assertEqual(out.getvalue(), '--group2.op1\x0b--group2.op2')
 
 
-    @unittest.skipIf(platform.python_implementation() != 'CPython', 'only CPython supported')
+    @unittest.skipIf(not is_cpython, 'only CPython supported')
     def test_simple_types(self):
         self.parser.add_argument('--int', type=int)
         self.parser.add_argument('--float', type=float)
@@ -98,7 +97,7 @@ class ArgcompleteTests(TempDirTestCase):
                 self.assertIn(expected, err.getvalue())
 
 
-    @unittest.skipIf(os.name != 'posix', 'Path class currently only supported in posix systems')
+    @unittest.skipIf(not is_posix, 'Path class currently only supported in posix systems')
     def test_ActionConfigFile(self):
         self.parser.add_argument('--cfg', action=ActionConfigFile)
         pathlib.Path('file1').touch()
@@ -176,7 +175,7 @@ class ArgcompleteTests(TempDirTestCase):
 
 
     @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
-    @unittest.skipIf(platform.python_implementation() != 'CPython', 'only CPython supported')
+    @unittest.skipIf(not is_cpython, 'only CPython supported')
     def test_json(self):
         self.parser.add_argument('--json', action=ActionJsonSchema(schema={'type': 'object'}))
 
@@ -242,7 +241,7 @@ class ArgcompleteTests(TempDirTestCase):
         self.assertEqual(out.getvalue(), 'true\x0bfalse')
 
 
-    @unittest.skipIf(os.name != 'posix', 'Path class currently only supported in posix systems')
+    @unittest.skipIf(not is_posix, 'Path class currently only supported in posix systems')
     def test_optional_path(self):
         self.parser.add_argument('--path', type=Optional[Path_fr])
         pathlib.Path('file1').touch()

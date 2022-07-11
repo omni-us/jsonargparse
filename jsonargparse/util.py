@@ -591,7 +591,7 @@ class LoggerProperty:
     def logger(self, logger: Union[bool, str, dict, logging.Logger]):
         if logger is None:
             from .deprecated import deprecation_warning, logger_property_none_message
-            deprecation_warning(LoggerProperty, logger_property_none_message)
+            deprecation_warning((LoggerProperty.logger, None), logger_property_none_message)
             logger = False
         self._logger = parse_logger(logger, type(self).__name__)
 

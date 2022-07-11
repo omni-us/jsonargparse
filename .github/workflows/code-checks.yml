@@ -1,0 +1,24 @@
+name: code-checks
+on: [push, pull_request]
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+          cache: pip
+      - run: pip install mypy
+      - run: mypy --install-types --non-interactive jsonargparse*/*.py
+  pylint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+          cache: pip
+      - run: pip install pylint
+      - run: pylint --errors-only --disable=no-member jsonargparse*/*.py

@@ -10,10 +10,10 @@ import zipfile
 from jsonargparse import ArgumentParser, LoggerProperty, null_logger, Path
 from jsonargparse.optionals import fsspec_support, import_fsspec, reconplogger_support, url_support
 from jsonargparse.util import get_import_path, import_object, register_unresolvable_import_paths
-from jsonargparse_tests.base import mock_module, responses, responses_activate, suppress_stderr, TempDirTestCase
+from jsonargparse_tests.base import is_cpython, is_posix, mock_module, responses_activate, responses_available, suppress_stderr, TempDirTestCase
 
 
-@unittest.skipIf(os.name != 'posix' or platform.python_implementation() != 'CPython',
+@unittest.skipIf(not (is_posix and is_cpython),
                  'Path class currently only supported in posix systems and CPython')
 class PathTests(TempDirTestCase):
 
@@ -141,12 +141,13 @@ class PathTests(TempDirTestCase):
             self.assertEqual(path(), os.path.join(self.tmpdir, self.file_rw))
 
 
-    @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
+    @unittest.skipIf(not url_support or not responses_available, 'validators, requests and responses packages are required')
     @responses_activate
     def test_urls(self):
         existing = 'http://example.com/existing-url'
         existing_body = 'url contents'
         nonexisting = 'http://example.com/non-existing-url'
+        import responses
         responses.add(responses.GET,
                       existing,
                       body=existing_body,

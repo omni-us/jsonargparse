@@ -1,21 +1,26 @@
 import inspect
 import os
+import platform
 import shutil
 import tempfile
 import unittest
 from contextlib import contextmanager, redirect_stderr
+from importlib.util import find_spec
 
 
-try:
+responses_available = find_spec('responses') is not None
+
+if responses_available:
     import responses
     responses_activate = responses.activate
-except ImportError:
+else:
     def nothing_decorator(func):
         return func
-    responses = False  # type: ignore
     responses_activate = nothing_decorator
 
 
+is_posix = os.name == 'posix'
+is_cpython = platform.python_implementation() == 'CPython'
 os.environ['COLUMNS'] = '150'
 
 

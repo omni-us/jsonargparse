@@ -3,7 +3,6 @@
 import json
 import os
 import pickle
-import platform
 import sys
 import unittest
 import warnings
@@ -41,7 +40,7 @@ from jsonargparse.optionals import (
 )
 from jsonargparse.typing import NotEmptyStr, Path_fc, Path_fr, PositiveFloat, PositiveInt
 from jsonargparse.util import CaptureParserException, capture_parser, DebugException
-from jsonargparse_tests.base import TempDirTestCase, responses, responses_activate
+from jsonargparse_tests.base import is_cpython, is_posix, responses_activate, responses_available, TempDirTestCase
 
 
 def example_parser():
@@ -553,7 +552,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(yaml.safe_load(out.getvalue()), {'o': 1})
 
 
-    @unittest.skipIf(not url_support or not responses, 'validators, requests and responses packages are required')
+    @unittest.skipIf(not (url_support and responses_available), 'validators, requests and responses packages are required')
     @responses_activate
     def test_urls(self):
         set_config_read_mode(urls_enabled=True)
@@ -600,6 +599,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
             'jsonnet.yaml': jsonnet_body,
         }
 
+        import responses
         for name, body in urls.items():
             responses.add(responses.GET,
                           base_url+name,
@@ -931,7 +931,7 @@ class ConfigFilesTests(TempDirTestCase):
         outval = ' '.join(out.getvalue().split())
         self.assertIn('tried getting defaults considering default_config_files but failed', outval)
 
-        if os.name == 'posix' and platform.python_implementation() == 'CPython':
+        if is_posix and is_cpython:
             os.chmod(default_config_file, 0)
             self.assertEqual(parser.get_default('op1'), 'from default')
 

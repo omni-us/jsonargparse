@@ -67,7 +67,7 @@ def CLI(
         if set_defaults is not None:
             parser.set_defaults(set_defaults)
         if return_parser:
-            deprecation_warning(CLI, cli_return_parser_message)
+            deprecation_warning((CLI, 'return_parser'), cli_return_parser_message)
             return parser
         cfg = parser.parse_args(args)
         cfg_init = parser.instantiate_classes(cfg)

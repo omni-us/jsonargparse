@@ -34,6 +34,14 @@ The crucial step is installing the requirements which would be done by running:
 
     pip install -e ".[dev,all]"
 
+Please also install the `pre-commit <https://pre-commit.com/>`__ git hook
+scripts so that unit tests and code checks are automatically run locally. This
+is done as follows:
+
+.. code-block:: bash
+
+    pre-commit install
+
 Running the unit tests can be done either using using `tox
 <https://tox.readthedocs.io/en/stable/>`__ or the :code:`setup.py` script. The
 unit tests are also installed with the package, thus can be run in a production
