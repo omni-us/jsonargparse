@@ -5,7 +5,7 @@ import re
 
 
 ## Use README.rst for the package long description ##
-LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:|py:attr:| *# doctest:.*', '', open('README.rst').read())
+LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:|:py:mod:|py:attr:| *# doctest:.*', '', open('README.rst').read())
 LONG_DESCRIPTION = re.sub('([+|][- ]{12})[- ]{5}', r'\1', LONG_DESCRIPTION)
 
 LONG_DESCRIPTION_LINES = []
