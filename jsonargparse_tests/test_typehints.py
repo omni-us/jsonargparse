@@ -993,52 +993,6 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             self.assertEqual(type(parser.instantiate_classes(cfg)['cal']), Calendar)
 
 
-    def test_linking_deep_targets(self):
-        class D:
-            pass
-
-        class A:
-            def __init__(self, d: D) -> None:
-                self.d = d
-
-        class BSuper:
-            pass
-
-        class BSub(BSuper):
-            def __init__(self, a: A) -> None:
-                self.a = a
-
-        class C:
-            def fn(self) -> D:
-                return D()
-
-        with mock_module(D, A, BSuper, BSub, C) as module:
-            config = {
-                "b": {
-                    "class_path": f"{module}.BSub",
-                    "init_args": {
-                        "a": {
-                            "class_path": f"{module}.A",
-                        },
-                    },
-                },
-                "c": {},
-            }
-            config_path = os.path.join(self.tmpdir, 'config.yaml')
-            with open(config_path, 'w') as f:
-                yaml.safe_dump(config, f)
-
-            parser = ArgumentParser()
-            parser.add_argument("--config", action=ActionConfigFile)
-            parser.add_subclass_arguments(BSuper, nested_key="b", required=True)
-            parser.add_class_arguments(C, nested_key="c")
-            parser.link_arguments("c", "b.init_args.a.init_args.d", compute_fn=C.fn, apply_on="instantiate")
-
-            config = parser.parse_args(["--config", config_path])
-            config_init = parser.instantiate_classes(config)
-            self.assertIsInstance(config_init["b"].a.d, D)
-
-
     def test_mapping_class_typehint(self):
         class A:
             pass
@@ -1076,57 +1030,6 @@ class TypeHintsTmpdirTests(TempDirTestCase):
 
             config['b']['int_list'] = config['b']['class_map']
             self.assertRaises(ParserError, lambda: parser.parse_object(config))
-
-
-    def test_linking_deep_targets_mapping(self):
-        class D:
-            pass
-
-        class A:
-            def __init__(self, d: D) -> None:
-                self.d = d
-
-        class BSuper:
-            pass
-
-        class BSub(BSuper):
-            def __init__(self, a_map: Mapping[str, A]) -> None:
-                self.a_map = a_map
-
-        class C:
-            def fn(self) -> D:
-                return D()
-
-        with mock_module(D, A, BSuper, BSub, C) as module:
-            config = {
-                "b": {
-                    "class_path": f"{module}.BSub",
-                    "init_args": {
-                        "a_map": {
-                            "name": {
-                                "class_path": f"{module}.A",
-                            },
-                        },
-                    },
-                },
-                "c": {},
-            }
-            config_path = os.path.join(self.tmpdir, 'config.yaml')
-            with open(config_path, 'w') as f:
-                yaml.safe_dump(config, f)
-
-            parser = ArgumentParser()
-            parser.add_argument("--config", action=ActionConfigFile)
-            parser.add_subclass_arguments(BSuper, nested_key="b", required=True)
-            parser.add_class_arguments(C, nested_key="c")
-            parser.link_arguments("c", "b.init_args.a_map.name.init_args.d", compute_fn=C.fn, apply_on="instantiate")
-
-            config = parser.parse_args(["--config", config_path])
-            config_init = parser.instantiate_classes(config)
-            self.assertIsInstance(config_init["b"].a_map["name"].d, D)
-
-            config_init = parser.instantiate_classes(config)
-            self.assertIsInstance(config_init["b"].a_map["name"].d, D)
 
 
     def test_subcommand_with_subclass_default_override_lightning_issue_10859(self):

@@ -14,6 +14,7 @@ from unittest.mock import patch
 from .formatters import DefaultHelpFormatter, empty_help, formatter_context, get_env_var
 from .jsonnet import ActionJsonnet
 from .jsonschema import ActionJsonSchema
+from .link_arguments import ActionLink, ArgumentLinking
 from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context, yaml_load
 from .namespace import dict_to_namespace, is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
@@ -25,7 +26,6 @@ from .actions import (
     _ActionSubCommands,
     _ActionPrintConfig,
     _ActionConfigLoad,
-    _ActionLink,
     _is_branch_key,
     _find_action,
     _find_action_and_subcommand,
@@ -151,7 +151,7 @@ class _ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     parser: Optional['ArgumentParser'] = None
 
 
-class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
+class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser):
     """Parser for command line, yaml/jsonnet files and environment variables."""
 
     formatter_class: Type[DefaultHelpFormatter]  # type: ignore
@@ -307,7 +307,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
 
         _ActionPrintConfig.print_config_if_requested(self, cfg)
 
-        _ActionLink.apply_parsing_links(self, cfg)
+        ActionLink.apply_parsing_links(self, cfg)
 
         if not skip_check and not lenient_check.get():
             with load_value_context(self.parser_mode):
@@ -604,29 +604,6 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
         return self._apply_actions(cfg_dict, prev_cfg=prev_cfg)
 
 
-    def link_arguments(
-        self,
-        source: Union[str, Tuple[str, ...]],
-        target: str,
-        compute_fn: Callable = None,
-        apply_on: str = 'parse',
-    ):
-        """Makes an argument value be derived from the values of other arguments.
-
-        Refer to :ref:`argument-linking` for a detailed explanation and examples-
-
-        Args:
-            source: Key(s) from which the target value is derived.
-            target: Key to where the value is set.
-            compute_fn: Function to compute target value from source.
-            apply_on: At what point to set target value, 'parse' or 'instantiate'.
-
-        Raises:
-            ValueError: If an invalid parameter is given.
-        """
-        _ActionLink(self, source, target, compute_fn, apply_on)
-
-
     ## Methods for adding to the parser ##
 
     def add_subparsers(self, **kwargs) -> NoReturn:
@@ -693,7 +670,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
 
         cfg = deepcopy(cfg)
         cfg = strip_meta(cfg)
-        _ActionLink.strip_link_target_keys(self, cfg)
+        ActionLink.strip_link_target_keys(self, cfg)
 
         with load_value_context(self.parser_mode):
             if not skip_check:
@@ -706,7 +683,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
 
             if skip_default:
                 defaults = self.get_defaults(skip_check=True)
-                _ActionLink.strip_link_target_keys(self, defaults)
+                ActionLink.strip_link_target_keys(self, defaults)
                 self._dump_cleanup_actions(defaults, self._actions, {'skip_check': True, 'skip_none': skip_none})
                 self._dump_delete_default_entries(cfg_dict, defaults.as_dict())
 
@@ -810,7 +787,7 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
 
         else:
             cfg = deepcopy(cfg)
-            _ActionLink.strip_link_target_keys(self, cfg)
+            ActionLink.strip_link_target_keys(self, cfg)
 
             if not skip_check:
                 with load_value_context(self.parser_mode):
@@ -1087,8 +1064,8 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
             components.extend(groups)
 
         components.sort(key=lambda x: -len(split_key(x.dest)))  # type: ignore
-        order = _ActionLink.instantiation_order(self)
-        components = _ActionLink.reorder(order, components)
+        order = ActionLink.instantiation_order(self)
+        components = ActionLink.reorder(order, components)
 
         cfg = strip_meta(cfg)
         for component in components:
@@ -1101,11 +1078,11 @@ class ArgumentParser(ActionsContainer, argparse.ArgumentParser):
                     if value is not None:
                         with load_value_context(self.parser_mode):
                             parent[key] = component.instantiate_classes(value)
-                        _ActionLink.apply_instantiation_links(self, cfg, component.dest)
+                        ActionLink.apply_instantiation_links(self, cfg, component.dest)
             else:
                 with load_value_context(self.parser_mode):
                     component.instantiate_class(component, cfg)
-                _ActionLink.apply_instantiation_links(self, cfg, component.dest)
+                ActionLink.apply_instantiation_links(self, cfg, component.dest)
 
         subcommand, subparser = _ActionSubCommands.get_subcommand(self, cfg, fail_no_subcommand=False)
         if subcommand is not None and subparser is not None:

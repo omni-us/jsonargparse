@@ -13,6 +13,7 @@ from .deprecated import *
 from .formatters import *
 from .jsonnet import *
 from .jsonschema import *
+from .link_arguments import *
 from .loaders_dumpers import *
 from .namespace import *
 from .optionals import *
@@ -35,6 +36,7 @@ from . import cli
 from . import core
 from . import signatures
 from . import typehints
+from . import link_arguments
 from . import jsonschema
 from . import jsonnet
 from . import actions
@@ -50,6 +52,7 @@ __all__ += cli.__all__
 __all__ += core.__all__
 __all__ += signatures.__all__
 __all__ += typehints.__all__
+__all__ += link_arguments.__all__
 __all__ += jsonschema.__all__
 __all__ += jsonnet.__all__
 __all__ += actions.__all__

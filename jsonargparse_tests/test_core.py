@@ -392,23 +392,6 @@ class ArgumentFeaturesTests(unittest.TestCase):
 
 class AdvancedFeaturesTests(unittest.TestCase):
 
-    def test_link_arguments(self):
-        parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--a.v1', default=2)
-        parser.add_argument('--a.v2', type=int, default=3)
-        parser.add_argument('--b.v2', type=int, default=4)
-        def a_prod(a):
-            return a['v1'] * a['v2']
-        parser.link_arguments('a', 'b.v2', a_prod)
-
-        cfg = parser.parse_args(['--a.v2=-5'])
-        self.assertEqual(cfg.b.v2, cfg.a.v1*cfg.a.v2)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--a.v1=x']))
-
-        dump = yaml.safe_load(parser.dump(cfg))
-        self.assertEqual(dump, {'a': {'v1': 2, 'v2': -5}})
-
-
     def test_subcommands(self):
         parser_a = ArgumentParser(error_handler=None)
         parser_a.add_argument('ap1')

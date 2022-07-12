@@ -19,22 +19,21 @@ v4.11.0 (2022-07-??)
 
 Added
 ^^^^^
-- ``env_prefix`` property now also accepts boolean. If set to False,
-when default env feature is enabled, it won't add any prefix when reading
-parameters from environment variables.
-
-Deprecated
-^^^^^^^^^^
-- ``env_prefix`` property will no longer accept ``None`` in v5.0.0.
-
-
-v4.10.3 (2022-07-??)
---------------------
+- ``env_prefix`` property now also accepts boolean. If set to False, no prefix
+  is used for environment variable names `#145
+  <https://github.com/omni-us/jsonargparse/pull/145>`__.
+- ``link_arguments`` support target being an entire subclass object
+  `lightning#13539
+  <https://github.com/Lightning-AI/lightning/discussions/13539>`__.
 
 Fixed
 ^^^^^
 - Method resolution order not working correctly in parameter resolvers `#143
   <https://github.com/omni-us/jsonargparse/issues/143>`__.
+
+Deprecated
+^^^^^^^^^^
+- ``env_prefix`` property will no longer accept ``None`` in v5.0.0.
 
 
 v4.10.2 (2022-07-01)

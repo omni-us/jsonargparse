@@ -1548,7 +1548,7 @@ Argument linking
 Some use cases could require adding arguments from multiple classes and be
 desired that some parameters get a value automatically computed from other
 arguments. This behavior can be obtained by using the
-:py:meth:`.ArgumentParser.link_arguments` method.
+:py:meth:`.ArgumentLinking.link_arguments` method.
 
 There are two types of links each defined with ``apply_on='parse'`` and
 ``apply_on='instantiate'``. As the names suggest the former are set when calling

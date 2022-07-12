@@ -12,11 +12,11 @@ from .actions import (
     ActionConfigFile,
     ActionYesNo,
     _ActionConfigLoad,
-    _ActionLink,
     _ActionSubCommands,
     _find_action,
     filter_default_actions,
 )
+from .link_arguments import ActionLink
 from .namespace import Namespace
 from .optionals import import_ruyaml
 from .type_checking import ArgumentParser, ruyamlCommentedMap
@@ -154,7 +154,7 @@ class DefaultHelpFormatter(HelpFormatter):
 
 
     def add_usage(self, usage, actions, groups, prefix=None):
-        actions = [a for a in actions if not isinstance(a, _ActionLink)]
+        actions = [a for a in actions if not isinstance(a, ActionLink)]
         super().add_usage(usage, actions, groups, prefix=prefix)
 
 
