@@ -40,7 +40,7 @@ from jsonargparse.optionals import (
 )
 from jsonargparse.typing import NotEmptyStr, Path_fc, Path_fr, PositiveFloat, PositiveInt
 from jsonargparse.util import CaptureParserException, capture_parser, DebugException
-from jsonargparse_tests.base import is_cpython, is_posix, responses_activate, responses_available, TempDirTestCase
+from jsonargparse_tests.base import is_posix, responses_activate, responses_available, TempDirTestCase
 
 
 def example_parser():
@@ -931,7 +931,7 @@ class ConfigFilesTests(TempDirTestCase):
         outval = ' '.join(out.getvalue().split())
         self.assertIn('tried getting defaults considering default_config_files but failed', outval)
 
-        if is_posix and is_cpython:
+        if is_posix:
             os.chmod(default_config_file, 0)
             self.assertEqual(parser.get_default('op1'), 'from default')
 

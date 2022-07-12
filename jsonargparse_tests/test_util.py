@@ -4,17 +4,14 @@ import logging
 import os
 import stat
 import pathlib
-import platform
 import unittest
 import zipfile
 from jsonargparse import ArgumentParser, LoggerProperty, null_logger, Path
 from jsonargparse.optionals import fsspec_support, import_fsspec, reconplogger_support, url_support
 from jsonargparse.util import get_import_path, import_object, register_unresolvable_import_paths
-from jsonargparse_tests.base import is_cpython, is_posix, mock_module, responses_activate, responses_available, suppress_stderr, TempDirTestCase
+from jsonargparse_tests.base import is_posix, mock_module, responses_activate, responses_available, suppress_stderr, TempDirTestCase
 
 
-@unittest.skipIf(not (is_posix and is_cpython),
-                 'Path class currently only supported in posix systems and CPython')
 class PathTests(TempDirTestCase):
 
     def setUp(self):
@@ -67,6 +64,7 @@ class PathTests(TempDirTestCase):
         self.assertEqual(path.cwd, Path('file_rx', mode='fr', cwd=path.cwd).cwd)
 
 
+    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_file_access_mode(self):
         Path(self.file_rw, 'frw')
         Path(self.file_r, 'fr')
@@ -80,11 +78,13 @@ class PathTests(TempDirTestCase):
         self.assertRaises(TypeError, lambda: Path('file_ne', 'fr'))
 
 
+    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_get_contents(self):
         self.assertEqual('file contents', Path(self.file_r, 'fr').get_content())
         self.assertEqual('file contents', Path('file://'+self.tmpdir+'/'+self.file_r, 'fr').get_content())
 
 
+    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_dir_access_mode(self):
         Path(self.dir_rwx, 'drwx')
         Path(self.dir_rx, 'drx')
@@ -94,6 +94,7 @@ class PathTests(TempDirTestCase):
         self.assertRaises(TypeError, lambda: Path(self.file_r, 'dr'))
 
 
+    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_create_mode(self):
         Path(self.file_rw, 'fcrw')
         Path(os.path.join(self.tmpdir, 'file_c'), 'fc')
@@ -131,6 +132,7 @@ class PathTests(TempDirTestCase):
         self.assertTrue(path.__repr__().startswith('Path_frw('))
 
 
+    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_tilde_home(self):
         with unittest.mock.patch.dict(os.environ, {'HOME': self.tmpdir}):
             home = Path('~', 'dr')
@@ -164,6 +166,7 @@ class PathTests(TempDirTestCase):
 
 
     @unittest.skipIf(not fsspec_support, 'fsspec package is required')
+    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_fsspec(self):
 
         def create_zip(zip_path, file_path):

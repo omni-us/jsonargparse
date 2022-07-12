@@ -7,7 +7,7 @@ import unittest
 from io import StringIO
 from jsonargparse import ActionConfigFile, ActionJsonSchema, ArgumentParser, ParserError
 from jsonargparse.optionals import jsonschema_support
-from jsonargparse_tests.base import is_cpython, is_posix, TempDirTestCase
+from jsonargparse_tests.base import is_posix, TempDirTestCase
 
 
 schema1 = {
@@ -99,7 +99,7 @@ class JsonSchemaTests(TempDirTestCase):
         self.assertEqual(op2_val, cfg.op3['n1'][0])
         parser.check_config(cfg, skip_none=True)
 
-        if is_posix and is_cpython:
+        if is_posix:
             os.chmod(op1_file, 0)
             self.assertRaises(ParserError, lambda: parser.parse_path(cfg1_file))
 
