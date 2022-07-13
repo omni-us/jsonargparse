@@ -338,6 +338,9 @@ class Path:
     absolute path can be obtained without having to remember the working
     directory from when the object was created.
     """
+
+    file_scheme = re.compile('^file:///?')
+
     def __init__(
         self,
         path: Union[str, 'Path'],
@@ -371,8 +374,8 @@ class Path:
             path = path.rel_path  # type: ignore
         elif isinstance(path, str):
             abs_path = os.path.expanduser(path)
-            if re.match('^file:///?', abs_path):
-                abs_path = re.sub('^file:///?', '/', abs_path)
+            if self.file_scheme.match(abs_path):
+                abs_path = self.file_scheme.sub('' if os.name == 'nt' else '/', abs_path)
             if 'u' in mode and url_support and import_url_validator('Path')(abs_path):
                 is_url = True
             elif 's' in mode and fsspec_support and known_to_fsspec(abs_path):

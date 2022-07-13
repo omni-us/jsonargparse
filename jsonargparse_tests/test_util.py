@@ -64,44 +64,44 @@ class PathTests(TempDirTestCase):
         self.assertEqual(path.cwd, Path('file_rx', mode='fr', cwd=path.cwd).cwd)
 
 
-    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_file_access_mode(self):
         Path(self.file_rw, 'frw')
         Path(self.file_r, 'fr')
         Path(self.file_, 'f')
         Path(self.dir_file_rx, 'fr')
-        self.assertRaises(TypeError, lambda: Path(self.file_rw, 'fx'))
+        if is_posix:
+            self.assertRaises(TypeError, lambda: Path(self.file_rw, 'fx'))
+            self.assertRaises(TypeError, lambda: Path(self.file_, 'fr'))
         self.assertRaises(TypeError, lambda: Path(self.file_r, 'fw'))
-        self.assertRaises(TypeError, lambda: Path(self.file_, 'fr'))
         self.assertRaises(TypeError, lambda: Path(self.dir_file_rx, 'fw'))
         self.assertRaises(TypeError, lambda: Path(self.dir_rx, 'fr'))
         self.assertRaises(TypeError, lambda: Path('file_ne', 'fr'))
 
 
-    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_get_contents(self):
         self.assertEqual('file contents', Path(self.file_r, 'fr').get_content())
-        self.assertEqual('file contents', Path('file://'+self.tmpdir+'/'+self.file_r, 'fr').get_content())
+        self.assertEqual('file contents', Path(f'file://{self.tmpdir}/{self.file_r}', 'fr').get_content())
+        self.assertEqual('file contents', Path(f'file://{self.tmpdir}/{self.file_r}', 'ur').get_content())
 
 
-    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_dir_access_mode(self):
         Path(self.dir_rwx, 'drwx')
         Path(self.dir_rx, 'drx')
         Path(self.dir_x, 'dx')
-        self.assertRaises(TypeError, lambda: Path(self.dir_rx, 'dw'))
-        self.assertRaises(TypeError, lambda: Path(self.dir_x, 'dr'))
+        if is_posix:
+            self.assertRaises(TypeError, lambda: Path(self.dir_rx, 'dw'))
+            self.assertRaises(TypeError, lambda: Path(self.dir_x, 'dr'))
         self.assertRaises(TypeError, lambda: Path(self.file_r, 'dr'))
 
 
-    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_create_mode(self):
         Path(self.file_rw, 'fcrw')
         Path(os.path.join(self.tmpdir, 'file_c'), 'fc')
         Path(self.dir_rwx, 'dcrwx')
         Path(os.path.join(self.tmpdir, 'dir_c'), 'dc')
-        self.assertRaises(TypeError, lambda: Path(os.path.join(self.dir_rx, 'file_c'), 'fc'))
-        self.assertRaises(TypeError, lambda: Path(os.path.join(self.dir_rx, 'dir_c'), 'dc'))
+        if is_posix:
+            self.assertRaises(TypeError, lambda: Path(os.path.join(self.dir_rx, 'file_c'), 'fc'))
+            self.assertRaises(TypeError, lambda: Path(os.path.join(self.dir_rx, 'dir_c'), 'dc'))
         self.assertRaises(TypeError, lambda: Path(self.file_rw, 'dc'))
         self.assertRaises(TypeError, lambda: Path(self.dir_rwx, 'fc'))
         self.assertRaises(TypeError, lambda: Path(os.path.join(self.dir_rwx, 'ne', 'file_c'), 'fc'))
@@ -132,20 +132,20 @@ class PathTests(TempDirTestCase):
         self.assertTrue(path.__repr__().startswith('Path_frw('))
 
 
-    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_tilde_home(self):
-        with unittest.mock.patch.dict(os.environ, {'HOME': self.tmpdir}):
+        home_env = 'USERPROFILE' if os.name == 'nt' else 'HOME'
+        with unittest.mock.patch.dict(os.environ, {home_env: self.tmpdir}):
             home = Path('~', 'dr')
-            path = Path('~/'+self.file_rw, 'frw')
+            path = Path(os.path.join('~', self.file_rw), 'frw')
             self.assertEqual(str(home), '~')
-            self.assertEqual(str(path), '~/'+self.file_rw)
+            self.assertEqual(str(path), os.path.join('~', self.file_rw))
             self.assertEqual(home(), self.tmpdir)
             self.assertEqual(path(), os.path.join(self.tmpdir, self.file_rw))
 
 
     @unittest.skipIf(not url_support or not responses_available, 'validators, requests and responses packages are required')
     @responses_activate
-    def test_urls(self):
+    def test_urls_http(self):
         existing = 'http://example.com/existing-url'
         existing_body = 'url contents'
         nonexisting = 'http://example.com/non-existing-url'
@@ -166,7 +166,6 @@ class PathTests(TempDirTestCase):
 
 
     @unittest.skipIf(not fsspec_support, 'fsspec package is required')
-    @unittest.skipIf(not is_posix, 'requires posix system')
     def test_fsspec(self):
 
         def create_zip(zip_path, file_path):
@@ -190,8 +189,9 @@ class PathTests(TempDirTestCase):
 
         with self.assertRaises(TypeError):
             Path('zip://'+nonexisting+'::file://'+zip1_path, mode='sr')
-        with self.assertRaises(TypeError):
-            Path('zip://'+existing+'::file://'+zip2_path, mode='sr')
+        if is_posix:
+            with self.assertRaises(TypeError):
+                Path('zip://'+existing+'::file://'+zip2_path, mode='sr')
         with self.assertRaises(ValueError):
             Path('zip://'+existing+'::file://'+zip1_path, mode='ds')
         with self.assertRaises(TypeError):

@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.11.1 (2022-07-??)
+--------------------
+
+Fixed
+^^^^^
+- `file:///` scheme not working in windows `#144
+  <https://github.com/omni-us/jsonargparse/issues/144>`__.
+
+
 v4.11.0 (2022-07-12)
 --------------------
 
