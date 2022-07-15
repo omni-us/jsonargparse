@@ -14,13 +14,25 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
-v4.11.1 (2022-07-??)
+v4.12.0 (2022-07-??)
 --------------------
+
+Added
+^^^^^
+- Instantiation links now support multiple sources.
 
 Fixed
 ^^^^^
 - `file:///` scheme not working in windows `#144
   <https://github.com/omni-us/jsonargparse/issues/144>`__.
+- Instantiation links with source an entire subclass incorrectly showed
+  ``--*.help``.
+
+Changed
+^^^^^^^
+- Instantiation links with source an entire class no longer requires to have a
+  compute function.
+- Instantiation links no longer restricted to first nesting level.
 
 
 v4.11.0 (2022-07-12)

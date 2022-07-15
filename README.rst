@@ -1545,14 +1545,14 @@ corresponding yaml structure.
 Argument linking
 ================
 
-Some use cases could require adding arguments from multiple classes and be
-desired that some parameters get a value automatically computed from other
-arguments. This behavior can be obtained by using the
-:py:meth:`.ArgumentLinking.link_arguments` method.
+Some use cases could require adding arguments from multiple classes and some
+parameters get a value automatically computed from other arguments. This
+behavior can be obtained by using the :py:meth:`.ArgumentLinking.link_arguments`
+method.
 
-There are two types of links each defined with ``apply_on='parse'`` and
-``apply_on='instantiate'``. As the names suggest the former are set when calling
-one of the parse methods and the latter are set when calling
+There are two types of links, defined with ``apply_on='parse'`` or
+``apply_on='instantiate'``. As the names suggest, the former are set when
+calling one of the parse methods and the latter are set when calling
 :py:meth:`.ArgumentParser.instantiate_classes`.
 
 For parsing links, source keys can be individual arguments or nested groups. The
@@ -1579,17 +1579,14 @@ example would be the following:
 As argument and in config files only ``data.batch_size`` should be specified.
 Then whatever value it has will be propagated to ``model.batch_size``.
 
-For instantiation links, only a single source key is supported. The key can be
-for a class group created using
-:py:meth:`.SignatureArguments.add_class_arguments` or a subclass action created
-using :py:meth:`.SignatureArguments.add_subclass_arguments`. If the key is only
-the class group or subclass action, then a compute function is required which
-takes the source class instance and returns the value to set in target.
-Alternatively the key can specify a class attribute. The target key has to be a
-single argument and can be inside init_args of a subclass. The order of
-instantiation used by :py:meth:`.ArgumentParser.instantiate_classes` is
-automatically determined based on the links. The instantiation links must be a
-directed acyclic graph. An example would be the following:
+For instantiation links, sources can be class groups (added with
+:py:meth:`.SignatureArguments.add_class_arguments`) or subclass arguments (see
+:ref:`sub-classes`). The source key can be the entire instantiated object or an
+attribute of the object. The target key has to be a single argument and can be
+inside init_args of a subclass. The order of instantiation used by
+:py:meth:`.ArgumentParser.instantiate_classes` is automatically determined based
+on the links. The set of all instantiation links must be a directed acyclic
+graph. An example would be the following:
 
 .. testcode::
 

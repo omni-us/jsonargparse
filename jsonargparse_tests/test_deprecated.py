@@ -127,8 +127,10 @@ class DeprecatedTests(unittest.TestCase):
     @unittest.skipIf(url_support, 'validators and requests packages should not be installed')
     def test_url_support_false(self):
         self.assertEqual('fr', get_config_read_mode())
-        with self.assertRaises(ImportError):
-            set_url_support(True)
+        with catch_warnings(record=True) as w:
+            with self.assertRaises(ImportError):
+                set_url_support(True)
+            self.assertIn('set_url_support was deprecated', str(w[-1].message))
         self.assertEqual('fr', get_config_read_mode())
         set_url_support(False)
         self.assertEqual('fr', get_config_read_mode())

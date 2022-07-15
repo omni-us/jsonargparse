@@ -4,9 +4,9 @@ import json
 import os
 import unittest
 import yaml
-from calendar import Calendar
+from calendar import Calendar, TextCalendar
 from io import StringIO
-from typing import Any, Mapping, Optional, Union
+from typing import Any, List, Mapping, Optional, Union
 from jsonargparse import (
     ActionConfigFile,
     ArgumentParser,
@@ -306,17 +306,51 @@ class LinkArgumentsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parser.link_arguments('a.b.c', 'b.b3', apply_on='instantiate')
 
-        # Object link without compute function
-        parser = make_parser_2()
-        with self.assertRaises(ValueError):
-            parser.link_arguments('b', 'a.init_args.a2', apply_on='instantiate')
 
-        # Unsupported deeper levels
-        parser = ArgumentParser(error_handler=None)
-        parser.add_class_arguments(ClassA, 'g.a')
-        parser.add_class_arguments(ClassB, 'g.b')
-        with self.assertRaises(ValueError):
-            parser.link_arguments('g.b.b2', 'g.a.a1', apply_on='instantiate')
+    def test_link_arguments_on_instantiate_no_compute_no_target_instantiate(self):
+        class ClassA:
+            def __init__(self, calendar: Calendar):
+                self.calendar = calendar
+
+        parser = ArgumentParser()
+        parser.add_argument('--firstweekday', type=int)
+        parser.add_class_arguments(ClassA, 'a', instantiate=False)
+        parser.add_class_arguments(Calendar, 'c')
+        parser.link_arguments('firstweekday', 'c.firstweekday')
+        parser.link_arguments('c', 'a.calendar', apply_on='instantiate')
+
+        cfg = parser.parse_args(['--firstweekday=2'])
+        self.assertEqual(cfg, Namespace(c=Namespace(firstweekday=2), firstweekday=2))
+        init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(init.a, Namespace)
+        self.assertIsInstance(init.c, Calendar)
+        self.assertIs(init.c, init.a.calendar)
+
+
+    def test_link_arguments_on_instantiate_multi_source(self):
+        class ClassA:
+            def __init__(self, calendars: List[Calendar]):
+                self.calendars = calendars
+
+        def as_list(*items):
+            return [*items]
+
+        parser = ArgumentParser()
+        parser.add_class_arguments(ClassA, 'a')
+        parser.add_class_arguments(Calendar, 'c.one')
+        parser.add_class_arguments(TextCalendar, 'c.two')
+        parser.link_arguments(('c.one', 'c.two'), 'a.calendars', apply_on='instantiate', compute_fn=as_list)
+
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertIn('as_list(c.one, c.two) --> a.calendars [applied on instantiate]', help_str.getvalue())
+
+        cfg = parser.parse_args([])
+        self.assertEqual(cfg.as_dict(), {'c': {'one': {'firstweekday': 0}, 'two': {'firstweekday': 0}}})
+        init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(init.c.one, Calendar)
+        self.assertIsInstance(init.c.two, TextCalendar)
+        self.assertEqual(init.a.calendars, [init.c.one, init.c.two])
 
 
     def test_link_arguments_on_instantiate_object_in_attribute(self):

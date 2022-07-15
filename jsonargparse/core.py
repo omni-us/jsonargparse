@@ -1069,6 +1069,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
         cfg = strip_meta(cfg)
         for component in components:
+            ActionLink.apply_instantiation_links(self, cfg, target=component.dest)
             if isinstance(component, (ActionTypeHint, _ActionConfigLoad)):
                 try:
                     value, parent, key = cfg.get_value_and_parent(component.dest)
@@ -1078,11 +1079,11 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                     if value is not None:
                         with load_value_context(self.parser_mode):
                             parent[key] = component.instantiate_classes(value)
-                        ActionLink.apply_instantiation_links(self, cfg, component.dest)
             else:
                 with load_value_context(self.parser_mode):
                     component.instantiate_class(component, cfg)
-                ActionLink.apply_instantiation_links(self, cfg, component.dest)
+
+        ActionLink.apply_instantiation_links(self, cfg, order=order)
 
         subcommand, subparser = _ActionSubCommands.get_subcommand(self, cfg, fail_no_subcommand=False)
         if subcommand is not None and subparser is not None:

@@ -105,15 +105,10 @@ class ActionLink(Action):
         exclude = (ActionLink, _ActionConfigLoad, _ActionSubCommands, ActionConfigFile)
         source = (source,) if isinstance(source, str) else source
         if apply_on == 'instantiate':
-            if len(source) != 1:
-                raise ValueError('Links applied on instantiation only supported for a single source.')
-            self.source = [(source[0], find_subclass_action_or_class_group(parser, source[0], exclude=exclude))]
-            if self.source[0][1] is None:
-                raise ValueError('Links applied on instantiation require source to be a subclass action or a class group.')
-            if '.' in self.source[0][1].dest:  # type: ignore
-                raise ValueError('Links applied on instantiation only supported for first level objects.')
-            if source[0] == self.source[0][1].dest and compute_fn is None:
-                raise ValueError('Links applied on instantiation with object as source requires a compute function.')
+            self.source = [(s, find_subclass_action_or_class_group(parser, s, exclude=exclude)) for s in source]
+            for key, action in self.source:
+                if action is None:
+                    raise ValueError(f'Links applied on instantiation require source to be a subclass action or a class group: {key}')
         else:
             self.source = [(s, find_parent_or_child_actions(parser, s, exclude=exclude)) for s in source]  # type: ignore
 
@@ -173,7 +168,7 @@ class ActionLink(Action):
         link_str += ' --> ' + target
 
         help_str: Optional[str]
-        if is_target_subclass:
+        if is_target_subclass and not valid_target_leaf:
             type_attr = None
             help_str = f'Use --{self.target[1].dest}.help CLASS_PATH for details.'
         else:
@@ -235,26 +230,49 @@ class ActionLink(Action):
             ActionLink.set_target_value(action, value, cfg, parser.logger)
 
     @staticmethod
-    def apply_instantiation_links(parser, cfg, source):
+    def apply_instantiation_links(parser, cfg, target=None, order=None):
         if not hasattr(parser, '_links_group'):
             return
-        for action in parser._links_group._group_actions:
-            source_key, source_action = action.source[0]
-            if action.apply_on != 'instantiate' or source != source_action.dest:
+
+        applied_key = '__applied_instantiation_links__'
+        applied_links = cfg.pop(applied_key) if applied_key in cfg else set()
+        link_actions = [
+            a for a in parser._links_group._group_actions
+            if a.apply_on == 'instantiate' and a not in applied_links
+        ]
+        if order and link_actions:
+            link_actions = ActionLink.reorder(order, link_actions)
+
+        for action in link_actions:
+            if not (order or action.target[0] == target or action.target[0].startswith(target+'.')):
                 continue
-            source_object = cfg[source]
-            if source_key == source_action.dest:
-                value = action.compute_fn(source_object)
+            source_objects = []
+            for source_key, source_action in action.source:
+                source_object = cfg[source_action.dest]
+                if source_key == source_action.dest:
+                    source_objects.append(source_object)
+                else:
+                    attr = split_key_leaf(source_key)[1]
+                    from .typehints import ActionTypeHint
+                    if ActionTypeHint.is_subclass_typehint(source_action) and not hasattr(source_object, attr):
+                        parser.logger.debug(
+                            f'Link {action.option_strings[0]} ignored since source '
+                            f'{source_action._typehint} does not have that parameter.'
+                        )
+                        continue
+                    source_objects.append(getattr(source_object, attr))
+            if not source_objects:
+                continue
+            elif action.compute_fn is None:
+                value = source_objects[0]
             else:
-                attr = split_key_leaf(source_key)[1]
-                from .typehints import ActionTypeHint
-                if ActionTypeHint.is_subclass_typehint(source_action) and not hasattr(source_object, attr):
-                    parser.logger.debug(f'Link {action.option_strings[0]} ignored since source {source_action._typehint} does not have that parameter.')
-                    continue
-                value = getattr(source_object, attr)
-                if action.compute_fn is not None:
-                    value = action.compute_fn(value)
+                value = action.compute_fn(*source_objects)
             ActionLink.set_target_value(action, value, cfg, parser.logger)
+            applied_links.add(action)
+
+        if target:
+            cfg[applied_key] = applied_links
+
 
     @staticmethod
     def set_target_value(action: 'ActionLink', value: Any, cfg: Namespace, logger) -> None:
@@ -275,9 +293,9 @@ class ActionLink(Action):
             if len(actions) > 0:
                 graph = DirectedGraph()
                 for action in actions:
-                    source = action.source[0][1].dest
                     target = re.sub(r'\.init_args$', '', split_key_leaf(action.target[0])[0])
-                    graph.add_edge(source, target)
+                    for _, source_action in action.source:
+                        graph.add_edge(source_action.dest, target)
                 return graph.get_topological_order()
         return []
 
