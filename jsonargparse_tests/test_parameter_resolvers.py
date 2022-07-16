@@ -55,6 +55,14 @@ class ClassC(ClassB):
         """
         super().__init__(**kargs)
 
+class ClassN:
+    def __init__(self, kn1: int = 1, **kargs):
+        """
+        Args:
+            kn1: help for kn1
+        """
+        self.kn2: int  # verify (though questionable stylistically) that value-less AnnAssign doesn't break resolution
+
 class Param:
     p1: int = 2
 
@@ -282,6 +290,11 @@ class GetClassParametersTests(unittest.TestCase):
         assert_params(self, get_params(ClassC), ['kc1', 'pkb1', 'kb1', 'kb2', 'ka1'])
         with source_unavailable():
             assert_params(self, get_params(ClassC), ['kc1', 'pkb1', 'kb1', 'kb2', 'ka1', 'ka2'])
+
+    def test_get_params_class_with_valueless_init_ann(self):
+        assert_params(self, get_params(ClassN), ['kn1'])
+        with source_unavailable():
+            assert_params(self, get_params(ClassN), ['kn1'])
 
     def test_get_params_class_with_inheritance_parent_without_init(self):
         params = get_params(ClassD)

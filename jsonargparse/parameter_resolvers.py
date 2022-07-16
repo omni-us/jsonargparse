@@ -322,7 +322,8 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 self.generic_visit(node)
 
     def visit_AnnAssign(self, node):
-        self.visit_Assign(node)
+        if node.value is not None:
+            self.visit_Assign(node)
 
     def visit_Call(self, node):
         for key, value in self.find_values.items():
