@@ -263,17 +263,19 @@ def get_component_and_parent(
         attr = inspect.getattr_static(function_or_class, method_or_property)
         if is_staticmethod(attr):
             component = getattr(function_or_class, method_or_property)
-        elif has_dunder_new_method(function_or_class, method_or_property):
-            parent = function_or_class
+            return component, parent, method_or_property
+        parent = function_or_class
+        if has_dunder_new_method(function_or_class, method_or_property):
             component = getattr(function_or_class, '__new__')
-        elif is_method_or_property(attr):
-            parent = function_or_class
-            component = attr.fget if is_property(attr) else attr
+        elif is_method(attr):
+            component = attr
+        elif is_property(attr):
+            component = attr.fget
         elif attr is not object.__init__:
-            raise ValueError(f'Invalid input: class={function_or_class}, method_or_property={method_or_property}.')
+            raise ValueError(f'Invalid or unsupported input: class={function_or_class}, method_or_property={method_or_property}')
     else:
         if not callable(function_or_class):
-            raise ValueError(f'Invalid input: function={function_or_class}.')
+            raise ValueError(f'Non-callable input: function={function_or_class}')
         component = function_or_class
     return component, parent, method_or_property
 
@@ -346,16 +348,13 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         function_or_class = method_or_property = None
         module = inspect.getmodule(self.component)
         if isinstance(node.func, ast.Name):
-            assert hasattr(module, node.func.id), f'No attribute {node.func.id!r} in {module}'
             function_or_class = getattr(module, node.func.id)
         elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
             if self.parent and ast.dump(node.func.value) == ast.dump(ast_variable_load(self.self_name)):
                 function_or_class = self.parent
                 method_or_property = node.func.attr
             else:
-                assert hasattr(module, node.func.value.id), f'No attribute {node.func.value.id!r} in {module}'
                 container = getattr(module, node.func.value.id)
-                assert hasattr(container, node.func.attr), f'No attribute {node.func.attr!r} in {node.func.value.id!r} of {module}'
                 function_or_class = getattr(container, node.func.attr)
         if not function_or_class:
             self.logger.debug(f'Component not supported: {ast_str(node)}')
@@ -497,9 +496,10 @@ def get_signature_parameters(
     try:
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
         return visitor.get_parameters()
-    except SourceNotAvailable as ex:
+    except Exception as ex:
+        cause = 'Source not available' if isinstance(ex, SourceNotAvailable) else 'Problems with AST resolving'
         logger.debug(
-            'Source not available, falling back to parameters by assumptions: '
-            f'function_or_class={function_or_class} method_or_property={method_or_property} :: {ex}'
+            f'{cause}, falling back to parameters by assumptions: function_or_class={function_or_class} '
+            f'method_or_property={method_or_property} :: {ex}'
         )
         return get_parameters_by_assumptions(function_or_class, method_or_property, logger)

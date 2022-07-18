@@ -1238,9 +1238,9 @@ unrelated to these variables.
 
     class BaseClass: pass
 
-.. testcode:: ast_resolver
+**Cases for functions**
 
-    # Cases for functions
+.. testcode:: ast_resolver
 
     def calls_a_function(*args, **kwargs):
         a_function(*args, **kwargs)
@@ -1256,7 +1256,9 @@ unrelated to these variables.
     def calls_a_class_method(*args, **kwargs):
         SomeClass.a_class_method(*args, **kwargs)
 
-    # Cases for classes
+**Cases for classes**
+
+.. testcode:: ast_resolver
 
     class PassThrough(BaseClass):
         def __init__(self, *args, **kwargs):
@@ -1276,6 +1278,14 @@ unrelated to these variables.
 
         def a_method(self):
             a_callable(**self._kwargs)
+
+    class AttributeUseInProperty:
+        def __init__(self, **kwargs):
+            self._kwargs = kwargs
+
+        @property
+        def a_property(self):
+            return a_callable(**self._kwargs)
 
     class DictUpdateUseInMethod:
         def __init__(self, **kwargs):
@@ -1301,10 +1311,12 @@ it is internally hard coded.
 
 .. note::
 
-    The supported cases are limited and it is highly encouraged that people
-    create issues requesting the support for new cases. However, note that when
-    a case is highly convoluted it could be a symptom that the respective code
-    is in need of refactoring.
+    The parameter resolvers log messages of failures and unsupported cases. To
+    view these logs, set the environment variable ``JSONARGPARSE_DEBUG`` to any
+    value. The supported cases are limited and it is highly encouraged that
+    people create issues requesting the support for new ones. However, note that
+    when a case is highly convoluted it could be a symptom that the respective
+    code is in need of refactoring.
 
 
 .. _sub-classes:

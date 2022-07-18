@@ -33,6 +33,9 @@ Changed
 - Instantiation links with source an entire class no longer requires to have a
   compute function.
 - Instantiation links no longer restricted to first nesting level.
+- AST parameter resolver now only logs debug messages instead of failing `#146
+  <https://github.com/omni-us/jsonargparse/pull/146>`__.
+- Documented AST resolver support for ``**kwargs`` use in property.
 
 
 v4.11.0 (2022-07-12)
