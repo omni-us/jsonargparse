@@ -185,6 +185,18 @@ class ClassM3(ClassM1):
         """
         super().__init__(**kwargs)
 
+class ClassP:
+    def __init__(self, kp1: int=1, **kw):
+        """
+        Args:
+            kp1: help for kp1
+        """
+        self._kw = kw
+
+    @property
+    def data(self):
+        return function_no_args_no_kwargs(**self._kw)
+
 class ClassM(ClassM2, ClassM3):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -269,7 +281,7 @@ def assert_params(self, params, expected):
     self.assertEqual(docs, [p.doc for p in params])
 
 
-logger = logging.getLogger('ast_analysis_tests')
+logger = logging.getLogger('test_parameter_resolvers')
 logger.level = logging.DEBUG
 
 
@@ -319,6 +331,11 @@ class GetClassParametersTests(unittest.TestCase):
         assert_params(self, get_params(ClassM), ['km2', 'km3', 'km1'])
         with source_unavailable():
             assert_params(self, get_params(ClassM), ['km2', 'km3', 'km1'])
+
+    def test_get_params_kwargs_use_in_property(self):
+        assert_params(self, get_params(ClassP), ['kp1', 'pk1', 'k2'])
+        with source_unavailable():
+            assert_params(self, get_params(ClassP), ['kp1'])
 
     def test_get_params_class_from_function(self):
         class_a = class_from_function(function_return_class_c)
@@ -380,7 +397,6 @@ class GetFunctionParametersTests(unittest.TestCase):
         with source_unavailable():
             assert_params(self, get_params(function_make_class_b), ['k1'])
 
-
 class OtherTests(unittest.TestCase):
 
     def test_unsupported_component(self):
@@ -413,11 +429,16 @@ class OtherTests(unittest.TestCase):
             get_params(ClassU5, logger=logger)
             self.assertIn('kwargs attribute given as keyword parameter not supported', log.output[0])
 
+    def test_get_params_non_existent_call(self):
+        with self.assertLogs(logger, level='DEBUG') as log:
+            self.assertEqual([], get_params(function_with_bug, logger=logger))
+            self.assertIn('does_not_exist', log.output[0])
+            self.assertIn('Problems with AST resolving', log.output[0])
+
     def test_get_params_failures(self):
         self.assertRaises(ValueError, lambda: get_params('invalid'))
         self.assertRaises(ValueError, lambda: get_params(Param, 'p1'))
         self.assertRaises(AttributeError, lambda: get_params(Param, 'p2'))
-        self.assertRaises(Exception, lambda: get_params(function_with_bug))
 
 
 if __name__ == '__main__':
