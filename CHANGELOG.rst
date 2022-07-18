@@ -27,6 +27,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/144>`__.
 - Instantiation links with source an entire subclass incorrectly showed
   ``--*.help``.
+- Ensure AST-based parameter resolver handles value-less type annotations without error
+  `#148 <https://github.com/omni-us/jsonargparse/issues/148>`__.
 
 Changed
 ^^^^^^^
