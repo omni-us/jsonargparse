@@ -416,6 +416,23 @@ class SignaturesTests(unittest.TestCase):
             self.assertIn("discarding init_args: {'pa': 'A', 'pc': 'X'}", str(w[0].message))
 
 
+    def test_class_path_override_with_mixed_type(self):
+        class MyCalendar(Calendar):
+            def __init__(self, *args, param: int = 0, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        class Main:
+            def __init__(self, cal: Union[Calendar, bool] = lazy_instance(MyCalendar, param=1)):
+                self.cal = cal
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(Main, 'main')
+
+        with warnings.catch_warnings(record=True) as w:
+            parser.parse_args(['--main.cal=Calendar'])
+            self.assertIn("discarding init_args: {'param': 1}", str(w[0].message))
+
+
     def test_add_subclass_init_args_without_class_path(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_subclass_arguments(Calendar, 'cal1')

@@ -243,7 +243,7 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def discard_init_args_on_class_path_change(parser, cfg_to, cfg_from):
-        for action in [a for a in parser._actions if ActionTypeHint.is_subclass_typehint(a)]:
+        for action in [a for a in parser._actions if ActionTypeHint.is_subclass_typehint(a, all_subtypes=False)]:
             val_to = cfg_to.get(action.dest)
             val_from = cfg_from.get(action.dest)
             if is_subclass_spec(val_to) and is_subclass_spec(val_from):

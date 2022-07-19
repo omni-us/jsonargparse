@@ -29,6 +29,8 @@ Fixed
   ``--*.help``.
 - Ensure AST-based parameter resolver handles value-less type annotations without error
   `#148 <https://github.com/omni-us/jsonargparse/issues/148>`__.
+- Discarding ``init_args`` on ``class_path`` change not working for ``Union``
+  with mixed non-subclass types.
 
 Changed
 ^^^^^^^
