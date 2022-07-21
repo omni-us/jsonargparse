@@ -20,6 +20,9 @@ v4.12.0 (2022-07-??)
 Added
 ^^^^^
 - Instantiation links now support multiple sources.
+- AST resolver now supports ``cls()`` class instantiation in ``classmethod``
+  `#146 <https://github.com/omni-us/jsonargparse/issues/146>`__.
+- AST resolver now supports ``pop`` and ``get`` from ``**kwargs``.
 
 Fixed
 ^^^^^
@@ -38,7 +41,7 @@ Changed
   compute function.
 - Instantiation links no longer restricted to first nesting level.
 - AST parameter resolver now only logs debug messages instead of failing `#146
-  <https://github.com/omni-us/jsonargparse/pull/146>`__.
+  <https://github.com/omni-us/jsonargparse/issues/146>`__.
 - Documented AST resolver support for ``**kwargs`` use in property.
 
 

@@ -178,7 +178,7 @@ class ClassM2(ClassM1):
         super().__init__(**kwargs)
 
 class ClassM3(ClassM1):
-    def __init__(self, km3: int=0, **kwargs):
+    def __init__(self, km3: int = 0, **kwargs):
         """
         Args:
             km3: help for km3
@@ -186,7 +186,7 @@ class ClassM3(ClassM1):
         super().__init__(**kwargs)
 
 class ClassP:
-    def __init__(self, kp1: int=1, **kw):
+    def __init__(self, kp1: int = 1, **kw):
         """
         Args:
             kp1: help for kp1
@@ -196,6 +196,25 @@ class ClassP:
     @property
     def data(self):
         return function_no_args_no_kwargs(**self._kw)
+
+class ClassS1:
+    def __init__(self, ks1: int = 2, **kw):
+        """
+        Args:
+            ks1: help for ks1
+        """
+        self.ks1 = ks1
+
+    @classmethod
+    def classmethod_s(cls, **kwargs):
+        return cls(**kwargs)
+
+class ClassS2:
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def run_classmethod_s(self):
+        return ClassS1.classmethod_s(**self.kwargs)
 
 class ClassM(ClassM2, ClassM3):
     def __init__(self, **kwargs):
@@ -260,6 +279,19 @@ def function_make_class_b(*args, k1: str = '-', **kwargs):
     """
     return ClassB.make(*args, **kwargs)
 
+def function_pop_get_from_kwargs(kn1: int = 0, **kw):
+    """
+    Args:
+        kn1: help for kn1
+        kn2: help for kn2
+        kn3: help for kn3
+        k2: help for k2
+    """
+    k2 = kw.pop('k2', [1])
+    kn2 = kw.pop('kn2', 0.5)
+    kn3 = kw.get('kn3', {})
+    return function_no_args_no_kwargs(**kw)
+
 def function_with_bug(**kws):
     return does_not_exist(**kws)  # pylint: disable=undefined-variable
 
@@ -267,6 +299,9 @@ def function_unsupported_component(**kwds):
     select = ['Text', 'HTML', '']
     shuffle(select)
     getattr(calendar, f'{select[0]}Calendar')(**kwds)
+
+def function_module_class(**kwds):
+    return calendar.Calendar(**kwds)
 
 
 @contextmanager
@@ -373,6 +408,12 @@ class GetMethodParametersTests(unittest.TestCase):
         with source_unavailable():
             assert_params(self, get_params(ClassB.make), ['pkcm1', 'kcm1'])
 
+    def test_get_params_classmethod_instantiate_from_cls(self):
+        assert_params(self, get_params(ClassS1, 'classmethod_s'), ['ks1'])
+        assert_params(self, get_params(ClassS2), ['ks1'])
+        with source_unavailable():
+            assert_params(self, get_params(ClassS1, 'classmethod_s'), [])
+
 
 class GetFunctionParametersTests(unittest.TestCase):
 
@@ -396,6 +437,20 @@ class GetFunctionParametersTests(unittest.TestCase):
         assert_params(self, get_params(function_make_class_b), ['k1', 'pkcm1', 'kcm1', 'kb1', 'kb2', 'ka1'])
         with source_unavailable():
             assert_params(self, get_params(function_make_class_b), ['k1'])
+
+    def test_get_params_function_pop_get_from_kwargs(self):
+        with self.assertLogs(logger, level='DEBUG') as log:
+            params = get_params(function_pop_get_from_kwargs, logger=logger)
+            assert_params(self, params, ['kn1', 'k2', 'kn2', 'kn3', 'pk1'])
+            self.assertIsNone(params[1].default)
+            self.assertIn('Unsupported kwargs pop/get default', log.output[0])
+        with source_unavailable():
+            assert_params(self, get_params(function_pop_get_from_kwargs), ['kn1'])
+
+    def test_get_params_function_module_class(self):
+        params = get_params(function_module_class)
+        self.assertEqual(['firstweekday'], [p.name for p in params])
+
 
 class OtherTests(unittest.TestCase):
 

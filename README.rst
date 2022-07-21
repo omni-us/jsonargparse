@@ -1238,7 +1238,7 @@ unrelated to these variables.
 
     class BaseClass: pass
 
-**Cases for functions**
+**Cases for statements in functions or methods**
 
 .. testcode:: ast_resolver
 
@@ -1256,6 +1256,12 @@ unrelated to these variables.
     def calls_a_class_method(*args, **kwargs):
         SomeClass.a_class_method(*args, **kwargs)
 
+    def pops_from_kwargs(**kwargs):
+        val = kwargs.pop('name', 'default')
+
+    def gets_from_kwargs(**kwargs):
+        val = kwargs.get('name', 'default')
+
 **Cases for classes**
 
 .. testcode:: ast_resolver
@@ -1267,10 +1273,6 @@ unrelated to these variables.
     class CallMethod:
         def __init__(self, *args, **kwargs):
             self.a_method(*args, **kwargs)
-
-    class CallCallable:
-        def __init__(self, *args, **kwargs):
-            a_callable(*args, **kwargs)
 
     class AttributeUseInMethod:
         def __init__(self, **kwargs):
@@ -1295,6 +1297,12 @@ unrelated to these variables.
 
         def a_method(self):
             a_callable(**self._kwargs)
+
+    class InstanceInClassmethod:
+        @classmethod
+        def get_instance(cls, **kwargs):
+            return cls(**kwargs)
+
 
 There can be other parameters apart from ``*args`` and ``**kwargs``, thus in the
 cases above the signatures can be for example like ``name(p1: int, k1: str =
