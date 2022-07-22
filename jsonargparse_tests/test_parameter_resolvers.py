@@ -285,11 +285,12 @@ def function_pop_get_from_kwargs(kn1: int = 0, **kw):
         kn1: help for kn1
         kn2: help for kn2
         kn3: help for kn3
-        k2: help for k2
+        kn4: help for kn4
     """
-    k2 = kw.pop('k2', [1])
+    k2 = kw.pop('k2', 2)
     kn2 = kw.pop('kn2', 0.5)
     kn3 = kw.get('kn3', {})
+    kn4 = kw.pop('kn4', [1])
     return function_no_args_no_kwargs(**kw)
 
 def function_with_bug(**kws):
@@ -441,8 +442,8 @@ class GetFunctionParametersTests(unittest.TestCase):
     def test_get_params_function_pop_get_from_kwargs(self):
         with self.assertLogs(logger, level='DEBUG') as log:
             params = get_params(function_pop_get_from_kwargs, logger=logger)
-            assert_params(self, params, ['kn1', 'k2', 'kn2', 'kn3', 'pk1'])
-            self.assertIsNone(params[1].default)
+            assert_params(self, params, ['kn1', 'kn2', 'kn3', 'kn4', 'pk1', 'k2'])
+            self.assertIs(params[-1].annotation, int)
             self.assertIn('Unsupported kwargs pop/get default', log.output[0])
         with source_unavailable():
             assert_params(self, get_params(function_pop_get_from_kwargs), ['kn1'])

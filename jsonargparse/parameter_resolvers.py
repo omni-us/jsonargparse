@@ -273,7 +273,13 @@ def common_parameters(params_list: List[ParamList]) -> ParamList:
 def merge_parameters(source: Union[ParamData, ParamList], target: ParamList) -> ParamList:
     if not isinstance(source, list):
         source = [source]
-    target_names = set(t.name for t in target)
+    source_dict = {p.name: p for p in source}
+    replace_names = set()
+    for p in target:
+        if p.name in source_dict and p.annotation is inspect._empty and source_dict[p.name] is not inspect._empty:
+            replace_names.add(p.name)
+    target = [p for p in target if p.name not in replace_names]
+    target_names = set(p.name for p in target)
     return target + [s for s in source if s.name not in target_names]
 
 
