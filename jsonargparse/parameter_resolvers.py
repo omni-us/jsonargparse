@@ -220,7 +220,7 @@ def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, logger)
             default = ast_literals[default]()
         else:
             default = None
-            logger.debug(f'Unsupported kwargs pop/get default: {ast_str(node)}')
+            logger.debug(f'AST resolver: unsupported kwargs pop/get default: {ast_str(node)}')
     return ParamData(
         name=name,
         annotation=inspect._empty,
@@ -444,7 +444,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 else:
                     function_or_class = getattr(container, node.func.attr)
         if not function_or_class:
-            self.logger.debug(f'Component not supported: {ast_str(node)}')
+            self.logger.debug(f'AST resolver: not supported: {ast_str(node)}')
             return None
         return function_or_class, method_or_property
 
@@ -456,7 +456,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             kwarg = ast_get_call_kwarg_with_value(node, value)
             if kwarg:
                 if kwarg.arg:
-                    self.logger.debug(f'kwargs attribute given as keyword parameter not supported: {ast_str(node)}')
+                    self.logger.debug(f'AST resolver: kwargs attribute given as keyword parameter not supported: {ast_str(node)}')
                 else:
                     get_param_args = self.get_node_component(node)
                     if get_param_args:
@@ -489,10 +489,10 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 kwarg = ast_get_call_kwarg_with_value(node, kwargs_value)
                 params = []
                 if kwarg.arg:
-                    self.logger.debug(f'kwargs given as keyword parameter not supported: {ast_str(node)}')
+                    self.logger.debug(f'AST resolver: kwargs given as keyword parameter not supported: {ast_str(node)}')
                 elif self.parent and ast_is_super_call(node):
                     if not ast_is_supported_super_call(node, self.parent, self.self_name):
-                        self.logger.debug(f'super with arbitrary parameters not supported: {ast_str(node)}')
+                        self.logger.debug(f'AST resolver: super with arbitrary parameters not supported: {ast_str(node)}')
                     else:
                         params = get_mro_parameters(node.func.attr, get_signature_parameters, self.logger)  # type: ignore
                 else:
@@ -509,7 +509,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     kwargs = merge_parameters(params, kwargs)
                     break
                 else:
-                    self.logger.debug(f'Unsupported type of assign: {ast_str(node)}')
+                    self.logger.debug(f'AST resolver: unsupported type of assign: {ast_str(node)}')
 
         return args, kwargs
 
@@ -525,7 +525,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             kwargs = visitor.get_parameters_call_attr(attr_name, attr_value)
             if kwargs is not None:
                 return kwargs
-        self.logger.debug(f'Did not find use of {self.self_name}.{attr_name} in members of {self.parent}')
+        self.logger.debug(f'AST resolver: did not find use of {self.self_name}.{attr_name} in members of {self.parent}')
         return []
 
     def get_parameters_call_attr(self, attr_name: str, attr_value: ast.AST) -> Optional[ParamList]:

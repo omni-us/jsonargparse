@@ -256,6 +256,14 @@ class LoggingPropertyTests(unittest.TestCase):
         self.assertEqual(test.logger.name, 'test_logger_name')
 
 
+    @unittest.mock.patch.dict(os.environ, {'JSONARGPARSE_DEBUG': ''})
+    def test_logger_jsonargparse_debug(self):
+        parser = ArgumentParser(logger=False)
+        with self.assertLogs(logger=parser.logger, level=logging.DEBUG) as log:
+            parser.logger.debug(self.log_message)
+            self.assertIn(self.log_message, log.output[0])
+
+
     def test_logger_levels(self):
         levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         for num, level in enumerate(levels):

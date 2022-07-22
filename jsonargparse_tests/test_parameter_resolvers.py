@@ -444,7 +444,7 @@ class GetFunctionParametersTests(unittest.TestCase):
             params = get_params(function_pop_get_from_kwargs, logger=logger)
             assert_params(self, params, ['kn1', 'kn2', 'kn3', 'kn4', 'pk1', 'k2'])
             self.assertIs(params[-1].annotation, int)
-            self.assertIn('Unsupported kwargs pop/get default', log.output[0])
+            self.assertIn('unsupported kwargs pop/get default', log.output[0])
         with source_unavailable():
             assert_params(self, get_params(function_pop_get_from_kwargs), ['kn1'])
 
@@ -458,12 +458,12 @@ class OtherTests(unittest.TestCase):
     def test_unsupported_component(self):
         with self.assertLogs(logger, level='DEBUG') as log:
             self.assertEqual([], get_params(function_unsupported_component, logger=logger))
-            self.assertIn('Component not supported', log.output[0])
+            self.assertIn('not supported', log.output[0])
 
     def test_unsupported_type_of_assign(self):
         with self.assertLogs(logger, level='DEBUG') as log:
             get_params(ClassU1, logger=logger)
-            self.assertIn('Unsupported type of assign', log.output[0])
+            self.assertIn('unsupported type of assign', log.output[0])
 
     def test_unsupported_kwarg_as_keyword(self):
         with self.assertLogs(logger, level='DEBUG') as log:
@@ -478,7 +478,7 @@ class OtherTests(unittest.TestCase):
     def test_unsupported_self_attr_not_found_in_members(self):
         with self.assertLogs(logger, level='DEBUG') as log:
             get_params(ClassU4, logger=logger)
-            self.assertIn('Did not find use of self._ka in members of', log.output[0])
+            self.assertIn('did not find use of self._ka in members of', log.output[0])
 
     def test_unsupported_kwarg_attr_as_keyword(self):
         with self.assertLogs(logger, level='DEBUG') as log:

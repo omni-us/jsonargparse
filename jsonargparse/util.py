@@ -563,6 +563,8 @@ class LoggerProperty:
             from .deprecated import deprecation_warning, logger_property_none_message
             deprecation_warning((LoggerProperty.logger, None), logger_property_none_message)
             logger = False
+        if not logger and 'JSONARGPARSE_DEBUG' in os.environ:
+            logger = {'level': 'DEBUG'}
         self._logger = parse_logger(logger, type(self).__name__)
 
 

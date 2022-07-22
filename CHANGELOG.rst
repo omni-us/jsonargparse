@@ -34,6 +34,7 @@ Fixed
   `#148 <https://github.com/omni-us/jsonargparse/issues/148>`__.
 - Discarding ``init_args`` on ``class_path`` change not working for ``Union``
   with mixed non-subclass types.
+- In some cases debug logs not shown even though ``JSONARGPARSE_DEBUG`` set.
 
 Changed
 ^^^^^^^

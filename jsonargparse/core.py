@@ -137,7 +137,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         parser = self.parser if hasattr(self, 'parser') else self  # type: ignore
         if name is not None and name in parser.groups:
             raise ValueError(f'Group with name {name} already exists.')
-        group = _ArgumentGroup(parser, *args, **kwargs)
+        group = _ArgumentGroup(parser, *args, logger=parser.logger, **kwargs)
         group.parser = parser
         parser._action_groups.append(group)
         if name is not None:
@@ -194,7 +194,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             default_env: Set the default value on whether to parse environment variables.
             default_meta: Set the default value on whether to include metadata in config objects.
         """
-        super().__init__(*args, formatter_class=formatter_class, **kwargs)
+        super().__init__(*args, formatter_class=formatter_class, logger=logger, **kwargs)
         if self.groups is None:
             self.groups = {}
         self.required_args: Set[str] = set()
@@ -205,7 +205,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         self.env_prefix = env_prefix
         self.parser_mode = parser_mode
         self.dump_header = dump_header
-        self.logger = logger
         self.error_handler = error_handler
         self._print_config = print_config
         if version is not None:

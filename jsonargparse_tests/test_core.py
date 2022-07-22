@@ -39,7 +39,7 @@ from jsonargparse.optionals import (
     url_support,
 )
 from jsonargparse.typing import NotEmptyStr, Path_fc, Path_fr, PositiveFloat, PositiveInt
-from jsonargparse.util import CaptureParserException, capture_parser, DebugException
+from jsonargparse.util import CaptureParserException, capture_parser, DebugException, null_logger
 from jsonargparse_tests.base import is_posix, responses_activate, responses_available, TempDirTestCase
 
 
@@ -1085,7 +1085,7 @@ class OtherTests(unittest.TestCase):
 
     @unittest.mock.patch.dict(os.environ, {'JSONARGPARSE_DEBUG': ''})
     def test_debug_usage_and_exit_error_handler(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(logger=null_logger)
         parser.add_argument('--int', type=int)
         err = StringIO()
         with redirect_stderr(err), self.assertRaises(DebugException):
