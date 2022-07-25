@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.12.1 (2022-07-25)
+--------------------
+
+Fixed
+^^^^^
+- Mypy fails to find jsonargparse type hints `#151
+  <https://github.com/omni-us/jsonargparse/issues/51>`__.
+
+
 v4.12.0 (2022-07-22)
 --------------------
 
