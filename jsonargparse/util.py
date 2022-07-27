@@ -7,6 +7,7 @@ import re
 import stat
 import sys
 import warnings
+from collections import namedtuple
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
@@ -121,8 +122,15 @@ def identity(value):
     return value
 
 
+NestedArg = namedtuple('NestedArg', 'key val')
+
+
 def parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:
     """Parses yaml/json config in a string or a path"""
+    nested_arg: Union[bool, NestedArg] = False
+    if isinstance(value, NestedArg):
+        nested_arg = value
+        value = nested_arg.val
     cfg_path = None
     if enable_path and type(value) is str:
         try:
@@ -138,6 +146,8 @@ def parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, Op
             value = parsed_val
     if isinstance(value, dict) and cfg_path is not None:
         value['__path__'] = cfg_path
+    if nested_arg:
+        value = NestedArg(key=nested_arg.key, val=value)  # type: ignore
     return value, cfg_path
 
 

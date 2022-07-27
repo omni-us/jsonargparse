@@ -242,7 +242,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
 
     def _parse_optional(self, arg_string):
-        subclass_arg = ActionTypeHint.parse_subclass_arg(arg_string)
+        subclass_arg = ActionTypeHint.parse_argv_item(arg_string)
         if subclass_arg:
             return subclass_arg
         if arg_string == self._print_config:

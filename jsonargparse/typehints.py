@@ -50,6 +50,7 @@ from .util import (
     iter_to_set_str,
     lenient_check,
     lenient_check_context,
+    NestedArg,
     NoneType,
     object_path_serializer,
     ParserError,
@@ -224,7 +225,7 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def parse_subclass_arg(arg_string):
+    def parse_argv_item(arg_string):
         parser = subclass_arg_parser.get()
         action = None
         if arg_string.startswith('--'):
@@ -234,7 +235,11 @@ class ActionTypeHint(Action):
             if '.' in arg_base and arg_base not in parser._option_string_actions:
                 action = _find_parent_action(parser, arg_base[2:])
 
-        if ActionTypeHint.is_subclass_typehint(action, all_subtypes=False):
+        typehint = typehint_from_action(action)
+        if (
+            ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False) or
+            ActionTypeHint.is_mapping_typehint(typehint)
+        ):
             return action, arg_base, explicit_arg
         elif parser._subcommands_action and arg_string in parser._subcommands_action._name_parser_map:
             subparser = parser._subcommands_action._name_parser_map[arg_string]
@@ -321,28 +326,14 @@ class ActionTypeHint(Action):
             parser, cfg, val, opt_str = args
             if isinstance(opt_str, str) and opt_str.startswith(f'--{self.dest}.'):
                 sub_opt = opt_str[len(f'--{self.dest}.'):]
-                if sub_opt != 'class_path':
-                    cfg_dest = deepcopy(cfg.get(self.dest, Namespace()))
-                    if self.dest not in cfg:
-                        try:
-                            default = parser.get_default(self.dest)
-                            cfg_dest['class_path'] = default['class_path']
-                        except (KeyError, TypeError):
-                            pass
-                    if isinstance(cfg_dest, str):
-                        cfg_dest = Namespace(class_path=cfg_dest)
-                    if split_key_root(sub_opt)[0] not in {'init_args', 'dict_kwargs'}:
-                        sub_opt = 'init_args.' + sub_opt
-                    if sub_opt.startswith('init_args.') and '.' in sub_opt[len('init_args.'):]:
-                        val = NestedArg(key=sub_opt[len('init_args.'):], val=val)
-                        sub_opt = 'init_args'
-                    elif sub_opt.startswith('dict_kwargs.') and isinstance(val, str):
-                        val = load_value(val)
-                    if isinstance(cfg_dest, list):
-                        cfg_dest[-1][sub_opt] = val
-                    else:
-                        cfg_dest[sub_opt] = val
-                    val = cfg_dest
+                val = NestedArg(key=sub_opt, val=val)
+                if self.dest not in cfg:
+                    try:
+                        default = parser.get_default(self.dest)
+                        cfg = deepcopy(cfg)
+                        cfg[self.dest] = default
+                    except KeyError:
+                        pass
             append = opt_str == f'--{self.dest}+'
             val = self._check_type(val, append=append, cfg=cfg)
         args[1].update(val, self.dest)
@@ -565,7 +556,9 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                     prev_val = []
             val = prev_val + (val if isinstance(val, list) else [val])
             prev_val = prev_val + [None] * (len(val) if isinstance(val, list) else 1)
-        if not isinstance(val, list):
+        if isinstance(val, NestedArg) and subtypehints is not None:
+            val = (prev_val[:-1] if isinstance(prev_val, list) else []) + [val]
+        elif not isinstance(val, list):
             raise ValueError(f'Expected a List but got "{val}"')
         if subtypehints is not None:
             for n, v in enumerate(val):
@@ -574,7 +567,12 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
 
     # Dict, Mapping
     elif typehint_origin in mapping_origin_types:
-        if not isinstance(val, dict):
+        if isinstance(val, NestedArg):
+            if isinstance(prev_val, dict):
+                val = {**prev_val, val.key: val.val}
+            else:
+                val = {val.key: val.val}
+        elif not isinstance(val, dict):
             raise ValueError(f'Expected a Dict but got "{val}"')
         if subtypehints is not None:
             if subtypehints[0] == int:
@@ -630,12 +628,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             return val
 
         val_input = val
-        val = subclass_spec_as_namespace(val)
-        if not is_subclass_spec(val) and prev_val and 'class_path' in prev_val:
-            if 'init_args' in val:
-                val['class_path'] = prev_val['class_path']
-            else:
-                val = Namespace(class_path=prev_val['class_path'], init_args=val)
+        val = subclass_spec_as_namespace(val, prev_val)
         if not is_subclass_spec(val):
             raise ValueError(
                 f'Type {typehint} expects: a class path (str); or a dict with a class_path entry; '
@@ -664,20 +657,36 @@ def is_subclass_spec(val):
     return is_class
 
 
-def subclass_spec_as_namespace(val):
+def subclass_spec_as_namespace(val, prev_val=None):
     if isinstance(val, str):
         return Namespace(class_path=val)
+    if isinstance(val, NestedArg):
+        key, val = val
+        if '.' not in key:
+            root_key = key
+        else:
+            if key.startswith('init_args.'):
+                root_key = 'init_args'
+                key = key[len('init_args.'):]
+                val = Namespace({key: val})
+            elif key.startswith('dict_kwargs.'):
+                root_key = 'dict_kwargs'
+                key = key[len('dict_kwargs.'):]
+                val = {key: val}
+            else:
+                root_key = 'init_args'
+                val = NestedArg(key=key, val=val)
+        val = Namespace({root_key: val})
     if isinstance(val, dict):
         val = Namespace(val)
     if 'init_args' in val and isinstance(val['init_args'], dict):
         val['init_args'] = Namespace(val['init_args'])
+    if not is_subclass_spec(val) and isinstance(prev_val, Namespace) and 'class_path' in prev_val:
+        if 'init_args' in val or 'dict_kwargs' in val:
+            val['class_path'] = prev_val['class_path']
+        else:
+            val = Namespace(class_path=prev_val['class_path'], init_args=val)
     return val
-
-
-class NestedArg:
-    def __init__(self, key, val):
-        self.key = key
-        self.val = val
 
 
 def get_all_subclass_paths(cls: Type) -> List[str]:
@@ -806,14 +815,10 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
         if init_args:
             value['init_args'] = load_value(parser.dump(init_args, **dump_kwargs.get()))
     else:
-        if isinstance(dict_kwargs, str):
-            dict_kwargs = load_value(dict_kwargs)
-        if isinstance(dict_kwargs, (dict, Namespace)):
+        if isinstance(dict_kwargs, dict):
             for key in list(dict_kwargs.keys()):
                 if _find_action(parser, key):
                     init_args[key] = dict_kwargs.pop(key)
-            if isinstance(dict_kwargs, Namespace):
-                dict_kwargs = dict(dict_kwargs)
         elif dict_kwargs:
             init_args['dict_kwargs'] = dict_kwargs
             dict_kwargs = None
@@ -821,6 +826,8 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
         if init_args:
             value['init_args'] = init_args
     if dict_kwargs:
+        if isinstance(prev_val, Namespace) and prev_val.get('class_path') == value['class_path'] and prev_val.get('dict_kwargs'):
+            dict_kwargs.update(prev_val.get('dict_kwargs'))
         value['dict_kwargs'] = dict_kwargs
     return value
 

@@ -14,13 +14,21 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
-v4.12.1 (2022-07-25)
+v4.13.0 (2022-07-??)
 --------------------
+
+Added
+^^^^^
+- Support setting through command line individual dict items without replacing
+  `#133 comment
+  <https://github.com/omni-us/jsonargparse/issues/133#issuecomment-1194305222>`__.
 
 Fixed
 ^^^^^
 - Mypy fails to find jsonargparse type hints `#151
-  <https://github.com/omni-us/jsonargparse/issues/51>`__.
+  <https://github.com/omni-us/jsonargparse/issues/151>`__.
+- For multiple ``dict_kwargs`` command line arguments only the last one was
+  kept.
 
 
 v4.12.0 (2022-07-22)

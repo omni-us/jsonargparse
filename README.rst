@@ -385,7 +385,7 @@ Some notes about this support are:
   :ref:`parsing-paths` and :ref:`parsing-urls`.
 
 - ``Dict``, ``Mapping``, and ``MutableMapping`` are supported but only with
-  ``str`` or ``int`` keys.
+  ``str`` or ``int`` keys. For more details see :ref:`dict-items`.
 
 - ``Tuple``, ``Set`` and ``MutableSet`` are supported even though they can't be
   represented in json distinguishable from a list. Each ``Tuple`` element
@@ -749,6 +749,35 @@ files would first assign a list and then append to this list:
 Appending works for any type for the list elements. List elements with class
 type is also supported and the short notation for ``init_args`` when used (see
 :ref:`sub-classes`), gets applied to the last element of the list.
+
+
+.. _dict-items:
+
+Dict items
+----------
+
+When an argument has ``Dict`` as type, the value can be set using json format,
+e.g.:
+
+.. testsetup:: dict_items
+
+    from jsonargparse import ArgumentParser
+    parser = ArgumentParser()
+
+.. doctest:: dict_items
+
+    >>> parser.add_argument('--dict', type=dict)  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(['--dict={"key1": "val1", "key2": "val2"}'])
+    Namespace(dict={'key1': 'val1', 'key2': 'val2'})
+
+Similar to lists, providing a second argument with value a json dict completely
+replaces the previous value. Setting individual dict items without replacing can
+be achieved as follows:
+
+.. doctest:: dict_items
+
+    >>> parser.parse_args(['--dict.key1=val1', '--dict.key2=val2'])
+    Namespace(dict={'key1': 'val1', 'key2': 'val2'})
 
 
 .. _registering-types:
