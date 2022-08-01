@@ -185,6 +185,18 @@ class ClassM3(ClassM1):
         """
         super().__init__(**kwargs)
 
+class ClassM4(ClassM2, ClassM3):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+class ClassM5(ClassM2):
+    def __init__(self, km5: int = 5, **kwargs):
+        """
+        Args:
+            km5: help for km5
+        """
+        super(ClassM2, self).__init__(**kwargs)
+
 class ClassP:
     def __init__(self, kp1: int = 1, **kw):
         """
@@ -216,10 +228,6 @@ class ClassS2:
     def run_classmethod_s(self):
         return ClassS1.classmethod_s(**self.kwargs)
 
-class ClassM(ClassM2, ClassM3):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
 class ClassU1:
     def __init__(self, k1: int = 1, **ka):
         data = Namespace()
@@ -234,7 +242,7 @@ class ClassU2:
 
 class ClassU3(ClassU1, ClassU2):
     def __init__(self, **ka):
-        super(ClassU2, self).__init__(**ka)  # pylint: disable=bad-super-call
+        super(ClassA, self).__init__(**ka)  # pylint: disable=bad-super-call
 
 class ClassU4:
     def __init__(self, k1: int = 1, **ka):
@@ -364,9 +372,14 @@ class GetClassParametersTests(unittest.TestCase):
             assert_params(self, get_params(ClassG), ['func'])
 
     def test_get_params_method_resolution_order(self):
-        assert_params(self, get_params(ClassM), ['km2', 'km3', 'km1'])
+        assert_params(self, get_params(ClassM4), ['km2', 'km3', 'km1'])
         with source_unavailable():
-            assert_params(self, get_params(ClassM), ['km2', 'km3', 'km1'])
+            assert_params(self, get_params(ClassM4), ['km2', 'km3', 'km1'])
+
+    def test_get_params_nonimmediate_method_resolution_order(self):
+        assert_params(self, get_params(ClassM5), ['km5', 'km1'])
+        with source_unavailable():
+            assert_params(self, get_params(ClassM5), ['km5', 'km2', 'km1'])
 
     def test_get_params_kwargs_use_in_property(self):
         assert_params(self, get_params(ClassP), ['kp1', 'pk1', 'k2'])
@@ -473,7 +486,7 @@ class OtherTests(unittest.TestCase):
     def test_unsupported_super_with_arbitrary_params(self):
         with self.assertLogs(logger, level='DEBUG') as log:
             get_params(ClassU3, logger=logger)
-            self.assertIn('super with arbitrary parameters not supported', log.output[0])
+            self.assertIn('unsupported super parameters', log.output[0])
 
     def test_unsupported_self_attr_not_found_in_members(self):
         with self.assertLogs(logger, level='DEBUG') as log:

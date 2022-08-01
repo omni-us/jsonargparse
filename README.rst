@@ -1183,12 +1183,6 @@ of python's `Abstract Syntax Trees (AST)
 on assumptions of class inheritance. The AST resolver is used first and only
 when AST fails, the assumptions resolver is used as fallback.
 
-.. note::
-
-    To debug issues related to parameter resolving it is recommended to install
-    the `reconplogger <https://pypi.org/project/reconplogger/>`__ package and
-    set the ``JSONARGPARSE_DEBUG`` before running the code, see :ref:`logging`.
-
 Unresolved parameters
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -1332,6 +1326,9 @@ unrelated to these variables.
         def get_instance(cls, **kwargs):
             return cls(**kwargs)
 
+    class NonImmediateSuper(BaseClass):
+        def __init__(self, *args, **kwargs):
+            super(BaseClass, self).__init__(*args, **kwargs)
 
 There can be other parameters apart from ``*args`` and ``**kwargs``, thus in the
 cases above the signatures can be for example like ``name(p1: int, k1: str =

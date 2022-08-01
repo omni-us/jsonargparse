@@ -14,7 +14,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
-v4.13.0 (2022-07-??)
+v4.13.0 (2022-08-??)
 --------------------
 
 Added
@@ -22,6 +22,8 @@ Added
 - Support setting through command line individual dict items without replacing
   `#133 comment
   <https://github.com/omni-us/jsonargparse/issues/133#issuecomment-1194305222>`__.
+- Support ``super()`` with non-immediate method resolution order parameter `#153
+  <https://github.com/omni-us/jsonargparse/issues/153>`__.
 
 Fixed
 ^^^^^

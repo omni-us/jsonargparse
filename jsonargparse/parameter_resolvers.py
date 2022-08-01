@@ -136,15 +136,28 @@ def ast_is_super_call(node) -> bool:
     )
 
 
-def ast_is_supported_super_call(node, parent, self_name) -> bool:
-    args = [
-        ast.dump(ast_variable_load(parent.__name__)),
-        ast.dump(ast_variable_load(self_name)),
-    ]
-    return (
-        (not node.func.value.args or args == [ast.dump(a) for a in node.func.value.args]) and
+def ast_is_supported_super_call(node, self_name, logger) -> bool:
+    supported = False
+    args = node.func.value.args
+    if not args and not node.func.value.keywords:
+        supported = True
+    elif (
+        args and
+        len(args) == 2 and
+        all(isinstance(a, ast.Name) for a in args) and
+        self_name == args[1].id and
         not node.func.value.keywords
-    )
+    ):
+        classes, idx = current_mro.get()
+        module = inspect.getmodule(classes[idx])
+        for offset, cls in enumerate(classes[idx:]):
+            if args[0].id == cls.__name__ and cls is getattr(module, cls.__name__, None):
+                current_mro.set((classes, idx+offset))
+                supported = True
+                break
+    if not supported:
+        logger.debug(f'AST resolver: unsupported super parameters: {ast_str(node)}')
+    return supported
 
 
 def ast_is_attr_assign(node, container):
@@ -491,9 +504,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 if kwarg.arg:
                     self.logger.debug(f'AST resolver: kwargs given as keyword parameter not supported: {ast_str(node)}')
                 elif self.parent and ast_is_super_call(node):
-                    if not ast_is_supported_super_call(node, self.parent, self.self_name):
-                        self.logger.debug(f'AST resolver: super with arbitrary parameters not supported: {ast_str(node)}')
-                    else:
+                    if ast_is_supported_super_call(node, self.self_name, self.logger):
                         params = get_mro_parameters(node.func.attr, get_signature_parameters, self.logger)  # type: ignore
                 else:
                     get_param_args = self.get_node_component(node)
