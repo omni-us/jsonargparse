@@ -29,6 +29,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/151>`__.
 - For multiple ``dict_kwargs`` command line arguments only the last one was
   kept.
+- Positional ``list`` with subtype causing crash `#154
+  <https://github.com/omni-us/jsonargparse/issues/154>`__.
 
 
 v4.12.0 (2022-07-22)

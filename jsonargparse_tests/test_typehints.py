@@ -226,6 +226,13 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual([(1, 2.02), (3, 3.09)], cfg.list)
 
 
+    def test_list_str_positional(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('list', type=List[str])
+        cfg = parser.parse_args(['["a", "b"]'])
+        self.assertEqual(cfg.list, ['a', 'b'])
+
+
     def test_tuple_ellipsis(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--tuple', type=Tuple[float, ...])
