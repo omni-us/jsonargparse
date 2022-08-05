@@ -142,6 +142,8 @@ class ActionTypeHint(Action):
         default = self.default
         if isinstance(default, LazyInitBaseClass):
             self.default = default.lazy_get_init_data()
+        elif self.is_subclass_typehint(self._typehint, all_subtypes=False) and isinstance(default, dict) and 'class_path' in default:
+            self.default = subclass_spec_as_namespace(default)
         elif is_enum_type(self._typehint) and isinstance(default, Enum):
             self.default = default.name
         elif is_callable_type(self._typehint) and callable(default) and not inspect.isclass(default):
@@ -681,7 +683,7 @@ def subclass_spec_as_namespace(val, prev_val=None):
         val = Namespace(val)
     if 'init_args' in val and isinstance(val['init_args'], dict):
         val['init_args'] = Namespace(val['init_args'])
-    if not is_subclass_spec(val) and isinstance(prev_val, Namespace) and 'class_path' in prev_val:
+    if not is_subclass_spec(val) and isinstance(prev_val, (Namespace, dict)) and 'class_path' in prev_val:
         if 'init_args' in val or 'dict_kwargs' in val:
             val['class_path'] = prev_val['class_path']
         else:

@@ -42,7 +42,7 @@ Features
 - Non-intrusive/decoupled parsing logic. No need to inherit from a special class
   or add decorators or use custom type hints.
 
-- Easy to implement configurable object composition.
+- Easy to implement configurable dependency injection (object composition).
 
 - Support for nested namespaces making possible to parse config files with
   non-flat hierarchies.
@@ -114,9 +114,12 @@ corresponding extras requires that enables them.
 Basic usage
 ===========
 
-There are multiple ways of using jsonargparse. The simplest one is by using the
-:func:`.CLI` function, which has the benefit of minimizing boilerplate code. A
-simple example is:
+There are multiple ways of using jsonargparse. One is to construct low level
+parsers (see :ref:`parsers`) being almost a drop in replacement of argparse.
+However, argparse is too verbose and leads to unnecessary duplication. The
+simplest and recommended way of using jsonargparse is by using the :func:`.CLI`
+function, which has the benefit of minimizing boilerplate code. A simple example
+is:
 
 .. testcode::
 
@@ -223,9 +226,32 @@ class and the second the name of the method, i.e. :code:`example.py class
     ``str`` and ``int`` type hints. The true power of jsonargparse is its
     support for a wide range of types, see :ref:`type-hints`. It is even
     possible to use general classes as type hints, allowing to easily implement
-    configurable `object composition
-    <https://en.wikipedia.org/wiki/Object_composition>`__, see
+    configurable `dependency injection (object composition)
+    <https://en.wikipedia.org/wiki/Dependency_injection>`__, see
     :ref:`sub-classes`.
+
+Writing configuration files
+---------------------------
+
+All tools implemented with the :func:`.CLI` function have the ``--config``
+option to provide settings in a config file (more details in
+:ref:`configuration-files`). This becomes very useful when the number of
+configurable parameters is large. To ease the writing of config files, there is
+also the option ``--print_config`` which prints to standard output a yaml with
+all settings that the tool supports with their default values. Users of the tool
+can be advised to follow the following steps:
+
+.. code-block:: bash
+
+    # Dump default configuration to have as reference
+    python example.py --print_config > config.yaml
+    # Modify the config as needed (all default settings can be removed)
+    nano config.yaml
+    # Run the tool using the adapted config
+    python example.py --config config.yaml
+
+Comparison to Fire
+------------------
 
 The :func:`.CLI` feature is similar to and inspired by `Fire
 <https://pypi.org/project/fire/>`__. However, there are fundamental differences.
@@ -235,12 +261,6 @@ for this purpose. Second, the arguments are expected to have type hints, and the
 given values will be validated according to these. Third, the return values of
 the functions are not automatically printed. :func:`.CLI` returns the value and
 it is up to the developer to decide what to do with it.
-
-Section :ref:`parsers` explains how to create an argument parser in a low level
-argparse-style. However, as parsers get more complex, being able to define them
-in a modular way becomes important. Three mechanisms are available for
-modularity, see respective sections :ref:`classes-methods-functions`,
-:ref:`sub-commands` and :ref:`parser-arguments`.
 
 
 .. _tutorials:
@@ -1724,7 +1744,7 @@ This yaml could be parsed as follows:
 
     The ``parser_mode='omegaconf'`` provides support for `OmegaConf's
     <https://omegaconf.readthedocs.io/>`__ variable interpolation in a single
-    yaml file. Is is not possible to do interpolation across multiple yaml files
+    yaml file. It is not possible to do interpolation across multiple yaml files
     or in an isolated individual command line argument.
 
 

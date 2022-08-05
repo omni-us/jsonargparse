@@ -1186,7 +1186,7 @@ class DataclassesTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        @dataclasses.dataclass
+        @dataclasses.dataclass(frozen=True)
         class MyDataClassA:
             """MyDataClassA description
 

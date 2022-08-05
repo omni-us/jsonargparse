@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.13.1 (2022-08-??)
+--------------------
+
+Fixed
+^^^^^
+- Regression that caused parse to fail parse when providing ``init_args`` from
+  command line and the subclass default set as a dict.
+
+
 v4.13.0 (2022-08-03)
 --------------------
 

@@ -678,6 +678,23 @@ class TypeHintsTests(unittest.TestCase):
                 self.assertEqual(cfg.op.init_args.cal.init_args, Namespace(firstweekday=2))
 
 
+    def test_class_type_dict_default_nested_init_args(self):
+        class Data:
+            def __init__(self, p1: int = 1, p2: str = 'x', p3: bool = False):
+                pass
+
+        with mock_module(Data) as module:
+            parser = ArgumentParser()
+            parser.add_argument('--data', type=Data)
+            parser.set_defaults({'data': {'class_path': f'{module}.Data'}})
+            cfg = parser.parse_args([
+                f'--data.init_args.p1=2',
+                f'--data.init_args.p2=y',
+                f'--data.init_args.p3=true',
+            ])
+            self.assertEqual(cfg.data.init_args, Namespace(p1=2, p2='y', p3=True))
+
+
     def test_class_type_subclass_nested_help(self):
         class Class:
             def __init__(self, cal: Calendar, p1: int = 0):

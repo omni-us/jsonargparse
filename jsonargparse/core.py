@@ -839,14 +839,14 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         """
         if len(args) > 0:
             for n in range(len(args)):
-                self._defaults.update(args[n])
-                for dest in args[n].keys():
+                for dest, default in args[n].items():
                     action = _find_action(self, dest)
                     if action is None:
                         raise KeyError(f'No action for destination key "{dest}" to set its default.')
-                    action.default = args[n][dest]
+                    action.default = default
                     if isinstance(action, ActionTypeHint):
                         action.normalize_default()
+                    self._defaults[dest] = action.default
         if kwargs:
             self.set_defaults(kwargs)
 
