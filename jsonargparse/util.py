@@ -410,7 +410,7 @@ class Path:
                     handle = fsspec.open(abs_path, fsspec_mode)
                     handle.open()
                     handle.close()
-                except FileNotFoundError:
+                except (FileNotFoundError, KeyError):
                     raise TypeError('Path does not exist: '+abs_path)
                 except PermissionError:
                     raise TypeError('Path exists but no permission to access: '+abs_path)

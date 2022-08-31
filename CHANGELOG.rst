@@ -21,6 +21,7 @@ Fixed
 ^^^^^
 - Failure to print help when ``object`` used as type hint.
 - Failure to parse init args when type hint is union of str and class.
+- Handle change of non-existent file exception type in latest fsspec version.
 
 
 v4.13.1 (2022-08-05)
