@@ -1353,7 +1353,7 @@ unrelated to these variables.
 There can be other parameters apart from ``*args`` and ``**kwargs``, thus in the
 cases above the signatures can be for example like ``name(p1: int, k1: str =
 'a', **kws)``. Also when internally calling some function or instantiating a
-class, there can also be additional parameters. For example in:
+class, there can be additional parameters. For example in:
 
 .. testcode::
 

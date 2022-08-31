@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.13.2 (2022-08-??)
+--------------------
+
+Fixed
+^^^^^
+- Failure to print help when ``object`` used as type hint.
+- Failure to parse init args when type hint is union of str and class.
+
+
 v4.13.1 (2022-08-05)
 --------------------
 

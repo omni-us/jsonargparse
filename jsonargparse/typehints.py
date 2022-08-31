@@ -679,6 +679,8 @@ def subclass_spec_as_namespace(val, prev_val=None):
                 root_key = 'init_args'
                 val = NestedArg(key=key, val=val)
         val = Namespace({root_key: val})
+        if isinstance(prev_val, str):
+            prev_val = Namespace(class_path=prev_val)
     if isinstance(val, dict):
         val = Namespace(val)
     if 'init_args' in val and isinstance(val['init_args'], dict):
@@ -711,7 +713,7 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
 
     if get_typehint_origin(cls) == Union:
         for arg in cls.__args__:
-            if ActionTypeHint.is_subclass_typehint(arg):
+            if ActionTypeHint.is_subclass_typehint(arg) and arg not in {object, type}:
                 add_subclasses(arg)
     else:
         add_subclasses(cls)

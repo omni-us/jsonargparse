@@ -678,6 +678,19 @@ class TypeHintsTests(unittest.TestCase):
                 self.assertEqual(cfg.op.init_args.cal.init_args, Namespace(firstweekday=2))
 
 
+    def test_class_type_in_union_with_str(self):
+        parser = ArgumentParser()
+        parser.add_argument('--op', type=Optional[Union[str, Calendar]])
+        cfg = parser.parse_args(['--op=value'])
+        self.assertEqual(cfg.op, 'value')
+        cfg = parser.parse_args([
+            '--op=TextCalendar',
+            '--op.firstweekday=1',
+            '--op.firstweekday=2',
+        ])
+        self.assertEqual(cfg.op, Namespace(class_path='calendar.TextCalendar', init_args=Namespace(firstweekday=2)))
+
+
     def test_class_type_dict_default_nested_init_args(self):
         class Data:
             def __init__(self, p1: int = 1, p2: str = 'x', p3: bool = False):
