@@ -48,8 +48,8 @@ repos:
     verbose: true
 
   - name: mypy
-    id: mypy jsonargparse/*.py jsonargparse_tests/*.py
-    entry: bash -c "mypy jsonargparse/*.py jsonargparse_tests/*.py"
+    id: mypy jsonargparse*/*.py
+    entry: bash -c "mypy jsonargparse*/*.py"
     language: system
     types: [python]
     pass_filenames: false

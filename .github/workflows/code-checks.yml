@@ -11,8 +11,7 @@ jobs:
           python-version: 3.8
           cache: pip
           cache-dependency-path: "**/setup.cfg"
-      - run: pip install -e .[all,test]
-      - run: pip install mypy
+      - run: pip install -e .[test,mypy]
       - run: mypy jsonargparse*/*.py
   pylint:
     runs-on: ubuntu-latest
@@ -23,6 +22,5 @@ jobs:
           python-version: 3.8
           cache: pip
           cache-dependency-path: "**/setup.cfg"
-      - run: pip install -e .[all,test]
-      - run: pip install pylint
+      - run: pip install -e .[all,test,pylint]
       - run: pylint --rcfile=setup.cfg jsonargparse*/*.py
