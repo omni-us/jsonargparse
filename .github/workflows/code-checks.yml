@@ -13,7 +13,7 @@ jobs:
           cache-dependency-path: "**/setup.cfg"
       - run: pip install -e .[all,test]
       - run: pip install mypy
-      - run: mypy --install-types --non-interactive jsonargparse*/*.py
+      - run: mypy jsonargparse*/*.py
   pylint:
     runs-on: ubuntu-latest
     steps:
@@ -25,4 +25,4 @@ jobs:
           cache-dependency-path: "**/setup.cfg"
       - run: pip install -e .[all,test]
       - run: pip install pylint
-      - run: pylint --errors-only --disable=no-member jsonargparse*/*.py
+      - run: pylint --rcfile=setup.cfg jsonargparse*/*.py
