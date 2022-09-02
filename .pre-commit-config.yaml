@@ -63,8 +63,8 @@ repos:
     verbose: true
 
   - name: pylint
-    id: pylint --errors-only --disable=no-member
-    entry: pylint --errors-only --disable=no-member
+    id: pylint --rcfile=setup.cfg
+    entry: pylint --rcfile=setup.cfg
     language: system
     types: [python]
     verbose: true
