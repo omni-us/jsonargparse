@@ -194,7 +194,7 @@ class ActionLink(Action):
     @staticmethod
     def apply_parsing_links(parser: 'ArgumentParser', cfg: Namespace) -> None:
         subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
-        if subcommand:
+        if subcommand and subcommand in cfg:
             ActionLink.apply_parsing_links(subparser, cfg[subcommand])  # type: ignore
         if not hasattr(parser, '_links_group'):
             return

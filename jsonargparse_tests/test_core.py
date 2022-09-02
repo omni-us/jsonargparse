@@ -538,6 +538,15 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(cfg, Namespace(subcommand=None))
 
 
+    def test_subcommand_without_options(self):
+        parser = ArgumentParser()
+        subcommands = parser.add_subcommands()
+        subparser = ArgumentParser()
+        subcommands.add_subcommand('foo', subparser)
+        cfg = parser.parse_args(['foo'])
+        self.assertEqual(cfg.subcommand, 'foo')
+
+
     def test_subcommand_print_config_default_env_issue_126(self):
         subparser = ArgumentParser()
         subparser.add_argument('--config', action=ActionConfigFile)

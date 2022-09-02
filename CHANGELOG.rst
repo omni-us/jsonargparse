@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.13.3 (2022-09-??)
+--------------------
+
+Fixed
+^^^^^
+- Failure to parse when subcommand has no options `#158
+  <https://github.com/omni-us/jsonargparse/issues/158>`__.
+
+
 v4.13.2 (2022-08-31)
 --------------------
 
