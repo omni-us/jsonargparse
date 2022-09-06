@@ -95,12 +95,7 @@ class ActionJsonnet(Action):
 
     def _check_type(self, value, cfg):
         islist = _is_action_value_list(self)
-        ext_vars = {}
-        if self._ext_vars is not None:
-            try:
-                ext_vars = cfg[self._ext_vars]
-            except KeyError:
-                pass
+        ext_vars = cfg.get(self._ext_vars, {})
         if not islist:
             value = [value]
         for num, val in enumerate(value):

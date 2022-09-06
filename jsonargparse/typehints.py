@@ -32,7 +32,7 @@ from typing import (
 )
 
 from .actions import _ActionHelpClassPath, _find_action, _find_parent_action, _is_action_value_list
-from .loaders_dumpers import get_loader_exceptions, load_value
+from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context
 from .namespace import Namespace
 from .typing import is_final_class, registered_types
 from .optionals import (
@@ -297,7 +297,8 @@ class ActionTypeHint(Action):
         for key in [k for k in cfg.keys() if k.endswith('+')]:
             action = _find_action(parser, key[:-1])
             if ActionTypeHint.supports_append(action):
-                val = action._check_type(cfg[key], append=True, cfg=cfg)
+                with load_value_context(parser.parser_mode):
+                    val = action._check_type(cfg[key], append=True, cfg=cfg)
                 cfg[key[:-1]] = val
                 cfg.pop(key)
 

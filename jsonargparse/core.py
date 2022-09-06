@@ -259,7 +259,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         skip_required: bool = False,
         skip_subcommands: bool = False,
         fail_no_subcommand: bool = True,
-        cfg_base: Optional[Namespace] = None,
         log_message: Optional[str] = None,
     ) -> Namespace:
         """Common parsing code used by other parse methods.
@@ -273,7 +272,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             skip_required: Whether to skip check of required arguments.
             skip_subcommands: Whether to skip subcommand processing.
             fail_no_subcommand: Whether to fail if no subcommand given.
-            cfg_base: A base configuration object.
             log_message: Message to log at INFO level after parsing.
 
         Returns:
@@ -285,18 +283,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         if not skip_subcommands:
             _ActionSubCommands.handle_subcommands(self, cfg, env=env, defaults=defaults, fail_no_subcommand=fail_no_subcommand)
 
-        if cfg_base is not None:
-            cfg = self.merge_config(cfg, cfg_base)
-
-        if env:
-            with _ActionPrintConfig.skip_print_config():
-                cfg_env = self.parse_env(defaults=defaults, _skip_check=True, _skip_subcommands=True)
-            cfg = self.merge_config(cfg, cfg_env)
-
-        elif defaults:
-            cfg = self.merge_config(cfg, self.get_defaults(skip_check=True))
-            with load_value_context(self.parser_mode):
-                ActionTypeHint.apply_appends(self, cfg)
+        if defaults:
             with lenient_check_context():
                 ActionTypeHint.add_sub_defaults(self, cfg)
 
@@ -313,6 +300,26 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
         if log_message is not None:
             self._logger.info(log_message)
+
+        return cfg
+
+
+    def _parse_defaults_and_environ(
+        self,
+        defaults: bool = True,
+        env: Optional[bool] = None,
+        environ: Union[Dict[str, str], os._Environ] = None,
+    ):
+        cfg = Namespace()
+        if defaults:
+            cfg = self.get_defaults(skip_check=True)
+
+        if env or (env is None and self._default_env):
+            if environ is None:
+                environ = os.environ
+            with load_value_context(self.parser_mode):
+                cfg_env = self._load_env_vars(env=environ, defaults=defaults)
+            cfg = self.merge_config(cfg_env, cfg)
 
         return cfg
 
@@ -348,7 +355,11 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         argcomplete_autocomplete(self)
 
         try:
-            cfg, unk = self.parse_known_args(args=args, namespace=namespace)
+            cfg = self._parse_defaults_and_environ(defaults, env)
+            if namespace:
+                cfg = self.merge_config(namespace, cfg)
+
+            cfg, unk = self.parse_known_args(args=args, namespace=cfg)
             if unk:
                 self.error(f'Unrecognized arguments: {" ".join(unk)}')
 
@@ -392,7 +403,12 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            cfg = self._apply_actions(cfg_obj)
+            cfg = self._parse_defaults_and_environ(defaults, env)
+            if cfg_base:
+                cfg = self.merge_config(cfg_base, cfg)
+
+            cfg_obj = self._apply_actions(cfg_obj)
+            cfg = self.merge_config(cfg_obj, cfg)
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -401,7 +417,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                 with_meta=with_meta,
                 skip_check=_skip_check,
                 skip_required=_skip_required,
-                cfg_base=cfg_base,
                 log_message='Parsed object.',
             )
 
@@ -411,7 +426,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         return parsed_cfg
 
 
-    def _load_env_vars(self, env: Dict[str, str], defaults: bool) -> Namespace:
+    def _load_env_vars(self, env: Union[Dict[str, str], os._Environ], defaults: bool) -> Namespace:
         cfg = Namespace()
         actions = filter_default_actions(self._actions)
         for action in actions:
@@ -436,10 +451,11 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                         try:
                             env_val = load_value(env_val)
                         except get_loader_exceptions():
-                            env_val = [env_val]  # type: ignore
+                            env_val = [env_val]
                     else:
-                        env_val = [env_val]  # type: ignore
+                        env_val = [env_val]
                 cfg[action.dest] = self._check_value_key(action, env_val, action.dest, cfg)
+        self._apply_actions(cfg)
         return cfg
 
 
@@ -465,16 +481,11 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             ParserError: If there is a parsing error and error_handler=None.
         """
         try:
-            if env is None:
-                env = dict(os.environ)
-            with load_value_context(self.parser_mode):
-                cfg = self._load_env_vars(env=env, defaults=defaults)
-
-            self._apply_actions(cfg)
+            cfg = self._parse_defaults_and_environ(defaults, env=True, environ=env)
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
-                env=False,
+                env=True,
                 defaults=defaults,
                 with_meta=with_meta,
                 skip_check=_skip_check,
@@ -561,6 +572,10 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         try:
             with load_value_context(self.parser_mode):
                 cfg = self._load_config_parser_mode(cfg_str, cfg_path, ext_vars, previous_config.get())
+
+            if defaults or env:
+                cfg_base = self._parse_defaults_and_environ(defaults, env)
+                cfg = self.merge_config(cfg, cfg_base)
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -920,11 +935,12 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                 cfg_file = self._load_config_parser_mode(default_config_file.get_content())
                 if key is not None:
                     cfg_file = cfg_file.get(key)
+                cfg = self.merge_config(cfg_file, cfg)
                 try:
                     with _ActionPrintConfig.skip_print_config():
-                        cfg_file = self._parse_common(
-                            cfg=cfg_file,
-                            env=None,
+                        cfg = self._parse_common(
+                            cfg=cfg,
+                            env=False,
                             defaults=False,
                             with_meta=None,
                             skip_check=skip_check,
@@ -932,7 +948,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                         )
                 except (TypeError, KeyError, ParserError) as ex:
                     raise ParserError(f'Problem in default config file "{default_config_file}" :: {ex.args[0]}') from ex
-            cfg = self.merge_config(cfg_file, cfg)
             meta = cfg.get('__default_config__')
             if isinstance(meta, list):
                 meta.append(default_config_file)
@@ -1217,6 +1232,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         cfg = cfg_to.clone()
         ActionTypeHint.discard_init_args_on_class_path_change(self, cfg, cfg_from)
         cfg.update(cfg_from)
+        ActionTypeHint.apply_appends(self, cfg)
         return cfg
 
 

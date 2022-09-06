@@ -980,6 +980,35 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertIn('(type: Path_drw_skip_check, default: test)', out.getvalue())
 
 
+    def test_list_append_default_config_files(self):
+        config_path = pathlib.Path(self.tmpdir, 'config.yaml')
+        parser = ArgumentParser(default_config_files=[str(config_path)])
+        parser.add_argument('--nums', type=List[int], default=[0])
+
+        with self.subTest('replace in default config'):
+            config_path.write_text('nums: [1]\n')
+            cfg = parser.parse_args(['--nums+=2'])
+            self.assertEqual(cfg.nums, [1, 2])
+            cfg = parser.parse_args(['--nums+=[2, 3]'])
+            self.assertEqual(cfg.nums, [1, 2, 3])
+
+        with self.subTest('append in default config'):
+            config_path.write_text('nums+: [1]\n')
+            cfg = parser.get_defaults()
+            self.assertEqual(cfg.nums, [0, 1])
+            cfg = parser.parse_args(['--nums+=2'])
+            self.assertEqual(cfg.nums, [0, 1, 2])
+            cfg = parser.parse_args(['--nums+=[2, 3]'])
+            self.assertEqual(cfg.nums, [0, 1, 2, 3])
+
+        with self.subTest('two default config appends'):
+            config_path2 = pathlib.Path(self.tmpdir, 'config2.yaml')
+            config_path2.write_text('nums+: [2]\n')
+            parser.default_config_files += [str(config_path2)]
+            cfg = parser.get_defaults()
+            self.assertEqual(cfg.nums, [0, 1, 2])
+
+
     def test_class_type_with_default_config_files(self):
         config = {
             'class_path': 'calendar.Calendar',

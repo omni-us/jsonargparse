@@ -296,7 +296,8 @@ class ParsersTests(TempDirTestCase):
         cfg = parser.parse_args(['--cfg', input1_config_file])
         cfg_list = parser.get_config_files(cfg)
         self.assertEqual(default_config_file, str(cfg_list[0]))
-        self.assertEqual(input1_config_file, str(cfg_list[1]))
+        self.assertEqual(input2_config_file, str(cfg_list[1]))  # From os.environ['APP_CFG']
+        self.assertEqual(input1_config_file, str(cfg_list[2]))
 
         for key in ['APP_CFG', 'APP_OP1']:
             del os.environ[key]

@@ -22,6 +22,8 @@ Fixed
 - Failure to parse when subcommand has no options `#158
   <https://github.com/omni-us/jsonargparse/issues/158>`__.
 - Optional packages being imported even though not used.
+- Append to list not working for ``default_config_files`` `#157
+  <https://github.com/omni-us/jsonargparse/issues/157>`__.
 
 
 v4.13.2 (2022-08-31)
