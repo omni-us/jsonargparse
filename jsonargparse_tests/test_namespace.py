@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+import argparse
 import unittest
-from jsonargparse.namespace import ArgparseNamespace, Namespace, namespace_to_dict, dict_to_namespace
+from jsonargparse.namespace import Namespace, namespace_to_dict, dict_to_namespace
 from jsonargparse_tests.base import is_cpython
 
 
@@ -148,7 +149,7 @@ class NamespaceTests(unittest.TestCase):
         ns['w'] = 1
         ns['x.y.z'] = 2
         flat = ns.as_flat()
-        self.assertIsInstance(flat, ArgparseNamespace)
+        self.assertIsInstance(flat, argparse.Namespace)
         self.assertEqual(vars(flat), {'w': 1, 'x.y.z': 2})
 
     def test_clone(self):
@@ -172,7 +173,7 @@ class NamespaceTests(unittest.TestCase):
         self.assertRaises(KeyError, lambda: ns.update(123))
 
     def test_init_from_argparse_flat_namespace(self):
-        argparse_ns = ArgparseNamespace()
+        argparse_ns = argparse.Namespace()
         setattr(argparse_ns, 'w', 0)
         setattr(argparse_ns, 'x.y.a', 1)
         setattr(argparse_ns, 'x.y.b', 2)
@@ -182,7 +183,7 @@ class NamespaceTests(unittest.TestCase):
 
     def test_init_invalid(self):
         self.assertRaises(ValueError, lambda: Namespace(1))
-        self.assertRaises(ValueError, lambda: Namespace(ArgparseNamespace(), x=1))
+        self.assertRaises(ValueError, lambda: Namespace(argparse.Namespace(), x=1))
 
     def test_namespace_to_dict(self):
         ns = Namespace()

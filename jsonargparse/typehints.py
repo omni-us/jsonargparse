@@ -33,11 +33,11 @@ from typing import (
 
 from .actions import _ActionHelpClassPath, _find_action, _find_parent_action, _is_action_value_list
 from .loaders_dumpers import get_loader_exceptions, load_value
-from .namespace import Namespace, split_key_root
+from .namespace import Namespace
 from .typing import is_final_class, registered_types
 from .optionals import (
     argcomplete_warn_redraw_prompt,
-    files_completer,
+    get_files_completer,
     typing_extensions_import,
 )
 from .util import (
@@ -432,6 +432,7 @@ class ActionTypeHint(Action):
             enum = self._typehint.__args__[0]
             return list(enum.__members__.keys())+['null']
         elif is_optional(self._typehint, Path):
+            files_completer = get_files_completer()
             return ['null'] + sorted(files_completer(prefix, **kwargs))
         elif chr(int(os.environ['COMP_TYPE'])) == '?':
             try:

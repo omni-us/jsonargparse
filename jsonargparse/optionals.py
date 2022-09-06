@@ -50,14 +50,9 @@ class UndefinedException(Exception):
     pass
 
 
-if jsonschema_support:
-    from jsonschema.exceptions import ValidationError as jsonschemaValidationError
-else:
-    jsonschemaValidationError = UndefinedException
-
-
 def get_jsonschema_exceptions():
-    return (jsonschemaValidationError,)
+    from jsonschema.exceptions import ValidationError
+    return (ValidationError,)
 
 
 @contextmanager
@@ -173,15 +168,15 @@ def parse_docs(component, parent, logger):
     return docs
 
 
-files_completer = None
-if argcomplete_support:
+def get_files_completer():
     from argcomplete.completers import FilesCompleter
-    files_completer = FilesCompleter()
+    return FilesCompleter()
 
 
 class FilesCompleterMethod:
     """Completer method for Action classes that should complete files."""
     def completer(self, prefix, **kwargs):
+        files_completer = get_files_completer()
         return sorted(files_completer(prefix, **kwargs))
 
 

@@ -1,6 +1,7 @@
 """Classes and functions related to namespace objects."""
 
-from argparse import Namespace as ArgparseNamespace
+import argparse
+from contextlib import contextmanager
 from copy import deepcopy
 from typing import Any, Callable, Dict, Iterator, List, Optional, overload, Tuple, Union
 
@@ -67,6 +68,16 @@ def strip_meta(cfg):
     return cfg
 
 
+@contextmanager
+def patch_namespace():
+    namespace_class = argparse.Namespace
+    argparse.Namespace = Namespace
+    try:
+        yield
+    finally:
+        argparse.Namespace = namespace_class
+
+
 def namespace_to_dict(namespace: 'Namespace') -> Dict[str, Any]:
     """Returns a deepcopy of a nested namespace converted into a nested dictionary."""
     return namespace.clone().as_dict()
@@ -87,14 +98,14 @@ def dict_to_namespace(cfg_dict: Union[Dict[str, Any], 'Namespace']) -> 'Namespac
     return expand_dict(cfg_dict)
 
 
-class Namespace(ArgparseNamespace):
+class Namespace(argparse.Namespace):
     """Extension of argparse's Namespace to support nesting and subscript access."""
 
     def __init__(self, *args, **kwargs):
         if len(args) == 0:
             super().__init__(**kwargs)
         else:
-            if len(kwargs) != 0 or len(args) != 1 or not isinstance(args[0], (ArgparseNamespace, dict)):
+            if len(kwargs) != 0 or len(args) != 1 or not isinstance(args[0], (argparse.Namespace, dict)):
                 raise ValueError('Expected a single positional parameter of type Namespace or dict.')
             for key, val in (args[0].items() if type(args[0]) is dict else vars(args[0]).items()):
                 self[key] = val
@@ -211,9 +222,9 @@ class Namespace(ArgparseNamespace):
             dic[key] = val
         return dic
 
-    def as_flat(self) -> ArgparseNamespace:
+    def as_flat(self) -> argparse.Namespace:
         """Converts the nested namespaces into a single argparse flat namespace."""
-        flat = ArgparseNamespace()
+        flat = argparse.Namespace()
         for key, val in self.items():
             setattr(flat, key, val)
         return flat

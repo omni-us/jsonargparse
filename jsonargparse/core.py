@@ -9,14 +9,13 @@ import re
 import sys
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Sequence, Set, Tuple, Type, Union
-from unittest.mock import patch
 
 from .formatters import DefaultHelpFormatter, empty_help, formatter_context, get_env_var
 from .jsonnet import ActionJsonnet
 from .jsonschema import ActionJsonSchema
 from .link_arguments import ActionLink, ArgumentLinking
 from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context, yaml_load
-from .namespace import dict_to_namespace, is_meta_key, Namespace, split_key, split_key_leaf, strip_meta
+from .namespace import dict_to_namespace, is_meta_key, Namespace, patch_namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
 from .typehints import ActionTypeHint, is_subclass_spec
 from .typing import is_final_class
@@ -233,7 +232,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         namespace = argcomplete_namespace(caller, self, namespace)
 
         try:
-            with patch('argparse.Namespace', Namespace), lenient_check_context(caller), ActionTypeHint.subclass_arg_context(self), load_value_context(self.parser_mode):
+            with patch_namespace(), lenient_check_context(caller), ActionTypeHint.subclass_arg_context(self), load_value_context(self.parser_mode):
                 namespace, args = self._parse_known_args(args, namespace)
         except (argparse.ArgumentError, ParserError) as ex:
             self.error(str(ex), ex)
@@ -1409,6 +1408,10 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
     @parser_mode.setter
     def parser_mode(self, parser_mode: str):
+        if parser_mode not in loaders and parser_mode == 'omegaconf' and omegaconf_support:
+            from .loaders_dumpers import set_loader
+            from .optionals import get_omegaconf_loader
+            set_loader('omegaconf', get_omegaconf_loader())
         if parser_mode not in loaders:
             raise ValueError(f'The only accepted values for parser_mode are {set(loaders.keys())}.')
         if parser_mode == 'jsonnet':
@@ -1437,12 +1440,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         if not (dump_header is None or (isinstance(dump_header, list) and all(isinstance(x, str) for x in dump_header))):
             raise ValueError('Expected dump_header to be None or a list of strings.')
         self._dump_header = dump_header
-
-
-if omegaconf_support:
-    from .loaders_dumpers import set_loader
-    from .optionals import get_omegaconf_loader
-    set_loader('omegaconf', get_omegaconf_loader())
 
 
 from .deprecated import parse_as_dict_patch, instantiate_subclasses_patch

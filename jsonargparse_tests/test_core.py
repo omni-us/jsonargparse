@@ -5,6 +5,7 @@ import os
 import pickle
 import sys
 import unittest
+import unittest.mock
 import warnings
 import yaml
 from io import StringIO
