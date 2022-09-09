@@ -26,6 +26,8 @@ Fixed
 ^^^^^
 - Subclass nested argument incorrectly loaded as subclass config `#159
   <https://github.com/omni-us/jsonargparse/issues/159>`__.
+- Append to list not working for ``default_config_files`` in subcommands `#157
+  <https://github.com/omni-us/jsonargparse/issues/157>`__.
 
 
 v4.13.3 (2022-09-06)

@@ -1026,6 +1026,18 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             self.assertEqual(cfg.nums, [0, 1, 2])
 
 
+    def test_list_append_default_config_files_subcommand(self):
+        config_path = pathlib.Path(self.tmpdir, 'config.yaml')
+        parser = ArgumentParser(default_config_files=[str(config_path)])
+        subcommands = parser.add_subcommands()
+        subparser = ArgumentParser()
+        subparser.add_argument('--nums', type=List[int], default=[0])
+        subcommands.add_subcommand('sub', subparser)
+        config_path.write_text('sub:\n  nums: [1]\n')
+        cfg = parser.parse_args(['sub', '--nums+=2'])
+        self.assertEqual(cfg.sub.nums, [1, 2])
+
+
     def test_class_type_with_default_config_files(self):
         config = {
             'class_path': 'calendar.Calendar',

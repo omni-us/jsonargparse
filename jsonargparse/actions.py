@@ -597,7 +597,8 @@ class _ActionSubCommands(_SubParsersAction):
         # parse arguments
         if subcommand in self._name_parser_map:
             subparser = self._name_parser_map[subcommand]
-            subnamespace, unk = subparser.parse_known_args(arg_strings)
+            subnamespace = namespace.get(subcommand).clone() if subcommand in namespace else None
+            subnamespace, unk = subparser.parse_known_args(arg_strings, namespace=subnamespace)
             if unk:
                 raise ParserError(f'Unrecognized arguments: {" ".join(unk)}')
             namespace.update(subnamespace, subcommand)
