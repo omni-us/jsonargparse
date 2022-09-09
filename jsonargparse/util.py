@@ -54,7 +54,6 @@ default_config_option_help = 'Path to a configuration file.'
 
 class ParserError(Exception):
     """Error raised when parsing a value fails."""
-    pass
 
 
 class DebugException(Exception):
@@ -292,6 +291,13 @@ def iter_to_set_str(val, sep=','):
 
 def indent_text(text: str) -> str:
     return text.replace('\n', '\n  ')
+
+
+def get_private_kwargs(kwargs, items):
+    extracted = [kwargs.pop(name, default) for name, default in items.items()]
+    if kwargs:
+        raise ValueError(f'Unexpected keyword parameters: {set(kwargs.keys())}')
+    return extracted[0] if len(extracted) == 1 else extracted
 
 
 def known_to_fsspec(path: str) -> bool:

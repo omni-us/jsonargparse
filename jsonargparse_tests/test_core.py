@@ -303,6 +303,11 @@ class ParsersTests(TempDirTestCase):
             del os.environ[key]
 
 
+    def test_parse_unexpected_kwargs(self):
+        with self.assertRaises(ValueError):
+            ArgumentParser().parse_args([], unexpected=True)
+
+
 class ArgumentFeaturesTests(unittest.TestCase):
 
     def test_positionals(self):

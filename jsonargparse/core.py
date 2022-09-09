@@ -45,14 +45,15 @@ from .optionals import (
     omegaconf_support,
 )
 from .util import (
-    identity,
-    ParserError,
-    usage_and_exit_error_handler,
     change_to_path_dir,
-    Path,
-    lenient_check_context,
+    get_private_kwargs,
+    identity,
     lenient_check,
+    lenient_check_context,
+    ParserError,
+    Path,
     return_parser_if_captured,
+    usage_and_exit_error_handler,
 )
 
 
@@ -71,7 +72,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         self.register('action', 'parsers', _ActionSubCommands)
 
 
-    def add_argument(self, *args, enable_path:bool=False, **kwargs):
+    def add_argument(self, *args, enable_path: bool = False, **kwargs):
         """Adds an argument to the parser or argument group.
 
         All the arguments from `argparse.ArgumentParser.add_argument
@@ -117,7 +118,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         return action
 
 
-    def add_argument_group(self, *args, name:str=None, **kwargs):
+    def add_argument_group(self, *args, name: str = None, **kwargs):
         """Adds a group to the parser.
 
         All the arguments from `argparse.ArgumentParser.add_argument_group
@@ -331,7 +332,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         env: Optional[bool] = None,
         defaults: bool = True,
         with_meta: Optional[bool] = None,
-        _skip_check: bool = False,
+        **kwargs,
     ) -> Namespace:
         """Parses command line argument strings.
 
@@ -351,6 +352,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
+        skip_check = get_private_kwargs(kwargs, {'_skip_check': False})
         return_parser_if_captured(self)
         argcomplete_autocomplete(self)
 
@@ -368,7 +370,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                 env=env,
                 defaults=defaults,
                 with_meta=with_meta,
-                skip_check=_skip_check,
+                skip_check=skip_check,
                 log_message='Parsed command line arguments.',
             )
 
@@ -385,8 +387,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         env: Optional[bool] = None,
         defaults: bool = True,
         with_meta: Optional[bool] = None,
-        _skip_check: bool = False,
-        _skip_required: bool = False,
+        **kwargs,
     ) -> Namespace:
         """Parses configuration given as an object.
 
@@ -402,6 +403,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
+        skip_check, skip_required = get_private_kwargs(kwargs, {'_skip_check': False, '_skip_required': False})
+
         try:
             cfg = self._parse_defaults_and_environ(defaults, env)
             if cfg_base:
@@ -415,8 +418,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                 env=env,
                 defaults=defaults,
                 with_meta=with_meta,
-                skip_check=_skip_check,
-                skip_required=_skip_required,
+                skip_check=skip_check,
+                skip_required=skip_required,
                 log_message='Parsed object.',
             )
 
@@ -464,8 +467,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         env: Dict[str, str] = None,
         defaults: bool = True,
         with_meta: Optional[bool] = None,
-        _skip_check: bool = False,
-        _skip_subcommands: bool = False,
+        **kwargs,
     ) -> Namespace:
         """Parses environment variables.
 
@@ -480,6 +482,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
+        skip_check, skip_subcommands = get_private_kwargs(kwargs, {'_skip_check': False, '_skip_subcommands': False})
+
         try:
             cfg = self._parse_defaults_and_environ(defaults, env=True, environ=env)
 
@@ -488,8 +492,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                 env=True,
                 defaults=defaults,
                 with_meta=with_meta,
-                skip_check=_skip_check,
-                skip_subcommands=_skip_subcommands,
+                skip_check=skip_check,
+                skip_subcommands=skip_subcommands,
                 log_message='Parsed environment variables.',
             )
 
@@ -549,8 +553,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         env: Optional[bool] = None,
         defaults: bool = True,
         with_meta: Optional[bool] = None,
-        _skip_check: bool = False,
-        _fail_no_subcommand: bool = True,
+        **kwargs,
     ) -> Namespace:
         """Parses configuration (yaml or jsonnet) given as a string.
 
@@ -560,7 +563,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             ext_vars: Optional external variables used for parsing jsonnet.
             env: Whether to merge with the parsed environment, None to use parser's default.
             defaults: Whether to merge with the parser's defaults.
-            nested: Whether the namespace should be nested.
             with_meta: Whether to include metadata in config object, None to use parser's default.
 
         Returns:
@@ -569,6 +571,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
+        skip_check, fail_no_subcommand = get_private_kwargs(kwargs, {'_skip_check': False, '_fail_no_subcommand': True})
+
         try:
             with load_value_context(self.parser_mode):
                 cfg = self._load_config_parser_mode(cfg_str, cfg_path, ext_vars, previous_config.get())
@@ -582,8 +586,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                 env=env,
                 defaults=defaults,
                 with_meta=with_meta,
-                skip_check=_skip_check,
-                fail_no_subcommand=_fail_no_subcommand,
+                skip_check=skip_check,
+                fail_no_subcommand=fail_no_subcommand,
                 log_message=f'Parsed {self.parser_mode} string.',
             )
 
