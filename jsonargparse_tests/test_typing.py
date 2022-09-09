@@ -177,6 +177,12 @@ class PathTypeTests(TempDirTestCase):
         self.assertEqual(Path_fr, NewPath_fr)
 
 
+    def test_path_like(self):
+        parser = ArgumentParser()
+        parser.add_argument('--path', type=os.PathLike)
+        self.assertEqual(self.file_fr, parser.parse_args([f'--path={self.file_fr}']).path)
+
+
 class OtherTests(unittest.TestCase):
 
     def test_pickle_module_types(self):

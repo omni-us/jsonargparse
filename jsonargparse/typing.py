@@ -1,6 +1,7 @@
 """Collection of types and type generators."""
 
 import operator
+import os
 import re
 import uuid
 from datetime import timedelta
@@ -329,6 +330,7 @@ Path_dw = path_type('dw', docstring='str pointing to a directory that exists and
 Path_dc = path_type('dc', docstring='str pointing to a directory that can be created if it does not exist')
 Path_drw = path_type('drw', docstring='str pointing to a directory that exists and is readable and writeable')
 
+register_type(os.PathLike, str, str)
 register_type(complex)
 register_type(uuid.UUID)
 

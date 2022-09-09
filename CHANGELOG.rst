@@ -14,6 +14,20 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.14.0 (2022-09-??)
+--------------------
+
+Added
+^^^^^
+- Support for ``os.PathLike`` as typehint `#159
+  <https://github.com/omni-us/jsonargparse/issues/159>`__.
+
+Fixed
+^^^^^
+- Subclass nested argument incorrectly loaded as subclass config `#159
+  <https://github.com/omni-us/jsonargparse/issues/159>`__.
+
+
 v4.13.3 (2022-09-06)
 --------------------
 

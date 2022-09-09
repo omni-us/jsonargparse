@@ -980,6 +980,23 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertIn('(type: Path_drw_skip_check, default: test)', out.getvalue())
 
 
+    def test_path_like_within_subclass(self):
+        class Data:
+            def __init__(self, path: Optional[os.PathLike] = None):
+                pass
+
+        data_path = pathlib.Path('data.json')
+        data_path.write_text('{"a": 1}')
+
+        parser = ArgumentParser()
+        parser.add_argument('--data', type=Data, enable_path=True)
+
+        with mock_module(Data) as module:
+            cfg = parser.parse_args([f'--data={module}.Data', f'--data.path={data_path}'])
+            self.assertEqual(cfg.data.class_path, f'{module}.Data')
+            self.assertEqual(cfg.data.init_args, Namespace(path=str(data_path)))
+
+
     def test_list_append_default_config_files(self):
         config_path = pathlib.Path(self.tmpdir, 'config.yaml')
         parser = ArgumentParser(default_config_files=[str(config_path)])

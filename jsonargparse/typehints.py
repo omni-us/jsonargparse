@@ -349,8 +349,9 @@ class ActionTypeHint(Action):
         for num, val in enumerate(value):
             try:
                 orig_val = val
+                enable_path = self._enable_path and not isinstance(val, NestedArg)
                 try:
-                    val, config_path = parse_value_or_config(val, enable_path=self._enable_path)
+                    val, config_path = parse_value_or_config(val, enable_path=enable_path)
                 except get_loader_exceptions():
                     config_path = None
                 path_meta = val.pop('__path__', None) if isinstance(val, dict) else None
