@@ -414,7 +414,10 @@ class ActionTypeHint(Action):
 
     def extra_help(self):
         extra = ''
-        if self.is_subclass_typehint(self, all_subtypes=False):
+        if (
+            self.is_subclass_typehint(self, all_subtypes=False) or
+            get_typehint_origin(self._typehint) in {Type, type}
+        ):
             class_paths = get_all_subclass_paths(self._typehint)
             if class_paths:
                 extra = ', known subclasses: '+', '.join(class_paths)
@@ -714,7 +717,7 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
         for subclass in cl.__subclasses__() if hasattr(cl, '__subclasses__') else []:
             add_subclasses(subclass)
 
-    if get_typehint_origin(cls) == Union:
+    if get_typehint_origin(cls) in {Union, Type, type}:
         for arg in cls.__args__:
             if ActionTypeHint.is_subclass_typehint(arg) and arg not in {object, type}:
                 add_subclasses(arg)

@@ -21,6 +21,7 @@ Added
 ^^^^^
 - Support for ``os.PathLike`` as typehint `#159
   <https://github.com/omni-us/jsonargparse/issues/159>`__.
+- Also show known subclasses in help for ``Type[<type>]``.
 
 Fixed
 ^^^^^

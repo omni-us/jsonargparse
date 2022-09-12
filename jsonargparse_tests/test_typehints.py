@@ -803,6 +803,22 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args([f'--config={config}']))
 
 
+    def test_help_known_subclasses_class(self):
+        parser = ArgumentParser()
+        parser.add_argument('--cal', type=Calendar)
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('known subclasses: calendar.Calendar,', out.getvalue())
+
+
+    def test_help_known_subclasses_type(self):
+        parser = ArgumentParser()
+        parser.add_argument('--cal', type=Type[Calendar])
+        out = StringIO()
+        parser.print_help(out)
+        self.assertIn('known subclasses: calendar.Calendar,', out.getvalue())
+
+
     def test_typehint_serialize_list(self):
         parser = ArgumentParser()
         action = parser.add_argument('--list', type=Union[PositiveInt, List[PositiveInt]])
