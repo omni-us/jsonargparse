@@ -13,6 +13,7 @@ from .namespace import Namespace
 __all__ = [
     'get_config_read_mode',
     'set_config_read_mode',
+    'set_docstring_parse_options',
 ]
 
 
@@ -29,6 +30,10 @@ reconplogger_support = find_spec('reconplogger') is not None
 dump_preserve_order_support = platform.python_implementation() == 'CPython'
 
 _config_read_mode = 'fr'
+_docstring_parse_options = {
+    'style': None,
+    'attribute_docstrings': False,
+}
 
 
 def typing_extensions_import(name):
@@ -88,11 +93,10 @@ def import_requests(importer):
     return requests
 
 
-def import_docstring_parse(importer, with_error=False):
+def import_docstring_parser(importer):
     with missing_package_raise('docstring-parser', importer):
-        from docstring_parser import parse as docstring_parse
-        from docstring_parser import ParseError as DocstringParseError
-    return (docstring_parse, DocstringParseError) if with_error else docstring_parse
+        import docstring_parser
+    return docstring_parser
 
 
 def import_argcomplete(importer):
@@ -153,19 +157,70 @@ def get_config_read_mode() -> str:
     return _config_read_mode
 
 
+def set_docstring_parse_options(style = None, attribute_docstrings: bool = None):
+    """Sets options for docstring parsing.
+
+    Args:
+        style (docstring_parser.DocstringStyle): The docstring style to expect.
+        attribute_docstrings: Whether to parse attribute docstrings (slower).
+    """
+    global _docstring_parse_options
+    dp = import_docstring_parser('set_docstring_parse_options')
+    if style is not None:
+        if not isinstance(style, dp.DocstringStyle):
+            raise ValueError(f'Expected style to be of type {dp.DocstringStyle}.')
+        _docstring_parse_options['style'] = style
+    if attribute_docstrings is not None:
+        if not isinstance(attribute_docstrings, bool):
+            raise ValueError(f'Expected attribute_docstrings to be boolean.')
+        _docstring_parse_options['attribute_docstrings'] = attribute_docstrings
+
+
+def get_docstring_parse_options():
+    if _docstring_parse_options['style'] is None:
+        dp = import_docstring_parser('get_docstring_parse_options')
+        _docstring_parse_options['style'] = dp.DocstringStyle.AUTO
+    return _docstring_parse_options
+
+
+def parse_docstring(component, params=False, logger=None):
+    dp = import_docstring_parser('parse_docstring')
+    options = get_docstring_parse_options()
+    try:
+        if params and options['attribute_docstrings']:
+            return dp.parse_from_object(component, style=options['style'])
+        else:
+            return dp.parse(component.__doc__, style=options['style'])
+    except (ValueError, dp.ParseError) as ex:
+        if logger:
+            logger.debug(f'Failed parsing docstring for {component}: {ex}')
+
+
 def parse_docs(component, parent, logger):
     docs = []
     if docstring_parser_support:
-        docstring_parse, docstring_error = import_docstring_parse('parse_docs', True)
         doc_sources = [component]
         if inspect.isclass(parent) and component.__name__ == '__init__':
             doc_sources = [parent] + doc_sources
         for src in doc_sources:
-            try:
-                docs.append(docstring_parse(src.__doc__))
-            except (ValueError, docstring_error) as ex:
-                logger.debug(f'Failed parsing docstring for {src}: {ex}')
+            doc = parse_docstring(src, params=True, logger=logger)
+            if doc:
+                docs.append(doc)
     return docs
+
+
+def get_doc_short_description(function_or_class, method_name=None, logger=None):
+    if docstring_parser_support:
+        component = function_or_class
+        if inspect.isclass(function_or_class):
+            if not method_name:
+                docstring = parse_docstring(function_or_class, params=False, logger=logger)
+                if docstring and docstring.short_description:
+                    return docstring.short_description
+            component = getattr(function_or_class, method_name or '__init__')
+        docstring = parse_docstring(component, params=False, logger=logger)
+        if docstring:
+            return docstring.short_description
 
 
 def get_files_completer():

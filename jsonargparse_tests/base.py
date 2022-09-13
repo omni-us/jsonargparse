@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from contextlib import contextmanager, redirect_stderr
 from importlib.util import find_spec
+from jsonargparse.optionals import docstring_parser_support, set_docstring_parse_options
 
 
 responses_available = find_spec('responses') is not None
@@ -17,6 +18,11 @@ else:
     def nothing_decorator(func):
         return func
     responses_activate = nothing_decorator  # type: ignore
+
+
+if docstring_parser_support:
+    from docstring_parser import DocstringStyle
+    set_docstring_parse_options(style=DocstringStyle.GOOGLE)
 
 
 is_posix = os.name == 'posix'

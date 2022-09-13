@@ -1155,18 +1155,60 @@ methods are:
 
 .. note::
 
-    To get parameter docstrings in the parser help, the `docstring-parser
-    <https://pypi.org/project/docstring-parser/>`__ package is required. This
-    package is included when installing jsonargparse with the ``signatures``
-    extras require as explained in section :ref:`installation`.
-
-.. note::
-
     The signatures support is intended to be non-intrusive. It is by design that
-    there is no need to inherit from a class, or add decorators, or change to
-    custom type hints and default values. This has several advantages. For
-    example it is possible to use classes from third party libraries which are
-    not possible for developers to modify.
+    there is no need to inherit from a class, add decorators, or use special
+    type hints and default values. This has several advantages. For example it
+    is possible to use classes from third party libraries which is not possible
+    for developers to modify.
+
+Docstring parsing
+-----------------
+
+To get parameter docstrings in the parser help, the `docstring-parser
+<https://pypi.org/project/docstring-parser/>`__ package is required. This
+package is included when installing jsonargparse with the ``signatures`` extras
+require as explained in section :ref:`installation`.
+
+A couple of options can be configured, both related to docstring parsing speed.
+By default docstrings are parsed used with
+``docstring_parser.DocstringStyle.AUTO``, which means that it is attempted to
+parse docstrings with all supported styles. If the relevant codebase uses a
+single style, this is inefficient. A single style can be configured as follows:
+
+.. testcode:: docstrings
+
+    from docstring_parser import DocstringStyle
+    from jsonargparse import set_docstring_parse_options
+
+    set_docstring_parse_options(style=DocstringStyle.REST)
+
+The second option that can be configured is the support for `attribute
+docstrings <https://peps.python.org/pep-0257/#what-is-a-docstring>`__ (i.e.
+literal strings in the line after an attribute is defined). By default this
+feature is disabled and enabling it makes the parsing slower even for classes
+that don't have attribute docstrings. To enable, do as follows:
+
+.. testcode:: docstrings
+
+    from dataclasses import dataclass
+    from jsonargparse import set_docstring_parse_options
+
+    set_docstring_parse_options(attribute_docstrings=True)
+
+    @dataclass
+    class Options:
+        """Options for a competition winner."""
+        name: str
+        """Name of winner."""
+        prize: int = 100
+        """Amount won."""
+
+
+.. testcleanup:: docstrings
+
+    set_docstring_parse_options(style=DocstringStyle.GOOGLE)
+    set_docstring_parse_options(attribute_docstrings=False)
+
 
 Classes from functions
 ----------------------

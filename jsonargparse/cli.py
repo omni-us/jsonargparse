@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 from .actions import ActionConfigFile
 from .core import ArgumentParser
 from .deprecated import cli_return_parser_message, deprecation_warning
-from .optionals import docstring_parser_support, import_docstring_parse
+from .optionals import get_doc_short_description
 from .util import default_config_option_help
 
 
@@ -78,7 +78,7 @@ def CLI(
     for name, component in comp_dict.items():
         subparser = ArgumentParser()
         subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
-        subcommands.add_subcommand(name, subparser, help=_get_help_str(component))
+        subcommands.add_subcommand(name, subparser, help=get_help_str(component, parser.logger))
         _add_component_to_parser(component, subparser, as_positional, config_help)
 
     if set_defaults is not None:
@@ -92,20 +92,10 @@ def CLI(
     return _run_component(component, cfg_init.get(subcommand))
 
 
-def _get_help_str(component):
-    help_str = str(component)
-    if docstring_parser_support:
-        docstring_parse, docstring_error = import_docstring_parse('_get_help_str', True)
-        description = None
-        try:
-            if inspect.isclass(component):
-                description = docstring_parse(component.__init__.__doc__).short_description
-            if description is None:
-                description = docstring_parse(component.__doc__).short_description
-        except (ValueError, docstring_error):
-            pass
-        if description is not None:
-            help_str = description
+def get_help_str(component, logger):
+    help_str = get_doc_short_description(component, logger=logger)
+    if not help_str:
+        help_str = str(component)
     return help_str
 
 
@@ -120,7 +110,7 @@ def _add_component_to_parser(component, parser, as_positional, config_help):
             subparser = ArgumentParser()
             subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
             subparser.add_method_arguments(component, key, **kwargs)
-            subcommands.add_subcommand(key, subparser, help=_get_help_str(getattr(component, key)))
+            subcommands.add_subcommand(key, subparser, help=get_help_str(getattr(component, key), parser.logger))
 
 
 def _run_component(component, cfg):

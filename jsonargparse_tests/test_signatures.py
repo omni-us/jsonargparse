@@ -22,7 +22,7 @@ from jsonargparse import (
     strip_meta,
 )
 from jsonargparse.actions import _find_action
-from jsonargparse.optionals import docstring_parser_support, import_docstring_parse
+from jsonargparse.optionals import docstring_parser_support, set_docstring_parse_options
 from jsonargparse.typing import final, OpenUnitInterval, PositiveFloat, PositiveInt
 from jsonargparse_tests.base import mock_module, suppress_stderr, TempDirTestCase
 
@@ -847,8 +847,8 @@ class SignaturesTests(unittest.TestCase):
                 """
 
         with unittest.mock.patch('docstring_parser.parse') as docstring_parse:
-            DocstringParseError = import_docstring_parse('test_docstring_parse_fail', True)[1]
-            docstring_parse.side_effect = DocstringParseError
+            from docstring_parser import ParseError
+            docstring_parse.side_effect = ParseError
             parser = ArgumentParser(error_handler=None)
             parser.add_class_arguments(Class1)
 
@@ -1383,6 +1383,28 @@ class DataclassesTests(unittest.TestCase):
         cfg = parser.instantiate_classes(cfg)
         self.assertIsInstance(cfg['class'], MyClass)
         self.assertIsInstance(cfg['class'].data, MyDataClass)
+
+
+    @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
+    def test_attribute_docstrings(self):
+
+        @dataclasses.dataclass
+        class WithAttrDocs:
+            attr_str: str = 'a'
+            "attr_str description"
+            attr_int: int = 1
+            "attr_int description"
+
+        set_docstring_parse_options(attribute_docstrings=True)
+
+        parser = ArgumentParser()
+        parser.add_class_arguments(WithAttrDocs)
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertIn('attr_str description (type: str, default: a)', help_str.getvalue())
+        self.assertIn('attr_int description (type: int, default: 1)', help_str.getvalue())
+
+        set_docstring_parse_options(attribute_docstrings=False)
 
 
 if __name__ == '__main__':

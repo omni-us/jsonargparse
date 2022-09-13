@@ -22,6 +22,9 @@ Added
 - Support for ``os.PathLike`` as typehint `#159
   <https://github.com/omni-us/jsonargparse/issues/159>`__.
 - Also show known subclasses in help for ``Type[<type>]``.
+- Support for attribute docstrings `#150
+  <https://github.com/omni-us/jsonargparse/issues/150>`__.
+- Way to configure parsing docstrings with a single style.
 
 Fixed
 ^^^^^

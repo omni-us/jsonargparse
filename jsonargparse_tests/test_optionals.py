@@ -7,8 +7,9 @@ from jsonargparse.optionals import (
     argcomplete_support,
     docstring_parser_support,
     fsspec_support,
+    get_docstring_parse_options,
     import_argcomplete,
-    import_docstring_parse,
+    import_docstring_parser,
     import_fsspec,
     import_jsonnet,
     import_jsonschema,
@@ -18,6 +19,7 @@ from jsonargparse.optionals import (
     jsonnet_support,
     jsonschema_support,
     ruyaml_support,
+    set_docstring_parse_options,
     url_support,
 )
 
@@ -74,14 +76,37 @@ class DocstringParserSupportTests(unittest.TestCase):
 
     @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
     def test_docstring_parser_support_true(self):
-        import_docstring_parse('test_docstring_parser_support_true')
+        import_docstring_parser('test_docstring_parser_support_true')
 
 
     @unittest.skipIf(docstring_parser_support, 'docstring-parser package should not be installed')
     def test_docstring_parser_support_false(self):
         with self.assertRaises(ImportError) as context:
-            import_docstring_parse('test_docstring_parser_support_false')
+            import_docstring_parser('test_docstring_parser_support_false')
             self.assertIn('test_docstring_parser_support_false', context.msg)
+
+
+    @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
+    def test_docstring_parse_options(self):
+        from docstring_parser import DocstringStyle
+        options = get_docstring_parse_options()
+        options['style'] = None
+        options = get_docstring_parse_options()
+
+        with self.subTest('style'):
+            for style in [DocstringStyle.NUMPYDOC, DocstringStyle.GOOGLE]:
+                set_docstring_parse_options(style=style)
+                self.assertEqual(options['style'], style)
+            with self.assertRaises(ValueError):
+                set_docstring_parse_options(style='invalid')
+
+        with self.subTest('attribute_docstrings'):
+            self.assertIs(options['attribute_docstrings'], False)
+            for attribute_docstrings in [True, False]:
+                set_docstring_parse_options(attribute_docstrings=attribute_docstrings)
+                self.assertIs(options['attribute_docstrings'], attribute_docstrings)
+            with self.assertRaises(ValueError):
+                set_docstring_parse_options(attribute_docstrings='invalid')
 
 
 class ArgcompleteSupportTests(unittest.TestCase):

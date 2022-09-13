@@ -7,7 +7,7 @@ from argparse import SUPPRESS
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from .actions import _ActionConfigLoad
-from .optionals import parse_docs
+from .optionals import get_doc_short_description
 from .parameter_resolvers import get_signature_parameters, ParamData
 from .typehints import ActionTypeHint, is_optional, LazyInitBaseClass
 from .typing import is_final_class
@@ -219,7 +219,7 @@ class SignatureArguments(LoggerProperty):
         params = get_signature_parameters(function_or_class, method_name, logger=self.logger)
 
         ## Create group if requested ##
-        doc_group = get_doc_short_description(function_or_class, method_name, self.logger)
+        doc_group = get_doc_short_description(function_or_class, method_name, logger=self.logger)
         component = getattr(function_or_class, method_name) if method_name else function_or_class
         group = self._create_group_if_requested(component, nested_key, as_group, doc_group, instantiate=instantiate)
 
@@ -361,10 +361,10 @@ class SignatureArguments(LoggerProperty):
         if not is_pure_dataclass(theclass):
             raise ValueError(f'Expected "theclass" argument to be a pure dataclass, given {theclass}')
 
-        doc_group = get_doc_short_description(theclass, None, self.logger)
+        doc_group = get_doc_short_description(theclass, logger=self.logger)
         for key in ['help', 'title']:
             if key in kwargs and kwargs[key] is not None:
-                doc_group = strip_title(kwargs.pop(key))
+                doc_group = kwargs.pop(key)
         group = self._create_group_if_requested(theclass, nested_key, as_group, doc_group, config_load_type=theclass)
 
         defaults = {}
@@ -433,7 +433,7 @@ class SignatureArguments(LoggerProperty):
         if not all(inspect.isclass(c) for c in baseclass):
             raise ValueError('Expected "baseclass" argument to be a class or a tuple of classes.')
 
-        doc_group = get_doc_short_description(baseclass[0], None, self.logger)
+        doc_group = get_doc_short_description(baseclass[0], logger=self.logger)
         group = self._create_group_if_requested(
             baseclass,
             nested_key,
@@ -478,7 +478,7 @@ class SignatureArguments(LoggerProperty):
             if doc_group is None:
                 doc_group = str(obj)
             name = obj.__name__ if nested_key is None else nested_key
-            group = self.add_argument_group(doc_group, name=name)
+            group = self.add_argument_group(strip_title(doc_group), name=name)
             if config_load and nested_key is not None:
                 group.add_argument('--'+nested_key, action=_ActionConfigLoad(basetype=config_load_type))
             if inspect.isclass(obj) and nested_key is not None and instantiate:
@@ -497,21 +497,6 @@ def group_instantiate_class(group, cfg):
         key = group.dest
         assert '.' not in key
     parent[key] = group.group_class(**value)
-
-
-def get_doc_short_description(function_or_class, method_name, logger):
-    if not method_name and inspect.isclass(function_or_class):
-        method_name = '__init__'
-    if method_name:
-        parent = function_or_class
-        component = getattr(parent, method_name)
-    else:
-        parent = None
-        component = function_or_class
-    for doc in parse_docs(component, parent, logger):
-        if doc.short_description:
-            return strip_title(doc.short_description)
-    return None
 
 
 def strip_title(value):
