@@ -172,7 +172,7 @@ def set_docstring_parse_options(style = None, attribute_docstrings: bool = None)
         _docstring_parse_options['style'] = style
     if attribute_docstrings is not None:
         if not isinstance(attribute_docstrings, bool):
-            raise ValueError(f'Expected attribute_docstrings to be boolean.')
+            raise ValueError('Expected attribute_docstrings to be boolean.')
         _docstring_parse_options['attribute_docstrings'] = attribute_docstrings
 
 
