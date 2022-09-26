@@ -6,7 +6,7 @@ import os
 from enum import Enum
 from typing import Any, Dict, Set
 from .namespace import Namespace
-from .optionals import get_config_read_mode, set_config_read_mode
+from .optionals import import_docstring_parser, get_config_read_mode, set_config_read_mode
 from .typehints import ActionTypeHint
 from .typing import path_type, restricted_number_type, registered_types
 from .util import is_subclass, warning
@@ -255,3 +255,18 @@ env_prefix_property_none_message = """
     Setting the env_prefix property to None was deprecated in v4.11.0 and will raise
     an exception in v5.0.0. Use True instead.
 """
+
+
+@deprecated("""
+    Only use the public API as described in
+    https://jsonargparse.readthedocs.io/en/stable/#api-reference. Keeping
+    import_docstring_parse function as deprecated only to provide backward
+    compatibility with old versions of pytorch-lightning. Will be removed in
+    v5.0.0.
+""")
+def import_docstring_parse(importer):
+    return import_docstring_parser(importer).parse
+
+
+import jsonargparse.optionals
+jsonargparse.optionals.import_docstring_parse = import_docstring_parse  # type: ignore

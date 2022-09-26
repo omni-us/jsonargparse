@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.14.1 (2022-09-26)
+--------------------
+
+Fixed
+^^^^^
+- Making ``import_docstring_parse`` a deprecated function only for
+  pytorch-lightning backward compatibility.
+
+
 v4.14.0 (2022-09-14)
 --------------------
 

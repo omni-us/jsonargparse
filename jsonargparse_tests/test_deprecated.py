@@ -7,8 +7,8 @@ from enum import Enum
 from io import StringIO
 from warnings import catch_warnings
 from jsonargparse import ActionConfigFile, ArgumentParser, CLI, get_config_read_mode, ParserError, Path, set_url_support
-from jsonargparse.deprecated import ActionEnum, ActionPath, ActionOperators, deprecation_warning
-from jsonargparse.optionals import url_support
+from jsonargparse.deprecated import ActionEnum, ActionPath, ActionOperators, deprecation_warning, import_docstring_parse
+from jsonargparse.optionals import docstring_parser_support, url_support
 from jsonargparse.util import LoggerProperty
 from jsonargparse_tests.base import TempDirTestCase
 
@@ -272,6 +272,13 @@ class DeprecatedTempDirTests(TempDirTestCase):
         parser.add_argument('path', nargs='?', action=ActionPath(mode='fc'))
         self.assertIsNone(parser.parse_args(['1']).path)
         self.assertIsNotNone(parser.parse_args(['2', 'file']).path)
+
+
+class DocstringParserSupportTests(unittest.TestCase):
+
+    @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
+    def test_docstring_parser_support_true(self):
+        import_docstring_parse('test_docstring_parser_support_true')
 
 
 if __name__ == '__main__':
