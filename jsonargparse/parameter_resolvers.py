@@ -257,7 +257,7 @@ def replace_args_and_kwargs(params: ParamList, args: ParamList, kwargs: ParamLis
     kwargs_idx = get_arg_kind_index(params, kinds.VAR_KEYWORD)
     if args_idx >= 0:
         params = params[:args_idx] + args + params[args_idx+1:]
-        if kwargs_idx != 1:
+        if kwargs_idx >= 0:
             kwargs_idx += len(args) - 1
     if kwargs_idx >= 0:
         existing_names = set(p.name for p in params[:kwargs_idx] + params[kwargs_idx+1:])

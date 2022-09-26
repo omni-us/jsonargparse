@@ -1,8 +1,8 @@
 """Actions to support jsonnet."""
 
 import json
-from typing import Optional, Union, Dict, Tuple, Any
 from argparse import Action
+from typing import Any, Dict, Optional, Tuple, Union
 
 from .actions import _is_action_value_list
 from .jsonschema import ActionJsonSchema
@@ -27,13 +27,16 @@ class ActionJsonnetExtVars(ActionJsonSchema):
 
     def __init__(self, **kwargs):
         """Initializer for ActionJsonnetExtVars instance."""
-        super().__init__(schema={'type': 'object'}, with_meta=False)
+        if kwargs:
+            super().__init__(**kwargs)
+        else:
+            super().__init__(schema={'type': 'object'}, with_meta=False)
 
 
     def __call__(self, *args, **kwargs):
         if len(args) == 0 and 'default' not in kwargs:
             kwargs['default'] = {}
-        return super().__call__(*args, **kwargs)
+        return super().__call__(*args, _class_type=ActionJsonnetExtVars, **kwargs)
 
 
 class ActionJsonnet(Action):
@@ -41,9 +44,9 @@ class ActionJsonnet(Action):
 
     def __init__(
         self,
-        ext_vars: str = None,
-        schema: Union[str, Dict] = None,
-        **kwargs
+        ext_vars: Optional[str] = None,
+        schema: Optional[Union[str, Dict]] = None,
+        **kwargs,
     ):
         """Initializer for ActionJsonnet instance.
 
@@ -95,7 +98,9 @@ class ActionJsonnet(Action):
 
     def _check_type(self, value, cfg):
         islist = _is_action_value_list(self)
-        ext_vars = cfg.get(self._ext_vars, {})
+        ext_vars = {}
+        if cfg:
+            ext_vars = cfg.get(self._ext_vars, {})
         if not islist:
             value = [value]
         for num, val in enumerate(value):

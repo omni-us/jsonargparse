@@ -144,6 +144,7 @@ class ActionTypeHint(Action):
             self.default = default.lazy_get_init_data()
         elif self.is_subclass_typehint(self._typehint, all_subtypes=False) and isinstance(default, dict) and 'class_path' in default:
             self.default = subclass_spec_as_namespace(default)
+            self.default.class_path = normalize_import_path(self.default.class_path, self._typehint)
         elif is_enum_type(self._typehint) and isinstance(default, Enum):
             self.default = default.name
         elif is_callable_type(self._typehint) and callable(default) and not inspect.isclass(default):
@@ -745,6 +746,12 @@ def resolve_class_path_by_name(cls: Type, name: str) -> str:
     return class_path
 
 
+def normalize_import_path(class_path, typehint):
+    if '.' not in class_path:
+        class_path = resolve_class_path_by_name(typehint, class_path)
+    return get_import_path(import_object(class_path))
+
+
 dump_kwargs: ContextVar = ContextVar('dump_kwargs', default={})
 
 
@@ -755,17 +762,17 @@ def dump_kwargs_context(kwargs):
 
 
 def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
-    if prev_val and 'init_args' in prev_val and prev_val['class_path'] != value.class_path:
+    if prev_val and 'init_args' in prev_val and prev_val['class_path'] != value['class_path']:
         parser = parser_or_action
         if isinstance(parser_or_action, ActionTypeHint):
             sub_add_kwargs = getattr(parser_or_action, 'sub_add_kwargs', {})
-            parser = ActionTypeHint.get_class_parser(value.class_path, sub_add_kwargs)
+            parser = ActionTypeHint.get_class_parser(value['class_path'], sub_add_kwargs)
         prev_val = subclass_spec_as_namespace(prev_val)
         del_args = {}
         for key, val in list(prev_val.init_args.__dict__.items()):
             action = _find_action(parser, key)
             if action:
-                with lenient_check_context(lenient=False):
+                with lenient_check_context(lenient=False), load_value_context(parser.parser_mode):
                     try:
                         parser._check_value_key(action, val, key, Namespace())
                     except Exception:
@@ -774,8 +781,8 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
                 del_args[key] = prev_val.init_args.pop(key)
         if del_args:
             warnings.warn(
-                f'Due to class_path change from {prev_val.class_path!r} to {value.class_path!r}, '
-                f'discarding init_args: {del_args}.'
+                f"Due to class_path change from {prev_val['class_path']!r} to {value['class_path']!r}, "
+                f"discarding init_args: {del_args}."
             )
 
 

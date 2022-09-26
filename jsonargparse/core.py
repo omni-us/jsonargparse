@@ -11,11 +11,11 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Sequence, Set, Tuple, Type, Union
 
 from .formatters import DefaultHelpFormatter, empty_help, formatter_context, get_env_var
-from .jsonnet import ActionJsonnet
+from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
 from .jsonschema import ActionJsonSchema
 from .link_arguments import ActionLink, ArgumentLinking
 from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context, yaml_load
-from .namespace import dict_to_namespace, is_meta_key, Namespace, patch_namespace, split_key, split_key_leaf, strip_meta
+from .namespace import is_meta_key, Namespace, patch_namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
 from .typehints import ActionTypeHint, is_subclass_spec
 from .typing import is_final_class
@@ -1039,6 +1039,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                     except TypeError as ex:
                         if not (val == {} and ActionTypeHint.is_subclass_typehint(action) and key not in self.required_args):
                             raise ex
+                elif key in self.groups and hasattr(self.groups[key], 'instantiate_class'):
+                    raise TypeError(f'Class group {key!r} got an unexpected value: {val}.')
                 else:
                     raise KeyError(f'No action for destination key "{key}" to check its value.')
 
@@ -1192,17 +1194,25 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             keys = list(cfg.__dict__.keys())
 
         if prev_cfg:
-            prev_cfg = prev_cfg.clone().update(dict_to_namespace(cfg))
+            prev_cfg = prev_cfg.clone()
         else:
-            prev_cfg = cfg
+            prev_cfg = Namespace()
 
         config_keys: Set[str] = set()
         num = 0
         while num < len(keys):
             key = keys[num]
-            num += 1
             exclude = _ActionConfigLoad if key in config_keys else None
             action, subcommand = _find_action_and_subcommand(self, key, exclude=exclude)
+
+            if isinstance(action, ActionJsonnet):
+                ext_vars_key = action._ext_vars
+                if ext_vars_key and ext_vars_key not in keys[:num]:
+                    keys = keys[:num] + [ext_vars_key] + [k for k in keys[num:] if k != ext_vars_key]
+                    continue
+
+            num += 1
+
             if action is None or isinstance(action, _ActionSubCommands):
                 value = cfg[key]
                 if isinstance(value, dict):
@@ -1212,6 +1222,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                     keys += [key+'.'+k for k in new_keys if key+'.'+k not in keys]
                 cfg[key] = value
                 continue
+
             action_dest = action.dest if subcommand is None else subcommand+'.'+action.dest
             value = cfg[action_dest]
             with lenient_check_context(), load_value_context(self.parser_mode):
@@ -1219,6 +1230,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             if isinstance(action, _ActionConfigLoad):
                 config_keys.add(action_dest)
                 keys.append(action_dest)
+            elif isinstance(action, ActionJsonnetExtVars):
+                prev_cfg[action_dest] = value
             cfg[action_dest] = value
         return cfg[parent_key] if parent_key else cfg
 
@@ -1240,7 +1253,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         return cfg
 
 
-    def _check_value_key(self, action: argparse.Action, value: Any, key: str, cfg: Namespace) -> Any:
+    def _check_value_key(self, action: argparse.Action, value: Any, key: str, cfg: Optional[Namespace]) -> Any:
         """Checks the value for a given action.
 
         Args:
@@ -1261,13 +1274,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             subparser.check_config(value)
         elif isinstance(action, _ActionConfigLoad):
             if isinstance(value, str):
-                fpath = None
-                if '.' in key:
-                    parent = cfg.get(split_key_leaf(key)[0])
-                    if isinstance(parent, Namespace):
-                        fpath = parent.get('__path__')
-                with change_to_path_dir(fpath):
-                    value = action.check_type(value, self)
+                value = action.check_type(value, self)
         elif hasattr(action, '_check_type'):
             value = action._check_type(value, cfg=cfg)  # type: ignore
         elif action.type is not None:
