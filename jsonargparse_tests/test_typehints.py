@@ -588,6 +588,21 @@ class TypeHintsTests(unittest.TestCase):
             self.assertIn(f'{module}.HTMLCalendar', err.getvalue())
 
 
+    def test_class_type_set_defaults_class_name(self):
+        parser = ArgumentParser()
+        parser.add_argument('--cal', type=Calendar)
+        parser.set_defaults({
+            'cal': {
+                'class_path': 'TextCalendar',
+                'init_args': {
+                    'firstweekday': 1,
+                }
+            }
+        })
+        cal = parser.get_default('cal').as_dict()
+        self.assertEqual(cal, {'class_path': 'calendar.TextCalendar', 'init_args': {'firstweekday': 1}})
+
+
     def test_class_type_subclass_short_init_args(self):
         parser = ArgumentParser()
         parser.add_argument('--op', type=Calendar)

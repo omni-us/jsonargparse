@@ -73,7 +73,8 @@ class ActionJsonSchema(Action):
             kwargs['_with_meta'] = self._with_meta
             if 'help' in kwargs and isinstance(kwargs['help'], str) and '%s' in kwargs['help']:
                 kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, sort_keys=True)
-            return ActionJsonSchema(**kwargs)
+            class_type = kwargs.pop('_class_type', ActionJsonSchema)
+            return class_type(**kwargs)
         val = self._check_type(args[2])
         if not self._with_meta:
             val = strip_meta(val)

@@ -152,6 +152,29 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_class_arguments(Class2))
 
 
+    def test_add_class_without_args(self):
+        class NoArgs:
+            pass
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cfg', action=ActionConfigFile)
+        parser.add_class_arguments(NoArgs, 'noargs')
+
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertNotIn('noargs', help_str.getvalue())
+
+        cfg = parser.parse_args([])
+        self.assertNotIn('noargs', cfg)
+        init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(init.noargs, NoArgs)
+
+        with mock_module(NoArgs) as module:
+            config = {'noargs': {'class_path': f'{module}.NoArgs'}}
+            with self.assertRaises(ParserError):
+                parser.parse_args([f'--cfg={config}'])
+
+
     def test_add_class_without_valid_args(self):
         class NoValidArgs:
             def __init__(self, a0=None):

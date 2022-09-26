@@ -2,8 +2,10 @@
 
 import json
 import os
+import pathlib
 import re
 import unittest
+import yaml
 from io import StringIO
 from jsonargparse import (
     ActionConfigFile,
@@ -161,8 +163,7 @@ class JsonnetTests(TempDirTestCase):
             action=ActionConfigFile)
 
         jsonnet_file = os.path.join(self.tmpdir, 'example.jsonnet')
-        with open(jsonnet_file, 'w') as output_file:
-            output_file.write(example_2_jsonnet)
+        pathlib.Path(jsonnet_file).write_text(example_2_jsonnet)
         outdir = os.path.join(self.tmpdir, 'output')
         outyaml = os.path.join(outdir, 'main.yaml')
         outjsonnet = os.path.join(outdir, 'example.jsonnet')
@@ -170,8 +171,13 @@ class JsonnetTests(TempDirTestCase):
 
         cfg = parser.parse_args(['--ext_vars', '{"param": 123}', '--jsonnet', jsonnet_file])
         self.assertEqual(str(cfg.jsonnet['__path__']), jsonnet_file)
-
         parser.save(cfg, outyaml)
+
+        outyaml_path = pathlib.Path(outyaml)
+        main_cfg = yaml.safe_load(outyaml_path.read_text())
+        main_cfg = {k: main_cfg[k] for k in ['jsonnet', 'ext_vars']}  # Make sure ext_vars after jsonnet
+        outyaml_path.write_text(yaml.safe_dump(main_cfg, sort_keys=False))
+
         cfg2 = parser.parse_args(['--cfg', outyaml])
         cfg2.cfg = None
         self.assertTrue(os.path.isfile(outyaml))

@@ -221,7 +221,14 @@ class SignatureArguments(LoggerProperty):
         ## Create group if requested ##
         doc_group = get_doc_short_description(function_or_class, method_name, logger=self.logger)
         component = getattr(function_or_class, method_name) if method_name else function_or_class
-        group = self._create_group_if_requested(component, nested_key, as_group, doc_group, instantiate=instantiate)
+        group = self._create_group_if_requested(
+            component,
+            nested_key,
+            as_group,
+            doc_group,
+            config_load=len(params) > 0,
+            instantiate=instantiate,
+        )
 
         ## Add parameter arguments ##
         added_args: List[str] = []

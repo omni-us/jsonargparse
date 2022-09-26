@@ -17,15 +17,24 @@ paths are considered internals and can change in any moment.
 v4.15.0 (2022-09-??)
 --------------------
 
+Added
+^^^^^
+- ``set_defaults`` now supports subclass by name and normalization of import path.
+
 Fixed
 ^^^^^
 - Loop variable capture bug pointed out by lgtm.com.
+- Issue with discard ``init_args`` when ``class_path`` not a subclass.
+- No error shown when arguments given to class group that does not accept arguments `#161
+  <https://github.com/omni-us/jsonargparse/issues/161#issuecomment-1256973565>`__.
+- Incorrect replacement of ``**kwargs`` when ``*args`` present in parameter resolver.
 
 Changed
 ^^^^^^^
 - Now ``UUID`` and ``timedelta`` types are registered on first use to avoid
   possibly unused imports.
 - json/yaml dump sort now defaults to false for all python implementations.
+- ``add_class_arguments`` will not add config load option if no added arguments.
 
 
 v4.14.1 (2022-09-26)
