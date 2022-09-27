@@ -1099,6 +1099,32 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertEqual(cfg.data.cal, Namespace(class_path='calendar.Calendar'))
 
 
+    def test_class_path_override_config_with_defaults(self):
+        class Base:
+            def __init__(self, b: int = 1):
+                pass
+
+        class Subclass1(Base):
+            def __init__(self, s1: str = '-'):
+                pass
+
+        class Subclass2(Base):
+            def __init__(self, s2: str = '-'):
+                pass
+
+        with mock_module(Base, Subclass1, Subclass2) as module:
+            parser = ArgumentParser()
+            parser.add_argument('--cfg', action=ActionConfigFile)
+            parser.add_argument('--s', type=Base, default=lazy_instance(Subclass1, s1='v1'))
+
+            config = {'s': {'class_path': 'Subclass2', 'init_args': {'s2': 'v2'}}}
+            with warnings.catch_warnings(record=True) as w:
+                cfg = parser.parse_args([f'--cfg={config}'])
+                self.assertIn("discarding init_args: {'s1': 'v1'}", str(w[0].message))
+            self.assertEqual(cfg.s.class_path, f'{module}.Subclass2')
+            self.assertEqual(cfg.s.init_args, Namespace(s2='v2'))
+
+
     def test_class_path_override_with_default_config_files(self):
 
         class MyCalendar(Calendar):
