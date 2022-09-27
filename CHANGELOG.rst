@@ -28,6 +28,8 @@ Fixed
 - No error shown when arguments given to class group that does not accept arguments `#161
   <https://github.com/omni-us/jsonargparse/issues/161#issuecomment-1256973565>`__.
 - Incorrect replacement of ``**kwargs`` when ``*args`` present in parameter resolver.
+- Override of ``class_path`` not discarding ``init_args`` when loading from
+  config file.
 
 Changed
 ^^^^^^^

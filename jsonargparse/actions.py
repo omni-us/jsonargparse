@@ -175,8 +175,6 @@ class ActionConfigFile(Action, FilesCompleterMethod):
     @staticmethod
     def apply_config(parser, cfg, dest, value) -> None:
         with _ActionSubCommands.not_single_subcommand(), previous_config_context(cfg):
-            if cfg.get(dest) is None:
-                cfg[dest] = []
             kwargs = {'env': False, 'defaults': False, '_skip_check': True, '_fail_no_subcommand': False}
             try:
                 cfg_path: Optional[Path] = Path(value, mode=get_config_read_mode())
@@ -190,10 +188,11 @@ class ActionConfigFile(Action, FilesCompleterMethod):
                     raise TypeError(f'Parser key "{dest}": {ex_str}') from ex_str
             else:
                 cfg_file = parser.parse_path(value, **kwargs)
+            cfg_merged = parser.merge_config(cfg_file, cfg)
+            cfg.__dict__.update(cfg_merged.__dict__)
+            if cfg.get(dest) is None:
+                cfg[dest] = []
             cfg[dest].append(cfg_path)
-            cfg.update(cfg_file)
-            from .typehints import ActionTypeHint
-            ActionTypeHint.apply_appends(parser, cfg)
 
 
 previous_config: ContextVar = ContextVar('previous_config', default=None)
