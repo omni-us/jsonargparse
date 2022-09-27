@@ -30,6 +30,8 @@ Fixed
 - Incorrect replacement of ``**kwargs`` when ``*args`` present in parameter resolver.
 - Override of ``class_path`` not discarding ``init_args`` when loading from
   config file.
+- Invalid values given to the ``compute_fn`` of a argument link applied on parse
+  without showing an understandable error message.
 
 Changed
 ^^^^^^^

@@ -5,7 +5,7 @@ import re
 from argparse import Action, SUPPRESS
 from collections import defaultdict
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
-from .actions import _ActionConfigLoad, _ActionSubCommands, ActionConfigFile, filter_default_actions, _find_parent_action
+from .actions import _ActionConfigLoad, _ActionSubCommands, ActionConfigFile, filter_default_actions, _find_action, _find_parent_action
 from .namespace import Namespace, split_key_leaf
 from .type_checking import ArgumentParser, _ArgumentGroup
 
@@ -207,6 +207,7 @@ class ActionLink(Action):
                 for source_key, source_action in action.source:
                     if ActionTypeHint.is_subclass_typehint(source_action[0]) and source_key not in cfg:
                         parser.logger.debug(f'Link {action.option_strings[0]} ignored since source {source_action[0]._typehint} does not have that parameter.')
+                    parser._check_value_key(source_action[0], cfg[source_action[0].dest], source_action[0].dest, None)
                     args.append(cfg[source_key])
             except KeyError:
                 continue
