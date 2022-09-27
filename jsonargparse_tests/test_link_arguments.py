@@ -37,6 +37,23 @@ class LinkArgumentsTests(unittest.TestCase):
         self.assertEqual(dump, {'a': {'v1': 2, 'v2': -5}})
 
 
+    def test_link_arguments_on_parse_invalid_compute_fn_arg(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cal1', type=Calendar, default=lazy_instance(TextCalendar))
+        parser.add_argument('--cal2', type=Calendar, default=lazy_instance(Calendar))
+        parser.link_arguments(
+            'cal1',
+            'cal2.init_args.firstweekday',
+            compute_fn=lambda c: c.init_args.firstweekday+1,
+        )
+        cfg = parser.parse_args(['--cal1.init_args.firstweekday=2'])
+        self.assertEqual(cfg.cal1.init_args.firstweekday, 2)
+        self.assertEqual(cfg.cal2.init_args.firstweekday, 3)
+        with self.assertRaises(ParserError) as cm:
+            parser.parse_args(['--cal1.class_path.init_args.firstweekday=2'])
+        self.assertIn('Parser key "cal1"', str(cm.exception))
+
+
     def test_link_arguments_on_parse_add_class_arguments(self):
         class ClassA:
             def __init__(self, v1: int = 2, v2: int = 3):
