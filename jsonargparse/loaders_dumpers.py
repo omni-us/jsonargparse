@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Callable, Dict, Tuple, Type
 
-from .optionals import dump_preserve_order_support, import_jsonnet
+from .optionals import import_jsonnet
 from .type_checking import ArgumentParser
 
 
@@ -118,12 +118,12 @@ def load_value(value: str, **kwargs):
 dump_yaml_kwargs = {
     'default_flow_style': False,
     'allow_unicode': True,
-    'sort_keys': False if dump_preserve_order_support else True,
+    'sort_keys': False,
 }
 
 dump_json_kwargs = {
     'ensure_ascii': False,
-    'sort_keys': False if dump_preserve_order_support else True,
+    'sort_keys': False,
 }
 
 

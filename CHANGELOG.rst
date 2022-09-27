@@ -21,6 +21,7 @@ Changed
 ^^^^^^^
 - Now ``UUID`` and ``timedelta`` types are registered on first use to avoid
   possibly unused import.
+- json/yaml dump sort now defaults to false for all python implementations.
 
 
 v4.14.1 (2022-09-26)

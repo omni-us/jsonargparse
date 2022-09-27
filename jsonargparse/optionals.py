@@ -3,7 +3,6 @@
 import inspect
 import locale
 import os
-import platform
 import typing
 from contextlib import contextmanager
 from importlib.util import find_spec
@@ -27,7 +26,6 @@ fsspec_support = find_spec('fsspec') is not None
 ruyaml_support = find_spec('ruyaml') is not None
 omegaconf_support = find_spec('omegaconf') is not None
 reconplogger_support = find_spec('reconplogger') is not None
-dump_preserve_order_support = platform.python_implementation() == 'CPython'
 
 _config_read_mode = 'fr'
 _docstring_parse_options = {

@@ -6,7 +6,6 @@ from importlib.util import find_spec
 from typing import List
 from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader, ParserError
 from jsonargparse.loaders_dumpers import load_value, load_value_context, yaml_dump
-from jsonargparse.optionals import dump_preserve_order_support
 
 
 class LoadersTests(unittest.TestCase):
@@ -43,7 +42,7 @@ class LoadersTests(unittest.TestCase):
         self.assertEqual('{one,two,three}', parser.parse_args(['--val={one,two,three}']).val)
 
 
-    @unittest.skipIf(not dump_preserve_order_support or not find_spec('omegaconf'), 'omegaconf package and CPython required')
+    @unittest.skipIf(not find_spec('omegaconf'), 'omegaconf package is required')
     def test_parser_mode_omegaconf(self):
         parser = ArgumentParser(error_handler=None, parser_mode='omegaconf')
         parser.add_argument('--server.host', type=str)
@@ -66,7 +65,7 @@ class LoadersTests(unittest.TestCase):
         self.assertIn('url: http://localhost:80/', parser.dump(cfg))
 
 
-    @unittest.skipIf(not dump_preserve_order_support or not find_spec('omegaconf'), 'omegaconf package and CPython required')
+    @unittest.skipIf(not find_spec('omegaconf'), 'omegaconf package is required')
     def test_parser_mode_omegaconf_in_subcommands(self):
         subparser = ArgumentParser()
         subparser.add_argument('--config', action=ActionConfigFile)

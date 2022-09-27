@@ -100,7 +100,7 @@ class NamespaceTests(unittest.TestCase):
         self.assertNotIn('x..y', ns)
         self.assertNotIn(123, ns)
 
-    @unittest.skipIf(not is_cpython, 'requires dict insertion order')
+    @unittest.skipIf(not is_cpython, 'requires __setattr__ insertion order')
     def test_items_generator(self):
         ns = Namespace()
         ns['a'] = 1
@@ -110,7 +110,7 @@ class NamespaceTests(unittest.TestCase):
         items = list(ns.items())
         self.assertEqual(items, [('a', 1), ('b.c', 2), ('b.d', 3), ('p.q.r', {'x': 4, 'y': 5})])
 
-    @unittest.skipIf(not is_cpython, 'requires dict insertion order')
+    @unittest.skipIf(not is_cpython, 'requires __setattr__ insertion order')
     def test_keys_generator(self):
         ns = Namespace()
         ns['a'] = 1
@@ -120,7 +120,7 @@ class NamespaceTests(unittest.TestCase):
         keys = list(ns.keys())
         self.assertEqual(keys, ['a', 'b.c', 'b.d', 'p.q.r'])
 
-    @unittest.skipIf(not is_cpython, 'requires dict insertion order')
+    @unittest.skipIf(not is_cpython, 'requires __setattr__ insertion order')
     def test_values_generator(self):
         ns = Namespace()
         ns['a'] = 1

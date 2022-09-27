@@ -32,7 +32,6 @@ from jsonargparse import (
 from jsonargparse.namespace import meta_keys
 from jsonargparse.optionals import (
     docstring_parser_support,
-    dump_preserve_order_support,
     fsspec_support,
     jsonnet_support,
     jsonschema_support,
@@ -41,7 +40,7 @@ from jsonargparse.optionals import (
 )
 from jsonargparse.typing import NotEmptyStr, Path_fc, Path_fr, PositiveFloat, PositiveInt
 from jsonargparse.util import CaptureParserException, capture_parser, DebugException, null_logger
-from jsonargparse_tests.base import is_posix, responses_activate, responses_available, TempDirTestCase
+from jsonargparse_tests.base import is_cpython, is_posix, responses_activate, responses_available, TempDirTestCase
 
 
 def example_parser():
@@ -680,6 +679,7 @@ class OutputTests(TempDirTestCase):
         self.assertEqual(parser.dump(cfg), 'paths:\n- path1\n- path2\n')
 
 
+    @unittest.skipIf(not is_cpython, 'requires __setattr__ insertion order')
     def test_dump_formats(self):
         parser = ArgumentParser()
         parser.add_argument('--op1', default=123)
@@ -711,8 +711,6 @@ class OutputTests(TempDirTestCase):
         self.assertEqual(parser.dump(parser.parse_args(['--g2.op2=pqr']), skip_default=True), 'g2:\n  op2: pqr\n')
 
 
-    @unittest.skipIf(not dump_preserve_order_support,
-                     'Dump preserve order only supported in python>=3.6 and CPython')
     def test_dump_order(self):
         args = {}
         for num in range(50):
