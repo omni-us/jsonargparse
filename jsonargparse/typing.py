@@ -3,11 +3,9 @@
 import operator
 import os
 import re
-import uuid
-from datetime import timedelta
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 from .optionals import final
-from .util import Path
+from .util import get_import_path, import_object, Path
 
 
 __all__ = [
@@ -44,7 +42,7 @@ _operators1 = {
 }
 _operators2 = {v: k for k, v in _operators1.items()}
 
-registered_types: Dict[Tuple, Any] = {}
+registered_types: Dict[Union[str, Type, Tuple], Any] = {}
 
 
 def create_type(
@@ -268,6 +266,7 @@ def register_type(
     deserializer: Optional[Callable] = None,
     deserializer_exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]] = (ValueError, TypeError, AttributeError),
     type_check: Callable = lambda v, t: v.__class__ == t,
+    fail_already_registered: bool = True,
     uniqueness_key: Optional[Tuple] = None,
 ):
     """Registers a new type for use in jsonargparse parsers.
@@ -278,16 +277,38 @@ def register_type(
         deserializer: Function that converts a basic type to an instance of the class. Default None instantiates type_class.
         deserializer_exceptions: Exceptions that deserializer raises when it fails.
         type_check: Function to check if a value is of type_class. Gets as arguments the value and type_class.
+        fail_already_registered: Whether to fail if type has already been registered.
         uniqueness_key: Key to determine uniqueness of type.
     """
     type_wrapper = RegisteredType(type_class, serializer, deserializer, deserializer_exceptions, type_check)
-    if type_class in registered_types:
+    fail_already_registered = globals().get('_fail_already_registered', fail_already_registered)
+    if not uniqueness_key and fail_already_registered and get_registered_type(type_class):
         if type_wrapper == registered_types[type_class]:
             return
         raise ValueError(f'Type "{type_class}" already registered with different serializer and/or deserializer.')
     registered_types[type_class] = type_wrapper
     if uniqueness_key is not None:
         registered_types[uniqueness_key] = type_class
+
+
+def register_type_on_first_use(import_path: str, *args, **kwargs):
+    registered_types[import_path] = lambda: register_type(
+        import_object(import_path),
+        *args,
+        **kwargs,
+    )
+
+
+def get_registered_type(type_class):
+    if type_class in registered_types:
+        return registered_types[type_class]
+    try:
+        import_path = get_import_path(type_class)
+        if import_path in registered_types:
+            registered_types.pop(import_path)()
+            return registered_types[type_class]
+    except (AttributeError, ValueError):
+        pass
 
 
 def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Callable = None):
@@ -305,6 +326,8 @@ def is_final_class(cls):
     """Checks whether a class is final, i.e. decorated with ``final``."""
     return getattr(cls, '__final__', False)
 
+
+_fail_already_registered = False
 
 PositiveInt        = restricted_number_type('PositiveInt',        int, ('>', 0),
                                             docstring='int restricted to be >0')
@@ -332,7 +355,7 @@ Path_drw = path_type('drw', docstring='str pointing to a directory that exists a
 
 register_type(os.PathLike, str, str)
 register_type(complex)
-register_type(uuid.UUID)
+register_type_on_first_use('uuid.UUID')
 
 
 def timedelta_deserializer(value):
@@ -347,7 +370,10 @@ def timedelta_deserializer(value):
     if not match:
         raise_error()
     kwargs = {key: float(val) for key, val in match.groupdict().items()}
+    from datetime import timedelta
     return timedelta(**kwargs)
 
 
-register_type(timedelta, deserializer=timedelta_deserializer)
+register_type_on_first_use('datetime.timedelta', deserializer=timedelta_deserializer)
+
+del _fail_already_registered
