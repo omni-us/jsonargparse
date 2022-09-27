@@ -14,6 +14,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.15.0 (2022-09-??)
+--------------------
+
+Changed
+^^^^^^^
+- Now ``UUID`` and ``timedelta`` types are registered on first use to avoid
+  possibly unused import.
+
+
 v4.14.1 (2022-09-26)
 --------------------
 

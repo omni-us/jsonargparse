@@ -34,7 +34,7 @@ from typing import (
 from .actions import _ActionHelpClassPath, _find_action, _find_parent_action, _is_action_value_list
 from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context
 from .namespace import Namespace
-from .typing import is_final_class, registered_types
+from .typing import get_registered_type, is_final_class
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     get_files_completer,
@@ -171,7 +171,7 @@ class ActionTypeHint(Action):
         supported = \
             typehint in root_types or \
             get_typehint_origin(typehint) in root_types or \
-            typehint in registered_types or \
+            get_registered_type(typehint) or \
             is_subclass(typehint, Enum) or \
             ActionTypeHint.is_subclass_typehint(typehint)
         if full and supported:
@@ -200,7 +200,7 @@ class ActionTypeHint(Action):
             return test(ActionTypeHint.is_subclass_typehint(s) for s in subtypes)
         return inspect.isclass(typehint) and \
             typehint not in leaf_or_root_types and \
-            typehint not in registered_types and \
+            not get_registered_type(typehint) and \
             typehint_origin is None and \
             not is_subclass(typehint, (Path, Enum))
 
@@ -466,7 +466,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
     # Any
     if typehint == Any:
         type_val = type(val)
-        if type_val in registered_types or is_subclass(type_val, Enum):
+        if get_registered_type(type_val) or is_subclass(type_val, Enum):
             val = adapt_typehints(val, type_val, **adapt_kwargs)
         elif isinstance(val, str):
             try:
@@ -488,8 +488,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                 raise ValueError(f'Expected a {typehint} but got "{val}"')
 
     # Registered types
-    elif typehint in registered_types:
-        registered_type = registered_types[typehint]
+    elif get_registered_type(typehint):
+        registered_type = get_registered_type(typehint)
         if serialize:
             if registered_type.is_value_of_type(val):
                 val = registered_type.serializer(val)

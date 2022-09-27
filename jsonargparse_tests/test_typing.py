@@ -9,6 +9,7 @@ from jsonargparse import ArgumentParser, ParserError
 from jsonargparse.typing import (
     ClosedUnitInterval,
     Email,
+    get_registered_type,
     NonNegativeFloat,
     NonNegativeInt,
     OpenUnitInterval,
@@ -21,7 +22,7 @@ from jsonargparse.typing import (
     restricted_number_type,
     restricted_string_type,
 )
-from jsonargparse.util import object_path_serializer
+from jsonargparse.util import import_object, object_path_serializer
 from jsonargparse_tests.base import mock_module, TempDirTestCase
 
 
@@ -186,6 +187,8 @@ class PathTypeTests(TempDirTestCase):
 class OtherTests(unittest.TestCase):
 
     def test_pickle_module_types(self):
+        for import_path in [x for x in registered_types.keys() if isinstance(x, str)]:
+            get_registered_type(import_object(import_path))
         for otype in registered_types.values():
             if isinstance(otype, RegisteredType) or hasattr(__import__('jsonargparse.typing'), otype.__name__):
                 if isinstance(otype, RegisteredType):
@@ -226,7 +229,7 @@ class OtherTests(unittest.TestCase):
 
 
     def test_timedelta(self):
-        timedelta_type = registered_types[timedelta]
+        timedelta_type = get_registered_type(timedelta)
         for delta_in, delta_out in [
             ('1:2:3', '1:02:03'),
             ('0:05:30', '0:05:30'),
