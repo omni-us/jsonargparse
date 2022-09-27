@@ -856,8 +856,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             KeyError: If key not defined in the parser.
         """
         if len(args) > 0:
-            for n in range(len(args)):
-                for dest, default in args[n].items():
+            for arg in args:
+                for dest, default in arg.items():
                     action = _find_action(self, dest)
                     if action is None:
                         raise KeyError(f'No action for destination key "{dest}" to set its default.')
