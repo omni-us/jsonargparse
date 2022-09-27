@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
+from functools import partial
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
 from .util import ClassFromFunctionBase, is_subclass, LoggerProperty, parse_logger
@@ -218,7 +219,7 @@ def get_signature_parameters_and_indexes(component, parent, logger):
 
 
 ast_literals = {
-    ast.dump(ast.parse(v, mode='eval').body): lambda: ast.literal_eval(v)
+    ast.dump(ast.parse(v, mode='eval').body): partial(ast.literal_eval, v)
     for v in ['{}', '[]']
 }
 

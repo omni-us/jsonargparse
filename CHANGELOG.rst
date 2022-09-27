@@ -17,10 +17,14 @@ paths are considered internals and can change in any moment.
 v4.15.0 (2022-09-??)
 --------------------
 
+Fixed
+^^^^^
+- Loop variable capture bug pointed out by lgtm.com.
+
 Changed
 ^^^^^^^
 - Now ``UUID`` and ``timedelta`` types are registered on first use to avoid
-  possibly unused import.
+  possibly unused imports.
 - json/yaml dump sort now defaults to false for all python implementations.
 
 
