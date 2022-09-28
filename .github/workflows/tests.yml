@@ -34,4 +34,4 @@ jobs:
           python-version: 3.8
       - run: pip install -e .[all,doc]
       - name: Run doc tests
-        run: sphinx-build -M doctest sphinx sphinx/_build sphinx/README.rst
+        run: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
