@@ -77,8 +77,8 @@ repos:
     verbose: true
 
   - name: doctest
-    id: sphinx-build -M doctest sphinx sphinx/_build sphinx/README.rst
-    entry: sphinx-build -M doctest sphinx sphinx/_build sphinx/README.rst
+    id: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
+    entry: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
     language: system
     pass_filenames: false
     verbose: true

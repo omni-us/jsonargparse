@@ -149,23 +149,23 @@ def parse_as_dict_patch():
     ArgumentParser.save = patched_save
 
 
+@deprecated("""
+    instantiate_subclasses was deprecated in v4.0.0 and will be removed in v5.0.0.
+""")
+def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
+    """Calls instantiate_classes with instantiate_groups=False.
+
+    Args:
+        cfg: The configuration object to use.
+
+    Returns:
+        A configuration object with all subclasses instantiated.
+    """
+    return self.instantiate_classes(cfg, instantiate_groups=False)
+
+
 def instantiate_subclasses_patch():
     from .core import ArgumentParser
-
-    @deprecated("""
-        instantiate_subclasses was deprecated in v4.0.0 and will be removed in v5.0.0.
-    """)
-    def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
-        """Calls instantiate_classes with instantiate_groups=False.
-
-        Args:
-            cfg: The configuration object to use.
-
-        Returns:
-            A configuration object with all subclasses instantiated.
-        """
-        return self.instantiate_classes(cfg, instantiate_groups=False)
-
     ArgumentParser.instantiate_subclasses = instantiate_subclasses
 
 
