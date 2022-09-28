@@ -179,6 +179,13 @@ class DeprecatedTests(unittest.TestCase):
             self.assertIn('env_prefix', str(w[-1].message))
 
 
+    @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
+    def test_docstring_parse(self):
+        with catch_warnings(record=True) as w:
+            import_docstring_parse('test_docstring_parse')
+            self.assertIn('Only use the public API', str(w[-1].message))
+
+
 class DeprecatedTempDirTests(TempDirTestCase):
 
     def test_parse_as_dict(self):
@@ -272,13 +279,6 @@ class DeprecatedTempDirTests(TempDirTestCase):
         parser.add_argument('path', nargs='?', action=ActionPath(mode='fc'))
         self.assertIsNone(parser.parse_args(['1']).path)
         self.assertIsNotNone(parser.parse_args(['2', 'file']).path)
-
-
-class DocstringParserSupportTests(unittest.TestCase):
-
-    @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
-    def test_docstring_parser_support_true(self):
-        import_docstring_parse('test_docstring_parser_support_true')
 
 
 if __name__ == '__main__':
