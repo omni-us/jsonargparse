@@ -170,8 +170,11 @@ def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None
 
 
 def is_subclass(cls, class_or_tuple):
-    """Extension of issubclass that supports non-class argument."""
-    return inspect.isclass(cls) and issubclass(cls, class_or_tuple)
+    """Extension of issubclass that supports non-class arguments."""
+    try:
+        return inspect.isclass(cls) and issubclass(cls, class_or_tuple)
+    except TypeError:
+        return False
 
 
 def import_object(name: str):

@@ -158,7 +158,7 @@ class ActionTypeHint(Action):
         typehint = kwargs.pop('type')
         if args[0].startswith('--') and ActionTypeHint.supports_append(typehint):
             args = tuple(list(args)+[args[0]+'+'])
-        if ActionTypeHint.is_subclass_typehint(typehint):
+        if ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False):
             help_action = container.add_argument(args[0]+'.help', action=_ActionHelpClassPath(baseclass=typehint))
             if sub_add_kwargs:
                 help_action.sub_add_kwargs = sub_add_kwargs
