@@ -19,6 +19,8 @@ Fixed
 ^^^^^
 - ``compute_fn`` of a argument link applied on parse not given subclass default
   ``init_args`` when loading from config.
+- Subclass ``--*.help`` option not available when type is a ``Union`` mixed with
+  not subclass types.
 
 
 v4.15.0 (2022-09-27)

@@ -723,6 +723,21 @@ class TypeHintsTests(unittest.TestCase):
             self.assertEqual(cfg.data.init_args, Namespace(p1=2, p2='y', p3=True))
 
 
+    def test_class_type_subclass_in_union_help(self):
+        parser = ArgumentParser()
+        parser.add_argument('--op', type=Union[str, Mapping[str, int], Calendar])
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--help'])
+        self.assertIn('Show the help for the given subclass of Calendar', out.getvalue())
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args([f'--op.help=TextCalendar'])
+        self.assertIn('--op.init_args.firstweekday', out.getvalue())
+
+
     def test_class_type_subclass_nested_help(self):
         class Class:
             def __init__(self, cal: Calendar, p1: int = 0):

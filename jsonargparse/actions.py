@@ -1,5 +1,6 @@
 """Collection of useful actions to define arguments."""
 
+import inspect
 import os
 import re
 import sys
@@ -322,7 +323,11 @@ class _ActionHelpClassPath(Action):
 
     def update_init_kwargs(self, kwargs):
         if getattr(self._baseclass, '__origin__', None) == Union:
-            self._basename = iter_to_set_str(c.__name__ for c in self._baseclass.__args__ if c != NoneType)
+            from .typehints import ActionTypeHint
+            self._basename = iter_to_set_str(
+                c.__name__ for c in self._baseclass.__args__
+                if ActionTypeHint.is_subclass_typehint(c)
+            )
         else:
             self._basename = self._baseclass.__name__
         kwargs.update({
