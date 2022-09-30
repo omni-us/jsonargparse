@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.15.1 (2022-10-??)
+--------------------
+
+Fixed
+^^^^^
+- ``compute_fn`` of a argument link applied on parse not given subclass default
+  ``init_args`` when loading from config.
+
+
 v4.15.0 (2022-09-27)
 --------------------
 

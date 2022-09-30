@@ -4,6 +4,8 @@ import inspect
 import re
 from argparse import Action, SUPPRESS
 from collections import defaultdict
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 from .actions import _ActionConfigLoad, _ActionSubCommands, ActionConfigFile, filter_default_actions, _find_parent_action
 from .namespace import Namespace, split_key_leaf
@@ -45,6 +47,18 @@ def find_subclass_action_or_class_group(
         if getattr(group, 'dest', None) in key_set and hasattr(group, 'instantiate_class'):
             return group
     return None
+
+
+apply_config_skip: ContextVar = ContextVar('apply_config_skip', default=False)
+
+
+@contextmanager
+def skip_apply_links():
+    t = apply_config_skip.set(True)
+    try:
+        yield
+    finally:
+        apply_config_skip.reset(t)
 
 
 class DirectedGraph:
@@ -193,6 +207,9 @@ class ActionLink(Action):
 
     @staticmethod
     def apply_parsing_links(parser: 'ArgumentParser', cfg: Namespace) -> None:
+        if apply_config_skip.get():
+            return
+
         subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
         if subcommand and subcommand in cfg:
             ActionLink.apply_parsing_links(subparser, cfg[subcommand])  # type: ignore
