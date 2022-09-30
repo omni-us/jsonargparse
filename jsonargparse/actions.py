@@ -174,7 +174,8 @@ class ActionConfigFile(Action, FilesCompleterMethod):
 
     @staticmethod
     def apply_config(parser, cfg, dest, value) -> None:
-        with _ActionSubCommands.not_single_subcommand(), previous_config_context(cfg):
+        from .link_arguments import skip_apply_links
+        with _ActionSubCommands.not_single_subcommand(), previous_config_context(cfg), skip_apply_links():
             kwargs = {'env': False, 'defaults': False, '_skip_check': True, '_fail_no_subcommand': False}
             try:
                 cfg_path: Optional[Path] = Path(value, mode=get_config_read_mode())

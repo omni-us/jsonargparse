@@ -37,8 +37,9 @@ class LinkArgumentsTests(unittest.TestCase):
         self.assertEqual(dump, {'a': {'v1': 2, 'v2': -5}})
 
 
-    def test_link_arguments_on_parse_invalid_compute_fn_arg(self):
+    def test_link_arguments_on_parse_compute_fn_subclass_spec(self):
         parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--cfg', action=ActionConfigFile)
         parser.add_argument('--cal1', type=Calendar, default=lazy_instance(TextCalendar))
         parser.add_argument('--cal2', type=Calendar, default=lazy_instance(Calendar))
         parser.link_arguments(
@@ -46,12 +47,21 @@ class LinkArgumentsTests(unittest.TestCase):
             'cal2.init_args.firstweekday',
             compute_fn=lambda c: c.init_args.firstweekday+1,
         )
-        cfg = parser.parse_args(['--cal1.init_args.firstweekday=2'])
-        self.assertEqual(cfg.cal1.init_args.firstweekday, 2)
-        self.assertEqual(cfg.cal2.init_args.firstweekday, 3)
-        with self.assertRaises(ParserError) as cm:
-            parser.parse_args(['--cal1.class_path.init_args.firstweekday=2'])
-        self.assertIn('Parser key "cal1"', str(cm.exception))
+
+        with self.subTest('from config and default init_args'):
+            cfg = parser.parse_args(['--cfg={"cal1": "Calendar"}'])
+            self.assertEqual(cfg.cal1.init_args.firstweekday, 0)
+            self.assertEqual(cfg.cal2.init_args.firstweekday, 1)
+
+        with self.subTest('from given init_args'):
+            cfg = parser.parse_args(['--cal1.init_args.firstweekday=2'])
+            self.assertEqual(cfg.cal1.init_args.firstweekday, 2)
+            self.assertEqual(cfg.cal2.init_args.firstweekday, 3)
+
+        with self.subTest('invalid arg'):
+            with self.assertRaises(ParserError) as cm:
+                parser.parse_args(['--cal1.class_path.init_args.firstweekday=2'])
+            self.assertIn('Parser key "cal1"', str(cm.exception))
 
 
     def test_link_arguments_on_parse_add_class_arguments(self):
