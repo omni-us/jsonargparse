@@ -295,10 +295,10 @@ def function_pop_get_from_kwargs(kn1: int = 0, **kw):
         kn3: help for kn3
         kn4: help for kn4
     """
-    k2 = kw.pop('k2', 2)
-    kn2 = kw.pop('kn2', 0.5)
-    kn3 = kw.get('kn3', {})
-    kn4 = kw.pop('kn4', [1])
+    kw.pop('k2', 2)
+    kw.pop('kn2', 0.5)
+    kw.get('kn3', {})
+    kw.pop('kn4', [1])
     return function_no_args_no_kwargs(**kw)
 
 def function_with_bug(**kws):

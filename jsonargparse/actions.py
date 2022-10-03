@@ -1,6 +1,5 @@
 """Collection of useful actions to define arguments."""
 
-import inspect
 import os
 import re
 import sys

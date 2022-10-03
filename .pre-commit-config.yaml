@@ -2,6 +2,11 @@ fail_fast: true
 
 repos:
 
+- repo: https://github.com/PyCQA/autoflake
+  rev: v1.6.1
+  hooks:
+  - id: autoflake
+
 - repo: local
   hooks:
 
@@ -9,7 +14,7 @@ repos:
     id: ./setup.py bdist_wheel && twine check dist/*.whl
     entry: bash -c '
       if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
-        echo skipped;
+        echo "$(tput setaf 6) Skipped, only runs when bumping version $(tput sgr0)";
       else
         ./setup.py bdist_wheel;
         twine check dist/*.whl;
@@ -22,7 +27,7 @@ repos:
     id: fail on CHANGELOG.rst not updated, or update CHANGELOG.rst if BUMPVERSION_UPDATE_CHANGELOG set
     entry: bash -c '
       if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
-        echo skipped;
+        echo "$(tput setaf 6) Skipped, only runs when bumping version $(tput sgr0)";
       else
         CHANGELOG=$(grep -E "^v.+\..+\..+ \(....-..-..\)" CHANGELOG.rst | head -n 1);
         EXPECTED="v$BUMPVERSION_NEW_VERSION ($(date -u +%Y-%m-%d))";
@@ -42,9 +47,15 @@ repos:
 
   - name: circleci config
     id: circleci config validate -c .circleci/config.yml
-    entry: circleci config validate -c
+    entry: bash -c '
+      if [ "$(which circleci)" = "" ]; then
+        echo "$(tput setaf 6) Skipped, circleci command not found $(tput sgr0)";
+      else
+        circleci config validate -c .circleci/config.yml;
+      fi'
     language: system
     files: .circleci/config.yml
+    pass_filenames: false
     verbose: true
 
   - name: mypy
@@ -78,7 +89,12 @@ repos:
 
   - name: doctest
     id: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
-    entry: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
+    entry: bash -c '
+      if [ "$(which sphinx-build)" = "" ]; then
+        echo "$(tput setaf 6) Skipped, sphinx-build command not found $(tput sgr0)";
+      else
+        sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst;
+      fi'
     language: system
     pass_filenames: false
     verbose: true
