@@ -12,12 +12,12 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
-v4.15.1 (2022-10-??)
+v4.15.1 (2022-10-07)
 --------------------
 
 Fixed
 ^^^^^
-- ``compute_fn`` of a argument link applied on parse not given subclass default
+- ``compute_fn`` of an argument link applied on parse not given subclass default
   ``init_args`` when loading from config.
 - Subclass ``--*.help`` option not available when type is a ``Union`` mixed with
   not subclass types.
