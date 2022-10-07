@@ -103,6 +103,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
                     kwargs=kwargs,
                     enable_path=enable_path,
                     container=super(),
+                    logger=self.logger,
                 )
         action = super().add_argument(*args, **kwargs)
         if isinstance(action, ActionConfigFile) and getattr(self, '_print_config', None) is not None:

@@ -124,6 +124,19 @@ class ActionTypeHint(Action):
         if typehint is not None:
             if not self.is_supported_typehint(typehint, full=True):
                 raise ValueError(f'Unsupported type hint {typehint}.')
+            if get_typehint_origin(typehint) == Union:
+                subtype_supported = [
+                    subtype is NoneType or self.is_supported_typehint(subtype, full=True)
+                    for subtype in typehint.__args__
+                ]
+                if sum(subtype_supported) < len(subtype_supported):
+                    discard = {typehint.__args__[n] for n, s in enumerate(subtype_supported) if not s}
+                    kwargs['logger'].debug(f'Discarding unsupported subtypes {discard} from {typehint}')
+                    orig_typehint = typehint  # deepcopy does not copy ForwardRef
+                    typehint = deepcopy(orig_typehint)
+                    typehint.__args__ = tuple(
+                        orig_typehint.__args__[n] for n, s in enumerate(subtype_supported) if s
+                    )
             self._typehint = typehint
             self._enable_path = False if is_optional(typehint, Path) else enable_path
         elif '_typehint' not in kwargs:
@@ -152,7 +165,7 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def prepare_add_argument(args, kwargs, enable_path, container, sub_add_kwargs=None):
+    def prepare_add_argument(args, kwargs, enable_path, container, logger, sub_add_kwargs=None):
         if 'action' in kwargs:
             raise ValueError('Providing both type and action not allowed.')
         typehint = kwargs.pop('type')
@@ -162,7 +175,7 @@ class ActionTypeHint(Action):
             help_action = container.add_argument(args[0]+'.help', action=_ActionHelpClassPath(baseclass=typehint))
             if sub_add_kwargs:
                 help_action.sub_add_kwargs = sub_add_kwargs
-        kwargs['action'] = ActionTypeHint(typehint=typehint, enable_path=enable_path)
+        kwargs['action'] = ActionTypeHint(typehint=typehint, enable_path=enable_path, logger=logger)
         return args
 
 
@@ -172,20 +185,27 @@ class ActionTypeHint(Action):
         supported = \
             typehint in root_types or \
             get_typehint_origin(typehint) in root_types or \
-            get_registered_type(typehint) or \
+            get_registered_type(typehint) is not None or \
             is_subclass(typehint, Enum) or \
             ActionTypeHint.is_subclass_typehint(typehint)
         if full and supported:
             typehint_origin = get_typehint_origin(typehint) or typehint
             if typehint not in root_types and typehint_origin in root_types and typehint_origin != Literal:
-                for typehint in getattr(typehint, '__args__', []):
-                    if not (
-                        typehint == Ellipsis or
-                        (typehint_origin == type and isinstance(typehint, TypeVar)) or
-                        typehint in leaf_types or
-                        ActionTypeHint.is_supported_typehint(typehint, full=True)
+                num_supported_args = 0
+                subtypes = getattr(typehint, '__args__', [])
+                subtypes = [s for s in subtypes if s is not NoneType]
+                for subtype in subtypes:
+                    if (
+                        subtype == Ellipsis or
+                        (typehint_origin == type and isinstance(subtype, TypeVar)) or
+                        subtype in leaf_types or
+                        ActionTypeHint.is_supported_typehint(subtype, full=True)
                     ):
+                        num_supported_args += 1
+                    elif typehint_origin != Union:
                         return False
+                if typehint_origin == Union and subtypes and num_supported_args == 0:
+                    return False
         return supported
 
 

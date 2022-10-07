@@ -321,6 +321,7 @@ class SignatureArguments(LoggerProperty):
                     kwargs=kwargs,
                     enable_path=is_subclass_typehint and sub_configs,
                     container=group,
+                    logger=self.logger,
                     sub_add_kwargs=sub_add_kwargs,
                 )
             except ValueError as ex:

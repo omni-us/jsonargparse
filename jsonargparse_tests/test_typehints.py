@@ -884,8 +884,24 @@ class TypeHintsTests(unittest.TestCase):
 
 
     def test_unsupported_type(self):
-        self.assertRaises(ValueError, lambda: ActionTypeHint(typehint=lambda: None))
-        self.assertRaises(ValueError, lambda: ActionTypeHint(typehint=Union[int, lambda: None]))
+        for typehint in [
+            lambda: None,
+            'unsupported',
+            Optional['unsupported'],
+            Tuple[int, 'unsupported'],
+            Union['unsupported1', 'unsupported2'],
+        ]:
+            with self.subTest(typehint):
+                with self.assertRaises(ValueError):
+                    ActionTypeHint(typehint=typehint)
+
+
+    def test_union_partially_unsupported_type(self):
+        parser = ArgumentParser(logger={'level': 'DEBUG'})
+        with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
+            parser.add_argument('--union', type=Union[int, str, 'unsupported'])
+            self.assertEqual(1, len(log.output))
+            self.assertIn('Discarding unsupported subtypes', log.output[0])
 
 
     def test_nargs_questionmark(self):

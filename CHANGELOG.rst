@@ -25,6 +25,9 @@ Fixed
 - Multiple subclass ``init_args`` given through command line not being
   considered `pytorch-lightning#15007
   <https://github.com/PyTorchLightning/pytorch-lightning/pull/15007>`__.
+- ``Union`` types required all subtypes to be supported when expected to be at
+  least one subtype supported `#168
+  <https://github.com/omni-us/jsonargparse/issues/168>`__.
 
 
 v4.15.0 (2022-09-27)
