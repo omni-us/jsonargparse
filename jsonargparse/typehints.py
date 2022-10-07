@@ -327,17 +327,10 @@ class ActionTypeHint(Action):
         if self.nargs == '?' and args[2] is None:
             val = None
         else:
-            parser, cfg, val, opt_str = args
+            cfg, val, opt_str = args[1:]
             if isinstance(opt_str, str) and opt_str.startswith(f'--{self.dest}.'):
                 sub_opt = opt_str[len(f'--{self.dest}.'):]
                 val = NestedArg(key=sub_opt, val=val)
-                if self.dest not in cfg:
-                    try:
-                        default = parser.get_default(self.dest)
-                        cfg = deepcopy(cfg)
-                        cfg[self.dest] = default
-                    except KeyError:
-                        pass
             append = opt_str == f'--{self.dest}+'
             val = self._check_type(val, append=append, cfg=cfg)
         args[1].update(val, self.dest)
@@ -356,9 +349,14 @@ class ActionTypeHint(Action):
                 except get_loader_exceptions():
                     config_path = None
                 path_meta = val.pop('__path__', None) if isinstance(val, dict) else None
+
+                prev_val = cfg.get(self.dest) if cfg else None
+                if not prev_val and not sub_defaults.get() and is_subclass_spec(self.default):
+                    prev_val = Namespace(class_path=self.default.class_path)
+
                 kwargs = {
                     'sub_add_kwargs': getattr(self, 'sub_add_kwargs', {}),
-                    'prev_val': cfg.get(self.dest) if cfg else None,
+                    'prev_val': prev_val,
                     'append': append,
                 }
                 try:
@@ -667,6 +665,8 @@ def is_subclass_spec(val):
 
 
 def subclass_spec_as_namespace(val, prev_val=None):
+    if val is None:
+        return None
     if isinstance(val, str):
         return Namespace(class_path=val)
     if isinstance(val, NestedArg):
@@ -767,7 +767,6 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
         if isinstance(parser_or_action, ActionTypeHint):
             sub_add_kwargs = getattr(parser_or_action, 'sub_add_kwargs', {})
             parser = ActionTypeHint.get_class_parser(value['class_path'], sub_add_kwargs)
-        prev_val = subclass_spec_as_namespace(prev_val)
         del_args = {}
         for key, val in list(prev_val.init_args.__dict__.items()):
             action = _find_action(parser, key)
@@ -787,6 +786,7 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
 
 
 def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev_val=None):
+    prev_val = subclass_spec_as_namespace(prev_val)
     value = subclass_spec_as_namespace(value)
     val_class = import_object(value.class_path)
     parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
@@ -820,10 +820,12 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
             return value
         return val_class(**{**init_args, **dict_kwargs})
 
+    prev_init_args = prev_val.get('init_args') if prev_val else None
+
     if isinstance(init_args, NestedArg):
         value['init_args'] = parser.parse_args(
             [f'--{init_args.key}={init_args.val}'],
-            namespace=prev_val.init_args.clone(),
+            namespace=prev_init_args,
             defaults=sub_defaults.get(),
         )
         return value
@@ -839,12 +841,12 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
         elif dict_kwargs:
             init_args['dict_kwargs'] = dict_kwargs
             dict_kwargs = None
-        init_args = parser.parse_object(init_args, defaults=sub_defaults.get())
+        init_args = parser.parse_object(init_args, cfg_base=prev_init_args, defaults=sub_defaults.get())
         if init_args:
             value['init_args'] = init_args
     if dict_kwargs:
-        if isinstance(prev_val, Namespace) and prev_val.get('class_path') == value['class_path'] and prev_val.get('dict_kwargs'):
-            dict_kwargs.update(prev_val.get('dict_kwargs'))
+        if prev_val and prev_val.get('class_path') == value['class_path'] and prev_val.get('dict_kwargs'):
+            dict_kwargs = {**prev_val.get('dict_kwargs'), **dict_kwargs}
         value['dict_kwargs'] = dict_kwargs
     return value
 

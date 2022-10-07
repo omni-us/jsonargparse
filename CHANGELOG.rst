@@ -21,6 +21,10 @@ Fixed
   ``init_args`` when loading from config.
 - Subclass ``--*.help`` option not available when type is a ``Union`` mixed with
   not subclass types.
+- Override of ``dict_kwargs`` items from command line not working.
+- Multiple subclass ``init_args`` given through command line not being
+  considered `pytorch-lightning#15007
+  <https://github.com/PyTorchLightning/pytorch-lightning/pull/15007>`__.
 
 
 v4.15.0 (2022-09-27)

@@ -278,6 +278,21 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', 'val+: a']))
 
 
+    def test_list_append_subclass_init_args(self):
+        class Class:
+            def __init__(self, p1: int = 0, p2: int = 0):
+                pass
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--val', type=Union[Class, List[Class]])
+
+        with mock_module(Class) as module:
+            cfg = parser.parse_args([f'--val+={module}.Class', '--val.p1=1', '--val.p2=2', '--val.p1=3'])
+            self.assertEqual(cfg.val, [Namespace(class_path=f'{module}.Class', init_args=Namespace(p1=3, p2=2))])
+            cfg = parser.parse_args([f'--val+=Class', '--val.p2=2', '--val.p1=1'])
+            self.assertEqual(cfg.val, [Namespace(class_path=f'{module}.Class', init_args=Namespace(p1=1, p2=2))])
+
+
     def test_list_append_subcommand_subclass(self):
         class A:
             def __init__(self, cals: Union[Calendar, List[Calendar]] = None):
@@ -792,7 +807,7 @@ class TypeHintsTests(unittest.TestCase):
             self.assertIsInstance(cfg_init.cls, Class)
             self.assertEqual(cfg_init.cls.kwargs, expected.dict_kwargs)
 
-            cfg = parser.parse_args(['--cls=Class', '--cls.dict_kwargs.p4=x', '--cls.dict_kwargs.p3=7.0'])
+            cfg = parser.parse_args(['--cls=Class', '--cls.dict_kwargs.p4=-', '--cls.dict_kwargs.p3=7.0', '--cls.dict_kwargs.p4=x'])
             self.assertEqual(cfg.cls.dict_kwargs, expected.dict_kwargs)
 
             with self.assertRaises(ParserError):
