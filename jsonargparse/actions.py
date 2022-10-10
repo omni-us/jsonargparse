@@ -344,27 +344,28 @@ class _ActionHelpClassPath(Action):
 
     def print_help(self, call_args, baseclass, dest):
         from .typehints import resolve_class_path_by_name
+        parser, _, value, option_string = call_args
         try:
-            val_class = import_object(resolve_class_path_by_name(baseclass, call_args[2]))
+            val_class = import_object(resolve_class_path_by_name(baseclass, value))
         except Exception as ex:
-            raise TypeError(f'{call_args[3]}: {ex}')
+            raise TypeError(f'{option_string}: {ex}')
         if getattr(self._baseclass, '__origin__', None) == Union:
             baseclasses = self._baseclass.__args__
         else:
             baseclasses = [baseclass]
         if not any(is_subclass(val_class, b) for b in baseclasses):
-            raise TypeError(f'{call_args[3]}: Class "{call_args[2]}" is not a subclass of {self._basename}')
+            raise TypeError(f'{option_string}: Class "{value}" is not a subclass of {self._basename}')
         dest += '.init_args'
-        subparser = import_object('jsonargparse.ArgumentParser')()
+        subparser = type(parser)()
         subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
         _remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
-        args = self.get_args_after_opt(call_args[0].args)
+        args = self.get_args_after_opt(parser.args)
         if args:
             subparser.parse_args(args)
             raise ParserError(f'Expected a nested --*.help option, got: {args}.')
         else:
             subparser.print_help()
-            call_args[0].exit()
+            parser.exit()
 
     def get_args_after_opt(self, args):
         opt_str = self.option_strings[0]
