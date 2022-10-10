@@ -62,6 +62,10 @@ class LinkArgumentsTests(unittest.TestCase):
             with self.assertRaises(ParserError) as cm:
                 parser.parse_args(['--cal1.class_path.init_args.firstweekday=2'])
             self.assertIn('Parser key "cal1"', str(cm.exception))
+            parser.set_defaults(cal1=None)
+            with self.assertRaises(ParserError) as cm:
+                parser.parse_args(['--cal1.firstweekday=-'])
+            self.assertIn('Parser key "cal1"', str(cm.exception))
 
 
     def test_link_arguments_on_parse_add_class_arguments(self):

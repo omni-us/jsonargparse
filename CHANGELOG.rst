@@ -12,6 +12,17 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in any moment.
 
 
+v4.15.2 (2022-10-??)
+--------------------
+
+Fixed
+^^^^^
+- Regression introduced in `6e7ae6d
+  <https://github.com/omni-us/jsonargparse/commit/6e7ae6dca41d2bdf081731c042bba9d08b6f228f>`__
+  that produced cryptic error message when an invalid argument given `#172
+  <https://github.com/omni-us/jsonargparse/issues/172>`__.
+
+
 v4.15.1 (2022-10-07)
 --------------------
 

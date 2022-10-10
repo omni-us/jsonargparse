@@ -294,10 +294,10 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
         _ActionPrintConfig.print_config_if_requested(self, cfg)
 
-        ActionLink.apply_parsing_links(self, cfg)
+        with load_value_context(self.parser_mode):
+            ActionLink.apply_parsing_links(self, cfg)
 
-        if not skip_check and not lenient_check.get():
-            with load_value_context(self.parser_mode):
+            if not skip_check and not lenient_check.get():
                 self.check_config(cfg, skip_required=skip_required)
 
         if log_message is not None:
