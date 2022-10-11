@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Callable, Dict, Tuple, Type
 
-from .optionals import import_jsonnet
+from .optionals import import_jsonnet, omegaconf_support
 from .type_checking import ArgumentParser
 
 
@@ -203,3 +203,9 @@ def set_dumper(format_name: str, dumper_fn: Callable[[Any], str]):
         dumper_fn: The dumper function to set. Example: ``yaml.safe_dump``.
     """
     dumpers[format_name] = dumper_fn
+
+
+def set_omegaconf_loader():
+    if omegaconf_support and 'omegaconf' not in loaders:
+        from .optionals import get_omegaconf_loader
+        set_loader('omegaconf', get_omegaconf_loader())

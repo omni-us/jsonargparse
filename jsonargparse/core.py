@@ -14,7 +14,16 @@ from .formatters import DefaultHelpFormatter, empty_help, formatter_context, get
 from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
 from .jsonschema import ActionJsonSchema
 from .link_arguments import ActionLink, ArgumentLinking
-from .loaders_dumpers import check_valid_dump_format, dump_using_format, get_loader_exceptions, loaders, load_value, load_value_context, yaml_load
+from .loaders_dumpers import (
+    check_valid_dump_format,
+    dump_using_format,
+    get_loader_exceptions,
+    loaders,
+    load_value,
+    load_value_context,
+    set_omegaconf_loader,
+    yaml_load,
+)
 from .namespace import is_meta_key, Namespace, patch_namespace, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
 from .typehints import ActionTypeHint, is_subclass_spec
@@ -42,7 +51,6 @@ from .optionals import (
     get_config_read_mode,
     import_fsspec,
     import_jsonnet,
-    omegaconf_support,
 )
 from .util import (
     change_to_path_dir,
@@ -1436,10 +1444,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
     @parser_mode.setter
     def parser_mode(self, parser_mode: str):
-        if parser_mode not in loaders and parser_mode == 'omegaconf' and omegaconf_support:
-            from .loaders_dumpers import set_loader
-            from .optionals import get_omegaconf_loader
-            set_loader('omegaconf', get_omegaconf_loader())
+        if parser_mode == 'omegaconf':
+            set_omegaconf_loader()
         if parser_mode not in loaders:
             raise ValueError(f'The only accepted values for parser_mode are {set(loaders.keys())}.')
         if parser_mode == 'jsonnet':

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
+import os
 import unittest
 import yaml
 from importlib.util import find_spec
 from typing import List
 from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader, ParserError
-from jsonargparse.loaders_dumpers import load_value, load_value_context, yaml_dump
+from jsonargparse.loaders_dumpers import loaders, load_value, load_value_context, yaml_dump
 
 
 class LoadersTests(unittest.TestCase):
@@ -123,6 +124,14 @@ class LoadersTests(unittest.TestCase):
         with load_value_context('yaml'):
             self.assertEqual('-', load_value('-'))
             self.assertEqual(' -  ', load_value(' -  '))
+
+
+    @unittest.skipIf(
+        not (find_spec('omegaconf') and 'JSONARGPARSE_OMEGACONF_FULL_TEST' in os.environ),
+        'only for omegaconf as the yaml loader',
+    )
+    def test_omegaconf_as_yaml_loader(self):
+        self.assertIs(loaders['yaml'], loaders['omegaconf'])
 
 
 if __name__ == '__main__':
