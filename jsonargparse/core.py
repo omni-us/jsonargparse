@@ -456,7 +456,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                         cfg[subcommand+'.'+k] = v
         for action in actions:
             env_var = get_env_var(self, action)
-            if env_var in env and not isinstance(action, ActionConfigFile):
+            if env_var in env and not isinstance(action, (ActionConfigFile, _ActionSubCommands)):
                 env_val = env[env_var]
                 if _is_action_value_list(action):
                     if re.match('^ *\\[.+,.+] *$', env_val):

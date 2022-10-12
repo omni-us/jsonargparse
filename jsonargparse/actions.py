@@ -572,6 +572,7 @@ class _ActionSubCommands(_SubParsersAction):
 
         parser.prog = f'{self._prog_prefix} [options] {name}'
         parser.env_prefix = f'{self._env_prefix}_{name}_'
+        parser.default_env = self.parent_parser.default_env
         parser.parent_parser = self.parent_parser
         parser.parser_mode = self.parent_parser.parser_mode
         parser.subcommand = name
