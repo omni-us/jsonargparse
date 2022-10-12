@@ -1,7 +1,6 @@
 """Code related to loading and dumping."""
 
 import inspect
-import json
 import re
 import yaml
 from contextlib import contextmanager
@@ -138,10 +137,12 @@ def yaml_comments_dump(data, parser):
 
 
 def json_dump(data):
+    import json
     return json.dumps(data, separators=(',', ':'), **dump_json_kwargs)
 
 
 def json_indented_dump(data):
+    import json
     return json.dumps(data, indent=2, **dump_json_kwargs)+'\n'
 
 

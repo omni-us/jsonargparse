@@ -1,6 +1,5 @@
 """Action to support jsonschemas."""
 
-import json
 import os
 from argparse import Action
 from typing import Dict, Union
@@ -72,6 +71,7 @@ class ActionJsonSchema(Action):
             kwargs['_enable_path'] = self._enable_path
             kwargs['_with_meta'] = self._with_meta
             if 'help' in kwargs and isinstance(kwargs['help'], str) and '%s' in kwargs['help']:
+                import json
                 kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, sort_keys=True)
             class_type = kwargs.pop('_class_type', ActionJsonSchema)
             return class_type(**kwargs)
@@ -128,6 +128,7 @@ class ActionJsonSchema(Action):
             except (ValueError,) + get_jsonschema_exceptions() + get_loader_exceptions():
                 msg = 'value not yet valid, '
             else:
+                import json
                 schema = json.dumps(self._validator.schema, indent=2, sort_keys=True).replace('\n', '\n  ')
                 msg += f'required to be valid according to schema:\n  {schema}\n'
             return argcomplete_warn_redraw_prompt(prefix, msg)

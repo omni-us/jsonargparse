@@ -1,6 +1,5 @@
 """Actions to support jsonnet."""
 
-import json
 from argparse import Action
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -91,6 +90,7 @@ class ActionJsonnet(Action):
             kwargs['_ext_vars'] = self._ext_vars
             kwargs['_validator'] = self._validator
             if 'help' in kwargs and '%s' in kwargs['help'] and self._validator is not None:
+                import json
                 kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, sort_keys=True)
             return ActionJsonnet(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2], cfg=args[1]))
@@ -125,6 +125,7 @@ class ActionJsonnet(Action):
         """
         if ext_vars is None:
             ext_vars = {}
+        import json
         ext_codes = {k: json.dumps(v) for k, v in ext_vars.items() if not isinstance(v, str)}
         ext_vars = {k: v for k, v in ext_vars.items() if isinstance(v, str)}
         return ext_vars, ext_codes
