@@ -234,6 +234,12 @@ class ActionTypeHint(Action):
         return False
 
 
+    @staticmethod
+    def is_callable_typehint(typehint):
+        typehint_origin = get_typehint_origin(typehint)
+        return typehint_origin in callable_origin_types or typehint in callable_origin_types
+
+
     def is_init_arg_mapping_typehint(self, key, cfg):
         result = False
         class_path = cfg.get(f'{self.dest}.class_path')
@@ -259,8 +265,9 @@ class ActionTypeHint(Action):
                 action = _find_parent_action(parser, arg_base[2:])
 
         typehint = typehint_from_action(action)
-        if (
+        if typehint and (
             ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False) or
+            ActionTypeHint.is_callable_typehint(typehint) or
             ActionTypeHint.is_mapping_typehint(typehint)
         ):
             return action, arg_base, explicit_arg
@@ -629,14 +636,16 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                 if isinstance(val, str):
                     val_obj = import_object(val)
                     if inspect.isclass(val_obj):
-                        val = {'class_path': val}
+                        val = Namespace(class_path=val)
                     elif callable(val_obj):
                         val = val_obj
                     else:
                         raise ImportError(f'Unexpected import object {val_obj}')
-                if isinstance(val, (dict, Namespace)):
+                if isinstance(val, (dict, Namespace, NestedArg)):
+                    val_input = val
+                    val = subclass_spec_as_namespace(val, prev_val)
                     if not is_subclass_spec(val):
-                        raise ImportError(f'Dict must include a class_path and optionally init_args, but got {val}')
+                        raise ImportError(f'Dict must include a class_path and optionally init_args, but got {val_input}')
                     val_class = import_object(val['class_path'])
                     if not (inspect.isclass(val_class) and callable_instances(val_class)):
                         raise ImportError(f'{val["class_path"]!r} is not a callable class.')
