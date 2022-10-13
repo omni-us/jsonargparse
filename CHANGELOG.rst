@@ -24,6 +24,8 @@ Fixed
 - ``default_env`` not forwarded to subcommand parsers, causing environment
   variable names to not be shown in subcommand help `pytorch-lightning#12790
   <https://github.com/Lightning-AI/lightning/issues/12790>`__.
+- Cannot override Callable ``init_args`` without passing the ``class_path``
+  `#174 <https://github.com/omni-us/jsonargparse/issues/174>`__.
 
 
 v4.15.1 (2022-10-07)
