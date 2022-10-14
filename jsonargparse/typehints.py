@@ -235,8 +235,12 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def is_callable_typehint(typehint):
+    def is_callable_typehint(typehint, all_subtypes=True):
         typehint_origin = get_typehint_origin(typehint)
+        if typehint_origin == Union:
+            subtypes = [a for a in typehint.__args__ if a != NoneType]
+            test = all if all_subtypes else any
+            return test(ActionTypeHint.is_callable_typehint(s) for s in subtypes)
         return typehint_origin in callable_origin_types or typehint in callable_origin_types
 
 
@@ -267,7 +271,7 @@ class ActionTypeHint(Action):
         typehint = typehint_from_action(action)
         if typehint and (
             ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False) or
-            ActionTypeHint.is_callable_typehint(typehint) or
+            ActionTypeHint.is_callable_typehint(typehint, all_subtypes=False) or
             ActionTypeHint.is_mapping_typehint(typehint)
         ):
             return action, arg_base, explicit_arg

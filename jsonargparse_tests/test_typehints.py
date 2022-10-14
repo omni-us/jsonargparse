@@ -497,6 +497,24 @@ class TypeHintsTests(unittest.TestCase):
             self.assertEqual(init.call(), 'Bob')
 
 
+    def test_union_callable_with_class_path_short_init_args(self):
+        class MyCallable:
+            def __init__(self, name: str):
+                self.name = name
+            def __call__(self):
+                return self.name
+
+        parser = ArgumentParser()
+        parser.add_argument('--call', type=Union[Callable, None])
+
+        with mock_module(MyCallable) as module:
+            cfg = parser.parse_args([f'--call={module}.MyCallable', '--call.name=Bob'])
+            self.assertEqual(cfg.call.class_path, f'{module}.MyCallable')
+            self.assertEqual(cfg.call.init_args, Namespace(name='Bob'))
+            init = parser.instantiate_classes(cfg)
+            self.assertEqual(init.call(), 'Bob')
+
+
     def test_typed_Callable_with_function_path(self):
         def my_func_1(p: int) -> str:
             return str(p)
