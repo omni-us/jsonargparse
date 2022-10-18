@@ -32,7 +32,7 @@ from typing import (
 )
 
 from .actions import _ActionHelpClassPath, _find_action, _find_parent_action, _is_action_value_list
-from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context
+from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context, pyyaml_exceptions, yaml_load
 from .namespace import Namespace
 from .typing import get_registered_type, is_final_class
 from .optionals import (
@@ -48,7 +48,6 @@ from .util import (
     indent_text,
     is_subclass,
     iter_to_set_str,
-    lenient_check,
     lenient_check_context,
     NestedArg,
     NoneType,
@@ -395,16 +394,16 @@ class ActionTypeHint(Action):
                     with change_to_path_dir(config_path):
                         val = adapt_typehints(val, self._typehint, **kwargs)
                 except ValueError as ex:
-                    val_is_int_float_or_none = isinstance(val, (int, float)) or val is None
-                    if lenient_check.get():
-                        value[num] = orig_val if val_is_int_float_or_none else val
-                        continue
-                    if val_is_int_float_or_none and config_path is None:
-                        val = adapt_typehints(orig_val, self._typehint, **kwargs)
-                    else:
+                    try:
+                        if isinstance(orig_val, str):
+                            with change_to_path_dir(config_path):
+                                val = adapt_typehints(orig_val, self._typehint, **kwargs)
+                            ex = None
+                    except ValueError:
                         if self._enable_path and config_path is None and isinstance(orig_val, str):
                             msg = f'\n- Expected a config path but "{orig_val}" either not accessible or invalid.\n- '
                             raise type(ex)(msg+str(ex)) from ex
+                    if ex:
                         raise ex
 
                 if not append and self._supports_append:
@@ -491,7 +490,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
         'append': append,
         'sub_add_kwargs': sub_add_kwargs or {},
     }
-    subtypehints = get_typehint_subtypes(typehint, append=append)
+    subtypehints = getattr(typehint, '__args__', None)
     typehint_origin = get_typehint_origin(typehint) or typehint
 
     # Any
@@ -501,22 +500,29 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             val = adapt_typehints(val, type_val, **adapt_kwargs)
         elif isinstance(val, str):
             try:
-                val, _ = parse_value_or_config(val, enable_path=False)
+                val, _ = parse_value_or_config(val, enable_path=False, simple_types=True)
             except get_loader_exceptions():
                 pass
 
     # Literal
     elif typehint_origin == Literal:
+        if val not in subtypehints and isinstance(val, str):
+            subtypes = Union[tuple(set(type(v) for v in subtypehints))]
+            val = adapt_typehints(val, subtypes, **adapt_kwargs)
         if val not in subtypehints:
             raise ValueError(f'Expected a {typehint} but got "{val}"')
 
     # Basic types
     elif typehint in leaf_types:
-        if not isinstance(val, typehint):
+        if not isinstance(val, typehint) and isinstance(val, str) and typehint is not str:
+            try:
+                val = yaml_load(val)
+            except pyyaml_exceptions:
+                pass
             if typehint is float and isinstance(val, int):
                 val = float(val)
-            else:
-                raise ValueError(f'Expected a {typehint} but got "{val}"')
+        if not isinstance(val, typehint):
+            raise ValueError(f'Expected a {typehint} but got "{val}"')
 
     # Registered types
     elif get_registered_type(typehint):
@@ -554,6 +560,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
     # Union
     elif typehint_origin == Union:
         vals = []
+        subtypehints = sort_subtypes_for_append(subtypehints) if append else subtypehints
         for subtypehint in subtypehints:
             try:
                 vals.append(adapt_typehints(val, subtypehint, **adapt_kwargs))
@@ -593,7 +600,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                     prev_val = [adapt_typehints(prev_val, subtypehints[0], **adapt_kwargs)]
                 except Exception:
                     prev_val = []
-            val = prev_val + (val if isinstance(val, list) else [val])
+            val = prev_val + (val if isinstance(val, list) else [adapt_typehints(val, subtypehints[0], **adapt_kwargs)])
             prev_val = prev_val + [None] * (len(val) if isinstance(val, list) else 1)
         if isinstance(val, NestedArg) and subtypehints is not None:
             val = (prev_val[:-1] if isinstance(prev_val, list) else []) + [val]
@@ -699,7 +706,7 @@ def is_subclass_spec(val):
 
 
 def subclass_spec_as_namespace(val, prev_val=None):
-    if val is None:
+    if not isinstance(val, (str, dict, Namespace, NestedArg)):
         return None
     if isinstance(val, str):
         return Namespace(class_path=val)
@@ -854,7 +861,7 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
             return value
         return val_class(**{**init_args, **dict_kwargs})
 
-    prev_init_args = prev_val.get('init_args') if prev_val else None
+    prev_init_args = prev_val.get('init_args') if isinstance(prev_val, Namespace) else None
 
     if isinstance(init_args, NestedArg):
         value['init_args'] = parser.parse_args(
@@ -881,7 +888,10 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
     if dict_kwargs:
         if prev_val and prev_val.get('class_path') == value['class_path'] and prev_val.get('dict_kwargs'):
             dict_kwargs = {**prev_val.get('dict_kwargs'), **dict_kwargs}
-        value['dict_kwargs'] = dict_kwargs
+        value['dict_kwargs'] = {
+            k: load_value(v, simple_types=True) if isinstance(v, str) else v
+            for k, v in dict_kwargs.items()
+        }
     return value
 
 
@@ -892,9 +902,8 @@ def not_append_diff(val1, val2):
     return val1 != val2
 
 
-def get_typehint_subtypes(typehint, append):
-    subtypes = getattr(typehint, '__args__', None)
-    if append and subtypes:
+def sort_subtypes_for_append(subtypes):
+    if subtypes and len(subtypes) > 1:
         subtypes = sorted(subtypes, key=lambda x: get_typehint_origin(x) not in sequence_origin_types)
     return subtypes
 
@@ -1002,7 +1011,6 @@ class LazyInitBaseClass:
     def __init__(self, class_type: Type, lazy_kwargs: dict):
         check_lazy_kwargs(class_type, lazy_kwargs)
         self._lazy_class_type = class_type
-        self._lazy_class_path = get_import_path(class_type)
         self._lazy_kwargs = lazy_kwargs
         self._lazy_methods = {}
         seen_methods: Dict = {}
@@ -1032,7 +1040,7 @@ class LazyInitBaseClass:
         init_args = Namespace(self._lazy_kwargs)
         if is_final_class(self._lazy_class_type):
             return init_args
-        init = Namespace(class_path=self._lazy_class_path)
+        init = Namespace(class_path=get_import_path(self._lazy_class_type))
         if len(self._lazy_kwargs) > 0:
             init['init_args'] = init_args
         return init

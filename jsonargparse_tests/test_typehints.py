@@ -22,6 +22,7 @@ from jsonargparse import ActionConfigFile, ArgumentParser, CLI, lazy_instance, N
 from jsonargparse.typehints import ActionTypeHint, is_optional, Literal
 from jsonargparse.typing import (
     Email,
+    final,
     NotEmptyStr,
     OpenUnitInterval,
     Path_drw,
@@ -87,6 +88,7 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual('  ', parser.parse_args(['--op', '  ']).op)
         self.assertEqual('', parser.parse_args(['--op', '']).op)
         self.assertEqual(' abc ', parser.parse_args(['--op= abc ']).op)
+        self.assertEqual('xyz: ', parser.parse_args(['--op=xyz: ']).op)
         self.assertEqual(' ', parser.parse_args(['--cfg={"op":" "}']).op)
         self.assertIsNone(parser.parse_args(['--op=null']).op)
 
@@ -96,6 +98,28 @@ class TypeHintsTests(unittest.TestCase):
         parser.add_argument('foo', type=str)
         self.assertEqual('2022-04-12', parser.parse_args(['2022-04-12']).foo)
         self.assertEqual('2022-04-32', parser.parse_args(['2022-04-32']).foo)
+
+
+    def test_float_scientific_notation(self):
+        parser = ArgumentParser()
+        parser.add_argument('--num', type=float)
+        self.assertEqual(1e-3, parser.parse_args(['--num=1e-3']).num)
+
+
+    def test_str_with_number_value(self):
+        class Class:
+            def __init__(self, val: str = '-'):
+                pass
+
+        with mock_module(Class):
+            parser = ArgumentParser()
+            parser.add_argument('--val', type=str)
+            parser.add_argument('--cls', type=Class, default=lazy_instance(Class))
+
+            for value in ['1', '02', '3.40', '5.7e-8']:
+                with self.subTest(value):
+                    self.assertEqual(value, parser.parse_args([f'--val={value}']).val)
+                    self.assertEqual(value, parser.parse_args([f'--cls.val={value}']).cls.init_args.val)
 
 
     def test_list(self):
@@ -195,7 +219,6 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[2, "a", "b", 5]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple=["2", "a", "b"]']))
         self.assertRaises(ParserError, lambda: parser.parse_args(['--tuple={"a":1, "b":"2"}']))
         out = StringIO()
         parser.print_help(out)
@@ -293,6 +316,25 @@ class TypeHintsTests(unittest.TestCase):
             self.assertEqual(cfg.val, [Namespace(class_path=f'{module}.Class', init_args=Namespace(p1=1, p2=2))])
 
 
+    def test_list_append_subclass_nonclass_default(self):
+        @final
+        class Class:
+            def __init__(self, cal: Union[Calendar, Iterable[Calendar], bool] = True):
+                self.cal = cal
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('cls', type=Class)
+
+        cfg = parser.parse_args(['--cls.cal=calendar.TextCalendar', '--cls.cal.firstweekday=2'])
+        self.assertNotIsInstance(cfg.cls.cal, list)
+        self.assertEqual('calendar.TextCalendar', cfg.cls.cal.class_path)
+        self.assertEqual(2, cfg.cls.cal.init_args.firstweekday)
+
+        cfg = parser.parse_args(['--cls.cal=calendar.TextCalendar', '--cls.cal+=calendar.HTMLCalendar'])
+        self.assertIsInstance(cfg.cls.cal, list)
+        self.assertEqual(['TextCalendar', 'HTMLCalendar'], [c.class_path.split('.')[1] for c in cfg.cls.cal])
+
+
     def test_list_append_subcommand_subclass(self):
         class A:
             def __init__(self, cals: Union[Calendar, List[Calendar]] = None):
@@ -345,6 +387,27 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(' ', parser.parse_args(['--any= '])['any'])
         self.assertEqual(' xyz ', parser.parse_args(['--any= xyz '])['any'])
         self.assertEqual('[[[', parser.parse_args(['--any=[[['])['any'])
+
+
+    def test_union_subtypes_order(self):
+        for subtypes, arg, expected in [
+            ((bool, str), '=true', True),
+            ((str, bool), '=true', 'true'),
+            ((int, str), '=1', 1),
+            ((str, int), '=2', '2'),
+            ((float, int), '=3', 3.0),
+            ((int, float), '=4', 4),
+            ((int, List[int]), '=5', 5),
+            ((List[int], int), '=6', 6),
+            ((int, List[int]), '+=7', [7]),
+            ((List[int], int), '+=8', [8]),
+        ]:
+            with self.subTest(f'{subtypes}, {arg}, {expected}'):
+                parser = ArgumentParser()
+                parser.add_argument('--val', type=Union[subtypes])
+                val = parser.parse_args([f'--val{arg}']).val
+                self.assertIsInstance(val, type(expected))
+                self.assertEqual(val, expected)
 
 
     @unittest.skipIf(not Literal, 'Literal introduced in python 3.8 or backported in typing_extensions')
