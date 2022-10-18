@@ -121,7 +121,6 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual('a', Class3(**cfg.as_dict())())
 
         self.assertRaises(ParserError, lambda: parser.parse_args([]))  # c3_a0 is required
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--c3_a0=0', '--c3_a7=["3", "3", 3.0]']))  # tuple[1] is int
 
         if docstring_parser_support:
             self.assertEqual('Class3 short description', parser.groups['Class3'].title)
@@ -448,10 +447,9 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, cal: Union[Calendar, bool] = lazy_instance(MyCalendar, param=1)):
                 self.cal = cal
 
-        parser = ArgumentParser(error_handler=None)
-        parser.add_class_arguments(Main, 'main')
-
-        with warnings.catch_warnings(record=True) as w:
+        with mock_module(MyCalendar), warnings.catch_warnings(record=True) as w:
+            parser = ArgumentParser(error_handler=None)
+            parser.add_class_arguments(Main, 'main')
             parser.parse_args(['--main.cal=Calendar'])
             self.assertIn("discarding init_args: {'param': 1}", str(w[0].message))
 

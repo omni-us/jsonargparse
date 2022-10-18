@@ -230,7 +230,6 @@ class CLITempDirTests(TempDirTestCase):
             def cmd_b(self):
                 print(self.b.a.p1)
 
-
         with mock_module(A, B) as module:
             a_yaml = {
                 'class_path': f'{module}.A',

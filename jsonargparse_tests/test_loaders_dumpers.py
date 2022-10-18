@@ -2,10 +2,11 @@
 
 import os
 import unittest
+import unittest.mock
 import yaml
 from importlib.util import find_spec
 from typing import List
-from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader, ParserError
+from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader
 from jsonargparse.loaders_dumpers import loaders, load_value, load_value_context, yaml_dump
 
 
@@ -23,17 +24,6 @@ class LoadersTests(unittest.TestCase):
             cfg = parser.parse_args(['--list=[1,2,3]'])
             dump = parser.dump(cfg, format='yaml_custom')
             self.assertEqual(dump, '{list: [1, 2, 3]}\n')
-
-
-    def test_set_loader_safe_load_invalid_scientific_notation(self):
-        parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--num', type=float)
-
-        with unittest.mock.patch.dict('jsonargparse.loaders_dumpers.loaders'):
-            set_loader('yaml', yaml.safe_load)
-            self.assertRaises(ParserError, lambda: parser.parse_args(['--num=1e-3']))
-
-        self.assertEqual(1e-3, parser.parse_args(['--num=1e-3']).num)
 
 
     def test_disable_implicit_mapping_values(self):

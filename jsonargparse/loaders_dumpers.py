@@ -106,12 +106,15 @@ def get_loader_exceptions():
     return loader_exceptions[load_value_mode.get()]
 
 
-def load_value(value: str, **kwargs):
+def load_value(value: str, simple_types: bool = False, **kwargs):
     loader = loaders[load_value_mode.get()]
     if kwargs:
         params = set(list(inspect.signature(loader).parameters)[1:])
         kwargs = {k: v for k, v in kwargs.items() if k in params}
-    return loader(value, **kwargs)
+    loaded_value = loader(value, **kwargs)
+    if not simple_types and isinstance(loaded_value, (int, float, bool)):
+        loaded_value = value
+    return loaded_value
 
 
 dump_yaml_kwargs = {

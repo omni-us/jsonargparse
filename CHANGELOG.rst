@@ -27,6 +27,10 @@ Fixed
 - Cannot override Callable ``init_args`` without passing the ``class_path``
   `#174 <https://github.com/omni-us/jsonargparse/issues/174>`__.
 - Positional subclass type incorrectly adds subclass help as positional.
+- Order of types in ``Union`` not being considered.
+- ``str`` type fails to parse values of the form ``^\w+: *``.
+- ``parse_object`` does not consider given namespace for previous ``class_path``
+  values.
 
 
 v4.15.1 (2022-10-07)

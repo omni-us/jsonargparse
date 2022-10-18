@@ -124,7 +124,7 @@ def identity(value):
 NestedArg = namedtuple('NestedArg', 'key val')
 
 
-def parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, Optional['Path']]:
+def parse_value_or_config(value: Any, enable_path: bool = True, simple_types: bool = False) -> Tuple[Any, Optional['Path']]:
     """Parses yaml/json config in a string or a path"""
     nested_arg: Union[bool, NestedArg] = False
     if isinstance(value, NestedArg):
@@ -138,9 +138,9 @@ def parse_value_or_config(value: Any, enable_path: bool = True) -> Tuple[Any, Op
             pass
         else:
             with change_to_path_dir(cfg_path):
-                value = load_value(cfg_path.get_content())
+                value = load_value(cfg_path.get_content(), simple_types=simple_types)
     if type(value) is str and value.strip() != '':
-        parsed_val = load_value(value)
+        parsed_val = load_value(value, simple_types=simple_types)
         if type(parsed_val) is not str:
             value = parsed_val
     if isinstance(value, dict) and cfg_path is not None:
