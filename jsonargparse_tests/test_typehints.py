@@ -900,6 +900,19 @@ class TypeHintsTests(unittest.TestCase):
         self.assertIn('known subclasses: calendar.Calendar,', out.getvalue())
 
 
+    def test_class_type_required(self):
+        parser = ArgumentParser()
+        parser.add_argument('cal', type=Calendar)
+
+        cfg = parser.parse_args(['TextCalendar'])
+        self.assertEqual(cfg.cal.class_path, 'calendar.TextCalendar')
+
+        help_str = StringIO()
+        parser.print_help(help_str)
+        self.assertIn("required, type: <class 'Calendar'>", help_str.getvalue())
+        self.assertIn('--cal.help', help_str.getvalue())
+
+
     def test_typehint_serialize_list(self):
         parser = ArgumentParser()
         action = parser.add_argument('--list', type=Union[PositiveInt, List[PositiveInt]])

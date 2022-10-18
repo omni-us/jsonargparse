@@ -26,6 +26,7 @@ Fixed
   <https://github.com/Lightning-AI/lightning/issues/12790>`__.
 - Cannot override Callable ``init_args`` without passing the ``class_path``
   `#174 <https://github.com/omni-us/jsonargparse/issues/174>`__.
+- Positional subclass type incorrectly adds subclass help as positional.
 
 
 v4.15.1 (2022-10-07)
