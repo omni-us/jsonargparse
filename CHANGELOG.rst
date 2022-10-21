@@ -11,6 +11,14 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in any moment.
 
+v4.15.3 (2022-10-??)
+--------------------
+
+Fixed
+^^^^^
+- Fail to import on Python 3.7 when typing_extensions not installed `#178
+  <https://github.com/omni-us/jsonargparse/issues/178>`__.
+
 
 v4.15.2 (2022-10-20)
 --------------------

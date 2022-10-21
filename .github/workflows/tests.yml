@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install tox
-      - run: tox -e py
+      - run: tox -e py-all-extras
   unittest-omegaconf:
     runs-on: ubuntu-20.04
     steps:

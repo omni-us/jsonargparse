@@ -26,10 +26,8 @@ jobs:
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             virtualenv -p python3 venv$py
             . venv$py/bin/activate
-            if [ "$py" == "3.6" ] || [ "$py" == "3.8" ]; then
-              pip3 install $(ls ./dist/*.whl)[test_no_urls]
-              python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
-            fi
+            pip3 install $(ls ./dist/*.whl)[test_no_urls]
+            python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
             pip3 install $(ls ./dist/*.whl)[test,all]
             python3 -m jsonargparse_tests coverage xml coverage_py${py}_all.xml
       - persist_to_workspace:
@@ -62,14 +60,12 @@ jobs:
       - run:
           name: Code coverage
           command: |
-            for py in 3.6 3.8; do
+            for py in 3.6 3.7 3.8 3.9 3.10; do
               bash <(curl -s https://codecov.io/bash) \
                 -Z \
                 -t $CODECOV_TOKEN_JSONARGPARSE \
                 -F py$py \
                 -f coverage_py${py}.xml
-            done
-            for py in 3.6 3.7 3.8 3.9 3.10; do
               bash <(curl -s https://codecov.io/bash) \
                 -Z \
                 -t $CODECOV_TOKEN_JSONARGPARSE \

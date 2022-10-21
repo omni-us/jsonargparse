@@ -42,7 +42,7 @@ def typing_extensions_import(name):
 
 
 final = typing_extensions_import('final')
-if not getattr(final(Namespace()), '__final__', False):
+if not final or not getattr(final(Namespace()), '__final__', False):
     def final(cls):  # pylint: disable=function-redefined
         """Decorator to make a class ``final``, i.e. it shouldn't be subclassed."""
         setattr(cls, '__final__', True)
