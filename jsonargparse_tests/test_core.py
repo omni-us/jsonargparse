@@ -1149,7 +1149,7 @@ class OtherTests(unittest.TestCase):
 
     def test_parse_known_args(self):
         parser = ArgumentParser()
-        self.assertRaises(NotImplementedError, lambda: parser.parse_known_args([]))
+        parser.parse_known_args([])
 
 
     def test_parse_args_invalid_args(self):
