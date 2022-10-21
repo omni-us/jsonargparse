@@ -19,6 +19,11 @@ Fixed
 - Fail to import on Python 3.7 when typing_extensions not installed `#178
   <https://github.com/omni-us/jsonargparse/issues/178>`__.
 
+Changed
+^^^^^^^
+- ``parse_known_args`` no longer raises a ``NotImplementedError``.
+   `#180 <https://github.com/omni-us/jsonargparse/issues/180>`__.
+
 
 v4.15.2 (2022-10-20)
 --------------------

@@ -223,10 +223,29 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
     ## Parsing methods ##
 
     def parse_known_args(self, args=None, namespace=None):
-        """Raises NotImplementedError to dissuade its use, since typos in configs would go unnoticed."""
+        """Parses command line argument strings, ignoring unknown entries.
+
+        All the arguments from `argparse.ArgumentParser.parse_known_args
+        <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_known_args>`_
+        are supported. Additionally it accepts:
+
+        Args:
+            args: List of arguments to parse or None to use sys.argv.
+            env: Whether to merge with the parsed environment, None to use parser's default.
+            defaults: Whether to merge with the parser's defaults.
+            with_meta: Whether to include metadata in config object, None to use parser's default.
+
+        Returns:
+            A config object with all parsed values.
+
+        Raises:
+            ParserError: If there is a parsing error and error_handler=None.
+
+        Warning:
+            Using this means that typos in configurations will go unnoticed!
+            It is strongly recommended to use :func:`.parse_args` instead.
+        """
         caller = inspect.getmodule(inspect.stack()[1][0]).__package__
-        if caller not in {'jsonargparse', 'argcomplete'}:
-            raise NotImplementedError('parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed.')
 
         if args is None:
             args = sys.argv[1:]
