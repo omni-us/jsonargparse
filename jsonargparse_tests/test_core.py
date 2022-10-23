@@ -1151,6 +1151,16 @@ class OtherTests(unittest.TestCase):
         parser = ArgumentParser()
         self.assertRaises(NotImplementedError, lambda: parser.parse_known_args([]))
 
+    def test_parse_known_args_without_caller_module(self):
+        """
+        Test case for corner case when calling parse_known_args in IPython.
+        The caller module will not exist. Test this is handled.
+        See https://github.com/omni-us/jsonargparse/pull/179
+        """
+        with unittest.mock.patch('inspect.getmodule') as mock_getmodule:
+            mock_getmodule.return_value = None
+            parser = ArgumentParser()
+            self.assertRaises(NotImplementedError, lambda: parser.parse_known_args([]))
 
     def test_parse_args_invalid_args(self):
         parser = ArgumentParser(error_handler=None)
