@@ -1494,6 +1494,13 @@ new group automatically; 2) the argument values can be given in an independent
 config file by specifying a path to it; and 3) by default sets a useful
 ``metavar`` and ``help`` strings.
 
+.. note::
+
+    Classes will be parsed and instantiated when given as value a dict with
+    ``class_path`` and ``init_args`` if the corresponding parameter has type
+    ``Any``, or when ``fail_untyped=False`` which defaults to type ``Any``.
+
+
 Command line
 ------------
 
