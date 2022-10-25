@@ -19,6 +19,8 @@ Fixed
 ^^^^^
 - Fail to import on Python 3.7 when typing_extensions not installed `#178
   <https://github.com/omni-us/jsonargparse/issues/178>`__.
+- Crashing when using set typehint with specified dtype `#183
+  <https://github.com/omni-us/jsonargparse/issues/183>`__.
 
 
 v4.15.2 (2022-10-20)

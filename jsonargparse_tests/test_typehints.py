@@ -17,7 +17,7 @@ from datetime import datetime
 from enum import Enum
 from gzip import GzipFile
 from io import StringIO
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 from jsonargparse import ActionConfigFile, ArgumentParser, CLI, lazy_instance, Namespace, ParserError, Path
 from jsonargparse.typehints import ActionTypeHint, is_optional, Literal
 from jsonargparse.typing import (
@@ -205,6 +205,13 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--dict1=["a", "b"]']))
         cfg = yaml.safe_load(parser.dump(cfg))
         self.assertEqual({'dict1': {'2': 4.5, '6': 'ab'}, 'dict2': {'a': True, 'b': 'f'}}, cfg)
+
+
+    def test_set(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--set', type=Set[int])
+        self.assertEqual({1, 2}, parser.parse_args(['--set=[1, 2]']).set)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--set=["a", "b"]']))
 
 
     def test_tuple(self):

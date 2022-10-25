@@ -583,7 +583,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             if is_tuple and not is_ellipsis and len(val) != len(subtypehints):
                 raise ValueError(f'Expected a tuple with {len(subtypehints)} elements but got "{val}"')
             for n, v in enumerate(val):
-                subtypehint = subtypehints[0 if is_ellipsis else n]
+                subtypehint = subtypehints[0 if is_ellipsis or not is_tuple else n]
                 val[n] = adapt_typehints(v, subtypehint, **adapt_kwargs)
             if is_tuple and len(val) == 0:
                 raise ValueError('Expected a non-empty tuple')
