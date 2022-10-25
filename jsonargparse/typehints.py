@@ -569,7 +569,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                 vals.append(ex)
         if all(isinstance(v, Exception) for v in vals):
             e = indent_text('\n- '.join(str(v) for v in ['']+vals))
-            raise ValueError(f'Value "{val}" does not validate against any of the types in {typehint}:{e}')
+            raise ValueError(f'Value "{val}" does not validate against any of the types in {typehint}:{e}') from vals[0]
         val = [v for v in vals if not isinstance(v, Exception)][0]
 
     # Tuple or Set
@@ -664,7 +664,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                     val['class_path'] = get_import_path(val_class)
                     val = adapt_class_type(val, False, instantiate_classes, sub_add_kwargs)
             except (ImportError, AttributeError, ParserError) as ex:
-                raise ValueError(f'Type {typehint} expects a function or a callable class: {ex}')
+                raise ValueError(f'Type {typehint} expects a function or a callable class: {ex}') from ex
 
     # Subclass
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):

@@ -9,7 +9,8 @@ section of releases.
 
 The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
-paths are considered internals and can change in any moment.
+paths are considered internals and can change in minor and patch releases.
+
 
 v4.15.3 (2022-10-??)
 --------------------
@@ -53,7 +54,7 @@ Fixed
 - Override of ``dict_kwargs`` items from command line not working.
 - Multiple subclass ``init_args`` given through command line not being
   considered `pytorch-lightning#15007
-  <https://github.com/PyTorchLightning/pytorch-lightning/pull/15007>`__.
+  <https://github.com/Lightning-AI/lightning/pull/15007>`__.
 - ``Union`` types required all subtypes to be supported when expected to be at
   least one subtype supported `#168
   <https://github.com/omni-us/jsonargparse/issues/168>`__.
@@ -249,7 +250,7 @@ Added
 ^^^^^
 - Signature parameters resolved by inspecting the source code with ASTs
   `pytorch-lightning#11653
-  <https://github.com/PyTorchLightning/pytorch-lightning/issues/11653>`__.
+  <https://github.com/Lightning-AI/lightning/issues/11653>`__.
 - Support init args for unresolved parameters in subclasses `#114
   <https://github.com/omni-us/jsonargparse/issues/114>`__.
 - Allow providing a config with ``init_args`` but no ``class_path`` `#113
@@ -312,7 +313,7 @@ Added
 - New ``register_unresolvable_import_paths`` function to allow getting the
   import paths of objects that don't have a proper ``__module__`` attribute
   `pytorch-lightning#13092
-  <https://github.com/PyTorchLightning/pytorch-lightning/issues/13092>`__.
+  <https://github.com/Lightning-AI/lightning/issues/13092>`__.
 - New unit test for merge of config file ``init_args`` when ``class_path`` does
   not change `#89 <https://github.com/omni-us/jsonargparse/issues/89>`__.
 
@@ -340,7 +341,7 @@ Fixed
 ^^^^^
 - Make ``import_docstring_parse`` backward compatible to support released
   versions of ``LightningCLI`` `pytorch-lightning#12918
-  <https://github.com/PyTorchLightning/pytorch-lightning/pull/12918>`__.
+  <https://github.com/Lightning-AI/lightning/pull/12918>`__.
 
 
 v4.7.1 (2022-04-26)
@@ -349,7 +350,7 @@ v4.7.1 (2022-04-26)
 Fixed
 ^^^^^
 - Properly catch exceptions when parsing docstrings `pytorch-lightning#12883
-  <https://github.com/PyTorchLightning/pytorch-lightning/issues/12883>`__.
+  <https://github.com/Lightning-AI/lightning/issues/12883>`__.
 
 
 v4.7.0 (2022-04-20)
@@ -434,7 +435,7 @@ Added
 Fixed
 ^^^^^
 - No error message for unrecognized arguments `pytorch-lightning#12303
-  <https://github.com/PyTorchLightning/pytorch-lightning/issues/12303>`__.
+  <https://github.com/Lightning-AI/lightning/issues/12303>`__.
 
 Changed
 ^^^^^^^
@@ -463,7 +464,7 @@ Added
 ^^^^^
 - Subcommands now also consider parent parser's ``default_config_files``
   `pytorch-lightning#11622
-  <https://github.com/PyTorchLightning/pytorch-lightning/pull/11622>`__.
+  <https://github.com/Lightning-AI/lightning/pull/11622>`__.
 - Automatically added group config load options are now shown in the help #121.
 
 Fixed
@@ -476,7 +477,7 @@ Fixed
 Changed
 ^^^^^^^
 - ``ArgumentParser`` objects are now pickleable `pytorch-lightning#12011
-  <https://github.com/PyTorchLightning/pytorch-lightning/pull/12011>`__.
+  <https://github.com/Lightning-AI/lightning/pull/12011>`__.
 
 
 v4.2.0 (2022-02-09)
@@ -529,7 +530,7 @@ v4.1.1 (2022-01-13)
 Fixed
 ^^^^^
 - Bad config merging in ``handle_subcommands`` `pytorch-lightning#10859
-  <https://github.com/PyTorchLightning/pytorch-lightning/issues/10859>`__.
+  <https://github.com/Lightning-AI/lightning/issues/10859>`__.
 - Unit tests failing with argcomplete>=2.0.0.
 
 
@@ -680,7 +681,7 @@ v3.19.1 (2021-09-03)
 Fixed
 ^^^^^
 - Repeated instantiation of dataclasses `pytorch-lightning#9207
-  <https://github.com/PyTorchLightning/pytorch-lightning/issues/9207>`__.
+  <https://github.com/Lightning-AI/lightning/issues/9207>`__.
 
 
 v3.19.0 (2021-08-27)
