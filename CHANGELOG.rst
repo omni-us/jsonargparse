@@ -12,6 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.16.0 (2022-10-??)
+--------------------
+
+Added
+^^^^^
+- Support for Python 3.11.
+
+
 v4.15.3 (2022-10-??)
 --------------------
 
