@@ -10,7 +10,7 @@ import unittest
 import uuid
 import warnings
 import yaml
-from calendar import Calendar
+from calendar import Calendar, HTMLCalendar, TextCalendar
 from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
 from datetime import datetime
@@ -394,6 +394,104 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(' ', parser.parse_args(['--any= '])['any'])
         self.assertEqual(' xyz ', parser.parse_args(['--any= xyz '])['any'])
         self.assertEqual('[[[', parser.parse_args(['--any=[[['])['any'])
+
+
+    def test_type_any_subclasses(self):
+        class Class:
+            def __init__(self, cal1: Calendar, cal2: Any):
+                self.cal1 = cal1
+                self.cal2 = cal2
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--any', type=Any)
+
+        with mock_module(Class) as module:
+            value = {
+                'class_path': f'{module}.Class',
+                'init_args': {
+                    'cal1': {
+                        'class_path': 'calendar.TextCalendar',
+                        'init_args': {'firstweekday': 1},
+                    },
+                    'cal2': {
+                        'class_path': 'calendar.HTMLCalendar',
+                        'init_args': {'firstweekday': 2},
+                    },
+                },
+            }
+
+            cfg = parser.parse_args([f'--any={value}'])
+            init = parser.instantiate_classes(cfg)
+            self.assertIsInstance(init.any, Class)
+            self.assertIsInstance(init.any.cal1, TextCalendar)
+            self.assertIsInstance(init.any.cal2, HTMLCalendar)
+            self.assertEquals(init.any.cal1.firstweekday, 1)
+            self.assertEquals(init.any.cal2.firstweekday, 2)
+
+            value['init_args']['cal2']['class_path'] = 'does.not.exist'
+            cfg = parser.parse_args([f'--any={value}'])
+            self.assertIsInstance(cfg.any.init_args.cal1, Namespace)
+            self.assertIsInstance(cfg.any.init_args.cal2, dict)
+            init = parser.instantiate_classes(cfg)
+            self.assertIsInstance(init.any, Class)
+            self.assertIsInstance(init.any.cal1, TextCalendar)
+            self.assertIsInstance(init.any.cal2, dict)
+            self.assertEquals(init.any.cal1.firstweekday, 1)
+            self.assertEquals(init.any.cal2['init_args']['firstweekday'], 2)
+
+            value['init_args']['cal1']['class_path'] = 'does.not.exist'
+            cfg = parser.parse_args([f'--any={value}'])
+            self.assertIsInstance(cfg.any, dict)
+
+
+    def test_type_any_list_of_subclasses(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--any', type=Any)
+
+        value = [
+            {
+                'class_path': 'calendar.TextCalendar',
+                'init_args': {'firstweekday': 1},
+            },
+            {
+                'class_path': 'calendar.HTMLCalendar',
+                'init_args': {'firstweekday': 2},
+            },
+        ]
+
+        cfg = parser.parse_args([f'--any={value}'])
+        init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(init.any, list)
+        self.assertEqual(len(init.any), 2)
+        self.assertIsInstance(init.any[0], TextCalendar)
+        self.assertIsInstance(init.any[1], HTMLCalendar)
+        self.assertEquals(init.any[0].firstweekday, 1)
+        self.assertEquals(init.any[1].firstweekday, 2)
+
+
+    def test_type_any_dict_of_subclasses(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--any', type=Any)
+
+        value = {
+            'k1': {
+                'class_path': 'calendar.TextCalendar',
+                'init_args': {'firstweekday': 1},
+            },
+            'k2': {
+                'class_path': 'calendar.HTMLCalendar',
+                'init_args': {'firstweekday': 2},
+            },
+        }
+
+        cfg = parser.parse_args([f'--any={value}'])
+        init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(init.any, dict)
+        self.assertEqual(len(init.any), 2)
+        self.assertIsInstance(init.any['k1'], TextCalendar)
+        self.assertIsInstance(init.any['k2'], HTMLCalendar)
+        self.assertEquals(init.any['k1'].firstweekday, 1)
+        self.assertEquals(init.any['k2'].firstweekday, 2)
 
 
     def test_union_subtypes_order(self):

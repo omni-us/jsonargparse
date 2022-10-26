@@ -17,11 +17,10 @@ v4.16.0 (2022-10-??)
 
 Added
 ^^^^^
+- Type ``Any`` now parses and instantiates classes when given dict that follows
+  subclass specification `pytorch-lightning#15115
+  <https://github.com/Lightning-AI/lightning/issues/15115>`__.
 - Support for Python 3.11.
-
-
-v4.15.3 (2022-10-??)
---------------------
 
 Fixed
 ^^^^^

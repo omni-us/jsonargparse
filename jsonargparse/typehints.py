@@ -503,6 +503,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                 val, _ = parse_value_or_config(val, enable_path=False, simple_types=True)
             except get_loader_exceptions():
                 pass
+        val = adapt_classes_any(val, serialize, instantiate_classes, sub_add_kwargs)
 
     # Literal
     elif typehint_origin == Literal:
@@ -893,6 +894,28 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
             for k, v in dict_kwargs.items()
         }
     return value
+
+
+def adapt_classes_any(val, serialize, instantiate_classes, sub_add_kwargs):
+    if is_subclass_spec(val):
+        orig_val = val
+        val = subclass_spec_as_namespace(val)
+        init_args = val.get('init_args')
+        if init_args and not instantiate_classes:
+            for subkey, subval in init_args.__dict__.items():
+                init_args[subkey] = adapt_classes_any(subval, serialize, instantiate_classes, sub_add_kwargs)
+            val['init_args'] = init_args
+        try:
+            val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs)
+        except Exception:
+            return orig_val
+    elif isinstance(val, list):
+        for num, subval in enumerate(val):
+            val[num] = adapt_classes_any(subval, serialize, instantiate_classes, sub_add_kwargs)
+    elif isinstance(val, dict):
+        for key, subval in val.items():
+            val[key] = adapt_classes_any(subval, serialize, instantiate_classes, sub_add_kwargs)
+    return val
 
 
 def not_append_diff(val1, val2):
