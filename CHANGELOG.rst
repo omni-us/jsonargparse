@@ -29,6 +29,14 @@ Fixed
 - Crashing when using set typehint with specified dtype `#183
   <https://github.com/omni-us/jsonargparse/issues/183>`__.
 
+Changed
+^^^^^^^
+- Using ``set_defaults`` on a config argument raises error and suggests to use
+  ``default_config_files`` `pytorch-lightning#15174
+  <https://github.com/Lightning-AI/lightning/issues/15174>`__.
+- Trying to add a second config argument to a single parser raises an exception
+  `#169 <https://github.com/omni-us/jsonargparse/issues/169>`__.
+
 
 v4.15.2 (2022-10-20)
 --------------------

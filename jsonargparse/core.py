@@ -56,6 +56,7 @@ from .util import (
     change_to_path_dir,
     get_private_kwargs,
     identity,
+    is_subclass,
     lenient_check,
     lenient_check_context,
     ParserError,
@@ -91,10 +92,13 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             enable_path: Whether to try parsing path/subconfig when argument is a complex type.
         """
         parser = self.parser if hasattr(self, 'parser') else self  # type: ignore
-        if 'action' in kwargs and isinstance(kwargs['action'], ActionParser):
-            if kwargs['action']._parser == parser:
-                raise ValueError('Parser cannot be added as a subparser of itself.')
-            return ActionParser._move_parser_actions(parser, args, kwargs)
+        if 'action' in kwargs:
+            if isinstance(kwargs['action'], ActionParser):
+                if kwargs['action']._parser == parser:
+                    raise ValueError('Parser cannot be added as a subparser of itself.')
+                return ActionParser._move_parser_actions(parser, args, kwargs)
+            if is_subclass(kwargs['action'], ActionConfigFile) and any(isinstance(a, ActionConfigFile) for a in self._actions):
+                raise ValueError('A parser is only allowed to have a single ActionConfigFile argument.')
         if 'type' in kwargs:
             if is_final_class(kwargs['type']) or is_pure_dataclass(kwargs['type']):
                 theclass = kwargs.pop('type')
@@ -871,6 +875,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                     action = _find_action(self, dest)
                     if action is None:
                         raise KeyError(f'No action for destination key "{dest}" to set its default.')
+                    elif isinstance(action, ActionConfigFile):
+                        ActionConfigFile.set_default_error()
                     action.default = default
                     if isinstance(action, ActionTypeHint):
                         action.normalize_default()

@@ -1196,5 +1196,19 @@ class OtherTests(unittest.TestCase):
             capture_parser(lambda: None)
 
 
+    def test_set_defaults_config_argument_error(self):
+        parser = ArgumentParser()
+        parser.add_argument('--config', action=ActionConfigFile)
+        with self.assertRaises(ValueError):
+            parser.set_defaults(config='config.yaml')
+
+
+    def test_add_multiple_config_arguments_error(self):
+        parser = ArgumentParser()
+        parser.add_argument('--cfg1', action=ActionConfigFile)
+        with self.assertRaises(ValueError):
+            parser.add_argument('--cfg2', action=ActionConfigFile)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
