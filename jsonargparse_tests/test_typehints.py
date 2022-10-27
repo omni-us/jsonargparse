@@ -425,8 +425,8 @@ class TypeHintsTests(unittest.TestCase):
             self.assertIsInstance(init.any, Class)
             self.assertIsInstance(init.any.cal1, TextCalendar)
             self.assertIsInstance(init.any.cal2, HTMLCalendar)
-            self.assertEquals(init.any.cal1.firstweekday, 1)
-            self.assertEquals(init.any.cal2.firstweekday, 2)
+            self.assertEqual(init.any.cal1.firstweekday, 1)
+            self.assertEqual(init.any.cal2.firstweekday, 2)
 
             value['init_args']['cal2']['class_path'] = 'does.not.exist'
             cfg = parser.parse_args([f'--any={value}'])
@@ -436,8 +436,8 @@ class TypeHintsTests(unittest.TestCase):
             self.assertIsInstance(init.any, Class)
             self.assertIsInstance(init.any.cal1, TextCalendar)
             self.assertIsInstance(init.any.cal2, dict)
-            self.assertEquals(init.any.cal1.firstweekday, 1)
-            self.assertEquals(init.any.cal2['init_args']['firstweekday'], 2)
+            self.assertEqual(init.any.cal1.firstweekday, 1)
+            self.assertEqual(init.any.cal2['init_args']['firstweekday'], 2)
 
             value['init_args']['cal1']['class_path'] = 'does.not.exist'
             cfg = parser.parse_args([f'--any={value}'])
@@ -465,8 +465,8 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(len(init.any), 2)
         self.assertIsInstance(init.any[0], TextCalendar)
         self.assertIsInstance(init.any[1], HTMLCalendar)
-        self.assertEquals(init.any[0].firstweekday, 1)
-        self.assertEquals(init.any[1].firstweekday, 2)
+        self.assertEqual(init.any[0].firstweekday, 1)
+        self.assertEqual(init.any[1].firstweekday, 2)
 
 
     def test_type_any_dict_of_subclasses(self):
@@ -490,8 +490,8 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(len(init.any), 2)
         self.assertIsInstance(init.any['k1'], TextCalendar)
         self.assertIsInstance(init.any['k2'], HTMLCalendar)
-        self.assertEquals(init.any['k1'].firstweekday, 1)
-        self.assertEquals(init.any['k2'].firstweekday, 2)
+        self.assertEqual(init.any['k1'].firstweekday, 1)
+        self.assertEqual(init.any['k2'].firstweekday, 2)
 
 
     def test_union_subtypes_order(self):
