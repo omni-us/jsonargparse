@@ -630,13 +630,20 @@ class SignaturesTests(unittest.TestCase):
                  a4: int = 4):
             return a1
 
-        parser = ArgumentParser()
-        parser.add_function_arguments(func, skip={'a2', 'a4'})
+        with self.subTest('parameter names'):
+            parser = ArgumentParser()
+            added_args = parser.add_function_arguments(func, skip={'a2', 'a4'})
+            self.assertEqual(added_args, ['a1', 'a3'])
 
-        for key in ['a1', 'a3']:
-            self.assertIsNotNone(_find_action(parser, key), key+' should be in parser but is not')
-        for key in ['a2', 'a4']:
-            self.assertIsNone(_find_action(parser, key), key+' should not be in parser but is')
+        with self.subTest('positionals and names'):
+            parser = ArgumentParser()
+            added_args = parser.add_function_arguments(func, skip={1, 'a3'})
+            self.assertEqual(added_args, ['a2', 'a4'])
+
+        with self.subTest('invalid skip'):
+            parser = ArgumentParser()
+            with self.assertRaises(ValueError):
+                parser.add_function_arguments(func, skip={1, 2})
 
 
     def test_skip_within_subclass_type(self):
