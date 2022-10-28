@@ -433,12 +433,15 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def get_class_parser(val_class, sub_add_kwargs=None):
+    def get_class_parser(val_class, sub_add_kwargs=None, skip_args=0):
         from .core import ArgumentParser
         if isinstance(val_class, str):
             val_class = import_object(val_class)
+        kwargs = dict(sub_add_kwargs) if sub_add_kwargs else {}
+        if skip_args:
+            kwargs.setdefault('skip', set()).add(skip_args)
         parser = ArgumentParser(error_handler=None)
-        parser.add_class_arguments(val_class, **(sub_add_kwargs or {}))
+        parser.add_class_arguments(val_class, **kwargs)
         return parser
 
 
@@ -446,7 +449,7 @@ class ActionTypeHint(Action):
         extra = ''
         if (
             self.is_subclass_typehint(self, all_subtypes=False) or
-            get_typehint_origin(self._typehint) in {Type, type}
+            get_typehint_origin(self._typehint) in callable_origin_types.union({Type, type})
         ):
             class_paths = get_all_subclass_paths(self._typehint)
             if class_paths:
@@ -659,11 +662,12 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                     val = subclass_spec_as_namespace(val, prev_val)
                     if not is_subclass_spec(val):
                         raise ImportError(f'Dict must include a class_path and optionally init_args, but got {val_input}')
+                    val, partial_classes, num_partial_args = get_partial_callable_classes(typehint, val)
                     val_class = import_object(val['class_path'])
-                    if not (inspect.isclass(val_class) and callable_instances(val_class)):
-                        raise ImportError(f'{val["class_path"]!r} is not a callable class.')
+                    if inspect.isclass(val_class) and not (partial_classes or callable_instances(val_class)):
+                        raise ImportError(f'Expected {val["class_path"]!r} to be a class that instantiates into callable or a subclass of {partial_classes}.')
                     val['class_path'] = get_import_path(val_class)
-                    val = adapt_class_type(val, False, instantiate_classes, sub_add_kwargs)
+                    val = adapt_class_type(val, False, instantiate_classes, sub_add_kwargs, skip_args=num_partial_args)
             except (ImportError, AttributeError, ParserError) as ex:
                 raise ValueError(f'Type {typehint} expects a function or a callable class: {ex}') from ex
 
@@ -742,6 +746,26 @@ def subclass_spec_as_namespace(val, prev_val=None):
     return val
 
 
+def get_partial_callable_classes(callable_type, subclass_spec):
+    partial_classes = False
+    num_partial_args = 0
+    subtypes = getattr(callable_type, '__args__', None)
+    if subtypes and len(subtypes) > 1:
+        return_type = subtypes[-1]
+        return_origin = get_typehint_origin(return_type)
+        subclass_types = tuple(
+            t for t in (return_type.__args__ if return_origin == Union else [return_type])
+            if ActionTypeHint.is_subclass_typehint(t)
+        )
+        class_type = import_object(resolve_class_path_by_name(return_type, subclass_spec['class_path']))
+        if subclass_types and is_subclass(class_type, subclass_types):
+            subclass_spec = deepcopy(subclass_spec)
+            subclass_spec['class_path'] = get_import_path(class_type)
+            partial_classes = True
+            num_partial_args = len(subtypes)-1
+    return subclass_spec, partial_classes, num_partial_args
+
+
 def get_all_subclass_paths(cls: Type) -> List[str]:
     subclass_list = []
 
@@ -759,6 +783,11 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
             subclass_list.append(class_path)
         for subclass in cl.__subclasses__() if hasattr(cl, '__subclasses__') else []:
             add_subclasses(subclass)
+
+    if get_typehint_origin(cls) in callable_origin_types:
+        if len(getattr(cls, '__args__', [])) < 2:
+            return subclass_list
+        cls = cls.__args__[-1]
 
     if get_typehint_origin(cls) in {Union, Type, type}:
         for arg in cls.__args__:
@@ -827,11 +856,11 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
             )
 
 
-def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev_val=None):
+def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev_val=None, skip_args=0):
     prev_val = subclass_spec_as_namespace(prev_val)
     value = subclass_spec_as_namespace(value)
     val_class = import_object(value.class_path)
-    parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
+    parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs, skip_args=skip_args)
 
     # No need to re-create the linked arg but just "inform" the corresponding parser actions that it exists upstream.
     for target in sub_add_kwargs.get('linked_targets', []):
@@ -860,6 +889,10 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
             if init_args:
                 value['init_args'] = init_args
             return value
+        if skip_args:
+            def partial_instance(*args):
+                return val_class(*args, **{**init_args, **dict_kwargs})
+            return partial_instance
         return val_class(**{**init_args, **dict_kwargs})
 
     prev_init_args = prev_val.get('init_args') if isinstance(prev_val, Namespace) else None

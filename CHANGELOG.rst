@@ -20,6 +20,9 @@ Added
 - Type ``Any`` now parses and instantiates classes when given dict that follows
   subclass specification `pytorch-lightning#15115
   <https://github.com/Lightning-AI/lightning/issues/15115>`__.
+- Signature methods now accept skipping a number of positionals.
+- Callable type hint with return type a class can now be given a subclass which
+  produces a callable that returns an instance of the class.
 - Support for Python 3.11.
 
 Fixed

@@ -431,11 +431,13 @@ Some notes about this support are:
   classes in a config object. For more details see :ref:`sub-classes`.
 
 - ``Callable`` is supported by either giving a dot import path to a callable
-  object, or by giving a dict with a ``class_path`` and optionally ``init_args``
-  entries specifying a class that once instantiated is callable. Running
-  :py:meth:`.ArgumentParser.instantiate_classes` will instantiate the callable
-  classes. Currently the callable's arguments and return types are ignored and
-  not validated.
+  object or by giving a dict with a ``class_path`` and optionally ``init_args``
+  entries. The specified class must either instantiate into a callable or be a
+  subclass of the return type of the callable. For these cases running
+  :py:meth:`.ArgumentParser.instantiate_classes` will instantiate the class or
+  provide a function that returns the instance of the class. For more details
+  see :ref:`callable-type`. Currently the callable's argument and return types
+  are not validated.
 
 
 .. _restricted-numbers:
@@ -798,6 +800,91 @@ be achieved as follows:
 
     >>> parser.parse_args(['--dict.key1=val1', '--dict.key2=val2'])
     Namespace(dict={'key1': 'val1', 'key2': 'val2'})
+
+
+.. _callable-type:
+
+Callable type
+-------------
+
+When using ``Callable`` as type, the parser accepts several options. The first
+option is the import path of a callable object, for example:
+
+.. testsetup:: callable
+
+    import sys
+    from jsonargparse import ArgumentParser, ActionConfigFile
+    from typing import Callable, Iterable
+    parser = ArgumentParser()
+
+.. testcode:: callable
+
+    parser.add_argument('--callable', type=Callable)
+    parser.parse_args(['--callable=time.sleep'])
+
+A second option is a class that once instantiated becomes callable:
+
+.. code-block::
+
+    >>> class OffsetSum:
+    ...     def __init__(self, offset: int):
+    ...         self.offset = offset
+    ...     def __call__(self, value: int):
+    ...         return self.offset + value
+
+    >>> value = {
+    ...     'class_path': '__main__.OffsetSum',
+    ...     'init_args': {
+    ...         'offset': 3,
+    ...     }
+    ... }
+
+    >>> cfg = parser.parse_args(['--callable', str(value)])
+    >>> cfg.callable
+    Namespace(class_path='__main__.OffsetSum', init_args=Namespace(offset=3))
+    >>> init = parser.instantiate_classes(cfg)
+    >>> init.callable(5)
+    8
+
+The third option is only applicable when the type is a callable that has a class
+as return type. This is useful to support dependency injection for classes that
+require a parameter that is only available after injection. The parser does this
+automatically by providing a function that receives this parameter and returns
+the instance of the class.
+
+.. code-block::
+
+    >>> class Optimizer:
+    ...     pass
+
+    >>> class SGD(Optimizer):
+    ...     def __init__(self, params: Iterable, lr: float):
+    ...         self.params = params
+    ...         self.lr = lr
+
+    >>> value = {
+    ...     'class_path': 'SGD',
+    ...     'init_args': {
+    ...         'lr': 0.01,
+    ...     }
+    ... }
+
+    >>> parser.add_argument('--optimizer', type=Callable[[Iterable], Optimizer])
+    >>> cfg = parser.parse_args(['--optimizer', str(value)])
+    >>> cfg.optimizer
+    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.01))
+    >>> init = parser.instantiate_classes(cfg)
+    >>> optim = init.optimizer([1, 2, 3])
+    >>> isinstance(optim, SGD)
+    True
+    >>> optim.params, optim.lr
+    ([1, 2, 3], 0.01)
+
+.. note::
+
+    When the ``Callable`` has a class return type, it is possible to specify the
+    ``class_path`` giving only its name if imported before parsing as explained
+    in :ref:`sub-classes-command-line`.
 
 
 .. _registering-types:
@@ -1500,6 +1587,7 @@ config file by specifying a path to it; and 3) by default sets a useful
     ``class_path`` and ``init_args`` if the corresponding parameter has type
     ``Any``, or when ``fail_untyped=False`` which defaults to type ``Any``.
 
+.. _sub-classes-command-line:
 
 Command line
 ------------

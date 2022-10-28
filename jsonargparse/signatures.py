@@ -33,7 +33,7 @@ class SignatureArguments(LoggerProperty):
         as_group: bool = True,
         as_positional: bool = False,
         default: Optional[LazyInitBaseClass] = None,
-        skip: Optional[Set[str]] = None,
+        skip: Optional[Set[Union[str, int]]] = None,
         instantiate: bool = True,
         fail_untyped: bool = True,
         sub_configs: bool = False,
@@ -49,7 +49,7 @@ class SignatureArguments(LoggerProperty):
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
             default: Default value used to override parameter defaults. Must be lazy_instance.
-            skip: Names of parameters that should be skipped.
+            skip: Names of parameters or number of positionals that should be skipped.
             instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
             sub_configs: Whether subclass type hints should be loadable from inner config file.
@@ -97,7 +97,7 @@ class SignatureArguments(LoggerProperty):
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[Set[str]] = None,
+        skip: Optional[Set[Union[str, int]]] = None,
         fail_untyped: bool = True,
         sub_configs: bool = False,
     ) -> List[str]:
@@ -111,7 +111,7 @@ class SignatureArguments(LoggerProperty):
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            skip: Names of parameters that should be skipped.
+            skip: Names of parameters or number of positionals that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
             sub_configs: Whether subclass type hints should be loadable from inner config file.
 
@@ -145,7 +145,7 @@ class SignatureArguments(LoggerProperty):
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[Set[str]] = None,
+        skip: Optional[Set[Union[str, int]]] = None,
         fail_untyped: bool = True,
         sub_configs: bool = False,
     ) -> List[str]:
@@ -158,7 +158,7 @@ class SignatureArguments(LoggerProperty):
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            skip: Names of parameters that should be skipped.
+            skip: Names of parameters or number of positionals that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
             sub_configs: Whether subclass type hints should be loadable from inner config file.
 
@@ -191,7 +191,7 @@ class SignatureArguments(LoggerProperty):
         nested_key: Optional[str],
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[Set[str]] = None,
+        skip: Optional[Set[Union[str, int]]] = None,
         fail_untyped: bool = True,
         sub_configs: bool = False,
         instantiate: bool = True,
@@ -205,7 +205,7 @@ class SignatureArguments(LoggerProperty):
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            skip: Names of parameters that should be skipped.
+            skip: Names of parameters or number of positionals that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
             sub_configs: Whether subclass type hints should be loadable from inner config file.
             instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
@@ -217,6 +217,14 @@ class SignatureArguments(LoggerProperty):
             ValueError: When there are required parameters without at least one valid type.
         """
         params = get_signature_parameters(function_or_class, method_name, logger=self.logger)
+
+        skip_positionals = [s for s in (skip or []) if isinstance(s, int)]
+        if skip_positionals:
+            if len(skip_positionals) > 1 or any(p <= 0 for p in skip_positionals):
+                raise ValueError(f'Unexpected number of positionals to skip: {skip_positionals}')
+            names = {p.name for p in params[:skip_positionals[0]]}
+            params = params[skip_positionals[0]:]
+            self.logger.debug(f'Skipping parameters {names} because {skip_positionals[0]} positionals requested to be skipped.')
 
         ## Create group if requested ##
         doc_group = get_doc_short_description(function_or_class, method_name, logger=self.logger)
@@ -238,7 +246,7 @@ class SignatureArguments(LoggerProperty):
                 nested_key,
                 param,
                 added_args,
-                skip,
+                skip={s for s in (skip or []) if isinstance(s, str)},
                 fail_untyped=fail_untyped,
                 sub_configs=sub_configs,
                 linked_targets=linked_targets,

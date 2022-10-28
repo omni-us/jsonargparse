@@ -6,6 +6,7 @@ import pathlib
 import random
 import re
 import sys
+import time
 import unittest
 import uuid
 import warnings
@@ -601,9 +602,14 @@ class TypeHintsTests(unittest.TestCase):
 
     def test_Callable_with_function_path(self):
         parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--callable', type=Callable, default=lazy_instance)
+        parser.add_argument('--callable', type=Callable, default=time.time)
         parser.add_argument('--list', type=List[Callable])
 
+        cfg = parser.get_defaults()
+        self.assertEqual(time.time, cfg.callable)
+        self.assertEqual(parser.dump(cfg), 'callable: time.time\n')
+        cfg = parser.parse_args(['--callable=random.randint'])
+        self.assertEqual(random.randint, cfg.callable)
         cfg = parser.parse_args(['--callable=jsonargparse.CLI'])
         self.assertEqual(CLI, cfg.callable)
         self.assertEqual(parser.dump(cfg), 'callable: jsonargparse.CLI\n')
@@ -612,7 +618,7 @@ class TypeHintsTests(unittest.TestCase):
 
         out = StringIO()
         parser.print_help(out)
-        self.assertIn('(type: Callable, default: jsonargparse.lazy_instance)', out.getvalue())
+        self.assertIn('(type: Callable, default: time.time)', out.getvalue())
 
 
     def test_Callable_with_class_path(self):
@@ -698,6 +704,101 @@ class TypeHintsTests(unittest.TestCase):
             self.assertEqual(my_func_1, cfg.callable)
             cfg = parser.parse_args([f'--callable={module}.my_func_2'])
             self.assertEqual(my_func_2, cfg.callable)  # Currently callable types are ignored
+
+
+    def test_typed_callable_with_return_type_class(self):
+        class Optimizer:
+            def __init__(self, params: List[float], lr: float = 1e-3):
+                self.params = params
+                self.lr = lr
+
+        class SGD(Optimizer):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        class Adam(Optimizer):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        value = {
+            'class_path': 'Adam',
+            'init_args': {
+                'lr': 0.01,
+            }
+        }
+
+        with mock_module(Optimizer, SGD, Adam) as module:
+            parser = ArgumentParser(error_handler=None)
+            parser.add_argument('--optimizer', type=Callable[[List[float]], Optimizer], default=SGD)
+
+            cfg = parser.get_defaults()
+            init = parser.instantiate_classes(cfg)
+            optim = init.optimizer([0.1, 2,3])
+            self.assertIsInstance(optim, SGD)
+            self.assertEqual(optim.params, [0.1, 2,3])
+            self.assertEqual(optim.lr, 1e-3)
+
+            cfg = parser.parse_args(['--optimizer', str(value)])
+            self.assertEqual(cfg.optimizer.class_path, f'{module}.Adam')
+            self.assertEqual(cfg.optimizer.init_args, Namespace(lr=0.01))
+            init = parser.instantiate_classes(cfg)
+            optim = init.optimizer([4.5, 6.7])
+            self.assertIsInstance(optim, Adam)
+            self.assertEqual(optim.params, [4.5, 6.7])
+            self.assertEqual(optim.lr, 0.01)
+
+            help_str = StringIO()
+            parser.print_help(help_str)
+            for name in ['Optimizer', 'SGD', 'Adam']:
+                self.assertIn(f'{module}.{name}', help_str.getvalue())
+
+
+    def test_typed_callable_with_return_type_union_of_classes(self):
+        class Optimizer:
+            pass
+
+        class StepLR:
+            def __init__(self, optimizer: Optimizer, last_epoch: int = -1):
+                self.optimizer = optimizer
+                self.last_epoch = last_epoch
+
+        class ReduceLROnPlateau:
+            def __init__(self, optimizer: Optimizer, monitor: str):
+                self.optimizer = optimizer
+                self.monitor = monitor
+
+        optim = Optimizer()
+        value = {
+            'class_path': 'ReduceLROnPlateau',
+            'init_args': {
+                'monitor': 'loss',
+            }
+        }
+
+        with mock_module(StepLR, ReduceLROnPlateau) as module:
+            parser = ArgumentParser(error_handler=None)
+            parser.add_argument('--scheduler', type=Callable[[Optimizer], Union[StepLR, ReduceLROnPlateau]], default=StepLR)
+
+            cfg = parser.get_defaults()
+            init = parser.instantiate_classes(cfg)
+            sched = init.scheduler(optim)
+            self.assertIsInstance(sched, StepLR)
+            self.assertIs(sched.optimizer, optim)
+            self.assertEqual(sched.last_epoch, -1)
+
+            cfg = parser.parse_args(['--scheduler', str(value)])
+            self.assertEqual(cfg.scheduler.class_path, f'{module}.ReduceLROnPlateau')
+            self.assertEqual(cfg.scheduler.init_args, Namespace(monitor='loss'))
+            init = parser.instantiate_classes(cfg)
+            sched = init.scheduler(optim)
+            self.assertIsInstance(sched, ReduceLROnPlateau)
+            self.assertIs(sched.optimizer, optim)
+            self.assertEqual(sched.monitor, 'loss')
+
+            help_str = StringIO()
+            parser.print_help(help_str)
+            for name in ['StepLR', 'ReduceLROnPlateau']:
+                self.assertIn(f'{module}.{name}', help_str.getvalue())
 
 
     def test_class_type(self):
