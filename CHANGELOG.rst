@@ -19,6 +19,8 @@ Fixed
 ^^^^^
 - ``str`` type fails to parse value when pyyaml raises ``ConstructorError``
   `#189 <https://github.com/omni-us/jsonargparse/issues/189>`__.
+- ``Namespace`` clone should not deepcopy leaf values `#187
+  <https://github.com/omni-us/jsonargparse/issues/187>`__.
 
 
 v4.16.0 (2022-10-28)

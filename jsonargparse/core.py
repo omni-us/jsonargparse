@@ -7,7 +7,6 @@ import logging
 import os
 import re
 import sys
-from copy import deepcopy
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Sequence, Set, Tuple, Type, Union
 
 from .formatters import DefaultHelpFormatter, empty_help, formatter_context, get_env_var
@@ -24,7 +23,7 @@ from .loaders_dumpers import (
     set_omegaconf_loader,
     yaml_load,
 )
-from .namespace import is_meta_key, Namespace, patch_namespace, split_key, split_key_leaf, strip_meta
+from .namespace import is_meta_key, Namespace, patch_namespace, recreate_branches, split_key, split_key_leaf, strip_meta
 from .signatures import is_pure_dataclass, SignatureArguments
 from .typehints import ActionTypeHint, is_subclass_spec
 from .typing import is_final_class
@@ -699,7 +698,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         """
         check_valid_dump_format(format)
 
-        cfg = deepcopy(cfg)
+        cfg = cfg.clone()
         cfg = strip_meta(cfg)
         ActionLink.strip_link_target_keys(self, cfg)
 
@@ -817,7 +816,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                 f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
 
         else:
-            cfg = deepcopy(cfg)
+            cfg = cfg.clone()
             ActionLink.strip_link_target_keys(self, cfg)
 
             if not skip_check:
@@ -945,7 +944,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         cfg = Namespace()
         for action in filter_default_actions(self._actions):
             if action.default != argparse.SUPPRESS and action.dest != argparse.SUPPRESS:
-                cfg[action.dest] = deepcopy(action.default)
+                cfg[action.dest] = recreate_branches(action.default)
 
         self._logger.info('Loaded default values from parser.')
 
@@ -1136,7 +1135,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         Returns:
             The stripped configuration object.
         """
-        cfg = deepcopy(cfg)
+        cfg = cfg.clone()
 
         del_keys = []
         for key in cfg.keys():

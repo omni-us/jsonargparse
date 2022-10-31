@@ -2,7 +2,6 @@
 
 import argparse
 from contextlib import contextmanager
-from copy import deepcopy
 from typing import Any, Callable, Dict, Iterator, List, Optional, overload, Tuple, Union
 
 
@@ -49,9 +48,9 @@ def strip_meta(cfg):
         cfg: The configuration object to strip.
 
     Returns:
-        A deepcopy of the configuration object excluding all metadata keys.
+        A copy of the configuration object excluding all metadata keys.
     """
-    cfg = deepcopy(cfg)
+    cfg = recreate_branches(cfg)
 
     del_keys = []
     for key in cfg.keys():
@@ -68,6 +67,17 @@ def strip_meta(cfg):
     return cfg
 
 
+def recreate_branches(data):
+    new_data = data
+    if isinstance(data, (Namespace, dict)):
+        new_data = type(data)()
+        for key, val in getattr(data, '__dict__', data).items():
+            new_data[key] = recreate_branches(val)
+    elif isinstance(data, list):
+        new_data = [recreate_branches(v) for v in data]
+    return new_data
+
+
 @contextmanager
 def patch_namespace():
     namespace_class = argparse.Namespace
@@ -79,13 +89,13 @@ def patch_namespace():
 
 
 def namespace_to_dict(namespace: 'Namespace') -> Dict[str, Any]:
-    """Returns a deepcopy of a nested namespace converted into a nested dictionary."""
+    """Returns a copy of a nested namespace converted into a nested dictionary."""
     return namespace.clone().as_dict()
 
 
 def dict_to_namespace(cfg_dict: Union[Dict[str, Any], 'Namespace']) -> 'Namespace':
     """Converts a nested dictionary into a nested namespace."""
-    cfg_dict = deepcopy(cfg_dict)
+    cfg_dict = recreate_branches(cfg_dict)
     def expand_dict(cfg):
         for k, v in cfg.items():
             if isinstance(v, dict) and all(isinstance(k, str) for k in v.keys()):
@@ -268,7 +278,7 @@ class Namespace(argparse.Namespace):
 
     def clone(self) -> 'Namespace':
         """Creates an new identical nested namespace."""
-        return deepcopy(self)
+        return recreate_branches(self)
 
     def update(self, value: Union['Namespace', Any], key: Optional[str] = None, only_unset: bool = False) -> 'Namespace':
         """Sets or replaces all items from the given nested namespace.
