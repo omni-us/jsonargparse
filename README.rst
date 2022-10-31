@@ -157,8 +157,16 @@ tool. In a shell you could see the help and run a command as follows:
 
 .. doctest:: :hide:
 
+    >>> CLI(command, args=['--help'])  # doctest: +ELLIPSIS
+    ...Prints the prize won by a person...
     >>> CLI(command, args=['Lucky', '--prize=1000'])
     Lucky won 1000€!
+
+.. note::
+
+    Parsing of docstrings is an optional feature. For this example to work as
+    shown, jsonargparse needs to be installed with the ``signatures`` extras
+    require as explained in section :ref:`installation`.
 
 :func:`.CLI` without arguments searches for functions and classes defined in the
 same module and in the local context where :func:`.CLI` is called. Giving a
