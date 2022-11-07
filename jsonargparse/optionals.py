@@ -6,6 +6,7 @@ import os
 import typing
 from contextlib import contextmanager
 from importlib.util import find_spec
+from typing import Optional
 
 from .namespace import Namespace
 
@@ -155,7 +156,7 @@ def get_config_read_mode() -> str:
     return _config_read_mode
 
 
-def set_docstring_parse_options(style = None, attribute_docstrings: bool = None):
+def set_docstring_parse_options(style = None, attribute_docstrings: Optional[bool] = None):
     """Sets options for docstring parsing.
 
     Args:

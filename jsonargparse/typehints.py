@@ -23,6 +23,7 @@ from typing import (
     MutableMapping,
     MutableSequence,
     MutableSet,
+    Optional,
     Sequence,
     Set,
     Tuple,
@@ -107,7 +108,7 @@ class ActionTypeHint(Action):
 
     def __init__(
         self,
-        typehint: Type = None,
+        typehint: Optional[Type] = None,
         enable_path: bool = False,
         **kwargs
     ):

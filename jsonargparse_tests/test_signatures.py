@@ -73,7 +73,7 @@ class SignaturesTests(unittest.TestCase):
                          c3_a5: Union[int, float, str, List[int], Dict[str, float]] = 5,
                          c3_a6: Optional[Class1] = None,
                          c3_a7: Tuple[str, int, float] = ('7', 7, 7.0),
-                         c3_a8: Tuple[str, Class1] = None,
+                         c3_a8: Optional[Tuple[str, Class1]] = None,
                          c1_a5: str = 'five',
                          **kwargs):
                 """Class3 short description
@@ -843,7 +843,7 @@ class SignaturesTests(unittest.TestCase):
 
     def test_implicit_optional(self):
 
-        def func(a1: int = None):
+        def func(a1: Optional[int] = None):
             return a1
 
         parser = ArgumentParser(error_handler=None)

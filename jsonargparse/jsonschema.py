@@ -2,7 +2,7 @@
 
 import os
 from argparse import Action
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from .actions import _is_action_value_list
 from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context
@@ -23,7 +23,7 @@ class ActionJsonSchema(Action):
 
     def __init__(
         self,
-        schema: Union[str, Dict] = None,
+        schema: Optional[Union[str, Dict]] = None,
         enable_path: bool = True,
         with_meta: bool = True,
         **kwargs

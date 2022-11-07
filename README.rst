@@ -157,8 +157,6 @@ tool. In a shell you could see the help and run a command as follows:
 
 .. doctest:: :hide:
 
-    >>> CLI(command, args=['--help'])  # doctest: +ELLIPSIS
-    ...Prints the prize won by a person...
     >>> CLI(command, args=['Lucky', '--prize=1000'])
     Lucky won 1000€!
 

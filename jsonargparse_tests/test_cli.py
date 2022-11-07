@@ -5,6 +5,7 @@ import unittest
 import yaml
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
+from typing import Optional
 from jsonargparse import ArgumentParser, capture_parser, CLI, lazy_instance
 from jsonargparse.optionals import docstring_parser_support, ruyaml_support
 from jsonargparse.typing import final
@@ -222,7 +223,7 @@ class CLITempDirTests(TempDirTestCase):
                 self.a = a
 
         class C:
-            def __init__(self, a: A = lazy_instance(A), b: B = None):
+            def __init__(self, a: A = lazy_instance(A), b: Optional[B] = None):
                 self.a = a
                 self.b = b
             def cmd_a(self):

@@ -268,7 +268,7 @@ class _ActionConfigLoad(Action):
 
     def __init__(
         self,
-        basetype: Type = None,
+        basetype: Optional[Type] = None,
         **kwargs
     ):
         if len(kwargs) == 0:
@@ -466,7 +466,7 @@ class ActionParser:
 
     def __init__(
         self,
-        parser: 'ArgumentParser' = None,
+        parser: Optional['ArgumentParser'] = None,
     ):
         """Initializer for ActionParser instance.
 
@@ -727,7 +727,7 @@ class ActionPathList(Action, FilesCompleterMethod):
 
     def __init__(
         self,
-        mode: str = None,
+        mode: Optional[str] = None,
         rel: str = 'cwd',
         **kwargs
     ):

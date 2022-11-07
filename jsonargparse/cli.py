@@ -13,8 +13,8 @@ __all__ = ['CLI']
 
 
 def CLI(
-    components: Union[Callable, Type, List[Union[Callable, Type]]] = None,
-    args: List[str] = None,
+    components: Optional[Union[Callable, Type, List[Union[Callable, Type]]]] = None,
+    args: Optional[List[str]] = None,
     config_help: str = default_config_option_help,
     set_defaults: Optional[Dict[str, Any]] = None,
     as_positional: bool = True,

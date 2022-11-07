@@ -49,9 +49,9 @@ def create_type(
     name: str,
     base_type: Type,
     check_value: Callable,
-    register_key: Tuple = None,
-    docstring: str = None,
-    extra_attrs: dict = None,
+    register_key: Optional[Tuple] = None,
+    docstring: Optional[str] = None,
+    extra_attrs: Optional[dict] = None,
 ) -> Type:
 
     if register_key in registered_types:
@@ -311,7 +311,7 @@ def get_registered_type(type_class):
         pass
 
 
-def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Callable = None):
+def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Optional[Callable] = None):
     assert uniqueness_key not in registered_types
     if type_class.__name__ in globals():
         raise ValueError(f'Type name "{type_class.__name__}" clashes with name already defined in jsonargparse.typing.')

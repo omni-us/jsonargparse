@@ -91,7 +91,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         Args:
             enable_path: Whether to try parsing path/subconfig when argument is a complex type.
         """
-        parser = self.parser if hasattr(self, 'parser') else self  # type: ignore
+        parser = self.parser if hasattr(self, 'parser') else self
         if 'action' in kwargs:
             if isinstance(kwargs['action'], ActionParser):
                 if kwargs['action']._parser == parser:
@@ -131,7 +131,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         return action
 
 
-    def add_argument_group(self, *args, name: str = None, **kwargs):
+    def add_argument_group(self, *args, name: Optional[str] = None, **kwargs):
         """Adds a group to the parser.
 
         All the arguments from `argparse.ArgumentParser.add_argument_group
@@ -147,7 +147,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         Raises:
             ValueError: If group with the same name already exists.
         """
-        parser = self.parser if hasattr(self, 'parser') else self  # type: ignore
+        parser = self.parser if hasattr(self, 'parser') else self
         if name is not None and name in parser.groups:
             raise ValueError(f'Group with name {name} already exists.')
         group = _ArgumentGroup(parser, *args, logger=parser.logger, **kwargs)
@@ -167,7 +167,7 @@ class _ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
 class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser):
     """Parser for command line, yaml/jsonnet files and environment variables."""
 
-    formatter_class: Type[DefaultHelpFormatter]  # type: ignore
+    formatter_class: Type[DefaultHelpFormatter]
     groups: Optional[Dict[str, '_ArgumentGroup']] = None
     _subcommands_action: Optional[_ActionSubCommands] = None
 
@@ -323,7 +323,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         self,
         defaults: bool = True,
         env: Optional[bool] = None,
-        environ: Union[Dict[str, str], os._Environ] = None,
+        environ: Optional[Union[Dict[str, str], os._Environ]] = None,
     ):
         cfg = Namespace()
         if defaults:
@@ -342,7 +342,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
     def parse_args(  # type: ignore[override]
         self,
         args: Optional[Sequence[str]] = None,
-        namespace: Namespace = None,
+        namespace: Optional[Namespace] = None,
         env: Optional[bool] = None,
         defaults: bool = True,
         with_meta: Optional[bool] = None,
@@ -478,7 +478,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
     def parse_env(
         self,
-        env: Dict[str, str] = None,
+        env: Optional[Dict[str, str]] = None,
         defaults: bool = True,
         with_meta: Optional[bool] = None,
         **kwargs,
@@ -771,7 +771,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         skip_check: bool = False,
         overwrite: bool = False,
         multifile: bool = True,
-        branch: str = None,
+        branch: Optional[str] = None,
     ) -> None:
         """Writes to file(s) the yaml or json for the given configuration object.
 
@@ -984,7 +984,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
     ## Other methods ##
 
-    def error(self, message: str, ex: Exception = None) -> NoReturn:
+    def error(self, message: str, ex: Optional[Exception] = None) -> NoReturn:
         """Logs error message if a logger is set, calls the error handler and raises a ParserError."""
         self._logger.error(message)
         if self._error_handler is not None:
@@ -1000,7 +1000,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         cfg: Namespace,
         skip_none: bool = True,
         skip_required: bool = False,
-        branch: str = None,
+        branch: Optional[str] = None,
     ) -> None:
         """Checks that the content of a given configuration object conforms with the parser.
 
@@ -1292,7 +1292,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             if isinstance(value, str):
                 value = action.check_type(value, self)
         elif hasattr(action, '_check_type'):
-            value = action._check_type(value, cfg=cfg)  # type: ignore
+            value = action._check_type(value, cfg=cfg)
         elif action.type is not None:
             try:
                 if action.nargs in {None, '?'} or action.nargs == 0:

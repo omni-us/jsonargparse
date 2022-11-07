@@ -345,7 +345,7 @@ class TypeHintsTests(unittest.TestCase):
 
     def test_list_append_subcommand_subclass(self):
         class A:
-            def __init__(self, cals: Union[Calendar, List[Calendar]] = None):
+            def __init__(self, cals: Optional[Union[Calendar, List[Calendar]]] = None):
                 self.cals = cals
 
         parser = ArgumentParser(error_handler=None)

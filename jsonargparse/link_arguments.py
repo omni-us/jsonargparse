@@ -215,7 +215,7 @@ class ActionLink(Action):
             ActionLink.apply_parsing_links(subparser, cfg[subcommand])  # type: ignore
         if not hasattr(parser, '_links_group'):
             return
-        for action in parser._links_group._group_actions:  # type: ignore
+        for action in parser._links_group._group_actions:
             if action.apply_on != 'parse':
                 continue
             from .typehints import ActionTypeHint
@@ -360,7 +360,7 @@ class ArgumentLinking:
         self,
         source: Union[str, Tuple[str, ...]],
         target: str,
-        compute_fn: Callable = None,
+        compute_fn: Optional[Callable] = None,
         apply_on: str = 'parse',
     ):
         """Makes an argument value be derived from the values of other arguments.

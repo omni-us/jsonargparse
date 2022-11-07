@@ -355,7 +355,7 @@ class SignatureArguments(LoggerProperty):
         self,
         theclass: Type,
         nested_key: str,
-        default: Union[Type, dict] = None,
+        default: Optional[Union[Type, dict]] = None,
         as_group: bool = True,
         **kwargs
     ) -> List[str]:
