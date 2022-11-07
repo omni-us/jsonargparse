@@ -1440,6 +1440,14 @@ unrelated to these variables.
     def gets_from_kwargs(**kwargs):
         val = kwargs.get('name', 'default')
 
+    def constant_conditional(**kwargs):
+        if global_boolean_1:
+            first_function(**kwargs)
+        elif not global_boolean_2:
+            second_function(**kwargs)
+        else:
+            third_function(**kwargs)
+
 **Cases for classes**
 
 .. testcode:: ast_resolver
