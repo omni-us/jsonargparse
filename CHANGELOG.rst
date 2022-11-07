@@ -12,8 +12,13 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.16.1 (2022-11-??)
+v4.17.0 (2022-11-??)
 --------------------
+
+Added
+^^^^^
+- AST resolver now ignores if/elif/else code when condition is a global constant
+  `#187 <https://github.com/omni-us/jsonargparse/issues/187>`__.
 
 Fixed
 ^^^^^

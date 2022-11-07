@@ -313,6 +313,17 @@ def function_module_class(**kwds):
     return calendar.Calendar(**kwds)
 
 
+constant_boolean_1 = True
+constant_boolean_2 = False
+
+
+def function_constant_boolean(**kwargs):
+    if constant_boolean_1:
+        return function_with_kwargs(**kwargs)
+    elif not constant_boolean_2:
+        return function_with_kwargs(k1=False, **kwargs)
+
+
 @contextmanager
 def source_unavailable():
     with patch('inspect.getsource', side_effect=OSError('could not get source code')):
@@ -464,6 +475,13 @@ class GetFunctionParametersTests(unittest.TestCase):
     def test_get_params_function_module_class(self):
         params = get_params(function_module_class)
         self.assertEqual(['firstweekday'], [p.name for p in params])
+
+    def test_get_params_function_constant_boolean(self):
+        assert_params(self, get_params(function_constant_boolean), ['k1', 'pk1', 'k2'])
+        with patch.dict(function_constant_boolean.__globals__, {'constant_boolean_1': False}):
+            assert_params(self, get_params(function_constant_boolean), ['pk1', 'k2'])
+            with patch.dict(function_constant_boolean.__globals__, {'constant_boolean_2': True}):
+                self.assertEqual(get_params(function_constant_boolean), [])
 
 
 class OtherTests(unittest.TestCase):

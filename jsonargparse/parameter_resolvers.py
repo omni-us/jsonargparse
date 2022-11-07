@@ -75,6 +75,10 @@ def ast_get_assign_targets(node):
     return node.targets if isinstance(node, ast.Assign) else [node.target]
 
 
+def ast_is_not(node) -> bool:
+    return isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not)
+
+
 dict_ast = ast.dump(ast_variable_load('dict'))
 
 
@@ -429,6 +433,18 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 self.values_found.append((key, node))
             elif ast_is_kwargs_pop_or_get(node, value_dump):
                 self.values_found.append((key, node))
+        self.generic_visit(node)
+
+    def visit_If(self, node):
+        is_test_not = ast_is_not(node.test)
+        test_node = node.test.operand if is_test_not else node.test
+        component_globals = self.component.__globals__
+        if isinstance(test_node, ast.Name) and test_node.id in component_globals:
+            condition = bool(component_globals[test_node.id])
+            if is_test_not:
+                condition = not condition
+            body = node.body if condition else node.orelse
+            node = ast.If(test=ast.Constant(value=True), body=body, orelse=[])
         self.generic_visit(node)
 
     def find_values_usage(self, values):
