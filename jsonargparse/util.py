@@ -14,7 +14,7 @@ from functools import wraps
 from types import BuiltinFunctionType, FunctionType, ModuleType
 from typing import Any, Callable, Optional, Tuple, Type, TypeVar, Union
 
-from .loaders_dumpers import load_value
+from .loaders_dumpers import json_dump, load_value
 from .optionals import (
     fsspec_support,
     get_config_read_mode,
@@ -285,8 +285,30 @@ def change_to_path_dir(path: Optional['Path']):
             os.chdir(cwd)
 
 
+def hash_item(item):
+    try:
+        if isinstance(item, (dict, list)):
+            item_hash = hash(json_dump(item))
+        else:
+            item_hash = hash(item)
+    except Exception:
+        item_hash = hash(repr(item))
+    return item_hash
+
+
+def unique(iterable):
+    unique_items = []
+    seen = set()
+    for item in iterable:
+        key = hash_item(item)
+        if key not in seen:
+            unique_items.append(item)
+            seen.add(key)
+    return unique_items
+
+
 def iter_to_set_str(val, sep=','):
-    val = list(val)
+    val = unique(val)
     if len(val) == 1:
         return str(val[0])
     return '{'+sep.join(str(x) for x in val)+'}'

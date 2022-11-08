@@ -148,19 +148,23 @@ class ClassG:
         elif self.func == '2':
             self.method2(**self.kws)
 
-    def method1(self, kmg1: int, kmg2: str, kmg3: bool):
+    def method1(self, kmg1: int = 1, kmg2: str = '-', kmg3: bool = True):
         """
         Args:
             kmg1: help for kmg1
+            kmg2: help for kmg2
             kmg3: help for kmg3
         """
+        self.called = 'method1'
 
-    def method2(self, kmg1: int, kmg2: float, kmg3: bool, kmg4: int):
+    def method2(self, kmg1: int = 1, kmg2: float = 2.3, kmg3: bool = False, kmg4: int = 4):
         """
         Args:
             kmg1: help for kmg1
             kmg3: help for kmg3
+            kmg4: help for kmg4
         """
+        self.called = 'method2'
 
 class ClassM1:
     def __init__(self, km1: int = 1):
@@ -290,6 +294,7 @@ def function_make_class_b(*args, k1: str = '-', **kwargs):
 def function_pop_get_from_kwargs(kn1: int = 0, **kw):
     """
     Args:
+        k2: help for k2
         kn1: help for kn1
         kn2: help for kn2
         kn3: help for kn3
@@ -299,7 +304,9 @@ def function_pop_get_from_kwargs(kn1: int = 0, **kw):
     kw.pop('kn2', 0.5)
     kw.get('kn3', {})
     kw.pop('kn4', [1])
-    return function_no_args_no_kwargs(**kw)
+    kw.get('pk1', '')
+    function_no_args_no_kwargs(**kw)
+    kw.pop('pk1', '')
 
 def function_with_bug(**kws):
     return does_not_exist(**kws)  # pylint: disable=undefined-variable
@@ -323,6 +330,34 @@ def function_constant_boolean(**kwargs):
     elif not constant_boolean_2:
         return function_with_kwargs(k1=False, **kwargs)
 
+def cond_1(kc: int = 1, kn0: str = 'x', kn1: str = '-'):
+    """
+    Args:
+        kc: help for kc
+        kn1: help for kn1
+    """
+
+def cond_2(kc: int = 1, kn2: bool = True):
+    """
+    Args:
+        kn2: help for kn2
+    """
+
+def cond_3(kc: int = 1, kn3: int = 2, kn4: float = 0.1):
+    """
+    Args:
+        kn3: help for kn3
+        kn4: help for kn4
+    """
+
+def conditional_calls(**kwargs):
+    if 'kn1' in kwargs:
+        cond_1(kn0='y', **kwargs)
+    elif 'kn2' in kwargs:
+        cond_2(**kwargs)
+    else:
+        cond_3(**kwargs)
+
 
 @contextmanager
 def source_unavailable():
@@ -330,10 +365,15 @@ def source_unavailable():
         yield
 
 
-def assert_params(self, params, expected):
+def assert_params(self, params, expected, origins={}):
     self.assertEqual(expected, [p.name for p in params])
     docs = [f'help for {p.name}' for p in params] if docstring_parser_support else [None] * len(params)
     self.assertEqual(docs, [p.doc for p in params])
+    param_origins = {
+        n: [o.split(f'{__name__}.', 1)[1] for o in p.origin]
+        for n, p in enumerate(params) if p.origin is not None
+    }
+    self.assertEqual(param_origins, origins)
 
 
 logger = logging.getLogger('test_parameter_resolvers')
@@ -378,7 +418,16 @@ class GetClassParametersTests(unittest.TestCase):
             assert_params(self, get_params(ClassF1), [])
 
     def test_get_params_class_kwargs_in_attr_method_conditioned_on_arg(self):
-        assert_params(self, get_params(ClassG), ['func', 'kmg1', 'kmg3'])
+        assert_params(
+            self,
+            get_params(ClassG),
+            ['func', 'kmg1', 'kmg2', 'kmg3', 'kmg4'],
+            {
+                2: ['ClassG._run:3', 'ClassG._run:5'],
+                3: ['ClassG._run:3', 'ClassG._run:5'],
+                4: ['ClassG._run:5'],
+            },
+        )
         with source_unavailable():
             assert_params(self, get_params(ClassG), ['func'])
 
@@ -466,8 +515,7 @@ class GetFunctionParametersTests(unittest.TestCase):
     def test_get_params_function_pop_get_from_kwargs(self):
         with self.assertLogs(logger, level='DEBUG') as log:
             params = get_params(function_pop_get_from_kwargs, logger=logger)
-            assert_params(self, params, ['kn1', 'kn2', 'kn3', 'kn4', 'pk1', 'k2'])
-            self.assertIs(params[-1].annotation, int)
+            assert_params(self, params, ['kn1', 'k2', 'kn2', 'kn3', 'kn4', 'pk1'])
             self.assertIn('unsupported kwargs pop/get default', log.output[0])
         with source_unavailable():
             assert_params(self, get_params(function_pop_get_from_kwargs), ['kn1'])
@@ -482,6 +530,21 @@ class GetFunctionParametersTests(unittest.TestCase):
             assert_params(self, get_params(function_constant_boolean), ['pk1', 'k2'])
             with patch.dict(function_constant_boolean.__globals__, {'constant_boolean_2': True}):
                 self.assertEqual(get_params(function_constant_boolean), [])
+
+    def test_conditional_calls_kwargs(self):
+        assert_params(
+            self,
+            get_params(conditional_calls),
+            ['kc', 'kn1', 'kn2', 'kn3', 'kn4'],
+            {
+                1: ["conditional_calls:3"],
+                2: ['conditional_calls:5'],
+                3: ['conditional_calls:7'],
+                4: ['conditional_calls:7'],
+            },
+        )
+        with source_unavailable():
+            self.assertEqual(get_params(conditional_calls), [])
 
 
 class OtherTests(unittest.TestCase):

@@ -209,6 +209,46 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(cfg.a, Namespace(a1=4, a2=2.3))
 
 
+    def test_add_class_conditional_kwargs(self):
+        from jsonargparse_tests.test_parameter_resolvers import ClassG
+
+        parser = ArgumentParser()
+        parser.add_class_arguments(ClassG, 'g')
+
+        cfg = parser.get_defaults()
+        self.assertEqual(cfg.g, Namespace(func=None, kmg1=1))
+
+        cfg = parser.parse_args(['--g.func=1', '--g.kmg2=x'])
+        self.assertEqual(cfg.g, Namespace(func='1', kmg1=1, kmg2='x'))
+        init = parser.instantiate_classes(cfg)
+        init.g._run()
+        self.assertEqual(init.g.called, 'method1')
+
+        cfg = parser.parse_args(['--g.func=2', '--g.kmg4=5'])
+        self.assertEqual(cfg.g, Namespace(func='2', kmg1=1, kmg4=5))
+        init = parser.instantiate_classes(cfg)
+        init.g._run()
+        self.assertEqual(init.g.called, 'method2')
+
+        help_str = StringIO()
+        parser.print_help(help_str)
+        module = 'jsonargparse_tests.test_parameter_resolvers'
+        expected = [
+            f'origins: {module}.ClassG._run:3; {module}.ClassG._run:5',
+            f'origins: {module}.ClassG._run:5',
+        ]
+        if docstring_parser_support:
+            expected += [
+                'help for func (required, type: str)',
+                'help for kmg1 (type: int, default: 1)',
+                'help for kmg2 (type: Union[str, float], default: {-, 2.3})',
+                'help for kmg3 (type: bool, default: {True, False})',
+                'help for kmg4 (type: int, default: 4)',
+            ]
+        for value in expected:
+            self.assertIn(value, help_str.getvalue())
+
+
     def test_add_method_arguments(self):
 
         class MyClass:
@@ -777,8 +817,8 @@ class SignaturesTests(unittest.TestCase):
             with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
                 parser.add_class_arguments(Class2, skip={'c2_a2'})
                 self.assertEqual(1, len(log.output))
-                self.assertIn('"c2_a2" from "Class2.__init__"', log.output[0])
-                self.assertIn('Parameter requested to be skipped', log.output[0])
+                self.assertIn('parameter "c2_a2" from "', log.output[0])
+                self.assertIn('Class2.__init__" because of: Parameter requested to be skipped', log.output[0])
 
 
     def test_instantiate_classes(self):

@@ -19,6 +19,8 @@ Added
 ^^^^^
 - AST resolver now ignores if/elif/else code when condition is a global constant
   `#187 <https://github.com/omni-us/jsonargparse/issues/187>`__.
+- AST resolver support for conditional ``**kwargs`` use in multiple calls `#187
+  <https://github.com/omni-us/jsonargparse/issues/187#issuecomment-1295141338>`__.
 
 Fixed
 ^^^^^

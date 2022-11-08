@@ -155,11 +155,6 @@ tool. In a shell you could see the help and run a command as follows:
     $ python example.py Lucky --prize=1000
     Lucky won 1000€!
 
-.. doctest:: :hide:
-
-    >>> CLI(command, args=['Lucky', '--prize=1000'])
-    Lucky won 1000€!
-
 .. note::
 
     Parsing of docstrings is an optional feature. For this example to work as
@@ -1505,6 +1500,29 @@ class, there can be additional parameters. For example in:
 
 The ``param`` parameter would be excluded from the resolved parameters because
 it is internally hard coded.
+
+A special case which is supported but with caveats, is multiple calls that use
+``**kwargs``. For example:
+
+.. testcode:: ast_resolver
+
+    def conditional_calls(**kwargs):
+        if condition_1:
+            first_function(**kwargs)
+        elif condition_2:
+            second_function(**kwargs)
+        else:
+            third_function(**kwargs)
+
+The resolved parameters that have the same type hint and default accross all
+calls are supported normally. When there is a discrepancy between the calls, the
+parameters behave differently and are shown in the help in special "Conditional
+arguments" sections. The main difference is that these arguments are not
+included in :py:meth:`.ArgumentParser.get_defaults` or the output of
+``--print_config``. This is necessary because the parser does not know which of
+the calls will be used at runtime, and adding them would cause
+:py:meth:`.ArgumentParser.instantiate_classes` to fail due to unexpected keyword
+arguments.
 
 .. note::
 
