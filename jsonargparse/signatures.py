@@ -8,7 +8,7 @@ from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from .actions import _ActionConfigLoad
 from .optionals import get_doc_short_description
-from .parameter_resolvers import get_signature_parameters, ParamData
+from .parameter_resolvers import get_parameter_origins, get_signature_parameters, ParamData
 from .typehints import ActionTypeHint, is_optional, LazyInitBaseClass
 from .typing import is_final_class
 from .util import get_import_path, is_subclass, iter_to_set_str, LoggerProperty
@@ -277,8 +277,7 @@ class SignatureArguments(LoggerProperty):
         if default == inspect_empty:
             default = param.default
         is_required = default == inspect_empty
-        src = (param.parent.__name__+'.' if param.parent else '')
-        src += iter_to_set_str(x.__name__ for x in (param.component if isinstance(param.component, tuple) else [param.component]))
+        src = get_parameter_origins(param.component, param.parent)
         skip_message = f'Skipping parameter "{name}" from "{src}" because of: '
         if not fail_untyped and annotation == inspect_empty:
             annotation = Any
@@ -310,6 +309,15 @@ class SignatureArguments(LoggerProperty):
         is_final_class_typehint = is_final_class(annotation)
         dest = (nested_key+'.' if nested_key else '') + name
         args = [dest if is_required and as_positional else '--'+dest]
+        if param.origin:
+            group_name = '; '.join(str(o) for o in param.origin)
+            if group_name in group.parser.groups:
+                group = group.parser.groups[group_name]
+            else:
+                group = group.parser.add_argument_group(
+                    f'Conditional arguments [origins: {group_name}]',
+                    name=group_name,
+                )
         if annotation in {str, int, float, bool} or \
            is_subclass(annotation, (str, int, float)) or \
            is_final_class_typehint or \

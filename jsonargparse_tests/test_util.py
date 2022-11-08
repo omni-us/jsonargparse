@@ -8,7 +8,7 @@ import unittest
 import zipfile
 from jsonargparse import ArgumentParser, LoggerProperty, null_logger, Path
 from jsonargparse.optionals import fsspec_support, import_fsspec, reconplogger_support, url_support
-from jsonargparse.util import get_import_path, import_object, register_unresolvable_import_paths
+from jsonargparse.util import get_import_path, import_object, register_unresolvable_import_paths, unique
 from jsonargparse_tests.base import is_posix, mock_module, responses_activate, responses_available, suppress_stderr, TempDirTestCase
 
 
@@ -307,6 +307,13 @@ class ImportFunctionsTests(unittest.TestCase):
             self.assertRaises(ValueError, lambda: get_import_path(func))
             register_unresolvable_import_paths(__import__(module_name))
             self.assertEqual(get_import_path(func), f'{module_name}.func')
+
+
+class OtherTests(unittest.TestCase):
+
+    def test_unique(self):
+        data = [1.0, 2, {}, 'x', ([], {}), 2, [], {}, [], ([], {}), 2]
+        self.assertEqual(unique(data), [1.0, 2, {}, 'x', ([], {}), []])
 
 
 if __name__ == '__main__':

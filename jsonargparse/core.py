@@ -24,6 +24,7 @@ from .loaders_dumpers import (
     yaml_load,
 )
 from .namespace import is_meta_key, Namespace, patch_namespace, recreate_branches, split_key, split_key_leaf, strip_meta
+from .parameter_resolvers import ConditionalDefault
 from .signatures import is_pure_dataclass, SignatureArguments
 from .typehints import ActionTypeHint, is_subclass_spec
 from .typing import is_final_class
@@ -943,7 +944,11 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         """
         cfg = Namespace()
         for action in filter_default_actions(self._actions):
-            if action.default != argparse.SUPPRESS and action.dest != argparse.SUPPRESS:
+            if (
+                action.default != argparse.SUPPRESS and
+                action.dest != argparse.SUPPRESS and
+                not isinstance(action.default, ConditionalDefault)
+            ):
                 cfg[action.dest] = recreate_branches(action.default)
 
         self._logger.info('Loaded default values from parser.')

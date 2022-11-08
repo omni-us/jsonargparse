@@ -10,7 +10,15 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
-from .util import ClassFromFunctionBase, is_subclass, LoggerProperty, parse_logger
+from .util import (
+    ClassFromFunctionBase,
+    get_import_path,
+    is_subclass,
+    iter_to_set_str,
+    LoggerProperty,
+    parse_logger,
+    unique,
+)
 from .optionals import parse_docs
 
 
@@ -22,17 +30,37 @@ class ParamData:
     kind: Optional[inspect._ParameterKind] = None
     doc: Optional[str] = None
     component: Optional[Union[Callable, Type, Tuple]] = None
-    parent: Optional[Type] = None
+    parent: Optional[Union[Type, Tuple]] = None
+    origin: Optional[Union[str, Tuple]] = None
 
 
 ParamList = List[ParamData]
 parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]  # type: ignore
 kinds = inspect._ParameterKind
 ast_assign_type: Tuple[Type[ast.AST], ...] = (ast.AnnAssign, ast.Assign)
+param_kwargs_get = '**.get()'
+param_kwargs_pop = '**.pop()'
 
 
 class SourceNotAvailable(Exception):
     "Raised when the source code for some component is not available."
+
+
+class ConditionalDefault(list):
+    def __repr__(self):
+        return iter_to_set_str(self, sep=', ')
+
+
+def get_parameter_origins(component, parent) -> str:
+    if isinstance(component, tuple):
+        assert parent is None or len(component) == len(parent)
+        return iter_to_set_str(
+            get_parameter_origins(c, parent[n] if parent else None)
+            for n, c in enumerate(component)
+        )
+    if parent:
+        return f'{get_import_path(parent)}.{component.__name__}'
+    return get_import_path(component)
 
 
 def is_staticmethod(attr) -> bool:
@@ -243,10 +271,11 @@ def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, logger)
         name=name,
         annotation=inspect._empty,
         default=default,
-        kind=inspect._ParameterKind.KEYWORD_ONLY,
+        kind=kinds.KEYWORD_ONLY,
         doc=doc_params.get(name),
         parent=parent,
         component=component,
+        origin=param_kwargs_get if node.func.attr == 'get' else param_kwargs_pop,
     )
 
 
@@ -270,35 +299,41 @@ def replace_args_and_kwargs(params: ParamList, args: ParamList, kwargs: ParamLis
     return params
 
 
-def common_parameters(params_list: List[ParamList]) -> ParamList:
+def group_parameters(params_list: List[ParamList]) -> ParamList:
     if len(params_list) == 1:
+        for param in params_list[0]:
+            if not isinstance(param.origin, tuple):
+                param.origin = None
         return params_list[0]
-    common = []
+    grouped = []
+    params_count = 0
+    params_skip = set()
     params_dict = defaultdict(lambda: [])
     for params in params_list:
+        if params[0].origin not in {param_kwargs_get, param_kwargs_pop}:
+            params_count += 1
         for param in params:
-            params_dict[param.name].append(param)
+            if param.name not in params_skip and param.kind != kinds.POSITIONAL_ONLY:
+                params_dict[param.name].append(param)
+                if param.origin == param_kwargs_pop:
+                    params_skip.add(param.name)
     for params in params_dict.values():
-        if (
-            len(params) == len(params_list) and
-            len(set(p.annotation for p in params)) == 1 and
-            kinds.POSITIONAL_ONLY not in set(p.kind for p in params)
-        ):
-            common.append(params[0])
-    return common
-
-
-def merge_parameters(source: Union[ParamData, ParamList], target: ParamList) -> ParamList:
-    if not isinstance(source, list):
-        source = [source]
-    source_dict = {p.name: p for p in source}
-    replace_names = set()
-    for p in target:
-        if p.name in source_dict and p.annotation is inspect._empty and source_dict[p.name] is not inspect._empty:
-            replace_names.add(p.name)
-    target = [p for p in target if p.name not in replace_names]
-    target_names = set(p.name for p in target)
-    return target + [s for s in source if s.name not in target_names]
+        gparam = params[0]
+        types = unique(p.annotation for p in params if p.annotation is not inspect._empty)
+        defaults = unique(p.default for p in params if p.default is not inspect._empty)
+        if len(params) >= params_count and len(types) <= 1 and len(defaults) <= 1:
+            gparam.origin = None
+        else:
+            gparam.parent = tuple(p.parent for p in params)
+            gparam.component = tuple(p.component for p in params)
+            gparam.origin = tuple(p.origin for p in params)
+            gparam.default = ConditionalDefault((p.default for p in params) if len(defaults) > 1 else defaults)
+            if len(types) > 1:
+                gparam.annotation = Union[tuple(types)] if types else inspect._empty
+        docs = [p.doc for p in params if p.doc]
+        gparam.doc = docs[0] if docs else None
+        grouped.append(gparam)
+    return grouped
 
 
 def has_dunder_new_method(cls, attr_name):
@@ -503,18 +538,17 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         if kwargs_name:
             values_to_find[kwargs_name] = kwargs_value = ast_variable_load(kwargs_name)
 
-        args: ParamList = []
-        kwargs: ParamList = []
         values_found = self.find_values_usage(values_to_find)
         if not values_found:
-            return args, kwargs
+            return [], []
 
+        params_list = []
         kwargs_value_dump = ast.dump(kwargs_value)
         for node in [v for k, v in values_found if k == kwargs_name]:
             if isinstance(node, ast.Call):
                 if ast_is_kwargs_pop_or_get(node, kwargs_value_dump):
                     param = get_kwargs_pop_or_get_parameter(node, self.component, self.parent, self.doc_params, self.logger)
-                    kwargs = merge_parameters(param, kwargs)
+                    params_list.append([param])
                     continue
                 kwarg = ast_get_call_kwarg_with_value(node, kwargs_value)
                 params = []
@@ -527,19 +561,22 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     get_param_args = self.get_node_component(node)
                     if get_param_args:
                         params = get_signature_parameters(*get_param_args, logger=self.logger)
-                args, kwargs_ = split_args_and_kwargs(remove_given_parameters(node, params))
-                kwargs = merge_parameters(kwargs_, kwargs)
-                break
+                params = remove_given_parameters(node, params)
+                if params:
+                    self.add_node_origins(params, node)
+                    params_list.append(params)
             elif isinstance(node, ast_assign_type):
                 self_attr = self.parent and ast_is_attr_assign(node, self.self_name)
                 if self_attr:
                     params = self.get_parameters_attr_use_in_members(self_attr)
-                    kwargs = merge_parameters(params, kwargs)
-                    break
+                    if params:
+                        self.add_node_origins(params, node)
+                        params_list.append(params)
                 else:
                     self.logger.debug(f'AST resolver: unsupported type of assign: {ast_str(node)}')
 
-        return args, kwargs
+        params = group_parameters(params_list)
+        return split_args_and_kwargs(params)
 
     def get_parameters_attr_use_in_members(self, attr_name) -> ParamList:
         attr_value = ast_attribute_load(self.self_name, attr_name)
@@ -556,6 +593,14 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         self.logger.debug(f'AST resolver: did not find use of {self.self_name}.{attr_name} in members of {self.parent}')
         return []
 
+    def add_node_origins(self, params: ParamList, node) -> None:
+        origin = None
+        for param in params:
+            if param.origin is None:
+                if not origin:
+                    origin = f'{get_parameter_origins(self.component, self.parent)}:{node.lineno}'
+                param.origin = origin
+
     def get_parameters_call_attr(self, attr_name: str, attr_value: ast.AST) -> Optional[ParamList]:
         values_to_find = {attr_name: attr_value}
         values_found = self.find_values_usage(values_to_find)
@@ -563,9 +608,10 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         if values_found:
             for _, node in values_found:
                 match = self.match_call_that_uses_attr(node, attr_name)
-                if match is not None:
+                if match:
+                    self.add_node_origins(match, node)
                     matched.append(match)
-            matched = common_parameters(matched)
+            matched = group_parameters(matched)
         return matched or None
 
     def get_parameters(self) -> ParamList:
