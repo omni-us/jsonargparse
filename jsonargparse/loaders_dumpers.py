@@ -93,7 +93,7 @@ loaders: Dict[str, Callable] = {
     'jsonnet': jsonnet_load,
 }
 
-pyyaml_exceptions = (yaml.parser.ParserError, yaml.scanner.ScannerError)
+pyyaml_exceptions = (yaml.YAMLError,)
 jsonnet_exceptions = pyyaml_exceptions + (ValueError,)
 
 loader_exceptions: Dict[str, Tuple[Type[Exception], ...]] = {

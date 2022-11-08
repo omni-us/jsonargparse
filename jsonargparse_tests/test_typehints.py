@@ -123,6 +123,12 @@ class TypeHintsTests(unittest.TestCase):
                     self.assertEqual(value, parser.parse_args([f'--cls.val={value}']).cls.init_args.val)
 
 
+    def test_str_with_yaml_constructor_error(self):
+        parser = ArgumentParser()
+        parser.add_argument('--val', type=str)
+        self.assertEqual('{{something}}', parser.parse_args(['--val={{something}}']).val)
+
+
     def test_list(self):
         for list_type in [Iterable, List, Sequence]:
             with self.subTest(str(list_type)):
