@@ -45,6 +45,7 @@ from .util import (
     change_to_path_dir,
     ClassType,
     get_import_path,
+    get_typehint_origin,
     import_object,
     indent_text,
     is_subclass,
@@ -963,12 +964,6 @@ def sort_subtypes_for_append(subtypes):
     if subtypes and len(subtypes) > 1:
         subtypes = sorted(subtypes, key=lambda x: get_typehint_origin(x) not in sequence_origin_types)
     return subtypes
-
-
-def get_typehint_origin(typehint):
-    if not hasattr(typehint, '__origin__') and get_import_path(typehint.__class__) == 'types.UnionType':
-        return Union
-    return getattr(typehint, '__origin__', None)
 
 
 def is_ellipsis_tuple(typehint):

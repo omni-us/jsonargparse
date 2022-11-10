@@ -17,6 +17,7 @@ from .typing import path_type
 from .util import (
     change_to_path_dir,
     default_config_option_help,
+    get_typehint_origin,
     import_object,
     indent_text,
     is_subclass,
@@ -314,7 +315,7 @@ class _ActionHelpClassPath(Action):
 
     def __init__(self, baseclass=None, **kwargs):
         if baseclass is not None:
-            if getattr(baseclass, '__origin__', None) == Union:
+            if get_typehint_origin(baseclass) == Union:
                 baseclasses = [c for c in baseclass.__args__ if c is not NoneType]
                 if len(baseclasses) == 1:
                     baseclass = baseclasses[0]
@@ -325,7 +326,7 @@ class _ActionHelpClassPath(Action):
             super().__init__(**kwargs)
 
     def update_init_kwargs(self, kwargs):
-        if getattr(self._baseclass, '__origin__', None) == Union:
+        if get_typehint_origin(self._baseclass) == Union:
             from .typehints import ActionTypeHint
             self._basename = iter_to_set_str(
                 c.__name__ for c in self._baseclass.__args__
@@ -353,7 +354,7 @@ class _ActionHelpClassPath(Action):
             val_class = import_object(resolve_class_path_by_name(baseclass, value))
         except Exception as ex:
             raise TypeError(f'{option_string}: {ex}')
-        if getattr(self._baseclass, '__origin__', None) == Union:
+        if get_typehint_origin(self._baseclass) == Union:
             baseclasses = self._baseclass.__args__
         else:
             baseclasses = [baseclass]
