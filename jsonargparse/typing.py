@@ -2,6 +2,7 @@
 
 import operator
 import os
+import pathlib
 import re
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 from .optionals import final
@@ -356,6 +357,9 @@ Path_drw = path_type('drw', docstring='str pointing to a directory that exists a
 register_type(os.PathLike, str, str)
 register_type(complex)
 register_type_on_first_use('uuid.UUID')
+
+for path in [pathlib.Path, pathlib.PosixPath, pathlib.WindowsPath]:
+    register_type(path, str, path, type_check=lambda v, t: isinstance(v, t))
 
 
 def timedelta_deserializer(value):

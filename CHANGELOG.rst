@@ -29,6 +29,12 @@ Fixed
 - ``Namespace`` clone should not deepcopy leaf values `#187
   <https://github.com/omni-us/jsonargparse/issues/187>`__.
 
+Changed
+^^^^^^^
+- Improved help usage and description for ``--print_config``.
+- Registering ``pathlib.Path`` types so that they are not shown as subclasse
+  types.
+
 
 v4.16.0 (2022-10-28)
 --------------------

@@ -216,16 +216,24 @@ print_config_skip: ContextVar = ContextVar('print_config_skip', default=False)
 
 
 class _ActionPrintConfig(Action):
-    def __init__(self,
-                 option_strings,
-                 dest=SUPPRESS,
-                 default=SUPPRESS):
-        super().__init__(option_strings=option_strings,
-                         dest=dest,
-                         default=default,
-                         nargs=1,
-                         metavar='[={comments,skip_null,skip_default}+]',
-                         help='Print the configuration after applying all other arguments and exit.')
+    def __init__(
+        self,
+        option_strings,
+        dest=SUPPRESS,
+        default=SUPPRESS,
+    ):
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            default=default,
+            nargs=1,
+            metavar='\b[=flags]',
+            help=(
+                'Print the configuration after applying all other arguments and exit. The optional '
+                'flags are one or more keywords separated by comma which modify the output. The '
+                'supported flags are: comments, skip_default, skip_null.'
+            ),
+        )
 
     def __call__(self, parser, namespace, value, option_string=None):
         kwargs = {'subparser': parser, 'key': None, 'skip_none': False, 'skip_check': False}

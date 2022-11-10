@@ -184,6 +184,15 @@ class PathTypeTests(TempDirTestCase):
         self.assertEqual(self.file_fr, parser.parse_args([f'--path={self.file_fr}']).path)
 
 
+    def test_pathlib_path(self):
+        parser = ArgumentParser()
+        parser.add_argument('--path', type=pathlib.Path)
+        cfg = parser.parse_args([f'--path={self.file_fr}'])
+        self.assertIsInstance(cfg.path, pathlib.Path)
+        self.assertEqual(str(cfg.path), self.file_fr)
+        self.assertEqual(parser.dump(cfg), 'path: file_r\n')
+
+
 class OtherTests(unittest.TestCase):
 
     def test_pickle_module_types(self):
