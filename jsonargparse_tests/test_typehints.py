@@ -600,10 +600,20 @@ class TypeHintsTests(unittest.TestCase):
     @unittest.skipIf(sys.version_info[:2] < (3, 10), 'new union syntax introduced in python 3.10')
     def test_union_new_syntax(self):
         parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--str', type=eval('int | None'))
-        self.assertEqual(123, parser.parse_args(['--str=123']).str)
-        self.assertIsNone(parser.parse_args(['--str=null']).str)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--str=abc']))
+        parser.add_argument('--val', type=eval('int | None'))
+        self.assertEqual(123, parser.parse_args(['--val=123']).val)
+        self.assertIsNone(parser.parse_args(['--val=null']).val)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--val=abc']))
+
+
+    @unittest.skipIf(sys.version_info[:2] < (3, 10), 'new union syntax introduced in python 3.10')
+    def test_union_new_syntax_subclasses(self):
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--op', type=eval('Calendar | bool'))
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--op.help=TextCalendar'])
+        self.assertIn('--op.init_args.firstweekday', out.getvalue())
 
 
     def test_Callable_with_function_path(self):

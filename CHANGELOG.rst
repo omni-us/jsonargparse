@@ -28,6 +28,8 @@ Fixed
   `#189 <https://github.com/omni-us/jsonargparse/issues/189>`__.
 - ``Namespace`` clone should not deepcopy leaf values `#187
   <https://github.com/omni-us/jsonargparse/issues/187>`__.
+- ``_ActionHelpClassPath`` actions fail to instantiate when base class uses new
+  union type syntax.
 
 Changed
 ^^^^^^^

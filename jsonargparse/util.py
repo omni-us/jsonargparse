@@ -259,6 +259,12 @@ def object_path_serializer(value):
         raise ValueError(f'Only possible to serialize an importable object, given {value}: {ex}') from ex
 
 
+def get_typehint_origin(typehint):
+    if not hasattr(typehint, '__origin__') and get_import_path(typehint.__class__) == 'types.UnionType':
+        return Union
+    return getattr(typehint, '__origin__', None)
+
+
 lenient_check: ContextVar = ContextVar('lenient_check', default=False)
 
 
