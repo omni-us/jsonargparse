@@ -359,7 +359,7 @@ register_type(complex)
 register_type_on_first_use('uuid.UUID')
 
 for path in [pathlib.Path, pathlib.PosixPath, pathlib.WindowsPath]:
-    register_type(path, str, path, type_check=lambda v, t: isinstance(v, t))
+    register_type(path, str, path, type_check=isinstance)
 
 
 def timedelta_deserializer(value):

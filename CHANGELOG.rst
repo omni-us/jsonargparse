@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.17.0 (2022-11-??)
+v4.17.0 (2022-11-11)
 --------------------
 
 Added
@@ -34,7 +34,7 @@ Fixed
 Changed
 ^^^^^^^
 - Improved help usage and description for ``--print_config``.
-- Registering ``pathlib.Path`` types so that they are not shown as subclasse
+- Registering ``pathlib.Path`` types so that they are not shown as subclass
   types.
 
 
