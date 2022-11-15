@@ -209,6 +209,33 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(cfg.a, Namespace(a1=4, a2=2.3))
 
 
+    def test_add_class_required_args(self):
+        class Model:
+            def __init__(self, n: int, m: float):
+                pass
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(Model, 'model')
+        parser.add_argument('--config', action=ActionConfigFile)
+
+        for args in [
+            [],
+            ['--model.n=2'],
+            ['--model.m=0.1'],
+            ['--model.n=x', '--model.m=0.1'],
+        ]:
+            with self.assertRaises(ParserError):
+                parser.parse_args(args)
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--model.m=0.1', '--print_config'])
+        self.assertIn('  n: null', out.getvalue())
+
+        cfg = parser.parse_args([f'--config={out.getvalue()}', '--model.n=3'])
+        self.assertEqual(cfg.model, Namespace(m=0.1, n=3))
+
+
     def test_add_class_conditional_kwargs(self):
         from jsonargparse_tests.test_parameter_resolvers import ClassG
 
