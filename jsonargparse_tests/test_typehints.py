@@ -294,12 +294,13 @@ class TypeHintsTests(unittest.TestCase):
 
     def test_list_append(self):
         parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--val', type=Union[int, str, List[int]])
+        parser.add_argument('--val', type=Union[int, float, List[int]])
         self.assertEqual(0, parser.parse_args(['--val=0']).val)
         self.assertEqual([0], parser.parse_args(['--val+=0']).val)
         self.assertEqual([1, 2, 3], parser.parse_args(['--val=1', '--val+=2', '--val+=3']).val)
         self.assertEqual([1, 2, 3], parser.parse_args(['--val=[1,2]', '--val+=3']).val)
-        self.assertEqual([1], parser.parse_args(['--val=a', '--val+=1']).val)
+        self.assertEqual([1], parser.parse_args(['--val=0.1', '--val+=1']).val)
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--val=a', '--val+=1']))
         with warnings.catch_warnings(record=True) as w:
             self.assertEqual(3, parser.parse_args(['--val=[1,2]', '--val=3']).val)
             self.assertIn('Replacing list value "[1, 2]" with "3"', str(w[0].message))
@@ -313,6 +314,7 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual([1, 2, 3], parser.parse_args(['--cfg', 'val+: 3']).val)
         self.assertEqual([1, 2, 3, 4], parser.parse_args(['--cfg', 'val+: [3, 4]']).val)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', 'val+: a']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--val=2', '--cfg', 'val+: 3']))
 
 
     def test_list_append_subclass_init_args(self):
@@ -349,6 +351,28 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(['TextCalendar', 'HTMLCalendar'], [c.class_path.split('.')[1] for c in cfg.cls.cal])
 
 
+    def test_list_append_subclass(self):
+        class A:
+            def __init__(self, cals: Optional[Union[Calendar, List[Calendar]]] = None):
+                self.cals = cals
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_class_arguments(A, 'a')
+        cfg = parser.parse_args([
+            '--a.cals+=Calendar',
+            '--a.cals.firstweekday=3',
+            '--a.cals+=TextCalendar',
+            '--a.cals.firstweekday=1',
+        ])
+        self.assertEqual(['calendar.Calendar', 'calendar.TextCalendar'], [x.class_path for x in cfg.a.cals])
+        self.assertEqual([3, 1], [x.init_args.firstweekday for x in cfg.a.cals])
+        cfg = parser.parse_args([f'--a={json.dumps(cfg.a.as_dict())}', '--a.cals.firstweekday=4'])
+        self.assertEqual(Namespace(firstweekday=4), cfg.a.cals[-1].init_args)
+        args = ['--a.cals+=Invalid', '--a.cals+=TextCalendar']
+        self.assertRaises(ParserError, lambda: parser.parse_args(args))
+        self.assertRaises(ParserError, lambda: parser.parse_args(args + ['--print_config']))
+
+
     def test_list_append_subcommand_subclass(self):
         class A:
             def __init__(self, cals: Optional[Union[Calendar, List[Calendar]]] = None):
@@ -370,6 +394,9 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual([3, 1], [x.init_args.firstweekday for x in cfg.cmd.a.cals])
         cfg = parser.parse_args(['cmd', f'--a={json.dumps(cfg.cmd.a.as_dict())}', '--a.cals.firstweekday=4'])
         self.assertEqual(Namespace(firstweekday=4), cfg.cmd.a.cals[-1].init_args)
+        args = ['cmd', '--a.cals+=Invalid', '--a.cals+=TextCalendar']
+        self.assertRaises(ParserError, lambda: parser.parse_args(args))
+        self.assertRaises(ParserError, lambda: parser.parse_args(args + ['--print_config']))
 
 
     def test_restricted_number_type(self):
