@@ -1466,6 +1466,7 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             self.assertEqual(cfg.nums, [0, 1, 2])
             cfg = parser.parse_args(['--nums+=[2, 3]'])
             self.assertEqual(cfg.nums, [0, 1, 2, 3])
+            self.assertEqual(str(cfg.__default_config__), str(config_path))
 
         with self.subTest('two default config appends'):
             config_path2 = pathlib.Path(self.tmpdir, 'config2.yaml')
@@ -1473,9 +1474,10 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             parser.default_config_files += [str(config_path2)]
             cfg = parser.get_defaults()
             self.assertEqual(cfg.nums, [0, 1, 2])
+            self.assertEqual([str(c) for c in cfg.__default_config__], [str(config_path), str(config_path2)])
 
 
-    def test_list_append_default_config_files_subcommand(self):
+    def test_list_append_subcommand_global_default_config_files(self):
         config_path = pathlib.Path(self.tmpdir, 'config.yaml')
         parser = ArgumentParser(default_config_files=[str(config_path)])
         subcommands = parser.add_subcommands()
@@ -1485,6 +1487,24 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         config_path.write_text('sub:\n  nums: [1]\n')
         cfg = parser.parse_args(['sub', '--nums+=2'])
         self.assertEqual(cfg.sub.nums, [1, 2])
+        self.assertEqual(str(cfg.__default_config__), str(config_path))
+        cfg = parser.parse_args(['sub', '--nums+=2'], defaults=False)
+        self.assertEqual(cfg.sub.nums, [2])
+
+
+    def test_list_append_subcommand_subparser_default_config_files(self):
+        config_path = pathlib.Path(self.tmpdir, 'config.yaml')
+        parser = ArgumentParser()
+        subcommands = parser.add_subcommands()
+        subparser = ArgumentParser(default_config_files=[str(config_path)])
+        subparser.add_argument('--nums', type=List[int], default=[0])
+        subcommands.add_subcommand('sub', subparser)
+        config_path.write_text('nums: [1]\n')
+        cfg = parser.parse_args(['sub', '--nums+=2'])
+        self.assertEqual(cfg.sub.nums, [1, 2])
+        self.assertEqual(str(cfg.sub.__default_config__), str(config_path))
+        cfg = parser.parse_args(['sub', '--nums+=2'], defaults=False)
+        self.assertEqual(cfg.sub.nums, [2])
 
 
     def test_class_type_with_default_config_files(self):

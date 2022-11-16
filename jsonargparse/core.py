@@ -241,9 +241,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                 self.error(f'All arguments are expected to be strings: {args}')
         self.args = args
 
-        if namespace is None:
-            namespace = Namespace()
-
         namespace = argcomplete_namespace(caller, self, namespace)
 
         try:
@@ -375,7 +372,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             if namespace:
                 cfg = self.merge_config(namespace, cfg)
 
-            cfg, unk = self.parse_known_args(args=args, namespace=cfg)
+            with _ActionSubCommands.parse_kwargs_context({'env': env, 'defaults': defaults}):
+                cfg, unk = self.parse_known_args(args=args, namespace=cfg)
             if unk:
                 self.error(f'Unrecognized arguments: {" ".join(unk)}')
 
@@ -1390,6 +1388,9 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             self._default_env = default_env
         else:
             raise ValueError('default_env has to be a boolean.')
+        if self._subcommands_action:
+            for subparser in self._subcommands_action._name_parser_map.values():
+                subparser.default_env = self._default_env
 
 
     @property
