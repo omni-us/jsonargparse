@@ -23,6 +23,9 @@ Fixed
   subcommands.
 - Parsing fails for registered types that can't be cast to boolean `#196
   <https://github.com/omni-us/jsonargparse/issues/196>`__.
+- List append not working for ``default_config_files`` set in a subcommand
+  subparser `pytorch-lightning#15256
+  <https://github.com/Lightning-AI/lightning/issues/15256>`__.
 
 Changed
 ^^^^^^^

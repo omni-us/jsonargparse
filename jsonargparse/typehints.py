@@ -357,16 +357,14 @@ class ActionTypeHint(Action):
             if 'nargs' in kwargs and kwargs['nargs'] == 0:
                 raise ValueError('ActionTypeHint does not allow nargs=0.')
             return ActionTypeHint(**kwargs)
-        if self.nargs == '?' and args[2] is None:
-            val = None
-        else:
-            cfg, val, opt_str = args[1:]
+        cfg, val, opt_str = args[1:]
+        if not (self.nargs == '?' and val is None):
             if isinstance(opt_str, str) and opt_str.startswith(f'--{self.dest}.'):
                 sub_opt = opt_str[len(f'--{self.dest}.'):]
                 val = NestedArg(key=sub_opt, val=val)
             append = opt_str == f'--{self.dest}+'
             val = self._check_type(val, append=append, cfg=cfg)
-        args[1].update(val, self.dest)
+        cfg.update(val, self.dest)
 
 
     def _check_type(self, value, append=False, cfg=None):
@@ -599,6 +597,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
     # List, Iterable or Sequence
     elif typehint_origin in sequence_origin_types:
         if append:
+            adapt_kwargs.pop('prev_val')
             if prev_val is None:
                 prev_val = []
             elif not isinstance(prev_val, list):

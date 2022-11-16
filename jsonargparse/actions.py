@@ -294,9 +294,13 @@ class _ActionConfigLoad(Action):
             kwargs['_basetype'] = self._basetype
             return _ActionConfigLoad(**kwargs)
         parser, namespace, value = args[:3]
-        cfg_file = Namespace()
-        cfg_file[self.dest] = self._load_config(value, parser)
-        namespace.update(cfg_file)
+        loaded_value = self._load_config(value, parser)
+        if isinstance(namespace.get(self.dest), Namespace):
+            loaded_value = parser.merge_config(
+                Namespace({self.dest: loaded_value}),
+                Namespace({self.dest: namespace[self.dest]})
+            )[self.dest]
+        namespace[self.dest] = loaded_value
 
     def _load_config(self, value, parser):
         try:
@@ -547,8 +551,8 @@ class ActionParser:
 
 
 single_subcommand: ContextVar = ContextVar('single_subcommand', default=True)
-
 parent_parsers: ContextVar = ContextVar('parent_parsers', default=[])
+parse_kwargs: ContextVar = ContextVar('parse_kwargs', default={})
 
 
 @contextmanager
@@ -588,6 +592,7 @@ class _ActionSubCommands(_SubParsersAction):
         parser.default_env = self.parent_parser.default_env
         parser.parent_parser = self.parent_parser
         parser.parser_mode = self.parent_parser.parser_mode
+        parser.error_handler = self.parent_parser.error_handler
         parser.subcommand = name
 
         # create a pseudo-action to hold the choice help
@@ -617,10 +622,15 @@ class _ActionSubCommands(_SubParsersAction):
         if subcommand in self._name_parser_map:
             subparser = self._name_parser_map[subcommand]
             subnamespace = namespace.get(subcommand).clone() if subcommand in namespace else None
-            subnamespace, unk = subparser.parse_known_args(arg_strings, namespace=subnamespace)
-            if unk:
-                raise ParserError(f'Unrecognized arguments: {" ".join(unk)}')
-            namespace.update(subnamespace, subcommand)
+            kwargs = dict(_skip_check=True, **parse_kwargs.get())
+            namespace[subcommand] = subparser.parse_args(arg_strings, namespace=subnamespace, **kwargs)
+
+
+    @staticmethod
+    @contextmanager
+    def parse_kwargs_context(kwargs):
+        parse_kwargs.set(kwargs)
+        yield
 
 
     @staticmethod
