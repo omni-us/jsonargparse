@@ -202,6 +202,12 @@ class ParsersTests(TempDirTestCase):
         self.assertRaises(ParserError, lambda: parser.parse_string('"""'))
 
 
+    def test_parse_string_not_dict(self):
+        parser = ArgumentParser(error_handler=None)
+        with self.assertRaises(ParserError):
+            parser.parse_string('not a dict')
+
+
     def test_parse_path(self):
         parser = example_parser()
         cfg1 = parser.parse_string(example_yaml)

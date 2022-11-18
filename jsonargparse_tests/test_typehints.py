@@ -30,6 +30,7 @@ from jsonargparse.typing import (
     Path_fc,
     Path_fr,
     path_type,
+    PositiveFloat,
     PositiveInt,
     register_type,
     restricted_number_type,
@@ -121,6 +122,16 @@ class TypeHintsTests(unittest.TestCase):
                 with self.subTest(value):
                     self.assertEqual(value, parser.parse_args([f'--val={value}']).val)
                     self.assertEqual(value, parser.parse_args([f'--cls.val={value}']).cls.init_args.val)
+
+
+    def test_boolean_not_a_number(self):
+        for argtype in [int, float, PositiveInt, PositiveFloat]:
+            with self.subTest(argtype):
+                parser = ArgumentParser(error_handler=None)
+                parser.add_argument('--num', type=argtype)
+                for value in [True, False]:
+                    with self.assertRaises(ParserError):
+                        parser.parse_object({'num': value})
 
 
     def test_str_with_yaml_constructor_error(self):

@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.17.1 (2022-11-??)
+--------------------
+
+Fixed
+^^^^^
+- ``bool`` values should not be accepted by ``int`` or ``float`` types.
+- ``parse_string`` raises ``AttributeError`` when given a simple string.
+
+
 v4.17.0 (2022-11-11)
 --------------------
 

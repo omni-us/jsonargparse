@@ -631,7 +631,9 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         try:
             cfg_dict = load_value(cfg_str, path=cfg_path, ext_vars=ext_vars)
         except get_loader_exceptions() as ex:
-            raise TypeError(f'Problems parsing config :: {ex}') from ex
+            raise TypeError(f'Problems parsing config: {ex}') from ex
+        if not isinstance(cfg_dict, dict):
+            raise TypeError(f'Unexpected config: {cfg_str}')
         return self._apply_actions(cfg_dict, prev_cfg=prev_cfg)
 
 

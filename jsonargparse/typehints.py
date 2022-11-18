@@ -520,14 +520,14 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
 
     # Basic types
     elif typehint in leaf_types:
-        if not isinstance(val, typehint) and isinstance(val, str) and typehint is not str:
+        if isinstance(val, str) and typehint is not str:
             try:
                 val = yaml_load(val)
             except pyyaml_exceptions:
                 pass
-            if typehint is float and isinstance(val, int):
-                val = float(val)
-        if not isinstance(val, typehint):
+        if typehint is float and isinstance(val, int) and not isinstance(val, bool):
+            val = float(val)
+        if not isinstance(val, typehint) or (typehint in (int, float) and isinstance(val, bool)):
             raise ValueError(f'Expected a {typehint} but got "{val}"')
 
     # Registered types

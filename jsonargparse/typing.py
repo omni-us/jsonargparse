@@ -129,6 +129,8 @@ def restricted_number_type(
     }
 
     def check_value(cls, v):
+        if isinstance(v, bool):
+            raise ValueError(f'invalid value, {v} not a number')
         if cls._type == int and isinstance(v, float) and not float.is_integer(v):
             raise ValueError(f'invalid value, {v} not an integer')
         vv = cls._type(v)
