@@ -43,9 +43,14 @@ def typing_extensions_import(name):
 
 
 final = typing_extensions_import('final')
-if not final or not getattr(final(Namespace()), '__final__', False):
+if not final or not getattr(final(Namespace()), '__final__', False) or 'SPHINX_BUILD' in os.environ:
     def final(cls):  # pylint: disable=function-redefined
-        """Decorator to make a class ``final``, i.e. it shouldn't be subclassed."""
+        """Decorator to make a class ``final``, i.e., it shouldn't be subclassed.
+
+        It is the same as ``typing.final`` or an equivalent implementation
+        depending on the python version and whether typing-extensions is
+        installed.
+        """
         setattr(cls, '__final__', True)
         return cls
 

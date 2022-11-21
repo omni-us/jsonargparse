@@ -52,7 +52,7 @@ autodoc_default_options = {
     'special-members': '__init__,__call__',
 }
 
-os.environ['JSONARGPARSE_SKIP_DEPRECATION_PATCH'] = ''
+os.environ['SPHINX_BUILD'] = ''
 
 # doctest extensions
 import doctest

@@ -1491,5 +1491,5 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
 from .deprecated import parse_as_dict_patch, instantiate_subclasses_patch
 instantiate_subclasses_patch()
-if 'JSONARGPARSE_SKIP_DEPRECATION_PATCH' not in os.environ:
+if 'SPHINX_BUILD' not in os.environ:
     parse_as_dict_patch()
