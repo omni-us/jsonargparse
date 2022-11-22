@@ -12,13 +12,22 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.17.1 (2022-11-??)
+v4.18.0 (2022-11-??)
 --------------------
 
 Fixed
 ^^^^^
 - ``bool`` values should not be accepted by ``int`` or ``float`` types.
 - ``parse_string`` raises ``AttributeError`` when given a simple string.
+- Added missing ``return_parser`` deprecation warning when ``CLI`` has
+  subcommands.
+
+Changed
+^^^^^^^
+- ``CLI`` no longer adds ``--config`` and ``--print_config`` if no arguments
+  added to subcommand.
+- ``CLI`` now uses the component's docstring short description for subparser
+  descriptions.
 
 
 v4.17.0 (2022-11-11)

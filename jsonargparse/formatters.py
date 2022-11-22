@@ -179,14 +179,14 @@ class DefaultHelpFormatter(HelpFormatter):
 
         group_titles = {}
         for parser_key, parser in parsers.items():
+            group_titles[parser_key] = parser.description
             prefix = '' if parser_key is None else parser_key + '.'
             for group in parser._action_groups:
                 actions = filter_default_actions(group._group_actions)
                 actions = [a for a in actions if not isinstance(a, (_ActionConfigLoad, ActionConfigFile, _ActionSubCommands))]
-                keys = {re.sub(r'\.?[^.]+$', '', a.dest) for a in actions}
+                keys = {re.sub(r'\.?[^.]+$', '', a.dest) for a in actions if '.' in a.dest}
                 for key in keys:
-                    full_key = prefix + key if key != '' else parser_key
-                    group_titles[full_key] = group.title
+                    group_titles[prefix + key] = group.title
 
         def set_comments(cfg, prefix='', depth=0):
             for key in cfg.keys():

@@ -131,7 +131,7 @@ def _is_action_value_list(action: Action) -> bool:
     return False
 
 
-def _remove_actions(parser, types):
+def remove_actions(parser, types):
 
     def remove(actions):
         rm_actions = [a for a in actions if isinstance(a, types)]
@@ -371,7 +371,7 @@ class _ActionHelpClassPath(Action):
         dest += '.init_args'
         subparser = type(parser)()
         subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
-        _remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
+        remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
         args = self.get_args_after_opt(parser.args)
         if args:
             subparser.parse_args(args)

@@ -7,13 +7,24 @@ from enum import Enum
 from io import StringIO
 from warnings import catch_warnings
 from jsonargparse import ActionConfigFile, ArgumentParser, CLI, get_config_read_mode, ParserError, Path, set_url_support
-from jsonargparse.deprecated import ActionEnum, ActionPath, ActionOperators, deprecation_warning, import_docstring_parse
+from jsonargparse.deprecated import (
+    ActionEnum,
+    ActionPath,
+    ActionOperators,
+    deprecation_warning,
+    import_docstring_parse,
+    shown_deprecation_warnings,
+)
 from jsonargparse.optionals import docstring_parser_support, url_support
 from jsonargparse.util import LoggerProperty
 from jsonargparse_tests.base import TempDirTestCase
 
 
 class DeprecatedTests(unittest.TestCase):
+
+    def tearDown(self):
+        shown_deprecation_warnings.clear()
+
 
     def test_deprecation_warning(self):
         with unittest.mock.patch('jsonargparse.deprecated.shown_deprecation_warnings', return_value=lambda: set()):
@@ -163,7 +174,9 @@ class DeprecatedTests(unittest.TestCase):
         def cmd2(a2: str = 'X'):
             return a2
 
-        parser = CLI([cmd1, cmd2], return_parser=True, set_defaults={'cmd2.a2': 'Z'})
+        with catch_warnings(record=True) as w:
+            parser = CLI([cmd1, cmd2], return_parser=True, set_defaults={'cmd2.a2': 'Z'})
+            self.assertIn('return_parser parameter was deprecated', str(w[-1].message))
         self.assertIsInstance(parser, ArgumentParser)
 
 

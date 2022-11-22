@@ -246,6 +246,11 @@ cli_return_parser_message = """
     v5.0.0. Instead of this use function capture_parser.
 """
 
+
+def deprecation_warning_cli_return_parser():
+    deprecation_warning('CLI.__init__.return_parser', cli_return_parser_message)
+
+
 logger_property_none_message = """
     Setting the logger property to None was deprecated in v4.10.0 and will raise
     an exception in v5.0.0. Use False instead.

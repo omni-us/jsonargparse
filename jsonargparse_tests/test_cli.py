@@ -27,6 +27,12 @@ class CLITests(unittest.TestCase):
         self.assertIsInstance(parser, ArgumentParser)
         self.assertEqual(3.4, parser.get_defaults().a1)
 
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            CLI(function, args=['--help'])
+        self.assertIn('a1', out.getvalue())
+        self.assertIn('function CLITests.test_single_function_cli', out.getvalue())
+
 
     def test_multiple_functions_cli(self):
         def cmd1(a1: int):
@@ -82,7 +88,7 @@ class CLITests(unittest.TestCase):
 
         self.assertIn('m1', out.getvalue())
         if docstring_parser_support:
-            self.assertIn('Description of method1:', out.getvalue())
+            self.assertIn('Description of method1', out.getvalue())
 
             with unittest.mock.patch('docstring_parser.parse') as docstring_parse:
                 from docstring_parser import ParseError
@@ -118,8 +124,13 @@ class CLITests(unittest.TestCase):
             def method2(self, m2: int = 0):
                 """Description of method2"""
                 return self.i1, m2
+            def method3(self):
+                return 'Cmd2.method3'
 
-        components = [cmd1, Cmd2]
+        def cmd3():
+            return 'cmd3'
+
+        components = [cmd1, Cmd2, cmd3]
         self.assertEqual(5, CLI(components, args=['cmd1', '5']))
         self.assertEqual(('d', 1.2), CLI(components, args=['Cmd2', 'method1', '1.2']))
         self.assertEqual(('b', 3), CLI(components, args=['Cmd2', '--i1=b', 'method2', '--m2=3']))
@@ -127,6 +138,8 @@ class CLITests(unittest.TestCase):
         self.assertEqual(('a', 4.5), CLI(components, args=['--config={"Cmd2": {"i1": "a", "method1": {"m1": 4.5}}}']))
         self.assertEqual(('c', 6.7), CLI(components, args=['Cmd2', '--i1=c', 'method1', '--config={"m1": 6.7}']))
         self.assertEqual(('d', 8.9), CLI(components, args=['Cmd2', '--config={"method1": {"m1": 8.9}}']))
+        self.assertEqual('Cmd2.method3', CLI(components, args=['Cmd2', 'method3']))
+        self.assertEqual('cmd3', CLI(components, args=['cmd3']))
 
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
@@ -154,7 +167,7 @@ class CLITests(unittest.TestCase):
             CLI(components, args=['Cmd2', 'method2', '--help'])
 
         if docstring_parser_support:
-            self.assertIn('Description of method2:', out.getvalue())
+            self.assertIn('Description of method2', out.getvalue())
             self.assertIn('--m2 M2', out.getvalue())
 
         out = StringIO()
@@ -178,6 +191,16 @@ class CLITests(unittest.TestCase):
                 CLI(components, args=['--print_config=comments', 'Cmd2', 'method2'])
             self.assertIn('# Description of Cmd2', out.getvalue())
             self.assertIn('# Description of method2', out.getvalue())
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            CLI(components, args=['Cmd2', 'method3', '--help'])
+        self.assertNotIn('--config', out.getvalue())
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            CLI(components, args=['cmd3', '--help'])
+        self.assertNotIn('--config', out.getvalue())
 
 
     def test_empty_context(self):
@@ -246,6 +269,11 @@ class CLITempDirTests(TempDirTestCase):
             with redirect_stdout(out):
                 CLI(C, args=['--config=config.yaml', 'cmd_a'])
             self.assertEqual('a yaml\n', out.getvalue())
+
+            out = StringIO()
+            with redirect_stdout(out), self.assertRaises(SystemExit):
+                CLI(C, args=['cmd_a', '--help'])
+            self.assertNotIn('--config', out.getvalue())
 
             with open('config.yaml', 'w') as f:
                 f.write('a: a.yaml\nb: b.yaml\n')
