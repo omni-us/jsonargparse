@@ -384,7 +384,7 @@ class ActionTypeHint(Action):
                 path_meta = val.pop('__path__', None) if isinstance(val, dict) else None
 
                 prev_val = cfg.get(self.dest) if cfg else None
-                if not prev_val and not sub_defaults.get() and is_subclass_spec(self.default):
+                if prev_val is None and not sub_defaults.get() and is_subclass_spec(self.default):
                     prev_val = Namespace(class_path=self.default.class_path)
 
                 kwargs = {
