@@ -586,12 +586,12 @@ class LoggerProperty:
 
     def __init__(self, *args, logger: Union[bool, str, dict, logging.Logger] = False, **kwargs):
         """Initializer for LoggerProperty class."""
-        self.logger = logger
+        self.logger = logger  # type: ignore
         super().__init__(*args, **kwargs)
 
 
     @property
-    def logger(self):
+    def logger(self) -> logging.Logger:
         """The logger property for the class.
 
         :getter: Returns the current logger.

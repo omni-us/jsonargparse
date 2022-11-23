@@ -212,7 +212,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             self.groups = {}
         self.required_args: Set[str] = set()
         self.save_path_content: Set[str] = set()
-        self.default_config_files = default_config_files
+        self.default_config_files = default_config_files  # type: ignore
         self.default_meta = default_meta
         self.default_env = default_env
         self.env_prefix = env_prefix
@@ -861,11 +861,11 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
     ## Methods related to defaults ##
 
-    def set_defaults(self, *args, **kwargs) -> None:
+    def set_defaults(self, *args: Dict[str, Any], **kwargs: Any) -> None:
         """Sets default values from dictionary or keyword arguments.
 
         Args:
-            *args (dict): Dictionary defining the default values to set.
+            *args: Dictionary defining the default values to set.
             **kwargs: Sets default values based on keyword arguments.
 
         Raises:
@@ -938,7 +938,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         """Returns a namespace with all default values.
 
         Args:
-            nested: Whether the namespace should be nested.
             skip_check: Whether to skip check if configuration is valid.
 
         Returns:
@@ -1314,7 +1313,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
     ## Properties ##
 
     @property
-    def error_handler(self):
+    def error_handler(self) -> Optional[Callable[['ArgumentParser', str], None]]:
         """Property for the error_handler function that is called when there are parsing errors.
 
         :getter: Returns the current error_handler function.
@@ -1327,7 +1326,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
 
     @error_handler.setter
-    def error_handler(self, error_handler):
+    def error_handler(self, error_handler: Optional[Callable[['ArgumentParser', str], None]]):
         if callable(error_handler) or error_handler is None:
             self._error_handler = error_handler
         else:
@@ -1335,7 +1334,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
 
     @property
-    def default_config_files(self):
+    def default_config_files(self) -> List[str]:
         """Default config file locations.
 
         :getter: Returns the current default config file locations.
@@ -1348,7 +1347,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
 
     @default_config_files.setter
-    def default_config_files(self, default_config_files:Optional[List[str]]):
+    def default_config_files(self, default_config_files: Optional[List[str]]):
         if default_config_files is None:
             self._default_config_files = []
         elif isinstance(default_config_files, list) and all(isinstance(x, str) for x in default_config_files):

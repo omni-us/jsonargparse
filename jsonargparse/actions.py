@@ -480,7 +480,7 @@ class ActionParser:
         """Initializer for ActionParser instance.
 
         Args:
-            parser: A parser to parse the option with.
+            parser (Optional[ArgumentParser]): A parser to parse the option with.
 
         Raises:
             ValueError: If the parser parameter is invalid.
