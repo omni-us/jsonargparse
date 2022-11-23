@@ -17,6 +17,7 @@ from jsonargparse.typing import (
     path_type,
     PositiveFloat,
     PositiveInt,
+    register_type,
     RegisteredType,
     registered_types,
     restricted_number_type,
@@ -252,6 +253,27 @@ class OtherTests(unittest.TestCase):
         for delta_in in ['not delta', 1234]:
             with self.subTest(delta_in):
                 self.assertRaises(ValueError, lambda: timedelta_type.deserializer(delta_in))
+
+
+    def test_register_non_bool_cast_type(self):
+        class Elems:
+            def __init__(self, *elems):
+                self.elems = list(elems)
+            def __bool__(self):
+                raise RuntimeError('bool not supported')
+
+        self.assertRaises(RuntimeError, lambda: not Elems(1, 2))
+        register_type(Elems, lambda x: x.elems, lambda x: Elems(*x))
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument('--elems', type=Elems)
+        cfg = parser.parse_args(['--elems=[1, 2, 3]'])
+        self.assertIsInstance(cfg.elems, Elems)
+        self.assertEqual(cfg.elems.elems, [1, 2, 3])
+        dump = parser.dump(cfg, format='json')
+        self.assertEqual(dump, '{"elems":[1,2,3]}')
+
+        del registered_types[Elems]
 
 
 if __name__ == '__main__':

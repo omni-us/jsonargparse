@@ -21,6 +21,8 @@ Fixed
 - ``parse_string`` raises ``AttributeError`` when given a simple string.
 - Added missing ``return_parser`` deprecation warning when ``CLI`` has
   subcommands.
+- Parsing fails for registered types that can't be cast to boolean `#196
+  <https://github.com/omni-us/jsonargparse/issues/196>`__.
 
 Changed
 ^^^^^^^
