@@ -801,6 +801,8 @@ class TypeHintsTests(unittest.TestCase):
             self.assertEqual(optim.params, [4.5, 6.7])
             self.assertEqual(optim.lr, 0.01)
 
+            self.assertEqual(cfg, parser.parse_args(['--optimizer=Adam', '--optimizer.lr=0.01']))
+
             help_str = StringIO()
             parser.print_help(help_str)
             for name in ['Optimizer', 'SGD', 'Adam']:

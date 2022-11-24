@@ -650,16 +650,20 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                 val = object_path_serializer(val)
         else:
             try:
+                val_input = val
                 if isinstance(val, str):
-                    val_obj = import_object(val)
+                    class_path = val
+                    return_type = get_callable_return_type(typehint)
+                    if '.' not in val and return_type:
+                        class_path = resolve_class_path_by_name(return_type, val)
+                    val_obj = import_object(class_path)
                     if inspect.isclass(val_obj):
-                        val = Namespace(class_path=val)
+                        val = Namespace(class_path=class_path)
                     elif callable(val_obj):
                         val = val_obj
                     else:
                         raise ImportError(f'Unexpected import object {val_obj}')
                 if isinstance(val, (dict, Namespace, NestedArg)):
-                    val_input = val
                     val = subclass_spec_as_namespace(val, prev_val)
                     if not is_subclass_spec(val):
                         raise ImportError(f'Dict must include a class_path and optionally init_args, but got {val_input}')
@@ -747,23 +751,29 @@ def subclass_spec_as_namespace(val, prev_val=None):
     return val
 
 
+def get_callable_return_type(typehint):
+    return_type = None
+    if len(getattr(typehint, '__args__', None) or []) > 1:
+        return_type = typehint.__args__[1]
+    return return_type
+
+
 def get_partial_callable_classes(callable_type, subclass_spec):
     partial_classes = False
     num_partial_args = 0
-    subtypes = getattr(callable_type, '__args__', None)
-    if subtypes and len(subtypes) > 1:
-        return_type = subtypes[-1]
+    return_type = get_callable_return_type(callable_type)
+    if return_type:
         return_origin = get_typehint_origin(return_type)
         subclass_types = tuple(
             t for t in (return_type.__args__ if return_origin == Union else [return_type])
             if ActionTypeHint.is_subclass_typehint(t)
         )
-        class_type = import_object(resolve_class_path_by_name(return_type, subclass_spec['class_path']))
+        class_type = import_object(resolve_class_path_by_name(return_type, subclass_spec.class_path))
         if subclass_types and is_subclass(class_type, subclass_types):
-            subclass_spec = deepcopy(subclass_spec)
+            subclass_spec = subclass_spec.clone()
             subclass_spec['class_path'] = get_import_path(class_type)
             partial_classes = True
-            num_partial_args = len(subtypes)-1
+            num_partial_args = len(callable_type.__args__)-1
     return subclass_spec, partial_classes, num_partial_args
 
 
