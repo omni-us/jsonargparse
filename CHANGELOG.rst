@@ -26,6 +26,8 @@ Fixed
 - List append not working for ``default_config_files`` set in a subcommand
   subparser `pytorch-lightning#15256
   <https://github.com/Lightning-AI/lightning/issues/15256>`__.
+- Specifying only the class name through command line not working for
+  ``Callable`` with class return type.
 
 Changed
 ^^^^^^^
