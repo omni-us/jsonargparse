@@ -40,6 +40,8 @@ Changed
   added to subcommand.
 - ``CLI`` now uses the component's docstring short description for subparser
   descriptions.
+- Slightly nicer type hint unexpected value error messages, in particular less
+  redundancy for ``Union`` types.
 
 
 v4.17.0 (2022-11-11)

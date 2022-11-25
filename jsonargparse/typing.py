@@ -130,14 +130,14 @@ def restricted_number_type(
 
     def check_value(cls, v):
         if isinstance(v, bool):
-            raise ValueError(f'invalid value, {v} not a number')
+            raise ValueError(f'{v} not a number')
         if cls._type == int and isinstance(v, float) and not float.is_integer(v):
-            raise ValueError(f'invalid value, {v} not an integer')
+            raise ValueError(f'{v} not an integer')
         vv = cls._type(v)
         check = [comparison(vv, ref) for comparison, ref in cls._restrictions]
         if (cls._join == 'and' and not all(check)) or \
            (cls._join == 'or' and not any(check)):
-            raise ValueError(f'invalid value, "{v}" does not conform to restriction {cls._expression}')
+            raise ValueError(f'{v} does not conform to restriction {cls._expression}')
 
     return create_type(
         name=name,
@@ -176,7 +176,7 @@ def restricted_string_type(
 
     def check_value(cls, v):
         if not cls._regex.match(v):
-            raise ValueError(f'invalid value, "{v}" does not match regular expression {cls._regex.pattern}')
+            raise ValueError(f'{v} does not match regular expression {cls._regex.pattern}')
 
     return create_type(
         name=name,
@@ -260,7 +260,7 @@ class RegisteredType:
             return self.base_deserializer(value)
         except self.deserializer_exceptions as ex:
             type_class_name = getattr(self.type_class, '__name__', str(self.type_class))
-            raise ValueError(f'Not of type {type_class_name}. {ex}') from ex
+            raise ValueError(f'Not of type {type_class_name}: {ex}') from ex
 
 
 def register_type(

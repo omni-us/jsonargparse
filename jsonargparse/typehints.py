@@ -23,6 +23,7 @@ from typing import (
     MutableMapping,
     MutableSequence,
     MutableSet,
+    NoReturn,
     Optional,
     Sequence,
     Set,
@@ -484,6 +485,22 @@ class ActionTypeHint(Action):
             return argcomplete_warn_redraw_prompt(prefix, msg)
 
 
+def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: Optional[Exception] = None) -> NoReturn:
+    if val is not inspect._empty:
+        message += f'. Got value: {val}'
+    raise ValueError(message) from exception
+
+
+def raise_union_unexpected_value(uniontype, val: Any, exceptions: List[Exception]) -> NoReturn:
+    errors = indent_text('\n- '.join(str(e) for e in [''] + exceptions))
+    errors = errors.replace(f'. Got value: {val}', '').replace(f' {val} ', ' ')
+    subtypes = uniontype.__args__
+    raise ValueError(
+        f'Does not validate against any of the Union subtypes\nSubtypes: {subtypes}'
+        f'\nErrors:{errors}\nGiven value type: {type(val)}\nGiven value: {val}'
+    ) from exceptions[0]
+
+
 def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, prev_val=None, append=False, sub_add_kwargs=None):
 
     adapt_kwargs = {
@@ -514,7 +531,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             subtypes = Union[tuple(set(type(v) for v in subtypehints))]
             val = adapt_typehints(val, subtypes, **adapt_kwargs)
         if val not in subtypehints:
-            raise ValueError(f'Expected a {typehint} but got "{val}"')
+            raise_unexpected_value(f'Expected a {typehint}', val)
 
     # Basic types
     elif typehint in leaf_types:
@@ -526,7 +543,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
         if typehint is float and isinstance(val, int) and not isinstance(val, bool):
             val = float(val)
         if not isinstance(val, typehint) or (typehint in (int, float) and isinstance(val, bool)):
-            raise ValueError(f'Expected a {typehint} but got "{val}"')
+            raise_unexpected_value(f'Expected a {typehint}', val)
 
     # Registered types
     elif get_registered_type(typehint):
@@ -546,9 +563,12 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                 val = val.name
             else:
                 if val not in typehint.__members__:
-                    raise ValueError(f'Value "{val}" is not a valid member name for the enum "{typehint}"')
+                    raise_unexpected_value(f'Expected a member of {typehint}', val)
         elif not serialize and not isinstance(val, typehint):
-            val = typehint[val]
+            try:
+                val = typehint[val]
+            except KeyError as ex:
+                raise_unexpected_value(f'Expected a member of {typehint}', val, ex)
 
     # Type
     elif typehint in {Type, type} or typehint_origin in {Type, type}:
@@ -559,7 +579,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             val = import_object(val)
             if (typehint in {Type, type} and not isinstance(val, type)) or \
                (typehint not in {Type, type} and not is_subclass(val, subtypehints[0])):
-                raise ValueError(f'Value "{path}" is not a {typehint}.')
+                raise_unexpected_value(f'Expected an import path corresponding to a {typehint}', path)
 
     # Union
     elif typehint_origin == Union:
@@ -572,25 +592,24 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             except Exception as ex:
                 vals.append(ex)
         if all(isinstance(v, Exception) for v in vals):
-            e = indent_text('\n- '.join(str(v) for v in ['']+vals))
-            raise ValueError(f'Value "{val}" does not validate against any of the types in {typehint}:{e}') from vals[0]
+            raise_union_unexpected_value(typehint, val, vals)
         val = [v for v in vals if not isinstance(v, Exception)][0]
 
     # Tuple or Set
     elif typehint_origin in tuple_set_origin_types:
         if not isinstance(val, (list, tuple, set)):
-            raise ValueError(f'Expected a {typehint_origin} but got "{val}"')
+            raise_unexpected_value(f'Expected a {typehint_origin}', val)
         val = list(val)
         if subtypehints is not None:
             is_tuple = typehint_origin in {Tuple, tuple}
             is_ellipsis = is_ellipsis_tuple(typehint)
             if is_tuple and not is_ellipsis and len(val) != len(subtypehints):
-                raise ValueError(f'Expected a tuple with {len(subtypehints)} elements but got "{val}"')
+                raise_unexpected_value(f'Expected a tuple with {len(subtypehints)} elements', val)
             for n, v in enumerate(val):
                 subtypehint = subtypehints[0 if is_ellipsis or not is_tuple else n]
                 val[n] = adapt_typehints(v, subtypehint, **adapt_kwargs)
             if is_tuple and len(val) == 0:
-                raise ValueError('Expected a non-empty tuple')
+                raise_unexpected_value(f'Expected a non-empty tuple', val)
         if not serialize:
             val = tuple(val) if typehint_origin in {Tuple, tuple} else set(val)
 
@@ -610,7 +629,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
         if isinstance(val, NestedArg) and subtypehints is not None:
             val = (prev_val[:-1] if isinstance(prev_val, list) else []) + [val]
         elif not isinstance(val, list):
-            raise ValueError(f'Expected a List but got "{val}"')
+            raise_unexpected_value(f'Expected a {typehint_origin}', val)
         if subtypehints is not None:
             for n, v in enumerate(val):
                 adapt_kwargs_n = {**adapt_kwargs, 'prev_val': prev_val[n]} if isinstance(prev_val, list) else adapt_kwargs
@@ -624,7 +643,7 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             else:
                 val = {val.key: val.val}
         elif not isinstance(val, dict):
-            raise ValueError(f'Expected a Dict but got "{val}"')
+            raise_unexpected_value(f'Expected a {typehint_origin}', val)
         if subtypehints is not None:
             if subtypehints[0] == int:
                 cast = str if serialize else int
@@ -670,11 +689,11 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                     val, partial_classes, num_partial_args = adapt_partial_callable_class(typehint, val)
                     val_class = import_object(val['class_path'])
                     if inspect.isclass(val_class) and not (partial_classes or callable_instances(val_class)):
-                        raise ImportError(f'Expected {val["class_path"]!r} to be a class that instantiates into callable or a subclass of {partial_classes}.')
+                        raise ImportError(f'Expected {val["class_path"]!r} to be a class that instantiates into callable or a subclass of {partial_classes}')
                     val['class_path'] = get_import_path(val_class)
                     val = adapt_class_type(val, False, instantiate_classes, sub_add_kwargs, skip_args=num_partial_args)
             except (ImportError, AttributeError, ParserError) as ex:
-                raise ValueError(f'Type {typehint} expects a function or a callable class: {ex}') from ex
+                raise_unexpected_value(f'Type {typehint} expects a function or a callable class: {ex}', val, ex)
 
     # Subclass
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):
@@ -688,21 +707,22 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
         val_input = val
         val = subclass_spec_as_namespace(val, prev_val)
         if not is_subclass_spec(val):
-            raise ValueError(
-                f'Type {typehint} expects: a class path (str); or a dict with a class_path entry; '
-                f'or a dict with init_args (if class path given previously). Got "{val_input}".'
+            raise_unexpected_value(
+                f'Subclass type {typehint.__name__} expects one of:\n  - a class path (str)\n  - a dict with '
+                f'class_path entry\n  - a dict without class_path but with init_args entry (class path given previously)',
+                val_input,
             )
 
         try:
             val_class = import_object(resolve_class_path_by_name(typehint, val['class_path']))
             if not is_subclass(val_class, typehint):
-                raise ValueError(f'"{val["class_path"]}" is not a subclass of {typehint}')
+                raise_unexpected_value(f'Import path {val["class_path"]} does not correspond to a subclass of {typehint}')
             val['class_path'] = get_import_path(val_class)
             val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
         except (ImportError, AttributeError, AssertionError, ParserError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
-            e = indent_text(f'\n- {ex}')
-            raise ValueError(f'Problem with given class_path "{class_path}":{e}') from ex
+            error = indent_text(f'\n- {ex}')
+            raise_unexpected_value(f'Problem with given class_path {class_path!r}:{error}', exception=ex)
 
     return val
 
