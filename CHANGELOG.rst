@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.18.0 (2022-11-??)
 --------------------
 
+Added
+^^^^^
+- AST resolving for defaults with a class instance or a lambda that returns a
+  class instance.
+
 Fixed
 ^^^^^
 - ``bool`` values should not be accepted by ``int`` or ``float`` types.
