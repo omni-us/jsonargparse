@@ -584,10 +584,8 @@ string for reading the list from stdin. Example:
     with open('paths.lst', 'w') as f:
         f.write('paths.lst\n')
 
-    from jsonargparse import ArgumentParser
     parser = ArgumentParser()
 
-    import sys
     stdin = sys.stdin
     sys.stdin = open('paths.lst', 'r')
 
@@ -668,7 +666,6 @@ the corresponding parsed values would be ``True`` or ``False``. For example:
 
 .. testsetup:: boolean
 
-    from jsonargparse import ArgumentParser
     parser = ArgumentParser()
 
 .. doctest:: boolean
@@ -684,7 +681,6 @@ straightforward. A couple of examples would be:
 
 .. testsetup:: yes_no
 
-    from jsonargparse import ArgumentParser
     parser = ArgumentParser()
 
 .. testcode:: yes_no
@@ -712,7 +708,6 @@ desired values. For example:
 
 .. testsetup:: enum
 
-    from jsonargparse import ArgumentParser
     parser = ArgumentParser()
 
 .. doctest:: enum
@@ -741,7 +736,6 @@ can be achieved by adding ``+`` as suffix to the argument key, for example:
 
 .. testsetup:: append
 
-    from jsonargparse import ArgumentParser
     from typing import List
     parser = ArgumentParser()
 
@@ -784,7 +778,6 @@ e.g.:
 
 .. testsetup:: dict_items
 
-    from jsonargparse import ArgumentParser
     parser = ArgumentParser()
 
 .. doctest:: dict_items
@@ -813,8 +806,6 @@ option is the import path of a callable object, for example:
 
 .. testsetup:: callable
 
-    import sys
-    from jsonargparse import ArgumentParser, ActionConfigFile
     from typing import Callable, Iterable
     parser = ArgumentParser()
 
@@ -825,13 +816,20 @@ option is the import path of a callable object, for example:
 
 A second option is a class that once instantiated becomes callable:
 
-.. code-block::
+.. testcode:: callable
 
-    >>> class OffsetSum:
-    ...     def __init__(self, offset: int):
-    ...         self.offset = offset
-    ...     def __call__(self, value: int):
-    ...         return self.offset + value
+    class OffsetSum:
+        def __init__(self, offset: int):
+            self.offset = offset
+        def __call__(self, value: int):
+            return self.offset + value
+
+.. testcode:: callable
+    :hide:
+
+    doctest_mock_class_in_main(OffsetSum)
+
+.. doctest:: callable
 
     >>> value = {
     ...     'class_path': '__main__.OffsetSum',
@@ -848,20 +846,31 @@ A second option is a class that once instantiated becomes callable:
     8
 
 The third option is only applicable when the type is a callable that has a class
-as return type. This is useful to support dependency injection for classes that
-require a parameter that is only available after injection. The parser does this
-automatically by providing a function that receives this parameter and returns
-the instance of the class.
+as return type or a ``Union`` including a class. This is useful to support
+dependency injection for classes that require a parameter that is only available
+after injection. The parser supports this automatically by providing a function
+that receives this parameter and returns the instance of the class. Take for
+example the classes:
 
-.. code-block::
+.. testcode:: callable
 
-    >>> class Optimizer:
-    ...     pass
+    class Optimizer:
+        def __init__(self, params: Iterable):
+            self.params = params
 
-    >>> class SGD(Optimizer):
-    ...     def __init__(self, params: Iterable, lr: float):
-    ...         self.params = params
-    ...         self.lr = lr
+    class SGD(Optimizer):
+        def __init__(self, params: Iterable, lr: float):
+            super().__init__(params)
+            self.lr = lr
+
+.. testcode:: callable
+    :hide:
+
+    doctest_mock_class_in_main(SGD)
+
+A possible parser and callable behavior would be:
+
+.. doctest:: callable
 
     >>> value = {
     ...     'class_path': 'SGD',
@@ -870,22 +879,49 @@ the instance of the class.
     ...     }
     ... }
 
-    >>> parser.add_argument('--optimizer', type=Callable[[Iterable], Optimizer])
+    >>> parser.add_argument('--optimizer', type=Callable[[Iterable], Optimizer])  # doctest: +IGNORE_RESULT
     >>> cfg = parser.parse_args(['--optimizer', str(value)])
     >>> cfg.optimizer
     Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.01))
     >>> init = parser.instantiate_classes(cfg)
-    >>> optim = init.optimizer([1, 2, 3])
-    >>> isinstance(optim, SGD)
+    >>> optimizer = init.optimizer([1, 2, 3])
+    >>> isinstance(optimizer, SGD)
     True
-    >>> optim.params, optim.lr
+    >>> optimizer.params, optimizer.lr
     ([1, 2, 3], 0.01)
 
 .. note::
 
     When the ``Callable`` has a class return type, it is possible to specify the
-    ``class_path`` giving only its name if imported before parsing as explained
+    ``class_path`` giving only its name if imported before parsing, as explained
     in :ref:`sub-classes-command-line`.
+
+If the same type above is used as type hint of a parameter of another class, a
+default can be set using a lambda, for example:
+
+.. testcode:: callable
+
+    class Model:
+        def __init__(
+            self,
+            optimizer: Callable[[Iterable], Optimizer] = lambda p: SGD(p, lr=0.05),
+        ):
+            self.optimizer = optimizer
+
+Then a parser and behavior could be:
+
+.. code-block::
+
+    >>> parser.add_class_arguments(Model, 'model')
+    >>> cfg = parser.get_defaults()
+    >>> cfg.model.optimizer
+    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.05))
+    >>> init = parser.instantiate_classes(cfg)
+    >>> optimizer = init.model.optimizer([1, 2, 3])
+    >>> optimizer.params, optimizer.lr
+    ([1, 2, 3], 0.05)
+
+See :ref:`ast-resolver` for limitations of lambda defaults.
 
 
 .. _registering-types:
@@ -1151,7 +1187,6 @@ Take for example a class with its init and a method with docstrings as follows:
 
 .. testsetup:: class_method
 
-    import sys
     sys.argv = ['', '--myclass.init.foo={}', '--myclass.method.bar=0']
     class MyBaseClass: pass
 
@@ -1349,7 +1384,6 @@ Take for example the following parsing and instantiation:
 
 .. testsetup:: unresolved
 
-    import sys
     import jsonargparse_tests
     sys.argv = ['', '--myclass=MyClass']
 
@@ -1395,6 +1429,8 @@ like ``super().__init__(*args, **kwargs)``. Thus, it blindly collects the
 incorrect if the code does not follow this pattern. This is why it is only used
 as fallback when the AST resolver fails.
 
+.. _ast-resolver:
+
 AST resolver
 ^^^^^^^^^^^^
 
@@ -1409,7 +1445,14 @@ unrelated to these variables.
 
 .. testsetup:: ast_resolver
 
+    from typing import Callable
     class BaseClass: pass
+    class SomeClass:
+        def __init__(self, **kwargs):
+            pass
+    class ChildClass(BaseClass):
+        def __init__(self, *args, **kwargs):
+            pass
 
 **Cases for statements in functions or methods**
 
@@ -1488,8 +1531,18 @@ unrelated to these variables.
         def __init__(self, *args, **kwargs):
             super(BaseClass, self).__init__(*args, **kwargs)
 
+**Cases for class instance defaults**
+
+.. testcode:: ast_resolver
+
+    # Class instance: only keyword arguments with ``ast.Constant` value
+    class_instance: SomeClass = SomeClass(param=1)
+
+    # Lambda returning class instance: only keyword arguments with ``ast.Constant` value
+    class_instance: Callable[[type], BaseClass] = lambda a: ChildClass(a, param=2.3)
+
 There can be other parameters apart from ``*args`` and ``**kwargs``, thus in the
-cases above the signatures can be for example like ``name(p1: int, k1: str =
+cases above, the signatures can be for example like ``name(p1: int, k1: str =
 'a', **kws)``. Also when internally calling some function or instantiating a
 class, there can be additional parameters. For example in:
 
@@ -1570,7 +1623,6 @@ Then in python:
     import os
     import shutil
     import tempfile
-    from jsonargparse import ArgumentParser
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)
@@ -1667,7 +1719,7 @@ its name can be seen in the general help ``python tool.py --help``.
 Default values
 --------------
 
-For a parameter that has a class as type it might also be wanted to set a
+For a parameter that has a class as type, it might also be wanted to set a
 default value for it. Special care must be taken when doing this, could be
 considered bad practice and be a good idea to avoid in most cases. The issue is
 that classes are normally mutable. Depending on how the parameter value is used,
@@ -1676,14 +1728,13 @@ what a default value is expected to be and lead to bugs which are difficult to
 debug.
 
 Since there are some legitimate use cases for class instances in defaults, they
-are supported with a particular behavior and recommendations. The first approach
-is using a normal class instance, for example:
+are supported with a particular behavior and recommendations. An example is:
 
-.. testsetup:: lazy_instance
+.. testsetup:: instance_default
 
     from calendar import Calendar
 
-.. testcode:: lazy_instance
+.. testcode:: instance_default
 
     class MyClass:
         def __init__(
@@ -1692,18 +1743,20 @@ is using a normal class instance, for example:
         ):
             self.calendar = calendar
 
-Adding this class to a parser will work without issues. Parsing would also work
-and if not overridden the default class instance will be found in the respective
-key of the config object. If ``--print_config`` is used, the class instance is
-just cast to a string. This means that the generated config file must be
-modified to become a valid input to the parser. Due to the limitations and the
-risk of mutable default this approach is discouraged.
+Adding this class to a parser will work without issues. The :ref:`ast-resolver`
+in limited cases determines how to instantiate the original default. The parsing
+methods would provide a dict with ``class_path`` and ``init_args`` instead of
+the class instance. Furthermore, if
+:py:meth:`.ArgumentParser.instantiate_classes` is used, a new instance of the
+class is created, thereby avoiding issues related to the mutability of the
+default.
 
-The second approach which is the recommended one is to use the special function
+Since the :ref:`ast-resolver` only supports limited cases, or when the source
+code is not available, a second approach is to use the special function
 :func:`.lazy_instance` to instantiate the default. Continuing with the same
-example above this would be:
+example above, this would be:
 
-.. testcode:: lazy_instance
+.. testcode:: instance_default
 
     from jsonargparse import lazy_instance
 
@@ -1714,12 +1767,8 @@ example above this would be:
         ):
             self.calendar = calendar
 
-In this case the default value will still be an instance of ``Calendar``. The
-difference is that the parsing methods would provide a dict with ``class_path``
-and ``init_args`` instead of the class instance. Furthermore, if
-:py:meth:`.ArgumentParser.instantiate_classes` is used a new instance of the
-class is created thereby avoiding issues related to the mutability of the
-default.
+Like this, the parsed default will be a dict with ``class_path`` and
+``init_args``, again avoiding the risk of mutability.
 
 .. note::
 
@@ -1745,7 +1794,6 @@ corresponding yaml structure.
     import shutil
     import tempfile
     from calendar import Calendar
-    from jsonargparse import ArgumentParser
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)
@@ -1880,7 +1928,6 @@ Take for example a yaml file as:
     with open('example.yaml', 'w') as f:
         f.write(example)
     from dataclasses import dataclass
-    from jsonargparse import ArgumentParser, ActionConfigFile
 
 .. testcleanup:: omegaconf
 
@@ -1941,7 +1988,6 @@ command line arguments, that is:
 .. testsetup:: env
 
     import os
-    from jsonargparse import ArgumentParser
     os.environ['APP_LEV1__OPT1'] = 'from env 1'
     os.environ['APP_LEV1__OPT2'] = 'from env 2'
 
@@ -2218,7 +2264,6 @@ argcomplete compatible tools or for each `individual
 
 .. testsetup:: tab_completion
 
-    import sys
     sys.argv = ['']
 
 .. testcode:: tab_completion

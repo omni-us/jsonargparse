@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 
 import calendar
+import inspect
 import logging
 import unittest
+import xml.dom
+from calendar import Calendar
 from contextlib import contextmanager
 from random import shuffle
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List
 from unittest.mock import patch
 from jsonargparse import class_from_function, Namespace
 from jsonargparse.optionals import docstring_parser_support
-from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
+from jsonargparse.parameter_resolvers import (
+    get_signature_parameters as get_params,
+    is_lambda,
+)
 
 
 class ClassA:
@@ -262,6 +268,44 @@ class ClassU5:
     def method1(self, kws: dict):
         pass
 
+class Optimizer:
+    def __init__(self, params: List[int]):
+        self.params = params
+
+class SGD(Optimizer):
+    def __init__(self, params: List[int], lr: float, **kwargs):
+        super().__init__(params, **kwargs)
+        self.lr = lr
+
+class ClassInstanceDefaults:
+    def __init__(
+        self,
+        layers: int,
+        number: float = 0.2,
+        elements: Callable[..., List[int]] = lambda *a: list(a),
+        node: Callable[[], xml.dom.Node] = lambda: xml.dom.Node(),
+        cal1: Calendar = Calendar(firstweekday=1),
+        cal2: Calendar = calendar.TextCalendar(2),
+        opt1: Callable[[List[int]], Optimizer] = lambda p: SGD(p, lr=0.01),
+        opt2: Callable[[List[int]], Optimizer] = lambda p: SGD(p, 0.02),
+        opt3: Callable[[List[int]], Optimizer] = lambda p, lr=0.1: SGD(p, lr=lr),  # type: ignore
+        opt4: Callable[[List[int]], Optimizer] = lambda p: Calendar(firstweekday=3),  # type: ignore
+        **kwargs,
+    ):
+        """
+        Args:
+            layers: help for layers
+            number: help for number
+            elements: help for elements
+            node: help for node
+            cal1: help for cal1
+            cal2: help for cal2
+            opt1: help for opt1
+            opt2: help for opt2
+            opt3: help for opt3
+            opt4: help for opt4
+        """
+
 def function_no_args_no_kwargs(pk1: str, k2: int = 1):
     """
     Args:
@@ -453,6 +497,24 @@ class GetClassParametersTests(unittest.TestCase):
         with source_unavailable():
             params = get_params(class_a)
             assert_params(self, params, ['pk1', 'k2'])
+
+    def test_get_params_class_instance_defaults(self):
+        params = get_params(ClassInstanceDefaults)
+        assert_params(self, params, ['layers', 'number', 'elements', 'node', 'cal1', 'cal2', 'opt1', 'opt2', 'opt3', 'opt4'])
+        with self.subTest('unmodified defaults'):
+            self.assertEqual(params[0].default, inspect._empty)
+            self.assertEqual(params[1].default, 0.2)
+            self.assertTrue(is_lambda(params[2].default))
+        with self.subTest('supported defaults'):
+            self.assertEqual(params[3].default, dict(class_path='xml.dom.Node'))
+            self.assertEqual(params[4].default, dict(class_path='calendar.Calendar', init_args=dict(firstweekday=1)))
+            self.assertEqual(params[6].default, dict(class_path=f'{__name__}.SGD', init_args=dict(lr=0.01)))
+        with self.subTest('unsupported defaults'):
+            self.assertIsInstance(params[5].default, calendar.TextCalendar)
+            self.assertTrue(is_lambda(params[7].default))
+            self.assertTrue(is_lambda(params[9].default))
+        with self.subTest('invalid defaults'):
+            self.assertTrue(is_lambda(params[8].default))
 
 
 class GetMethodParametersTests(unittest.TestCase):

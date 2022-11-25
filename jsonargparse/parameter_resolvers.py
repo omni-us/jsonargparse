@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
+from .optionals import parse_docs
 from .util import (
     ClassFromFunctionBase,
     get_import_path,
@@ -19,7 +20,6 @@ from .util import (
     parse_logger,
     unique,
 )
-from .optionals import parse_docs
 
 
 @dataclass
@@ -81,6 +81,10 @@ def is_method_or_property(attr) -> bool:
 
 def is_classmethod(parent, component) -> bool:
     return parent and isinstance(inspect.getattr_static(parent, component.__name__), classmethod)
+
+
+def is_lambda(value: Any) -> bool:
+    return callable(value) and value.__name__ == '<lambda>'
 
 
 def ast_str(node):
@@ -149,6 +153,16 @@ def ast_get_constant_value(node):
     return getattr(node, ast_constant_attr[node.__class__])
 
 
+def ast_get_name_and_attrs(node) -> List[str]:
+    names = []
+    while isinstance(node, ast.Attribute):
+        names.append(node.attr)
+        node = node.value
+    if isinstance(node, ast.Name):
+        names.append(node.id)
+    return names[::-1]
+
+
 def ast_is_kwargs_pop_or_get(node, value_dump) -> bool:
     return (
         isinstance(node.func, ast.Attribute) and
@@ -169,7 +183,7 @@ def ast_is_super_call(node) -> bool:
     )
 
 
-def ast_is_supported_super_call(node, self_name, logger) -> bool:
+def ast_is_supported_super_call(node, self_name, log_debug) -> bool:
     supported = False
     args = node.func.value.args
     if not args and not node.func.value.keywords:
@@ -189,7 +203,7 @@ def ast_is_supported_super_call(node, self_name, logger) -> bool:
                 supported = True
                 break
     if not supported:
-        logger.debug(f'AST resolver: unsupported super parameters: {ast_str(node)}')
+        log_debug(f'unsupported super parameters: {ast_str(node)}')
     return supported
 
 
@@ -256,7 +270,7 @@ ast_literals = {
 }
 
 
-def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, logger):
+def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, log_debug):
     name = ast_get_constant_value(node.args[0])
     if ast_is_constant(node.args[1]):
         default = ast_get_constant_value(node.args[1])
@@ -266,7 +280,7 @@ def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, logger)
             default = ast_literals[default]()
         else:
             default = None
-            logger.debug(f'AST resolver: unsupported kwargs pop/get default: {ast_str(node)}')
+            log_debug(f'unsupported kwargs pop/get default: {ast_str(node)}')
     return ParamData(
         name=name,
         annotation=inspect._empty,
@@ -276,6 +290,20 @@ def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, logger)
         parent=parent,
         component=component,
         origin=param_kwargs_get if node.func.attr == 'get' else param_kwargs_pop,
+    )
+
+
+def is_param_subclass_instance_default(param: ParamData) -> bool:
+    from .typehints import ActionTypeHint, get_subclass_types
+    class_types = get_subclass_types(param.annotation)
+    return (
+        (class_types and isinstance(param.default, class_types)) or
+        (
+            is_lambda(param.default) and
+            ActionTypeHint.is_callable_typehint(param.annotation, all_subtypes=False) and
+            param.annotation.__args__ and
+            ActionTypeHint.is_subclass_typehint(param.annotation.__args__[-1], all_subtypes=False)
+        )
     )
 
 
@@ -419,11 +447,13 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
     ):
         super().__init__(**kwargs)
         self.component, self.parent, _ = get_component_and_parent(function_or_class, method_or_property)
-        self.parse_source_tree()
+
+    def log_debug(self, message) -> None:
+        self.logger.debug(f'AST resolver: {message}')
 
     def parse_source_tree(self):
-        """Parses the component's module AST and sets the component and parent nodes."""
-        if self.component is None:
+        """Parses the component's AST and sets the component and parent nodes."""
+        if hasattr(self, 'component_node'):
             return
         try:
             source = textwrap.dedent(inspect.getsource(self.component))
@@ -509,7 +539,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 else:
                     function_or_class = getattr(container, node.func.attr)
         if not function_or_class:
-            self.logger.debug(f'AST resolver: not supported: {ast_str(node)}')
+            self.log_debug(f'not supported: {ast_str(node)}')
             return None
         return function_or_class, method_or_property
 
@@ -521,7 +551,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             kwarg = ast_get_call_kwarg_with_value(node, value)
             if kwarg:
                 if kwarg.arg:
-                    self.logger.debug(f'AST resolver: kwargs attribute given as keyword parameter not supported: {ast_str(node)}')
+                    self.log_debug(f'kwargs attribute given as keyword parameter not supported: {ast_str(node)}')
                 else:
                     get_param_args = self.get_node_component(node)
                     if get_param_args:
@@ -529,7 +559,54 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             params = remove_given_parameters(node, params)
         return params
 
+    def replace_param_default_subclass_specs(self, params: List[ParamData]) -> None:
+        params = [p for p in params if is_param_subclass_instance_default(p)]
+        if params:
+            self.parse_source_tree()
+            default_nodes = self.get_default_nodes({p.name for p in params})
+            assert len(params) == len(default_nodes)
+            from .typehints import get_subclass_types
+            for param, default_node in zip(params, default_nodes):
+                lambda_default = is_lambda(param.default)
+                node = default_node
+                num_positionals = 0
+                if lambda_default:
+                    node = default_node.body
+                    num_positionals = len(param.annotation.__args__) - 1
+                class_type = self.get_call_class_type(node)
+                subclass_types = get_subclass_types(param.annotation)
+                if not (class_type and subclass_types and is_subclass(class_type, subclass_types)):
+                    continue
+                subclass_spec = dict(class_path=get_import_path(class_type), init_args=dict())
+                for kwarg in node.keywords:
+                    if kwarg.arg and ast_is_constant(kwarg.value):
+                        subclass_spec['init_args'][kwarg.arg] = ast_get_constant_value(kwarg.value)
+                    else:
+                        subclass_spec.clear()
+                        break
+                if not subclass_spec or len(node.args) - num_positionals > 0:
+                    self.log_debug(f'unsupported class instance default: {ast_str(default_node)}')
+                elif subclass_spec:
+                    if not subclass_spec['init_args']:
+                        del subclass_spec['init_args']
+                    param.default = subclass_spec
+
+    def get_call_class_type(self, node) -> Optional[type]:
+        names = ast_get_name_and_attrs(getattr(node, 'func', None))
+        class_type = self.component.__globals__.get(names[0]) if names else None
+        for name in names[1:]:
+            class_type = getattr(class_type, name, None)
+        return class_type if inspect.isclass(class_type) else None
+
+    def get_default_nodes(self, param_names: set):
+        node = self.component_node.args
+        arg_nodes = getattr(node, 'posonlyargs', []) + node.args
+        default_nodes = [None] * (len(arg_nodes) - len(node.defaults)) + node.defaults
+        default_nodes = [d for n, d in enumerate(default_nodes) if arg_nodes[n].arg in param_names]
+        return default_nodes
+
     def get_parameters_args_and_kwargs(self) -> Tuple[ParamList, ParamList]:
+        self.parse_source_tree()
         args_name = getattr(self.component_node.args.vararg, 'arg', None)
         kwargs_name = getattr(self.component_node.args.kwarg, 'arg', None)
         values_to_find = {}
@@ -547,15 +624,15 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         for node in [v for k, v in values_found if k == kwargs_name]:
             if isinstance(node, ast.Call):
                 if ast_is_kwargs_pop_or_get(node, kwargs_value_dump):
-                    param = get_kwargs_pop_or_get_parameter(node, self.component, self.parent, self.doc_params, self.logger)
+                    param = get_kwargs_pop_or_get_parameter(node, self.component, self.parent, self.doc_params, self.log_debug)
                     params_list.append([param])
                     continue
                 kwarg = ast_get_call_kwarg_with_value(node, kwargs_value)
                 params = []
                 if kwarg.arg:
-                    self.logger.debug(f'AST resolver: kwargs given as keyword parameter not supported: {ast_str(node)}')
+                    self.log_debug(f'kwargs given as keyword parameter not supported: {ast_str(node)}')
                 elif self.parent and ast_is_super_call(node):
-                    if ast_is_supported_super_call(node, self.self_name, self.logger):
+                    if ast_is_supported_super_call(node, self.self_name, self.log_debug):
                         params = get_mro_parameters(node.func.attr, get_signature_parameters, self.logger)  # type: ignore
                 else:
                     get_param_args = self.get_node_component(node)
@@ -573,7 +650,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                         self.add_node_origins(params, node)
                         params_list.append(params)
                 else:
-                    self.logger.debug(f'AST resolver: unsupported type of assign: {ast_str(node)}')
+                    self.log_debug(f'unsupported type of assign: {ast_str(node)}')
 
         params = group_parameters(params_list)
         return split_args_and_kwargs(params)
@@ -590,7 +667,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             kwargs = visitor.get_parameters_call_attr(attr_name, attr_value)
             if kwargs is not None:
                 return kwargs
-        self.logger.debug(f'AST resolver: did not find use of {self.self_name}.{attr_name} in members of {self.parent}')
+        self.log_debug(f'did not find use of {self.self_name}.{attr_name} in members of {self.parent}')
         return []
 
     def add_node_origins(self, params: ParamList, node) -> None:
@@ -602,6 +679,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 param.origin = origin
 
     def get_parameters_call_attr(self, attr_name: str, attr_value: ast.AST) -> Optional[ParamList]:
+        self.parse_source_tree()
         values_to_find = {attr_name: attr_value}
         values_found = self.find_values_usage(values_to_find)
         matched = []
@@ -618,6 +696,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         if self.component is None:
             return []
         params, args_idx, kwargs_idx, doc_params = get_signature_parameters_and_indexes(self.component, self.parent, self.logger)
+        self.replace_param_default_subclass_specs(params)
         if args_idx >= 0 or kwargs_idx >= 0:
             self.doc_params = doc_params
             with mro_context(self.parent):
