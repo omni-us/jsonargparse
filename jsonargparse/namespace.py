@@ -28,9 +28,7 @@ def split_key_leaf(key: str) -> List[str]:
     return key.rsplit('.', 1)
 
 
-def is_meta_key(key: Union[str, int]) -> bool:
-    if not isinstance(key, str):
-        return False
+def is_meta_key(key: str) -> bool:
     leaf_key = split_key_leaf(key)[-1]
     return leaf_key in meta_keys
 
@@ -50,31 +48,20 @@ def strip_meta(cfg):
     Returns:
         A copy of the configuration object excluding all metadata keys.
     """
-    cfg = recreate_branches(cfg)
-
-    del_keys = []
-    for key in cfg.keys():
-        if is_meta_key(key):
-            del_keys.append(key)
-        elif isinstance(cfg[key], dict):
-            dic = cfg[key]
-            for dic_key in [k for k in dic.keys() if is_meta_key(k)]:
-                del dic[dic_key]
-
-    for key in del_keys:
-        del cfg[key]
-
+    if cfg:
+        cfg = recreate_branches(cfg, skip_keys=meta_keys)
     return cfg
 
 
-def recreate_branches(data):
+def recreate_branches(data, skip_keys=None):
     new_data = data
     if isinstance(data, (Namespace, dict)):
         new_data = type(data)()
         for key, val in getattr(data, '__dict__', data).items():
-            new_data[key] = recreate_branches(val)
+            if skip_keys is None or key not in skip_keys:
+                new_data[key] = recreate_branches(val, skip_keys)
     elif isinstance(data, list):
-        new_data = [recreate_branches(v) for v in data]
+        new_data = [recreate_branches(v, skip_keys) for v in data]
     return new_data
 
 
@@ -239,23 +226,25 @@ class Namespace(argparse.Namespace):
             setattr(flat, key, val)
         return flat
 
-    def items(self) -> Iterator[Tuple[str, Any]]:
-        """Returns a generator of all nested (key, value) items."""
+    def items(self, branches: bool = False) -> Iterator[Tuple[str, Any]]:
+        """Returns a generator of all leaf (key, value) items, optionally including branches."""
         for key, val in vars(self).items():
             if isinstance(val, Namespace):
+                if branches:
+                    yield key, val
                 for subkey, subval in val.items():
                     yield key+'.'+subkey, subval
             else:
                 yield key, val
 
-    def keys(self) -> Iterator[str]:
-        """Returns a generator of all nested keys."""
-        for key, _ in self.items():
+    def keys(self, branches: bool = False) -> Iterator[str]:
+        """Returns a generator of all leaf keys, optionally including branches."""
+        for key, _ in self.items(branches):
             yield key
 
-    def values(self) -> Iterator[Any]:
-        """Returns a generator of all nested values."""
-        for _, val in self.items():
+    def values(self, branches: bool = False) -> Iterator[Any]:
+        """Returns a generator of all leaf values, optionally including branches."""
+        for _, val in self.items(branches):
             yield val
 
     def get_sorted_keys(self, branches: bool = True, key_filter: Callable = is_meta_key) -> List[str]:

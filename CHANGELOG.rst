@@ -33,6 +33,9 @@ Fixed
   <https://github.com/Lightning-AI/lightning/issues/15256>`__.
 - Specifying only the class name through command line not working for
   ``Callable`` with class return type.
+- ``init_args`` not discarded for nested subclasses provided through command
+  line `pytorch-lightning#15796
+  <https://github.com/Lightning-AI/lightning/issues/15796>`__.
 
 Changed
 ^^^^^^^

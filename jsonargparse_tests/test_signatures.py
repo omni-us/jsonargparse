@@ -505,6 +505,38 @@ class SignaturesTests(unittest.TestCase):
             self.assertIn("discarding init_args: {'pa': 'A', 'pc': 'X'}", str(w[0].message))
 
 
+    def test_add_subclass_nested_discard_init_args(self):
+        class ChildBase:
+            pass
+
+        class A(ChildBase):
+            def __init__(self, a: int = 0):
+                pass
+
+        class B(ChildBase):
+            def __init__(self, b: int = 0):
+                pass
+
+        class Parent:
+            def __init__(self, c: ChildBase):
+                pass
+
+        with mock_module(Parent, ChildBase, A, B) as module, warnings.catch_warnings(record=True) as w:
+            parser = ArgumentParser(error_handler=None)
+            parser.add_subclass_arguments(Parent, 'p')
+            cfg = parser.parse_args([
+                '--p=Parent',
+                '--p.init_args.c=A',
+                '--p.init_args.c.init_args.a=1',
+                '--p.init_args.c=B',
+                '--p.init_args.c.init_args.b=2',
+            ])
+            self.assertEqual(cfg.p.class_path, f'{module}.Parent')
+            self.assertEqual(cfg.p.init_args.c.class_path, f'{module}.B')
+            self.assertEqual(cfg.p.init_args.c.init_args, Namespace(b=2))
+            self.assertIn("discarding init_args: {'a': 1}", str(w[0].message))
+
+
     def test_class_path_override_with_mixed_type(self):
         class MyCalendar(Calendar):
             def __init__(self, *args, param: int = 0, **kwargs):
