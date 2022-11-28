@@ -284,12 +284,17 @@ class ActionTypeHint(Action):
 
 
     @staticmethod
-    def discard_init_args_on_class_path_change(parser, cfg_to, cfg_from):
-        for action in [a for a in parser._actions if ActionTypeHint.is_subclass_typehint(a, all_subtypes=False)]:
-            val_to = cfg_to.get(action.dest)
-            val_from = cfg_from.get(action.dest)
-            if is_subclass_spec(val_to) and is_subclass_spec(val_from):
-                discard_init_args_on_class_path_change(action, val_to, val_from)
+    def discard_init_args_on_class_path_change(parser_or_action, prev_cfg, cfg):
+        keys = list(prev_cfg.keys(branches=True))
+        for key in keys:
+            prev_val = prev_cfg.get(key)
+            val = cfg.get(key)
+            if is_subclass_spec(prev_val) and is_subclass_spec(val):
+                action = parser_or_action
+                if not isinstance(parser_or_action, ActionTypeHint):
+                    action = _find_action(parser_or_action, key)
+                if isinstance(action, ActionTypeHint):
+                    discard_init_args_on_class_path_change(action, prev_val, val)
 
 
     @staticmethod
@@ -365,6 +370,14 @@ class ActionTypeHint(Action):
                 val = NestedArg(key=sub_opt, val=val)
             append = opt_str == f'--{self.dest}+'
             val = self._check_type(val, append=append, cfg=cfg)
+            if is_subclass_spec(val):
+                prev_val = cfg.get(self.dest)
+                if is_subclass_spec(prev_val) and 'init_args' in prev_val:
+                    ActionTypeHint.discard_init_args_on_class_path_change(
+                        self,
+                        prev_val.init_args,
+                        val.get('init_args'),
+                    )
         cfg.update(val, self.dest)
 
 
@@ -402,7 +415,7 @@ class ActionTypeHint(Action):
                             ex = None
                     except ValueError:
                         if self._enable_path and config_path is None and isinstance(orig_val, str):
-                            msg = f'\n- Expected a config path but "{orig_val}" either not accessible or invalid.\n- '
+                            msg = f'\n- Expected a config path but {orig_val} either not accessible or invalid\n- '
                             raise type(ex)(msg+str(ex)) from ex
                     if ex:
                         raise ex
@@ -419,7 +432,8 @@ class ActionTypeHint(Action):
                 value[num] = val
             except (TypeError, ValueError) as ex:
                 elem = '' if not islist else f' element {num+1}'
-                raise TypeError(f'Parser key "{self.dest}"{elem}: {ex}') from ex
+                error = indent_text(str(ex))
+                raise TypeError(f'Parser key "{self.dest}"{elem}: {error}') from ex
         return value if islist else value[0]
 
 
@@ -624,8 +638,9 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
                     prev_val = [adapt_typehints(prev_val, subtypehints[0], **adapt_kwargs)]
                 except Exception:
                     prev_val = []
-            val = prev_val + (val if isinstance(val, list) else [adapt_typehints(val, subtypehints[0], **adapt_kwargs)])
-            prev_val = prev_val + [None] * (len(val) if isinstance(val, list) else 1)
+            val_is_list = isinstance(val, list)
+            val = prev_val + (val if val_is_list else [val])
+            prev_val = prev_val + [None] * (len(val)-len(prev_val) if val_is_list else 1)
         if isinstance(val, NestedArg) and subtypehints is not None:
             val = (prev_val[:-1] if isinstance(prev_val, list) else []) + [val]
         elif not isinstance(val, list):
@@ -708,9 +723,11 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
         val = subclass_spec_as_namespace(val, prev_val)
         if not is_subclass_spec(val):
             raise_unexpected_value(
-                f'Subclass type {typehint.__name__} expects one of:\n  - a class path (str)\n  - a dict with '
-                f'class_path entry\n  - a dict without class_path but with init_args entry (class path given previously)',
-                val_input,
+                f'Not a valid {typehint.__name__}. Got value: {val_input}\n'
+                'Subclass types expect one of:\n'
+                '- a class path (str)\n'
+                '- a dict with class_path entry\n'
+                '- a dict without class_path but with init_args entry (class path given previously)'
             )
 
         try:

@@ -299,9 +299,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             with lenient_check_context():
                 ActionTypeHint.add_sub_defaults(self, cfg)
 
-        if not (with_meta or (with_meta is None and self._default_meta)):
-            cfg = strip_meta(cfg)
-
         _ActionPrintConfig.print_config_if_requested(self, cfg)
 
         with load_value_context(self.parser_mode):
@@ -309,6 +306,9 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
             if not skip_check and not lenient_check.get():
                 self.check_config(cfg, skip_required=skip_required)
+
+        if not (with_meta or (with_meta is None and self._default_meta)):
+            cfg = strip_meta(cfg)
 
         if log_message is not None:
             self._logger.info(log_message)
@@ -699,7 +699,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         """
         check_valid_dump_format(format)
 
-        cfg = cfg.clone()
         cfg = strip_meta(cfg)
         ActionLink.strip_link_target_keys(self, cfg)
 

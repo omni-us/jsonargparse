@@ -8,7 +8,6 @@ from contextlib import contextmanager
 from importlib.util import find_spec
 from typing import Optional
 
-from .namespace import Namespace
 
 __all__ = [
     'get_config_read_mode',
@@ -42,8 +41,15 @@ def typing_extensions_import(name):
         return getattr(typing, name, False)
 
 
+def is_compatible_final(final) -> bool:
+    @final
+    class FinalClass:
+        pass
+    return getattr(FinalClass, '__final__', False)
+
+
 final = typing_extensions_import('final')
-if not final or not getattr(final(Namespace()), '__final__', False) or 'SPHINX_BUILD' in os.environ:
+if not final or not is_compatible_final(final) or 'SPHINX_BUILD' in os.environ:
     def final(cls):  # pylint: disable=function-redefined
         """Decorator to make a class ``final``, i.e., it shouldn't be subclassed.
 
@@ -249,7 +255,7 @@ def argcomplete_autocomplete(parser):
 
 def argcomplete_namespace(caller, parser, namespace):
     if caller == 'argcomplete':
-        namespace.__class__ = Namespace
+        namespace.__class__ = __import__('jsonargparse').Namespace
         namespace = parser.merge_config(parser.get_defaults(skip_check=True), namespace).as_flat()
     return namespace
 
