@@ -525,18 +525,18 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         if isinstance(node.func, ast.Name):
             if is_classmethod(self.parent, self.component) and node.func.id == self.self_name:
                 function_or_class = self.parent
-            else:
+            elif hasattr(module, node.func.id):
                 function_or_class = getattr(module, node.func.id)
         elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
             if self.parent and ast.dump(node.func.value) == ast.dump(ast_variable_load(self.self_name)):
                 function_or_class = self.parent
                 method_or_property = node.func.attr
-            else:
+            elif hasattr(module, node.func.value.id):
                 container = getattr(module, node.func.value.id)
                 if inspect.isclass(container):
                     function_or_class = container
                     method_or_property = node.func.attr
-                else:
+                elif hasattr(container, node.func.attr):
                     function_or_class = getattr(container, node.func.attr)
         if not function_or_class:
             self.log_debug(f'not supported: {ast_str(node)}')
@@ -747,9 +747,14 @@ def get_signature_parameters(
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
         return visitor.get_parameters()
     except Exception as ex:
-        cause = 'Source not available' if isinstance(ex, SourceNotAvailable) else 'Problems with AST resolving'
+        cause = 'Source not available'
+        exc_info = None
+        if not isinstance(ex, SourceNotAvailable):
+            cause = 'Problems with AST resolving'
+            exc_info = ex
         logger.debug(
             f'{cause}, falling back to parameters by assumptions: function_or_class={function_or_class} '
-            f'method_or_property={method_or_property} :: {ex}'
+            f'method_or_property={method_or_property}: {ex}',
+            exc_info=exc_info,
         )
         return get_parameters_by_assumptions(function_or_class, method_or_property, logger)

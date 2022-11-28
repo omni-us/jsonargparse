@@ -645,7 +645,6 @@ class OtherTests(unittest.TestCase):
         with self.assertLogs(logger, level='DEBUG') as log:
             self.assertEqual([], get_params(function_with_bug, logger=logger))
             self.assertIn('does_not_exist', log.output[0])
-            self.assertIn('Problems with AST resolving', log.output[0])
 
     def test_get_params_failures(self):
         self.assertRaises(ValueError, lambda: get_params('invalid'))
