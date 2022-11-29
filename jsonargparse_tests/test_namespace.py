@@ -209,6 +209,54 @@ class NamespaceTests(unittest.TestCase):
         val = func(**kwargs)
         self.assertEqual(val, (4, 2, 5))
 
+    def test_shallow_clashing_keys(self):
+        ns = Namespace()
+        self.assertFalse('get' in ns)
+        exec('ns.get = 1')
+        self.assertTrue('get' in ns)
+        self.assertEqual(ns.get('get'), 1)
+        self.assertEqual(dict(ns.items()), {'get': 1})
+        ns['pop'] = 2
+        self.assertEqual(ns['pop'], 2)
+        self.assertEqual(ns.as_dict(), {'get': 1, 'pop': 2})
+        self.assertEqual(ns.pop('get'), 1)
+        self.assertEqual(dict(**ns), {'pop': 2})
+        self.assertEqual(ns.as_flat(), argparse.Namespace(pop=2))
+        del ns['pop']
+        self.assertEqual(ns, Namespace())
+        self.assertEqual(namespace_to_dict(Namespace(update=3)), {'update': 3})
+
+    def test_leaf_clashing_keys(self):
+        ns = Namespace()
+        ns['x.get'] = 1
+        self.assertTrue('x.get' in ns)
+        self.assertEqual(ns.get('x.get'), 1)
+        self.assertEqual(ns['x.get'], 1)
+        self.assertEqual(ns['x']['get'], 1)
+        self.assertEqual(ns.as_dict(), {'x': {'get': 1}})
+        self.assertEqual(dict(ns.items()), {'x.get': 1})
+        self.assertEqual(str(ns.as_flat()), "Namespace(**{'x.get': 1})")
+        self.assertEqual(ns.pop('x.get'), 1)
+        self.assertIs(ns.get('x.get'), None)
+
+    def test_shallow_branch_clashing_keys(self):
+        ns = Namespace(get=Namespace(x=2))
+        self.assertTrue('get.x' in ns)
+        self.assertEqual(ns.get('get.x'), 2)
+        self.assertEqual(ns['get.x'], 2)
+        self.assertEqual(ns['get'], Namespace(x=2))
+        self.assertEqual(ns.as_dict(), {'get': {'x': 2}})
+        self.assertEqual(dict(ns.items()), {'get.x': 2})
+        self.assertEqual(ns.pop('get.x'), 2)
+
+    def test_nested_branch_clashing_keys(self):
+        ns = Namespace()
+        ns['x.get.y'] = 3
+        self.assertTrue('x.get.y' in ns)
+        self.assertEqual(ns.get('x.get.y'), 3)
+        self.assertEqual(ns.as_dict(), {'x': {'get': {'y': 3}}})
+        self.assertEqual(ns.pop('x.get.y'), 3)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

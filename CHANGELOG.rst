@@ -36,6 +36,8 @@ Fixed
 - ``init_args`` not discarded for nested subclasses provided through command
   line `pytorch-lightning#15796
   <https://github.com/Lightning-AI/lightning/issues/15796>`__.
+- Unable to set/get values in ``Namespace`` when key is the same as a method
+  name.
 
 Changed
 ^^^^^^^

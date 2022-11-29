@@ -2,7 +2,7 @@
 
 import argparse
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Iterator, List, Optional, overload, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, overload, Set, Tuple, Union
 
 
 __all__ = [
@@ -127,6 +127,7 @@ class Namespace(argparse.Namespace):
         key_split = split_key(key)
         if any(k == '' for k in key_split):
             raise KeyError(f'Empty nested key: "{key}".')
+        key_split = [add_clash_mark(k) for k in key_split]
         leaf_key = key_split[-1]
         parent_ns: Namespace = self
         parent_key = ''
@@ -170,7 +171,7 @@ class Namespace(argparse.Namespace):
         if '.' in name:
             self.__setitem__(name, value)
         else:
-            super().__setattr__(name, value)
+            super().__setattr__(add_clash_mark(name), value)
 
     def __setitem__(self, key: str, item: Any) -> None:
         """Sets an item to a possibly nested namespace."""
@@ -216,7 +217,7 @@ class Namespace(argparse.Namespace):
                 val = {k: v.as_dict() for k, v in val.items()}
             elif isinstance(val, list) and val != [] and all(isinstance(v, Namespace) for v in val):
                 val = [v.as_dict() for v in val]
-            dic[key] = val
+            dic[del_clash_mark(key)] = val
         return dic
 
     def as_flat(self) -> argparse.Namespace:
@@ -229,11 +230,12 @@ class Namespace(argparse.Namespace):
     def items(self, branches: bool = False) -> Iterator[Tuple[str, Any]]:
         """Returns a generator of all leaf (key, value) items, optionally including branches."""
         for key, val in vars(self).items():
+            key = del_clash_mark(key)
             if isinstance(val, Namespace):
                 if branches:
                     yield key, val
                 for subkey, subval in val.items():
-                    yield key+'.'+subkey, subval
+                    yield key+'.'+del_clash_mark(subkey), subval
             else:
                 yield key, val
 
@@ -304,6 +306,22 @@ class Namespace(argparse.Namespace):
         if not parent_ns:
             return default
         return parent_ns.__dict__.pop(leaf_key, default)
+
+
+clash_names: Set[str] = set(dir(Namespace))
+clash_mark = '\u200B'
+
+
+def add_clash_mark(key: str) -> str:
+    if key in clash_names:
+        key = clash_mark + key
+    return key
+
+
+def del_clash_mark(key: str) -> str:
+    if key[0] == clash_mark:
+        key = key[1:]
+    return key
 
 
 # Temporal to provide backward compatibility in pytorch-lightning
