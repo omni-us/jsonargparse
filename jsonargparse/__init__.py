@@ -64,4 +64,4 @@ __all__ += util.__all__
 __all__ += deprecated.__all__
 
 
-__version__ = '4.17.0'
+__version__ = '4.18.0'

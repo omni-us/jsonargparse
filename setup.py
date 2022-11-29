@@ -10,8 +10,12 @@ LONG_DESCRIPTION = re.sub('([+|][- ]{12})[- ]{5}', r'\1', LONG_DESCRIPTION)
 
 LONG_DESCRIPTION_LINES = []
 skip_line = False
-for num, line in enumerate(LONG_DESCRIPTION.split('\n')):
-    if any(line.startswith('.. '+x) for x in ['doctest:: :hide:', 'testsetup::', 'testcleanup::']):
+lines = LONG_DESCRIPTION.split('\n')
+for num, line in enumerate(lines):
+    if (
+        any(line.startswith('.. '+x) for x in ['doctest:: :hide:', 'testsetup::', 'testcleanup::']) or
+        (line.startswith('.. testcode::') and ':hide:' in lines[num+1])
+    ):
         skip_line = True
     elif skip_line and line != '' and not line.startswith(' '):
         skip_line = False
