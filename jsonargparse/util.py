@@ -334,7 +334,7 @@ def get_private_kwargs(kwargs, items):
 def known_to_fsspec(path: str) -> bool:
     import_fsspec('known_to_fsspec')
     from fsspec.registry import known_implementations
-    for protocol in known_implementations.keys():
+    for protocol in known_implementations:
         if path.startswith(protocol+'://') or path.startswith(protocol+'::'):
             return True
     return False
@@ -447,10 +447,10 @@ class Path:
                     handle = fsspec.open(abs_path, fsspec_mode)
                     handle.open()
                     handle.close()
-                except (FileNotFoundError, KeyError):
-                    raise TypeError('Path does not exist: '+abs_path)
-                except PermissionError:
-                    raise TypeError('Path exists but no permission to access: '+abs_path)
+                except (FileNotFoundError, KeyError) as ex:
+                    raise TypeError('Path does not exist: '+abs_path) from ex
+                except PermissionError as ex:
+                    raise TypeError('Path exists but no permission to access: '+abs_path) from ex
         elif not skip_check:
             ptype = 'Directory' if 'd' in mode else 'File'
             if 'c' in mode:

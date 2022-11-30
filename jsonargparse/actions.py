@@ -365,7 +365,7 @@ class _ActionHelpClassPath(Action):
         try:
             val_class = import_object(resolve_class_path_by_name(baseclass, value))
         except Exception as ex:
-            raise TypeError(f'{option_string}: {ex}')
+            raise TypeError(f'{option_string}: {ex}') from ex
         if get_typehint_origin(self._baseclass) == Union:
             baseclasses = self._baseclass.__args__
         else:
