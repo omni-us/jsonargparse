@@ -165,7 +165,7 @@ comment_prefix: Dict[str,str] = {
 
 
 def check_valid_dump_format(dump_format: str):
-    if dump_format not in {'parser_mode'}.union(set(dumpers.keys())):
+    if dump_format not in {'parser_mode'}.union(set(dumpers)):
         raise ValueError(f'Unknown output format "{dump_format}".')
 
 
