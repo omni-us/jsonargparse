@@ -7,7 +7,8 @@ __all__ = [
 ]
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .core import ArgumentParser, _ArgumentGroup
     from ruyaml.comments import CommentedMap as ruyamlCommentedMap
+
+    from .core import ArgumentParser, _ArgumentGroup
 else:
     globals().update({k: None for k in __all__})

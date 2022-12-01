@@ -5,10 +5,10 @@ import os
 import re
 import unittest
 from io import StringIO
+
 from jsonargparse import ActionConfigFile, ActionJsonSchema, ArgumentParser, ParserError
 from jsonargparse.optionals import jsonschema_support
-from jsonargparse_tests.base import is_posix, TempDirTestCase
-
+from jsonargparse_tests.base import TempDirTestCase, is_posix
 
 schema1 = {
     'type': 'array',

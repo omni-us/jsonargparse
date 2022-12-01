@@ -5,7 +5,6 @@ import sys
 import unittest
 import warnings
 
-
 testing_package = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
 
 

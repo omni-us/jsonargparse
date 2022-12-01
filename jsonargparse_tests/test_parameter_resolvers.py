@@ -10,12 +10,11 @@ from contextlib import contextmanager
 from random import shuffle
 from typing import Any, Callable, Dict, List
 from unittest.mock import patch
-from jsonargparse import class_from_function, Namespace
+
+from jsonargparse import Namespace, class_from_function
 from jsonargparse.optionals import docstring_parser_support
-from jsonargparse.parameter_resolvers import (
-    get_signature_parameters as get_params,
-    is_lambda,
-)
+from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
+from jsonargparse.parameter_resolvers import is_lambda
 
 
 class ClassA:

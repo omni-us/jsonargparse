@@ -3,6 +3,7 @@
 import os
 import unittest
 from io import StringIO
+
 from jsonargparse import ActionConfigFile, ActionParser, ActionYesNo, ArgumentParser
 from jsonargparse_tests.base import TempDirTestCase
 

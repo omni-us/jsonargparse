@@ -2,14 +2,16 @@
 
 import sys
 import unittest
-import yaml
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from typing import Optional
-from jsonargparse import ArgumentParser, capture_parser, CLI, lazy_instance
+
+import yaml
+
+from jsonargparse import CLI, ArgumentParser, capture_parser, lazy_instance
 from jsonargparse.optionals import docstring_parser_support, ruyaml_support
 from jsonargparse.typing import final
-from jsonargparse_tests.base import mock_module, TempDirTestCase
+from jsonargparse_tests.base import TempDirTestCase, mock_module
 
 
 class CLITests(unittest.TestCase):

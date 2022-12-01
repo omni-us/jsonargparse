@@ -5,9 +5,9 @@ import os
 import pathlib
 import re
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
-from .optionals import final
-from .util import get_import_path, import_object, Path
 
+from .optionals import final
+from .util import Path, get_import_path, import_object
 
 __all__ = [
     'final',

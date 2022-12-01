@@ -2,14 +2,32 @@
 
 import logging
 import os
-import stat
 import pathlib
+import stat
 import unittest
 import zipfile
-from jsonargparse import ArgumentParser, LoggerProperty, null_logger, Path
-from jsonargparse.optionals import fsspec_support, import_fsspec, reconplogger_support, url_support
-from jsonargparse.util import get_import_path, import_object, register_unresolvable_import_paths, unique
-from jsonargparse_tests.base import is_posix, mock_module, responses_activate, responses_available, suppress_stderr, TempDirTestCase
+
+from jsonargparse import ArgumentParser, LoggerProperty, Path, null_logger
+from jsonargparse.optionals import (
+    fsspec_support,
+    import_fsspec,
+    reconplogger_support,
+    url_support,
+)
+from jsonargparse.util import (
+    get_import_path,
+    import_object,
+    register_unresolvable_import_paths,
+    unique,
+)
+from jsonargparse_tests.base import (
+    TempDirTestCase,
+    is_posix,
+    mock_module,
+    responses_activate,
+    responses_available,
+    suppress_stderr,
+)
 
 
 class PathTests(TempDirTestCase):

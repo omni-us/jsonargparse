@@ -2,6 +2,7 @@
 
 import unittest
 from importlib.util import find_spec
+
 from jsonargparse import get_config_read_mode, set_config_read_mode
 from jsonargparse.optionals import (
     argcomplete_support,

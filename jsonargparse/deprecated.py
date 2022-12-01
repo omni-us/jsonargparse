@@ -5,12 +5,16 @@ import inspect
 import os
 from enum import Enum
 from typing import Any, Dict, Set
-from .namespace import Namespace
-from .optionals import import_docstring_parser, get_config_read_mode, set_config_read_mode
-from .typehints import ActionTypeHint
-from .typing import path_type, restricted_number_type, registered_types
-from .util import is_subclass, warning
 
+from .namespace import Namespace
+from .optionals import (
+    get_config_read_mode,
+    import_docstring_parser,
+    set_config_read_mode,
+)
+from .typehints import ActionTypeHint
+from .typing import path_type, registered_types, restricted_number_type
+from .util import is_subclass, warning
 
 __all__ = [
     'ActionEnum',
@@ -274,4 +278,5 @@ def import_docstring_parse(importer):
 
 
 import jsonargparse.optionals
+
 jsonargparse.optionals.import_docstring_parse = import_docstring_parse  # type: ignore

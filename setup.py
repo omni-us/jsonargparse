@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from setuptools import setup, Command
 import re
 
+from setuptools import Command, setup
 
 ## Use README.rst for the package long description ##
 LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:|:py:mod:|py:attr:| *# doctest:.*', '', open('README.rst').read())

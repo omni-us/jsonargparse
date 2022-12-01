@@ -7,13 +7,12 @@ from .actions import _is_action_value_list
 from .jsonschema import ActionJsonSchema
 from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context
 from .optionals import (
-    import_jsonschema,
-    import_jsonnet,
     get_config_read_mode,
     get_jsonschema_exceptions,
+    import_jsonnet,
+    import_jsonschema,
 )
 from .util import ParserError, Path
-
 
 __all__ = [
     'ActionJsonnetExtVars',

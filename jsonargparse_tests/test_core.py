@@ -7,14 +7,17 @@ import sys
 import unittest
 import unittest.mock
 import warnings
-import yaml
-from io import StringIO
 from calendar import Calendar
-from contextlib import redirect_stderr, redirect_stdout
 from collections import OrderedDict
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
 from random import randint, shuffle
 from typing import Optional
+
+import yaml
+
 from jsonargparse import (
+    SUPPRESS,
     ActionConfigFile,
     ActionJsonnet,
     ActionJsonSchema,
@@ -25,7 +28,6 @@ from jsonargparse import (
     ParserError,
     Path,
     set_config_read_mode,
-    SUPPRESS,
     strip_meta,
     usage_and_exit_error_handler,
 )
@@ -38,9 +40,26 @@ from jsonargparse.optionals import (
     ruyaml_support,
     url_support,
 )
-from jsonargparse.typing import NotEmptyStr, Path_fc, Path_fr, PositiveFloat, PositiveInt
-from jsonargparse.util import CaptureParserException, capture_parser, DebugException, null_logger
-from jsonargparse_tests.base import is_cpython, is_posix, responses_activate, responses_available, TempDirTestCase
+from jsonargparse.typing import (
+    NotEmptyStr,
+    Path_fc,
+    Path_fr,
+    PositiveFloat,
+    PositiveInt,
+)
+from jsonargparse.util import (
+    CaptureParserException,
+    DebugException,
+    capture_parser,
+    null_logger,
+)
+from jsonargparse_tests.base import (
+    TempDirTestCase,
+    is_cpython,
+    is_posix,
+    responses_activate,
+    responses_available,
+)
 
 
 def example_parser():

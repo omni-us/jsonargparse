@@ -5,26 +5,27 @@ import pathlib
 import pickle
 import unittest
 from datetime import timedelta
+
 from jsonargparse import ArgumentParser, ParserError
 from jsonargparse.typing import (
     ClosedUnitInterval,
     Email,
-    get_registered_type,
     NonNegativeFloat,
     NonNegativeInt,
     OpenUnitInterval,
     Path_fr,
-    path_type,
     PositiveFloat,
     PositiveInt,
-    register_type,
     RegisteredType,
+    get_registered_type,
+    path_type,
+    register_type,
     registered_types,
     restricted_number_type,
     restricted_string_type,
 )
 from jsonargparse.util import import_object, object_path_serializer
-from jsonargparse_tests.base import mock_module, TempDirTestCase
+from jsonargparse_tests.base import TempDirTestCase, mock_module
 
 
 class RestrictedNumberTests(unittest.TestCase):

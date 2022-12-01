@@ -3,11 +3,18 @@
 import os
 import unittest
 import unittest.mock
-import yaml
 from importlib.util import find_spec
 from typing import List
+
+import yaml
+
 from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader
-from jsonargparse.loaders_dumpers import loaders, load_value, load_value_context, yaml_dump
+from jsonargparse.loaders_dumpers import (
+    load_value,
+    load_value_context,
+    loaders,
+    yaml_dump,
+)
 
 
 class LoadersTests(unittest.TestCase):

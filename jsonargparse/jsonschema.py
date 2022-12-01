@@ -14,7 +14,6 @@ from .optionals import (
 )
 from .util import parse_value_or_config
 
-
 __all__ = ['ActionJsonSchema']
 
 
