@@ -1,11 +1,5 @@
-from argparse import (
-    OPTIONAL,
-    REMAINDER,
-    SUPPRESS,
-    PARSER,
-    ONE_OR_MORE,
-    ZERO_OR_MORE,
-)
+from argparse import ONE_OR_MORE, OPTIONAL, PARSER, REMAINDER, SUPPRESS, ZERO_OR_MORE
+
 from .actions import *
 from .cli import *
 from .core import *
@@ -21,7 +15,6 @@ from .signatures import *
 from .typehints import *
 from .util import *
 
-
 __all__ = [
     'OPTIONAL',
     'REMAINDER',
@@ -32,21 +25,22 @@ __all__ = [
 ]
 
 
-from . import cli
-from . import core
-from . import signatures
-from . import typehints
-from . import link_arguments
-from . import jsonschema
-from . import jsonnet
-from . import actions
-from . import namespace
-from . import formatters
-from . import optionals
-from . import loaders_dumpers
-from . import util
-from . import deprecated
-
+from . import (
+    actions,
+    cli,
+    core,
+    deprecated,
+    formatters,
+    jsonnet,
+    jsonschema,
+    link_arguments,
+    loaders_dumpers,
+    namespace,
+    optionals,
+    signatures,
+    typehints,
+    util,
+)
 
 __all__ += cli.__all__
 __all__ += core.__all__

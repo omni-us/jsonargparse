@@ -5,26 +5,28 @@ import json
 import os
 import unittest
 import warnings
-import yaml
 from calendar import Calendar, January  # type: ignore
 from contextlib import redirect_stderr, redirect_stdout
 from enum import Enum
 from io import StringIO
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+import yaml
+
 from jsonargparse import (
     ActionConfigFile,
     ArgumentParser,
+    Namespace,
+    ParserError,
     class_from_function,
     compose_dataclasses,
     lazy_instance,
-    Namespace,
-    ParserError,
     strip_meta,
 )
 from jsonargparse.actions import _find_action
 from jsonargparse.optionals import docstring_parser_support, set_docstring_parse_options
-from jsonargparse.typing import final, OpenUnitInterval, PositiveFloat, PositiveInt
-from jsonargparse_tests.base import mock_module, suppress_stderr, TempDirTestCase
+from jsonargparse.typing import OpenUnitInterval, PositiveFloat, PositiveInt, final
+from jsonargparse_tests.base import TempDirTestCase, mock_module, suppress_stderr
 
 
 class SignaturesTests(unittest.TestCase):

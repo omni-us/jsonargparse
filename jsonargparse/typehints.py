@@ -33,18 +33,33 @@ from typing import (
     Union,
 )
 
-from .actions import _ActionHelpClassPath, _find_action, _find_parent_action, _is_action_value_list
-from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context, pyyaml_exceptions, yaml_load
+from .actions import (
+    _ActionHelpClassPath,
+    _find_action,
+    _find_parent_action,
+    _is_action_value_list,
+)
+from .loaders_dumpers import (
+    get_loader_exceptions,
+    load_value,
+    load_value_context,
+    pyyaml_exceptions,
+    yaml_load,
+)
 from .namespace import Namespace
-from .typing import get_registered_type, is_final_class
 from .optionals import (
     argcomplete_warn_redraw_prompt,
     get_files_completer,
     typing_extensions_import,
 )
+from .typing import get_registered_type, is_final_class
 from .util import (
-    change_to_path_dir,
     ClassType,
+    NestedArg,
+    NoneType,
+    ParserError,
+    Path,
+    change_to_path_dir,
     get_import_path,
     get_typehint_origin,
     import_object,
@@ -52,15 +67,10 @@ from .util import (
     is_subclass,
     iter_to_set_str,
     lenient_check_context,
-    NestedArg,
-    NoneType,
     object_path_serializer,
-    ParserError,
     parse_value_or_config,
-    Path,
     warning,
 )
-
 
 __all__ = ['lazy_instance']
 

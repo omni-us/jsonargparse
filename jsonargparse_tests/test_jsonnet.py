@@ -5,20 +5,21 @@ import os
 import pathlib
 import re
 import unittest
-import yaml
 from io import StringIO
+
+import yaml
+
 from jsonargparse import (
     ActionConfigFile,
     ActionJsonnet,
     ActionJsonnetExtVars,
     ActionJsonSchema,
     ArgumentParser,
-    strip_meta,
     ParserError,
+    strip_meta,
 )
 from jsonargparse.optionals import jsonnet_support
 from jsonargparse_tests.base import TempDirTestCase
-
 
 example_1_jsonnet = '''
 local make_record(num) = {

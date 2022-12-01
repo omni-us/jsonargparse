@@ -2,7 +2,8 @@
 
 import argparse
 import unittest
-from jsonargparse.namespace import Namespace, namespace_to_dict, dict_to_namespace
+
+from jsonargparse.namespace import Namespace, dict_to_namespace, namespace_to_dict
 from jsonargparse_tests.base import is_cpython
 
 

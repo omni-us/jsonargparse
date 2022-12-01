@@ -8,10 +8,14 @@ from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from .actions import _ActionConfigLoad
 from .optionals import get_doc_short_description
-from .parameter_resolvers import get_parameter_origins, get_signature_parameters, ParamData
-from .typehints import ActionTypeHint, is_optional, LazyInitBaseClass
+from .parameter_resolvers import (
+    ParamData,
+    get_parameter_origins,
+    get_signature_parameters,
+)
+from .typehints import ActionTypeHint, LazyInitBaseClass, is_optional
 from .typing import is_final_class
-from .util import get_import_path, is_subclass, iter_to_set_str, LoggerProperty
+from .util import LoggerProperty, get_import_path, is_subclass, iter_to_set_str
 
 __all__ = [
     'compose_dataclasses',

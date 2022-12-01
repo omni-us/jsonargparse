@@ -27,7 +27,6 @@ from .optionals import (
 )
 from .type_checking import ArgumentParser
 
-
 __all__ = [
     'capture_parser',
     'class_from_function',

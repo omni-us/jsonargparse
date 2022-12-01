@@ -4,7 +4,7 @@ import os
 import re
 import sys
 import warnings
-from argparse import Action, SUPPRESS, _HelpAction, _SubParsersAction
+from argparse import SUPPRESS, Action, _HelpAction, _SubParsersAction
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
@@ -15,6 +15,9 @@ from .optionals import FilesCompleterMethod, get_config_read_mode
 from .type_checking import ArgumentParser
 from .typing import path_type
 from .util import (
+    NoneType,
+    ParserError,
+    Path,
     change_to_path_dir,
     default_config_option_help,
     get_typehint_origin,
@@ -23,12 +26,8 @@ from .util import (
     is_subclass,
     iter_to_set_str,
     lenient_check_context,
-    NoneType,
     parse_value_or_config,
-    ParserError,
-    Path,
 )
-
 
 __all__ = [
     'ActionConfigFile',

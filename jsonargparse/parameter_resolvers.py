@@ -13,10 +13,10 @@ from typing import Any, Callable, List, Optional, Tuple, Type, Union
 from .optionals import parse_docs
 from .util import (
     ClassFromFunctionBase,
+    LoggerProperty,
     get_import_path,
     is_subclass,
     iter_to_set_str,
-    LoggerProperty,
     parse_logger,
     unique,
 )

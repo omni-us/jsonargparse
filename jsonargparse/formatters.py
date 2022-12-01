@@ -1,7 +1,14 @@
 """Formatter classes."""
 
 import re
-from argparse import Action, _HelpAction, HelpFormatter, OPTIONAL, SUPPRESS, ZERO_OR_MORE
+from argparse import (
+    OPTIONAL,
+    SUPPRESS,
+    ZERO_OR_MORE,
+    Action,
+    HelpFormatter,
+    _HelpAction,
+)
 from contextlib import contextmanager
 from contextvars import ContextVar
 from io import StringIO
@@ -21,7 +28,6 @@ from .namespace import Namespace
 from .optionals import import_ruyaml
 from .type_checking import ArgumentParser, ruyamlCommentedMap
 from .typehints import ActionTypeHint, type_to_str
-
 
 __all__ = ['DefaultHelpFormatter']
 

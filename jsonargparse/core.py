@@ -7,8 +7,36 @@ import logging
 import os
 import re
 import sys
-from typing import Any, Callable, Dict, List, NoReturn, Optional, Sequence, Set, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    NoReturn,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
+from .actions import (
+    ActionConfigFile,
+    ActionParser,
+    _ActionConfigLoad,
+    _ActionPrintConfig,
+    _ActionSubCommands,
+    _find_action,
+    _find_action_and_subcommand,
+    _find_parent_action,
+    _find_parent_action_and_subcommand,
+    _is_action_value_list,
+    _is_branch_key,
+    filter_default_actions,
+    parent_parsers,
+    previous_config,
+)
 from .formatters import DefaultHelpFormatter, empty_help, formatter_context, get_env_var
 from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
 from .jsonschema import ActionJsonSchema
@@ -17,32 +45,20 @@ from .loaders_dumpers import (
     check_valid_dump_format,
     dump_using_format,
     get_loader_exceptions,
-    loaders,
     load_value,
     load_value_context,
+    loaders,
     set_omegaconf_loader,
     yaml_load,
 )
-from .namespace import is_meta_key, Namespace, patch_namespace, recreate_branches, split_key, split_key_leaf, strip_meta
-from .parameter_resolvers import ConditionalDefault
-from .signatures import is_pure_dataclass, SignatureArguments
-from .typehints import ActionTypeHint, is_subclass_spec
-from .typing import is_final_class
-from .actions import (
-    ActionParser,
-    ActionConfigFile,
-    _ActionSubCommands,
-    _ActionPrintConfig,
-    _ActionConfigLoad,
-    _is_branch_key,
-    _find_action,
-    _find_action_and_subcommand,
-    _find_parent_action,
-    _find_parent_action_and_subcommand,
-    _is_action_value_list,
-    filter_default_actions,
-    parent_parsers,
-    previous_config,
+from .namespace import (
+    Namespace,
+    is_meta_key,
+    patch_namespace,
+    recreate_branches,
+    split_key,
+    split_key_leaf,
+    strip_meta,
 )
 from .optionals import (
     argcomplete_autocomplete,
@@ -52,19 +68,22 @@ from .optionals import (
     import_fsspec,
     import_jsonnet,
 )
+from .parameter_resolvers import ConditionalDefault
+from .signatures import SignatureArguments, is_pure_dataclass
+from .typehints import ActionTypeHint, is_subclass_spec
+from .typing import is_final_class
 from .util import (
+    ParserError,
+    Path,
     change_to_path_dir,
     get_private_kwargs,
     identity,
     is_subclass,
     lenient_check,
     lenient_check_context,
-    ParserError,
-    Path,
     return_parser_if_captured,
     usage_and_exit_error_handler,
 )
-
 
 __all__ = ['ActionsContainer', 'ArgumentParser']
 
@@ -1432,7 +1451,10 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             self._env_prefix = None
         elif env_prefix in {True, None}:
             if env_prefix is None:
-                from .deprecated import deprecation_warning, env_prefix_property_none_message
+                from .deprecated import (
+                    deprecation_warning,
+                    env_prefix_property_none_message,
+                )
                 deprecation_warning(ArgumentParser, env_prefix_property_none_message)
             self._env_prefix = os.path.splitext(self.prog)[0]
         elif isinstance(env_prefix, str):
@@ -1488,7 +1510,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         self._dump_header = dump_header
 
 
-from .deprecated import parse_as_dict_patch, instantiate_subclasses_patch
+from .deprecated import instantiate_subclasses_patch, parse_as_dict_patch
+
 instantiate_subclasses_patch()
 if 'SPHINX_BUILD' not in os.environ:
     parse_as_dict_patch()

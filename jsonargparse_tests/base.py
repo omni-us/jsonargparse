@@ -7,9 +7,9 @@ import tempfile
 import unittest
 from contextlib import contextmanager, redirect_stderr
 from importlib.util import find_spec
+
 from jsonargparse.optionals import docstring_parser_support, set_docstring_parse_options
 from jsonargparse.util import unresolvable_import_paths
-
 
 responses_available = find_spec('responses') is not None
 

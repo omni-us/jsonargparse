@@ -2,14 +2,14 @@
 
 import inspect
 import re
-import yaml
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Callable, Dict, Tuple, Type
 
+import yaml
+
 from .optionals import import_jsonnet, omegaconf_support
 from .type_checking import ArgumentParser
-
 
 __all__ = [
     'set_loader',

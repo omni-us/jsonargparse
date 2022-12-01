@@ -8,11 +8,16 @@ from contextlib import ExitStack, redirect_stderr
 from enum import Enum
 from io import StringIO
 from typing import List, Optional
+
 from jsonargparse import ActionConfigFile, ActionJsonSchema, ActionYesNo, ArgumentParser
-from jsonargparse.typing import Email, Path_fr, PositiveFloat, PositiveInt
-from jsonargparse.optionals import argcomplete_support, import_argcomplete, jsonschema_support
 from jsonargparse.loaders_dumpers import load_value_context
-from jsonargparse_tests.base import is_cpython, is_posix, TempDirTestCase
+from jsonargparse.optionals import (
+    argcomplete_support,
+    import_argcomplete,
+    jsonschema_support,
+)
+from jsonargparse.typing import Email, Path_fr, PositiveFloat, PositiveInt
+from jsonargparse_tests.base import TempDirTestCase, is_cpython, is_posix
 
 
 @unittest.skipIf(not argcomplete_support, 'argcomplete package is required')

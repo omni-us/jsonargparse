@@ -2,12 +2,12 @@
 
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Type, Union
+
 from .actions import ActionConfigFile, _ActionPrintConfig, remove_actions
 from .core import ArgumentParser
 from .deprecated import deprecation_warning_cli_return_parser
 from .optionals import get_doc_short_description
 from .util import default_config_option_help
-
 
 __all__ = ['CLI']
 

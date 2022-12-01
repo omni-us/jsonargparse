@@ -5,7 +5,16 @@ import os
 import pathlib
 import unittest
 from io import StringIO
-from jsonargparse import ActionConfigFile, ActionParser, ActionPathList, ActionYesNo, ArgumentParser, ParserError, strip_meta
+
+from jsonargparse import (
+    ActionConfigFile,
+    ActionParser,
+    ActionPathList,
+    ActionYesNo,
+    ArgumentParser,
+    ParserError,
+    strip_meta,
+)
 from jsonargparse_tests.base import TempDirTestCase
 from jsonargparse_tests.test_core import example_parser
 

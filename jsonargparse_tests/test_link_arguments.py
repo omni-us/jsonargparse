@@ -3,19 +3,21 @@
 import json
 import os
 import unittest
-import yaml
 from calendar import Calendar, TextCalendar
 from io import StringIO
 from typing import Any, List, Mapping, Optional, Union
+
+import yaml
+
 from jsonargparse import (
     ActionConfigFile,
     ArgumentParser,
-    lazy_instance,
     Namespace,
     ParserError,
+    lazy_instance,
 )
 from jsonargparse.optionals import docstring_parser_support
-from jsonargparse_tests.base import mock_module, TempDirTestCase
+from jsonargparse_tests.base import TempDirTestCase, mock_module
 
 
 class LinkArgumentsTests(unittest.TestCase):

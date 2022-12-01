@@ -10,7 +10,6 @@ import time
 import unittest
 import uuid
 import warnings
-import yaml
 from calendar import Calendar, HTMLCalendar, TextCalendar
 from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
@@ -18,24 +17,48 @@ from datetime import datetime
 from enum import Enum
 from gzip import GzipFile
 from io import StringIO
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
-from jsonargparse import ActionConfigFile, ArgumentParser, CLI, lazy_instance, Namespace, ParserError, Path
-from jsonargparse.typehints import ActionTypeHint, is_optional, Literal
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
+
+import yaml
+
+from jsonargparse import (
+    CLI,
+    ActionConfigFile,
+    ArgumentParser,
+    Namespace,
+    ParserError,
+    Path,
+    lazy_instance,
+)
+from jsonargparse.typehints import ActionTypeHint, Literal, is_optional
 from jsonargparse.typing import (
     Email,
-    final,
     NotEmptyStr,
     OpenUnitInterval,
     Path_drw,
     Path_fc,
     Path_fr,
-    path_type,
     PositiveFloat,
     PositiveInt,
+    final,
+    path_type,
     register_type,
     restricted_number_type,
 )
-from jsonargparse_tests.base import mock_module, TempDirTestCase
+from jsonargparse_tests.base import TempDirTestCase, mock_module
 
 
 class TypeHintsTests(unittest.TestCase):

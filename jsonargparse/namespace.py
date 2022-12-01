@@ -2,8 +2,18 @@
 
 import argparse
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Iterator, List, Optional, overload, Set, Tuple, Union
-
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    overload,
+)
 
 __all__ = [
     'Namespace',
@@ -326,4 +336,5 @@ def del_clash_mark(key: str) -> str:
 
 # Temporal to provide backward compatibility in pytorch-lightning
 import yaml
+
 yaml.SafeDumper.add_representer(Namespace, lambda d, x: d.represent_mapping('tag:yaml.org,2002:map', x.as_dict()))

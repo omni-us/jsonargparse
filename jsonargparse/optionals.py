@@ -8,7 +8,6 @@ from contextlib import contextmanager
 from importlib.util import find_spec
 from typing import Optional
 
-
 __all__ = [
     'get_config_read_mode',
     'set_config_read_mode',
@@ -276,6 +275,7 @@ def argcomplete_warn_redraw_prompt(prefix, message):
 def get_omegaconf_loader():
     """Returns a yaml loader function based on OmegaConf which supports variable interpolation."""
     import io
+
     from .loaders_dumpers import yaml_load
     with missing_package_raise('omegaconf', 'get_omegaconf_loader'):
         from omegaconf import OmegaConf
