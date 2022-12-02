@@ -323,10 +323,10 @@ def indent_text(text: str) -> str:
     return text.replace('\n', '\n  ')
 
 
-def get_private_kwargs(kwargs, items):
-    extracted = [kwargs.pop(name, default) for name, default in items.items()]
-    if kwargs:
-        raise ValueError(f'Unexpected keyword parameters: {set(kwargs.keys())}')
+def get_private_kwargs(data, **kwargs):
+    extracted = [data.pop(name, default) for name, default in kwargs.items()]
+    if data:
+        raise ValueError(f'Unexpected keyword parameters: {set(data.keys())}')
     return extracted[0] if len(extracted) == 1 else extracted
 
 

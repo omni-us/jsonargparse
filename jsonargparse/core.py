@@ -1,9 +1,9 @@
 """Extensions of core argparse classes."""
 
 import argparse
+import logging
 import glob
 import inspect
-import logging
 import os
 import re
 import sys
@@ -382,7 +382,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
-        skip_check = get_private_kwargs(kwargs, {'_skip_check': False})
+        skip_check = get_private_kwargs(kwargs, _skip_check=False)
         return_parser_if_captured(self)
         argcomplete_autocomplete(self)
 
@@ -434,7 +434,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
-        skip_check, skip_required = get_private_kwargs(kwargs, {'_skip_check': False, '_skip_required': False})
+        skip_check, skip_required = get_private_kwargs(kwargs, _skip_check=False, _skip_required=False)
 
         try:
             cfg = self._parse_defaults_and_environ(defaults, env)
@@ -513,7 +513,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
-        skip_check, skip_subcommands = get_private_kwargs(kwargs, {'_skip_check': False, '_skip_subcommands': False})
+        skip_check, skip_subcommands = get_private_kwargs(kwargs, _skip_check=False, _skip_subcommands=False)
 
         try:
             cfg = self._parse_defaults_and_environ(defaults, env=True, environ=env)
@@ -602,7 +602,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         Raises:
             ParserError: If there is a parsing error and error_handler=None.
         """
-        skip_check, fail_no_subcommand = get_private_kwargs(kwargs, {'_skip_check': False, '_fail_no_subcommand': True})
+        skip_check, fail_no_subcommand = get_private_kwargs(kwargs, _skip_check=False, _fail_no_subcommand=True)
 
         try:
             with load_value_context(self.parser_mode):

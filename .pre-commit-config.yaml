@@ -1,5 +1,13 @@
 fail_fast: true
 
+ci:
+  skip:
+  - mypy
+  - pycodestyle
+  - pylint
+  - tox
+  - coverage
+
 repos:
 
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -21,8 +29,8 @@ repos:
 - repo: local
   hooks:
 
-  - name: twine check [on bumpversion]
-    id: ./setup.py bdist_wheel && twine check dist/*.whl
+  - id: twine-check
+    name: twine check [on bumpversion]
     entry: bash -c '
       if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
         echo "$(tput setaf 6) Skipped, only runs when bumping version $(tput sgr0)";
@@ -34,8 +42,8 @@ repos:
     pass_filenames: false
     verbose: true
 
-  - name: changelog [on bumpversion]
-    id: fail on CHANGELOG.rst not updated, or update CHANGELOG.rst if BUMPVERSION_UPDATE_CHANGELOG set
+  - id: changelog-check
+    name: changelog check [on bumpversion]
     entry: bash -c '
       if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
         echo "$(tput setaf 6) Skipped, only runs when bumping version $(tput sgr0)";
@@ -56,8 +64,8 @@ repos:
     pass_filenames: false
     verbose: true
 
-  - name: circleci config
-    id: circleci config validate -c .circleci/config.yml
+  - id: circleci-config-validate
+    name: circleci config validate -c .circleci/config.yml
     entry: bash -c '
       if [ "$(which circleci)" = "" ]; then
         echo "$(tput setaf 6) Skipped, circleci command not found $(tput sgr0)";
@@ -69,37 +77,37 @@ repos:
     pass_filenames: false
     verbose: true
 
-  - name: mypy
-    id: mypy jsonargparse*/*.py
+  - id: mypy
+    name: mypy jsonargparse*/*.py
     entry: bash -c "mypy jsonargparse*/*.py"
     language: system
     types: [python]
     pass_filenames: false
     verbose: true
 
-  - name: pycodestyle
-    id: pycodestyle
+  - id: pycodestyle
+    name: pycodestyle
     entry: pycodestyle
     language: system
     types: [python]
     verbose: true
 
-  - name: pylint
-    id: pylint --rcfile=setup.cfg
+  - id: pylint
+    name: pylint --rcfile=setup.cfg
     entry: pylint --rcfile=setup.cfg
     language: system
     types: [python]
     verbose: true
 
-  - name: tox
-    id: tox --parallel
+  - id: tox
+    name: tox --parallel
     entry: tox --parallel
     language: system
     pass_filenames: false
     verbose: true
 
-  - name: doctest
-    id: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
+  - id: doctest
+    name: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
     entry: bash -c '
       if [ "$(which sphinx-build)" = "" ]; then
         echo "$(tput setaf 6) Skipped, sphinx-build command not found $(tput sgr0)";
@@ -110,8 +118,8 @@ repos:
     pass_filenames: false
     verbose: true
 
-  - name: coverage
-    id: ./setup.py test_coverage
+  - id: coverage
+    name: ./setup.py test_coverage
     entry: ./setup.py test_coverage
     language: system
     pass_filenames: false
