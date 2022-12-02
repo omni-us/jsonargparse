@@ -1,9 +1,9 @@
 """Extensions of core argparse classes."""
 
 import argparse
-import logging
 import glob
 import inspect
+import logging
 import os
 import re
 import sys
