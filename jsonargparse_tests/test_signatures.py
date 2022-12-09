@@ -271,9 +271,9 @@ class SignaturesTests(unittest.TestCase):
             expected += [
                 'help for func (required, type: str)',
                 'help for kmg1 (type: int, default: 1)',
-                'help for kmg2 (type: Union[str, float], default: {-, 2.3})',
-                'help for kmg3 (type: bool, default: {True, False})',
-                'help for kmg4 (type: int, default: 4)',
+                'help for kmg2 (type: Union[str, float], default: Conditional<ast-resolver> {-, 2.3})',
+                'help for kmg3 (type: bool, default: Conditional<ast-resolver> {True, False})',
+                'help for kmg4 (type: int, default: Conditional<ast-resolver> 4)',
             ]
         for value in expected:
             self.assertIn(value, help_str.getvalue())

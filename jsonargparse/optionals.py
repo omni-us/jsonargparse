@@ -15,6 +15,7 @@ __all__ = [
 
 
 typing_extensions_support = find_spec('typing_extensions') is not None
+typeshed_client_support = find_spec('typeshed_client') is not None
 jsonschema_support = find_spec('jsonschema') is not None
 jsonnet_support = find_spec('_jsonnet') is not None
 url_support = False if any(find_spec(x) is None for x in ['validators', 'requests']) else True
@@ -57,6 +58,14 @@ if not final or not is_compatible_final(final) or 'SPHINX_BUILD' in os.environ:
         """
         setattr(cls, '__final__', True)
         return cls
+
+
+def import_typeshed_client():
+    if typeshed_client_support:
+        import typeshed_client
+        return typeshed_client
+    else:
+        return __import__('argparse').Namespace(ImportedInfo=object, Resolver=object)
 
 
 class UndefinedException(Exception):

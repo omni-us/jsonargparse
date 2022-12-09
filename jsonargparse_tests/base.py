@@ -1,4 +1,5 @@
 import inspect
+import logging
 import os
 import platform
 import shutil
@@ -46,6 +47,12 @@ def mock_module(*args):
     import jsonargparse_tests
     with unittest.mock.patch.multiple(jsonargparse_tests, create=True, **{c.__name__: c for c in args}):
         yield __module__
+
+
+def get_debug_level_logger(name):
+    logger = logging.getLogger(name)
+    logger.level = logging.DEBUG
+    return logger
 
 
 def doctest_mock_class_in_main(cls):

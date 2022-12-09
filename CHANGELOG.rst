@@ -25,6 +25,7 @@ Added
 - Specific error messages for when an argument link uses as source the target of
   a previous parse link and vice versa `#208
   <https://github.com/omni-us/jsonargparse/issues/208>`__.
+- New resolver that identifies parameter types from stub files ``*.pyi``.
 
 Fixed
 ^^^^^
@@ -40,6 +41,7 @@ Changed
 - Clearer error message for when an argument link targets a subclass and the
   target key does not have ``init_args`` `pytorch-lightning#16032
   <https://github.com/Lightning-AI/lightning/issues/16032>`__.
+- The ``signatures`` extras now installs the ``typeshed-client`` package.
 
 
 v4.18.0 (2022-11-29)

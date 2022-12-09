@@ -2,7 +2,6 @@
 
 import calendar
 import inspect
-import logging
 import unittest
 import xml.dom
 from calendar import Calendar
@@ -15,6 +14,9 @@ from jsonargparse import Namespace, class_from_function
 from jsonargparse.optionals import docstring_parser_support
 from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse.parameter_resolvers import is_lambda
+from jsonargparse_tests.base import get_debug_level_logger
+
+logger = get_debug_level_logger(__name__)
 
 
 class ClassA:
@@ -417,10 +419,6 @@ def assert_params(self, params, expected, origins={}):
         for n, p in enumerate(params) if p.origin is not None
     }
     self.assertEqual(param_origins, origins)
-
-
-logger = logging.getLogger('test_parameter_resolvers')
-logger.level = logging.DEBUG
 
 
 class GetClassParametersTests(unittest.TestCase):
