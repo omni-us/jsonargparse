@@ -68,7 +68,7 @@ from .optionals import (
     import_fsspec,
     import_jsonnet,
 )
-from .parameter_resolvers import ConditionalDefault
+from .parameter_resolvers import UnknownDefault
 from .signatures import SignatureArguments, is_pure_dataclass
 from .typehints import ActionTypeHint, is_subclass_spec
 from .typing import is_final_class
@@ -964,7 +964,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             if (
                 action.default != argparse.SUPPRESS and
                 action.dest != argparse.SUPPRESS and
-                not isinstance(action.default, ConditionalDefault)
+                not isinstance(action.default, UnknownDefault)
             ):
                 cfg[action.dest] = recreate_branches(action.default)
 

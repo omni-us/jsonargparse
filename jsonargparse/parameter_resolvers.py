@@ -8,8 +8,9 @@ from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from ._stubs_resolver import get_stub_types
 from .optionals import parse_docs
 from .util import (
     ClassFromFunctionBase,
@@ -46,9 +47,20 @@ class SourceNotAvailable(Exception):
     "Raised when the source code for some component is not available."
 
 
-class ConditionalDefault(list):
-    def __repr__(self):
-        return iter_to_set_str(self, sep=', ')
+class UnknownDefault:
+    def __init__(self, resolver: str, data: Any = inspect._empty) -> None:
+        self.resolver = resolver
+        self.data = data
+    def __repr__(self) -> str:
+        value = f"{type(self).__name__.replace('Default', '')}<{self.resolver}>"
+        if self.data != inspect._empty:
+            value = f'{value} {self.data}'
+        return value
+
+
+class ConditionalDefault(UnknownDefault):
+    def __init__(self, resolver: str, data: Any) -> None:
+        super().__init__(resolver, iter_to_set_str(data, sep=', '))
 
 
 def get_parameter_origins(component, parent) -> Optional[str]:
@@ -245,10 +257,10 @@ def get_arg_kind_index(params, kind):
 
 
 def get_signature_parameters_and_indexes(component, parent, logger):
+    signature_source = component
     if is_classmethod(parent, component):
-        params = list(inspect.signature(component.__func__).parameters.values())
-    else:
-        params = list(inspect.signature(component).parameters.values())
+        signature_source = component.__func__
+    params = list(inspect.signature(signature_source).parameters.values())
     if parent:
         params = params[1:]
     args_idx = get_arg_kind_index(params, kinds.VAR_POSITIONAL)
@@ -264,7 +276,26 @@ def get_signature_parameters_and_indexes(component, parent, logger):
             component=component,
             **{a: getattr(param, a) for a in parameter_attributes},
         )
-    return params, args_idx, kwargs_idx, doc_params
+    stubs = get_stub_types(params, signature_source, parent, logger)
+    return params, args_idx, kwargs_idx, doc_params, stubs
+
+
+def add_stub_types(stubs: Optional[Dict[str, Any]], params: ParamList, component) -> None:
+    if not stubs:
+        return
+    for param in params:
+        if param.annotation == inspect._empty and param.name in stubs:
+            param.annotation = stubs[param.name]
+    known_params = {p.name for p in params}
+    for name, stub in stubs.items():
+        if name not in known_params:
+            params.append(ParamData(
+                name=name,
+                annotation=stub,
+                default=UnknownDefault('stubs-resolver'),
+                kind=kinds.KEYWORD_ONLY,
+                component=component,
+            ))
 
 
 ast_literals = {
@@ -361,7 +392,10 @@ def group_parameters(params_list: List[ParamList]) -> ParamList:
             gparam.parent = tuple(p.parent for p in params)
             gparam.component = tuple(p.component for p in params)
             gparam.origin = tuple(p.origin for p in params)
-            gparam.default = ConditionalDefault((p.default for p in params) if len(defaults) > 1 else defaults)
+            gparam.default = ConditionalDefault(
+                'ast-resolver',
+                (p.default for p in params) if len(defaults) > 1 else defaults,
+            )
             if len(types) > 1:
                 gparam.annotation = Union[tuple(types)] if types else inspect._empty
         docs = [p.doc for p in params if p.doc]
@@ -702,13 +736,14 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
     def get_parameters(self) -> ParamList:
         if self.component is None:
             return []
-        params, args_idx, kwargs_idx, doc_params = get_signature_parameters_and_indexes(self.component, self.parent, self.logger)
+        params, args_idx, kwargs_idx, doc_params, stubs = get_signature_parameters_and_indexes(self.component, self.parent, self.logger)
         self.replace_param_default_subclass_specs(params)
         if args_idx >= 0 or kwargs_idx >= 0:
             self.doc_params = doc_params
             with mro_context(self.parent):
                 args, kwargs = self.get_parameters_args_and_kwargs()
             params = replace_args_and_kwargs(params, args, kwargs)
+        add_stub_types(stubs, params, self.component)
         return params
 
 
@@ -718,7 +753,7 @@ def get_parameters_by_assumptions(
     logger: Union[bool, str, dict, logging.Logger] = True,
 ) -> ParamList:
     component, parent, method_name = get_component_and_parent(function_or_class, method_name)
-    params, args_idx, kwargs_idx, _ = get_signature_parameters_and_indexes(component, parent, logger)
+    params, args_idx, kwargs_idx, _, stubs = get_signature_parameters_and_indexes(component, parent, logger)
 
     if parent and (args_idx >= 0 or kwargs_idx >= 0):
         with mro_context(parent):
@@ -728,6 +763,7 @@ def get_parameters_by_assumptions(
             params = replace_args_and_kwargs(params, args, kwargs)
 
     params = replace_args_and_kwargs(params, [], [])
+    add_stub_types(stubs, params, component)
     return params
 
 

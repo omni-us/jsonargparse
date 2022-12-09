@@ -1587,6 +1587,44 @@ arguments.
     when a case is highly convoluted it could be a symptom that the respective
     code is in need of refactoring.
 
+.. _stubs-resolver:
+
+Stubs resolver
+^^^^^^^^^^^^^^
+
+The stubs resolver makes use of the `typeshed-client
+<https://pypi.org/project/typeshed-client/>`__ package to identify parameters
+and their type hints from stub files ``*.pyi``. To enable this resolver, install
+jsonargparse with the ``signatures`` extras require as explained in section
+:ref:`installation`.
+
+Many of the types defined in stub files use the latest syntax for type hints,
+that is, bitwise or operator ``|`` for unions and generics, e.g.
+``list[<type>]`` instead of ``typing.List[<type>]``, see PEPs `604
+<https://peps.python.org/pep-0604>`__ and `585
+<https://peps.python.org/pep-0585>`__. The types with this new syntax can't be
+evaluated at runtime in Python versions older than ``3.10``. Since jsonargparse
+needs to interpret the types at runtime, these will only be resolved in newer
+versions of Python.
+
+Most of the types in the Python standard library have their types in stubs. An
+example from the standard library would be:
+
+.. doctest:: stubs_resolver
+
+    >>> from random import uniform
+
+    >>> parser = ArgumentParser()
+    >>> parser.add_function_arguments(uniform, 'uniform')  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(['--uniform.a=0.7', '--uniform.b=3.4'])
+    Namespace(uniform=Namespace(a=0.7, b=3.4))
+
+Without the stubs resolver, to not fail, the
+:py:meth:`.SignatureArguments.add_function_arguments` call requires the
+``fail_untyped=False`` option. This has the disadvantage that type ``Any`` is
+given to the ``a`` and ``b`` arguments, instead of ``float``, which means that
+the parser would not fail if given an invalid value, for instance a string.
+
 
 .. _sub-classes:
 
