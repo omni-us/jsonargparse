@@ -18,6 +18,7 @@ def CLI(
     config_help: str = default_config_option_help,
     set_defaults: Optional[Dict[str, Any]] = None,
     as_positional: bool = True,
+    fail_untyped: bool = True,
     **kwargs
 ):
     """Simple creation of command line interfaces.
@@ -34,6 +35,7 @@ def CLI(
         config_help: Help string for config file option in help.
         set_defaults: Dictionary of values to override components defaults.
         as_positional: Whether to add required parameters as positional arguments.
+        fail_untyped: Whether to raise exception if a required parameter does not have a type.
         **kwargs: Used to instantiate :class:`.ArgumentParser`.
 
     Returns:
@@ -62,7 +64,7 @@ def CLI(
 
     if len(components) == 1:
         component = components[0]
-        _add_component_to_parser(component, parser, as_positional, config_help)
+        _add_component_to_parser(component, parser, as_positional, fail_untyped, config_help)
         if set_defaults is not None:
             parser.set_defaults(set_defaults)
         if return_parser:
@@ -79,7 +81,7 @@ def CLI(
         subparser = ArgumentParser(description=description)
         subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
         subcommands.add_subcommand(name, subparser, help=get_help_str(component, parser.logger))
-        added_args = _add_component_to_parser(component, subparser, as_positional, config_help)
+        added_args = _add_component_to_parser(component, subparser, as_positional, fail_untyped, config_help)
         if not added_args:
             remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
 
@@ -102,8 +104,8 @@ def get_help_str(component, logger):
     return help_str
 
 
-def _add_component_to_parser(component, parser, as_positional, config_help):
-    kwargs = {'as_positional': as_positional, 'sub_configs': True}
+def _add_component_to_parser(component, parser, as_positional, fail_untyped, config_help):
+    kwargs = dict(as_positional=as_positional, fail_untyped=fail_untyped, sub_configs=True)
     if inspect.isfunction(component):
         added_args = parser.add_function_arguments(component, as_group=False, **kwargs)
         if not parser.description:

@@ -12,6 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.19.0 (2022-12-??)
+--------------------
+
+Added
+^^^^^
+- ``CLI`` now exposes the ``fail_untyped`` parameter.
+
+
 v4.18.0 (2022-11-29)
 --------------------
 
