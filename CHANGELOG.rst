@@ -19,6 +19,11 @@ Added
 ^^^^^
 - ``CLI`` now exposes the ``fail_untyped`` parameter.
 
+Fixed
+^^^^^
+- List type with empty list default causes failure `PyLaia#48
+  <https://github.com/jpuigcerver/PyLaia/issues/48>`__.
+
 
 v4.18.0 (2022-11-29)
 --------------------

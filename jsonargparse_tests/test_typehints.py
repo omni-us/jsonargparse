@@ -340,6 +340,16 @@ class TypeHintsTests(unittest.TestCase):
             self.assertIn('Replacing list value "[1, 2]" with "3"', str(w[0].message))
 
 
+    def test_list_append_default_empty(self):
+        parser = ArgumentParser()
+        parser.add_argument('--list', type=List[str], default=[])
+        self.assertEqual([], parser.get_defaults().list)
+        self.assertEqual(['a'], parser.parse_args(['--list=[a]']).list)
+        self.assertEqual([], parser.get_defaults().list)
+        self.assertEqual(['b', 'c'], parser.parse_args(['--list+=[b, c]']).list)
+        self.assertEqual([], parser.get_defaults().list)
+
+
     def test_list_append_config(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--cfg', action=ActionConfigFile)
