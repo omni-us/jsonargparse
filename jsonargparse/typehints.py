@@ -443,7 +443,7 @@ class ActionTypeHint(Action):
             except (TypeError, ValueError) as ex:
                 elem = '' if not islist else f' element {num+1}'
                 error = indent_text(str(ex))
-                raise TypeError(f'Parser key "{self.dest}"{elem}: {error}') from ex
+                raise TypeError(f'Parser key "{self.dest}"{elem}:\n{error}') from ex
         return value if islist else value[0]
 
 
@@ -516,12 +516,12 @@ def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: O
 
 
 def raise_union_unexpected_value(uniontype, val: Any, exceptions: List[Exception]) -> NoReturn:
-    errors = indent_text('\n- '.join(str(e) for e in [''] + exceptions))
+    errors = indent_text('- '.join(str(e) for e in [''] + exceptions))
     errors = errors.replace(f'. Got value: {val}', '').replace(f' {val} ', ' ')
     subtypes = uniontype.__args__
     raise ValueError(
         f'Does not validate against any of the Union subtypes\nSubtypes: {subtypes}'
-        f'\nErrors:{errors}\nGiven value type: {type(val)}\nGiven value: {val}'
+        f'\nErrors:\n{errors}\nGiven value type: {type(val)}\nGiven value: {val}'
     ) from exceptions[0]
 
 

@@ -6,6 +6,7 @@ import os
 import re
 import stat
 import sys
+import textwrap
 import warnings
 from collections import namedtuple
 from contextlib import contextmanager
@@ -320,7 +321,7 @@ def iter_to_set_str(val, sep=','):
 
 
 def indent_text(text: str) -> str:
-    return text.replace('\n', '\n  ')
+    return textwrap.indent(text, '  ')
 
 
 def get_private_kwargs(data, **kwargs):
