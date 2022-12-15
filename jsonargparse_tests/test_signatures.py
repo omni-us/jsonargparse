@@ -9,6 +9,7 @@ from calendar import Calendar, January  # type: ignore
 from contextlib import redirect_stderr, redirect_stdout
 from enum import Enum
 from io import StringIO
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import yaml
@@ -1307,6 +1308,59 @@ class SignaturesConfigTests(TempDirTestCase):
 
         cfg = parser.parse_args(['fit'])
         self.assertEqual(cfg.fit.model.foo, 123)
+
+
+    def test_config_nested_discard_init_args(self):
+        class Base:
+            def __init__(self, b: float = 0.5):
+                pass
+
+        class Sub1(Base):
+            def __init__(self, s1: str = 'x', **kwargs):
+                super().__init__(**kwargs)
+
+        class Sub2(Base):
+            def __init__(self, s2: int = 3, **kwargs):
+                super().__init__(**kwargs)
+
+        class Main:
+            def __init__(self, sub: Base = lazy_instance(Sub1)) -> None:
+                self.sub = sub
+
+        with mock_module(Base, Sub1, Sub2, Main) as module:
+            subconfig = {
+                'sub': {
+                    'class_path': f'{module}.Sub2',
+                    'init_args': {'s2': 4},
+                }
+            }
+
+            for subtest in ['class', 'subclass']:
+                with self.subTest(subtest), warnings.catch_warnings(record=True) as w:
+                    parser = ArgumentParser(error_handler=None)
+                    parser.add_argument('--config', action=ActionConfigFile)
+
+                    if subtest == 'class':
+                        config = {'main': subconfig}
+                        parser.add_class_arguments(Main, 'main')
+                    else:
+                        config = {
+                            'main': {
+                                'class_path': f'{module}.Main',
+                                'init_args': subconfig,
+                            }
+                        }
+                        parser.add_subclass_arguments(Main, 'main')
+                        parser.set_defaults(main=lazy_instance(Main))
+
+                    config_path = Path('config.yaml')
+                    config_path.write_text(yaml.safe_dump(config))
+
+                    cfg = parser.parse_args([f'--config={config_path}'])
+                    init = parser.instantiate_classes(cfg)
+                    self.assertIsInstance(init.main, Main)
+                    self.assertIsInstance(init.main.sub, Sub2)
+                    self.assertIn("discarding init_args: {'s1': 'x'}", str(w[0].message))
 
 
 @dataclasses.dataclass(frozen=True)

@@ -244,7 +244,7 @@ class Namespace(argparse.Namespace):
             if isinstance(val, Namespace):
                 if branches:
                     yield key, val
-                for subkey, subval in val.items():
+                for subkey, subval in val.items(branches):
                     yield key+'.'+del_clash_mark(subkey), subval
             else:
                 yield key, val
