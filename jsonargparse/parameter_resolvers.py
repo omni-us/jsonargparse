@@ -294,6 +294,9 @@ def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, log_deb
 
 
 def is_param_subclass_instance_default(param: ParamData) -> bool:
+    from .signatures import is_pure_dataclass
+    if is_pure_dataclass(type(param.default)):
+        return False
     from .typehints import ActionTypeHint, get_subclass_types
     class_types = get_subclass_types(param.annotation)
     return (

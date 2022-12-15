@@ -1309,54 +1309,48 @@ class SignaturesConfigTests(TempDirTestCase):
         self.assertEqual(cfg.fit.model.foo, 123)
 
 
+@dataclasses.dataclass(frozen=True)
+class MyDataClassA:
+    """MyDataClassA description
+
+    Args:
+        a1: a1 help
+        a2: a2 help
+    """
+    a1: PositiveInt = PositiveInt(1)  # type: ignore
+    a2: str = '2'
+
+@dataclasses.dataclass
+class MyDataClassB:
+    """MyDataClassB description
+
+    Args:
+        b1: b1 help
+        b2: b2 help
+    """
+    b1: PositiveFloat = PositiveFloat(3.0)  # type: ignore
+    b2: MyDataClassA = MyDataClassA()
+
+
 class DataclassesTests(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-
-        @dataclasses.dataclass(frozen=True)
-        class MyDataClassA:
-            """MyDataClassA description
-
-            Args:
-                a1: a1 help
-                a2: a2 help
-            """
-            a1: PositiveInt = PositiveInt(1)
-            a2: str = '2'
-
-        @dataclasses.dataclass
-        class MyDataClassB:
-            """MyDataClassB description
-
-            Args:
-                b1: b1 help
-                b2: b2 help
-            """
-            b1: PositiveFloat = PositiveFloat(3.0)
-            b2: MyDataClassA = MyDataClassA()
-
-        cls.MyDataClassA = MyDataClassA
-        cls.MyDataClassB = MyDataClassB
-
 
     @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
     def test_add_dataclass_arguments(self):
         parser = ArgumentParser(error_handler=None)
-        parser.add_dataclass_arguments(self.MyDataClassA, 'a', default=self.MyDataClassA(), title='CustomA title')
-        parser.add_dataclass_arguments(self.MyDataClassB, 'b', default=self.MyDataClassB())
+        parser.add_dataclass_arguments(MyDataClassA, 'a', default=MyDataClassA(), title='CustomA title')
+        parser.add_dataclass_arguments(MyDataClassB, 'b', default=MyDataClassB())
 
         cfg = parser.get_defaults()
-        self.assertEqual(dataclasses.asdict(self.MyDataClassA()), cfg['a'].as_dict())
-        self.assertEqual(dataclasses.asdict(self.MyDataClassB()), cfg['b'].as_dict())
+        self.assertEqual(dataclasses.asdict(MyDataClassA()), cfg['a'].as_dict())
+        self.assertEqual(dataclasses.asdict(MyDataClassB()), cfg['b'].as_dict())
         dump = yaml.safe_load(parser.dump(cfg))
-        self.assertEqual(dataclasses.asdict(self.MyDataClassA()), dump['a'])
-        self.assertEqual(dataclasses.asdict(self.MyDataClassB()), dump['b'])
+        self.assertEqual(dataclasses.asdict(MyDataClassA()), dump['a'])
+        self.assertEqual(dataclasses.asdict(MyDataClassB()), dump['b'])
 
         cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg['a'], self.MyDataClassA)
-        self.assertIsInstance(cfg['b'], self.MyDataClassB)
-        self.assertIsInstance(cfg['b'].b2, self.MyDataClassA)
+        self.assertIsInstance(cfg['a'], MyDataClassA)
+        self.assertIsInstance(cfg['b'], MyDataClassB)
+        self.assertIsInstance(cfg['b'].b2, MyDataClassA)
 
         self.assertEqual(5, parser.parse_args(['--b.b2.a1=5']).b.b2.a1)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--b.b2.a1=x']))
@@ -1371,9 +1365,9 @@ class DataclassesTests(unittest.TestCase):
             parser.add_dataclass_arguments(1, 'c')
 
         with self.assertRaises(ValueError):
-            parser.add_dataclass_arguments(self.MyDataClassB, 'c', default=self.MyDataClassB(b2=self.MyDataClassB()))
+            parser.add_dataclass_arguments(MyDataClassB, 'c', default=MyDataClassB(b2=MyDataClassB()))
 
-        class MyClass(int, self.MyDataClassA):
+        class MyClass(int, MyDataClassA):
             """MyClass description"""
 
         with self.assertRaises(ValueError):
@@ -1385,8 +1379,8 @@ class DataclassesTests(unittest.TestCase):
         class MyClass:
             def __init__(
                 self,
-                a1: self.MyDataClassA = self.MyDataClassA(),  # type: ignore
-                a2: self.MyDataClassB = self.MyDataClassB(),  # type: ignore
+                a1: MyDataClassA = MyDataClassA(),
+                a2: MyDataClassB = MyDataClassB(),
             ):
                 self.a1 = a1
                 self.a2 = a2
@@ -1395,22 +1389,22 @@ class DataclassesTests(unittest.TestCase):
         parser.add_class_arguments(MyClass, 'g')
 
         cfg = parser.get_defaults()
-        self.assertEqual(dataclasses.asdict(self.MyDataClassA()), cfg['g']['a1'].as_dict())
-        self.assertEqual(dataclasses.asdict(self.MyDataClassB()), cfg['g']['a2'].as_dict())
+        self.assertEqual(dataclasses.asdict(MyDataClassA()), cfg['g']['a1'].as_dict())
+        self.assertEqual(dataclasses.asdict(MyDataClassB()), cfg['g']['a2'].as_dict())
         dump = yaml.safe_load(parser.dump(cfg))
-        self.assertEqual(dataclasses.asdict(self.MyDataClassA()), dump['g']['a1'])
-        self.assertEqual(dataclasses.asdict(self.MyDataClassB()), dump['g']['a2'])
+        self.assertEqual(dataclasses.asdict(MyDataClassA()), dump['g']['a1'])
+        self.assertEqual(dataclasses.asdict(MyDataClassB()), dump['g']['a2'])
 
         cfg_init = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg_init.g.a1, self.MyDataClassA)
-        self.assertIsInstance(cfg_init.g.a2, self.MyDataClassB)
-        self.assertIsInstance(cfg_init.g.a2.b2, self.MyDataClassA)
+        self.assertIsInstance(cfg_init.g.a1, MyDataClassA)
+        self.assertIsInstance(cfg_init.g.a2, MyDataClassB)
+        self.assertIsInstance(cfg_init.g.a2.b2, MyDataClassA)
 
 
     def test_dataclass_typehint_in_subclass(self):
 
         class MyClass1:
-            def __init__(self, a1: self.MyDataClassB = self.MyDataClassB()):  # type: ignore
+            def __init__(self, a1: MyDataClassB = MyDataClassB()):
                 """MyClass1 description"""
                 self.a1 = a1
 
@@ -1431,21 +1425,21 @@ class DataclassesTests(unittest.TestCase):
             self.assertIsInstance(cfg.c1.init_args.a1.b2.a1, PositiveInt)
             cfg = parser.instantiate_classes(cfg)
             self.assertIsInstance(cfg['c1'], MyClass1)
-            self.assertIsInstance(cfg['c1'].a1, self.MyDataClassB)
-            self.assertIsInstance(cfg['c1'].a1.b2, self.MyDataClassA)
+            self.assertIsInstance(cfg['c1'].a1, MyDataClassB)
+            self.assertIsInstance(cfg['c1'].a1.b2, MyDataClassA)
             self.assertIsInstance(cfg['c1'].a1.b1, PositiveFloat)
 
 
     def test_dataclass_add_argument_type(self):
         parser = ArgumentParser()
-        parser.add_argument('--b', type=self.MyDataClassB, default=self.MyDataClassB(b1=7.0))
+        parser.add_argument('--b', type=MyDataClassB, default=MyDataClassB(b1=7.0))
 
         cfg = parser.get_defaults()
         self.assertEqual({'b1': 7.0, 'b2': {'a1': 1, 'a2': '2'}}, cfg['b'].as_dict())
 
         cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg['b'], self.MyDataClassB)
-        self.assertIsInstance(cfg['b'].b2, self.MyDataClassA)
+        self.assertIsInstance(cfg['b'], MyDataClassB)
+        self.assertIsInstance(cfg['b'].b2, MyDataClassA)
 
 
     def test_dataclass_add_argument_type_some_required(self):
