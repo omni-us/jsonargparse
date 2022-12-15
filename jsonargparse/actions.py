@@ -310,8 +310,8 @@ class _ActionConfigLoad(Action):
                 cfg = parser._apply_actions(cfg, parent_key=self.dest)
             return cfg
         except (TypeError,) + get_loader_exceptions() as ex:
-            str_ex = indent_text(str(ex))
-            raise TypeError(f'Parser key "{self.dest}": Unable to load config "{value}"\n- {str_ex}') from ex
+            str_ex = indent_text(f'- {ex}')
+            raise TypeError(f'Parser key "{self.dest}":\nUnable to load config {value!r}\n{str_ex}') from ex
 
     def check_type(self, value, parser):
         return self._load_config(value, parser)
