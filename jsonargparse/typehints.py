@@ -295,8 +295,12 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def discard_init_args_on_class_path_change(parser_or_action, prev_cfg, cfg):
+        if isinstance(prev_cfg, dict):
+            return
         keys = list(prev_cfg.keys(branches=True))
-        for key in keys:
+        num = 0
+        while num < len(keys):
+            key = keys[num]
             prev_val = prev_cfg.get(key)
             val = cfg.get(key)
             if is_subclass_spec(prev_val) and is_subclass_spec(val):
@@ -305,6 +309,14 @@ class ActionTypeHint(Action):
                     action = _find_action(parser_or_action, key)
                 if isinstance(action, ActionTypeHint):
                     discard_init_args_on_class_path_change(action, prev_val, val)
+                    prev_sub_cfg = prev_val.get('init_args')
+                    if prev_sub_cfg:
+                        sub_add_kwargs = getattr(action, 'sub_add_kwargs', {})
+                        subparser = ActionTypeHint.get_class_parser(val['class_path'], sub_add_kwargs)
+                        sub_cfg = val.get('init_args', Namespace())
+                        ActionTypeHint.discard_init_args_on_class_path_change(subparser, prev_sub_cfg, sub_cfg)
+                    keys = keys[:num+1] + [k for k in keys[num+1:] if not k.startswith(key+'.')]
+            num += 1
 
 
     @staticmethod

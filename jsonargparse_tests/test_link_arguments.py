@@ -230,6 +230,9 @@ class LinkArgumentsTests(unittest.TestCase):
             cfg = parser.parse_args(['--a='+json.dumps(a_value), '--c='+json.dumps(c_value)])
             self.assertEqual(cfg.a.init_args.a1, c_value)
             self.assertEqual(cfg.a.init_args.a2, c_value)
+            init = parser.instantiate_classes(cfg)
+            self.assertIsInstance(init.a, ClassA)
+            self.assertIsInstance(init.c, Calendar)
 
 
     def test_link_arguments_on_parse_within_subcommand(self):
