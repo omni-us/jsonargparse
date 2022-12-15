@@ -23,6 +23,7 @@ Fixed
 ^^^^^
 - List type with empty list default causes failure `PyLaia#48
   <https://github.com/jpuigcerver/PyLaia/issues/48>`__.
+- Pure dataclass instance default being considered as a subclass type.
 
 
 v4.18.0 (2022-11-29)
