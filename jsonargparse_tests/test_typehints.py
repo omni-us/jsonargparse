@@ -697,6 +697,7 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(parser.dump(cfg), 'callable: time.time\n')
         cfg = parser.parse_args(['--callable=random.randint'])
         self.assertEqual(random.randint, cfg.callable)
+        self.assertEqual(parser.dump(cfg), 'callable: random.randint\n')
         cfg = parser.parse_args(['--callable=jsonargparse.CLI'])
         self.assertEqual(CLI, cfg.callable)
         self.assertEqual(parser.dump(cfg), 'callable: jsonargparse.CLI\n')

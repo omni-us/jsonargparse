@@ -20,6 +20,8 @@ Added
 - ``CLI`` now exposes the ``fail_untyped`` parameter.
 - ``bytes`` and ``bytearray`` registered on first use and decodes from standard
   Base64.
+- Support getting the import path of variables in modules, e.g.
+  ``random.randint``.
 
 Fixed
 ^^^^^

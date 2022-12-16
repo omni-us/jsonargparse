@@ -314,6 +314,8 @@ class ImportFunctionsTests(unittest.TestCase):
         self.assertEqual(get_import_path(ArgumentParser.merge_config), 'jsonargparse.ArgumentParser.merge_config')
         from email.mime.base import MIMEBase
         self.assertEqual(get_import_path(MIMEBase), 'email.mime.base.MIMEBase')
+        from dataclasses import MISSING
+        self.assertEqual(get_import_path(MISSING), 'dataclasses.MISSING')
 
 
     def test_register_unresolvable_import_paths(self):
