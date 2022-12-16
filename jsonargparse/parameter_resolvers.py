@@ -51,7 +51,7 @@ class ConditionalDefault(list):
         return iter_to_set_str(self, sep=', ')
 
 
-def get_parameter_origins(component, parent) -> str:
+def get_parameter_origins(component, parent) -> Optional[str]:
     if isinstance(component, tuple):
         assert parent is None or len(component) == len(parent)
         return iter_to_set_str(
@@ -580,7 +580,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 subclass_types = get_subclass_types(param.annotation)
                 if not (class_type and subclass_types and is_subclass(class_type, subclass_types)):
                     continue
-                subclass_spec = dict(class_path=get_import_path(class_type), init_args=dict())
+                subclass_spec: dict = dict(class_path=get_import_path(class_type), init_args=dict())
                 for kwarg in node.keywords:
                     if kwarg.arg and ast_is_constant(kwarg.value):
                         subclass_spec['init_args'][kwarg.arg] = ast_get_constant_value(kwarg.value)

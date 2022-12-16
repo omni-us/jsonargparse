@@ -12,6 +12,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
+from importlib import import_module
 from types import BuiltinFunctionType, FunctionType, ModuleType
 from typing import Any, Callable, Optional, Tuple, Type, TypeVar, Union
 
@@ -194,17 +195,6 @@ def import_object(name: str):
     return getattr(parent, name_object)
 
 
-def import_module_leaf(name: str):
-    """Similar to __import__(name) but returns the leaf module instead of the root."""
-    if '.' in name:
-        name_parent, name_leaf = name.rsplit('.', 1)
-        parent = __import__(name_parent, fromlist=[name_leaf])
-        module = getattr(parent, name_leaf)
-    else:
-        module = __import__(name)
-    return module
-
-
 unresolvable_import_paths = {}
 
 
@@ -221,29 +211,48 @@ def register_unresolvable_import_paths(*modules: ModuleType):
                 unresolvable_import_paths[val] = f'{module.__name__}.{val.__name__}'
 
 
-def get_import_path(value):
+def get_module_var_path(module_path: str, value: Any) -> Optional[str]:
+    module = import_module(module_path)
+    for name, var in vars(module).items():
+        if var is value:
+            return module_path + '.' + name
+    return None
+
+
+def get_import_path(value: Any) -> Optional[str]:
     """Returns the shortest dot import path for the given object."""
+    path = None
     module_path = getattr(value, '__module__', None)
+    qualname = getattr(value, '__qualname__', '')
+
     if module_path is None:
         path = unresolvable_import_paths.get(value)
-        if not path:
-            raise ValueError(f'Not possible to determine the import path for object {value}.')
-        module_path = path.rsplit('.', 1)[0]
-    else:
-        path = module_path + '.' + value.__qualname__
-    if '.' in module_path:
+        if path:
+            module_path, _ = path.rsplit('.', 1)
+    elif (
+        (not qualname and not inspect.isclass(value)) or
+        (inspect.ismethod(value) and not inspect.isclass(value.__self__))
+    ):
+        path = get_module_var_path(module_path, value)
+    elif qualname:
+        path = module_path + '.' + qualname
+
+    if not path:
+        raise ValueError(f'Not possible to determine the import path for object {value}.')
+
+    if qualname and module_path and '.' in module_path:
         module_parts = module_path.split('.')
         for num in range(len(module_parts)):
             module_path = '.'.join(module_parts[:num+1])
-            module = import_module_leaf(module_path)
-            if '.' in value.__qualname__:
-                obj_name, attr = value.__qualname__.rsplit('.', 1)
+            module = import_module(module_path)
+            if '.' in qualname:
+                obj_name, attr = qualname.rsplit('.', 1)
                 obj = getattr(module, obj_name, None)
                 if getattr(obj, attr, None) is value:
-                    path = module_path + '.' + value.__qualname__
+                    path = module_path + '.' + qualname
                     break
-            elif getattr(module, value.__qualname__, None) is value:
-                path = module_path + '.' + value.__qualname__
+            elif getattr(module, qualname, None) is value:
+                path = module_path + '.' + qualname
                 break
     return path
 
