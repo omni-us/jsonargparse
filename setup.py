@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
 import re
+from contextlib import suppress
+from pathlib import Path
 
 from setuptools import Command, setup
 
 ## Use README.rst for the package long description ##
-LONG_DESCRIPTION = re.sub(':class:|:func:|:ref:|:py:meth:|:py:mod:|py:attr:| *# doctest:.*', '', open('README.rst').read())
+LONG_DESCRIPTION = re.sub(
+    ':class:|:func:|:ref:|:py:meth:|:py:mod:|py:attr:| *# doctest:.*',
+    '',
+    Path('README.rst').read_text(),
+)
 LONG_DESCRIPTION = re.sub('([+|][- ]{12})[- ]{5}', r'\1', LONG_DESCRIPTION)
 
 LONG_DESCRIPTION_LINES = []
@@ -26,7 +32,6 @@ LONG_DESCRIPTION = re.sub('(testcode::|doctest::).*', 'code-block:: python', LON
 
 
 ## test_coverage target ##
-NAME_TESTS = next(filter(lambda x: x.startswith('test_suite = '), open('setup.cfg').readlines())).strip().split()[-1]
 CMDCLASS = {}
 
 class CoverageCommand(Command):
@@ -35,17 +40,15 @@ class CoverageCommand(Command):
     def initialize_options(self): pass
     def finalize_options(self): pass
     def run(self):
-        __import__(NAME_TESTS+'.__main__').__main__.run_test_coverage()
+        __import__('jsonargparse_tests.__main__').__main__.run_test_coverage()
 
 CMDCLASS['test_coverage'] = CoverageCommand
 
 
 ## build_sphinx target ##
-try:
+with suppress(ImportError):
     from sphinx.setup_command import BuildDoc
     CMDCLASS['build_sphinx'] = BuildDoc  # type: ignore
-except ImportError:
-    pass
 
 
 ## Run setuptools setup ##

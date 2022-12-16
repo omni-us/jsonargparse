@@ -93,6 +93,7 @@ class ActionJsonnet(Action):
                 kwargs['help'] = kwargs['help'] % json.dumps(self._validator.schema, sort_keys=True)
             return ActionJsonnet(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2], cfg=args[1]))
+        return None
 
 
     def _check_type(self, value, cfg):

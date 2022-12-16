@@ -4,6 +4,7 @@ import dataclasses
 import inspect
 import re
 from argparse import SUPPRESS
+from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from .actions import _ActionConfigLoad
@@ -398,10 +399,8 @@ class SignatureArguments(LoggerProperty):
         defaults = {}
         if default is not None:
             if isinstance(default, dict):
-                try:
+                with suppress(TypeError):
                     default = theclass(**default)
-                except TypeError:
-                    pass
             if not isinstance(default, theclass):
                 raise ValueError(f'Expected "default" argument to be an instance of "{theclass.__name__}" or its kwargs dict, given {default}')
             defaults = dataclasses.asdict(default)
@@ -529,7 +528,8 @@ def group_instantiate_class(group, cfg):
 
 def strip_title(value):
     if value is not None:
-        return re.sub(r'\.$', '', value.strip())
+        value = re.sub(r'\.$', '', value.strip())
+    return value
 
 
 def is_factory_class(value):

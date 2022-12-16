@@ -216,9 +216,12 @@ def ast_is_attr_assign(node, container):
 
 def ast_get_call_kwarg_with_value(node, value):
     value_dump = ast.dump(value)
+    kwarg = None
     for arg in node.keywords:
         if isinstance(getattr(arg, 'value', None), ast.AST) and ast.dump(arg.value) == value_dump:
-            return arg
+            kwarg = arg
+            break
+    return kwarg
 
 
 def ast_get_call_positional_indexes(node):
@@ -616,14 +619,15 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         if args_name:
             values_to_find[args_name] = ast_variable_load(args_name)
         if kwargs_name:
-            values_to_find[kwargs_name] = kwargs_value = ast_variable_load(kwargs_name)
+            values_to_find[kwargs_name] = ast_variable_load(kwargs_name)
 
         values_found = self.find_values_usage(values_to_find)
         if not values_found:
             return [], []
 
         params_list = []
-        kwargs_value_dump = ast.dump(kwargs_value)
+        kwargs_value = kwargs_name and values_to_find[kwargs_name]
+        kwargs_value_dump = kwargs_value and ast.dump(kwargs_value)
         for node in [v for k, v in values_found if k == kwargs_name]:
             if isinstance(node, ast.Call):
                 if ast_is_kwargs_pop_or_get(node, kwargs_value_dump):

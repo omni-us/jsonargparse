@@ -7,7 +7,7 @@ import sys
 import warnings
 from argparse import Action
 from collections import abc, defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from copy import deepcopy
 from enum import Enum
@@ -291,6 +291,7 @@ class ActionTypeHint(Action):
         elif parser._subcommands_action and arg_string in parser._subcommands_action._name_parser_map:
             subparser = parser._subcommands_action._name_parser_map[arg_string]
             subclass_arg_parser.set(subparser)
+        return None
 
 
     @staticmethod
@@ -401,6 +402,7 @@ class ActionTypeHint(Action):
                         val.get('init_args'),
                     )
         cfg.update(val, self.dest)
+        return None
 
 
     def _check_type(self, value, append=False, cfg=None):
@@ -555,10 +557,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
         if get_registered_type(type_val) or is_subclass(type_val, Enum):
             val = adapt_typehints(val, type_val, **adapt_kwargs)
         elif isinstance(val, str):
-            try:
+            with suppress(*get_loader_exceptions()):
                 val, _ = parse_value_or_config(val, enable_path=False, simple_types=True)
-            except get_loader_exceptions():
-                pass
         val = adapt_classes_any(val, serialize, instantiate_classes, sub_add_kwargs)
 
     # Literal
@@ -572,10 +572,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
     # Basic types
     elif typehint in leaf_types:
         if isinstance(val, str) and typehint is not str:
-            try:
+            with suppress(*pyyaml_exceptions):
                 val = yaml_load(val)
-            except pyyaml_exceptions:
-                pass
         if typehint is float and isinstance(val, int) and not isinstance(val, bool):
             val = float(val)
         if not isinstance(val, typehint) or (typehint in (int, float) and isinstance(val, bool)):
@@ -1079,8 +1077,7 @@ def typehint_from_action(action_or_typehint):
 def type_to_str(obj):
     if obj in {bool, tuple} or is_subclass(obj, (int, float, str, Enum)):
         return obj.__name__
-    elif obj is not None:
-        return re.sub(r'[A-Za-z0-9_<>.]+\.', '', str(obj)).replace('NoneType', 'null')
+    return re.sub(r'[A-Za-z0-9_<>.]+\.', '', str(obj)).replace('NoneType', 'null')
 
 
 def literal_to_str(val):

@@ -4,6 +4,7 @@ import operator
 import os
 import pathlib
 import re
+from contextlib import suppress
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
 from .optionals import final
@@ -305,13 +306,12 @@ def register_type_on_first_use(import_path: str, *args, **kwargs):
 def get_registered_type(type_class):
     if type_class in registered_types:
         return registered_types[type_class]
-    try:
+    with suppress(AttributeError, ValueError):
         import_path = get_import_path(type_class)
         if import_path in registered_types:
             registered_types.pop(import_path)()
             return registered_types[type_class]
-    except (AttributeError, ValueError):
-        pass
+    return None
 
 
 def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Optional[Callable] = None):

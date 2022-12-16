@@ -36,7 +36,7 @@ class DeprecatedTests(unittest.TestCase):
 
 
     def test_deprecation_warning(self):
-        with unittest.mock.patch('jsonargparse.deprecated.shown_deprecation_warnings', return_value=lambda: set()):
+        with unittest.mock.patch('jsonargparse.deprecated.shown_deprecation_warnings', return_value=set()):
             with catch_warnings(record=True) as w:
                 message = 'Deprecation warning'
                 deprecation_warning(None, message)
