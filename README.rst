@@ -397,13 +397,14 @@ Some notes about this support are:
   nesting it is meant child types inside ``List``, ``Dict``, etc. There is no
   limit in nesting depth.
 
-- Fully supported types are: ``str``, ``bool`` (some details in
-  :ref:`boolean-arguments`), ``int``, ``float``, ``complex``, ``List`` (some
-  details in :ref:`list-append`), ``Iterable``, ``Sequence``, ``Any``,
-  ``Union``, ``Optional``, ``Type``, ``Enum``, ``PathLike``, ``UUID``,
-  ``timedelta``, restricted types as explained in sections
-  :ref:`restricted-numbers` and :ref:`restricted-strings` and paths and URLs as
-  explained in sections :ref:`parsing-paths` and :ref:`parsing-urls`.
+- Fully supported types are: ``str``, ``bool`` (more details in
+  :ref:`boolean-arguments`), ``int``, ``float``, ``complex``,
+  ``bytes``/``bytearray`` (Base64 encoding), ``List`` (more details in
+  :ref:`list-append`), ``Iterable``, ``Sequence``, ``Any``, ``Union``,
+  ``Optional``, ``Type``, ``Enum``, ``PathLike``, ``UUID``, ``timedelta``,
+  restricted types as explained in sections :ref:`restricted-numbers` and
+  :ref:`restricted-strings` and paths and URLs as explained in sections
+  :ref:`parsing-paths` and :ref:`parsing-urls`.
 
 - ``Dict``, ``Mapping``, and ``MutableMapping`` are supported but only with
   ``str`` or ``int`` keys. For more details see :ref:`dict-items`.

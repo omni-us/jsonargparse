@@ -18,6 +18,8 @@ v4.19.0 (2022-12-??)
 Added
 ^^^^^
 - ``CLI`` now exposes the ``fail_untyped`` parameter.
+- ``bytes`` and ``bytearray`` registered on first use and decodes from standard
+  Base64.
 
 Fixed
 ^^^^^
