@@ -382,4 +382,24 @@ def timedelta_deserializer(value):
 
 register_type_on_first_use('datetime.timedelta', deserializer=timedelta_deserializer)
 
+
+def bytes_serializer(value: Union[bytes, bytearray]) -> str:
+    from base64 import b64encode
+    return b64encode(value).decode()
+
+
+def bytes_deserializer(value: str) -> bytes:
+    from base64 import b64decode
+    return b64decode(value)
+
+
+def bytearray_deserializer(value: str) -> bytearray:
+    from base64 import b64decode
+    return bytearray(b64decode(value))
+
+
+register_type_on_first_use('builtins.bytes', serializer=bytes_serializer, deserializer=bytes_deserializer)
+register_type_on_first_use('builtins.bytearray', serializer=bytes_serializer, deserializer=bytearray_deserializer)
+
+
 del _fail_already_registered

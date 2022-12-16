@@ -256,6 +256,20 @@ class OtherTests(unittest.TestCase):
                 self.assertRaises(ValueError, lambda: timedelta_type.deserializer(delta_in))
 
 
+    def test_bytes_and_bytearray(self):
+        for type_class in [bytes, bytearray]:
+            with self.subTest(type_class):
+                bytes_type = get_registered_type(type_class)
+                for serialized, deserialized in [
+                    ('',                 type_class(b'')),
+                    ('iVBORw0KGgo=',     type_class(b'\x89PNG\r\n\x1a\n')),
+                    ('AAAAB3NzaC1yc2E=', type_class(b'\x00\x00\x00\x07ssh-rsa')),
+                ]:
+                    with self.subTest(serialized):
+                        self.assertEqual(deserialized, bytes_type.deserializer(serialized))
+                        self.assertEqual(serialized, bytes_type.serializer(deserialized))
+
+
     def test_register_non_bool_cast_type(self):
         class Elems:
             def __init__(self, *elems):
