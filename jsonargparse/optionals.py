@@ -3,8 +3,7 @@
 import inspect
 import locale
 import os
-import typing
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from importlib.util import find_spec
 from typing import Optional
 
@@ -37,7 +36,7 @@ def typing_extensions_import(name):
     if typing_extensions_support:
         return getattr(__import__('typing_extensions'), name)
     else:
-        return getattr(typing, name, False)
+        return getattr(__import__('typing'), name, False)
 
 
 def is_compatible_final(final) -> bool:
@@ -80,8 +79,7 @@ def missing_package_raise(package, importer):
 def import_jsonschema(importer):
     with missing_package_raise('jsonschema', importer):
         import jsonschema
-        from jsonschema import Draft7Validator as jsonvalidator
-    return jsonschema, jsonvalidator
+    return jsonschema, jsonschema.Draft7Validator
 
 
 def import_jsonnet(importer):
@@ -203,6 +201,7 @@ def parse_docstring(component, params=False, logger=None):
     except (ValueError, dp.ParseError) as ex:
         if logger:
             logger.debug(f'Failed parsing docstring for {component}: {ex}')
+    return None
 
 
 def parse_docs(component, parent, logger):
@@ -230,6 +229,7 @@ def get_doc_short_description(function_or_class, method_name=None, logger=None):
         docstring = parse_docstring(component, params=False, logger=logger)
         if docstring:
             return docstring.short_description
+    return None
 
 
 def get_files_completer():
@@ -263,11 +263,9 @@ def argcomplete_warn_redraw_prompt(prefix, message):
     argcomplete = import_argcomplete('argcomplete_warn_redraw_prompt')
     if prefix != '':
         argcomplete.warn(message)
-        try:
+        with suppress(ValueError):
             shell_pid = int(os.popen('ps -p %d -oppid=' % os.getppid()).read().strip())
             os.kill(shell_pid, 28)
-        except ValueError:
-            pass
     _ = '_' if locale.getlocale()[1] != 'UTF-8' else '\xa0'
     return [_+message.replace(' ', _), '']
 

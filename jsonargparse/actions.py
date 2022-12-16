@@ -300,6 +300,7 @@ class _ActionConfigLoad(Action):
                 Namespace({self.dest: namespace[self.dest]})
             )[self.dest]
         namespace[self.dest] = loaded_value
+        return None
 
     def _load_config(self, value, parser):
         try:
@@ -356,7 +357,7 @@ class _ActionHelpClassPath(Action):
             kwargs['_baseclass'] = self._baseclass
             return type(self)(**kwargs)
         dest = re.sub('\\.help$', '',  self.dest)
-        self.print_help(args, self._baseclass, dest)
+        return self.print_help(args, self._baseclass, dest)
 
     def print_help(self, call_args, baseclass, dest):
         from .typehints import resolve_class_path_by_name
@@ -450,6 +451,7 @@ class ActionYesNo(Action):
             setattr(args[1], self.dest, not value)
         else:
             setattr(args[1], self.dest, value)
+        return None
 
     def _add_dest_prefix(self, prefix):
         self.dest = prefix+'.'+self.dest
@@ -783,6 +785,7 @@ class ActionPathList(Action, FilesCompleterMethod):
             kwargs['_rel'] = self._rel
             return ActionPathList(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
+        return None
 
     def _check_type(self, value, cfg=None):
         if value == []:

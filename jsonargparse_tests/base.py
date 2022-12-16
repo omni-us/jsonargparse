@@ -5,7 +5,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from contextlib import contextmanager, redirect_stderr
+from contextlib import contextmanager, redirect_stderr, suppress
 from importlib.util import find_spec
 
 from jsonargparse.optionals import docstring_parser_support, set_docstring_parse_options
@@ -72,7 +72,5 @@ class TempDirTestCase(unittest.TestCase):
 
     def tearDown(self):
         os.chdir(self.cwd)
-        try:
+        with suppress(PermissionError):
             shutil.rmtree(self.tmpdir)
-        except PermissionError:
-            pass

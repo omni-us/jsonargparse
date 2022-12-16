@@ -212,9 +212,9 @@ class NamespaceTests(unittest.TestCase):
 
     def test_shallow_clashing_keys(self):
         ns = Namespace()
-        self.assertFalse('get' in ns)
+        self.assertNotIn('get', ns)
         exec('ns.get = 1')
-        self.assertTrue('get' in ns)
+        self.assertIn('get', ns)
         self.assertEqual(ns.get('get'), 1)
         self.assertEqual(dict(ns.items()), {'get': 1})
         ns['pop'] = 2
@@ -230,7 +230,7 @@ class NamespaceTests(unittest.TestCase):
     def test_leaf_clashing_keys(self):
         ns = Namespace()
         ns['x.get'] = 1
-        self.assertTrue('x.get' in ns)
+        self.assertIn('x.get', ns)
         self.assertEqual(ns.get('x.get'), 1)
         self.assertEqual(ns['x.get'], 1)
         self.assertEqual(ns['x']['get'], 1)
@@ -242,7 +242,7 @@ class NamespaceTests(unittest.TestCase):
 
     def test_shallow_branch_clashing_keys(self):
         ns = Namespace(get=Namespace(x=2))
-        self.assertTrue('get.x' in ns)
+        self.assertIn('get.x', ns)
         self.assertEqual(ns.get('get.x'), 2)
         self.assertEqual(ns['get.x'], 2)
         self.assertEqual(ns['get'], Namespace(x=2))
@@ -253,7 +253,7 @@ class NamespaceTests(unittest.TestCase):
     def test_nested_branch_clashing_keys(self):
         ns = Namespace()
         ns['x.get.y'] = 3
-        self.assertTrue('x.get.y' in ns)
+        self.assertIn('x.get.y', ns)
         self.assertEqual(ns.get('x.get.y'), 3)
         self.assertEqual(ns.as_dict(), {'x': {'get': {'y': 3}}})
         self.assertEqual(ns.pop('x.get.y'), 3)

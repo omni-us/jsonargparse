@@ -78,6 +78,7 @@ class ActionJsonSchema(Action):
         if not self._with_meta:
             val = strip_meta(val)
         setattr(args[1], self.dest, val)
+        return None
 
 
     def _check_type(self, value, cfg=None):

@@ -275,9 +275,9 @@ class OtherTests(unittest.TestCase):
             def __init__(self, *elems):
                 self.elems = list(elems)
             def __bool__(self):
-                raise RuntimeError('bool not supported')
+                raise TypeError('bool not supported')
 
-        self.assertRaises(RuntimeError, lambda: not Elems(1, 2))
+        self.assertRaises(TypeError, lambda: not Elems(1, 2))
         register_type(Elems, lambda x: x.elems, lambda x: Elems(*x))
 
         parser = ArgumentParser(error_handler=None)
