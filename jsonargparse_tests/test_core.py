@@ -593,7 +593,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(yaml.safe_load(out.getvalue()), {'o': 1})
 
 
-    @unittest.skipIf(not (url_support and responses_available), 'validators, requests and responses packages are required')
+    @unittest.skipIf(not (url_support and responses_available), 'requests and responses packages are required')
     @responses_activate
     def test_urls(self):
         set_config_read_mode(urls_enabled=True)

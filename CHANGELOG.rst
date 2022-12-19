@@ -26,6 +26,9 @@ Added
   a previous parse link and vice versa `#208
   <https://github.com/omni-us/jsonargparse/issues/208>`__.
 - New resolver that identifies parameter types from stub files ``*.pyi``.
+- Support for relative paths within remote fsspec/url config files.
+- New context manager methods for path types: ``open`` and
+  ``relative_path_context``.
 
 Fixed
 ^^^^^
@@ -43,6 +46,7 @@ Changed
   target key does not have ``init_args`` `pytorch-lightning#16032
   <https://github.com/Lightning-AI/lightning/issues/16032>`__.
 - The ``signatures`` extras now installs the ``typeshed-client`` package.
+- ``validators`` package is no longer a dependency.
 
 
 v4.18.0 (2022-11-29)
