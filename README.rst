@@ -619,21 +619,20 @@ Parsing URLs
 
 The :func:`.path_type` function also supports URLs which after parsing, the
 :py:meth:`.Path.get_content` method can be used to perform a GET request to the
-corresponding URL and retrieve its content. For this to work the *validators*
-and *requests* python packages are required. Alternatively, :func:`.path_type`
-can also be used for `fsspec <https://filesystem-spec.readthedocs.io>`__
-supported file systems. The respective optional package(s) will be installed
-along with jsonargparse if installed with the ``urls`` or ``fsspec`` extras
-require as explained in section :ref:`installation`.
+corresponding URL and retrieve its content. For this to work the *requests*
+python package is required. Alternatively, :func:`.path_type` can also be used
+for `fsspec <https://filesystem-spec.readthedocs.io>`__ supported file systems.
+The respective optional package(s) will be installed along with jsonargparse if
+installed with the ``urls`` or ``fsspec`` extras require as explained in section
+:ref:`installation`.
 
 The ``'u'`` flag is used to parse URLs using requests and the flag ``'s'`` to
 parse fsspec file systems. For example if it is desired that an argument can be
 either a readable file or URL, the type would be created as ``Path_fur =
-path_type('fur')``. If the value appears to be a URL according to
-:func:`validators.url.url` then a HEAD request would be triggered to check if it
-is accessible. To get the content of the parsed path, without needing to care if
-it is a local file or a URL, the :py:meth:`.Path.get_content` method Scan be
-used.
+path_type('fur')``. If the value appears to be a URL, a HEAD request would be
+triggered to check if it is accessible. To get the content of the parsed path,
+without needing to care if it is a local file or a URL, the
+:py:meth:`.Path.get_content` method Scan be used.
 
 If you import ``from jsonargparse import set_config_read_mode`` and then run
 ``set_config_read_mode(urls_enabled=True)`` or
@@ -649,6 +648,13 @@ like the following would work:
 .. code-block:: bash
 
     my_tool.py --config http://example.com/config.yaml
+
+.. note::
+
+    Relative paths inside a remote path are parsed as remote. For example, for a
+    relative path ``model/state_dict.pt`` found inside
+    ``s3://bucket/config.yaml``, its parsed full path becomes
+    ``s3://bucket/model/state_dict.pt``.
 
 
 .. _boolean-arguments:

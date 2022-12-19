@@ -16,7 +16,6 @@ from jsonargparse.optionals import (
     import_jsonschema,
     import_requests,
     import_ruyaml,
-    import_url_validator,
     jsonnet_support,
     jsonschema_support,
     ruyaml_support,
@@ -55,18 +54,13 @@ class JsonnetSupportTests(unittest.TestCase):
 
 class UrlSupportTests(unittest.TestCase):
 
-    @unittest.skipIf(not url_support, 'validators and requests packages are required')
+    @unittest.skipIf(not url_support, 'requests package is required')
     def test_url_support_true(self):
-        import_url_validator('test_url_support_true')
         import_requests('test_url_support_true')
 
 
-    @unittest.skipIf(url_support, 'validators and requests packages should not be installed')
+    @unittest.skipIf(url_support, 'requests package should not be installed')
     def test_url_support_false(self):
-        if find_spec('validators') is None:
-            with self.assertRaises(ImportError) as context:
-                import_url_validator('test_url_support_false')
-                self.assertIn('test_url_support_false', context.msg)
         if find_spec('requests') is None:
             with self.assertRaises(ImportError) as context:
                 import_requests('test_url_support_false')
@@ -159,7 +153,7 @@ class ConfigReadModeTests(unittest.TestCase):
         set_config_read_mode()
 
 
-    @unittest.skipIf(not url_support, 'validators and requests packages are required')
+    @unittest.skipIf(not url_support, 'requests package is required')
     def test_url_support_true(self):
         self.assertEqual('fr', get_config_read_mode())
         set_config_read_mode(urls_enabled=True)
@@ -168,7 +162,7 @@ class ConfigReadModeTests(unittest.TestCase):
         self.assertEqual('fr', get_config_read_mode())
 
 
-    @unittest.skipIf(url_support, 'validators and requests packages should not be installed')
+    @unittest.skipIf(url_support, 'request package should not be installed')
     def test_url_support_false(self):
         self.assertEqual('fr', get_config_read_mode())
         with self.assertRaises(ImportError):

@@ -18,7 +18,7 @@ typing_extensions_support = find_spec('typing_extensions') is not None
 typeshed_client_support = find_spec('typeshed_client') is not None
 jsonschema_support = find_spec('jsonschema') is not None
 jsonnet_support = find_spec('_jsonnet') is not None
-url_support = False if any(find_spec(x) is None for x in ['validators', 'requests']) else True
+url_support = find_spec('requests') is not None
 docstring_parser_support = find_spec('docstring_parser') is not None
 argcomplete_support = find_spec('argcomplete') is not None
 fsspec_support = find_spec('fsspec') is not None
@@ -97,12 +97,6 @@ def import_jsonnet(importer):
     return _jsonnet
 
 
-def import_url_validator(importer):
-    with missing_package_raise('validators', importer):
-        from validators.url import url as url_validator
-    return url_validator
-
-
 def import_requests(importer):
     with missing_package_raise('requests', importer):
         import requests
@@ -150,15 +144,14 @@ def set_config_read_mode(
         fsspec_enabled: Whether to read config files from fsspec supported file systems.
     """
     imports = {
-        'u': [import_url_validator, import_requests],
-        's': [import_fsspec],
+        'u': import_requests,
+        's': import_fsspec,
     }
 
     def update_mode(flag, enabled):
         global _config_read_mode
         if enabled:
-            for import_func in imports[flag]:
-                import_func('set_config_read_mode')
+            imports[flag]('set_config_read_mode')
             if flag not in _config_read_mode:
                 _config_read_mode = _config_read_mode.replace('f', 'f'+flag)
         else:

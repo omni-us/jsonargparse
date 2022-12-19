@@ -8,15 +8,12 @@ import unittest
 import zipfile
 
 from jsonargparse import ArgumentParser, LoggerProperty, Path, null_logger
-from jsonargparse.optionals import (
-    fsspec_support,
-    import_fsspec,
-    reconplogger_support,
-    url_support,
-)
+from jsonargparse.optionals import fsspec_support, reconplogger_support, url_support
 from jsonargparse.util import (
+    current_path_dir,
     get_import_path,
     import_object,
+    parse_url,
     register_unresolvable_import_paths,
     unique,
 )
@@ -161,7 +158,28 @@ class PathTests(TempDirTestCase):
             self.assertEqual(path(), os.path.join(self.tmpdir, self.file_rw))
 
 
-    @unittest.skipIf(not url_support or not responses_available, 'validators, requests and responses packages are required')
+    def test_parse_url(self):
+        for url, scheme, path in [
+            ('https://eg.com:8080/eg',                          'https://',                         'eg.com:8080/eg'),
+            ('dask::s3://bucket/key',                           'dask::s3://',                      'bucket/key'),
+            ('filecache::s3://bucket/key',                      'filecache::s3://',                 'bucket/key'),
+            ('zip://*.csv::simplecache::gcs://bucket/file.zip', 'zip://*.csv::simplecache::gcs://', 'bucket/file.zip'),
+            ('simplecache::zip://*.csv::gcs://bucket/file.zip', 'simplecache::zip://*.csv::gcs://', 'bucket/file.zip'),
+            ('zip://existing.txt::file://file1.zip',            'zip://existing.txt::file://',      'file1.zip'),
+            ('file.txt',       None, None),
+            ('../../file.txt', None, None),
+            ('/tmp/file.txt',  None, None),
+        ]:
+            with self.subTest(url):
+                url_data = parse_url(url)
+                if scheme is None:
+                    self.assertIsNone(url_data)
+                else:
+                    self.assertEqual(url_data.scheme, scheme)
+                    self.assertEqual(url_data.url_path, path)
+
+
+    @unittest.skipIf(not url_support or not responses_available, 'requests and responses packages are required')
     @responses_activate
     def test_urls_http(self):
         existing = 'http://example.com/existing-url'
@@ -215,13 +233,89 @@ class PathTests(TempDirTestCase):
         with self.assertRaises(TypeError):
             Path('unsupported://'+existing, mode='sr')
 
-        fsspec = import_fsspec('test_fsspec')
-
+        import fsspec
         nonexisting = 'nonexisting.txt'
         path = Path('memory://'+nonexisting, mode='sw')
         with fsspec.open(path(), 'w') as f:
             f.write(existing_body)
         self.assertEqual(existing_body, path.get_content())
+
+
+    @unittest.skipIf(not url_support, 'requests package is required')
+    def test_relative_path_context_url(self):
+        path1 = Path('http://example.com/nested/path/file1.txt', mode='u')
+        with path1.relative_path_context() as dir:
+            self.assertEqual('http://example.com/nested/path', dir)
+            path2 = Path('../file2.txt', mode='u')
+            self.assertEqual(path2(), 'http://example.com/nested/file2.txt')
+
+
+    @unittest.skipIf(not fsspec_support, 'fsspec package is required')
+    def test_relative_path_context_fsspec(self):
+        local_path = pathlib.Path(self.tmpdir) / 'file0.txt'
+        local_path.write_text('zero')
+
+        import fsspec
+        mem_path = Path('memory://one/two/file1.txt', mode='sc')
+        with fsspec.open(mem_path(), 'w') as f:
+            f.write('one')
+
+        with Path('memory://one/two/three/file1.txt', mode='sc').relative_path_context() as dir1:
+            self.assertEqual('memory://one/two/three', dir1)
+            self.assertEqual('memory://one/two/three', current_path_dir.get())
+
+            with self.subTest('absolute local path'):
+                path0 = Path(str(local_path), mode='fr')
+                self.assertEqual('zero', path0.get_content())
+
+            with self.subTest('relative fsspec path'):
+                path1 = Path('../file1.txt', mode='fsr')
+                self.assertEqual('one', path1.get_content())
+                self.assertEqual(str(path1), '../file1.txt')
+                self.assertEqual(path1(), 'memory://one/two/file1.txt')
+                self.assertIsNotNone(path1._url_data)
+
+            with self.subTest('nested fsspec dir'):
+                with path1.relative_path_context() as dir2:
+                    self.assertEqual('memory://one/two', dir2)
+                    path2 = Path('four/five/six/../file2.txt', mode='fsc')
+                    self.assertEqual(path2(), 'memory://one/two/four/five/file2.txt')
+
+            with self.subTest('non-fsspec path'):
+                path3 = Path('file3.txt', mode='fc')
+                self.assertEqual(path3(), str(pathlib.Path(self.tmpdir) / 'file3.txt'))
+
+        self.assertIsNone(current_path_dir.get())
+
+
+    def test_path_open_local(self):
+        pathlib.Path('file.txt').write_text('content')
+        path = Path('file.txt', mode='fr')
+        with path.open() as f:
+            self.assertEqual('content', f.read())
+
+
+    @unittest.skipIf(not url_support or not responses_available, 'requests and responses packages are required')
+    @responses_activate
+    def test_path_open_url(self):
+        import responses
+        url = 'http://example.com/file.txt'
+        responses.add(responses.GET, url, body='content', status=200)
+        responses.add(responses.HEAD, url, status=200)
+        path = Path(url, mode='ur')
+        with path.open() as f:
+            self.assertEqual('content', f.read())
+
+
+    @unittest.skipIf(not fsspec_support, 'fsspec package is required')
+    def test_path_open_fsspec(self):
+        import fsspec
+        path = Path('memory://nested/file.txt', mode='sc')
+        with fsspec.open(path(), 'w') as f:
+            f.write('content')
+        path = Path('memory://nested/file.txt', mode='sr')
+        with path.open() as f:
+            self.assertEqual('content', f.read())
 
 
 class LoggingPropertyTests(unittest.TestCase):
