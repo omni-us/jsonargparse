@@ -109,17 +109,12 @@ class ActionLink(Action):
         compute_fn: Optional[Callable] = None,
         apply_on: str = 'parse',
     ):
+        if not hasattr(parser, '_links_group'):
+            parser._links_group = parser.add_argument_group('Linked arguments')
         self.parser = parser
-
-        # Set and check apply_on
         self.apply_on = apply_on
-        if apply_on not in {'parse', 'instantiate'}:
-            raise ValueError("apply_on must be 'parse' or 'instantiate'.")
-
-        # Set and check compute function
         self.compute_fn = compute_fn
-        if compute_fn is None and not isinstance(source, str):
-            raise ValueError('Multiple source keys requires a compute function.')
+        self._initial_input_checks(source, target)
 
         # Set and check source actions or group
         exclude = (ActionLink, _ActionConfigLoad, _ActionSubCommands, ActionConfigFile)
@@ -143,8 +138,9 @@ class ActionLink(Action):
         is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1])
         valid_target_init_arg = is_target_subclass and target.startswith(self.target[1].dest+'.init_args.')
         valid_target_leaf = self.target[1].dest == target
-        if not (valid_target_leaf or valid_target_init_arg):
-            raise ValueError(f'Target key "{target}" must be for an individual argument.')
+        if not valid_target_leaf and is_target_subclass and not valid_target_init_arg:
+            prefix = self.target[1].dest+'.init_args.'
+            raise ValueError(f'Target key expected to start with "{prefix}", got "{target}".')
 
         # Replace target action with link action
         if not is_target_subclass or valid_target_leaf:
@@ -169,8 +165,6 @@ class ActionLink(Action):
             sub_add_kwargs['linked_targets'].add(subtarget)
 
         # Add link action to group to show in help
-        if not hasattr(parser, '_links_group'):
-            parser._links_group = parser.add_argument_group('Linked arguments')
         parser._links_group._group_actions.append(self)
 
         # Check instantiation link does not create cycle
@@ -203,6 +197,31 @@ class ActionLink(Action):
             type=type_attr,
             help=help_str,
         )
+
+    def _initial_input_checks(self, source, target):
+        # Check apply_on
+        if self.apply_on not in {'parse', 'instantiate'}:
+            raise ValueError("apply_on must be 'parse' or 'instantiate'.")
+
+        # Check compute function
+        if self.compute_fn is None and not isinstance(source, str):
+            raise ValueError('Multiple source keys requires a compute function.')
+
+        if self.apply_on == 'parse':
+            # Check source
+            link_actions = self.parser._links_group._group_actions
+            existing_targets = {a.target[0] for a in link_actions}
+            for src in [source] if isinstance(source, str) else source:
+                if src in existing_targets:
+                    raise ValueError(f'Source "{src}" not allowed since it is the target of another link.')
+            # Check target
+            existing_sources = {
+                s[0]
+                for a in link_actions
+                for s in a.source if a.apply_on == 'parse'
+            }
+            if target in existing_sources:
+                raise ValueError(f'Target "{target}" not allowed since it is the source of another link.')
 
     def __call__(self, *args, **kwargs):
         source = ', '.join(s[0] for s in self.source)
