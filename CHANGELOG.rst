@@ -22,6 +22,9 @@ Added
   Base64.
 - Support getting the import path of variables in modules, e.g.
   ``random.randint``.
+- Specific error messages for when an argument link uses as source the target of
+  a previous parse link and vice versa `#208
+  <https://github.com/omni-us/jsonargparse/issues/208>`__.
 
 Fixed
 ^^^^^
@@ -31,6 +34,12 @@ Fixed
 - Discard ``init_args`` after ``class_path`` change causes error `#205
   <https://github.com/omni-us/jsonargparse/issues/205>`__.
 - Issues reported by CodeQL.
+
+Changed
+^^^^^^^
+- Clearer error message for when an argument link targets a subclass and the
+  target key does not have ``init_args`` `pytorch-lightning#16032
+  <https://github.com/Lightning-AI/lightning/issues/16032>`__.
 
 
 v4.18.0 (2022-11-29)

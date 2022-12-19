@@ -22,6 +22,28 @@ from jsonargparse_tests.base import TempDirTestCase, mock_module
 
 class LinkArgumentsTests(unittest.TestCase):
 
+    def test_link_arguments_previous_target_as_source_error(self):
+        parser = ArgumentParser()
+        parser.add_argument('--a')
+        parser.add_argument('--b')
+        parser.add_argument('--c')
+        parser.link_arguments('a', 'b')
+        with self.assertRaises(ValueError) as ctx:
+            parser.link_arguments('b', 'c')
+        self.assertIn('Source "b" not allowed', str(ctx.exception))
+
+
+    def test_link_arguments_previous_source_as_target_error(self):
+        parser = ArgumentParser()
+        parser.add_argument('--a')
+        parser.add_argument('--b')
+        parser.add_argument('--c')
+        parser.link_arguments('b', 'c')
+        with self.assertRaises(ValueError) as ctx:
+            parser.link_arguments('a', 'b')
+        self.assertIn('Target "b" not allowed', str(ctx.exception))
+
+
     def test_link_arguments_on_parse_compute_fn_single_arguments(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--a.v1', default=2)
@@ -339,8 +361,9 @@ class LinkArgumentsTests(unittest.TestCase):
 
         # Source must be subclass action or class group
         parser = make_parser_2()
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as ctx:
             parser.link_arguments('a.b.c', 'b.b3', apply_on='instantiate')
+        self.assertIn('Target key expected to start with "b.init_args."', str(ctx.exception))
 
 
     def test_link_arguments_on_instantiate_no_compute_no_target_instantiate(self):
