@@ -34,6 +34,7 @@ Fixed
 - Pure dataclass instance default being considered as a subclass type.
 - Discard ``init_args`` after ``class_path`` change causes error `#205
   <https://github.com/omni-us/jsonargparse/issues/205>`__.
+- ``fail_untyped=False`` not propagated to subclass ``--*.help`` actions.
 - Issues reported by CodeQL.
 
 Changed

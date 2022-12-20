@@ -330,13 +330,13 @@ class SignatureArguments(LoggerProperty):
             kwargs['type'] = annotation
         elif annotation != inspect_empty:
             try:
-                is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation)
+                is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation, all_subtypes=False)
                 kwargs['type'] = annotation
-                sub_add_kwargs = None
+                sub_add_kwargs: dict = {'fail_untyped': fail_untyped, 'sub_configs': sub_configs}
                 if is_subclass_typehint:
                     prefix = name + '.init_args.'
                     subclass_skip = {s[len(prefix):] for s in skip or [] if s.startswith(prefix)}
-                    sub_add_kwargs = {'fail_untyped': fail_untyped, 'skip': subclass_skip}
+                    sub_add_kwargs['skip'] = subclass_skip
                 args = ActionTypeHint.prepare_add_argument(
                     args=args,
                     kwargs=kwargs,

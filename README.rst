@@ -1619,11 +1619,11 @@ example from the standard library would be:
     >>> parser.parse_args(['--uniform.a=0.7', '--uniform.b=3.4'])
     Namespace(uniform=Namespace(a=0.7, b=3.4))
 
-Without the stubs resolver, to not fail, the
+Without the stubs resolver, the
 :py:meth:`.SignatureArguments.add_function_arguments` call requires the
 ``fail_untyped=False`` option. This has the disadvantage that type ``Any`` is
-given to the ``a`` and ``b`` arguments, instead of ``float``, which means that
-the parser would not fail if given an invalid value, for instance a string.
+given to the ``a`` and ``b`` arguments, instead of ``float``. And this means
+that the parser would not fail if given an invalid value, for instance a string.
 
 
 .. _sub-classes:

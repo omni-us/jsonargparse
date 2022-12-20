@@ -65,7 +65,7 @@ def import_typeshed_client():
         import typeshed_client
         return typeshed_client
     else:
-        return __import__('argparse').Namespace(ImportedInfo=object, Resolver=object)
+        return __import__('argparse').Namespace(ImportedInfo=object, ModulePath=object, Resolver=object)
 
 
 class UndefinedException(Exception):
