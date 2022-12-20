@@ -1,6 +1,9 @@
 import ast
 import inspect
 import sys
+from contextlib import suppress
+from copy import deepcopy
+from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
@@ -9,7 +12,7 @@ from .optionals import (
     typeshed_client_support,
     typing_extensions_import,
 )
-from .util import import_object, unique
+from .util import unique
 
 if TYPE_CHECKING:  # pragma: no cover
     import typeshed_client as tc
@@ -20,12 +23,12 @@ else:
 kinds = inspect._ParameterKind
 
 
-def import_module(name: str):
+def import_module_or_none(path: str):
+    if path.endswith('.__init__'):
+        path = path[:-9]
     try:
-        if '.' in name:
-            return import_object(name)
-        return __import__(name)
-    except Exception:
+        return import_module(path)
+    except ModuleNotFoundError:
         return None
 
 
@@ -48,6 +51,7 @@ class ImportsVisitor(ast.NodeVisitor):
             module_path = self.module_path[:-node.level]
             if node.module:
                 module_path.append(node.module)
+            node = deepcopy(node)
             node.module = '.'.join(module_path)
             node.level = 0
         for alias in node.names:
@@ -61,7 +65,13 @@ class ImportsVisitor(ast.NodeVisitor):
 
 
 def ast_annassign_to_assign(node: ast.AnnAssign) -> ast.Assign:
-    return ast.Assign(targets=[node.target], value=node.value, type_ignores=[], lineno=1, end_lineno=1)
+    return ast.Assign(
+        targets=[node.target],
+        value=node.value,
+        type_ignores=[],
+        lineno=node.lineno,
+        end_lineno=node.lineno,
+    )
 
 
 class AssignsVisitor(ast.NodeVisitor):
@@ -81,6 +91,33 @@ class AssignsVisitor(ast.NodeVisitor):
         return self.assigns_found
 
 
+class MethodsVisitor(ast.NodeVisitor):
+
+    method_found: Optional[ast.FunctionDef]
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        if not self.method_found and node.name == self.method_name:
+            self.method_found = node
+
+    def visit_If(self, node: ast.If) -> None:
+        test_ast = ast.parse('___test___ = 0')
+        test_ast.body[0].value = node.test  # type: ignore
+        exec_vars = {'sys': sys}
+        with suppress(Exception):
+            exec(compile(test_ast, filename="<ast>", mode="exec"), exec_vars, exec_vars)
+            if exec_vars['___test___']:
+                node.orelse = []
+            else:
+                node.body = []
+            self.generic_visit(node)
+
+    def find(self, node: ast.AST, method_name: str) -> Optional[ast.FunctionDef]:
+        self.method_name = method_name
+        self.method_found = None
+        self.visit(node)
+        return self.method_found
+
+
 stubs_resolver = None
 
 
@@ -93,16 +130,6 @@ def get_stubs_resolver():
     return stubs_resolver
 
 
-def ast_get_class_method(node: ast.AST, method_name: str) -> Optional[ast.FunctionDef]:
-    method_ast = None
-    if isinstance(node, ast.ClassDef):
-        for elem in node.body:
-            if isinstance(elem, ast.FunctionDef) and elem.name == method_name:
-                method_ast = elem
-                break
-    return method_ast
-
-
 def get_mro_method_parent(parent, method_name):
     while hasattr(parent, '__dict__') and method_name not in parent.__dict__:
         try:
@@ -110,6 +137,19 @@ def get_mro_method_parent(parent, method_name):
         except IndexError:
             parent = None
     return None if parent is object else parent
+
+
+def get_source_module(path: str, component) -> tc.ModulePath:
+    if component is None:
+        module_path, name = path.rsplit('.', 1)
+        component = getattr(import_module_or_none(module_path), name, None)
+    if component is not None:
+        module = inspect.getmodule(component)
+        assert module is not None
+        module_path = module.__name__
+        if getattr(module, '__file__', '').endswith('__init__.py'):
+            module_path += '.__init__'
+    return tc.ModulePath(tuple(module_path.split('.')))
 
 
 class StubsResolver(tc.Resolver):
@@ -120,13 +160,13 @@ class StubsResolver(tc.Resolver):
         self._module_assigns_cache: Dict[str, Dict[str, ast.Assign]] = {}
         self._module_imports_cache: Dict[str, Dict[str, Tuple[Optional[str], str]]] = {}
 
-    def get_imported_info(self, name: str) -> Optional[tc.ImportedInfo]:
-        resolved = super().get_fully_qualified_name(name)
+    def get_imported_info(self, path: str, component=None) -> Optional[tc.ImportedInfo]:
+        resolved = self.get_fully_qualified_name(path)
         imported_info = None
         if isinstance(resolved, tc.ImportedInfo):
-            imported_info = resolved
-        elif isinstance(resolved, tc.NameInfo):
-            source_module = tc.ModulePath(tuple(name.split('.')[:-1]))
+            resolved = resolved.info
+        if isinstance(resolved, tc.NameInfo):
+            source_module = get_source_module(path, component)
             imported_info = tc.ImportedInfo(source_module=source_module, info=resolved)
         return imported_info
 
@@ -135,12 +175,14 @@ class StubsResolver(tc.Resolver):
             parent = type(component.__self__)
             component = getattr(parent, component.__name__)
         if not parent:
-            return self.get_imported_info(f'{component.__module__}.{component.__name__}')
+            return self.get_imported_info(f'{component.__module__}.{component.__name__}', component)
         parent = get_mro_method_parent(parent, component.__name__)
-        stub_import = parent and self.get_imported_info(f'{parent.__module__}.{parent.__name__}')
+        stub_import = parent and self.get_imported_info(f'{parent.__module__}.{parent.__name__}', component)
         if stub_import and isinstance(stub_import.info.ast, ast.AST):
-            method_ast = ast_get_class_method(stub_import.info.ast, component.__name__)
-            if method_ast is not None:
+            method_ast = MethodsVisitor().find(stub_import.info.ast, component.__name__)
+            if method_ast is None:
+                stub_import = None
+            else:
                 name_info = tc.NameInfo(name=component.__qualname__, is_exported=False, ast=method_ast)
                 stub_import = tc.ImportedInfo(source_module=stub_import.source_module, info=name_info)
         return stub_import
@@ -169,7 +211,7 @@ class StubsResolver(tc.Resolver):
 
     def add_import_aliases(self, aliases, stub_import: tc.ImportedInfo):
         module_path = '.'.join(stub_import.source_module)
-        module = import_module(module_path)
+        module = import_module_or_none(module_path)
         stub_ast: Optional[ast.AST] = None
         if isinstance(stub_import.info.ast, (ast.Assign, ast.AnnAssign)):
             stub_ast = stub_import.info.ast.value
@@ -185,7 +227,6 @@ class StubsResolver(tc.Resolver):
             if alias_already_added(aliases, name, module_path):
                 continue
             source = module_path
-            value = inspect._empty
             if name in __builtins__:
                 source = '__builtins__'
                 value = __builtins__[name]
@@ -196,7 +237,7 @@ class StubsResolver(tc.Resolver):
                 self.add_module_aliases(aliases, module_path, module, value.value)
             elif name in self.get_module_stub_imports(module_path):
                 imported_module_path, imported_name = self.get_module_stub_imports(module_path)[name]
-                imported_module = import_module(imported_module_path)
+                imported_module = import_module_or_none(imported_module_path)
                 if hasattr(imported_module, imported_name):
                     source = imported_module_path
                     value = getattr(imported_module, imported_name)
@@ -255,10 +296,12 @@ def get_arg_type(arg_ast, aliases):
     try:
         exec(compile(type_ast, filename="<ast>", mode="exec"), exec_vars, exec_vars)
     except NameError as ex:
+        ex_from = None
         for name, alias_exception in bad_aliases.items():
             if str(ex) == f"name '{name}' is not defined":
-                raise NameError(str(alias_exception)) from ex
-        raise ex
+                ex_from = alias_exception
+                break
+        raise ex from ex_from
     return exec_vars['___arg_type___']
 
 
@@ -285,6 +328,7 @@ def get_stub_types(params, component, parent, logger) -> Optional[Dict[str, Any]
             try:
                 types[name] = get_arg_type(arg_ast, aliases)
             except Exception as ex:
-                logger.debug(f'Failed to use type stub for parameter {name}', exc_info=ex)
-                continue
+                logger.debug(f'Failed to parse type stub for {component.__qualname__!r} parameter {name!r}', exc_info=ex)
+                if name not in known_params:
+                    types[name] = inspect._empty
     return types

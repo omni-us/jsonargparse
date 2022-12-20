@@ -11,8 +11,11 @@ from io import StringIO
 from ipaddress import ip_network
 from random import Random, SystemRandom, uniform
 from tarfile import TarFile
+from typing import Any
 from unittest.mock import patch
 from uuid import UUID, uuid5
+
+import yaml
 
 from jsonargparse import ArgumentParser
 from jsonargparse._stubs_resolver import get_mro_method_parent, get_stubs_resolver
@@ -20,6 +23,7 @@ from jsonargparse.parameter_resolvers import get_signature_parameters as get_par
 from jsonargparse_tests.base import get_debug_level_logger
 
 logger = get_debug_level_logger(__name__)
+torch_available = find_spec('torch')
 
 
 @contextmanager
@@ -86,12 +90,34 @@ class StubsResolverTests(unittest.TestCase):
             params = get_params(uniform)
         self.assertEqual([('a', inspect._empty), ('b', inspect._empty)], get_param_types(params))
 
-    @unittest.skipIf(sys.version_info[:2] < (3, 10), 'new union syntax introduced in python 3.10')
+    def test_get_params_conditional_python_version(self):
+        params = get_params(Random, 'seed')
+        self.assertEqual(['a', 'version'], get_param_names(params))
+        if sys.version_info >= (3, 10):
+            self.assertEqual('int | float | str | bytes | bytearray | None', str(params[0].annotation))
+        else:
+            expected = Any if sys.version_info < (3, 9) else inspect._empty
+            self.assertEqual(expected, params[0].annotation)
+        self.assertEqual(int, params[1].annotation)
+        with mock_typeshed_client_unavailable():
+            params = get_params(Random, 'seed')
+        self.assertEqual([('a', inspect._empty), ('version', inspect._empty)], get_param_types(params))
+
+    @patch('jsonargparse._stubs_resolver.exec')
+    def test_get_params_exec_failure(self, mock_exec):
+        mock_exec.side_effect = NameError('failed')
+        params = get_params(Random, 'seed')
+        self.assertEqual([('a', inspect._empty), ('version', inspect._empty)], get_param_types(params))
+
     def test_get_params_classmethod(self):
         params = get_params(TarFile, 'open')
-        self.assertTrue(all(p.annotation != inspect._empty for p in params))
+        expected = ['name', 'mode', 'fileobj', 'bufsize', 'format', 'tarinfo', 'dereference', 'ignore_zeros', 'encoding', 'errors', 'pax_headers', 'debug', 'errorlevel']
+        self.assertEqual(expected, get_param_names(params)[:len(expected)])
+        if sys.version_info >= (3, 10):
+            self.assertTrue(all(p.annotation != inspect._empty for p in params))
         with mock_typeshed_client_unavailable():
             params = get_params(TarFile, 'open')
+        self.assertEqual(expected, get_param_names(params)[:len(expected)])
         self.assertTrue(all(p.annotation == inspect._empty for p in params))
 
     def test_get_params_staticmethod(self):
@@ -104,12 +130,24 @@ class StubsResolverTests(unittest.TestCase):
     def test_get_params_function(self):
         params = get_params(ip_network)
         self.assertEqual(['address', 'strict'], get_param_names(params))
-        if sys.version_info[:2] >= (3, 10):
+        if sys.version_info >= (3, 10):
             self.assertIn('int | str | bytes | ipaddress.IPv4Address | ', str(params[0].annotation))
         self.assertEqual(bool, params[1].annotation)
         with mock_typeshed_client_unavailable():
             params = get_params(ip_network)
         self.assertEqual([('address', inspect._empty), ('strict', inspect._empty)], get_param_types(params))
+
+    def test_get_param_relative_import_from_init(self):
+        params = get_params(yaml.safe_load)
+        self.assertEqual(['stream'], get_param_names(params))
+        if sys.version_info >= (3, 10):
+            self.assertNotEqual(params[0].annotation, inspect._empty)
+        else:
+            self.assertEqual(params[0].annotation, inspect._empty)
+        with mock_typeshed_client_unavailable():
+            params = get_params(yaml.safe_load)
+        self.assertEqual(['stream'], get_param_names(params))
+        self.assertEqual(params[0].annotation, inspect._empty)
 
     def test_get_params_non_unique_alias(self):
         params = get_params(uuid5)
@@ -127,7 +165,6 @@ class StubsResolverTests(unittest.TestCase):
                 self.assertIn("non-unique alias 'UUID': problem (module)", log.output[0])
 
     @unittest.skipIf(not find_spec('requests'), 'requests package is required')
-    @unittest.skipIf(sys.version_info[:2] < (3, 10), 'new union syntax introduced in python 3.10')
     def test_get_params_complex_function_requests_get(self):
         from requests import get
         with mock_typeshed_client_unavailable():
@@ -139,16 +176,17 @@ class StubsResolverTests(unittest.TestCase):
         params = get_params(get)
         expected += ['data', 'headers', 'cookies', 'files', 'auth', 'timeout', 'allow_redirects', 'proxies', 'hooks', 'stream', 'verify', 'cert', 'json']
         self.assertEqual(expected, get_param_names(params))
-        self.assertTrue(all(p.annotation != inspect._empty for p in params))
+        if sys.version_info >= (3, 10):
+            self.assertTrue(all(p.annotation != inspect._empty for p in params))
 
         parser = ArgumentParser(error_handler=None)
-        parser.add_function_arguments(get)
+        parser.add_function_arguments(get, fail_untyped=False)
         self.assertEqual(['url', 'params'], list(parser.get_defaults().keys()))
         help_str = StringIO()
         parser.print_help(help_str)
         self.assertIn('default: Unknown<stubs-resolver>', help_str.getvalue())
 
-    @unittest.skipIf(not find_spec('torch'), 'torch package is required')
+    @unittest.skipIf(not torch_available, 'torch package is required')
     def test_get_params_torch_optimizer(self):
         import torch.optim  # pylint: disable=import-error
 
@@ -181,7 +219,7 @@ class StubsResolverTests(unittest.TestCase):
                     params = get_params(cls)
                 self.assertTrue(any(p.annotation == inspect._empty for p in params))
 
-    @unittest.skipIf(not find_spec('torch'), 'torch package is required')
+    @unittest.skipIf(not torch_available, 'torch package is required')
     def test_get_params_torch_lr_scheduler(self):
         import torch.optim.lr_scheduler  # pylint: disable=import-error
 

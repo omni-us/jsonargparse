@@ -966,6 +966,24 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(Namespace(a1=None, a2=None), parser.parse_args([]))
 
 
+    def test_fail_untyped_false_subclass_help(self):
+        class Class1:
+            def __init__(self, a1, a2=None):
+                self.a1 = a1
+
+        def func(c1: Union[int, Class1]):
+            return c1
+
+        with mock_module(Class1) as module:
+            parser = ArgumentParser(error_handler=None)
+            parser.add_function_arguments(func, fail_untyped=False)
+
+            help_str = StringIO()
+            with redirect_stdout(help_str), self.assertRaises(SystemExit):
+                parser.parse_args([f'--c1.help={module}.Class1'])
+            self.assertIn('--c1.init_args.a1 A1', help_str.getvalue())
+
+
     @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
     def test_docstring_parse_fail(self):
 

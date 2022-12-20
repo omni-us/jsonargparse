@@ -339,8 +339,15 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def add_sub_defaults(parser, cfg):
+        def skip_sub_defaults_apply(v):
+            return not (
+                isinstance(v, (str, Namespace)) or
+                is_subclass_spec(v) or
+                (isinstance(v, list) and any(is_subclass_spec(e) for e in v)) or
+                (isinstance(v, dict) and any(is_subclass_spec(e) for e in v.values()))
+            )
         with ActionTypeHint.sub_defaults_context():
-            parser._apply_actions(cfg)
+            parser._apply_actions(cfg, skip_fn=skip_sub_defaults_apply)
 
 
     @staticmethod
