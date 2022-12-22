@@ -226,10 +226,10 @@ def path_type(
         _skip_check = skip_check
         _type = str
 
-        def __init__(self, v):
-            super().__init__(v, mode=self._mode, skip_check=self._skip_check)
+        def __init__(self, v, **k):
+            super().__init__(v, mode=self._mode, skip_check=self._skip_check, **k)
 
-    restricted_type = type(name, (PathType, str), {'__doc__': docstring})
+    restricted_type = type(name, (PathType,), {'__doc__': docstring})
     add_type(restricted_type, register_key, type_check=_is_path_type)
 
     return restricted_type
@@ -350,11 +350,11 @@ NotEmptyStr = restricted_string_type('NotEmptyStr', r'^.*[^ ].*$',
 Email       = restricted_string_type('Email', r'^[^@ ]+@[^@ ]+\.[^@ ]+$',
                                      docstring=r'str restricted to the email pattern ^[^@ ]+@[^@ ]+\.[^@ ]+$')
 
-Path_fr = path_type('fr', docstring='str pointing to a file that exists and is readable')
-Path_fc = path_type('fc', docstring='str pointing to a file that can be created if it does not exist')
-Path_dw = path_type('dw', docstring='str pointing to a directory that exists and is writeable')
-Path_dc = path_type('dc', docstring='str pointing to a directory that can be created if it does not exist')
-Path_drw = path_type('drw', docstring='str pointing to a directory that exists and is readable and writeable')
+Path_fr = path_type('fr', docstring='path to a file that exists and is readable')
+Path_fc = path_type('fc', docstring='path to a file that can be created if it does not exist')
+Path_dw = path_type('dw', docstring='path to a directory that exists and is writeable')
+Path_dc = path_type('dc', docstring='path to a directory that can be created if it does not exist')
+Path_drw = path_type('drw', docstring='path to a directory that exists and is readable and writeable')
 
 register_type(os.PathLike, str, str)
 register_type(complex)

@@ -29,6 +29,9 @@ Added
 - Support for relative paths within remote fsspec/url config files.
 - New context manager methods for path types: ``open`` and
   ``relative_path_context``.
+- Path types now implement the ``os.PathLike`` protocol.
+- New path mode ``cc`` to not require the parent directory to exists but that it
+  can be created.
 
 Fixed
 ^^^^^
@@ -39,6 +42,7 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/205>`__.
 - ``fail_untyped=False`` not propagated to subclass ``--*.help`` actions.
 - Issues reported by CodeQL.
+- Incorrect value when ``Path`` is cast to ``str`` and ``rel_path`` was changed.
 
 Changed
 ^^^^^^^
@@ -47,6 +51,7 @@ Changed
   <https://github.com/Lightning-AI/lightning/issues/16032>`__.
 - The ``signatures`` extras now installs the ``typeshed-client`` package.
 - ``validators`` package is no longer a dependency.
+- Path types are no longer a subclass of ``str``.
 
 
 v4.18.0 (2022-11-29)

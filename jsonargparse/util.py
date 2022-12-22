@@ -8,7 +8,7 @@ import stat
 import sys
 import textwrap
 import warnings
-from collections import namedtuple
+from collections import Counter, namedtuple
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -315,14 +315,14 @@ def change_to_path_dir(path: Optional['Path']) -> Iterator[Optional[str]]:
     if path is not None:
         if path._url_data and (path.is_url or path.is_fsspec):
             scheme = path._url_data.scheme
-            dir = path._url_data.url_path
+            path_dir = path._url_data.url_path
         else:
             scheme = ''
-            dir = path.abs_path
+            path_dir = path.abs_path
             chdir = True
         if 'd' not in path.mode:
-            dir = os.path.dirname(dir)
-        path_dir = scheme + dir
+            path_dir = os.path.dirname(path_dir)
+        path_dir = scheme + path_dir
 
     token = current_path_dir.set(path_dir)
     if chdir and path_dir:
@@ -451,13 +451,18 @@ def resolve_relative_path(path: str) -> str:
 class Path:
     """Stores a (possibly relative) path and the corresponding absolute path.
 
-    When a Path instance is created it is checked that: the path exists, whether
-    it is a file or directory and whether has the required access permissions
-    (f=file, d=directory, r=readable, w=writeable, x=executable, c=creatable,
-    u=url, s=fsspec or in uppercase meaning not, i.e., F=not-file,
-    D=not-directory, R=not-readable, W=not-writeable and X=not-executable). The
-    absolute path can be obtained without having to remember the working
-    directory from when the object was created.
+    The absolute path can be obtained without having to remember the working
+    directory (or parent remote path) from when the object was created.
+
+    When a Path instance is created, it is checked that: the path exists,
+    whether it is a file or directory and whether it has the required access
+    permissions (f=file, d=directory, r=readable, w=writeable, x=executable,
+    c=creatable, u=url, s=fsspec or in uppercase meaning not, i.e., F=not-file,
+    D=not-directory, R=not-readable, W=not-writeable and X=not-executable).
+
+    The creatable flag "c" can be given one or two times. If give once, the
+    parent directory must exist and be writeable. If given twice, the parent
+    directory does not have to exist, but should be allowed to create.
     """
 
     rel_path: str
@@ -465,7 +470,7 @@ class Path:
     cwd: str
     mode: str
     _url_data: Optional[UrlData]
-    file_scheme = re.compile('^file:///?')
+    _file_scheme = re.compile('^file:///?')
 
     def __init__(
         self,
@@ -499,8 +504,8 @@ class Path:
             path = path.rel_path
         elif isinstance(path, str):
             abs_path = os.path.expanduser(path)
-            if self.file_scheme.match(abs_path):
-                abs_path = self.file_scheme.sub('' if os.name == 'nt' else '/', abs_path)
+            if self._file_scheme.match(abs_path):
+                abs_path = self._file_scheme.sub('' if os.name == 'nt' else '/', abs_path)
             absolute = is_absolute(abs_path)
             url_data = parse_url(abs_path)
             cwd_url_data = parse_url(cwd or current_path_dir.get() or os.getcwd())
@@ -518,7 +523,7 @@ class Path:
                     is_url = True
                 elif 's' in mode and fsspec_support and known_to_fsspec(abs_path):
                     is_fsspec = True
-            elif 'f' in mode or 'd' in mode:
+            else:
                 if cwd is None:
                     cwd = os.getcwd()
                 abs_path = abs_path if absolute else os.path.join(cwd, abs_path)
@@ -549,6 +554,11 @@ class Path:
             ptype = 'Directory' if 'd' in mode else 'File'
             if 'c' in mode:
                 pdir = os.path.realpath(os.path.join(abs_path, '..'))
+                if not os.path.isdir(pdir) and mode.count('c') == 2:
+                    ppdir = None
+                    while not os.path.isdir(pdir) and pdir != ppdir:
+                        ppdir = pdir
+                        pdir = os.path.realpath(os.path.join(pdir, '..'))
                 if not os.path.isdir(pdir):
                     raise TypeError(ptype+' is not creatable since parent directory does not exist: '+abs_path)
                 if not os.access(pdir, os.W_OK):
@@ -583,7 +593,7 @@ class Path:
 
         self.rel_path = path
         self.abs_path = abs_path
-        self.cwd = cwd  # type: ignore
+        self.cwd = cwd
         self.mode = mode
         self._url_data = url_data
         self.is_url: bool = is_url
@@ -600,7 +610,17 @@ class Path:
             name += '_skip_check'
         return name+'('+self.rel_path+cwd+')'
 
-    def __call__(self, absolute:bool=True) -> str:
+    def __fspath__(self) -> str:
+        return self.abs_path
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Path):
+            return self.abs_path == other.abs_path
+        elif isinstance(other, str):
+            return str(self) == other
+        return False
+
+    def __call__(self, absolute: bool = True) -> str:
         """Returns the path as a string.
 
         Args:
@@ -646,11 +666,14 @@ class Path:
             yield path_dir
 
     @staticmethod
-    def _check_mode(mode:str):
+    def _check_mode(mode: str):
         if not isinstance(mode, str):
             raise ValueError('Expected mode to be a string.')
         if len(set(mode)-set('fdrwxcusFDRWX')) > 0:
             raise ValueError('Expected mode to only include [fdrwxcusFDRWX] flags.')
+        for flag, count in Counter(mode).items():
+            if count > (2 if flag == 'c' else 1):
+                raise ValueError(f'Too many occurrences ({count}) for flag "{flag}".')
         if 'f' in mode and 'd' in mode:
             raise ValueError('Both modes "f" and "d" not possible.')
         if 'u' in mode and 'd' in mode:
