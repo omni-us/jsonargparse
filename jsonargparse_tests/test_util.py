@@ -72,11 +72,31 @@ class PathTests(TempDirTestCase):
         self.assertEqual(path1.rel_path, path2.rel_path)
         self.assertEqual(path1.is_url, path2.is_url)
         self.assertRaises(TypeError, lambda: Path(True))
+        self.assertRaises(ValueError, lambda: Path(self.file_rw, '-'))
+        self.assertRaises(ValueError, lambda: Path(self.file_rw, 'frr'))
 
 
     def test_cwd(self):
         path = Path('file_rx', mode='fr', cwd=os.path.join(self.tmpdir, 'dir_x'))
         self.assertEqual(path.cwd, Path('file_rx', mode='fr', cwd=path.cwd).cwd)
+
+
+    def test_empty_mode(self):
+        path = Path('does_not_exist', '')
+        self.assertEqual(path(), os.path.join(self.tmpdir, 'does_not_exist'))
+
+
+    def test_pathlike(self):
+        path = Path(self.file_rw)
+        self.assertEqual(os.fspath(path), os.path.join(self.tmpdir, self.file_rw))
+        self.assertEqual(os.path.dirname(path), self.tmpdir)
+
+
+    def test_equality_operator(self):
+        path1 = Path(self.file_rw)
+        path2 = Path(os.path.join(self.tmpdir, self.file_rw))
+        self.assertEqual(path1, path2)
+        self.assertNotEqual(Path('123', 'fc'), 123)
 
 
     def test_file_access_mode(self):
@@ -112,11 +132,13 @@ class PathTests(TempDirTestCase):
     def test_create_mode(self):
         Path(self.file_rw, 'fcrw')
         Path(os.path.join(self.tmpdir, 'file_c'), 'fc')
+        Path(os.path.join(self.tmpdir, 'not_existing_dir', 'file_c'), 'fcc')
         Path(self.dir_rwx, 'dcrwx')
         Path(os.path.join(self.tmpdir, 'dir_c'), 'dc')
         if is_posix:
             self.assertRaises(TypeError, lambda: Path(os.path.join(self.dir_rx, 'file_c'), 'fc'))
             self.assertRaises(TypeError, lambda: Path(os.path.join(self.dir_rx, 'dir_c'), 'dc'))
+            self.assertRaises(TypeError, lambda: Path(os.path.join(self.dir_rx, 'not_existing_dir', 'file_c'), 'fcc'))
         self.assertRaises(TypeError, lambda: Path(self.file_rw, 'dc'))
         self.assertRaises(TypeError, lambda: Path(self.dir_rwx, 'fc'))
         self.assertRaises(TypeError, lambda: Path(os.path.join(self.dir_rwx, 'ne', 'file_c'), 'fc'))

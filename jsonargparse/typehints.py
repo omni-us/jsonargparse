@@ -1082,7 +1082,7 @@ def typehint_from_action(action_or_typehint):
 
 
 def type_to_str(obj):
-    if obj in {bool, tuple} or is_subclass(obj, (int, float, str, Enum)):
+    if obj in {bool, tuple} or is_subclass(obj, (int, float, str, Path, Enum)):
         return obj.__name__
     return re.sub(r'[A-Za-z0-9_<>.]+\.', '', str(obj)).replace('NoneType', 'null')
 

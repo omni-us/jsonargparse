@@ -653,7 +653,7 @@ like the following would work:
 
     Relative paths inside a remote path are parsed as remote. For example, for a
     relative path ``model/state_dict.pt`` found inside
-    ``s3://bucket/config.yaml``, its parsed full path becomes
+    ``s3://bucket/config.yaml``, its parsed absolute path becomes
     ``s3://bucket/model/state_dict.pt``.
 
 

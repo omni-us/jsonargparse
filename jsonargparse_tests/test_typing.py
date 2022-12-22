@@ -13,6 +13,7 @@ from jsonargparse.typing import (
     NonNegativeFloat,
     NonNegativeInt,
     OpenUnitInterval,
+    Path_fc,
     Path_fr,
     PositiveFloat,
     PositiveInt,
@@ -173,6 +174,11 @@ class PathTypeTests(TempDirTestCase):
         self.assertEqual(path, self.file_fr)
         self.assertEqual(path(), os.path.realpath(self.file_fr))
         self.assertRaises(TypeError, lambda: Path_fr('does_not_exist'))
+
+
+    def test_Path_fc_with_kwargs(self):
+        path = Path_fc('some-file.txt', cwd=self.tmpdir)
+        self.assertEqual(path(), os.path.join(self.tmpdir, 'some-file.txt'))
 
 
     def test_already_registered(self):
