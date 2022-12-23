@@ -44,17 +44,19 @@ _operators1 = {
 }
 _operators2 = {v: k for k, v in _operators1.items()}
 
-registered_types: Dict[Union[str, Type, Tuple], Any] = {}
+registered_types: Dict[tuple, type] = {}
+registered_type_handlers: Dict[type, 'RegisteredType'] = {}
+registration_pending: Dict[str, Callable] = {}
 
 
 def create_type(
     name: str,
-    base_type: Type,
+    base_type: type,
     check_value: Callable,
     register_key: Optional[Tuple] = None,
     docstring: Optional[str] = None,
     extra_attrs: Optional[dict] = None,
-) -> Type:
+) -> type:
 
     if register_key in registered_types:
         registered_type = registered_types[register_key]
@@ -82,11 +84,11 @@ def create_type(
 
 def restricted_number_type(
     name: Optional[str],
-    base_type: Type,
+    base_type: type,
     restrictions: Union[Tuple, List[Tuple]],
     join: str = 'and',
     docstring: Optional[str] = None,
-) -> Type:
+) -> type:
     """Creates or returns an already registered restricted number type class.
 
     Args:
@@ -154,7 +156,7 @@ def restricted_string_type(
     name: str,
     regex: Union[str, Pattern],
     docstring: Optional[str] = None,
-) -> Type:
+) -> type:
     """Creates or returns an already registered restricted string type class.
 
     Args:
@@ -197,7 +199,7 @@ def path_type(
     mode: str,
     docstring: Optional[str] = None,
     skip_check: bool = False,
-) -> Type:
+) -> type:
     """Creates or returns an already registered path type class.
 
     Args:
@@ -272,7 +274,7 @@ def register_type(
     type_check: Callable = lambda v, t: v.__class__ == t,
     fail_already_registered: bool = True,
     uniqueness_key: Optional[Tuple] = None,
-):
+) -> None:
     """Registers a new type for use in jsonargparse parsers.
 
     Args:
@@ -284,34 +286,32 @@ def register_type(
         fail_already_registered: Whether to fail if type has already been registered.
         uniqueness_key: Key to determine uniqueness of type.
     """
-    type_wrapper = RegisteredType(type_class, serializer, deserializer, deserializer_exceptions, type_check)
+    type_handler = RegisteredType(type_class, serializer, deserializer, deserializer_exceptions, type_check)
     fail_already_registered = globals().get('_fail_already_registered', fail_already_registered)
     if not uniqueness_key and fail_already_registered and get_registered_type(type_class):
-        if type_wrapper == registered_types[type_class]:
+        if type_handler == registered_type_handlers[type_class]:
             return
         raise ValueError(f'Type "{type_class}" already registered with different serializer and/or deserializer.')
-    registered_types[type_class] = type_wrapper
+    registered_type_handlers[type_class] = type_handler
     if uniqueness_key is not None:
         registered_types[uniqueness_key] = type_class
 
 
 def register_type_on_first_use(import_path: str, *args, **kwargs):
-    registered_types[import_path] = lambda: register_type(
+    registration_pending[import_path] = lambda: register_type(
         import_object(import_path),
         *args,
         **kwargs,
     )
 
 
-def get_registered_type(type_class):
-    if type_class in registered_types:
-        return registered_types[type_class]
-    with suppress(AttributeError, ValueError):
-        import_path = get_import_path(type_class)
-        if import_path in registered_types:
-            registered_types.pop(import_path)()
-            return registered_types[type_class]
-    return None
+def get_registered_type(type_class) -> Optional[RegisteredType]:
+    if type_class not in registered_type_handlers:
+        with suppress(AttributeError, ValueError):
+            import_path = get_import_path(type_class)
+            if import_path in registration_pending:
+                registration_pending.pop(import_path)()
+    return registered_type_handlers.get(type_class)
 
 
 def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Optional[Callable] = None):

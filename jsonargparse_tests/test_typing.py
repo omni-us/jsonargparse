@@ -17,7 +17,6 @@ from jsonargparse.typing import (
     Path_fr,
     PositiveFloat,
     PositiveInt,
-    RegisteredType,
     get_registered_type,
     path_type,
     register_type,
@@ -25,7 +24,7 @@ from jsonargparse.typing import (
     restricted_number_type,
     restricted_string_type,
 )
-from jsonargparse.util import import_object, object_path_serializer
+from jsonargparse.util import object_path_serializer
 from jsonargparse_tests.base import TempDirTestCase, mock_module
 
 
@@ -204,15 +203,9 @@ class PathTypeTests(TempDirTestCase):
 class OtherTests(unittest.TestCase):
 
     def test_pickle_module_types(self):
-        for import_path in [x for x in registered_types.keys() if isinstance(x, str)]:
-            get_registered_type(import_object(import_path))
-        for otype in registered_types.values():
-            if isinstance(otype, RegisteredType) or hasattr(__import__('jsonargparse.typing'), otype.__name__):
-                if isinstance(otype, RegisteredType):
-                    otype = otype.type_class
-                with self.subTest(str(otype)):
-                    utype = pickle.loads(pickle.dumps(otype))
-                    self.assertEqual(otype, utype)
+        for type_class in registered_types.values():
+            with self.subTest(str(type_class)):
+                self.assertEqual(type_class, pickle.loads(pickle.dumps(type_class)))
 
 
     def test_name_clash(self):
@@ -293,8 +286,6 @@ class OtherTests(unittest.TestCase):
         self.assertEqual(cfg.elems.elems, [1, 2, 3])
         dump = parser.dump(cfg, format='json')
         self.assertEqual(dump, '{"elems":[1,2,3]}')
-
-        del registered_types[Elems]
 
 
 if __name__ == '__main__':
