@@ -183,6 +183,30 @@ class LinkArgumentsTests(unittest.TestCase):
                 parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
 
 
+    def test_link_arguments_on_parse_mixed_subclass_target(self):
+        class Logger:
+            def __init__(self, save_dir: Optional[str] = None):
+                pass
+
+        class Trainer:
+            def __init__(
+                self,
+                save_dir: Optional[str] = None,
+                logger: Union[bool, Logger] = False,
+            ):
+                pass
+
+        with mock_module(Logger):
+            parser = ArgumentParser()
+            parser.add_class_arguments(Trainer, 'trainer')
+            parser.link_arguments('trainer.save_dir', 'trainer.logger.init_args.save_dir')
+            cfg = parser.parse_args([])
+            self.assertEqual(cfg.trainer, Namespace(logger=False, save_dir=None))
+            cfg = parser.parse_args(['--trainer.save_dir=logs', '--trainer.logger=Logger'])
+            self.assertEqual(cfg.trainer.save_dir, 'logs')
+            self.assertEqual(cfg.trainer.logger.init_args, Namespace(save_dir='logs'))
+
+
     def test_link_arguments_on_parse_add_subclass_arguments_with_instantiate_false(self):
         class ClassA:
             def __init__(

@@ -135,7 +135,7 @@ class ActionLink(Action):
         assert self.target[1] is not None
 
         from .typehints import ActionTypeHint
-        is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1])
+        is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1], all_subtypes=False)
         valid_target_init_arg = is_target_subclass and target.startswith(self.target[1].dest+'.init_args.')
         valid_target_leaf = self.target[1].dest == target
         if not valid_target_leaf and is_target_subclass and not valid_target_init_arg:
@@ -321,7 +321,7 @@ class ActionLink(Action):
     def set_target_value(action: 'ActionLink', value: Any, cfg: Namespace, logger) -> None:
         target_key, target_action = action.target
         from .typehints import ActionTypeHint
-        if ActionTypeHint.is_subclass_typehint(target_action):
+        if ActionTypeHint.is_subclass_typehint(target_action, all_subtypes=False):
             if target_key == target_action.dest:  # type: ignore
                 target_action._check_type(value)  # type: ignore
             elif target_key not in cfg:

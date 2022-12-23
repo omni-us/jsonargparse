@@ -43,6 +43,8 @@ Fixed
 - ``fail_untyped=False`` not propagated to subclass ``--*.help`` actions.
 - Issues reported by CodeQL.
 - Incorrect value when ``Path`` is cast to ``str`` and ``rel_path`` was changed.
+- Argument links with target a subclass mixed with other types not working `#208
+  <https://github.com/omni-us/jsonargparse/issues/208>`__.
 
 Changed
 ^^^^^^^
