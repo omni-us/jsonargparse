@@ -45,6 +45,7 @@ Fixed
 - Incorrect value when ``Path`` is cast to ``str`` and ``rel_path`` was changed.
 - Argument links with target a subclass mixed with other types not working `#208
   <https://github.com/omni-us/jsonargparse/issues/208>`__.
+- Failures when using a sequence type and the default is a tuple.
 
 Changed
 ^^^^^^^

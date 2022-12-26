@@ -537,7 +537,7 @@ def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: O
 
 
 def raise_union_unexpected_value(uniontype, val: Any, exceptions: List[Exception]) -> NoReturn:
-    errors = indent_text('- '.join(str(e) for e in [''] + exceptions))
+    errors = indent_text('- ' + '\n- '.join(map(str, exceptions)))
     errors = errors.replace(f'. Got value: {val}', '').replace(f' {val} ', ' ')
     subtypes = uniontype.__args__
     raise ValueError(
@@ -670,6 +670,8 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             prev_val = prev_val + [None] * (len(val)-len(prev_val) if val_is_list else 1)
         if isinstance(val, NestedArg) and subtypehints is not None:
             val = (prev_val[:-1] if isinstance(prev_val, list) else []) + [val]
+        elif isinstance(val, Iterable) and not isinstance(val, (list, str)) and type(val) not in mapping_origin_types:
+            val = list(val)
         elif not isinstance(val, list):
             raise_unexpected_value(f'Expected a {typehint_origin}', val)
         if subtypehints is not None:

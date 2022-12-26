@@ -304,6 +304,13 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(cfg.list, ['a', 'b'])
 
 
+    def test_sequence_tuple_default(self):
+        parser = ArgumentParser()
+        parser.add_argument('--seq', type=Sequence[str], default=('one', 'two'))
+        cfg = parser.parse_args([])
+        self.assertEqual(cfg, parser.get_defaults())
+
+
     def test_tuple_ellipsis(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--tuple', type=Tuple[float, ...])

@@ -3,6 +3,7 @@
 import dataclasses
 import json
 import os
+import textwrap
 import unittest
 import warnings
 from calendar import Calendar, January  # type: ignore
@@ -1159,6 +1160,32 @@ class SignaturesTests(unittest.TestCase):
             self.assertEqual(cfg.model.encoder.init_args.some_dict, {'a': 1})
             self.assertEqual(cfg.model.encoder.init_args.sub_network.init_args.some_dict, {'b': 2})
             self.assertEqual(cfg.model.as_dict(), yaml.safe_load(config)['model'])
+
+
+    def test_subclass_nested_error_message_indentation(self):
+        class Class:
+            def __init__(self, val: Optional[Union[int, dict]] = None):
+                pass
+
+        with mock_module(Class):
+            parser = ArgumentParser()
+            parser.add_subclass_arguments(Class, 'cls')
+            err = StringIO()
+            with redirect_stderr(err), self.assertRaises(SystemExit):
+                parser.parse_args(['--cls=Class', '--cls.init_args.val=abc'])
+            expected = textwrap.dedent('''
+            - Parser key "val":
+              Does not validate against any of the Union subtypes
+              Subtypes: (<class 'int'>, <class 'dict'>, <class 'NoneType'>)
+              Errors:
+                - Expected a <class 'int'>
+                - Expected a <class 'dict'>
+                - Expected a <class 'NoneType'>
+              Given value type: <class 'str'>
+              Given value: abc
+            ''').strip()
+            expected = textwrap.indent(expected, '    ')
+            self.assertIn(expected, err.getvalue())
 
 
 class SignaturesConfigTests(TempDirTestCase):
