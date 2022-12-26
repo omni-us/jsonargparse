@@ -530,9 +530,6 @@ that exists and is readable, the following could be done:
 
 .. testsetup:: paths
 
-    import os
-    import shutil
-    import tempfile
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)
@@ -590,9 +587,6 @@ string for reading the list from stdin. Example:
 
 .. testsetup:: path_list
 
-    import os
-    import shutil
-    import tempfile
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)
@@ -757,7 +751,6 @@ can be achieved by adding ``+`` as suffix to the argument key, for example:
 
 .. testsetup:: append
 
-    from typing import List
     parser = ArgumentParser()
 
 .. doctest:: append
@@ -827,7 +820,6 @@ option is the import path of a callable object, for example:
 
 .. testsetup:: callable
 
-    from typing import Callable, Iterable
     parser = ArgumentParser()
 
 .. testcode:: callable
@@ -1080,9 +1072,6 @@ the following would be observed:
 
 .. testsetup:: config
 
-    import os
-    import shutil
-    import tempfile
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)
@@ -1405,7 +1394,6 @@ Take for example the following parsing and instantiation:
 
 .. testsetup:: unresolved
 
-    import jsonargparse_tests
     sys.argv = ['', '--myclass=MyClass']
 
     class MyClass:
@@ -1466,7 +1454,6 @@ unrelated to these variables.
 
 .. testsetup:: ast_resolver
 
-    from typing import Callable
     class BaseClass: pass
     class SomeClass:
         def __init__(self, **kwargs):
@@ -1679,9 +1666,6 @@ Then in python:
 
 .. testsetup:: subclasses
 
-    import os
-    import shutil
-    import tempfile
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)
@@ -1789,10 +1773,6 @@ debug.
 Since there are some legitimate use cases for class instances in defaults, they
 are supported with a particular behavior and recommendations. An example is:
 
-.. testsetup:: instance_default
-
-    from calendar import Calendar
-
 .. testcode:: instance_default
 
     class MyClass:
@@ -1849,10 +1829,6 @@ corresponding yaml structure.
 
 .. testsetup:: final_classes
 
-    import os
-    import shutil
-    import tempfile
-    from calendar import Calendar
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)
@@ -1978,15 +1954,11 @@ Take for example a yaml file as:
     client:
       url: http://${server.host}:${server.port}/
     """
-    import os
-    import shutil
-    import tempfile
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)
     with open('example.yaml', 'w') as f:
         f.write(example)
-    from dataclasses import dataclass
 
 .. testcleanup:: omegaconf
 
@@ -2046,7 +2018,6 @@ command line arguments, that is:
 
 .. testsetup:: env
 
-    import os
     os.environ['APP_LEV1__OPT1'] = 'from env 1'
     os.environ['APP_LEV1__OPT2'] = 'from env 2'
 
@@ -2203,9 +2174,6 @@ config files to be in jsonnet format instead. Example:
 
 .. testsetup:: jsonnet
 
-    import os
-    import shutil
-    import tempfile
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)

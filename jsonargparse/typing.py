@@ -4,7 +4,6 @@ import operator
 import os
 import pathlib
 import re
-from contextlib import suppress
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
 from .optionals import final
@@ -14,7 +13,6 @@ __all__ = [
     'final',
     'is_final_class',
     'register_type',
-    'registered_types',
     'restricted_number_type',
     'restricted_string_type',
     'path_type',
@@ -307,6 +305,7 @@ def register_type_on_first_use(import_path: str, *args, **kwargs):
 
 def get_registered_type(type_class) -> Optional[RegisteredType]:
     if type_class not in registered_type_handlers:
+        from contextlib import suppress
         with suppress(AttributeError, ValueError):
             import_path = get_import_path(type_class)
             if import_path in registration_pending:
@@ -360,8 +359,8 @@ register_type(os.PathLike, str, str)
 register_type(complex)
 register_type_on_first_use('uuid.UUID')
 
-for path in [pathlib.Path, pathlib.PosixPath, pathlib.WindowsPath]:
-    register_type(path, str, path, type_check=isinstance)
+for _path in [pathlib.Path, pathlib.PosixPath, pathlib.WindowsPath]:
+    register_type(_path, str, _path, type_check=isinstance)
 
 
 def timedelta_deserializer(value):

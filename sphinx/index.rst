@@ -22,6 +22,7 @@ jsonargparse
 jsonargparse.typing
 -------------------
 .. automodule:: jsonargparse.typing
+    :exclude-members: get_import_path, import_object, Path
 
 
 Index
