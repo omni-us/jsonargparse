@@ -69,7 +69,14 @@ class CustomOutputChecker(OutputChecker):
 doctest.OutputChecker = CustomOutputChecker
 
 doctest_global_setup = '''
+import os
+import shutil
 import sys
+import tempfile
+from calendar import Calendar
+from dataclasses import dataclass
+from typing import Callable, Iterable, List
+import jsonargparse_tests
 from jsonargparse import *
 from jsonargparse.typing import *
 from jsonargparse_tests.base import doctest_mock_class_in_main

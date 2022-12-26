@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
     steps:
       - checkout
       - run:
@@ -16,7 +16,7 @@ jobs:
             - ./dist/*.tar.gz
   test-py38: &test-py38
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
     steps:
       - attach_workspace:
           at: .
@@ -34,29 +34,29 @@ jobs:
           root: .
           paths:
             - ./coverage_*.xml
-  #test-py311:
-  #  <<: *test-py38
-  #  docker:
-  #    - image: circleci/python:3.11
+  test-py311:
+    <<: *test-py38
+    docker:
+      - image: cimg/python:3.11
   test-py310:
     <<: *test-py38
     docker:
-      - image: circleci/python:3.10
+      - image: cimg/python:3.10
   test-py39:
     <<: *test-py38
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
   test-py37:
     <<: *test-py38
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
   test-py36:
     <<: *test-py38
     docker:
-      - image: circleci/python:3.6
+      - image: cimg/python:3.6
   codecov:
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
     steps:
       - checkout
       - attach_workspace:
@@ -99,8 +99,8 @@ workflows:
           <<: *buildreq
           requires:
             - build
-      #- test-py311:
-      #    <<: *testreq
+      - test-py311:
+          <<: *testreq
       - test-py310:
           <<: *testreq
       - test-py39:
@@ -112,7 +112,7 @@ workflows:
       - codecov:
           <<: *testreq
           requires:
-            #- test-py311
+            - test-py311
             - test-py310
             - test-py39
             - test-py38

@@ -230,7 +230,7 @@ class _ActionPrintConfig(Action):
             metavar='\b[=flags]',
             help=(
                 'Print the configuration after applying all other arguments and exit. The optional '
-                'flags are one or more keywords separated by comma which modify the output. The '
+                'flags customizes the output and are one or more keywords separated by comma. The '
                 'supported flags are: comments, skip_default, skip_null.'
             ),
         )

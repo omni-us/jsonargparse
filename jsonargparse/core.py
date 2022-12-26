@@ -676,7 +676,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             **kwargs: All options that `argparse.ArgumentParser.add_subparsers` accepts.
         """
         if 'description' not in kwargs:
-            kwargs['description'] = 'For more details of each subcommand add it as argument followed by --help.'
+            kwargs['description'] = 'For more details of each subcommand, add it as an argument followed by --help.'
         with formatter_context(self):
             subcommands: _ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore
         if required:
