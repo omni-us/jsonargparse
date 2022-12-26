@@ -60,15 +60,6 @@ Features
 - Support for command line tab argument completion using `argcomplete
   <https://pypi.org/project/argcomplete/>`__.
 
-- Configuration values are overridden based on the following precedence.
-
-  - **Parsing command line:** command line arguments (might include config
-    files) > environment variables > default config files > defaults.
-  - **Parsing files:** config file > environment variables > default config
-    files > defaults.
-  - **Parsing environment:** environment variables > default config files >
-    defaults.
-
 
 .. _installation:
 
@@ -328,6 +319,29 @@ shown above you would observe:
 If the parsing fails the standard behavior is that the usage is printed and the
 program is terminated. Alternatively you can initialize the parser with
 ``error_handler=None`` in which case a :class:`.ParserError` is raised.
+
+
+Override order
+--------------
+
+Final parsed values depend on different sources, namely: source code, command
+line arguments, :ref:`configuration-files` and :ref:`environment-variables`.
+Values are overridden based on the following precedence:
+
+1. Defaults defined in the source code.
+2. Existing default config files in the order defined in
+   ``default_config_files``, e.g. ``~/.config/myapp.yaml``.
+3. Full config environment variable, e.g. ``APP_CONFIG``.
+4. Individual key environment variables, e.g. ``APP_OPT1``.
+5. Command line arguments in order left to right (might include config files).
+
+Depending on the parse method used (see :class:`.ArgumentParser`) and how the
+parser was built, some of the options above might not apply. Parsing of
+environment variables must be explicitly enabled, except if using
+:py:meth:`.ArgumentParser.parse_env`. If the parser does not have an
+:class:`.ActionConfigFile` argument, then there is no parsing of a full config
+environment variable or a way to provide a config file from command line.
+
 
 Capturing parsers
 -----------------
