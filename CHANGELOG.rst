@@ -17,7 +17,7 @@ v4.19.0 (2022-12-??)
 
 Added
 ^^^^^
-- ``CLI`` now exposes the ``fail_untyped`` parameter.
+- ``CLI`` now supports the ``fail_untyped`` and ``parser_class`` parameters.
 - ``bytes`` and ``bytearray`` registered on first use and decodes from standard
   Base64.
 - Support getting the import path of variables in modules, e.g.
@@ -32,6 +32,8 @@ Added
 - Path types now implement the ``os.PathLike`` protocol.
 - New path mode ``cc`` to not require the parent directory to exists but that it
   can be created.
+- The parent parser class is now used to create internal parsers `#171
+  <https://github.com/omni-us/jsonargparse/issues/171>`__.
 
 Fixed
 ^^^^^
@@ -46,6 +48,7 @@ Fixed
 - Argument links with target a subclass mixed with other types not working `#208
   <https://github.com/omni-us/jsonargparse/issues/208>`__.
 - Failures when using a sequence type and the default is a tuple.
+- Parent parser logger not being forwarded to subcommand and internal parsers.
 
 Changed
 ^^^^^^^
@@ -55,6 +58,9 @@ Changed
 - The ``signatures`` extras now installs the ``typeshed-client`` package.
 - ``validators`` package is no longer a dependency.
 - Path types are no longer a subclass of ``str``.
+- Parsing steps logging now at debug level.
+- Discarding ``init_args`` warning changed to log at debug level.
+- Removed replacing list instead of append warning.
 
 
 v4.18.0 (2022-11-29)

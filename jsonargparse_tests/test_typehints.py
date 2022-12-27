@@ -9,7 +9,6 @@ import sys
 import time
 import unittest
 import uuid
-import warnings
 from calendar import Calendar, HTMLCalendar, TextCalendar
 from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
@@ -341,10 +340,8 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual([1, 2, 3], parser.parse_args(['--val=1', '--val+=2', '--val+=3']).val)
         self.assertEqual([1, 2, 3], parser.parse_args(['--val=[1,2]', '--val+=3']).val)
         self.assertEqual([1], parser.parse_args(['--val=0.1', '--val+=1']).val)
+        self.assertEqual(3, parser.parse_args(['--val=[1,2]', '--val=3']).val)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--val=a', '--val+=1']))
-        with warnings.catch_warnings(record=True) as w:
-            self.assertEqual(3, parser.parse_args(['--val=[1,2]', '--val=3']).val)
-            self.assertIn('Replacing list value "[1, 2]" with "3"', str(w[0].message))
 
 
     def test_list_append_default_empty(self):
@@ -1574,7 +1571,8 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertIn('class_path: calendar.Calendar\n', dump)
         self.assertIn('firstweekday: 3\n', dump)
 
-        cfg = parser.parse_args([])
+        with self.assertLogs(logger=parser.logger, level='DEBUG'):
+            cfg = parser.parse_args([])
         self.assertEqual(cfg.data.cal.as_dict(), config)
         cfg = parser.parse_args(['--data.cal.class_path=calendar.Calendar'], defaults=False)
         self.assertEqual(cfg.data.cal, Namespace(class_path='calendar.Calendar'))
@@ -1594,14 +1592,14 @@ class TypeHintsTmpdirTests(TempDirTestCase):
                 pass
 
         with mock_module(Base, Subclass1, Subclass2) as module:
-            parser = ArgumentParser()
+            parser = ArgumentParser(logger={'level': 'DEBUG'})
             parser.add_argument('--cfg', action=ActionConfigFile)
             parser.add_argument('--s', type=Base, default=lazy_instance(Subclass1, s1='v1'))
 
             config = {'s': {'class_path': 'Subclass2', 'init_args': {'s2': 'v2'}}}
-            with warnings.catch_warnings(record=True) as w:
+            with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
                 cfg = parser.parse_args([f'--cfg={config}'])
-                self.assertIn("discarding init_args: {'s1': 'v1'}", str(w[0].message))
+            self.assertTrue(any("discarding init_args: {'s1': 'v1'}" in o for o in log.output))
             self.assertEqual(cfg.s.class_path, f'{module}.Subclass2')
             self.assertEqual(cfg.s.init_args, Namespace(s2='v2'))
 
@@ -1621,15 +1619,20 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             with open(config_path, 'w') as f:
                 json.dump({'cal': config}, f)
 
-            parser = ArgumentParser(error_handler=None, default_config_files=[config_path])
+            parser = ArgumentParser(
+                error_handler=None,
+                logger={'level': 'DEBUG'},
+                default_config_files=[config_path],
+            )
             parser.add_argument('--cal', type=Optional[Calendar])
 
-            cfg = parser.instantiate_classes(parser.get_defaults())
+            with self.assertLogs(logger=parser.logger, level='DEBUG'):
+                cfg = parser.instantiate_classes(parser.get_defaults())
             self.assertIsInstance(cfg['cal'], MyCalendar)
 
-            with warnings.catch_warnings(record=True) as w:
+            with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
                 cfg = parser.parse_args(['--cal={"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}'])
-                self.assertIn("discarding init_args: {'param': '1'}", str(w[0].message))
+            self.assertTrue(any("discarding init_args: {'param': '1'}" in o for o in log.output))
             self.assertEqual(cfg.cal.init_args, Namespace(firstweekday=3))
             self.assertEqual(type(parser.instantiate_classes(cfg)['cal']), Calendar)
 
@@ -1687,7 +1690,7 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             def __init__(self, a: int = 4, c: int = 5):
                 pass
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
         parser_subcommands = parser.add_subcommands()
         subparser = ArgumentParser()
         subparser.add_argument('--arch', type=Arch)
@@ -1699,9 +1702,9 @@ class TypeHintsTmpdirTests(TempDirTestCase):
             subparser.set_defaults(arch=default)
             parser_subcommands.add_subcommand('fit', subparser)
 
-            with warnings.catch_warnings(record=True) as w:
+            with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
                 cfg = parser.parse_args(['fit', f'--arch={json.dumps(value)}'])
-                self.assertIn("discarding init_args: {'b': 3}", str(w[0].message))
+            self.assertTrue(any("discarding init_args: {'b': 3}" in o for o in log.output))
             self.assertEqual(cfg.fit.arch.as_dict(), value)
 
 

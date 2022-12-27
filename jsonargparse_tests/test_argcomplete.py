@@ -10,7 +10,7 @@ from io import StringIO
 from typing import List, Optional
 
 from jsonargparse import ActionConfigFile, ActionJsonSchema, ActionYesNo, ArgumentParser
-from jsonargparse.loaders_dumpers import load_value_context
+from jsonargparse._common import parser_context
 from jsonargparse.optionals import (
     argcomplete_support,
     import_argcomplete,
@@ -44,7 +44,7 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_TYPE'] = str(ord('?'))   # ='63'  str(ord('\t'))='9'
         self.parser = ArgumentParser(error_handler=lambda x: x.exit(2))
         stack = ExitStack()
-        stack.enter_context(load_value_context('yaml'))
+        stack.enter_context(parser_context(load_value_mode='yaml'))
         self.addCleanup(stack.close)
 
 

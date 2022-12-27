@@ -248,9 +248,9 @@ class FilesCompleterMethod:
 
 def argcomplete_autocomplete(parser):
     if argcomplete_support:
-        argcomplete = import_argcomplete('parse_args')
-        from .loaders_dumpers import load_value_context
-        with load_value_context(parser.parser_mode):
+        argcomplete = import_argcomplete('argcomplete_autocomplete')
+        from ._common import parser_context
+        with parser_context(load_value_mode=parser.parser_mode):
             argcomplete.autocomplete(parser)
 
 

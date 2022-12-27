@@ -4,8 +4,6 @@ import inspect
 import os
 import re
 import sys
-import warnings
-from argparse import Action
 from collections import abc, defaultdict
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
@@ -33,16 +31,20 @@ from typing import (
     Union,
 )
 
+from ._common import parent_parser, parser_context
 from .actions import (
+    Action,
+    ActionConfigFile,
     _ActionHelpClassPath,
+    _ActionPrintConfig,
     _find_action,
     _find_parent_action,
     _is_action_value_list,
+    remove_actions,
 )
 from .loaders_dumpers import (
     get_loader_exceptions,
     load_value,
-    load_value_context,
     pyyaml_exceptions,
     yaml_load,
 )
@@ -66,7 +68,6 @@ from .util import (
     indent_text,
     is_subclass,
     iter_to_set_str,
-    lenient_check_context,
     object_path_serializer,
     parse_value_or_config,
     warning,
@@ -367,7 +368,7 @@ class ActionTypeHint(Action):
         for key in [k for k in cfg.keys() if k.endswith('+')]:
             action = _find_action(parser, key[:-1])
             if ActionTypeHint.supports_append(action):
-                with load_value_context(parser.parser_mode):
+                with parser_context(load_value_mode=parser.parser_mode):
                     val = action._check_type(cfg[key], append=True, cfg=cfg)
                 cfg[key[:-1]] = val
                 cfg.pop(key)
@@ -451,11 +452,6 @@ class ActionTypeHint(Action):
                     if ex:
                         raise ex
 
-                if not append and self._supports_append:
-                    prev_val = kwargs.get('prev_val')
-                    if isinstance(prev_val, list) and not_append_diff(prev_val, val) and get_typehint_origin(self._typehint) == Union:
-                        warnings.warn(f'Replacing list value "{prev_val}" with "{val}". To append to a list use "{self.dest}+".')
-
                 if path_meta is not None:
                     val['__path__'] = path_meta
                 if isinstance(val, (Namespace, dict)) and config_path is not None:
@@ -480,13 +476,14 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def get_class_parser(val_class, sub_add_kwargs=None, skip_args=0):
-        from .core import ArgumentParser
         if isinstance(val_class, str):
             val_class = import_object(val_class)
         kwargs = dict(sub_add_kwargs) if sub_add_kwargs else {}
         if skip_args:
             kwargs.setdefault('skip', set()).add(skip_args)
-        parser = ArgumentParser(error_handler=None)
+        parser = parent_parser.get()
+        parser = type(parser)(error_handler=None, logger=parser.logger)
+        remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
         parser.add_class_arguments(val_class, **kwargs)
         return parser
 
@@ -929,7 +926,7 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
         for key, val in list(prev_val.init_args.__dict__.items()):
             action = _find_action(parser, key)
             if action:
-                with lenient_check_context(lenient=False), load_value_context(parser.parser_mode):
+                with parser_context(lenient_check=False, load_value_mode=parser.parser_mode):
                     try:
                         parser._check_value_key(action, val, key, Namespace())
                     except Exception:
@@ -937,7 +934,7 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
             if not action:
                 del_args[key] = prev_val.init_args.pop(key)
         if del_args:
-            warnings.warn(
+            parser_or_action.logger.debug(
                 f"Due to class_path change from {prev_val['class_path']!r} to {value['class_path']!r}, "
                 f"discarding init_args: {del_args}."
             )
@@ -1036,13 +1033,6 @@ def adapt_classes_any(val, serialize, instantiate_classes, sub_add_kwargs):
         for key, subval in val.items():
             val[key] = adapt_classes_any(subval, serialize, instantiate_classes, sub_add_kwargs)
     return val
-
-
-def not_append_diff(val1, val2):
-    if isinstance(val1, list) and isinstance(val2, list):
-        val1 = [x.get('class_path') if is_subclass_spec(x) else x for x in val1]
-        val2 = [x.get('class_path') if is_subclass_spec(x) else x for x in val2]
-    return val1 != val2
 
 
 def sort_subtypes_for_append(subtypes):

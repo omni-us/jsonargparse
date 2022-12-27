@@ -19,6 +19,7 @@ def CLI(
     set_defaults: Optional[Dict[str, Any]] = None,
     as_positional: bool = True,
     fail_untyped: bool = True,
+    parser_class: Type[ArgumentParser] = ArgumentParser,
     **kwargs
 ):
     """Simple creation of command line interfaces.
@@ -36,6 +37,7 @@ def CLI(
         set_defaults: Dictionary of values to override components defaults.
         as_positional: Whether to add required parameters as positional arguments.
         fail_untyped: Whether to raise exception if a required parameter does not have a type.
+        parser_class: The ArgumentParser class to use.
         **kwargs: Used to instantiate :class:`.ArgumentParser`.
 
     Returns:
@@ -59,7 +61,7 @@ def CLI(
     elif not isinstance(components, list):
         components = [components]
 
-    parser = ArgumentParser(default_meta=False, **kwargs)
+    parser = parser_class(default_meta=False, **kwargs)
     parser.add_argument('--config', action=ActionConfigFile, help=config_help)
 
     if len(components) == 1:
@@ -78,7 +80,7 @@ def CLI(
     comp_dict = {c.__name__: c for c in components}
     for name, component in comp_dict.items():
         description = get_help_str(component, parser.logger)
-        subparser = ArgumentParser(description=description)
+        subparser = parser_class(description=description)
         subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
         subcommands.add_subcommand(name, subparser, help=get_help_str(component, parser.logger))
         added_args = _add_component_to_parser(component, subparser, as_positional, fail_untyped, config_help)
@@ -115,7 +117,7 @@ def _add_component_to_parser(component, parser, as_positional, fail_untyped, con
         subcommands = parser.add_subcommands(required=True)
         for key in [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != '_']:
             description = get_help_str(getattr(component, key), parser.logger)
-            subparser = ArgumentParser(description=description)
+            subparser = type(parser)(description=description)
             subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
             added_subargs = subparser.add_method_arguments(component, key, as_group=False, **kwargs)
             added_args += [f'{key}.{a}' for a in added_subargs]
