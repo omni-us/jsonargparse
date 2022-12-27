@@ -9,12 +9,8 @@ from typing import List
 import yaml
 
 from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader
-from jsonargparse.loaders_dumpers import (
-    load_value,
-    load_value_context,
-    loaders,
-    yaml_dump,
-)
+from jsonargparse._common import parser_context
+from jsonargparse.loaders_dumpers import load_value, loaders, yaml_dump
 
 
 class LoadersTests(unittest.TestCase):
@@ -118,7 +114,7 @@ class LoadersTests(unittest.TestCase):
 
 
     def test_load_value_dash(self):
-        with load_value_context('yaml'):
+        with parser_context(load_value_mode='yaml'):
             self.assertEqual('-', load_value('-'))
             self.assertEqual(' -  ', load_value(' -  '))
 

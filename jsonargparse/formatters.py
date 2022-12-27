@@ -9,12 +9,11 @@ from argparse import (
     HelpFormatter,
     _HelpAction,
 )
-from contextlib import contextmanager
-from contextvars import ContextVar
 from io import StringIO
 from string import Template
 from typing import Optional, Union
 
+from ._common import defaults_cache, parent_parser
 from .actions import (
     ActionConfigFile,
     ActionYesNo,
@@ -33,21 +32,6 @@ __all__ = ['DefaultHelpFormatter']
 
 
 empty_help: str = '_EMPTY_HELP_'
-
-
-formatter_parser: ContextVar = ContextVar('formatter_parser')
-formatter_defaults: ContextVar = ContextVar('formatter_defaults')
-
-
-@contextmanager
-def formatter_context(parser: 'ArgumentParser', defaults: Optional[Namespace] = None):
-    prev_parser = formatter_parser.set(parser)
-    prev_defaults = formatter_defaults.set(defaults)
-    try:
-        yield
-    finally:
-        formatter_parser.reset(prev_parser)
-        formatter_defaults.reset(prev_defaults)
 
 
 class PercentTemplate(Template):
@@ -99,7 +83,7 @@ class DefaultHelpFormatter(HelpFormatter):
 
     def _format_usage(self, *args, **kwargs):
         usage = super()._format_usage(*args, **kwargs)
-        parser = formatter_parser.get()
+        parser = parent_parser.get()
         for key in parser.required_args:
             try:
                 default = parser.get_default(key)
@@ -111,7 +95,7 @@ class DefaultHelpFormatter(HelpFormatter):
 
 
     def _format_action_invocation(self, action):
-        parser = formatter_parser.get()
+        parser = parent_parser.get()
         if action.option_strings == [] or action.default == SUPPRESS or not parser.default_env:
             return super()._format_action_invocation(action)
         extr = ''
@@ -136,7 +120,7 @@ class DefaultHelpFormatter(HelpFormatter):
         if params.get('default') == SUPPRESS:
             del params['default']
         elif 'default' in params:
-            defaults = formatter_defaults.get()
+            defaults = defaults_cache.get()
             if defaults is not None:
                 params['default'] = action.default = defaults.get(action.dest)
             if params['default'] is None:
@@ -179,7 +163,7 @@ class DefaultHelpFormatter(HelpFormatter):
                     subparsers.update(get_subparsers(subparser, prefix=full_key))
             return subparsers
 
-        parser = formatter_parser.get()
+        parser = parent_parser.get()
         parsers = get_subparsers(parser)
         parsers[None] = parser
 
@@ -268,12 +252,19 @@ class DefaultHelpFormatter(HelpFormatter):
         cfg.yaml_set_comment_before_after_key(key, before='\n'+text, indent=2*depth)
 
 
-def get_env_var(parser_or_formatter: Union['ArgumentParser', DefaultHelpFormatter], action: Action) -> str:
-    """Returns the environment variable for a given parser or formatter and action."""
+def get_env_var(
+    parser_or_formatter: Union['ArgumentParser', DefaultHelpFormatter],
+    action: Optional[Action] = None,
+) -> str:
+    """Returns the environment variable name for a given parser or formatter and action."""
     if isinstance(parser_or_formatter, DefaultHelpFormatter):
-        parser = formatter_parser.get()
+        parser = parent_parser.get()
     else:
         parser = parser_or_formatter
-    env_var = (parser.env_prefix+'_' if parser.env_prefix else '') + action.dest
+    env_var = ''
+    if isinstance(parser.env_prefix, str):
+        env_var = parser.env_prefix + '_'
+    if action:
+        env_var += action.dest
     env_var = env_var.replace('.', '__').upper()
     return env_var

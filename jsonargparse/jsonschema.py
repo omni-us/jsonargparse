@@ -1,11 +1,11 @@
 """Action to support jsonschemas."""
 
 import os
-from argparse import Action
 from typing import Dict, Optional, Union
 
-from .actions import _is_action_value_list
-from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context
+from ._common import parser_context
+from .actions import Action, _is_action_value_list
+from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import strip_meta
 from .optionals import (
     argcomplete_warn_redraw_prompt,
@@ -40,7 +40,7 @@ class ActionJsonSchema(Action):
         """
         if schema is not None:
             if isinstance(schema, str):
-                with load_value_context('yaml'):
+                with parser_context(load_value_mode='yaml'):
                     try:
                         schema = load_value(schema)
                     except get_loader_exceptions() as ex:

@@ -2,12 +2,11 @@
 
 import inspect
 import re
-from contextlib import contextmanager
-from contextvars import ContextVar
 from typing import Any, Callable, Dict, Tuple, Type
 
 import yaml
 
+from ._common import load_value_mode, parent_parser
 from .optionals import import_jsonnet, omegaconf_support
 from .type_checking import ArgumentParser
 
@@ -17,17 +16,7 @@ __all__ = [
 ]
 
 
-load_value_mode: ContextVar = ContextVar('load_value_mode')
 regex_curly_comma = re.compile(' *[{},] *')
-
-
-@contextmanager
-def load_value_context(mode):
-    t = load_value_mode.set(mode)
-    try:
-        yield
-    finally:
-        load_value_mode.reset(t)
 
 
 class DefaultLoader(getattr(yaml, 'CSafeLoader', yaml.SafeLoader)):  # type: ignore
@@ -102,12 +91,19 @@ loader_exceptions: Dict[str, Tuple[Type[Exception], ...]] = {
 }
 
 
+def get_load_value_mode() -> str:
+    mode = load_value_mode.get()
+    if mode is None:
+        mode = parent_parser.get().parser_mode
+    return mode
+
+
 def get_loader_exceptions():
-    return loader_exceptions[load_value_mode.get()]
+    return loader_exceptions[get_load_value_mode()]
 
 
 def load_value(value: str, simple_types: bool = False, **kwargs):
-    loader = loaders[load_value_mode.get()]
+    loader = loaders[get_load_value_mode()]
     if kwargs:
         params = set(list(inspect.signature(loader).parameters)[1:])
         kwargs = {k: v for k, v in kwargs.items() if k in params}

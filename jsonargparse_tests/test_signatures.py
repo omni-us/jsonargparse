@@ -484,7 +484,7 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_add_subclass_discard_init_args(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
         parser.add_subclass_arguments(Calendar, 'cal')
 
         class CalA(Calendar):
@@ -495,7 +495,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, pb: str = 'b', pc: int = 4, **kwds):
                 super().__init__(**kwds)
 
-        with mock_module(CalA, CalB) as module, warnings.catch_warnings(record=True) as w:
+        with mock_module(CalA, CalB) as module, self.assertLogs(logger=parser.logger, level='DEBUG') as log:
             cfg = parser.parse_args([
                 f'--cal.class_path={module}.CalA',
                 '--cal.init_args.pa=A',
@@ -506,7 +506,7 @@ class SignaturesTests(unittest.TestCase):
             ])
             self.assertEqual(cfg.cal.class_path, f'{module}.CalB')
             self.assertEqual(cfg.cal.init_args, Namespace(pb='B', pc=4, firstweekday=3))
-            self.assertIn("discarding init_args: {'pa': 'A', 'pc': 'X'}", str(w[0].message))
+            self.assertTrue(any("discarding init_args: {'pa': 'A', 'pc': 'X'}" in o for o in log.output))
 
 
     def test_add_subclass_nested_discard_init_args(self):
@@ -525,8 +525,8 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, c: ChildBase):
                 pass
 
-        with mock_module(Parent, ChildBase, A, B) as module, warnings.catch_warnings(record=True) as w:
-            parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+        with mock_module(Parent, ChildBase, A, B) as module, self.assertLogs(logger=parser.logger, level='DEBUG') as log:
             parser.add_subclass_arguments(Parent, 'p')
             cfg = parser.parse_args([
                 '--p=Parent',
@@ -538,7 +538,7 @@ class SignaturesTests(unittest.TestCase):
             self.assertEqual(cfg.p.class_path, f'{module}.Parent')
             self.assertEqual(cfg.p.init_args.c.class_path, f'{module}.B')
             self.assertEqual(cfg.p.init_args.c.init_args, Namespace(b=2))
-            self.assertIn("discarding init_args: {'a': 1}", str(w[0].message))
+        self.assertTrue(any("discarding init_args: {'a': 1}" in o for o in log.output))
 
 
     def test_class_path_override_with_mixed_type(self):
@@ -550,11 +550,11 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, cal: Union[Calendar, bool] = lazy_instance(MyCalendar, param=1)):
                 self.cal = cal
 
-        with mock_module(MyCalendar), warnings.catch_warnings(record=True) as w:
-            parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+        with mock_module(MyCalendar), self.assertLogs(logger=parser.logger, level='DEBUG') as log:
             parser.add_class_arguments(Main, 'main')
             parser.parse_args(['--main.cal=Calendar'])
-            self.assertIn("discarding init_args: {'param': 1}", str(w[0].message))
+        self.assertTrue(any("discarding init_args: {'param': 1}" in o for o in log.output))
 
 
     def test_add_subclass_init_args_without_class_path(self):
@@ -1381,8 +1381,8 @@ class SignaturesConfigTests(TempDirTestCase):
             }
 
             for subtest in ['class', 'subclass']:
-                with self.subTest(subtest), warnings.catch_warnings(record=True) as w:
-                    parser = ArgumentParser(error_handler=None)
+                with self.subTest(subtest):
+                    parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
                     parser.add_argument('--config', action=ActionConfigFile)
 
                     if subtest == 'class':
@@ -1401,11 +1401,12 @@ class SignaturesConfigTests(TempDirTestCase):
                     config_path = Path('config.yaml')
                     config_path.write_text(yaml.safe_dump(config))
 
-                    cfg = parser.parse_args([f'--config={config_path}'])
+                    with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
+                        cfg = parser.parse_args([f'--config={config_path}'])
                     init = parser.instantiate_classes(cfg)
                     self.assertIsInstance(init.main, Main)
                     self.assertIsInstance(init.main.sub, Sub2)
-                    self.assertIn("discarding init_args: {'s1': 'x'}", str(w[0].message))
+                    self.assertTrue(any("discarding init_args: {'s1': 'x'}" in o for o in log.output))
 
 
 @dataclasses.dataclass(frozen=True)

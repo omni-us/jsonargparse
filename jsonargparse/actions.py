@@ -4,17 +4,21 @@ import os
 import re
 import sys
 import warnings
-from argparse import SUPPRESS, Action, _HelpAction, _SubParsersAction
+from argparse import SUPPRESS
+from argparse import Action as ArgparseAction
+from argparse import _HelpAction, _SubParsersAction
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
+from ._common import parser_context
 from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import Namespace, split_key, split_key_root
 from .optionals import FilesCompleterMethod, get_config_read_mode
 from .type_checking import ArgumentParser
 from .typing import path_type
 from .util import (
+    LoggerProperty,
     NoneType,
     ParserError,
     Path,
@@ -25,7 +29,6 @@ from .util import (
     indent_text,
     is_subclass,
     iter_to_set_str,
-    lenient_check_context,
     parse_value_or_config,
 )
 
@@ -35,6 +38,10 @@ __all__ = [
     'ActionParser',
     'ActionPathList',
 ]
+
+
+class Action(LoggerProperty, ArgparseAction):
+    """Base for jsonargparse Action classes."""
 
 
 def _is_branch_key(parser, key: str) -> bool:
@@ -51,8 +58,8 @@ def _is_branch_key(parser, key: str) -> bool:
 def _find_action_and_subcommand(
     parser: 'ArgumentParser',
     dest: str,
-    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
-) -> Tuple[Optional[Action], Optional[str]]:
+    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+) -> Tuple[Optional[ArgparseAction], Optional[str]]:
     """Finds an action in a parser given its destination key.
 
     Args:
@@ -88,16 +95,16 @@ def _find_action_and_subcommand(
 def _find_action(
     parser: 'ArgumentParser',
     dest: str,
-    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
-) -> Optional[Action]:
+    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+) -> Optional[ArgparseAction]:
     return _find_action_and_subcommand(parser, dest, exclude=exclude)[0]
 
 
 def _find_parent_action_and_subcommand(
     parser: 'ArgumentParser',
     key: str,
-    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
-) -> Tuple[Optional[Action], Optional[str]]:
+    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+) -> Tuple[Optional[ArgparseAction], Optional[str]]:
     action, subcommand = _find_action_and_subcommand(parser, key, exclude=exclude)
     if action is None and '.' in key:
         parts = split_key(key)
@@ -111,12 +118,12 @@ def _find_parent_action_and_subcommand(
 def _find_parent_action(
     parser: 'ArgumentParser',
     key: str,
-    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
-) -> Optional[Action]:
+    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+) -> Optional[ArgparseAction]:
     return _find_parent_action_and_subcommand(parser, key, exclude=exclude)[0]
 
 
-def _is_action_value_list(action: Action) -> bool:
+def _is_action_value_list(action: ArgparseAction) -> bool:
     """Checks whether an action produces a list value.
 
     Args:
@@ -266,7 +273,7 @@ class _ActionPrintConfig(Action):
             subparser = parser.print_config.pop('subparser')
             if key is not None:
                 cfg = cfg[key]
-            with lenient_check_context():
+            with parser_context(lenient_check=True):
                 sys.stdout.write(subparser.dump(cfg, **parser.print_config))
             delattr(parser, 'print_config')
             parser.exit()
@@ -570,7 +577,8 @@ def parent_parsers_context(key, parser):
 class _ActionSubCommands(_SubParsersAction):
     """Extension of argparse._SubParsersAction to modify subcommands functionality."""
 
-    _env_prefix: Union[bool, str] = True
+    parent_parser: 'ArgumentParser'
+    env_prefix: str
 
 
     def add_parser(self, name, **kwargs):
@@ -589,11 +597,12 @@ class _ActionSubCommands(_SubParsersAction):
             raise ValueError('Multiple levels of subcommands must be added in level order.')
 
         parser.prog = f'{self._prog_prefix} [options] {name}'
-        parser.env_prefix = f'{self._env_prefix}_{name}_'
+        parser.env_prefix = f'{self.env_prefix}{name}_'
         parser.default_env = self.parent_parser.default_env
         parser.parent_parser = self.parent_parser
         parser.parser_mode = self.parent_parser.parser_mode
         parser.error_handler = self.parent_parser.error_handler
+        parser.logger = self.parent_parser.logger
         parser.subcommand = name
 
         # create a pseudo-action to hold the choice help

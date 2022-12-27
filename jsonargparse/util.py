@@ -29,6 +29,7 @@ from typing import (
     Union,
 )
 
+from ._common import parser_capture, parser_context
 from .loaders_dumpers import json_dump, load_value
 from .optionals import (
     fsspec_support,
@@ -97,18 +98,6 @@ class CaptureParserException(Exception):
         super().__init__('' if parser else 'No parse_args call to capture the parser.')
 
 
-parser_captured: ContextVar = ContextVar('parser_captured', default=False)
-
-
-@contextmanager
-def capture_parser_context():
-    t = parser_captured.set(True)
-    try:
-        yield
-    finally:
-        parser_captured.reset(t)
-
-
 def capture_parser(function: Callable, *args, **kwargs) -> ArgumentParser:
     """Returns the parser object used within the execution of a function.
 
@@ -124,7 +113,7 @@ def capture_parser(function: Callable, *args, **kwargs) -> ArgumentParser:
         CaptureParserException: If the function does not call parse_args.
     """
     try:
-        with capture_parser_context():
+        with parser_context(parser_capture=True):
             function(*args, **kwargs)
     except CaptureParserException as ex:
         return ex.parser  # type: ignore
@@ -132,7 +121,7 @@ def capture_parser(function: Callable, *args, **kwargs) -> ArgumentParser:
 
 
 def return_parser_if_captured(parser: ArgumentParser):
-    if parser_captured.get():
+    if parser_capture.get():
         raise CaptureParserException(parser)
 
 
@@ -290,18 +279,6 @@ def get_typehint_origin(typehint):
     if not hasattr(typehint, '__origin__') and get_import_path(typehint.__class__) == 'types.UnionType':
         return Union
     return getattr(typehint, '__origin__', None)
-
-
-lenient_check: ContextVar = ContextVar('lenient_check', default=False)
-
-
-@contextmanager
-def lenient_check_context(caller=None, lenient=True):
-    t = lenient_check.set(False if caller == 'argcomplete' else lenient)
-    try:
-        yield
-    finally:
-        lenient_check.reset(t)
 
 
 current_path_dir: ContextVar[Optional[str]] = ContextVar('current_path_dir', default=None)

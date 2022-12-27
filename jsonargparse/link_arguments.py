@@ -2,13 +2,15 @@
 
 import inspect
 import re
-from argparse import SUPPRESS, Action
+from argparse import SUPPRESS
+from argparse import Action as ArgparseAction
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
 from .actions import (
+    Action,
     ActionConfigFile,
     _ActionConfigLoad,
     _ActionSubCommands,
@@ -24,9 +26,9 @@ __all__ = ['ArgumentLinking']
 def find_parent_or_child_actions(
     parser: 'ArgumentParser',
     key: str,
-    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
-) -> Optional[List[Action]]:
-    found: List[Action] = []
+    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+) -> Optional[List[ArgparseAction]]:
+    found: List[ArgparseAction] = []
     action = _find_parent_action(parser, key, exclude=exclude)
     if action is not None:
         found = [action]
@@ -42,8 +44,8 @@ def find_parent_or_child_actions(
 def find_subclass_action_or_class_group(
     parser: 'ArgumentParser',
     key: str,
-    exclude: Optional[Union[Type[Action], Tuple[Type[Action], ...]]] = None,
-) -> Optional[Union[Action, '_ArgumentGroup']]:
+    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+) -> Optional[Union[ArgparseAction, '_ArgumentGroup']]:
     from .typehints import ActionTypeHint
     action = _find_parent_action(parser, key, exclude=exclude)
     if ActionTypeHint.is_subclass_typehint(action):

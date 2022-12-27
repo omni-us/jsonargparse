@@ -1,11 +1,11 @@
 """Actions to support jsonnet."""
 
-from argparse import Action
 from typing import Any, Dict, Optional, Tuple, Union
 
-from .actions import _is_action_value_list
+from ._common import parser_context
+from .actions import Action, _is_action_value_list
 from .jsonschema import ActionJsonSchema
-from .loaders_dumpers import get_loader_exceptions, load_value, load_value_context
+from .loaders_dumpers import get_loader_exceptions, load_value
 from .optionals import (
     get_config_read_mode,
     get_jsonschema_exceptions,
@@ -64,7 +64,7 @@ class ActionJsonnet(Action):
             if schema is not None:
                 jsonvalidator = import_jsonschema('ActionJsonnet')[1]
                 if isinstance(schema, str):
-                    with load_value_context('yaml'):
+                    with parser_context(load_value_mode='yaml'):
                         try:
                             schema = load_value(schema)
                         except get_loader_exceptions() as ex:
@@ -163,7 +163,7 @@ class ActionJsonnet(Action):
             fname = jsonnet(absolute=False) if isinstance(jsonnet, Path) else jsonnet
             snippet = fpath.get_content()
         try:
-            with load_value_context('yaml'):
+            with parser_context(load_value_mode='yaml'):
                 values = load_value(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
         except RuntimeError as ex:
             raise ParserError(f'Problems evaluating jsonnet "{fname}" :: {ex}') from ex
