@@ -7,7 +7,7 @@ import re
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
 from .optionals import final
-from .util import Path, get_import_path, import_object
+from .util import Path, get_import_path, get_private_kwargs, import_object
 
 __all__ = [
     'final',
@@ -196,14 +196,13 @@ def _is_path_type(value, type_class):
 def path_type(
     mode: str,
     docstring: Optional[str] = None,
-    skip_check: bool = False,
+    **kwargs
 ) -> type:
     """Creates or returns an already registered path type class.
 
     Args:
         mode: The required type and access permissions among [fdrwxcuFDRWX].
         docstring: Docstring for the type class.
-        skip_check: Whether to skip path checks.
 
     Returns:
         The created or retrieved type class.
@@ -211,7 +210,11 @@ def path_type(
     Path._check_mode(mode)
     name = 'Path_'+mode
     key_name = 'path '+''.join(sorted(mode))
+
+    skip_check = get_private_kwargs(kwargs, skip_check=False)
     if skip_check:
+        from .deprecated import path_skip_check_deprecation
+        path_skip_check_deprecation()
         name += '_skip_check'
         key_name += ' skip_check'
 

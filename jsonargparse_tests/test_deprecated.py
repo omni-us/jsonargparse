@@ -275,7 +275,9 @@ class DeprecatedTempDirTests(TempDirTestCase):
 
     def test_ActionPath_skip_check(self):
         parser = ArgumentParser(error_handler=None)
-        parser.add_argument('--file', action=ActionPath(mode='fr', skip_check=True))
+        with catch_warnings(record=True) as w:
+            parser.add_argument('--file', action=ActionPath(mode='fr', skip_check=True))
+            self.assertIn('skip_check parameter of Path was deprecated', str(w[-1].message))
         cfg = parser.parse_args(['--file=not-exist'])
         self.assertIsInstance(cfg.file, Path)
         self.assertEqual(str(cfg.file), 'not-exist')
@@ -301,6 +303,21 @@ class DeprecatedTempDirTests(TempDirTestCase):
         parser.add_argument('path', nargs='?', action=ActionPath(mode='fc'))
         self.assertIsNone(parser.parse_args(['1']).path)
         self.assertIsNotNone(parser.parse_args(['2', 'file']).path)
+
+
+    def test_Path_attr_set(self):
+        path = Path('file', 'fc')
+        with catch_warnings(record=True) as w:
+            path.rel_path = 'file'
+            path.abs_path = os.path.join(self.tmpdir, 'file')
+            path.skip_check = False
+            path.cwd = self.tmpdir
+            self.assertIn('Path objects are not meant to be mutable', str(w[-1].message))
+        with catch_warnings(record=True) as w:
+            self.assertEqual(path.rel_path, 'file')
+            self.assertEqual(path.abs_path, os.path.join(self.tmpdir, 'file'))
+            self.assertEqual(path.skip_check, False)
+            self.assertIn('Path objects are not meant to be mutable', str(w[-1].message))
 
 
 if __name__ == '__main__':
