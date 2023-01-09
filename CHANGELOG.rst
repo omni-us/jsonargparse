@@ -12,6 +12,18 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.20.0 (2023-01-??)
+--------------------
+
+Deprecated
+^^^^^^^^^^
+- Path ``skip_check`` parameter is deprecated and will be removed in v5.0.0.
+  Instead use as type ``str`` or ``os.PathLike``.
+- Modifying Path attributes is deprecated. In v5.0.0 they will be properties
+  without a setter and two renamed: ``rel_path -> relative`` and ``abs_path ->
+  absolute``.
+
+
 v4.19.0 (2022-12-27)
 --------------------
 

@@ -1460,13 +1460,13 @@ class TypeHintsTmpdirTests(TempDirTestCase):
     def test_default_path_unregistered_type(self):
         parser = ArgumentParser()
         parser.add_argument('--path',
-                            type=path_type('drw', skip_check=True),
-                            default=Path('test', mode='drw', skip_check=True))
+                            type=path_type('dcc'),
+                            default=Path('test', mode='dcc'))
         cfg = parser.parse_args([])
         self.assertEqual('path: test\n', parser.dump(cfg))
         out = StringIO()
         parser.print_help(out)
-        self.assertIn('(type: Path_drw_skip_check, default: test)', out.getvalue())
+        self.assertIn('(type: Path_dcc, default: test)', out.getvalue())
 
 
     def test_path_like_within_subclass(self):

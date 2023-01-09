@@ -30,6 +30,7 @@ from typing import (
 )
 
 from ._common import parser_capture, parser_context
+from .deprecated import PathDeprecations
 from .loaders_dumpers import json_dump, load_value
 from .optionals import (
     fsspec_support,
@@ -295,7 +296,7 @@ def change_to_path_dir(path: Optional['Path']) -> Iterator[Optional[str]]:
             path_dir = path._url_data.url_path
         else:
             scheme = ''
-            path_dir = path.abs_path
+            path_dir = path.absolute
             chdir = True
         if 'd' not in path.mode:
             path_dir = os.path.dirname(path_dir)
@@ -408,7 +409,7 @@ def parse_url(url: str) -> Optional[UrlData]:
     )
 
 
-def is_absolute(path: str) -> bool:
+def is_absolute_path(path: str) -> bool:
     if path.find('://') > 0:
         return True
     return os.path.isabs(path)
@@ -425,7 +426,7 @@ def resolve_relative_path(path: str) -> str:
     return '/'.join(resolved)
 
 
-class Path:
+class Path(PathDeprecations):
     """Stores a (possibly relative) path and the corresponding absolute path.
 
     The absolute path can be obtained without having to remember the working
@@ -442,10 +443,6 @@ class Path:
     directory does not have to exist, but should be allowed to create.
     """
 
-    rel_path: str
-    abs_path: str
-    cwd: str
-    mode: str
     _url_data: Optional[UrlData]
     _file_scheme = re.compile('^file:///?')
 
@@ -454,20 +451,20 @@ class Path:
         path: Union[str, 'Path'],
         mode: str = 'fr',
         cwd: Optional[str] = None,
-        skip_check: bool = False,
+        **kwargs,
     ):
         """Initializer for Path instance.
 
         Args:
             path: The path to check and store.
             mode: The required type and access permissions among [fdrwxcuFDRWX].
-            cwd: Working directory for relative paths. If None, then os.getcwd() is used.
-            skip_check: Whether to skip path checks.
+            cwd: Working directory for relative paths. If None, os.getcwd() is used.
 
         Raises:
             ValueError: If the provided mode is invalid.
             TypeError: If the path does not exist or does not agree with the mode.
         """
+        self._deprecated_kwargs(kwargs)
         self._check_mode(mode)
 
         is_url = False
@@ -477,20 +474,20 @@ class Path:
             is_fsspec = path.is_fsspec
             url_data = path._url_data
             cwd = path.cwd
-            abs_path = path.abs_path
-            path = path.rel_path
+            abs_path = path._absolute
+            path = path._relative
         elif isinstance(path, str):
             abs_path = os.path.expanduser(path)
             if self._file_scheme.match(abs_path):
                 abs_path = self._file_scheme.sub('' if os.name == 'nt' else '/', abs_path)
-            absolute = is_absolute(abs_path)
+            is_absolute = is_absolute_path(abs_path)
             url_data = parse_url(abs_path)
             cwd_url_data = parse_url(cwd or current_path_dir.get() or os.getcwd())
             if (
                 ('u' in mode or 's' in mode) and
-                (url_data or (cwd_url_data and not absolute))
+                (url_data or (cwd_url_data and not is_absolute))
             ):
-                if cwd_url_data and not absolute:
+                if cwd_url_data and not is_absolute:
                     abs_path = resolve_relative_path(cwd_url_data.url_path + '/' + path)
                     abs_path = cwd_url_data.scheme + abs_path
                     url_data = parse_url(abs_path)
@@ -503,19 +500,19 @@ class Path:
             else:
                 if cwd is None:
                     cwd = os.getcwd()
-                abs_path = abs_path if absolute else os.path.join(cwd, abs_path)
+                abs_path = abs_path if is_absolute else os.path.join(cwd, abs_path)
                 url_data = None
         else:
             raise TypeError('Expected path to be a string or a Path object.')
 
-        if not skip_check and is_url:
+        if not self._skip_check and is_url:
             if 'r' in mode:
                 requests = import_requests('Path with URL support')
                 try:
                     requests.head(abs_path).raise_for_status()
                 except requests.HTTPError as ex:
                     raise TypeError(f'{abs_path} HEAD not accessible :: {ex}') from ex
-        elif not skip_check and is_fsspec:
+        elif not self._skip_check and is_fsspec:
             fsspec_mode = ''.join(c for c in mode if c in {'r','w'})
             if fsspec_mode:
                 fsspec = import_fsspec('Path')
@@ -527,7 +524,7 @@ class Path:
                     raise TypeError('Path does not exist: '+abs_path) from ex
                 except PermissionError as ex:
                     raise TypeError('Path exists but no permission to access: '+abs_path) from ex
-        elif not skip_check:
+        elif not self._skip_check:
             ptype = 'Directory' if 'd' in mode else 'File'
             if 'c' in mode:
                 pdir = os.path.realpath(os.path.join(abs_path, '..'))
@@ -568,31 +565,51 @@ class Path:
             if 'X' in mode and os.access(abs_path, os.X_OK):
                 raise TypeError(ptype+' is executable: '+abs_path)
 
-        self.rel_path = path
-        self.abs_path = abs_path
-        self.cwd = cwd
-        self.mode = mode
+        self._relative = path
+        self._absolute = abs_path
+        self._cwd = cwd
+        self._mode = mode
+        self._is_url = is_url
+        self._is_fsspec = is_fsspec
         self._url_data = url_data
-        self.is_url: bool = is_url
-        self.is_fsspec: bool = is_fsspec
-        self.skip_check = skip_check
+
+    @property
+    def relative(self) -> str:
+        return self._relative
+
+    @property
+    def absolute(self) -> str:
+        return self._absolute
+
+    @property
+    def mode(self) -> str:
+        return self._mode
+
+    @property
+    def is_url(self) -> bool:
+        return self._is_url
+
+    @property
+    def is_fsspec(self) -> bool:
+        return self._is_fsspec
 
     def __str__(self):
-        return self.rel_path
+        return self._relative
 
     def __repr__(self):
-        cwd = '' if self.rel_path == self.abs_path else ', cwd='+self.cwd
-        name = 'Path_'+self.mode
-        if self.skip_check:
-            name += '_skip_check'
-        return name+'('+self.rel_path+cwd+')'
+        name = 'Path_'+self._mode
+        name = self._repr_skip_check(name)
+        cwd = ''
+        if self._relative != self._absolute:
+            cwd = ', cwd='+self._cwd
+        return f'{name}({self._relative}{cwd})'
 
     def __fspath__(self) -> str:
-        return self.abs_path
+        return self._absolute
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Path):
-            return self.abs_path == other.abs_path
+            return self._absolute == other._absolute
         elif isinstance(other, str):
             return str(self) == other
         return False
@@ -603,36 +620,36 @@ class Path:
         Args:
             absolute: If false returns the original path given, otherwise the corresponding absolute path.
         """
-        return self.abs_path if absolute else self.rel_path
+        return self._absolute if absolute else self._relative
 
     def get_content(self, mode: str = 'r') -> str:
         """Returns the contents of the file or the remote path."""
-        if self.is_url:
+        if self._is_url:
             assert mode == 'r'
             requests = import_requests('Path.get_content')
-            response = requests.get(self.abs_path)
+            response = requests.get(self._absolute)
             response.raise_for_status()
             return response.text
-        elif self.is_fsspec:
+        elif self._is_fsspec:
             fsspec = import_fsspec('Path.get_content')
-            with fsspec.open(self.abs_path, mode) as handle:
+            with fsspec.open(self._absolute, mode) as handle:
                 with handle as input_file:
                     return input_file.read()
         else:
-            with open(self.abs_path, mode) as input_file:
+            with open(self._absolute, mode) as input_file:
                 return input_file.read()
 
     @contextmanager
     def open(self, mode: str = 'r') -> Iterator[IO]:
         """Return an opened file object for the path."""
-        if self.is_url:
+        if self._is_url:
             yield StringIO(self.get_content())
-        elif self.is_fsspec:
+        elif self._is_fsspec:
             fsspec = import_fsspec('Path.open')
-            with fsspec.open(self.abs_path, mode) as handle:
+            with fsspec.open(self._absolute, mode) as handle:
                 yield handle
         else:
-            with open(self.abs_path, mode) as handle:
+            with open(self._absolute, mode) as handle:
                 yield handle
 
     @contextmanager

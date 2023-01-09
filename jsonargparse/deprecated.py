@@ -7,14 +7,6 @@ from enum import Enum
 from typing import Any, Dict, Set
 
 from .namespace import Namespace
-from .optionals import (
-    get_config_read_mode,
-    import_docstring_parser,
-    set_config_read_mode,
-)
-from .typehints import ActionTypeHint
-from .typing import path_type, registered_types, restricted_number_type
-from .util import is_subclass, warning
 
 __all__ = [
     'ActionEnum',
@@ -36,6 +28,7 @@ def deprecation_warning(component, message):
     show_warnings = env_var != 'off'
     all_warnings = env_var == 'all'
     if show_warnings and (component not in shown_deprecation_warnings or all_warnings):
+        from .util import warning
         if len(shown_deprecation_warnings) == 0 and not all_warnings:
             warning(
                 """
@@ -182,6 +175,7 @@ class ActionEnum:
 
     def __init__(self, **kwargs):
         if 'enum' in kwargs:
+            from .util import is_subclass
             if not is_subclass(kwargs['enum'], Enum):
                 raise ValueError('Expected enum to be an subclass of Enum.')
             self._type = kwargs['enum']
@@ -189,6 +183,7 @@ class ActionEnum:
             raise ValueError('Expected enum keyword argument.')
 
     def __call__(self, *args, **kwargs):
+        from .typehints import ActionTypeHint
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
@@ -203,6 +198,7 @@ class ActionOperators:
         if 'expr' in kwargs:
             restrictions = [kwargs['expr']] if isinstance(kwargs['expr'], tuple) else kwargs['expr']
             register_key = (tuple(sorted(restrictions)), kwargs.get('type', int), kwargs.get('join', 'and'))
+            from .typing import registered_types, restricted_number_type
             if register_key in registered_types:
                 self._type = registered_types[register_key]
             else:
@@ -211,6 +207,7 @@ class ActionOperators:
             raise ValueError('Expected expr keyword argument.')
 
     def __call__(self, *args, **kwargs):
+        from .typehints import ActionTypeHint
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
@@ -226,9 +223,11 @@ class ActionPath:
         mode: str,
         skip_check: bool = False,
     ):
+        from .typing import path_type
         self._type = path_type(mode, skip_check=skip_check)
 
     def __call__(self, *args, **kwargs):
+        from .typehints import ActionTypeHint
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
@@ -239,6 +238,7 @@ class ActionPath:
 """)
 def set_url_support(enabled:bool):
     """Enables/disables URL support for config read mode."""
+    from .optionals import get_config_read_mode, set_config_read_mode
     set_config_read_mode(
         urls_enabled=enabled,
         fsspec_enabled=True if 's' in get_config_read_mode() else False,
@@ -274,7 +274,80 @@ env_prefix_property_none_message = """
     v5.0.0.
 """)
 def import_docstring_parse(importer):
+    from .optionals import import_docstring_parser
     return import_docstring_parser(importer).parse
+
+
+path_skip_check_message = """
+    The skip_check parameter of Path was deprecated in v4.20.0 and will be
+    removed in v5.0.0. There is no reason to use a Path type if its checks are
+    disabled. Instead use a type such as str or os.PathLike.
+"""
+
+
+def path_skip_check_deprecation():
+    deprecation_warning('Path.__init__', path_skip_check_message)
+
+
+path_immutable_attrs_message = """
+    Path objects are not meant to be mutable. To make this more explicit,
+    attributes have been renamed and changed into properties without setters.
+    Please update your code to use the new property names and don't modify path
+    attributes. The changes are: ``rel_path`` -> ``relative`` and ``abs_path``
+    -> ``absolute``, ``cwd`` no name change, ``skip_check`` will be removed.
+
+"""
+
+class PathDeprecations:
+
+    @property
+    def rel_path(self):
+        deprecation_warning('Path attr get', path_immutable_attrs_message)
+        return self._relative
+
+    @rel_path.setter
+    def rel_path(self, rel_path):
+        deprecation_warning('Path attr set', path_immutable_attrs_message)
+        self._relative = rel_path
+
+    @property
+    def abs_path(self):
+        deprecation_warning('Path attr get', path_immutable_attrs_message)
+        return self._absolute
+
+    @abs_path.setter
+    def abs_path(self, abs_path):
+        deprecation_warning('Path attr set', path_immutable_attrs_message)
+        self._absolute = abs_path
+
+    @property
+    def cwd(self):
+        return self._cwd
+
+    @cwd.setter
+    def cwd(self, cwd):
+        deprecation_warning('Path attr set', path_immutable_attrs_message)
+        self._cwd = cwd
+
+    def _deprecated_kwargs(self, kwargs):
+        from .util import get_private_kwargs
+        self._skip_check = get_private_kwargs(kwargs, skip_check=False)
+        if self._skip_check:
+            path_skip_check_deprecation()
+
+    def _repr_skip_check(self, name):
+        if self._skip_check:
+            name += '_skip_check'
+        return name
+
+    @property
+    def skip_check(self):
+        return self._skip_check
+
+    @skip_check.setter
+    def skip_check(self, skip_check):
+        deprecation_warning('Path attr set', path_immutable_attrs_message)
+        self._skip_check = skip_check
 
 
 import jsonargparse.optionals
