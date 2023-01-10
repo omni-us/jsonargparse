@@ -85,7 +85,7 @@ jobs:
           at: .
       - run:
           name: Publish Release on PyPI
-          command: twine upload --username "${PYPI_USER}" --password "${PYPI_PASS}" ./dist/*.whl ./dist/*.tar.gz
+          command: twine upload --username __token__ --password "${PYPI_TOKEN}" ./dist/*.whl ./dist/*.tar.gz
 
 workflows:
   version: 2
