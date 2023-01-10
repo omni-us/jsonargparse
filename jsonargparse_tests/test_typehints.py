@@ -655,7 +655,7 @@ class TypeHintsTests(unittest.TestCase):
         self._test_typehint_non_parameterized_types(type=type)
 
 
-    @unittest.skipIf(sys.version_info[:2] < (3, 9), '[] support for builtins introduced in python 3.9')
+    @unittest.skipIf(sys.version_info < (3, 9), '[] support for builtins introduced in python 3.9')
     def test_typehint_parametrized_type(self):
         self._test_typehint_parameterized_types(type=type)
 
@@ -672,7 +672,7 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual('uuid: '+str(id1)+'\nuuids:\n- '+str(id1)+'\n- '+str(id2)+'\n', parser.dump(cfg))
 
 
-    @unittest.skipIf(sys.version_info[:2] < (3, 10), 'new union syntax introduced in python 3.10')
+    @unittest.skipIf(sys.version_info < (3, 10), 'new union syntax introduced in python 3.10')
     def test_union_new_syntax(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--val', type=eval('int | None'))
@@ -681,7 +681,7 @@ class TypeHintsTests(unittest.TestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--val=abc']))
 
 
-    @unittest.skipIf(sys.version_info[:2] < (3, 10), 'new union syntax introduced in python 3.10')
+    @unittest.skipIf(sys.version_info < (3, 10), 'new union syntax introduced in python 3.10')
     def test_union_new_syntax_subclasses(self):
         parser = ArgumentParser(error_handler=None)
         parser.add_argument('--op', type=eval('Calendar | bool'))

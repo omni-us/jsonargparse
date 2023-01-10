@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import sys
+from contextlib import suppress
 from typing import (
     Any,
     Callable,
@@ -23,7 +24,6 @@ from typing import (
 
 from ._common import lenient_check, parser_context
 from .actions import (
-    Action,
     ActionConfigFile,
     ActionParser,
     _ActionConfigLoad,
@@ -912,10 +912,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             default_config_files += [(None, x) for x in files]
 
         if len(default_config_files) > 0:
-            try:
+            with suppress(TypeError):
                 return [(k, Path(v, mode=get_config_read_mode())) for k, v in default_config_files]
-            except TypeError:
-                pass
         return []
 
 

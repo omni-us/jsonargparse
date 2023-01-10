@@ -109,6 +109,13 @@ class Namespace(argparse.Namespace):
     """Extension of argparse's Namespace to support nesting and subscript access."""
 
     def __init__(self, *args, **kwargs):
+        """Initializer for Namespace objects.
+
+        Instantiating a Namespace with initial values most commonly is done by
+        providing keyword arguments, e.g. ``Namespace(name1=value1,
+        name2=value2)``. Alternatively a single positional ``Namespace`` or
+        ``dict`` object can be given.
+        """
         if len(args) == 0:
             super().__init__(**kwargs)
         else:

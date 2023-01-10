@@ -1372,11 +1372,13 @@ this function, the example above would change to:
 Parameter resolvers
 -------------------
 
-Two techniques are implemented for resolving signature parameters. One makes use
-of python's `Abstract Syntax Trees (AST)
-<https://docs.python.org/3/library/ast.html>`__ library and the other is based
+Three techniques are implemented for resolving signature parameters. One makes
+use of python's `Abstract Syntax Trees (AST)
+<https://docs.python.org/3/library/ast.html>`__ library and the second is based
 on assumptions of class inheritance. The AST resolver is used first and only
-when AST fails, the assumptions resolver is used as fallback.
+when AST fails, the assumptions resolver is run as fallback. The third resolver
+uses stub files ``*.pyi`` and is applied on top of both the AST and assumptions
+resolvers.
 
 Unresolved parameters
 ^^^^^^^^^^^^^^^^^^^^^
