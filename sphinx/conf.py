@@ -70,11 +70,13 @@ doctest.OutputChecker = CustomOutputChecker
 
 doctest_global_setup = '''
 import os
+import pathlib
 import shutil
 import sys
 import tempfile
 from calendar import Calendar
 from dataclasses import dataclass
+from io import StringIO
 from typing import Callable, Iterable, List
 import jsonargparse_tests
 from jsonargparse import *

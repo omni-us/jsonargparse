@@ -1457,6 +1457,69 @@ class TypeHintsTmpdirTests(TempDirTestCase):
         self.assertRaises(ParserError, lambda: parser.parse_args(['--data=does-not-exist.yaml']))
 
 
+    def test_list_path_with_enable_path(self):
+        tmpdir = os.path.join(self.tmpdir, 'subdir')
+        os.mkdir(tmpdir)
+        pathlib.Path(os.path.join(tmpdir, 'file1')).touch()
+        pathlib.Path(os.path.join(tmpdir, 'file2')).touch()
+        pathlib.Path(os.path.join(tmpdir, 'file3')).touch()
+        pathlib.Path(os.path.join(tmpdir, 'file4')).touch()
+        pathlib.Path(os.path.join(tmpdir, 'file5')).touch()
+        list_file = os.path.join(tmpdir, 'files.lst')
+        list_file2 = os.path.join(tmpdir, 'files2.lst')
+        list_file3 = os.path.join(tmpdir, 'files3.lst')
+        list_file4 = os.path.join(tmpdir, 'files4.lst')
+        with open(list_file, 'w') as output_file:
+            output_file.write('file1\nfile2\nfile3\nfile4\n')
+        with open(list_file2, 'w') as output_file:
+            output_file.write('file5\n')
+        pathlib.Path(list_file3).touch()
+        with open(list_file4, 'w') as output_file:
+            output_file.write('file1\nfile2\nfile6\n')
+
+        parser = ArgumentParser(error_handler=None)
+        parser.add_argument(
+            '--lists',
+            nargs='+',
+            type=List[Path_fr],
+            enable_path=True,
+        )
+        parser.add_argument(
+            '--list',
+            type=List[Path_fr],
+            enable_path=True,
+        )
+
+        cfg = parser.parse_args(['--list', list_file])
+        self.assertTrue(all(isinstance(x, Path_fr) for x in cfg.list))
+        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [str(x) for x in cfg.list])
+
+        with unittest.mock.patch('sys.stdin', StringIO('file1\nfile2\n')):
+            with self.assertRaises(ParserError):
+                parser.parse_args(['--list', '-'])
+            with Path_drw('subdir').relative_path_context():
+                cfg = parser.parse_args(['--list', '-'])
+        self.assertTrue(all(isinstance(x, Path_fr) for x in cfg.list))
+        self.assertEqual(['file1', 'file2'], [str(x) for x in cfg.list])
+
+        cfg = parser.parse_args(['--lists', list_file])
+        self.assertEqual(1, len(cfg.lists))
+        self.assertTrue(all(isinstance(x, Path_fr) for x in cfg.lists[0]))
+        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [str(x) for x in cfg.lists[0]])
+
+        cfg = parser.parse_args(['--lists', list_file, list_file2])
+        self.assertEqual(2, len(cfg.lists))
+        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [str(x) for x in cfg.lists[0]])
+        self.assertEqual(['file5'], [str(x) for x in cfg.lists[1]])
+
+        cfg = parser.parse_args(['--lists', list_file3])
+        self.assertEqual([[]], cfg.lists)
+
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--lists']))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--lists', list_file4]))
+        self.assertRaises(ParserError, lambda: parser.parse_args(['--lists', 'no-such-file']))
+
+
     def test_default_path_unregistered_type(self):
         parser = ArgumentParser()
         parser.add_argument('--path',

@@ -108,7 +108,7 @@ def load_value(value: str, simple_types: bool = False, **kwargs):
         params = set(list(inspect.signature(loader).parameters)[1:])
         kwargs = {k: v for k, v in kwargs.items() if k in params}
     loaded_value = loader(value, **kwargs)
-    if not simple_types and isinstance(loaded_value, (int, float, bool)):
+    if not simple_types and isinstance(loaded_value, (int, float, bool, str)):
         loaded_value = value
     return loaded_value
 

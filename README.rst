@@ -512,8 +512,7 @@ path could be included in a config file as relative with respect to the config
 file's location. After parsing it should be easy to access the parsed file path
 without having to consider the location of the config file. To help in these
 situations jsonargparse includes a type generator :func:`.path_type`, some
-predefined types (e.g. :class:`.Path_fr`) and the :class:`.ActionPathList`
-class.
+predefined types (e.g. :class:`.Path_fr`).
 
 For example suppose you have a directory with a configuration file
 ``app/config.yaml`` and some data ``app/data/info.db``. The contents of the yaml
@@ -581,39 +580,37 @@ using the :py:meth:`.Path.get_content` method. For the previous example would be
 
 An argument with a path type can be given ``nargs='+'`` to parse multiple paths.
 But it might also be wanted to parse a list of paths found in a plain text file
-or from stdin. For this the :class:`.ActionPathList` is used and as argument
-either the path to a file listing the paths is given or the special ``'-'``
-string for reading the list from stdin. Example:
+or from stdin. For this add the argument with type ``List[<path_type>]`` and
+``enable_path=True``. To read from stdin give the special string ``'-'``.
+Example:
 
 .. testsetup:: path_list
 
     cwd = os.getcwd()
     tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
     os.chdir(tmpdir)
-    with open('paths.lst', 'w') as f:
-        f.write('paths.lst\n')
+    pathlib.Path('paths.lst').write_text('paths.lst\n')
 
     parser = ArgumentParser()
 
     stdin = sys.stdin
-    sys.stdin = open('paths.lst', 'r')
+    sys.stdin = StringIO('paths.lst\n')
 
 .. testcleanup:: path_list
 
-    sys.stdin.close()
     sys.stdin = stdin
     os.chdir(cwd)
     shutil.rmtree(tmpdir)
 
 .. testcode:: path_list
 
-    from jsonargparse import ActionPathList
-    parser.add_argument('--list', action=ActionPathList(mode='fr'))
-    cfg = parser.parse_args(['--list', 'paths.lst'])  # Text file with paths
-    cfg = parser.parse_args(['--list', '-'])          # List from stdin
+    from jsonargparse.typing import Path_fr
+    parser.add_argument('--list', type=List[Path_fr], enable_path=True)
+    cfg = parser.parse_args(['--list', 'paths.lst'])  # File with list of paths
+    cfg = parser.parse_args(['--list', '-'])          # List of paths from stdin
 
-If ``nargs='+'`` is given to ``add_argument`` with :class:`.ActionPathList` then
-a single list is generated including all paths in all provided lists.
+If ``nargs='+'`` is given to ``add_argument`` with ``List[<path_type>]`` and
+``enable_path=True`` then for each argument a list of paths is generated.
 
 .. note::
 

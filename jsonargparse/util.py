@@ -146,7 +146,7 @@ def parse_value_or_config(value: Any, enable_path: bool = True, simple_types: bo
         except TypeError:
             pass
         else:
-            with change_to_path_dir(cfg_path):
+            with cfg_path.relative_path_context():
                 value = load_value(cfg_path.get_content(), simple_types=simple_types)
     if type(value) is str and value.strip() != '':
         parsed_val = load_value(value, simple_types=simple_types)
@@ -176,6 +176,18 @@ def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None
         raise DebugException('jsonargparse debug enabled, thus raising exception instead of exit.')
     else:
         parser.exit(2)
+
+
+class CachedStdin(StringIO):
+    """Used to allow reading sys.stdin multiple times."""
+
+
+def read_stdin() -> str:
+    if not isinstance(sys.stdin, CachedStdin):
+        sys.stdin = CachedStdin(sys.stdin.read())
+    value = sys.stdin.read()
+    sys.stdin.seek(0)
+    return value
 
 
 def is_subclass(cls, class_or_tuple):
