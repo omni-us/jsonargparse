@@ -22,6 +22,8 @@ Deprecated
 - Modifying Path attributes is deprecated. In v5.0.0 they will be properties
   without a setter and two renamed: ``rel_path -> relative`` and ``abs_path ->
   absolute``.
+- ``ActionPathList`` is deprecated and will be removed in v5.0.0. Instead use as
+  type ``List[<path_type>]`` with ``enable_path=True``.
 
 
 v4.19.0 (2022-12-27)

@@ -70,6 +70,7 @@ from .util import (
     iter_to_set_str,
     object_path_serializer,
     parse_value_or_config,
+    read_stdin,
     warning,
 )
 
@@ -435,6 +436,7 @@ class ActionTypeHint(Action):
                     'sub_add_kwargs': getattr(self, 'sub_add_kwargs', {}),
                     'prev_val': prev_val,
                     'append': append,
+                    'enable_path': enable_path,
                 }
                 try:
                     with change_to_path_dir(config_path):
@@ -543,13 +545,22 @@ def raise_union_unexpected_value(uniontype, val: Any, exceptions: List[Exception
     ) from exceptions[0]
 
 
-def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, prev_val=None, append=False, sub_add_kwargs=None):
-
+def adapt_typehints(
+    val,
+    typehint,
+    serialize=False,
+    instantiate_classes=False,
+    prev_val=None,
+    append=False,
+    enable_path=False,
+    sub_add_kwargs=None,
+):
     adapt_kwargs = {
         'serialize': serialize,
         'instantiate_classes': instantiate_classes,
         'prev_val': prev_val,
         'append': append,
+        'enable_path': enable_path,
         'sub_add_kwargs': sub_add_kwargs or {},
     }
     subtypehints = getattr(typehint, '__args__', None)
@@ -665,6 +676,14 @@ def adapt_typehints(val, typehint, serialize=False, instantiate_classes=False, p
             val_is_list = isinstance(val, list)
             val = prev_val + (val if val_is_list else [val])
             prev_val = prev_val + [None] * (len(val)-len(prev_val) if val_is_list else 1)
+        if enable_path and type(val) is str:
+            if val == '-':
+                val = read_stdin().splitlines()
+            else:
+                with suppress(TypeError):
+                    from .optionals import get_config_read_mode
+                    list_path = Path(val, mode=get_config_read_mode())
+                    val = list_path.get_content().splitlines()
         if isinstance(val, NestedArg) and subtypehints is not None:
             val = (prev_val[:-1] if isinstance(prev_val, list) else []) + [val]
         elif isinstance(val, Iterable) and not isinstance(val, (list, str)) and type(val) not in mapping_origin_types:

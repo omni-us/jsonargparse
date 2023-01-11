@@ -3,15 +3,19 @@
 import functools
 import inspect
 import os
+import sys
+from argparse import Action
 from enum import Enum
-from typing import Any, Dict, Set
+from typing import Any, Dict, Optional, Set
 
 from .namespace import Namespace
+from .optionals import FilesCompleterMethod
 
 __all__ = [
     'ActionEnum',
     'ActionOperators',
     'ActionPath',
+    'ActionPathList',
     'set_url_support',
 ]
 
@@ -229,6 +233,87 @@ class ActionPath:
     def __call__(self, *args, **kwargs):
         from .typehints import ActionTypeHint
         return ActionTypeHint(typehint=self._type)(**kwargs)
+
+
+@deprecated("""
+    ActionPathList was deprecated in v4.20.0 and will be removed in v5.0.0. Instead
+    use as type ``List[<path_type>]`` with ``enable_path=True``.
+""")
+class ActionPathList(Action, FilesCompleterMethod):
+    """Action to check and store a list of file paths read from a plain text file or stream."""
+
+    def __init__(
+        self,
+        mode: Optional[str] = None,
+        rel: str = 'cwd',
+        **kwargs
+    ):
+        """Initializer for ActionPathList instance.
+
+        Args:
+            mode: The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
+            rel: Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list'.
+
+        Raises:
+            ValueError: If any of the parameters (mode or rel) are invalid.
+        """
+        if mode is not None:
+            from .typing import path_type
+            self._type = path_type(mode)
+            self._rel = rel
+            if self._rel not in {'cwd', 'list'}:
+                raise ValueError(f'rel must be either "cwd" or "list", got {self._rel}.')
+        elif '_type' not in kwargs:
+            raise ValueError('Expected mode keyword argument.')
+        else:
+            self._type = kwargs.pop('_type')
+            self._rel = kwargs.pop('_rel')
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        """Parses an argument as a PathList and if valid sets the parsed value to the corresponding key.
+
+        Raises:
+            TypeError: If the argument is not a valid PathList.
+        """
+        if len(args) == 0:
+            if 'nargs' in kwargs and kwargs['nargs'] not in {'+', 1}:
+                raise ValueError('ActionPathList only supports nargs of 1 or "+".')
+            kwargs['_type'] = self._type
+            kwargs['_rel'] = self._rel
+            return ActionPathList(**kwargs)
+        setattr(args[1], self.dest, self._check_type(args[2]))
+        return None
+
+    def _check_type(self, value, cfg=None):
+        if value == []:
+            return value
+        from .actions import _is_action_value_list
+        islist = _is_action_value_list(self)
+        if not islist and not isinstance(value, list):
+            value = [value]
+        if isinstance(value, list) and all(not isinstance(v, self._type) for v in value):
+            path_list_files = value
+            value = []
+            for path_list_file in path_list_files:
+                try:
+                    with sys.stdin if path_list_file == '-' else open(path_list_file) as f:
+                        path_list = [x.strip() for x in f.readlines()]
+                except FileNotFoundError as ex:
+                    raise TypeError(f'Problems reading path list: {path_list_file} :: {ex}') from ex
+                cwd = os.getcwd()
+                if self._rel == 'list' and path_list_file != '-':
+                    os.chdir(os.path.abspath(os.path.join(path_list_file, os.pardir)))
+                try:
+                    for num, val in enumerate(path_list):
+                        try:
+                            path_list[num] = self._type(val)
+                        except TypeError as ex:
+                            raise TypeError(f'Path number {num+1} in list {path_list_file}, {ex}') from ex
+                finally:
+                    os.chdir(cwd)
+                value += path_list
+        return value
 
 
 @deprecated("""

@@ -2,14 +2,12 @@
 
 import json
 import os
-import pathlib
 import unittest
 from io import StringIO
 
 from jsonargparse import (
     ActionConfigFile,
     ActionParser,
-    ActionPathList,
     ActionYesNo,
     ArgumentParser,
     ParserError,
@@ -72,61 +70,6 @@ class SimpleActionsTests(unittest.TestCase):
         self.assertEqual(False, parser.parse_args(['--val', 'false']).val)
         self.assertEqual(False, parser.parse_args(['--val', 'no']).val)
         self.assertRaises(ParserError, lambda: parser.parse_args(['--val', '1']))
-
-
-class ActionPathTests(TempDirTestCase):
-
-    def test_ActionPathList(self):
-        tmpdir = os.path.join(self.tmpdir, 'subdir')
-        os.mkdir(tmpdir)
-        pathlib.Path(os.path.join(tmpdir, 'file1')).touch()
-        pathlib.Path(os.path.join(tmpdir, 'file2')).touch()
-        pathlib.Path(os.path.join(tmpdir, 'file3')).touch()
-        pathlib.Path(os.path.join(tmpdir, 'file4')).touch()
-        pathlib.Path(os.path.join(tmpdir, 'file5')).touch()
-        list_file = os.path.join(tmpdir, 'files.lst')
-        list_file2 = os.path.join(tmpdir, 'files2.lst')
-        list_file3 = os.path.join(tmpdir, 'files3.lst')
-        list_file4 = os.path.join(tmpdir, 'files4.lst')
-        with open(list_file, 'w') as output_file:
-            output_file.write('file1\nfile2\nfile3\nfile4\n')
-        with open(list_file2, 'w') as output_file:
-            output_file.write('file5\n')
-        pathlib.Path(list_file3).touch()
-        with open(list_file4, 'w') as output_file:
-            output_file.write('file1\nfile2\nfile6\n')
-
-        parser = ArgumentParser(prog='app', error_handler=None)
-        parser.add_argument('--list',
-            nargs='+',
-            action=ActionPathList(mode='fr', rel='list'))
-        parser.add_argument('--list_cwd',
-            action=ActionPathList(mode='fr', rel='cwd'))
-
-        cfg = parser.parse_args(['--list', list_file])
-        self.assertEqual(4, len(cfg.list))
-        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [str(x) for x in cfg.list])
-
-        cfg = parser.parse_args(['--list', list_file, list_file2])
-        self.assertEqual(5, len(cfg.list))
-        self.assertEqual(['file1', 'file2', 'file3', 'file4', 'file5'], [str(x) for x in cfg.list])
-
-        self.assertEqual(0, len(parser.parse_args(['--list', list_file3]).list))
-
-        cwd = os.getcwd()
-        os.chdir(tmpdir)
-        cfg = parser.parse_args(['--list_cwd', list_file])
-        self.assertEqual(4, len(cfg.list_cwd))
-        self.assertEqual(['file1', 'file2', 'file3', 'file4'], [str(x) for x in cfg.list_cwd])
-        os.chdir(cwd)
-
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--list']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--list', list_file4]))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--list', 'no-such-file']))
-
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPathList))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPathList(mode='fr'), nargs='*'))
-        self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPathList(mode='fr', rel='.')))
 
 
 class ActionParserTests(TempDirTestCase):
