@@ -6,7 +6,7 @@ import pickle
 import unittest
 from datetime import timedelta
 
-from jsonargparse import ArgumentParser, ParserError
+from jsonargparse import ArgumentError, ArgumentParser
 from jsonargparse.typing import (
     ClosedUnitInterval,
     Email,
@@ -110,7 +110,7 @@ class RestrictedNumberTests(unittest.TestCase):
         def gt0_or_off(x):
             return x if x == 'off' else PositiveInt(x)
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--le0', type=NonNegativeFloat)
         parser.add_argument('--f10t20', type=TenToTwenty, nargs='+')
         parser.add_argument('--gt0_or_off', type=gt0_or_off)
@@ -118,21 +118,21 @@ class RestrictedNumberTests(unittest.TestCase):
 
         self.assertEqual(0.0, parser.parse_args(['--le0', '0']).le0)
         self.assertEqual(5.6, parser.parse_args(['--le0', '5.6']).le0)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--le0', '-2.1']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--le0', '-2.1']))
 
         self.assertEqual([11, 14, 16], parser.parse_args(['--f10t20', '11', '14', '16']).f10t20)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--f10t20', '9']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--f10t20', '21']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--f10t20', '10.5']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--f10t20', '9']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--f10t20', '21']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--f10t20', '10.5']))
 
         self.assertEqual(1, parser.parse_args(['--gt0_or_off', '1']).gt0_or_off)
         self.assertEqual('off', parser.parse_args(['--gt0_or_off', 'off']).gt0_or_off)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--gt0_or_off', '0']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--gt0_or_off', 'on']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--gt0_or_off', '0']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--gt0_or_off', 'on']))
 
         self.assertEqual([1, 'off'], parser.parse_args(['--multi_gt0_or_off', '1', 'off']).multi_gt0_or_off)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--multi_gt0_or_off', '1', '0']))
-        self.assertRaises(ParserError, lambda: parser.parse_object({'multi_gt0_or_off': [1, 0]}))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--multi_gt0_or_off', '1', '0']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_object({'multi_gt0_or_off': [1, 0]}))
 
 
 class RestrictedStringTests(unittest.TestCase):
@@ -152,12 +152,12 @@ class RestrictedStringTests(unittest.TestCase):
 
     def test_add_argument_type(self):
         FourDigits = restricted_string_type('FourDigits', '^[0-9]{4}$')
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--op', type=FourDigits)
         self.assertEqual('1234', parser.parse_args(['--op', '1234']).op)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', '123']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', '12345']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op', 'abcd']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op', '123']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op', '12345']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op', 'abcd']))
 
 
 class PathTypeTests(TempDirTestCase):
@@ -279,7 +279,7 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(TypeError, lambda: not Elems(1, 2))
         register_type(Elems, lambda x: x.elems, lambda x: Elems(*x))
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--elems', type=Elems)
         cfg = parser.parse_args(['--elems=[1, 2, 3]'])
         self.assertIsInstance(cfg.elems, Elems)

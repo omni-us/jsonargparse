@@ -4,6 +4,7 @@ import inspect
 import os
 import re
 import sys
+from argparse import ArgumentError
 from collections import abc, defaultdict
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
@@ -59,7 +60,6 @@ from .util import (
     ClassType,
     NestedArg,
     NoneType,
-    ParserError,
     Path,
     change_to_path_dir,
     get_import_path,
@@ -484,7 +484,7 @@ class ActionTypeHint(Action):
         if skip_args:
             kwargs.setdefault('skip', set()).add(skip_args)
         parser = parent_parser.get()
-        parser = type(parser)(error_handler=None, logger=parser.logger)
+        parser = type(parser)(exit_on_error=False, logger=parser.logger)
         remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
         parser.add_class_arguments(val_class, **kwargs)
         return parser
@@ -754,7 +754,7 @@ def adapt_typehints(
                         raise ImportError(f'Expected {val["class_path"]!r} to be a class that instantiates into callable or a subclass of {partial_classes}')
                     val['class_path'] = get_import_path(val_class)
                     val = adapt_class_type(val, False, instantiate_classes, sub_add_kwargs, skip_args=num_partial_args)
-            except (ImportError, AttributeError, ParserError) as ex:
+            except (ImportError, AttributeError, ArgumentError) as ex:
                 raise_unexpected_value(f'Type {typehint} expects a function or a callable class: {ex}', val, ex)
 
     # Subclass
@@ -783,7 +783,7 @@ def adapt_typehints(
                 raise_unexpected_value(f'Import path {val["class_path"]} does not correspond to a subclass of {typehint}')
             val['class_path'] = get_import_path(val_class)
             val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
-        except (ImportError, AttributeError, AssertionError, ParserError) as ex:
+        except (ImportError, AttributeError, AssertionError, ArgumentError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
             error = indent_text(f'\n- {ex}')
             raise_unexpected_value(f'Problem with given class_path {class_path!r}:{error}', exception=ex)
@@ -1143,11 +1143,11 @@ def callable_instances(cls: Type):
 def check_lazy_kwargs(class_type: Type, lazy_kwargs: dict):
     if lazy_kwargs:
         from .core import ArgumentParser
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(class_type)
         try:
             parser.parse_object(lazy_kwargs)
-        except ParserError as ex:
+        except ArgumentError as ex:
             raise ValueError(str(ex)) from ex
 
 

@@ -39,6 +39,7 @@ from .actions import (
     parent_parsers,
     previous_config,
 )
+from .deprecated import ParserDeprecations
 from .formatters import DefaultHelpFormatter, empty_help, get_env_var
 from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
 from .jsonschema import ActionJsonSchema
@@ -74,14 +75,13 @@ from .signatures import SignatureArguments, is_pure_dataclass
 from .typehints import ActionTypeHint, is_subclass_spec
 from .typing import is_final_class
 from .util import (
-    ParserError,
     Path,
+    argument_error,
     change_to_path_dir,
     get_private_kwargs,
     identity,
     is_subclass,
     return_parser_if_captured,
-    usage_and_exit_error_handler,
 )
 
 __all__ = ['ActionsContainer', 'ArgumentParser']
@@ -183,7 +183,7 @@ class _ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     parser: Optional['ArgumentParser'] = None
 
 
-class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser):
+class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argparse.ArgumentParser):
     """Parser for command line, yaml/jsonnet files and environment variables."""
 
     formatter_class: Type[DefaultHelpFormatter]
@@ -195,8 +195,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         self,
         *args,
         env_prefix: Union[bool, str] = True,
-        error_handler: Optional[Callable[['ArgumentParser', str], None]] = usage_and_exit_error_handler,
         formatter_class: Type[DefaultHelpFormatter] = DefaultHelpFormatter,
+        exit_on_error: bool = True,
         logger: Union[bool, str, dict, logging.Logger] = False,
         version: Optional[str] = None,
         print_config: Optional[str] = '--print_config',
@@ -215,7 +215,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
         Args:
             env_prefix: Prefix for environment variables. ``True`` to derive from ``prog``.
-            error_handler: Handler for parsing errors, if None raises :class:`.ParserError` exception.
             formatter_class: Class for printing help messages.
             logger: Configures the logger, see :class:`.LoggerProperty`.
             version: Program version which will be printed by the --version argument.
@@ -229,6 +228,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         super().__init__(*args, formatter_class=formatter_class, logger=logger, **kwargs)
         if self.groups is None:
             self.groups = {}
+        self.exit_on_error = exit_on_error
         self.required_args: Set[str] = set()
         self.save_path_content: Set[str] = set()
         self.default_config_files = default_config_files  # type: ignore
@@ -237,7 +237,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         self.env_prefix = env_prefix
         self.parser_mode = parser_mode
         self.dump_header = dump_header
-        self.error_handler = error_handler
         self._print_config = print_config
         if version is not None:
             self.add_argument('--version', action='version', version='%(prog)s '+version, help='Print version and exit.')
@@ -257,7 +256,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
         try:
             with patch_namespace(), parser_context(parent_parser=self, lenient_check=True), ActionTypeHint.subclass_arg_context(self):
                 namespace, args = self._parse_known_args(args, namespace)
-        except (argparse.ArgumentError, ParserError) as ex:
+        except argparse.ArgumentError as ex:
             self.error(str(ex), ex)
 
         return namespace, args
@@ -367,7 +366,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             A config object with all parsed values.
 
         Raises:
-            ParserError: If there is a parsing error and error_handler=None.
+            ArgumentError: If the parsing fails error and exit_on_error=True.
         """
         skip_check = get_private_kwargs(kwargs, _skip_check=False)
         return_parser_if_captured(self)
@@ -427,7 +426,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             A config object with all parsed values.
 
         Raises:
-            ParserError: If there is a parsing error and error_handler=None.
+            ArgumentError: If the parsing fails error and exit_on_error=True.
         """
         skip_check, skip_required = get_private_kwargs(kwargs, _skip_check=False, _skip_required=False)
 
@@ -506,7 +505,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             A config object with all parsed values.
 
         Raises:
-            ParserError: If there is a parsing error and error_handler=None.
+            ArgumentError: If the parsing fails error and exit_on_error=True.
         """
         skip_check, skip_subcommands = get_private_kwargs(kwargs, _skip_check=False, _skip_subcommands=False)
 
@@ -551,7 +550,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             A config object with all parsed values.
 
         Raises:
-            ParserError: If there is a parsing error and error_handler=None.
+            ArgumentError: If the parsing fails error and exit_on_error=True.
         """
         fpath = Path(cfg_path, mode=get_config_read_mode())
         with change_to_path_dir(fpath):
@@ -594,7 +593,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
             A config object with all parsed values.
 
         Raises:
-            ParserError: If there is a parsing error and error_handler=None.
+            ArgumentError: If the parsing fails error and exit_on_error=True.
         """
         skip_check, fail_no_subcommand = get_private_kwargs(kwargs, _skip_check=False, _fail_no_subcommand=True)
 
@@ -981,8 +980,8 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                             skip_check=skip_check,
                             skip_required=True,
                         )
-                except (TypeError, KeyError, ParserError) as ex:
-                    raise ParserError(f'Problem in default config file "{default_config_file}" :: {ex.args[0]}') from ex
+                except (TypeError, KeyError, argparse.ArgumentError) as ex:
+                    raise argument_error(f'Problem in default config file "{default_config_file}": {ex.args[0]}') from ex
             meta = cfg.get('__default_config__')
             if isinstance(meta, list):
                 meta.append(default_config_file)
@@ -1000,14 +999,19 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
     ## Other methods ##
 
     def error(self, message: str, ex: Optional[Exception] = None) -> NoReturn:
-        """Logs error message if a logger is set, calls the error handler and raises a ParserError."""
+        """Logs error message if a logger is set and exits or raises an ArgumentError."""
         self._logger.error(message)
-        if self._error_handler is not None:
+        if callable(self._error_handler):
             self._error_handler(self, message)
-        if ex is None:
-            raise ParserError(message)
-        else:
-            raise ParserError(message) from ex
+        if not self.exit_on_error:
+            raise argument_error(message) from ex
+        elif 'JSONARGPARSE_DEBUG' in os.environ:
+            self._logger.debug('Debug enabled, thus raising exception instead of exit.')
+            raise argument_error(message) from ex
+        self.print_usage(sys.stderr)
+        args = {'prog': self.prog, 'message': message}
+        sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
+        self.exit(2)
 
 
     def check_config(
@@ -1193,7 +1197,7 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
                     if isinstance(config_files, list):
                         config_files = [str(x) for x in config_files]
                     note = f'default values below are the ones overridden by the contents of: {config_files}'
-            except ParserError as ex:
+            except argparse.ArgumentError as ex:
                 note = f'tried getting defaults considering default_config_files but failed due to: {ex}'
             group = self._default_config_files_group
             group.description = f'{self._default_config_files}, Note: {note}'
@@ -1326,27 +1330,6 @@ class ArgumentParser(ActionsContainer, ArgumentLinking, argparse.ArgumentParser)
 
 
     ## Properties ##
-
-    @property
-    def error_handler(self) -> Optional[Callable[['ArgumentParser', str], None]]:
-        """Property for the error_handler function that is called when there are parsing errors.
-
-        :getter: Returns the current error_handler function.
-        :setter: Sets a new error_handler function (Callable[self, message:str] or None).
-
-        Raises:
-            ValueError: If an invalid value is given.
-        """
-        return self._error_handler
-
-
-    @error_handler.setter
-    def error_handler(self, error_handler: Optional[Callable[['ArgumentParser', str], None]]):
-        if callable(error_handler) or error_handler is None:
-            self._error_handler = error_handler
-        else:
-            raise ValueError('error_handler can be either a Callable or None.')
-
 
     @property
     def default_config_files(self) -> List[str]:

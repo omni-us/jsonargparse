@@ -179,7 +179,7 @@ class StubsResolverTests(unittest.TestCase):
         if sys.version_info >= (3, 10):
             self.assertTrue(all(p.annotation != inspect._empty for p in params))
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_function_arguments(get, fail_untyped=False)
         self.assertEqual(['url', 'params'], list(parser.get_defaults().keys()))
         help_str = StringIO()

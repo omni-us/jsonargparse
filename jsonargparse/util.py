@@ -8,6 +8,7 @@ import stat
 import sys
 import textwrap
 import warnings
+from argparse import ArgumentError
 from collections import Counter, namedtuple
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -48,10 +49,8 @@ __all__ = [
     'class_from_function',
     'LoggerProperty',
     'null_logger',
-    'ParserError',
     'Path',
     'register_unresolvable_import_paths',
-    'usage_and_exit_error_handler',
 ]
 
 
@@ -73,12 +72,8 @@ class UrlData:
     url_path: str
 
 
-class ParserError(Exception):
-    """Error raised when parsing a value fails."""
-
-
-class DebugException(Exception):
-    pass
+def argument_error(message: str) -> ArgumentError:
+    return ArgumentError(None, message)
 
 
 class JsonargparseWarning(UserWarning):
@@ -157,25 +152,6 @@ def parse_value_or_config(value: Any, enable_path: bool = True, simple_types: bo
     if nested_arg:
         value = NestedArg(key=nested_arg.key, val=value)  # type: ignore
     return value, cfg_path
-
-
-def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None:
-    """Error handler that prints the usage and exits with error code 2 (same behavior as argparse).
-
-    If the JSONARGPARSE_DEBUG environment variable is set, instead of exit, a
-    DebugException is raised.
-
-    Args:
-        parser: The parser object.
-        message: The message describing the error being handled.
-    """
-    parser.print_usage(sys.stderr)
-    args = {'prog': parser.prog, 'message': message}
-    sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
-    if 'JSONARGPARSE_DEBUG' in os.environ:
-        raise DebugException('jsonargparse debug enabled, thus raising exception instead of exit.')
-    else:
-        parser.exit(2)
 
 
 class CachedStdin(StringIO):

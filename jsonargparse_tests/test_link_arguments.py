@@ -11,9 +11,9 @@ import yaml
 
 from jsonargparse import (
     ActionConfigFile,
+    ArgumentError,
     ArgumentParser,
     Namespace,
-    ParserError,
     lazy_instance,
 )
 from jsonargparse.optionals import docstring_parser_support
@@ -45,7 +45,7 @@ class LinkArgumentsTests(unittest.TestCase):
 
 
     def test_link_arguments_on_parse_compute_fn_single_arguments(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--a.v1', default=2)
         parser.add_argument('--a.v2', type=int, default=3)
         parser.add_argument('--b.v2', type=int, default=4)
@@ -55,14 +55,14 @@ class LinkArgumentsTests(unittest.TestCase):
 
         cfg = parser.parse_args(['--a.v2=-5'])
         self.assertEqual(cfg.b.v2, cfg.a.v1*cfg.a.v2)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--a.v1=x']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--a.v1=x']))
 
         dump = yaml.safe_load(parser.dump(cfg))
         self.assertEqual(dump, {'a': {'v1': 2, 'v2': -5}})
 
 
     def test_link_arguments_on_parse_compute_fn_subclass_spec(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--cfg', action=ActionConfigFile)
         parser.add_argument('--cal1', type=Calendar, default=lazy_instance(TextCalendar))
         parser.add_argument('--cal2', type=Calendar, default=lazy_instance(Calendar))
@@ -83,11 +83,11 @@ class LinkArgumentsTests(unittest.TestCase):
             self.assertEqual(cfg.cal2.init_args.firstweekday, 3)
 
         with self.subTest('invalid arg'):
-            with self.assertRaises(ParserError) as cm:
+            with self.assertRaises(ArgumentError) as cm:
                 parser.parse_args(['--cal1.class_path.init_args.firstweekday=2'])
             self.assertIn('Parser key "cal1"', str(cm.exception))
             parser.set_defaults(cal1=None)
-            with self.assertRaises(ParserError) as cm:
+            with self.assertRaises(ArgumentError) as cm:
                 parser.parse_args(['--cal1.firstweekday=-'])
             self.assertIn('Parser key "cal1"', str(cm.exception))
 
@@ -104,7 +104,7 @@ class LinkArgumentsTests(unittest.TestCase):
                     v1: b v1 help
                 """
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(ClassA, 'a')
         parser.add_class_arguments(ClassB, 'b')
         parser.link_arguments('a.v2', 'b.v1')
@@ -133,7 +133,7 @@ class LinkArgumentsTests(unittest.TestCase):
                 self.assertIn('b v1 help', help_str.getvalue())
 
         with self.subTest('failure cases'):
-            self.assertRaises(ParserError, lambda: parser.parse_args(['--b.v1=5']))
+            self.assertRaises(ArgumentError, lambda: parser.parse_args(['--b.v1=5']))
             self.assertRaises(ValueError, lambda: parser.link_arguments('a.v2', 'b.v1'))
             self.assertRaises(ValueError, lambda: parser.link_arguments('x', 'b.v2'))
             self.assertRaises(ValueError, lambda: parser.link_arguments('a.v1', 'x'))
@@ -150,7 +150,7 @@ class LinkArgumentsTests(unittest.TestCase):
             ):
                 pass
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_subclass_arguments(ClassA, 'a')
         parser.add_subclass_arguments(Calendar, 'c')
 
@@ -179,7 +179,7 @@ class LinkArgumentsTests(unittest.TestCase):
             self.assertRaises(ValueError, lambda: parser.link_arguments('a.init_args.v1', 'c.init_args'))
 
             a_value['init_args'] = {'v1': 'a', 'v2': 'b'}
-            with self.assertRaises(ParserError):
+            with self.assertRaises(ArgumentError):
                 parser.parse_args(['--a='+json.dumps(a_value), '--c=calendar.Calendar'])
 
 
@@ -216,7 +216,7 @@ class LinkArgumentsTests(unittest.TestCase):
             ):
                 self.c = c
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_subclass_arguments(ClassA, 'a')
         parser.add_subclass_arguments(Calendar, 'c', instantiate=False)
         parser.link_arguments('c', 'a.init_args.c')
@@ -257,7 +257,7 @@ class LinkArgumentsTests(unittest.TestCase):
         def return_dict(value: dict):
             return value
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_subclass_arguments(ClassA, 'a')
         parser.add_subclass_arguments(Calendar, 'c')
         parser.link_arguments('c', 'a.init_args.a1', compute_fn=return_dict)
@@ -320,7 +320,7 @@ class LinkArgumentsTests(unittest.TestCase):
                 self.c2 = c2
 
         def make_parser_1():
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_class_arguments(ClassA, 'a')
             parser.add_class_arguments(ClassB, 'b')
             parser.add_class_arguments(ClassC, 'c')
@@ -333,7 +333,7 @@ class LinkArgumentsTests(unittest.TestCase):
             return obj_b.b2
 
         def make_parser_2():
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_subclass_arguments(ClassA, 'a')
             parser.add_subclass_arguments(ClassB, 'b')
             parser.link_arguments('b', 'a.init_args.a1', get_b2, apply_on='instantiate')
@@ -489,7 +489,7 @@ class LinkArgumentsTests(unittest.TestCase):
             def __init__(self, b1: int = 2):
                 self.b1 = b1
 
-        parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+        parser = ArgumentParser(exit_on_error=False, logger={'level': 'DEBUG'})
         with mock_module(ClassA, ClassB) as module, self.assertLogs(logger=parser.logger, level='DEBUG') as log:
             parser.add_subclass_arguments(ClassA, 'a', default=lazy_instance(ClassA))
             parser.add_subclass_arguments(ClassB, 'b', default=lazy_instance(ClassB))
@@ -500,7 +500,7 @@ class LinkArgumentsTests(unittest.TestCase):
             self.assertTrue(any('a.init_args.a2 --> b.init_args.b1 ignored since source' in x for x in log.output))
             self.assertTrue(any('a.init_args.a1 --> b.init_args.b2 ignored since target' in x for x in log.output))
 
-        parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+        parser = ArgumentParser(exit_on_error=False, logger={'level': 'DEBUG'})
         with mock_module(ClassA, ClassB) as module, self.assertLogs(logger=parser.logger, level='DEBUG') as log:
             parser.add_subclass_arguments(ClassA, 'a', default=lazy_instance(ClassA))
             parser.add_subclass_arguments(ClassB, 'b', default=lazy_instance(ClassB))

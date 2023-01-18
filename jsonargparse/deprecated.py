@@ -4,19 +4,22 @@ import functools
 import inspect
 import os
 import sys
-from argparse import Action
+from argparse import Action, ArgumentError
 from enum import Enum
-from typing import Any, Dict, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set
 
 from .namespace import Namespace
 from .optionals import FilesCompleterMethod
+from .type_checking import ArgumentParser
 
 __all__ = [
     'ActionEnum',
     'ActionOperators',
     'ActionPath',
     'ActionPathList',
+    'ParserError',
     'set_url_support',
+    'usage_and_exit_error_handler',
 ]
 
 
@@ -380,7 +383,6 @@ path_immutable_attrs_message = """
     Please update your code to use the new property names and don't modify path
     attributes. The changes are: ``rel_path`` -> ``relative`` and ``abs_path``
     -> ``absolute``, ``cwd`` no name change, ``skip_check`` will be removed.
-
 """
 
 class PathDeprecations:
@@ -433,6 +435,69 @@ class PathDeprecations:
     def skip_check(self, skip_check):
         deprecation_warning('Path attr set', path_immutable_attrs_message)
         self._skip_check = skip_check
+
+
+class DebugException(Exception):
+    pass
+
+
+@deprecated("""
+    usage_and_exit_error_handler was deprecated in v4.20.0 and will be removed
+    in v5.0.0. With the removal of error_handler, there is no longer a need for
+    this function.
+""")
+def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None:
+    """Prints the usage and exits with error code 2 (same behavior as argparse).
+
+    Args:
+        parser: The parser object.
+        message: The message describing the error being handled.
+    """
+    parser.print_usage(sys.stderr)
+    args = {'prog': parser.prog, 'message': message}
+    sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
+    parser.exit(2)
+
+
+error_handler_message = """
+    ArgumentParser's error_handler was deprecated in v4.20.0 and will be removed
+    in v5.0.0. Instead use the new exit_on_error parameter from argparse.
+"""
+
+
+def deprecation_warning_error_handler():
+    deprecation_warning('ArgumentParser.error_handler', error_handler_message)
+
+
+class ParserDeprecations:
+
+    def __init__(self, *args, error_handler=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.error_handler = error_handler
+
+    @property
+    def error_handler(self) -> Optional[Callable[['ArgumentParser', str], None]]:
+        """Property for the error_handler function that is called when there are parsing errors.
+
+        :getter: Returns the current error_handler function.
+        :setter: Sets a new error_handler function (Callable[self, message:str] or None).
+
+        Raises:
+            ValueError: If an invalid value is given.
+        """
+        return self._error_handler
+
+    @error_handler.setter
+    def error_handler(self, error_handler):
+        if error_handler is not False:
+            deprecation_warning_error_handler()
+        if callable(error_handler) or error_handler in {None, False}:
+            self._error_handler = error_handler
+        else:
+            raise ValueError('error_handler can be either a Callable or None.')
+
+
+ParserError = ArgumentError
 
 
 import jsonargparse.optionals

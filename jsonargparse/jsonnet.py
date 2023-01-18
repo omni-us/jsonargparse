@@ -12,7 +12,7 @@ from .optionals import (
     import_jsonnet,
     import_jsonschema,
 )
-from .util import ParserError, Path
+from .util import Path, argument_error
 
 __all__ = [
     'ActionJsonnetExtVars',
@@ -166,7 +166,7 @@ class ActionJsonnet(Action):
             with parser_context(load_value_mode='yaml'):
                 values = load_value(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
         except RuntimeError as ex:
-            raise ParserError(f'Problems evaluating jsonnet "{fname}" :: {ex}') from ex
+            raise argument_error(f'Problems evaluating jsonnet "{fname}": {ex}') from ex
         if self._validator is not None:
             self._validator.validate(values)
         if with_meta:

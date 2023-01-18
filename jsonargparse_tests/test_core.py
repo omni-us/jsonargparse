@@ -23,13 +23,12 @@ from jsonargparse import (
     ActionJsonSchema,
     ActionParser,
     ActionYesNo,
+    ArgumentError,
     ArgumentParser,
     Namespace,
-    ParserError,
     Path,
     set_config_read_mode,
     strip_meta,
-    usage_and_exit_error_handler,
 )
 from jsonargparse.namespace import meta_keys
 from jsonargparse.optionals import (
@@ -47,12 +46,7 @@ from jsonargparse.typing import (
     PositiveFloat,
     PositiveInt,
 )
-from jsonargparse.util import (
-    CaptureParserException,
-    DebugException,
-    capture_parser,
-    null_logger,
-)
+from jsonargparse.util import CaptureParserException, capture_parser
 from jsonargparse_tests.base import (
     TempDirTestCase,
     is_cpython,
@@ -64,7 +58,7 @@ from jsonargparse_tests.base import (
 
 def example_parser():
     """Creates a simple parser for doing tests."""
-    parser = ArgumentParser(prog='app', default_meta=False, error_handler=None)
+    parser = ArgumentParser(prog='app', default_meta=False, exit_on_error=False)
 
     group_one = parser.add_argument_group('Group 1', name='group1')
     group_one.add_argument('--bools.def_false',
@@ -116,8 +110,8 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual('opt1_arg', parser.parse_args(['--lev1.lev2.opt1', 'opt1_arg']).lev1.lev2.opt1)
         self.assertEqual(9, parser.parse_args(['--nums.val1', '9']).nums.val1)
         self.assertEqual(6.4, parser.parse_args(['--nums.val2', '6.4']).nums.val2)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val1', '7.5']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--nums.val2', 'eight']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--nums.val1', '7.5']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--nums.val2', 'eight']))
         self.assertEqual(9, parser.parse_args(['--nums.val1', '9'])['nums.val1'])
 
 
@@ -133,7 +127,7 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual(False, cfg.bools.def_false)
         self.assertEqual(True,  cfg.bools.def_true)
 
-        self.assertRaises(ParserError, lambda: parser.parse_object({'undefined': True}))
+        self.assertRaises(ArgumentError, lambda: parser.parse_object({'undefined': True}))
 
 
     def test_parse_env(self):
@@ -147,7 +141,7 @@ class ParsersTests(TempDirTestCase):
         parser.add_argument('--cfg', action=ActionConfigFile)
         env = OrderedDict(example_env)
         env['APP_NUMS__VAL1'] = '"""'
-        self.assertRaises(ParserError, lambda: parser.parse_env(env))
+        self.assertRaises(ArgumentError, lambda: parser.parse_env(env))
         env = OrderedDict(example_env)
         env['APP_CFG'] = '{"nums": {"val1": 1}}'
         self.assertEqual(0, parser.parse_env(env).nums.val1)
@@ -186,9 +180,9 @@ class ParsersTests(TempDirTestCase):
 
 
     def test_env_prefix(self):
-        parser = ArgumentParser(env_prefix=True, default_env=True, error_handler=None)
+        parser = ArgumentParser(env_prefix=True, default_env=True, exit_on_error=False)
         parser.add_argument("--test_arg", type=str, required=True, help="Test argument")
-        with self.assertRaises(ParserError):
+        with self.assertRaises(ArgumentError):
             with unittest.mock.patch.dict(os.environ, {'TEST_ARG': 'one'}):
                 parser.parse_args([])
         prefix = os.path.splitext(parser.prog)[0].upper()
@@ -218,12 +212,12 @@ class ParsersTests(TempDirTestCase):
         self.assertFalse(hasattr(cfg2, 'bools'))
         self.assertTrue(hasattr(cfg2, 'nums'))
 
-        self.assertRaises(ParserError, lambda: parser.parse_string('"""'))
+        self.assertRaises(ArgumentError, lambda: parser.parse_string('"""'))
 
 
     def test_parse_string_not_dict(self):
-        parser = ArgumentParser(error_handler=None)
-        with self.assertRaises(ParserError):
+        parser = ArgumentParser(exit_on_error=False)
+        with self.assertRaises(ArgumentError):
             parser.parse_string('not a dict')
 
 
@@ -243,10 +237,10 @@ class ParsersTests(TempDirTestCase):
 
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml+'  val2: eight\n')
-        self.assertRaises(ParserError, lambda: parser.parse_path(yaml_file))
+        self.assertRaises(ArgumentError, lambda: parser.parse_path(yaml_file))
         with open(yaml_file, 'w') as output_file:
             output_file.write(example_yaml+'  val3: key_not_defined\n')
-        self.assertRaises(ParserError, lambda: parser.parse_path(yaml_file))
+        self.assertRaises(ArgumentError, lambda: parser.parse_path(yaml_file))
 
 
     def test_cfg_base(self):
@@ -335,18 +329,18 @@ class ParsersTests(TempDirTestCase):
 class ArgumentFeaturesTests(unittest.TestCase):
 
     def test_positionals(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('pos1')
         parser.add_argument('pos2', nargs='?')
-        self.assertRaises(ParserError, lambda: parser.parse_args([]))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args([]))
         self.assertIsNone(parser.parse_args(['v1']).pos2)
         self.assertEqual('v1', parser.parse_args(['v1']).pos1)
         self.assertEqual('v2', parser.parse_args(['v1', 'v2']).pos2)
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('pos1')
         parser.add_argument('pos2', nargs='+')
-        self.assertRaises(ParserError, lambda: parser.parse_args(['v1']).pos2)
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['v1']).pos2)
         self.assertEqual(['v2', 'v3'], parser.parse_args(['v1', 'v2', 'v3']).pos2)
 
         parser.add_argument('--opt')
@@ -359,7 +353,7 @@ class ArgumentFeaturesTests(unittest.TestCase):
 
 
     def test_required(self):
-        parser = ArgumentParser(env_prefix='APP', error_handler=None)
+        parser = ArgumentParser(env_prefix='APP', exit_on_error=False)
         group = parser.add_argument_group('Group 1')
         group.add_argument('--req1', required=True)
         parser.add_argument('--lev1.req2', required=True)
@@ -372,9 +366,9 @@ class ArgumentFeaturesTests(unittest.TestCase):
         cfg = parser.parse_env({'APP_REQ1': 'val5', 'APP_LEV1__REQ2': 'val6'})
         self.assertEqual('val5', cfg.req1)
         self.assertEqual('val6', cfg.lev1.req2)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--req1', 'val1']))
-        self.assertRaises(ParserError, lambda: parser.parse_string('{"lev1":{"req2":"val4"}}'))
-        self.assertRaises(ParserError, lambda: parser.parse_env({}))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--req1', 'val1']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_string('{"lev1":{"req2":"val4"}}'))
+        self.assertRaises(ArgumentError, lambda: parser.parse_env({}))
 
         out = StringIO()
         parser.print_help(out)
@@ -388,23 +382,23 @@ class ArgumentFeaturesTests(unittest.TestCase):
 
 
     def test_choices(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--ch1',
             choices='ABC')
         parser.add_argument('--ch2',
             choices=['v1', 'v2'])
         cfg = parser.parse_args(['--ch1', 'C', '--ch2', 'v1'])
         self.assertEqual(cfg.as_dict(), {'ch1': 'C', 'ch2': 'v1'})
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--ch1', 'D']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--ch2', 'v0']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--ch1', 'D']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--ch2', 'v0']))
 
 
     def test_nargs(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--val', nargs='+', type=int)
         self.assertEqual([9],        parser.parse_args(['--val', '9']).val)
         self.assertEqual([3, 6, 2],  parser.parse_args(['--val', '3', '6', '2']).val)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--val']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--val']))
         parser = ArgumentParser()
         parser.add_argument('--val', nargs='*', type=float)
         self.assertEqual([5.2, 1.9], parser.parse_args(['--val', '5.2', '1.9']).val)
@@ -424,12 +418,12 @@ class ArgumentFeaturesTests(unittest.TestCase):
 class AdvancedFeaturesTests(unittest.TestCase):
 
     def test_subcommands(self):
-        parser_a = ArgumentParser(error_handler=None)
+        parser_a = ArgumentParser(exit_on_error=False)
         parser_a.add_argument('ap1')
         parser_a.add_argument('--ao1',
             default='ao1_def')
 
-        parser = ArgumentParser(prog='app', error_handler=None)
+        parser = ArgumentParser(prog='app', exit_on_error=False)
         parser.add_argument('--o1',
             default='o1_def')
         subcommands = parser.add_subcommands()
@@ -440,7 +434,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
 
         self.assertRaises(NotImplementedError, lambda: parser.add_subparsers())
         self.assertRaises(NotImplementedError, lambda: subcommands.add_parser(''))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['c']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['c']))
 
         cfg = parser.get_defaults().as_dict()
         self.assertEqual(cfg, {'o1': 'o1_def', 'subcommand': None})
@@ -466,17 +460,17 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertRaises(KeyError, lambda: cfg['a'])
 
         parser.parse_args(['B'])
-        self.assertRaises(ParserError, lambda: parser.parse_args(['A']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['A']))
 
-        self.assertRaises(ParserError, lambda: parser.parse_args())
-        self.assertRaises(ParserError, lambda: parser.parse_args(['a']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['b', '--unk']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['c']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args())
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['a']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['b', '--unk']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['c']))
 
         cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}}').as_dict()
         self.assertEqual(cfg['subcommand'], 'a')
         self.assertEqual(cfg['a'], {'ap1': 'ap1_cfg', 'ao1': 'ao1_def'})
-        self.assertRaises(ParserError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'))
+        self.assertRaises(ArgumentError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'))
 
         with warnings.catch_warnings(record=True) as w:
             cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
@@ -522,23 +516,23 @@ class AdvancedFeaturesTests(unittest.TestCase):
 
 
     def test_subsubcommands(self):
-        parser_s1_a = ArgumentParser(error_handler=None)
+        parser_s1_a = ArgumentParser(exit_on_error=False)
         parser_s1_a.add_argument('--os1a',
             default='os1a_def')
 
-        parser_s2_b = ArgumentParser(error_handler=None)
+        parser_s2_b = ArgumentParser(exit_on_error=False)
         parser_s2_b.add_argument('--os2b',
             default='os2b_def')
 
-        parser = ArgumentParser(prog='app', error_handler=None, default_meta=False)
+        parser = ArgumentParser(prog='app', exit_on_error=False, default_meta=False)
         subcommands1 = parser.add_subcommands()
         subcommands1.add_subcommand('a', parser_s1_a)
 
         subcommands2 = parser_s1_a.add_subcommands()
         subcommands2.add_subcommand('b', parser_s2_b)
 
-        self.assertRaises(ParserError, lambda: parser.parse_args([]))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['a']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args([]))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['a']))
 
         cfg = parser.parse_args(['a', 'b']).as_dict()
         self.assertEqual(cfg, {'subcommand': 'a', 'a': {'subcommand': 'b', 'os1a': 'os1a_def', 'b': {'os2b': 'os2b_def'}}})
@@ -561,7 +555,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
 
 
     def test_optional_subcommand(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         subcommands = parser.add_subcommands(required=False)
         subparser = ArgumentParser()
         subcommands.add_subcommand('foo', subparser)
@@ -583,7 +577,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
         subparser.add_argument('--config', action=ActionConfigFile)
         subparser.add_argument('--o', type=int, default=1)
 
-        parser = ArgumentParser(error_handler=None, default_env=True)
+        parser = ArgumentParser(exit_on_error=False, default_env=True)
         subcommands = parser.add_subcommands()
         subcommands.add_subcommand('a', subparser)
 
@@ -597,7 +591,7 @@ class AdvancedFeaturesTests(unittest.TestCase):
     @responses_activate
     def test_urls(self):
         set_config_read_mode(urls_enabled=True)
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--cfg',
             action=ActionConfigFile)
         parser.add_argument('--parser',
@@ -758,7 +752,7 @@ class OutputTests(TempDirTestCase):
 
 
     def test_save(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--parser',
             action=ActionParser(parser=example_parser()))
         if jsonschema_support:
@@ -897,7 +891,7 @@ class OutputTests(TempDirTestCase):
 
 
     def test_print_config(self):
-        parser = ArgumentParser(error_handler=None, description='cli tool')
+        parser = ArgumentParser(exit_on_error=False, description='cli tool')
         parser.add_argument('--cfg', action=ActionConfigFile)
         parser.add_argument('--v0', help=SUPPRESS, default='0')
         parser.add_argument('--v1', help='Option v1.', default=1)
@@ -919,7 +913,7 @@ class OutputTests(TempDirTestCase):
         outval = yaml.safe_load(out.getvalue())
         self.assertEqual(outval, {'g1': {'v2': '2'}, 'g2': {}, 'v1': 1})
 
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--print_config=bad']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--print_config=bad']))
 
         if docstring_parser_support and ruyaml_support:
             out = StringIO()
@@ -951,7 +945,7 @@ class ConfigFilesTests(TempDirTestCase):
 
     def test_get_default_with_default_config_file(self):
         default_config_file = os.path.realpath(os.path.join(self.tmpdir, 'defaults.yaml'))
-        parser = ArgumentParser(default_config_files=[default_config_file], error_handler=None)
+        parser = ArgumentParser(default_config_files=[default_config_file], exit_on_error=False)
         parser.add_argument('--op1', default='from default')
 
         with open(default_config_file, 'w') as output_file:
@@ -964,7 +958,7 @@ class ConfigFilesTests(TempDirTestCase):
 
         with open(default_config_file, 'w') as output_file:
             output_file.write('op2: v2\n')
-        self.assertRaises(ParserError, lambda: parser.get_default('op1'))
+        self.assertRaises(ArgumentError, lambda: parser.get_default('op1'))
 
         out = StringIO()
         parser.print_help(out)
@@ -978,7 +972,7 @@ class ConfigFilesTests(TempDirTestCase):
 
     def test_get_default_with_multiple_default_config_files(self):
         default_configs_pattern = os.path.realpath(os.path.join(self.tmpdir, 'defaults_*.yaml'))
-        parser = ArgumentParser(default_config_files=[default_configs_pattern], error_handler=None)
+        parser = ArgumentParser(default_config_files=[default_configs_pattern], exit_on_error=False)
         parser.add_argument('--op1', default='from default')
         parser.add_argument('--op2', default='from default')
 
@@ -1025,7 +1019,7 @@ class ConfigFilesTests(TempDirTestCase):
         with open(abs_yaml_file, 'w') as output_file:
             output_file.write('val: yaml\n')
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--cfg', action=ActionConfigFile)
         parser.add_argument('--val')
 
@@ -1038,17 +1032,17 @@ class ConfigFilesTests(TempDirTestCase):
         self.assertEqual(rel_yaml_file, str(cfg.cfg[1]))
         self.assertEqual(None, cfg.cfg[2])
 
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '{"k":"v"}']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cfg', '{"k":"v"}']))
 
 
     def test_ActionConfigFile_failures(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         self.assertRaises(ValueError, lambda: parser.add_argument('--cfg', default='config.yaml', action=ActionConfigFile))
         self.assertRaises(ValueError, lambda: parser.add_argument('--nested.cfg', action=ActionConfigFile))
 
         parser.add_argument('--cfg', action=ActionConfigFile)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '"""']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg=not-exist']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cfg', '"""']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cfg=not-exist']))
 
 
 class OtherTests(unittest.TestCase):
@@ -1112,10 +1106,10 @@ class OtherTests(unittest.TestCase):
         parser.check_config(cfg.lev1, branch='lev1')
 
 
-    def test_usage_and_exit_error_handler(self):
+    def test_exit_on_error(self):
         err = StringIO()
         with redirect_stderr(err):
-            parser = ArgumentParser()
+            parser = ArgumentParser(exit_on_error=True)
             parser.add_argument('--val', type=int)
             self.assertEqual(8, parser.parse_args(['--val', '8']).val)
             self.assertRaises(SystemExit, lambda: parser.parse_args(['--val', 'eight']))
@@ -1123,32 +1117,12 @@ class OtherTests(unittest.TestCase):
 
 
     @unittest.mock.patch.dict(os.environ, {'JSONARGPARSE_DEBUG': ''})
-    def test_debug_usage_and_exit_error_handler(self):
-        parser = ArgumentParser(logger=null_logger)
+    def test_debug_environment_variable(self):
+        parser = ArgumentParser(logger={'level': 'DEBUG'})
         parser.add_argument('--int', type=int)
-        err = StringIO()
-        with redirect_stderr(err), self.assertRaises(DebugException):
+        with self.assertLogs(logger=parser.logger, level='DEBUG') as log, self.assertRaises(ArgumentError):
             parser.parse_args(['--int=invalid'])
-
-
-    def test_error_handler_property(self):
-        parser = ArgumentParser()
-        self.assertEqual(parser.error_handler, usage_and_exit_error_handler)
-
-        def custom_error_handler(self, message):
-            print('custom_error_handler')
-            self.exit(2)
-
-        parser.error_handler = custom_error_handler
-        self.assertEqual(parser.error_handler, custom_error_handler)
-
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(['--invalid'])
-        self.assertEqual(out.getvalue(), 'custom_error_handler\n')
-
-        with self.assertRaises(ValueError):
-            parser.error_handler = 'invalid'
+        self.assertTrue(any("Debug enabled" in o for o in log.output))
 
 
     def test_version_print(self):
@@ -1188,8 +1162,8 @@ class OtherTests(unittest.TestCase):
             self.assertRaises(NotImplementedError, lambda: parser.parse_known_args([]))
 
     def test_parse_args_invalid_args(self):
-        parser = ArgumentParser(error_handler=None)
-        self.assertRaises(ParserError, lambda: parser.parse_args([{}]))
+        parser = ArgumentParser(exit_on_error=False)
+        self.assertRaises(ArgumentError, lambda: parser.parse_args([{}]))
 
 
     @unittest.skipIf(sys.version_info[:2] == (3, 6), 'loggers not pickleable in python 3.6')

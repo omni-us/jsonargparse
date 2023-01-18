@@ -17,9 +17,9 @@ import yaml
 
 from jsonargparse import (
     ActionConfigFile,
+    ArgumentError,
     ArgumentParser,
     Namespace,
-    ParserError,
     class_from_function,
     compose_dataclasses,
     lazy_instance,
@@ -92,7 +92,7 @@ class SignaturesTests(unittest.TestCase):
                 super().__init__(None, c3_a4, **kwargs)
 
         ## Test without nesting ##
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(Class3)
 
         self.assertRaises(ValueError, lambda: parser.add_class_arguments('Class3'))
@@ -124,7 +124,7 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual(('3', 3, 3.0), parser.parse_args(['--c3_a0=0', '--c3_a7=["3", 3, 3.0]']).c3_a7)
         self.assertEqual('a', Class3(**cfg.as_dict())())
 
-        self.assertRaises(ParserError, lambda: parser.parse_args([]))  # c3_a0 is required
+        self.assertRaises(ArgumentError, lambda: parser.parse_args([]))  # c3_a0 is required
 
         if docstring_parser_support:
             self.assertEqual('Class3 short description', parser.groups['Class3'].title)
@@ -159,7 +159,7 @@ class SignaturesTests(unittest.TestCase):
         class NoArgs:
             pass
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--cfg', action=ActionConfigFile)
         parser.add_class_arguments(NoArgs, 'noargs')
 
@@ -174,7 +174,7 @@ class SignaturesTests(unittest.TestCase):
 
         with mock_module(NoArgs) as module:
             config = {'noargs': {'class_path': f'{module}.NoArgs'}}
-            with self.assertRaises(ParserError):
+            with self.assertRaises(ArgumentError):
                 parser.parse_args([f'--cfg={config}'])
 
 
@@ -191,7 +191,7 @@ class SignaturesTests(unittest.TestCase):
         def func(a1: Union[int, Dict[int, int]] = 1):
             pass
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_function_arguments(func)
         parser.get_defaults()
         self.assertEqual({2: 7, 4: 9}, parser.parse_args(['--a1={"2": 7, "4": 9}']).a1)
@@ -206,7 +206,7 @@ class SignaturesTests(unittest.TestCase):
                 obj.a2 = a2  # type: ignore
                 return obj
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(ClassA, 'a')
 
         cfg = parser.parse_args(['--a.a1=4'])
@@ -218,7 +218,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, n: int, m: float):
                 pass
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(Model, 'model')
         parser.add_argument('--config', action=ActionConfigFile)
 
@@ -228,7 +228,7 @@ class SignaturesTests(unittest.TestCase):
             ['--model.m=0.1'],
             ['--model.n=x', '--model.m=0.1'],
         ]:
-            with self.assertRaises(ParserError):
+            with self.assertRaises(ArgumentError):
                 parser.parse_args(args)
 
         out = StringIO()
@@ -388,7 +388,7 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_add_subclass_arguments(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_subclass_arguments(Calendar, 'cal')
 
         cal = {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
@@ -407,10 +407,10 @@ class SignaturesTests(unittest.TestCase):
         cfg = parser.parse_args(['--cal.class_path=calendar.Calendar', '--cal.init_args.firstweekday=4', '--cal.class_path=calendar.Calendar'])
         self.assertEqual(cfg['cal'].as_dict(), cal)
 
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"not.exist.Class"}']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal={"class_path":"calendar.January"}']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal.help=calendar.January']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal.help=calendar.does_not_exist']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cal={"class_path":"not.exist.Class"}']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cal={"class_path":"calendar.January"}']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cal.help=calendar.January']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cal.help=calendar.does_not_exist']))
         self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(January, 'jan'))
 
         out = StringIO()
@@ -478,13 +478,13 @@ class SignaturesTests(unittest.TestCase):
             self.assertIn('--cal.init_args.firstweekday', out.getvalue())
             self.assertNotIn('param', out.getvalue())
 
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_subclass_arguments(Calendar, 'cal')
             self.assertRaises(ValueError, lambda: parser.parse_args(args))
 
 
     def test_add_subclass_discard_init_args(self):
-        parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+        parser = ArgumentParser(exit_on_error=False, logger={'level': 'DEBUG'})
         parser.add_subclass_arguments(Calendar, 'cal')
 
         class CalA(Calendar):
@@ -525,7 +525,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, c: ChildBase):
                 pass
 
-        parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+        parser = ArgumentParser(exit_on_error=False, logger={'level': 'DEBUG'})
         with mock_module(Parent, ChildBase, A, B) as module, self.assertLogs(logger=parser.logger, level='DEBUG') as log:
             parser.add_subclass_arguments(Parent, 'p')
             cfg = parser.parse_args([
@@ -550,7 +550,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, cal: Union[Calendar, bool] = lazy_instance(MyCalendar, param=1)):
                 self.cal = cal
 
-        parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+        parser = ArgumentParser(exit_on_error=False, logger={'level': 'DEBUG'})
         with mock_module(MyCalendar), self.assertLogs(logger=parser.logger, level='DEBUG') as log:
             parser.add_class_arguments(Main, 'main')
             parser.parse_args(['--main.cal=Calendar'])
@@ -558,12 +558,12 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_add_subclass_init_args_without_class_path(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_subclass_arguments(Calendar, 'cal1')
         parser.add_subclass_arguments(Calendar, 'cal2', default=lazy_instance(Calendar))
         parser.add_subclass_arguments(Calendar, 'cal3', default=lazy_instance(Calendar, firstweekday=2))
 
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cal1.init_args.firstweekday=4']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cal1.init_args.firstweekday=4']))
         cfg = parser.parse_args(['--cal2.init_args.firstweekday=4', '--cal3.init_args.firstweekday=5'])
         self.assertEqual(cfg.cal2.init_args, Namespace(firstweekday=4))
         self.assertEqual(cfg.cal3.init_args, Namespace(firstweekday=5))
@@ -580,7 +580,7 @@ class SignaturesTests(unittest.TestCase):
                 self.image_size = image_size
 
         with mock_module(ModelBaseClass, ModelClass) as module:
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_subclass_arguments(ModelBaseClass, 'model')
             parser.add_argument('--config', action=ActionConfigFile)
 
@@ -604,7 +604,7 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_add_subclass_init_args_in_subcommand(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         subcommands = parser.add_subcommands()
         subparser = ArgumentParser()
         subparser.add_subclass_arguments(Calendar, 'cal', default=lazy_instance(Calendar))
@@ -630,7 +630,7 @@ class SignaturesTests(unittest.TestCase):
             class_path_a = f'{module}.ClassA'
             class_path_b = f'{module}.ClassB'
 
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_subclass_arguments((ClassA, ClassB), 'c')
 
             cfg = parser.parse_args(['--c={"class_path": "'+class_path_a+'", "init_args": {"a1": -1}}'])
@@ -651,17 +651,17 @@ class SignaturesTests(unittest.TestCase):
 
 
     def test_required_group(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(Calendar, None, required=True))
         parser.add_subclass_arguments(Calendar, 'cal', required=True)
-        self.assertRaises(ParserError, lambda: parser.parse_args([]))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args([]))
         out = StringIO()
         parser.print_help(out)
         self.assertIn('[-h] [--cal.help CLASS_PATH_OR_NAME] --cal ', out.getvalue())
 
 
     def test_not_required_group(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_subclass_arguments(Calendar, 'cal', required=False)
         cfg = parser.parse_args([])
         self.assertEqual(cfg, Namespace())
@@ -674,7 +674,7 @@ class SignaturesTests(unittest.TestCase):
         def func(a1: None):
             return a1
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         self.assertRaises(ValueError, lambda: parser.add_function_arguments(func))
 
 
@@ -688,10 +688,10 @@ class SignaturesTests(unittest.TestCase):
         def func(a1: Optional[MyEnum] = None):
             return a1
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_function_arguments(func)
         self.assertEqual(MyEnum.B, parser.parse_args(['--a1=B']).a1)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--a1=D']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--a1=D']))
 
         help_str = StringIO()
         parser.print_help(help_str)
@@ -704,7 +704,7 @@ class SignaturesTests(unittest.TestCase):
         def func2(a1: Optional[MyEnum2] = None):
             return a1
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_function_arguments(func2)
         self.assertEqual(MyEnum2.B, parser.parse_args(['--a1=B']).a1)
         self.assertEqual('B', parser.parse_args(['--a1=B']).a1)
@@ -719,7 +719,7 @@ class SignaturesTests(unittest.TestCase):
         def func(a1: Any = MyEnum.B):
             return a1
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_function_arguments(func)
         cfg = parser.parse_args([])
         self.assertEqual('a1: B\n', parser.dump(cfg))
@@ -761,7 +761,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, c1: Class1, c2: int = 5, c3: float = 6.7):
                 pass
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(Class2, skip={'c1.init_args.a2', 'c2'})
 
         with mock_module(Class1) as module:
@@ -782,7 +782,7 @@ class SignaturesTests(unittest.TestCase):
                 self.b1 = b1
                 self.b2 = b2
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_subclass_arguments(ClassA, 'c', skip={'a1', 'b2'})
 
         with mock_module(ClassA, ClassB) as module:
@@ -808,7 +808,7 @@ class SignaturesTests(unittest.TestCase):
                 self.b1 = b1
                 self.b2 = b2
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(ClassB, 'b')
 
         self.assertEqual(parser.get_defaults().b.b2, Namespace(a1=1, a2=-3.2))
@@ -819,8 +819,8 @@ class SignaturesTests(unittest.TestCase):
         self.assertIsInstance(cfg['b'], ClassB)
         self.assertIsInstance(cfg['b'].b2, ClassA)
 
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--b.b2={"bad": "value"}']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--b.b2="bad"']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--b.b2={"bad": "value"}']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--b.b2="bad"']))
         self.assertRaises(ValueError, lambda: parser.add_subclass_arguments(ClassA, 'a'))
         self.assertRaises(ValueError, lambda: parser.add_class_arguments(ClassA, 'a', default=ClassA()))
 
@@ -831,18 +831,18 @@ class SignaturesTests(unittest.TestCase):
                  a2: Optional[Union[PositiveInt, OpenUnitInterval]] = 0.5):
             return a1, a2
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_function_arguments(func)
 
         self.assertEqual(1.0, parser.parse_args(['--a1=1']).a1)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--a1=-1']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--a1=-1']))
 
         self.assertEqual(0.7, parser.parse_args(['--a2=0.7']).a2)
         self.assertEqual(5, parser.parse_args(['--a2=5']).a2)
         self.assertEqual(None, parser.parse_args(['--a2=null']).a2)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=0']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=1.5']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--a2=-1']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--a2=0']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--a2=1.5']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--a2=-1']))
 
 
     def test_dict_int_str_type(self):
@@ -850,12 +850,12 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, d: Dict[int, str]):
                 self.d = d
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(Foo)
         parser.add_argument('--config', action=ActionConfigFile)
         cfg = {'d': {1: 'val1', 2: 'val2'}}
         self.assertEqual(cfg['d'], parser.parse_args(['--config', str(cfg)]).d)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--config={"d": {"a": "b"}}']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--config={"d": {"a": "b"}}']))
 
 
     def test_logger_debug(self):
@@ -876,7 +876,7 @@ class SignaturesTests(unittest.TestCase):
                             **kwargs):
                     pass
 
-            parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+            parser = ArgumentParser(exit_on_error=False, logger={'level': 'DEBUG'})
             with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
                 parser.add_class_arguments(Class2, skip={'c2_a2'})
                 self.assertEqual(1, len(log.output))
@@ -894,7 +894,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, c1: Optional[Class1]):
                 self.c1 = c1
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(Class2)
 
         with mock_module(Class1) as module:
@@ -908,7 +908,7 @@ class SignaturesTests(unittest.TestCase):
             self.assertEqual(7, cfg['c1'].a1)
             self.assertEqual(2.3, cfg['c1'].a2)
 
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_class_arguments(Class2, 'c2')
 
             cfg = parser.parse_args(['--c2={"c1": {'+class_path+', '+init_args+'}}'])
@@ -919,7 +919,7 @@ class SignaturesTests(unittest.TestCase):
             class EmptyInitClass:
                 pass
 
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_class_arguments(EmptyInitClass, 'e')
             cfg = parser.parse_args([])
             cfg = parser.instantiate_classes(cfg)
@@ -949,7 +949,7 @@ class SignaturesTests(unittest.TestCase):
         def func(a1: Optional[int] = None):
             return a1
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_function_arguments(func)
 
         self.assertIsNone(parser.parse_args(['--a1=null']).a1)
@@ -960,7 +960,7 @@ class SignaturesTests(unittest.TestCase):
         def func(a1, a2=None):
             return a1
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         added_args = parser.add_function_arguments(func, fail_untyped=False)
 
         self.assertEqual(['a1', 'a2'], added_args)
@@ -976,7 +976,7 @@ class SignaturesTests(unittest.TestCase):
             return c1
 
         with mock_module(Class1) as module:
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_function_arguments(func, fail_untyped=False)
 
             help_str = StringIO()
@@ -998,7 +998,7 @@ class SignaturesTests(unittest.TestCase):
         with unittest.mock.patch('docstring_parser.parse') as docstring_parse:
             from docstring_parser import ParseError
             docstring_parse.side_effect = ParseError
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_class_arguments(Class1)
 
             help_str = StringIO()
@@ -1047,7 +1047,7 @@ class SignaturesTests(unittest.TestCase):
             def __init__(self, arg1: int, arg2: int = 1):
                 pass
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument("--config", action=ActionConfigFile)
         parser.add_class_arguments(Class, 'class')
         parser.add_subclass_arguments(BaseClass, 'subclass')
@@ -1106,7 +1106,7 @@ class SignaturesTests(unittest.TestCase):
 
         get_calendar_class = class_from_function(get_calendar)
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(get_calendar_class, 'a')
 
         if docstring_parser_support:
@@ -1152,7 +1152,7 @@ class SignaturesTests(unittest.TestCase):
                         class_path: {module}.Module
             """
 
-            parser = ArgumentParser(error_handler=None)
+            parser = ArgumentParser(exit_on_error=False)
             parser.add_argument('--config', action=ActionConfigFile)
             parser.add_class_arguments(Model, 'model')
 
@@ -1197,7 +1197,7 @@ class SignaturesConfigTests(TempDirTestCase):
                  a3: bool = False):
             return a1
 
-        parser = ArgumentParser(error_handler=None, default_meta=False)
+        parser = ArgumentParser(exit_on_error=False, default_meta=False)
         parser.add_function_arguments(func, 'func')
 
         cfg_path = 'config.yaml'
@@ -1210,7 +1210,7 @@ class SignaturesConfigTests(TempDirTestCase):
         cfg = parser.parse_args(['--func={"a1": "ONE"}'])
         self.assertEqual(cfg.func, Namespace(a1='ONE', a2=2.0, a3=False))
 
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--func="""']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--func="""']))
 
 
     def test_config_within_config(self):
@@ -1220,7 +1220,7 @@ class SignaturesConfigTests(TempDirTestCase):
                  a3: bool = False):
             return a1
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--cfg', action=ActionConfigFile)
         parser.add_function_arguments(func, 'func')
 
@@ -1239,7 +1239,7 @@ class SignaturesConfigTests(TempDirTestCase):
 
 
     def test_add_subclass_arguments_with_config(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--cfg', action=ActionConfigFile)
         parser.add_subclass_arguments(Calendar, 'cal')
 
@@ -1255,7 +1255,7 @@ class SignaturesConfigTests(TempDirTestCase):
         cfg = parser.parse_args(['--cfg='+cfg_path, '--cal.init_args.firstweekday=2'])
         self.assertEqual(cfg['cal'].as_dict(), cal)
 
-        parser = ArgumentParser(error_handler=None, default_config_files=['config.yaml'])
+        parser = ArgumentParser(exit_on_error=False, default_config_files=['config.yaml'])
         parser.add_subclass_arguments(Calendar, 'cal')
 
         cfg = parser.parse_args(['--cal.init_args.firstweekday=2'])
@@ -1267,18 +1267,18 @@ class SignaturesConfigTests(TempDirTestCase):
             def __init__(self, param: int):
                 self.param = param
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(A, 'a')
         try:
             parser.parse_args(['--a=does_not_exist.yaml'])
-        except ParserError as ex:
+        except ArgumentError as ex:
             self.assertIn('Unable to load config "does_not_exist.yaml"', str(ex))
         else:
-            raise ValueError('Expected ParserError to be raised')
+            raise ValueError('Expected ArgumentError to be raised')
 
 
     def test_add_subclass_arguments_with_multifile_save(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_subclass_arguments(Calendar, 'cal')
 
         cal_cfg_path = 'cal.yaml'
@@ -1322,7 +1322,7 @@ class SignaturesConfigTests(TempDirTestCase):
             with open('defaults.yaml', 'w') as f:
                 f.write(defaults)
 
-            parser = ArgumentParser(error_handler=None, default_config_files=['defaults.yaml'])
+            parser = ArgumentParser(exit_on_error=False, default_config_files=['defaults.yaml'])
             parser.add_class_arguments(Model, 'model')
 
             cfg = parser.parse_args(['--model.sub_module.init_args.p2=7'])
@@ -1339,7 +1339,7 @@ class SignaturesConfigTests(TempDirTestCase):
             def __init__(self, foo: int):
                 self.foo = foo
 
-        parser = ArgumentParser(default_config_files=["default.yaml"], error_handler=None)
+        parser = ArgumentParser(default_config_files=["default.yaml"], exit_on_error=False)
         parser.add_argument('--config', action=ActionConfigFile)
         subcommands = parser.add_subcommands()
 
@@ -1382,7 +1382,7 @@ class SignaturesConfigTests(TempDirTestCase):
 
             for subtest in ['class', 'subclass']:
                 with self.subTest(subtest):
-                    parser = ArgumentParser(error_handler=None, logger={'level': 'DEBUG'})
+                    parser = ArgumentParser(exit_on_error=False, logger={'level': 'DEBUG'})
                     parser.add_argument('--config', action=ActionConfigFile)
 
                     if subtest == 'class':
@@ -1436,7 +1436,7 @@ class DataclassesTests(unittest.TestCase):
 
     @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
     def test_add_dataclass_arguments(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_dataclass_arguments(MyDataClassA, 'a', default=MyDataClassA(), title='CustomA title')
         parser.add_dataclass_arguments(MyDataClassB, 'b', default=MyDataClassB())
 
@@ -1453,7 +1453,7 @@ class DataclassesTests(unittest.TestCase):
         self.assertIsInstance(cfg['b'].b2, MyDataClassA)
 
         self.assertEqual(5, parser.parse_args(['--b.b2.a1=5']).b.b2.a1)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--b.b2.a1=x']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--b.b2.a1=x']))
 
         help_str = StringIO()
         parser.print_help(help_str)
@@ -1513,7 +1513,7 @@ class DataclassesTests(unittest.TestCase):
                 """MyClass2 description"""
                 self.c1 = c1
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(MyClass2)
 
         with mock_module(MyClass1, MyClass2) as module:
@@ -1549,11 +1549,11 @@ class DataclassesTests(unittest.TestCase):
             a1: str
             a2: float = 1.2
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--b', type=MyDataClass)
 
         self.assertEqual(Namespace(a1='v', a2=1.2), parser.parse_args(['--b.a1=v']).b)
-        self.assertRaises(ParserError, lambda: parser.parse_args([]))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args([]))
 
 
     def test_dataclass_field_default_factory(self):

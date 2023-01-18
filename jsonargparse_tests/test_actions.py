@@ -9,8 +9,8 @@ from jsonargparse import (
     ActionConfigFile,
     ActionParser,
     ActionYesNo,
+    ArgumentError,
     ArgumentParser,
-    ParserError,
     strip_meta,
 )
 from jsonargparse_tests.base import TempDirTestCase
@@ -33,7 +33,7 @@ class SimpleActionsTests(unittest.TestCase):
         self.assertEqual(True,  parser.parse_args(['--bools.def_false=yes']).bools.def_false)
         self.assertEqual(False, parser.parse_args(['--bools.def_false=no']).bools.def_false)
         self.assertEqual(True,  parser.parse_args(['--no_bools.def_true=no']).bools.def_true)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--bools.def_true nope']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--bools.def_true nope']))
 
         parser = ArgumentParser()
         parser.add_argument('--val', action=ActionYesNo)
@@ -62,14 +62,14 @@ class SimpleActionsTests(unittest.TestCase):
 
 
     def test_ActionYesNo_old_bool(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--val', nargs=1, action=ActionYesNo(no_prefix=None))
         self.assertEqual(False, parser.get_defaults().val)
         self.assertEqual(True,  parser.parse_args(['--val', 'true']).val)
         self.assertEqual(True,  parser.parse_args(['--val', 'yes']).val)
         self.assertEqual(False, parser.parse_args(['--val', 'false']).val)
         self.assertEqual(False, parser.parse_args(['--val', 'no']).val)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--val', '1']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--val', '1']))
 
 
 class ActionParserTests(TempDirTestCase):
@@ -85,7 +85,7 @@ class ActionParserTests(TempDirTestCase):
         parser_lv2.add_argument('--inner3',
             action=ActionParser(parser=parser_lv3))
 
-        parser = ArgumentParser(prog='lv1', default_env=True, error_handler=None)
+        parser = ArgumentParser(prog='lv1', default_env=True, exit_on_error=False)
         parser.add_argument('--opt1',
             default='opt1_def')
         parser.add_argument('--inner2',
@@ -169,22 +169,22 @@ class ActionParserTests(TempDirTestCase):
     def test_ActionParser_required(self):
         p1 = ArgumentParser()
         p1.add_argument('--op1', required=True)
-        p2 = ArgumentParser(error_handler=None)
+        p2 = ArgumentParser(exit_on_error=False)
         p2.add_argument('--op2', action=ActionParser(parser=p1))
         p2.parse_args(['--op2.op1=1'])
-        self.assertRaises(ParserError, lambda: p2.parse_args([]))
+        self.assertRaises(ArgumentError, lambda: p2.parse_args([]))
 
 
     def test_ActionParser_failures(self):
         parser_lv2 = ArgumentParser()
         parser_lv2.add_argument('--op')
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--inner', action=ActionParser(parser=parser_lv2))
         self.assertRaises(Exception, lambda: parser.add_argument('--bad', action=ActionParser))
         self.assertRaises(ValueError, lambda: parser.add_argument('--bad', action=ActionParser(parser=parser)))
         self.assertRaises(ValueError, lambda: parser.add_argument('--bad', type=str, action=ActionParser(ArgumentParser())))
         self.assertRaises(ValueError, lambda: parser.add_argument('-b', '--bad', action=ActionParser(ArgumentParser())))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--inner=1']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--inner=1']))
         self.assertRaises(ValueError, lambda: ActionParser())
         self.assertRaises(ValueError, lambda: ActionParser(parser=object))
 
@@ -192,21 +192,21 @@ class ActionParserTests(TempDirTestCase):
     def test_ActionParser_conflict(self):
         parser_lv2 = ArgumentParser()
         parser_lv2.add_argument('--op')
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--inner.op')
         self.assertRaises(ValueError, lambda: parser.add_argument('--inner', action=ActionParser(parser_lv2)))
 
 
     def test_ActionParser_nested_dash_names(self):
-        p1 = ArgumentParser(error_handler=None)
+        p1 = ArgumentParser(exit_on_error=False)
         p1.add_argument('--op1-like')
 
-        p2 = ArgumentParser(error_handler=None)
+        p2 = ArgumentParser(exit_on_error=False)
         p2.add_argument('--op2-like', action=ActionParser(parser=p1))
 
         self.assertEqual(p2.parse_args(['--op2-like.op1-like=a']).op2_like.op1_like, 'a')
 
-        p3 = ArgumentParser(error_handler=None)
+        p3 = ArgumentParser(exit_on_error=False)
         p3.add_argument('--op3', action=ActionParser(parser=p2))
 
         self.assertEqual(p3.parse_args(['--op3.op2-like.op1-like=b']).op3.op2_like.op1_like, 'b')
