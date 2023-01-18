@@ -4,6 +4,7 @@ import os
 import pathlib
 import unittest
 from calendar import Calendar
+from contextlib import redirect_stdout
 from enum import Enum
 from io import StringIO
 from warnings import catch_warnings
@@ -11,8 +12,8 @@ from warnings import catch_warnings
 from jsonargparse import (
     CLI,
     ActionConfigFile,
+    ArgumentError,
     ArgumentParser,
-    ParserError,
     Path,
     get_config_read_mode,
     set_url_support,
@@ -22,13 +23,15 @@ from jsonargparse.deprecated import (
     ActionOperators,
     ActionPath,
     ActionPathList,
+    ParserError,
     deprecation_warning,
     import_docstring_parse,
     shown_deprecation_warnings,
+    usage_and_exit_error_handler,
 )
 from jsonargparse.optionals import docstring_parser_support, url_support
-from jsonargparse.util import LoggerProperty
-from jsonargparse_tests.base import TempDirTestCase
+from jsonargparse.util import LoggerProperty, argument_error
+from jsonargparse_tests.base import TempDirTestCase, suppress_stderr
 
 
 class DeprecatedTests(unittest.TestCase):
@@ -54,7 +57,7 @@ class DeprecatedTests(unittest.TestCase):
             B = 2
             C = 3
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         with catch_warnings(record=True) as w:
             action = ActionEnum(enum=MyEnum)
             self.assertIn('ActionEnum was deprecated', str(w[-1].message))
@@ -66,7 +69,7 @@ class DeprecatedTests(unittest.TestCase):
         for val in ['A', 'B', 'C']:
             self.assertEqual(MyEnum[val], parser.parse_args(['--enum='+val]).enum)
         for val in ['X', 'b', 2]:
-            self.assertRaises(ParserError, lambda: parser.parse_args(['--enum='+str(val)]))
+            self.assertRaises(ArgumentError, lambda: parser.parse_args(['--enum='+str(val)]))
 
         cfg = parser.parse_args(['--enum=C'], with_meta=False)
         self.assertEqual('enum: C\n', parser.dump(cfg))
@@ -90,7 +93,7 @@ class DeprecatedTests(unittest.TestCase):
 
 
     def test_ActionOperators(self):
-        parser = ArgumentParser(prog='app', error_handler=None)
+        parser = ArgumentParser(prog='app', exit_on_error=False)
         with catch_warnings(record=True) as w:
             parser.add_argument('--le0',
                 action=ActionOperators(expr=('<', 0)))
@@ -105,24 +108,24 @@ class DeprecatedTests(unittest.TestCase):
 
         self.assertEqual(1.5, parser.parse_args(['--gt1.a.le4', '1.5']).gt1.a.le4)
         self.assertEqual(4.0, parser.parse_args(['--gt1.a.le4', '4.0']).gt1.a.le4)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--gt1.a.le4', '1.0']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--gt1.a.le4', '5.5']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--gt1.a.le4', '1.0']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--gt1.a.le4', '5.5']))
 
         self.assertEqual(1.5, parser.parse_string('gt1:\n  a:\n    le4: 1.5').gt1.a.le4)
         self.assertEqual(4.0, parser.parse_string('gt1:\n  a:\n    le4: 4.0').gt1.a.le4)
-        self.assertRaises(ParserError, lambda: parser.parse_string('gt1:\n  a:\n    le4: 1.0'))
-        self.assertRaises(ParserError, lambda: parser.parse_string('gt1:\n  a:\n    le4: 5.5'))
+        self.assertRaises(ArgumentError, lambda: parser.parse_string('gt1:\n  a:\n    le4: 1.0'))
+        self.assertRaises(ArgumentError, lambda: parser.parse_string('gt1:\n  a:\n    le4: 5.5'))
 
         self.assertEqual(1.5, parser.parse_env({'APP_GT1__A__LE4': '1.5'}).gt1.a.le4)
         self.assertEqual(4.0, parser.parse_env({'APP_GT1__A__LE4': '4.0'}).gt1.a.le4)
-        self.assertRaises(ParserError, lambda: parser.parse_env({'APP_GT1__A__LE4': '1.0'}))
-        self.assertRaises(ParserError, lambda: parser.parse_env({'APP_GT1__A__LE4': '5.5'}))
+        self.assertRaises(ArgumentError, lambda: parser.parse_env({'APP_GT1__A__LE4': '1.0'}))
+        self.assertRaises(ArgumentError, lambda: parser.parse_env({'APP_GT1__A__LE4': '5.5'}))
 
         self.assertEqual(2, parser.parse_args(['--lt5.o.ge10.o.eq7', '2']).lt5.o.ge10.o.eq7)
         self.assertEqual(7, parser.parse_args(['--lt5.o.ge10.o.eq7', '7']).lt5.o.ge10.o.eq7)
         self.assertEqual(10, parser.parse_args(['--lt5.o.ge10.o.eq7', '10']).lt5.o.ge10.o.eq7)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '5']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '8']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '5']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--lt5.o.ge10.o.eq7', '8']))
 
         self.assertEqual([0, 1, 2], parser.parse_args(['--ge0', '0', '1', '2']).ge0)
 
@@ -159,7 +162,7 @@ class DeprecatedTests(unittest.TestCase):
 
 
     def test_instantiate_subclasses(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--cal', type=Calendar)
         cfg = parser.parse_object({'cal':{'class_path': 'calendar.Calendar'}})
         with catch_warnings(record=True) as w:
@@ -210,6 +213,39 @@ class DeprecatedTests(unittest.TestCase):
             self.assertIn('Only use the public API', str(w[-1].message))
 
 
+    def test_error_handler_parameter(self):
+        with catch_warnings(record=True) as w:
+            parser = ArgumentParser(error_handler=usage_and_exit_error_handler)
+            self.assertIn('error_handler was deprecated in v4.20.0', str(w[-1].message))
+        self.assertEqual(parser.error_handler, usage_and_exit_error_handler)
+        with suppress_stderr(), self.assertRaises(SystemExit):
+            parser.parse_args(['--invalid'])
+
+
+    def test_error_handler_property(self):
+        def custom_error_handler(self, message):
+            print('custom_error_handler')
+            self.exit(2)
+
+        parser = ArgumentParser()
+        with catch_warnings(record=True) as w:
+            parser.error_handler = custom_error_handler
+            self.assertIn('error_handler was deprecated in v4.20.0', str(w[-1].message))
+        self.assertEqual(parser.error_handler, custom_error_handler)
+
+        out = StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit):
+            parser.parse_args(['--invalid'])
+        self.assertEqual(out.getvalue(), 'custom_error_handler\n')
+
+        with self.assertRaises(ValueError):
+            parser.error_handler = 'invalid'
+
+
+    def test_ParserError(self):
+        self.assertIsInstance(argument_error(''), ParserError)
+
+
 class DeprecatedTempDirTests(TempDirTestCase):
 
     def test_parse_as_dict(self):
@@ -237,7 +273,7 @@ class DeprecatedTempDirTests(TempDirTestCase):
         with open(abs_yaml_file, 'w') as output_file:
             output_file.write('file: '+rel_yaml_file+'\ndir: '+self.tmpdir+'\n')
 
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--cfg', action=ActionConfigFile)
         with catch_warnings(record=True) as w:
             parser.add_argument('--file', action=ActionPath(mode='fr'))
@@ -251,19 +287,19 @@ class DeprecatedTempDirTests(TempDirTestCase):
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0](absolute=True)))
         self.assertEqual(rel_yaml_file, cfg.file(absolute=False))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', abs_yaml_file+'~']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cfg', abs_yaml_file+'~']))
 
         cfg = parser.parse_args(['--cfg', 'file: '+abs_yaml_file+'\ndir: '+self.tmpdir+'\n'])
         self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(None, cfg.cfg[0])
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--cfg', '{"k":"v"}']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--cfg', '{"k":"v"}']))
 
         cfg = parser.parse_args(['--file', abs_yaml_file, '--dir', self.tmpdir])
         self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir(absolute=True)))
         self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file(absolute=True)))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--dir', abs_yaml_file]))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--file', self.tmpdir]))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--dir', abs_yaml_file]))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--file', self.tmpdir]))
 
         cfg = parser.parse_args(['--files', abs_yaml_file, abs_yaml_file])
         self.assertTrue(isinstance(cfg.files, list))
@@ -276,7 +312,7 @@ class DeprecatedTempDirTests(TempDirTestCase):
 
 
     def test_ActionPath_skip_check(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         with catch_warnings(record=True) as w:
             parser.add_argument('--file', action=ActionPath(mode='fr', skip_check=True))
             self.assertIn('skip_check parameter of Path was deprecated', str(w[-1].message))
@@ -342,7 +378,7 @@ class DeprecatedTempDirTests(TempDirTestCase):
         with open(list_file4, 'w') as output_file:
             output_file.write('file1\nfile2\nfile6\n')
 
-        parser = ArgumentParser(prog='app', error_handler=None)
+        parser = ArgumentParser(prog='app', exit_on_error=False)
         with catch_warnings(record=True) as w:
             parser.add_argument('--list',
                 nargs='+',
@@ -368,9 +404,9 @@ class DeprecatedTempDirTests(TempDirTestCase):
         self.assertEqual(['file1', 'file2', 'file3', 'file4'], [str(x) for x in cfg.list_cwd])
         os.chdir(cwd)
 
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--list']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--list', list_file4]))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--list', 'no-such-file']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--list']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--list', list_file4]))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--list', 'no-such-file']))
 
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPathList))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPathList(mode='fr'), nargs='*'))

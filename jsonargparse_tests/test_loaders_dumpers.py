@@ -16,7 +16,7 @@ from jsonargparse.loaders_dumpers import load_value, loaders, yaml_dump
 class LoadersTests(unittest.TestCase):
 
     def test_set_dumper_custom_yaml(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--list', type=List[int])
 
         def custom_yaml_dump(data) -> str:
@@ -30,7 +30,7 @@ class LoadersTests(unittest.TestCase):
 
 
     def test_disable_implicit_mapping_values(self):
-        parser = ArgumentParser(error_handler=None)
+        parser = ArgumentParser(exit_on_error=False)
         parser.add_argument('--val', type=str)
         self.assertEqual('{one}', parser.parse_args(['--val={one}']).val)
         self.assertEqual('{one,two,three}', parser.parse_args(['--val={one,two,three}']).val)
@@ -38,7 +38,7 @@ class LoadersTests(unittest.TestCase):
 
     @unittest.skipIf(not find_spec('omegaconf'), 'omegaconf package is required')
     def test_parser_mode_omegaconf(self):
-        parser = ArgumentParser(error_handler=None, parser_mode='omegaconf')
+        parser = ArgumentParser(exit_on_error=False, parser_mode='omegaconf')
         parser.add_argument('--server.host', type=str)
         parser.add_argument('--server.port', type=int)
         parser.add_argument('--client.url', type=str)
@@ -66,7 +66,7 @@ class LoadersTests(unittest.TestCase):
         subparser.add_argument('--source', type=str)
         subparser.add_argument('--target', type=str)
 
-        parser = ArgumentParser(error_handler=None, parser_mode='omegaconf')
+        parser = ArgumentParser(exit_on_error=False, parser_mode='omegaconf')
         subcommands = parser.add_subcommands()
         subcommands.add_subcommand('sub', subparser)
 

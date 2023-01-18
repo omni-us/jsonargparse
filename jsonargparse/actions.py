@@ -18,8 +18,8 @@ from .type_checking import ArgumentParser
 from .util import (
     LoggerProperty,
     NoneType,
-    ParserError,
     Path,
+    argument_error,
     change_to_path_dir,
     default_config_option_help,
     get_typehint_origin,
@@ -246,7 +246,7 @@ class _ActionPrintConfig(Action):
             flags = value[0].split(',')
             invalid_flags = [f for f in flags if f not in valid_flags]
             if len(invalid_flags) > 0:
-                raise ParserError(f'Invalid option "{invalid_flags[0]}" for {option_string}')
+                raise argument_error(f'Invalid option "{invalid_flags[0]}" for {option_string}')
             for flag in [f for f in flags if f != '']:
                 kwargs[valid_flags[flag]] = True
         while hasattr(parser, 'parent_parser'):
@@ -383,7 +383,7 @@ class _ActionHelpClassPath(Action):
         args = self.get_args_after_opt(parser.args)
         if args:
             subparser.parse_args(args)
-            raise ParserError(f'Expected a nested --*.help option, got: {args}.')
+            raise argument_error(f'Expected a nested --*.help option, got: {args}.')
         else:
             subparser.print_help()
             parser.exit()
@@ -598,7 +598,8 @@ class _ActionSubCommands(_SubParsersAction):
         parser.default_env = self.parent_parser.default_env
         parser.parent_parser = self.parent_parser
         parser.parser_mode = self.parent_parser.parser_mode
-        parser.error_handler = self.parent_parser.error_handler
+        parser._error_handler = self.parent_parser._error_handler
+        parser.exit_on_error = self.parent_parser.exit_on_error
         parser.logger = self.parent_parser.logger
         parser.subcommand = name
 

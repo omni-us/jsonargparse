@@ -6,7 +6,12 @@ import re
 import unittest
 from io import StringIO
 
-from jsonargparse import ActionConfigFile, ActionJsonSchema, ArgumentParser, ParserError
+from jsonargparse import (
+    ActionConfigFile,
+    ActionJsonSchema,
+    ArgumentError,
+    ArgumentParser,
+)
 from jsonargparse.optionals import jsonschema_support
 from jsonargparse_tests.base import TempDirTestCase, is_posix
 
@@ -50,7 +55,7 @@ schema3 = {
 class JsonSchemaTests(TempDirTestCase):
 
     def test_ActionJsonSchema(self):
-        parser = ArgumentParser(prog='app', default_meta=False, error_handler=None)
+        parser = ArgumentParser(prog='app', default_meta=False, exit_on_error=False)
         parser.add_argument('--op1',
             action=ActionJsonSchema(schema=schema1))
         parser.add_argument('--op2',
@@ -64,14 +69,14 @@ class JsonSchemaTests(TempDirTestCase):
         op2_val = {'k1': 'one', 'k2': 2, 'k3': 3.3}
 
         self.assertEqual(op1_val, parser.parse_args(['--op1', str(op1_val)]).op1)
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '[1, "two"]']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op1', '[1.5, 2]']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op1', '[1, "two"]']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op1', '[1.5, 2]']))
 
         self.assertEqual(op2_val, parser.parse_args(['--op2', str(op2_val)]).op2)
         self.assertEqual(17, parser.parse_args(['--op2', '{"k2": 2}']).op2['k3'])
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k1": 1}']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k2": "2"}']))
-        self.assertRaises(ParserError, lambda: parser.parse_args(['--op2', '{"k4": 4}']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op2', '{"k1": 1}']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op2', '{"k2": "2"}']))
+        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op2', '{"k4": 4}']))
 
         op1_file = os.path.join(self.tmpdir, 'op1.json')
         op2_file = os.path.join(self.tmpdir, 'op2.json')
@@ -101,7 +106,7 @@ class JsonSchemaTests(TempDirTestCase):
 
         if is_posix:
             os.chmod(op1_file, 0)
-            self.assertRaises(ParserError, lambda: parser.parse_path(cfg1_file))
+            self.assertRaises(ArgumentError, lambda: parser.parse_path(cfg1_file))
 
 
     def test_ActionJsonSchema_failures(self):

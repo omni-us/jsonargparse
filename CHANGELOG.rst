@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.20.0 (2023-01-??)
 --------------------
 
+Changed
+^^^^^^^
+- When parsing fails now ``argparse.ArgumentError`` is raised instead of
+  ``ParserError``.
+
 Deprecated
 ^^^^^^^^^^
 - Path ``skip_check`` parameter is deprecated and will be removed in v5.0.0.
@@ -24,6 +29,8 @@ Deprecated
   absolute``.
 - ``ActionPathList`` is deprecated and will be removed in v5.0.0. Instead use as
   type ``List[<path_type>]`` with ``enable_path=True``.
+- ``ArgumentParser.error_handler`` is deprecated and will be removed in v5.0.0.
+  Instead use the new exit_on_error parameter from argparse.
 
 
 v4.19.0 (2022-12-27)

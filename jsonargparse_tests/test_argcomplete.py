@@ -42,7 +42,7 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['_ARGCOMPLETE_SUPPRESS_SPACE'] = '1'
         os.environ['_ARGCOMPLETE_COMP_WORDBREAKS'] = " \t\n\"'><=;|&(:"
         os.environ['COMP_TYPE'] = str(ord('?'))   # ='63'  str(ord('\t'))='9'
-        self.parser = ArgumentParser(error_handler=lambda x: x.exit(2))
+        self.parser = ArgumentParser()
         stack = ExitStack()
         stack.enter_context(parser_context(load_value_mode='yaml'))
         self.addCleanup(stack.close)

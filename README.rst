@@ -318,7 +318,7 @@ shown above you would observe:
 
 If the parsing fails the standard behavior is that the usage is printed and the
 program is terminated. Alternatively you can initialize the parser with
-``error_handler=None`` in which case a :class:`.ParserError` is raised.
+``exit_on_error=False`` in which case an :class:`.ArgumentError` is raised.
 
 
 Override order

@@ -1,4 +1,12 @@
-from argparse import ONE_OR_MORE, OPTIONAL, PARSER, REMAINDER, SUPPRESS, ZERO_OR_MORE
+from argparse import (
+    ONE_OR_MORE,
+    OPTIONAL,
+    PARSER,
+    REMAINDER,
+    SUPPRESS,
+    ZERO_OR_MORE,
+    ArgumentError,
+)
 
 from .actions import *
 from .cli import *
@@ -16,6 +24,7 @@ from .typehints import *
 from .util import *
 
 __all__ = [
+    'ArgumentError',
     'OPTIONAL',
     'REMAINDER',
     'SUPPRESS',
