@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.20.0 (2023-01-??)
 --------------------
 
+Fixed
+^^^^^
+- ``add_subcommands`` fails when parser has required argument and default config
+  available `#232 <https://github.com/omni-us/jsonargparse/issues/232>`__.
+
 Changed
 ^^^^^^^
 - When parsing fails now ``argparse.ArgumentError`` is raised instead of

@@ -2,6 +2,7 @@
 
 import json
 import os
+import pathlib
 import pickle
 import sys
 import unittest
@@ -1010,6 +1011,19 @@ class ConfigFilesTests(TempDirTestCase):
         self.assertIn('defaults_0.yaml', out.getvalue())
         self.assertIn('defaults_1.yaml', out.getvalue())
         self.assertIn('defaults_2.yaml', out.getvalue())
+
+
+    def test_required_arg_in_default_config_and_add_subcommands(self):
+        pathlib.Path('config.yaml').write_text('output: test\nprepare:\n  media: test\n')
+        parser = ArgumentParser(default_config_files=['config.yaml'])
+        parser.add_argument('--output', required=True)
+        subcommands = parser.add_subcommands()
+        prepare = ArgumentParser()
+        prepare.add_argument('--media', required=True)
+        subcommands.add_subcommand('prepare', prepare)
+        cfg = parser.parse_args([])
+        self.assertEqual(str(cfg.__default_config__), 'config.yaml')
+        self.assertEqual(strip_meta(cfg), Namespace(output='test', prepare=Namespace(media='test'), subcommand='prepare'))
 
 
     def test_ActionConfigFile(self):

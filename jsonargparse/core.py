@@ -670,7 +670,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         """
         if 'description' not in kwargs:
             kwargs['description'] = 'For more details of each subcommand, add it as an argument followed by --help.'
-        with parser_context(parent_parser=self):
+        with parser_context(parent_parser=self, lenient_check=True):
             subcommands: _ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore
         if required:
             self.required_args.add(dest)
