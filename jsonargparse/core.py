@@ -93,7 +93,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
     _action_groups: Sequence['_ArgumentGroup']  # type: ignore
 
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.register('type', None, identity)
         self.register('action', 'parsers', _ActionSubCommands)
@@ -150,7 +150,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         return action
 
 
-    def add_argument_group(self, *args, name: Optional[str] = None, **kwargs):
+    def add_argument_group(self, *args, name: Optional[str] = None, **kwargs) -> '_ArgumentGroup':
         """Adds a group to the parser.
 
         All the arguments from `argparse.ArgumentParser.add_argument_group
@@ -184,7 +184,7 @@ class _ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
 
 
 class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argparse.ArgumentParser):
-    """Parser for command line, yaml/jsonnet files and environment variables."""
+    """Parser for command line, configuration files and environment variables."""
 
     formatter_class: Type[DefaultHelpFormatter]
     groups: Optional[Dict[str, '_ArgumentGroup']] = None
@@ -206,7 +206,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         default_env: bool = False,
         default_meta: bool = True,
         **kwargs
-    ):
+    ) -> None:
         """Initializer for ArgumentParser instance.
 
         All the arguments from the initializer of `argparse.ArgumentParser
@@ -537,7 +537,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         with_meta: Optional[bool] = None,
         **kwargs,
     ) -> Namespace:
-        """Parses a configuration file (yaml or jsonnet) given its path.
+        """Parses a configuration file given its path.
 
         Args:
             cfg_path: Path to the configuration file to parse.
@@ -579,7 +579,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         with_meta: Optional[bool] = None,
         **kwargs,
     ) -> Namespace:
-        """Parses configuration (yaml or jsonnet) given as a string.
+        """Parses configuration given as a string.
 
         Args:
             cfg_str: The configuration content.
@@ -628,7 +628,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         ext_vars: Optional[dict] = None,
         prev_cfg: Optional[Namespace] = None,
     ) -> Namespace:
-        """Loads a configuration string (yaml or jsonnet) into a namespace.
+        """Loads a configuration string into a namespace.
 
         Args:
             cfg_str: The configuration content.
@@ -1206,9 +1206,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         return help_str
 
 
-    def print_usage(self, file=None):
+    def print_usage(self, *args, **kwargs) -> None:
         with parser_context(parent_parser=self):
-            return super().print_usage(file)
+            return super().print_usage(*args, **kwargs)
 
 
     def _apply_actions(

@@ -11,7 +11,7 @@ from argparse import (
 )
 from io import StringIO
 from string import Template
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 from ._common import defaults_cache, parent_parser
 from .actions import (
@@ -56,8 +56,9 @@ class DefaultHelpFormatter(HelpFormatter):
     the respective environment variable name is included preceded by 'ENV:'.
     """
 
-    def _get_help_string(self, action):
+    def _get_help_string(self, action: Action) -> str:
         action_help = ' ' if action.help == empty_help else action.help
+        assert isinstance(action_help, str)
         if isinstance(action, ActionConfigFile):
             return action_help
         if isinstance(action, _HelpAction):
@@ -81,7 +82,7 @@ class DefaultHelpFormatter(HelpFormatter):
         return action_help + (' ('+help_str+')' if help_str else '')
 
 
-    def _format_usage(self, *args, **kwargs):
+    def _format_usage(self, *args, **kwargs) -> str:
         usage = super()._format_usage(*args, **kwargs)
         parser = parent_parser.get()
         for key in parser.required_args:
@@ -94,7 +95,7 @@ class DefaultHelpFormatter(HelpFormatter):
         return usage
 
 
-    def _format_action_invocation(self, action):
+    def _format_action_invocation(self, action: Action) -> str:
         parser = parent_parser.get()
         if action.option_strings == [] or action.default == SUPPRESS or not parser.default_env:
             return super()._format_action_invocation(action)
@@ -104,11 +105,11 @@ class DefaultHelpFormatter(HelpFormatter):
         return 'ARG:   ' + super()._format_action_invocation(action) + extr
 
 
-    def _get_default_metavar_for_optional(self, action):
+    def _get_default_metavar_for_optional(self, action: Action) -> str:
         return action.dest.rsplit('.')[-1].upper()
 
 
-    def _expand_help(self, action):
+    def _expand_help(self, action: Action) -> str:
         params = dict(vars(action), prog=self._prog)
         if params.get('choices') is not None:
             choices_str = ', '.join([str(c) for c in params['choices']])
@@ -132,7 +133,7 @@ class DefaultHelpFormatter(HelpFormatter):
         return help_str
 
 
-    def _get_type_str(self, action):
+    def _get_type_str(self, action: Action) -> Optional[str]:
         type_str = None
         if isinstance(action, ActionYesNo):
             type_str = 'bool'
@@ -143,9 +144,9 @@ class DefaultHelpFormatter(HelpFormatter):
         return type_str
 
 
-    def add_usage(self, usage, actions, groups, prefix=None):
+    def add_usage(self, usage: Optional[str], actions: Iterable[Action], *args, **kwargs) -> None:
         actions = [a for a in actions if not isinstance(a, ActionLink)]
-        super().add_usage(usage, actions, groups, prefix=prefix)
+        super().add_usage(usage, actions, *args, **kwargs)
 
 
     def add_yaml_comments(self, cfg: str) -> str:
