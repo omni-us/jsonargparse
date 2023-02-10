@@ -52,7 +52,10 @@ def CLI(
         module = inspect.getmodule(caller).__name__  # type: ignore
         components = [
             v for v in caller.f_locals.values()
-            if (inspect.isfunction(v) or inspect.isclass(v)) and inspect.getmodule(v).__name__ == module  # type: ignore
+            if (
+                (inspect.isclass(v) or callable(v)) and
+                getattr(inspect.getmodule(v), '__name__', None) == module
+            )
         ]
         if len(components) == 0:
             raise ValueError('Either components argument must be given or there must be at least one '
@@ -60,6 +63,10 @@ def CLI(
 
     elif not isinstance(components, list):
         components = [components]
+
+    unexpected = [c for c in components if not (inspect.isclass(c) or callable(c))]
+    if unexpected:
+        raise ValueError(f'Unexpected components, not class or function: {unexpected}')
 
     parser = parser_class(default_meta=False, **kwargs)
     parser.add_argument('--config', action=ActionConfigFile, help=config_help)
@@ -108,11 +115,7 @@ def get_help_str(component, logger):
 
 def _add_component_to_parser(component, parser, as_positional, fail_untyped, config_help):
     kwargs = dict(as_positional=as_positional, fail_untyped=fail_untyped, sub_configs=True)
-    if inspect.isfunction(component):
-        added_args = parser.add_function_arguments(component, as_group=False, **kwargs)
-        if not parser.description:
-            parser.description = get_help_str(component, parser.logger)
-    else:
+    if inspect.isclass(component):
         added_args = parser.add_class_arguments(component, **kwargs)
         subcommands = parser.add_subcommands(required=True)
         for key in [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != '_']:
@@ -124,12 +127,16 @@ def _add_component_to_parser(component, parser, as_positional, fail_untyped, con
             if not added_subargs:
                 remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
             subcommands.add_subcommand(key, subparser, help=get_help_str(getattr(component, key), parser.logger))
+    else:
+        added_args = parser.add_function_arguments(component, as_group=False, **kwargs)
+        if not parser.description:
+            parser.description = get_help_str(component, parser.logger)
     return added_args
 
 
 def _run_component(component, cfg):
     cfg.pop('config', None)
-    if inspect.isfunction(component):
+    if not inspect.isclass(component):
         return component(**cfg)
     subcommand = cfg.pop('subcommand')
     subcommand_cfg = cfg.pop(subcommand, {})

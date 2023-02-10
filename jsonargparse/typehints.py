@@ -146,11 +146,7 @@ class ActionTypeHint(Action):
                 if sum(subtype_supported) < len(subtype_supported):
                     discard = {typehint.__args__[n] for n, s in enumerate(subtype_supported) if not s}
                     kwargs['logger'].debug(f'Discarding unsupported subtypes {discard} from {typehint}')
-                    orig_typehint = typehint  # deepcopy does not copy ForwardRef
-                    typehint = deepcopy(orig_typehint)
-                    typehint.__args__ = tuple(
-                        orig_typehint.__args__[n] for n, s in enumerate(subtype_supported) if s
-                    )
+                    typehint = Union[tuple(t for t, s in zip(typehint.__args__, subtype_supported) if s)]  # type: ignore
             self._typehint = typehint
             self._enable_path = False if is_optional(typehint, Path) else enable_path
         elif '_typehint' not in kwargs:

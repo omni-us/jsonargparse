@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.20.0 (2023-01-??)
 --------------------
 
+Added
+^^^^^
+- ``CLI`` support for callable class instances `#238
+  <https://github.com/omni-us/jsonargparse/issues/238>`__.
+
 Fixed
 ^^^^^
 - ``add_subcommands`` fails when parser has required argument and default config

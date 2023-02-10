@@ -38,6 +38,8 @@ def mock_module(*args):
     __module__ = 'jsonargparse_tests'
     for component in args:
         component.__module__ = __module__
+        if not hasattr(component, '__name__'):
+            component.__name__ = type(component).__name__.lower()
         component.__qualname__ = component.__name__
         if inspect.isclass(component):
             methods = [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != '_']

@@ -2,6 +2,7 @@
 
 import sys
 import unittest
+import unittest.mock
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from typing import Optional
@@ -15,6 +16,11 @@ from jsonargparse_tests.base import TempDirTestCase, mock_module
 
 
 class CLITests(unittest.TestCase):
+
+    def test_unexpected(self):
+        with self.assertRaises(ValueError):
+            CLI(0)
+
 
     def test_single_function_cli(self):
         def function(a1: float):
@@ -34,6 +40,16 @@ class CLITests(unittest.TestCase):
             CLI(function, args=['--help'])
         self.assertIn('a1', out.getvalue())
         self.assertIn('function CLITests.test_single_function_cli', out.getvalue())
+
+
+    def test_callable_instance(self):
+        class CallableClass:
+            def __call__(self, x: int):
+                return x
+
+        instance = CallableClass()
+        with mock_module(instance):
+            self.assertEqual(3, CLI(instance, as_positional=False, args=['--x=3']))
 
 
     def test_multiple_functions_cli(self):
