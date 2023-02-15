@@ -381,6 +381,7 @@ class SignatureArguments(LoggerProperty):
             nested_key: Key for nested namespace.
             default: Value for defaults. Must be instance of or kwargs for theclass.
             as_group: Whether arguments should be added to a new argument group.
+            fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
         Returns:
             The list of arguments added.
