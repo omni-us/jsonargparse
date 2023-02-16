@@ -955,6 +955,25 @@ class SignaturesTests(unittest.TestCase):
         self.assertIsNone(parser.parse_args(['--a1=null']).a1)
 
 
+    def test_fail_untyped_true(self):
+        def func1(a1):
+            return a1
+
+        parser = ArgumentParser(exit_on_error=False)
+        with self.assertRaises(ValueError) as ctx:
+            parser.add_function_arguments(func1, fail_untyped=True)
+        self.assertIn('Parameter "a1" from', str(ctx.exception))
+        self.assertIn('does not specify a type', str(ctx.exception))
+
+        def func2(a2: 'int'):
+            return a2
+
+        with self.assertRaises(ValueError) as ctx:
+            parser.add_function_arguments(func2, fail_untyped=True)
+        self.assertIn('Parameter "a2" from', str(ctx.exception))
+        self.assertIn('specifies the type as a string', str(ctx.exception))
+
+
     def test_fail_untyped_false(self):
 
         def func(a1, a2=None):
@@ -1569,6 +1588,32 @@ class DataclassesTests(unittest.TestCase):
         cfg = parser.get_defaults().as_dict()
         self.assertEqual([1, 2, 3], cfg['a1'])
         self.assertEqual({'a': 1.2, 'b': 3.4}, cfg['a2'])
+
+
+    def test_dataclass_fail_untyped(self):
+
+        class MyClass:
+            def __init__(self, c1) -> None:
+                self.c1 = c1
+
+        @dataclasses.dataclass
+        class MyDataclass:
+            a1: MyClass
+            a2: str = "a2"
+            a3: str = "a3"
+
+        parser = ArgumentParser(exit_on_error=False)
+        parser.add_argument('--cfg', type=MyDataclass, fail_untyped=False)
+
+        with mock_module(MyDataclass, MyClass) as module:
+            class_path = f'"class_path": "{module}.MyClass"'
+            init_args = '"init_args": {"c1": 1}'
+            cfg = parser.parse_args(['--cfg.a1={'+class_path+', '+init_args+'}'])
+            cfg = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg['cfg'], MyDataclass)
+            self.assertIsInstance(cfg['cfg'].a1, MyClass)
+            self.assertIsInstance(cfg['cfg'].a2, str)
+            self.assertIsInstance(cfg['cfg'].a3, str)
 
 
     def test_compose_dataclasses(self):

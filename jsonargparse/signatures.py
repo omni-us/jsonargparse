@@ -312,6 +312,7 @@ class SignatureArguments(LoggerProperty):
             kwargs['required'] = True
         is_subclass_typehint = False
         is_final_class_typehint = is_final_class(annotation)
+        is_pure_dataclass_typehint = is_pure_dataclass(annotation)
         dest = (nested_key+'.' if nested_key else '') + name
         args = [dest if is_required and as_positional else '--'+dest]
         if param.origin:
@@ -326,7 +327,7 @@ class SignatureArguments(LoggerProperty):
         if annotation in {str, int, float, bool} or \
            is_subclass(annotation, (str, int, float)) or \
            is_final_class_typehint or \
-           is_pure_dataclass(annotation):
+           is_pure_dataclass_typehint:
             kwargs['type'] = annotation
         elif annotation != inspect_empty:
             try:
@@ -353,7 +354,7 @@ class SignatureArguments(LoggerProperty):
                 'sub_configs': sub_configs,
                 'instantiate': instantiate,
             }
-            if is_final_class_typehint:
+            if is_final_class_typehint or is_pure_dataclass_typehint:
                 kwargs.update(sub_add_kwargs)
             action = group.add_argument(*args, **kwargs)
             action.sub_add_kwargs = sub_add_kwargs
@@ -361,7 +362,12 @@ class SignatureArguments(LoggerProperty):
                 action.sub_add_kwargs['skip'] = subclass_skip
             added_args.append(dest)
         elif is_required and fail_untyped:
-            raise ValueError(f'Required parameter without a type for "{src}" parameter "{name}".')
+            msg = f'With fail_untyped=True, all mandatory parameters must have a supported type. Parameter "{name}" from "{src}" '
+            if isinstance(annotation, str):
+                msg += 'specifies the type as a string. Types as a string and `from __future__ import annotations` is currently not supported.'
+            else:
+                msg += 'does not specify a type.'
+            raise ValueError(msg)
 
 
     def add_dataclass_arguments(
@@ -370,6 +376,7 @@ class SignatureArguments(LoggerProperty):
         nested_key: str,
         default: Optional[Union[Type, dict]] = None,
         as_group: bool = True,
+        fail_untyped: bool = True,
         **kwargs
     ) -> List[str]:
         """Adds arguments from a dataclass based on its field types and docstrings.
@@ -379,6 +386,7 @@ class SignatureArguments(LoggerProperty):
             nested_key: Key for nested namespace.
             default: Value for defaults. Must be instance of or kwargs for theclass.
             as_group: Whether arguments should be added to a new argument group.
+            fail_untyped: Whether to raise exception if a required parameter does not have a type.
 
         Returns:
             The list of arguments added.
@@ -413,6 +421,7 @@ class SignatureArguments(LoggerProperty):
                 nested_key,
                 params[field.name],
                 added_args,
+                fail_untyped=fail_untyped,
                 default=defaults.get(field.name, inspect_empty),
             )
 
