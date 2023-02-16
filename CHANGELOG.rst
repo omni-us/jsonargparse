@@ -25,9 +25,6 @@ Fixed
 - ``add_subcommands`` fails when parser has required argument and default config
   available `#232 <https://github.com/omni-us/jsonargparse/issues/232>`__.
 
-- ``fail_untyped`` does not work with dataclasses
-  available `#241 <https://github.com/omni-us/jsonargparse/issues/241>`__.
-
 Changed
 ^^^^^^^
 - When parsing fails now ``argparse.ArgumentError`` is raised instead of
