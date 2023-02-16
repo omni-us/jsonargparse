@@ -26,7 +26,7 @@ Fixed
   available `#232 <https://github.com/omni-us/jsonargparse/issues/232>`__.
 
 - ``fail_untyped`` does not work with dataclasses
-  available `#241 <https://github.com/omni-us/jsonargparse/issues/241`__.
+  available `#241 <https://github.com/omni-us/jsonargparse/issues/241>`__.
 
 Changed
 ^^^^^^^
