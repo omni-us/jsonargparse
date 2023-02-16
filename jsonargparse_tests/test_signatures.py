@@ -955,6 +955,25 @@ class SignaturesTests(unittest.TestCase):
         self.assertIsNone(parser.parse_args(['--a1=null']).a1)
 
 
+    def test_fail_untyped_true(self):
+        def func1(a1):
+            return a1
+
+        parser = ArgumentParser(exit_on_error=False)
+        with self.assertRaises(ValueError) as ctx:
+            parser.add_function_arguments(func1, fail_untyped=True)
+        self.assertIn('Parameter "a1" from', str(ctx.exception))
+        self.assertIn('does not specify a type', str(ctx.exception))
+
+        def func2(a2: 'int'):
+            return a2
+
+        with self.assertRaises(ValueError) as ctx:
+            parser.add_function_arguments(func2, fail_untyped=True)
+        self.assertIn('Parameter "a2" from', str(ctx.exception))
+        self.assertIn('specifies the type as a string', str(ctx.exception))
+
+
     def test_fail_untyped_false(self):
 
         def func(a1, a2=None):

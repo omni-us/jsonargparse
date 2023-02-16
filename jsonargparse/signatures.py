@@ -362,7 +362,12 @@ class SignatureArguments(LoggerProperty):
                 action.sub_add_kwargs['skip'] = subclass_skip
             added_args.append(dest)
         elif is_required and fail_untyped:
-            raise ValueError(f'Required parameter without a type for "{src}" parameter "{name}".')
+            msg = f'With fail_untyped=True, all mandatory parameters must have a supported type. Parameter "{name}" from "{src}" '
+            if isinstance(annotation, str):
+                msg += 'specifies the type as a string. Types as a string and `from __future__ import annotations` is currently not supported.'
+            else:
+                msg += 'does not specify a type.'
+            raise ValueError(msg)
 
 
     def add_dataclass_arguments(

@@ -19,6 +19,8 @@ Added
 ^^^^^
 - ``CLI`` support for callable class instances `#238
   <https://github.com/omni-us/jsonargparse/issues/238>`__.
+- ``add_dataclass_arguments`` now supports the ``fail_untyped`` parameter `#241
+  <https://github.com/omni-us/jsonargparse/issues/241>`__.
 
 Fixed
 ^^^^^
@@ -27,8 +29,10 @@ Fixed
 
 Changed
 ^^^^^^^
-- When parsing fails now ``argparse.ArgumentError`` is raised instead of
+- When parsing fails, now ``argparse.ArgumentError`` is raised instead of
   ``ParserError``.
+- Improved error messages when ``fail_untyped=True`` `#137
+  <https://github.com/omni-us/jsonargparse/issues/137>`__.
 
 Deprecated
 ^^^^^^^^^^
