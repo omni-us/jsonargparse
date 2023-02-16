@@ -1571,6 +1571,32 @@ class DataclassesTests(unittest.TestCase):
         self.assertEqual({'a': 1.2, 'b': 3.4}, cfg['a2'])
 
 
+    def test_dataclass_fail_untyped(self):
+
+        class MyClass:
+            def __init__(self, c1) -> None:
+                self.c1 = c1
+
+        @dataclasses.dataclass
+        class MyDataclass:
+            a1: MyClass
+            a2: str = "a2"
+            a3: str = "a3"
+
+        parser = ArgumentParser(exit_on_error=False)
+        parser.add_argument('--cfg', type=MyDataclass, fail_untyped=False)
+
+        with mock_module(MyDataclass, MyClass) as module:
+            class_path = f'"class_path": "{module}.MyClass"'
+            init_args = '"init_args": {"c1": 1}'
+            cfg = parser.parse_args(['--cfg.a1={'+class_path+', '+init_args+'}'])
+            cfg = parser.instantiate_classes(cfg)
+            self.assertIsInstance(cfg['cfg'], MyDataclass)
+            self.assertIsInstance(cfg['cfg'].a1, MyClass)
+            self.assertIsInstance(cfg['cfg'].a2, str)
+            self.assertIsInstance(cfg['cfg'].a3, str)
+
+
     def test_compose_dataclasses(self):
 
         @dataclasses.dataclass

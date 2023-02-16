@@ -48,6 +48,7 @@ v4.19.0 (2022-12-27)
 
 Added
 ^^^^^
+- ``add_dataclass_arguments`` now supports the ``fail_untyped`` parameter
 - ``CLI`` now supports the ``fail_untyped`` and ``parser_class`` parameters.
 - ``bytes`` and ``bytearray`` registered on first use and decodes from standard
   Base64.
