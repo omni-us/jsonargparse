@@ -45,8 +45,6 @@ def CLI(
     """
     return_parser = kwargs.pop('return_parser', False)
     caller = inspect.stack()[1][0]
-    if 'description' not in kwargs:
-        kwargs['description'] = caller.f_globals.get('__doc__')
 
     if components is None:
         module = inspect.getmodule(caller).__name__  # type: ignore

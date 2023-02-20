@@ -33,6 +33,8 @@ Changed
   ``ParserError``.
 - Improved error messages when ``fail_untyped=True`` `#137
   <https://github.com/omni-us/jsonargparse/issues/137>`__.
+- ``CLI`` no longer uses the module's docstring as main parser description `#245
+  <https://github.com/omni-us/jsonargparse/issues/245>`__.
 
 Deprecated
 ^^^^^^^^^^
