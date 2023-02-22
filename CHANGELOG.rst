@@ -12,6 +12,16 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.20.1 (2023-02-??)
+--------------------
+
+Fixed
+^^^^^
+- Dump not working for partial callable with return instance
+  `pytorch-lightning#15340 (comment)
+  <https://github.com/Lightning-AI/lightning/issues/15340#issuecomment-1439203008>`__.
+
+
 v4.20.0 (2023-02-20)
 --------------------
 
@@ -54,7 +64,6 @@ v4.19.0 (2022-12-27)
 
 Added
 ^^^^^
-- ``add_dataclass_arguments`` now supports the ``fail_untyped`` parameter
 - ``CLI`` now supports the ``fail_untyped`` and ``parser_class`` parameters.
 - ``bytes`` and ``bytearray`` registered on first use and decodes from standard
   Base64.

@@ -722,7 +722,8 @@ def adapt_typehints(
     elif typehint_origin in callable_origin_types or typehint in callable_origin_types:
         if serialize:
             if is_subclass_spec(val):
-                val = adapt_class_type(val, True, False, sub_add_kwargs)
+                val, _, num_partial_args = adapt_partial_callable_class(typehint, val)
+                val = adapt_class_type(val, True, False, sub_add_kwargs, skip_args=num_partial_args)
             else:
                 val = object_path_serializer(val)
         else:
