@@ -838,6 +838,8 @@ class TypeHintsTests(unittest.TestCase):
             self.assertIsInstance(optim, Adam)
             self.assertEqual(optim.params, [4.5, 6.7])
             self.assertEqual(optim.lr, 0.01)
+            dump = parser.dump(cfg)
+            self.assertEqual(yaml.safe_load(dump), cfg.as_dict())
 
             self.assertEqual(cfg, parser.parse_args(['--optimizer=Adam', '--optimizer.lr=0.01']))
 
