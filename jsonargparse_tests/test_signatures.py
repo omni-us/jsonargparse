@@ -1427,6 +1427,46 @@ class SignaturesConfigTests(TempDirTestCase):
                     self.assertIsInstance(init.main.sub, Sub2)
                     self.assertTrue(any("discarding init_args: {'s1': 'x'}" in o for o in log.output))
 
+    def test_config_nested_dict_discard_init_args(self):
+        class Base:
+            def __init__(self, b: float = 0.5):
+                pass
+
+        class Sub1(Base):
+            def __init__(self, s1: int = 3, **kwargs):
+                super().__init__(**kwargs)
+
+        class Sub2(Base):
+            def __init__(self, s2: int = 4, **kwargs):
+                super().__init__(**kwargs)
+
+        class Main:
+            def __init__(self, sub: Optional[Dict] = None) -> None:
+                self.sub = sub
+
+        configs, subconfigs, config_paths = {}, {}, {}
+        with mock_module(Base, Sub1, Sub2, Main) as module:
+            parser = ArgumentParser(exit_on_error=False, logger={'level': 'DEBUG'})
+            parser.add_argument('--config', action=ActionConfigFile)
+            parser.add_subclass_arguments(Main, 'main')
+            parser.set_defaults(main=lazy_instance(Main))
+            for c in [1, 2]:
+                subconfigs[c] = {
+                    'sub': {
+                        'class_path': f'{module}.Sub{c}',
+                        'init_args': {f's{c}': c},
+                    }
+                }
+                configs[c] = {'main': {'class_path': f'{module}.Main','init_args': subconfigs[c],}}
+                config_paths[c] = Path(f'config{c}.yaml')
+                config_paths[c].write_text(yaml.safe_dump(configs[c]))
+
+            with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
+                cfg = parser.parse_args([f'--config={config_paths[1]}', f'--config={config_paths[2]}'])
+            init = parser.instantiate_classes(cfg)
+            self.assertIsInstance(init.main, Main)
+            self.assertTrue(init.main.sub['init_args']['s2'], 2)
+            self.assertTrue(any("discarding init_args: {'s1': 1}" in o for o in log.output))
 
 @dataclasses.dataclass(frozen=True)
 class MyDataClassA:
