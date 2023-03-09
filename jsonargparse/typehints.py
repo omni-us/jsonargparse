@@ -939,6 +939,7 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
             sub_add_kwargs = getattr(parser_or_action, 'sub_add_kwargs', {})
             parser = ActionTypeHint.get_class_parser(value['class_path'], sub_add_kwargs)
         del_args = {}
+        prev_val = subclass_spec_as_namespace(prev_val)
         for key, val in list(prev_val.init_args.__dict__.items()):
             action = _find_action(parser, key)
             if action:
