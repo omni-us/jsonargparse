@@ -230,6 +230,25 @@ class TypeHintsTests(unittest.TestCase):
         self.assertEqual(cfg.dict, {'one': 1, 'two': 2})
 
 
+    def test_subclass_dict_items(self):
+        class Class:
+            def __init__(self, param: Dict[str, int]):
+                pass
+
+        parser = ArgumentParser(exit_on_error=False)
+        parser.add_argument('--val', type=Class)
+
+        with mock_module(Class) as module:
+            for init_args in ['', '.init_args']:
+                cfg = parser.parse_args([
+                    f'--val={module}.Class',
+                    f'--val{init_args}.param.one=1',
+                    f'--val{init_args}.param.two=2',
+                ])
+                self.assertEqual(cfg.val.class_path, f'{module}.Class')
+                self.assertEqual(cfg.val.init_args.param, {'one': 1, 'two': 2})
+
+
     def test_dict_union(self):
         class MyEnum(Enum):
             ab = 1

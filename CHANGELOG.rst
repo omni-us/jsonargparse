@@ -24,6 +24,9 @@ Fixed
   contexts `#247 <https://github.com/omni-us/jsonargparse/issues/247>`__.
 - Failure with dataclasses that have field with ``init=False`` `#252
   <https://github.com/omni-us/jsonargparse/issues/252>`__.
+- Failure when setting individual dict key values for subclasses and
+  ``.init_args.`` is included in argument `#251
+  <https://github.com/omni-us/jsonargparse/issues/251>`__.
 
 
 v4.20.0 (2023-02-20)
