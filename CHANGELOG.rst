@@ -17,12 +17,13 @@ v4.20.1 (2023-03-??)
 
 Fixed
 ^^^^^
-- Allow ``discard_init_args_on_class_path_change`` to handle more nested contexts `#247
-  <https://github.com/omni-us/jsonargparse/issues/247>`__.
-
 - Dump not working for partial callable with return instance
   `pytorch-lightning#15340 (comment)
   <https://github.com/Lightning-AI/lightning/issues/15340#issuecomment-1439203008>`__.
+- Allow ``discard_init_args_on_class_path_change`` to handle more nested
+  contexts `#247 <https://github.com/omni-us/jsonargparse/issues/247>`__.
+- Failure with dataclasses that have field with ``init=False`` `#252
+  <https://github.com/omni-us/jsonargparse/issues/252>`__.
 
 
 v4.20.0 (2023-02-20)

@@ -416,14 +416,15 @@ class SignatureArguments(LoggerProperty):
         added_args: List[str] = []
         params = {p.name: p for p in get_signature_parameters(theclass, None, logger=self.logger)}
         for field in dataclasses.fields(theclass):
-            self._add_signature_parameter(
-                group,
-                nested_key,
-                params[field.name],
-                added_args,
-                fail_untyped=fail_untyped,
-                default=defaults.get(field.name, inspect_empty),
-            )
+            if field.name in params:
+                self._add_signature_parameter(
+                    group,
+                    nested_key,
+                    params[field.name],
+                    added_args,
+                    fail_untyped=fail_untyped,
+                    default=defaults.get(field.name, inspect_empty),
+                )
 
         return added_args
 

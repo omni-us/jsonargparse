@@ -1615,6 +1615,19 @@ class DataclassesTests(unittest.TestCase):
         self.assertRaises(ArgumentError, lambda: parser.parse_args([]))
 
 
+    def test_dataclass_field_init_false(self):
+
+        @dataclasses.dataclass
+        class DataInitFalse:
+            p1: str = '-'
+            p2: str = dataclasses.field(init=False)
+
+        parser = ArgumentParser(exit_on_error=False)
+        added = parser.add_dataclass_arguments(DataInitFalse, 'd')
+        self.assertEqual(added, ['d.p1'])
+        self.assertEqual(parser.get_defaults(), Namespace(d=Namespace(p1='-')))
+
+
     def test_dataclass_field_default_factory(self):
 
         @dataclasses.dataclass
