@@ -394,7 +394,10 @@ class ActionTypeHint(Action):
         cfg, val, opt_str = args[1:]
         if not (self.nargs == '?' and val is None):
             if isinstance(opt_str, str) and opt_str.startswith(f'--{self.dest}.'):
-                sub_opt = opt_str[len(f'--{self.dest}.'):]
+                if opt_str.startswith(f'--{self.dest}.init_args.'):
+                    sub_opt = opt_str[len(f'--{self.dest}.init_args.'):]
+                else:
+                    sub_opt = opt_str[len(f'--{self.dest}.'):]
                 val = NestedArg(key=sub_opt, val=val)
             append = opt_str == f'--{self.dest}+'
             val = self._check_type(val, append=append, cfg=cfg)
@@ -806,11 +809,7 @@ def subclass_spec_as_namespace(val, prev_val=None):
         if '.' not in key:
             root_key = key
         else:
-            if key.startswith('init_args.'):
-                root_key = 'init_args'
-                key = key[len('init_args.'):]
-                val = Namespace({key: val})
-            elif key.startswith('dict_kwargs.'):
+            if key.startswith('dict_kwargs.'):
                 root_key = 'dict_kwargs'
                 key = key[len('dict_kwargs.'):]
                 val = {key: val}
