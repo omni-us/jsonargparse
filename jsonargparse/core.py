@@ -1254,7 +1254,25 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 continue
 
             action_dest = action.dest if subcommand is None else subcommand+'.'+action.dest
-            value = cfg[action_dest]
+            ALLOW_ALIAS = 1
+            try:
+                value = cfg[action_dest]
+            except KeyError:
+                from jsonargparse.actions import get_alias_dest
+                if ALLOW_ALIAS:
+                    # If the main key isn't in the config, check if it exists
+                    # under an alias.
+                    found = None
+                    for alias in get_alias_dest(action):
+                        if alias in cfg:
+                            value = cfg[alias]
+                            found = True
+                            break
+                    if not found:
+                        raise
+                else:
+                    raise
+                    ...
             if skip_fn and skip_fn(value):
                 continue
             with parser_context(parent_parser=self, lenient_check=True):

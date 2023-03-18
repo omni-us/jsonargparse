@@ -69,8 +69,11 @@ def _find_action_and_subcommand(
     if exclude is not None:
         actions = [a for a in actions if not isinstance(a, exclude)]
     fallback_action = None
+
+    ALLOW_ALIAS = True
+
     for action in actions:
-        if action.dest == dest:
+        if action.dest == dest or (ALLOW_ALIAS and dest in get_alias_dest(action)):
             if isinstance(action, _ActionConfigLoad):
                 fallback_action = action
             else:
@@ -746,3 +749,11 @@ class _ActionSubCommands(_SubParsersAction):
             # Handle inner subcommands
             if subparser._subparsers is not None:
                 _ActionSubCommands.handle_subcommands(subparser, cfg, env, defaults, key+'.', fail_no_subcommand=fail_no_subcommand)
+
+
+def get_alias_dest(action):
+    def option_string_to_var(optstr):
+        " normalize a cli key as a variable "
+        return optstr.lstrip('-').replace('-', '_')
+
+    return [option_string_to_var(optstr) for optstr in action.option_strings]
