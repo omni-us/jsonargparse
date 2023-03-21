@@ -749,6 +749,7 @@ can be achieved by adding ``+`` as suffix to the argument key, for example:
 .. testsetup:: append
 
     parser = ArgumentParser()
+    class MyBaseClass: pass
 
 .. doctest:: append
 
@@ -774,9 +775,38 @@ files would first assign a list and then append to this list:
     - 2
     - 3
 
-Appending works for any type for the list elements. List elements with class
-type is also supported and the short notation for ``init_args`` when used (see
-:ref:`sub-classes`), gets applied to the last element of the list.
+Appending works for any type for the list elements. Lists with class type
+elements (see :ref:`sub-classes`) are also supported. To append to the list,
+first append a new class by using the ``+`` suffix. Then ``init_args`` for this
+class are specified like if the type wasn't a list, since the arguments are
+applied to the last class in the list. Take for example that an argument is
+added to a parser as:
+
+.. testcode:: append
+
+    parser.add_argument('--list_of_instances', type=List[MyBaseClass])
+
+Thanks to the short notation, command line arguments don't require to specify
+``class_path`` and ``init_args``. Thus, multiple classes can be appended and its
+arguments set as follows:
+
+.. code-block:: bash
+
+    python tool.py \
+      --list_of_instances+={CLASS_1_PATH} \
+      --list_of_instances.{CLASS_1_ARG_1}=... \
+      --list_of_instances.{CLASS_1_ARG_2}=... \
+      --list_of_instances+={CLASS_2_PATH} \
+      --list_of_instances.{CLASS_2_ARG_1}=... \
+      ...
+      --list_of_instances+={CLASS_N_PATH} \
+      --list_of_instances.{CLASS_N_ARG_1}=... \
+      ...
+
+Once a new class has been appended to the list, it is not possible to modify the
+arguments of a previous class. This limitation is by intention since it forces
+classes and its arguments to be defined in order, making the command line call
+intuitive to write and understand.
 
 
 .. _dict-items:
