@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.21.0 (2023-04-??)
+--------------------
+
+Changed
+^^^^^^^
+- Switched from ``setup.cfg`` to ``pyproject.toml`` for configuration.
+- Removed ``build_sphinx`` from ``setup.py`` and documented how to build.
+
+
 v4.20.1 (2023-03-30)
 --------------------
 

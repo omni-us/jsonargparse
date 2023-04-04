@@ -7,15 +7,13 @@ proposing enhancements, or more directly by creating `pull requests
 <https://github.com/omni-us/jsonargparse/pulls>`_.
 
 If you intend to work with the source code, note that this project does not
-include any :code:`requirements.txt` file. This is by intention. To make it very
+include any ``requirements.txt`` file. This is by intention. To make it very
 clear what are the requirements for different use cases, all the requirements of
-the project are stored in the file :code:`setup.cfg`. The basic runtime
-requirements are defined in section :code:`[options]` in the
-:code:`install_requires` entry. All extras requires for optional features listed
-in :ref:`installation` are stored in section :code:`[options.extras_require]`.
-Also there are :code:`test`, :code:`test_no_urls`, :code:`dev` and :code:`doc`
-entries in the same :code:`[options.extras_require]` section which lists
-requirements for testing, development and documentation building.
+the project are stored in the file ``pyproject.toml``. The basic runtime
+requirements are defined in ``dependencies``. Requirements for optional features
+stored in ``[project.optional-dependencies]``. Also in the same section there
+are requirements for testing, development and documentation building: ``test``,
+``test-no-urls``, ``dev`` and ``doc``.
 
 The recommended way to work with the source code is the following. First clone
 the repository, then create a virtual environment, activate it and finally
@@ -42,9 +40,17 @@ is done as follows:
 
     pre-commit install
 
+To build the documentation run:
+
+.. code-block:: bash
+
+    sphinx-build sphinx sphinx/_build sphinx/index.rst
+
+Then to see it, open the file ``sphinx/_build/index.html`` in a browser.
+
 Running the unit tests can be done either using using `tox
-<https://tox.readthedocs.io/en/stable/>`__ or the :code:`setup.py` script. The
-unit tests are also installed with the package, thus can be run in a production
+<https://tox.readthedocs.io/en/stable/>`__ or the ``setup.py`` script. The unit
+tests are also installed with the package, thus can be run in a production
 system.
 
 .. code-block:: bash

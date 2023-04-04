@@ -209,8 +209,8 @@ via :ref:`sub-commands` similar to the single class example above, i.e.
 function to execute. If multiple classes or a mixture of functions and classes
 is given to :func:`.CLI`, to execute a method of a class, two levels of
 :ref:`sub-commands` are required. The first sub-command would be the name of the
-class and the second the name of the method, i.e. :code:`example.py class
-[init_arguments] method [arguments]`.
+class and the second the name of the method, i.e. ``example.py class
+[init_arguments] method [arguments]``.
 
 .. note::
 
@@ -673,8 +673,8 @@ Furthermore unexperienced users might mistakenly use ``type=bool`` which would
 not provide the intended behavior.
 
 With jsonargparse adding an argument with ``type=bool`` the intended action is
-implemented. If given as values ``{'yes', 'true'}`` or :code:`{'no', 'false'}`
-the corresponding parsed values would be ``True`` or ``False``. For example:
+implemented. If given as values ``{'yes', 'true'}`` or ``{'no', 'false'}`` the
+corresponding parsed values would be ``True`` or ``False``. For example:
 
 .. testsetup:: boolean
 
@@ -704,8 +704,8 @@ straightforward. A couple of examples would be:
     parser.add_argument('--with-op2', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
 
 If the :class:`.ActionYesNo` class is used in conjunction with ``nargs='?'`` the
-options can also be set by giving as value any of :code:`{'true', 'yes',
-'false', 'no'}`.
+options can also be set by giving as value any of ``{'true', 'yes', 'false',
+'no'}``.
 
 
 .. _enums:
@@ -978,8 +978,7 @@ is how complex numbers are registered: ``register_type(complex)``. For other
 type classes that don't have these properties, to register it might be necessary
 to provide a serializer and/or deserializer function. Including the serializer
 and deserializer functions, the registration of the complex numbers example is
-equivalent to :code:`register_type(complex, serializer=str,
-deserializer=complex)`.
+equivalent to ``register_type(complex, serializer=str, deserializer=complex)``.
 
 A more useful example could be registering the ``datetime`` class. This case
 requires to give both a serializer and a deserializer as seen below.
@@ -1071,12 +1070,11 @@ the expected structure in the config files.
 The :py:attr:`.ArgumentParser.default_config_files` property can be set when
 creating a parser to specify patterns to search for configuration files. For
 example if a parser is created as
-:code:`ArgumentParser(default_config_files=['~/.myapp.yaml',
-'/etc/myapp.yaml'])`, when parsing if any of those two config files exist it
-will be parsed and used to override the defaults. All matched config files are
-parsed and applied in the given order. The default config files are always
-parsed first, this means that any command line argument will override its
-values.
+``ArgumentParser(default_config_files=['~/.myapp.yaml', '/etc/myapp.yaml'])``,
+when parsing if any of those two config files exist it will be parsed and used
+to override the defaults. All matched config files are parsed and applied in the
+given order. The default config files are always parsed first, this means that
+any command line argument will override its values.
 
 It is also possible to add an argument to explicitly provide a configuration
 file path. Providing a config file as an argument does not disable the parsing
@@ -2367,7 +2365,7 @@ disabled. To enable, the ``logger`` argument should be set when creating an
 existing logger object which is used for the whole application. For convenience,
 to enable a default logger the ``logger`` argument can also receive ``True`` or
 a string which sets the name of the logger or a dictionary that can include the
-name and the level, e.g. :code:`{"name": "myapp", "level": "ERROR"}`. If
+name and the level, e.g. ``{"name": "myapp", "level": "ERROR"}``. If
 `reconplogger <https://pypi.org/project/reconplogger/>`__ is installed, setting
 ``logger`` to ``True`` or a dictionary without specifying a name, then the
 reconplogger is used. If reconplogger is installed and the

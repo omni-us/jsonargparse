@@ -8,7 +8,9 @@ jobs:
       - checkout
       - run:
           name: Build wheel package
-          command: ./setup.py bdist_wheel sdist
+          command: |
+            pip3 install -U setuptools
+            ./setup.py bdist_wheel sdist
       - persist_to_workspace:
           root: .
           paths:
@@ -26,7 +28,7 @@ jobs:
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             virtualenv -p python3 venv$py
             . venv$py/bin/activate
-            pip3 install $(ls ./dist/*.whl)[test_no_urls]
+            pip3 install $(ls ./dist/*.whl)[test-no-urls]
             python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
             pip3 install $(ls ./dist/*.whl)[test,all]
             python3 -m jsonargparse_tests coverage xml coverage_py${py}_all.xml
