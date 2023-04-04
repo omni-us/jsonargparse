@@ -1,0 +1,181 @@
+[build-system]
+requires = ["setuptools>=65.6.3", "wheel>=0.38.4"]
+
+[project]
+name = "jsonargparse"
+dynamic = ["version", "readme"]
+description = "Implement minimal boilerplate CLIs derived from type hints and parse from command line, config files and environment variables."
+authors = [
+    {name = "Mauricio Villegas", email = "mauricio@omnius.com"},
+]
+license = {file = "LICENSE.rst"}
+requires-python = ">=3.6"
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+]
+
+dependencies = [
+    "PyYAML>=3.13",
+    "contextvars>=2.4; python_version == '3.6'",
+    "dataclasses>=0.8; python_version == '3.6'",
+]
+
+[project.optional-dependencies]
+all = [
+    "jsonargparse[signatures]",
+    "jsonargparse[jsonschema]",
+    "jsonargparse[jsonnet]",
+    "jsonargparse[urls]",
+    "jsonargparse[fsspec]",
+    "jsonargparse[argcomplete]",
+    "jsonargparse[ruyaml]",
+    "jsonargparse[omegaconf]",
+    "jsonargparse[typing-extensions]",
+    "jsonargparse[reconplogger]",
+]
+signatures = [
+    "docstring-parser>=0.15",
+    "typeshed-client>=2.1.0",
+]
+jsonschema = [
+    "jsonschema>=3.2.0",
+]
+jsonnet = [
+    "jsonnet>=0.13.0; os_name == 'posix'",
+    "jsonnet-binary>=0.17.0; os_name != 'posix'",
+]
+urls = [
+    "requests>=2.18.4",
+]
+fsspec = [
+    "fsspec>=0.8.4",
+]
+argcomplete = [
+    "argcomplete>=2.0.0",
+]
+ruyaml = [
+    "ruyaml>=0.20.0",
+]
+omegaconf = [
+    "omegaconf>=2.1.1",
+]
+typing-extensions = [
+    "typing-extensions>=3.10.0.0; python_version < '3.8'",
+]
+reconplogger = [
+    "reconplogger>=4.4.0",
+]
+test = [
+    "jsonargparse[test-no-urls]",
+    "jsonargparse[types-pyyaml]",
+    "responses>=0.12.0",
+    "types-requests>=2.28.9",
+]
+test-no-urls = [
+    "coverage>=4.5.1",
+]
+dev = [
+    "jsonargparse[test]",
+    "jsonargparse[doc]",
+    "jsonargparse[pylint]",
+    "jsonargparse[mypy]",
+    "pre-commit>=2.19.0",
+    "tox>=3.25.0",
+    "pycodestyle>=2.5.0",
+]
+pylint = [
+    "pylint>=2.15.6",
+]
+mypy = [
+    "jsonargparse[types-pyyaml]",
+    "mypy>=0.701",
+]
+types-pyyaml = [
+    "types-PyYAML>=6.0.11",
+]
+doc = [
+    "Sphinx>=1.7.9",
+    "sphinx-rtd-theme>=0.4.3",
+    "autodocsumm>=0.1.10",
+    "sphinx-autodoc-typehints>=1.19.5",
+]
+maintainer = [
+    "bump2version>=0.5.11",
+]
+
+[project.urls]
+Documentation-stable = "https://jsonargparse.readthedocs.io/en/stable/"
+Documentation-latest = "https://jsonargparse.readthedocs.io/en/latest/"
+Changes = "https://jsonargparse.readthedocs.io/en/stable/changelog.html"
+GitHub = "https://github.com/omni-us/jsonargparse"
+PyPI = "https://pypi.org/project/jsonargparse"
+CircleCI = "https://circleci.com/gh/omni-us/jsonargparse"
+SonarCloud = "https://sonarcloud.io/dashboard?id=omni-us_jsonargparse"
+Codecov = "https://codecov.io/gh/omni-us/jsonargparse"
+
+[tool.setuptools]
+platforms = ["Any"]
+packages = ["jsonargparse", "jsonargparse_tests"]
+
+
+[tool.setuptools.dynamic]
+version = {attr = "jsonargparse.__version__"}
+
+
+[tool.setuptools.package-data]
+jsonargparse = [
+    "*.pyi",
+    "py.typed",
+]
+
+
+[tool.mypy]
+ignore_missing_imports = true
+allow_redefinition = true
+warn_unused_ignores = true
+
+
+[tool.pylint]
+disable = "no-member"
+errors-only = true
+
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py{37,38,39,310,311}-{all,no}-extras,pypy3,omegaconf
+skip_missing_interpreters = true
+
+[testenv]
+extras =
+    all-extras: test,all
+    no-extras: test-no-urls
+changedir = jsonargparse_tests
+commands = python -m unittest
+usedevelop = true
+
+[testenv:omegaconf]
+extras = test,all
+setenv =
+    JSONARGPARSE_OMEGACONF_FULL_TEST = true
+"""

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import re
-from contextlib import suppress
 from pathlib import Path
 
 from setuptools import Command, setup
@@ -45,11 +44,10 @@ class CoverageCommand(Command):
 CMDCLASS['test_coverage'] = CoverageCommand
 
 
-## build_sphinx target ##
-with suppress(ImportError):
-    from sphinx.setup_command import BuildDoc
-    CMDCLASS['build_sphinx'] = BuildDoc  # type: ignore
-
-
 ## Run setuptools setup ##
-setup(long_description=LONG_DESCRIPTION, cmdclass=CMDCLASS)
+setup(
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type='text/x-rst',
+    cmdclass=CMDCLASS,
+    test_suite='jsonargparse_tests',
+)
