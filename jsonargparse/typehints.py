@@ -611,12 +611,12 @@ def adapt_typehints(
                 val = val.name
             else:
                 if val not in typehint.__members__:
-                    raise_unexpected_value(f'Expected a member of {typehint}', val)
+                    raise_unexpected_value(f'Expected a member of {typehint}: {iter_to_set_str(typehint.__members__)}', val)
         elif not serialize and not isinstance(val, typehint):
             try:
                 val = typehint[val]
             except KeyError as ex:
-                raise_unexpected_value(f'Expected a member of {typehint}', val, ex)
+                raise_unexpected_value(f'Expected a member of {typehint}: {iter_to_set_str(typehint.__members__)}', val, ex)
 
     # Type
     elif typehint in {Type, type} or typehint_origin in {Type, type}:
