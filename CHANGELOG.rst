@@ -15,13 +15,18 @@ paths are considered internals and can change in minor and patch releases.
 v4.21.0 (2023-04-??)
 --------------------
 
+Fixed
+^^^^^
+- `str` parameter in subclass incorrectly parsed as dict with implicit `null`
+  value (`#262 <https://github.com/omni-us/jsonargparse/issues/262>`__).
+
 Changed
 ^^^^^^^
 - Switched from ``setup.cfg`` to ``pyproject.toml`` for configuration.
 - Removed ``build_sphinx`` from ``setup.py`` and documented how to build.
 - Include enum members in error when invalid value is given
-  `pytorch-lightning#17247
-  <https://github.com/Lightning-AI/lightning/issues/17247>`__.
+  (`pytorch-lightning#17247
+  <https://github.com/Lightning-AI/lightning/issues/17247>`__).
 
 
 v4.20.1 (2023-03-30)
