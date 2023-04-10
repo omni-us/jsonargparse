@@ -56,10 +56,13 @@ def yaml_load(stream):
         value = stream
     else:
         value = yaml.load(stream, Loader=DefaultLoader)
-    if isinstance(value, dict) and all(v is None for v in value.values()):
-        keys = {k for k in regex_curly_comma.split(stream) if k}
-        if len(keys) > 0 and keys == set(value.keys()):
+    if isinstance(value, dict) and value and all(v is None for v in value.values()):
+        if len(value) == 1 and stream.strip() == next(iter(value.keys())) + ':':
             value = stream
+        else:
+            keys = {k for k in regex_curly_comma.split(stream) if k}
+            if len(keys) > 0 and keys == set(value.keys()):
+                value = stream
     return value
 
 

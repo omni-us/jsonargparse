@@ -11,6 +11,7 @@ import yaml
 from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader
 from jsonargparse._common import parser_context
 from jsonargparse.loaders_dumpers import load_value, loaders, yaml_dump
+from jsonargparse_tests.base import mock_module
 
 
 class LoadersTests(unittest.TestCase):
@@ -34,6 +35,18 @@ class LoadersTests(unittest.TestCase):
         parser.add_argument('--val', type=str)
         self.assertEqual('{one}', parser.parse_args(['--val={one}']).val)
         self.assertEqual('{one,two,three}', parser.parse_args(['--val={one,two,three}']).val)
+
+
+    def test_disable_implicit_null(self):
+        class Bar:
+            def __init__(self, x: str):
+                pass
+
+        with mock_module(Bar):
+            parser = ArgumentParser()
+            parser.add_subclass_arguments(Bar, 'bar')
+            cfg = parser.parse_args(['--bar=Bar', '--bar.x=Foo:'])
+            self.assertEqual('Foo:', cfg.bar.init_args.x)
 
 
     @unittest.skipIf(not find_spec('omegaconf'), 'omegaconf package is required')
