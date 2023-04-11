@@ -1193,7 +1193,7 @@ class SignaturesTests(unittest.TestCase):
             with redirect_stderr(err), self.assertRaises(SystemExit):
                 parser.parse_args(['--cls=Class', '--cls.init_args.val=abc'])
             expected = textwrap.dedent('''
-            - Parser key "val":
+            Parser key "val":
               Does not validate against any of the Union subtypes
               Subtypes: (<class 'int'>, <class 'dict'>, <class 'NoneType'>)
               Errors:
@@ -1205,6 +1205,34 @@ class SignaturesTests(unittest.TestCase):
             ''').strip()
             expected = textwrap.indent(expected, '    ')
             self.assertIn(expected, err.getvalue())
+
+
+    def test_subclass_in_union_error_message_indentation(self):
+        class Class:
+            def __init__(self, val: int):
+                pass
+
+        with mock_module(Class):
+            parser = ArgumentParser()
+            parser.add_argument('--union', type=Union[str, Class])
+            err = StringIO()
+            with redirect_stderr(err), self.assertRaises(SystemExit):
+                parser.parse_object({'union': [{'class_path': 'Class', 'init_args': {'val': 'x'}}]})
+            expected = textwrap.dedent('''
+            Errors:
+              - Expected a <class 'str'>
+              - Not a valid subclass of Class
+                Subclass types expect one of:
+                - a class path (str)
+                - a dict with class_path entry
+                - a dict without class_path but with init_args entry (class path given previously)
+            Given value type: <class 'list'>
+            Given value: [{'class_path': 'Class', 'init_args': {'val': 'x'}}]
+            ''').strip()
+            expected = textwrap.indent(expected, '  ')
+            expected = '\n'.join(expected.splitlines())
+            obtained = '\n'.join(err.getvalue().splitlines())
+            self.assertIn(expected, obtained)
 
 
 class SignaturesConfigTests(TempDirTestCase):

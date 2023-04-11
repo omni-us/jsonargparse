@@ -535,7 +535,8 @@ def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: O
 
 
 def raise_union_unexpected_value(uniontype, val: Any, exceptions: List[Exception]) -> NoReturn:
-    errors = indent_text('- ' + '\n- '.join(map(str, exceptions)))
+    str_exceptions = [indent_text(str(e), first_line=False) for e in exceptions]
+    errors = indent_text('- ' + '\n- '.join(str_exceptions))
     errors = errors.replace(f'. Got value: {val}', '').replace(f' {val} ', ' ')
     subtypes = uniontype.__args__
     raise ValueError(
@@ -770,7 +771,7 @@ def adapt_typehints(
         val = subclass_spec_as_namespace(val, prev_val)
         if not is_subclass_spec(val):
             raise_unexpected_value(
-                f'Not a valid {typehint.__name__}. Got value: {val_input}\n'
+                f'Not a valid subclass of {typehint.__name__}. Got value: {val_input}\n'
                 'Subclass types expect one of:\n'
                 '- a class path (str)\n'
                 '- a dict with class_path entry\n'
@@ -785,8 +786,8 @@ def adapt_typehints(
             val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
         except (ImportError, AttributeError, AssertionError, ArgumentError) as ex:
             class_path = val if isinstance(val, str) else val['class_path']
-            error = indent_text(f'\n- {ex}')
-            raise_unexpected_value(f'Problem with given class_path {class_path!r}:{error}', exception=ex)
+            error = indent_text(str(ex))
+            raise_unexpected_value(f'Problem with given class_path {class_path!r}:\n{error}', exception=ex)
 
     return val
 
