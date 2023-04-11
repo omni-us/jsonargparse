@@ -19,6 +19,8 @@ Fixed
 ^^^^^
 - `str` parameter in subclass incorrectly parsed as dict with implicit `null`
   value (`#262 <https://github.com/omni-us/jsonargparse/issues/262>`__).
+- Wrong error indentation for subclass in union (`pytorch-lightning#17254
+  <https://github.com/Lightning-AI/lightning/issues/17254>`__).
 
 Changed
 ^^^^^^^

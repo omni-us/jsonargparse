@@ -333,8 +333,13 @@ def iter_to_set_str(val, sep=','):
     return '{'+sep.join(str(x) for x in val)+'}'
 
 
-def indent_text(text: str) -> str:
-    return textwrap.indent(text, '  ')
+def indent_text(text: str, first_line: bool = True) -> str:
+    if first_line:
+        return textwrap.indent(text, '  ')
+    lines = text.splitlines()
+    if len(lines) == 1:
+        return text
+    return lines[0] + os.linesep + textwrap.indent(os.linesep.join(lines[1:]), '  ')
 
 
 def get_private_kwargs(data, **kwargs):
