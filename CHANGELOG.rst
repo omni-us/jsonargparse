@@ -15,12 +15,18 @@ paths are considered internals and can change in minor and patch releases.
 v4.21.0 (2023-04-??)
 --------------------
 
+Added
+^^^^^
+- Support for pydantic models and attr defines similar to dataclasses.
+
 Fixed
 ^^^^^
 - `str` parameter in subclass incorrectly parsed as dict with implicit `null`
   value (`#262 <https://github.com/omni-us/jsonargparse/issues/262>`__).
 - Wrong error indentation for subclass in union (`pytorch-lightning#17254
   <https://github.com/Lightning-AI/lightning/issues/17254>`__).
+- ``dataclass`` from pydantic not working (`#100 (comment)
+  <https://github.com/omni-us/jsonargparse/issues/100#issuecomment-1408413796>`__).
 
 Changed
 ^^^^^^^
@@ -29,6 +35,11 @@ Changed
 - Include enum members in error when invalid value is given
   (`pytorch-lightning#17247
   <https://github.com/Lightning-AI/lightning/issues/17247>`__).
+
+Deprecated
+^^^^^^^^^^
+- Support for python 3.6 will be removed in v5.0.0. New features added in
+  future v4 releases are not guaranteed to work with python 3.6.
 
 
 v4.20.1 (2023-03-30)

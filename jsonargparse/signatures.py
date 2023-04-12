@@ -8,7 +8,13 @@ from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from .actions import _ActionConfigLoad
-from .optionals import get_doc_short_description
+from .optionals import (
+    attrs_support,
+    get_doc_short_description,
+    import_attrs,
+    import_pydantic,
+    pydantic_support,
+)
 from .parameter_resolvers import (
     ParamData,
     get_parameter_origins,
@@ -411,20 +417,18 @@ class SignatureArguments(LoggerProperty):
                     default = theclass(**default)
             if not isinstance(default, theclass):
                 raise ValueError(f'Expected "default" argument to be an instance of "{theclass.__name__}" or its kwargs dict, given {default}')
-            defaults = dataclasses.asdict(default)
+            defaults = dataclass_to_dict(default)
 
         added_args: List[str] = []
-        params = {p.name: p for p in get_signature_parameters(theclass, None, logger=self.logger)}
-        for field in dataclasses.fields(theclass):
-            if field.name in params:
-                self._add_signature_parameter(
-                    group,
-                    nested_key,
-                    params[field.name],
-                    added_args,
-                    fail_untyped=fail_untyped,
-                    default=defaults.get(field.name, inspect_empty),
-                )
+        for param in get_signature_parameters(theclass, None, logger=self.logger):
+            self._add_signature_parameter(
+                group,
+                nested_key,
+                param,
+                added_args,
+                fail_untyped=fail_untyped,
+                default=defaults.get(param.name, inspect_empty),
+            )
 
         return added_args
 
@@ -550,7 +554,24 @@ def is_pure_dataclass(value):
     if not inspect.isclass(value):
         return False
     classes = [c for c in inspect.getmro(value) if c != object]
-    return all(dataclasses.is_dataclass(c) for c in classes)
+    all_dataclasses = all(dataclasses.is_dataclass(c) for c in classes)
+    if not all_dataclasses and pydantic_support:
+        pydantic = import_pydantic('is_pure_dataclass')
+        classes = [c for c in classes if c != pydantic.utils.Representation]
+        all_dataclasses = all(is_subclass(c, pydantic.BaseModel) for c in classes)
+    if not all_dataclasses and attrs_support:
+        attrs = import_attrs('is_pure_dataclass')
+        if attrs.has(value):
+            return True
+    return all_dataclasses
+
+
+def dataclass_to_dict(value):
+    if pydantic_support:
+        pydantic = import_pydantic('dataclass_to_dict')
+        if isinstance(value, pydantic.BaseModel):
+            return value.dict()
+    return dataclasses.asdict(value)
 
 
 def compose_dataclasses(*args):
