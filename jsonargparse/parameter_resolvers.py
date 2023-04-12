@@ -80,7 +80,7 @@ def is_staticmethod(attr) -> bool:
 
 
 def is_method(attr) -> bool:
-    return inspect.isfunction(attr) and not is_staticmethod(attr)
+    return (inspect.isfunction(attr) or attr.__class__.__name__ == 'cython_function_or_method') and not is_staticmethod(attr)
 
 
 def is_property(attr) -> bool:
@@ -265,10 +265,7 @@ def get_signature_parameters_and_indexes(component, parent, logger):
         params = params[1:]
     args_idx = get_arg_kind_index(params, kinds.VAR_POSITIONAL)
     kwargs_idx = get_arg_kind_index(params, kinds.VAR_KEYWORD)
-    doc_params = {}
-    for doc in parse_docs(component, parent, logger):
-        for param in doc.params:
-            doc_params[param.arg_name] = param.description
+    doc_params = parse_docs(component, parent, logger)
     for num, param in enumerate(params):
         params[num] = ParamData(
             doc=doc_params.get(param.name),
@@ -767,6 +764,37 @@ def get_parameters_by_assumptions(
     return params
 
 
+def get_parameters_from_pydantic(
+    function_or_class: Union[Callable, Type],
+    method_or_property: Optional[str],
+    logger: logging.Logger,
+) -> Optional[ParamList]:
+    from .optionals import import_pydantic, pydantic_support
+    if not pydantic_support or method_or_property:
+        return None
+    pydantic = import_pydantic('get_parameters_from_pydantic')
+    if not is_subclass(function_or_class, pydantic.BaseModel):
+        return None
+    params = []
+    doc_params = parse_docs(function_or_class, None, logger)
+    for field in function_or_class.__fields__.values():  # type: ignore
+        if field.required:
+            default = inspect._empty
+        elif field.default_factory:
+            default = field.default_factory()
+        else:
+            default = field.default
+        params.append(ParamData(
+            name=field.name,
+            annotation=field.annotation,
+            default=default,
+            kind=kinds.KEYWORD_ONLY,
+            doc=field.field_info.description or doc_params.get(field.name),
+            component=function_or_class,
+        ))
+    return params
+
+
 def get_signature_parameters(
     function_or_class: Union[Callable, Type],
     method_or_property: Optional[str] = None,
@@ -787,6 +815,9 @@ def get_signature_parameters(
     """
     logger = parse_logger(logger, 'get_signature_parameters')
     try:
+        params = get_parameters_from_pydantic(function_or_class, method_or_property, logger)
+        if params is not None:
+            return params
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
         return visitor.get_parameters()
     except Exception as ex:

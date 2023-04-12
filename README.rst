@@ -433,7 +433,9 @@ Some notes about this support are:
 - ``dataclasses`` are supported as a type but only for pure data classes and not
   nested in a type. By pure it is meant that the class only inherits from data
   classes. Not a mixture of normal classes and data classes. Data classes as
-  fields of other data classes is supported.
+  fields of other data classes is supported. Pydantic's ``dataclass`` decorator
+  and ``BaseModel`` classes, and attrs' ``define`` decorator are supported
+  like standard dataclasses. Though, this support is currently experimental.
 
 - To set a value to ``None`` it is required to use ``null`` since this is how
   json/yaml defines it. To avoid confusion in the help, ``NoneType`` is

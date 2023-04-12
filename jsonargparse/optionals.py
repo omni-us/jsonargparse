@@ -25,6 +25,8 @@ fsspec_support = find_spec('fsspec') is not None
 ruyaml_support = find_spec('ruyaml') is not None
 omegaconf_support = find_spec('omegaconf') is not None
 reconplogger_support = find_spec('reconplogger') is not None
+pydantic_support = find_spec('pydantic') is not None
+attrs_support = find_spec('attrs') is not None
 
 _config_read_mode = 'fr'
 _docstring_parse_options = {
@@ -133,6 +135,18 @@ def import_reconplogger(importer):
     return reconplogger
 
 
+def import_pydantic(importer):
+    with missing_package_raise('pydantic', importer):
+        import pydantic
+    return pydantic
+
+
+def import_attrs(importer):
+    with missing_package_raise('attrs', importer):
+        import attrs
+    return attrs
+
+
 def set_config_read_mode(
     urls_enabled: bool = False,
     fsspec_enabled: bool = False,
@@ -207,15 +221,16 @@ def parse_docstring(component, params=False, logger=None):
 
 
 def parse_docs(component, parent, logger):
-    docs = []
+    docs = {}
     if docstring_parser_support:
         doc_sources = [component]
         if inspect.isclass(parent) and component.__name__ == '__init__':
-            doc_sources = [parent] + doc_sources
+            doc_sources += [parent]
         for src in doc_sources:
             doc = parse_docstring(src, params=True, logger=logger)
             if doc:
-                docs.append(doc)
+                for param in doc.params:
+                    docs[param.arg_name] = param.description
     return docs
 
 
