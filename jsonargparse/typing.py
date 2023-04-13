@@ -6,6 +6,7 @@ import pathlib
 import re
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
+from ._common import is_final_class
 from .optionals import final
 from .util import Path, get_import_path, get_private_kwargs, import_object
 
@@ -325,11 +326,6 @@ def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Opti
     if type_check is not None:
         kwargs['type_check'] = type_check  # type: ignore
     register_type(type_class, type_class._type, **kwargs)  # type: ignore
-
-
-def is_final_class(cls):
-    """Checks whether a class is final, i.e. decorated with ``final``."""
-    return getattr(cls, '__final__', False)
 
 
 _fail_already_registered = False

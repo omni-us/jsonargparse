@@ -4,7 +4,7 @@ import dataclasses
 import sys
 import unittest
 from io import StringIO
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 import yaml
 
@@ -281,7 +281,69 @@ class DataclassesTests(unittest.TestCase):
         set_docstring_parse_options(attribute_docstrings=False)
 
 
-@unittest.skipIf(sys.version_info == (3, 6), 'pydantic not supported in python 3.10')
+class NestedDataclassTypeTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        @dataclasses.dataclass
+        class Data:
+            p1: str
+            p2: int = 0
+
+        cls.Data = Data
+        cls.parser = ArgumentParser(exit_on_error=False)
+        cls.parser.add_argument('--data', type=Optional[Data])
+
+    def test_dataclass_all_fields(self):
+        cfg = self.parser.parse_args(['--data={"p1": "x", "p2": 1}'])
+        self.assertEqual(cfg, Namespace(data=Namespace(p1='x', p2=1)))
+
+    def test_dataclass_single_field(self):
+        cfg = self.parser.parse_args(['--data={"p1": "y"}'])
+        self.assertEqual(cfg, Namespace(data=Namespace(p1='y', p2=0)))
+
+    def test_dataclass_invalid_field(self):
+        with self.assertRaises(ArgumentError):
+            self.parser.parse_args(['--data={"p1": 1}'])
+
+    def test_dataclass_instantiate(self):
+        cfg = self.parser.parse_args(['--data={"p1": "y", "p2": 2}'])
+        init = self.parser.instantiate_classes(cfg)
+        self.assertIsInstance(init.data, self.Data)
+        self.assertEqual(init.data.p1, 'y')
+        self.assertEqual(init.data.p2, 2)
+
+    def test_dataclass_dump(self):
+        cfg = self.parser.parse_args(['--data={"p1": "z"}'])
+        self.assertEqual(self.parser.dump(cfg), 'data:\n  p1: z\n  p2: 0\n')
+
+    def test_dataclass_missing_required_field(self):
+        with self.assertRaises(ArgumentError):
+            self.parser.parse_args(['--data={"p2": 2}'])
+
+    def test_not_dataclass_value(self):
+        cfg = self.parser.parse_args(['--data=null'])
+        self.assertEqual(cfg, Namespace(data=None))
+        self.assertEqual(cfg, self.parser.instantiate_classes(cfg))
+
+    def test_not_dataclass_in_union(self):
+        parser = ArgumentParser()
+        parser.add_argument('--union', type=Optional[Union[self.Data, int]])
+        cfg = parser.parse_args(['--union=1'])
+        self.assertEqual(cfg, Namespace(union=1))
+        self.assertEqual(cfg, parser.instantiate_classes(cfg))
+
+    def test_dataclass_in_list(self):
+        parser = ArgumentParser()
+        parser.add_argument('--list', type=List[self.Data])
+        cfg = parser.parse_args(['--list=[{"p1": "a"},{"p1": "b"}]'])
+        init = parser.instantiate_classes(cfg)
+        self.assertEqual(['a', 'b'], [d.p1 for d in init.list])
+        self.assertIsInstance(init.list[0], self.Data)
+        self.assertIsInstance(init.list[1], self.Data)
+
+
+@unittest.skipIf(sys.version_info == (3, 6), 'pydantic not supported in python 3.6')
 @unittest.skipIf(not pydantic_support, 'pydantic package is required')
 class PydanticTests(unittest.TestCase):
 

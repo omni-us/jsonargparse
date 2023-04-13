@@ -32,7 +32,7 @@ from typing import (
     Union,
 )
 
-from ._common import parent_parser, parser_context
+from ._common import is_dataclass_like, is_subclass, parent_parser, parser_context
 from .actions import (
     Action,
     ActionConfigFile,
@@ -55,7 +55,7 @@ from .optionals import (
     get_files_completer,
     typing_extensions_import,
 )
-from .typing import get_registered_type, is_final_class
+from .typing import get_registered_type
 from .util import (
     ClassType,
     NestedArg,
@@ -66,7 +66,6 @@ from .util import (
     get_typehint_origin,
     import_object,
     indent_text,
-    is_subclass,
     iter_to_set_str,
     object_path_serializer,
     parse_value_or_config,
@@ -137,6 +136,7 @@ class ActionTypeHint(Action):
         """
         if typehint is not None:
             if not self.is_supported_typehint(typehint, full=True):
+                self.is_supported_typehint(typehint, full=True)
                 raise ValueError(f'Unsupported type hint {typehint}.')
             if get_typehint_origin(typehint) == Union:
                 subtype_supported = [
@@ -198,6 +198,7 @@ class ActionTypeHint(Action):
             get_typehint_origin(typehint) in root_types or \
             get_registered_type(typehint) is not None or \
             is_subclass(typehint, Enum) or \
+            is_dataclass_like(typehint) or \
             ActionTypeHint.is_subclass_typehint(typehint)
         if full and supported:
             typehint_origin = get_typehint_origin(typehint) or typehint
@@ -233,6 +234,7 @@ class ActionTypeHint(Action):
         return inspect.isclass(typehint) and \
             typehint not in leaf_or_root_types and \
             not get_registered_type(typehint) and \
+            not is_dataclass_like(typehint) and \
             typehint_origin is None and \
             not is_subclass(typehint, (Path, Enum))
 
@@ -758,6 +760,19 @@ def adapt_typehints(
             except (ImportError, AttributeError, ArgumentError) as ex:
                 raise_unexpected_value(f'Type {typehint} expects a function or a callable class: {ex}', val, ex)
 
+    # Dataclass-like
+    elif is_dataclass_like(typehint):
+        parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs)
+        if instantiate_classes:
+            init_args = parser.instantiate_classes(val)
+            return typehint(**init_args)
+        if serialize:
+            val = load_value(parser.dump(val, **dump_kwargs.get()))
+        elif isinstance(val, (dict, Namespace)):
+            val = parser.parse_object(val, defaults=sub_defaults.get())
+        else:
+            raise_unexpected_value(f'Type {typehint} expects a dict or Namespace', val)
+
     # Subclass
     elif not hasattr(typehint, '__origin__') and inspect.isclass(typehint):
         if isinstance(val, typehint):
@@ -1179,9 +1194,12 @@ class LazyInitBaseClass:
         self._lazy_init()
         return getattr(self, method_name)(*args, **kwargs)
 
+    def lazy_get_init_args(self) -> Namespace:
+        return Namespace(self._lazy_kwargs)
+
     def lazy_get_init_data(self):
-        init_args = Namespace(self._lazy_kwargs)
-        if is_final_class(self._lazy_class_type):
+        init_args = self.lazy_get_init_args()
+        if is_dataclass_like(self._lazy_class_type):
             return init_args
         init = Namespace(class_path=get_import_path(self._lazy_class_type))
         if len(self._lazy_kwargs) > 0:

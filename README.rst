@@ -430,18 +430,17 @@ Some notes about this support are:
   config files and environment variables, tuples and sets are represented as an
   array.
 
-- ``dataclasses`` are supported as a type but only for pure data classes and not
-  nested in a type. By pure it is meant that the class only inherits from data
-  classes. Not a mixture of normal classes and data classes. Data classes as
-  fields of other data classes is supported. Pydantic's ``dataclass`` decorator
-  and ``BaseModel`` classes, and attrs' ``define`` decorator are supported
-  like standard dataclasses. Though, this support is currently experimental.
-
 - To set a value to ``None`` it is required to use ``null`` since this is how
   json/yaml defines it. To avoid confusion in the help, ``NoneType`` is
   displayed as ``null``. For example a function argument with type and default
   ``Optional[str] = None`` would be shown in the help as ``type: Union[str,
   null], default: null``.
+
+- ``dataclasses`` are supported even when nested. Final classes, attrs'
+  ``define`` decorator, and pydantic's ``dataclass`` decorator and ``BaseModel``
+  classes are supported and behave like standard dataclasses. If a dataclass
+  inherits from a normal class, the type is considered a subclass instead of a
+  dataclass, see :ref:`sub-classes`.
 
 - Normal classes can be used as a type, which are specified with a dict
   containing ``class_path`` and optionally ``init_args``.

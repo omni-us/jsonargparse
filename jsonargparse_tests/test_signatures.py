@@ -153,6 +153,17 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parser.add_class_arguments(Class2))
 
 
+    def test_add_class_with_default(self):
+        class Class:
+            def __init__(self, p1: int = 1, p2: str = '-'):
+                pass
+
+        parser = ArgumentParser()
+        parser.add_class_arguments(Class, 'cls', default=lazy_instance(Class, p1=2))
+        defaults = parser.get_defaults()
+        self.assertEqual(defaults, Namespace(cls=Namespace(p1=2, p2='-')))
+
+
     def test_add_class_without_args(self):
         class NoArgs:
             pass

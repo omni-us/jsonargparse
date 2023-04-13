@@ -182,7 +182,7 @@ class ActionEnum:
 
     def __init__(self, **kwargs):
         if 'enum' in kwargs:
-            from .util import is_subclass
+            from ._common import is_subclass
             if not is_subclass(kwargs['enum'], Enum):
                 raise ValueError('Expected enum to be an subclass of Enum.')
             self._type = kwargs['enum']
