@@ -10,13 +10,13 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from ._common import is_dataclass_like, is_subclass
 from ._stubs_resolver import get_stub_types
 from .optionals import parse_docs
 from .util import (
     ClassFromFunctionBase,
     LoggerProperty,
     get_import_path,
-    is_subclass,
     iter_to_set_str,
     parse_logger,
     unique,
@@ -325,8 +325,7 @@ def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, log_deb
 
 
 def is_param_subclass_instance_default(param: ParamData) -> bool:
-    from .signatures import is_pure_dataclass
-    if is_pure_dataclass(type(param.default)):
+    if is_dataclass_like(type(param.default)):
         return False
     from .typehints import ActionTypeHint, get_subclass_types
     class_types = get_subclass_types(param.annotation)

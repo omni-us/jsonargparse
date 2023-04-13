@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-from ._common import parser_context
+from ._common import is_subclass, parser_context
 from .loaders_dumpers import get_loader_exceptions, load_value
 from .namespace import Namespace, split_key, split_key_root
 from .optionals import FilesCompleterMethod, get_config_read_mode
@@ -25,7 +25,6 @@ from .util import (
     get_typehint_origin,
     import_object,
     indent_text,
-    is_subclass,
     iter_to_set_str,
     parse_value_or_config,
 )

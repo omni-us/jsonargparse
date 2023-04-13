@@ -166,14 +166,6 @@ def read_stdin() -> str:
     return value
 
 
-def is_subclass(cls, class_or_tuple):
-    """Extension of issubclass that supports non-class arguments."""
-    try:
-        return inspect.isclass(cls) and issubclass(cls, class_or_tuple)
-    except TypeError:
-        return False
-
-
 def import_object(name: str):
     """Returns an object in a module given its dot import path."""
     if not isinstance(name, str) or '.' not in name:

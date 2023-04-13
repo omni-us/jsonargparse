@@ -17,6 +17,7 @@ v4.21.0 (2023-04-??)
 
 Added
 ^^^^^
+- Support for dataclasses nested in a type.
 - Support for pydantic models and attr defines similar to dataclasses.
 
 Fixed
@@ -27,6 +28,7 @@ Fixed
   <https://github.com/Lightning-AI/lightning/issues/17254>`__).
 - ``dataclass`` from pydantic not working (`#100 (comment)
   <https://github.com/omni-us/jsonargparse/issues/100#issuecomment-1408413796>`__).
+- ``add_dataclass_arguments`` not forwarding ``sub_configs`` parameter.
 
 Changed
 ^^^^^^^

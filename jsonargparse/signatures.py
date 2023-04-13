@@ -7,22 +7,16 @@ from argparse import SUPPRESS
 from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
+from ._common import is_dataclass_like, is_subclass
 from .actions import _ActionConfigLoad
-from .optionals import (
-    attrs_support,
-    get_doc_short_description,
-    import_attrs,
-    import_pydantic,
-    pydantic_support,
-)
+from .optionals import get_doc_short_description, import_pydantic, pydantic_support
 from .parameter_resolvers import (
     ParamData,
     get_parameter_origins,
     get_signature_parameters,
 )
 from .typehints import ActionTypeHint, LazyInitBaseClass, is_optional
-from .typing import is_final_class
-from .util import LoggerProperty, get_import_path, is_subclass, iter_to_set_str
+from .util import LoggerProperty, get_import_path, iter_to_set_str
 
 __all__ = [
     'compose_dataclasses',
@@ -93,7 +87,7 @@ class SignatureArguments(LoggerProperty):
         if default:
             skip = skip or set()
             prefix = nested_key+'.' if nested_key else ''
-            defaults = default.lazy_get_init_data().as_dict()
+            defaults = default.lazy_get_init_args()
             if defaults:
                 defaults = {prefix+k: v for k, v in defaults.items() if k not in skip}
                 self.set_defaults(**defaults)  # type: ignore
@@ -317,8 +311,7 @@ class SignatureArguments(LoggerProperty):
         elif not as_positional:
             kwargs['required'] = True
         is_subclass_typehint = False
-        is_final_class_typehint = is_final_class(annotation)
-        is_pure_dataclass_typehint = is_pure_dataclass(annotation)
+        is_dataclass_like_typehint = is_dataclass_like(annotation)
         dest = (nested_key+'.' if nested_key else '') + name
         args = [dest if is_required and as_positional else '--'+dest]
         if param.origin:
@@ -332,8 +325,7 @@ class SignatureArguments(LoggerProperty):
                 )
         if annotation in {str, int, float, bool} or \
            is_subclass(annotation, (str, int, float)) or \
-           is_final_class_typehint or \
-           is_pure_dataclass_typehint:
+           is_dataclass_like_typehint:
             kwargs['type'] = annotation
         elif annotation != inspect_empty:
             try:
@@ -360,7 +352,7 @@ class SignatureArguments(LoggerProperty):
                 'sub_configs': sub_configs,
                 'instantiate': instantiate,
             }
-            if is_final_class_typehint or is_pure_dataclass_typehint:
+            if is_dataclass_like_typehint:
                 kwargs.update(sub_add_kwargs)
             action = group.add_argument(*args, **kwargs)
             action.sub_add_kwargs = sub_add_kwargs
@@ -401,8 +393,8 @@ class SignatureArguments(LoggerProperty):
             ValueError: When not given a dataclass.
             ValueError: When default is not instance of or kwargs for theclass.
         """
-        if not is_pure_dataclass(theclass):
-            raise ValueError(f'Expected "theclass" argument to be a pure dataclass, given {theclass}')
+        if not is_dataclass_like(theclass):
+            raise ValueError(f'Expected "theclass" argument to be a dataclass-like, given {theclass}')
 
         doc_group = get_doc_short_description(theclass, logger=self.logger)
         for key in ['help', 'title']:
@@ -420,6 +412,7 @@ class SignatureArguments(LoggerProperty):
             defaults = dataclass_to_dict(default)
 
         added_args: List[str] = []
+        param_kwargs = {k: v for k, v in kwargs.items() if k == 'sub_configs'}
         for param in get_signature_parameters(theclass, None, logger=self.logger):
             self._add_signature_parameter(
                 group,
@@ -428,6 +421,7 @@ class SignatureArguments(LoggerProperty):
                 added_args,
                 fail_untyped=fail_untyped,
                 default=defaults.get(param.name, inspect_empty),
+                **param_kwargs,
             )
 
         return added_args
@@ -467,8 +461,8 @@ class SignatureArguments(LoggerProperty):
         Raises:
             ValueError: When given an invalid base class.
         """
-        if is_final_class(baseclass):
-            raise ValueError("Not allowed for classes that are final.")
+        if is_dataclass_like(baseclass):
+            raise ValueError("Not allowed for dataclass-like classes.")
         if type(baseclass) is not tuple:
             baseclass = (baseclass,)  # type: ignore
         if not all(inspect.isclass(c) for c in baseclass):
@@ -550,32 +544,18 @@ def is_factory_class(value):
     return value.__class__ == dataclasses._HAS_DEFAULT_FACTORY_CLASS
 
 
-def is_pure_dataclass(value):
-    if not inspect.isclass(value):
-        return False
-    classes = [c for c in inspect.getmro(value) if c != object]
-    all_dataclasses = all(dataclasses.is_dataclass(c) for c in classes)
-    if not all_dataclasses and pydantic_support:
-        pydantic = import_pydantic('is_pure_dataclass')
-        classes = [c for c in classes if c != pydantic.utils.Representation]
-        all_dataclasses = all(is_subclass(c, pydantic.BaseModel) for c in classes)
-    if not all_dataclasses and attrs_support:
-        attrs = import_attrs('is_pure_dataclass')
-        if attrs.has(value):
-            return True
-    return all_dataclasses
-
-
-def dataclass_to_dict(value):
+def dataclass_to_dict(value) -> dict:
     if pydantic_support:
         pydantic = import_pydantic('dataclass_to_dict')
         if isinstance(value, pydantic.BaseModel):
             return value.dict()
+    if isinstance(value, LazyInitBaseClass):
+        return value.lazy_get_init_data().as_dict()
     return dataclasses.asdict(value)
 
 
 def compose_dataclasses(*args):
-    """Returns a pure dataclass inheriting all given dataclasses and properly handling __post_init__."""
+    """Returns a dataclass inheriting all given dataclasses and properly handling __post_init__."""
 
     @dataclasses.dataclass
     class ComposedDataclass(*args):

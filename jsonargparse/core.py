@@ -22,7 +22,7 @@ from typing import (
     Union,
 )
 
-from ._common import lenient_check, parser_context
+from ._common import is_dataclass_like, is_subclass, lenient_check, parser_context
 from .actions import (
     ActionConfigFile,
     ActionParser,
@@ -71,16 +71,14 @@ from .optionals import (
     import_jsonnet,
 )
 from .parameter_resolvers import UnknownDefault
-from .signatures import SignatureArguments, is_pure_dataclass
+from .signatures import SignatureArguments
 from .typehints import ActionTypeHint, is_subclass_spec
-from .typing import is_final_class
 from .util import (
     Path,
     argument_error,
     change_to_path_dir,
     get_private_kwargs,
     identity,
-    is_subclass,
     return_parser_if_captured,
 )
 
@@ -118,14 +116,10 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             if is_subclass(kwargs['action'], ActionConfigFile) and any(isinstance(a, ActionConfigFile) for a in self._actions):
                 raise ValueError('A parser is only allowed to have a single ActionConfigFile argument.')
         if 'type' in kwargs:
-            if is_final_class(kwargs['type']) or is_pure_dataclass(kwargs['type']):
+            if is_dataclass_like(kwargs['type']):
                 theclass = kwargs.pop('type')
                 nested_key = re.sub('^--', '', args[0])
-                if is_final_class(theclass):
-                    kwargs.pop('help', None)
-                    self.add_class_arguments(theclass, nested_key, **kwargs)
-                else:
-                    self.add_dataclass_arguments(theclass, nested_key, **kwargs)
+                self.add_dataclass_arguments(theclass, nested_key, **kwargs)
                 return _find_action(parser, nested_key)
             if ActionTypeHint.is_supported_typehint(kwargs['type']):
                 args = ActionTypeHint.prepare_add_argument(
@@ -1109,7 +1103,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         components: List[Union[ActionTypeHint, _ActionConfigLoad, _ArgumentGroup]] = []
         for action in filter_default_actions(self._actions):
             if isinstance(action, ActionTypeHint) or \
-               (isinstance(action, _ActionConfigLoad) and is_pure_dataclass(action.basetype)):
+               (isinstance(action, _ActionConfigLoad) and is_dataclass_like(action.basetype)):
                 components.append(action)
 
         if instantiate_groups:
