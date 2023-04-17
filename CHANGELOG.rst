@@ -19,6 +19,8 @@ Added
 ^^^^^
 - Support for dataclasses nested in a type.
 - Support for pydantic models and attr defines similar to dataclasses.
+- Support for `pydantic types
+  <https://docs.pydantic.dev/usage/types/#pydantic-types>`__.
 
 Fixed
 ^^^^^

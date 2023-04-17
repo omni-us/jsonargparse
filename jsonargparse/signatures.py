@@ -9,13 +9,14 @@ from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from ._common import is_dataclass_like, is_subclass
 from .actions import _ActionConfigLoad
-from .optionals import get_doc_short_description, import_pydantic, pydantic_support
+from .optionals import get_doc_short_description, pydantic_support
 from .parameter_resolvers import (
     ParamData,
     get_parameter_origins,
     get_signature_parameters,
 )
 from .typehints import ActionTypeHint, LazyInitBaseClass, is_optional
+from .typing import register_pydantic_type
 from .util import LoggerProperty, get_import_path, iter_to_set_str
 
 __all__ = [
@@ -327,6 +328,7 @@ class SignatureArguments(LoggerProperty):
            is_subclass(annotation, (str, int, float)) or \
            is_dataclass_like_typehint:
             kwargs['type'] = annotation
+            register_pydantic_type(annotation)
         elif annotation != inspect_empty:
             try:
                 is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation, all_subtypes=False)
@@ -336,6 +338,8 @@ class SignatureArguments(LoggerProperty):
                     prefix = name + '.init_args.'
                     subclass_skip = {s[len(prefix):] for s in skip or [] if s.startswith(prefix)}
                     sub_add_kwargs['skip'] = subclass_skip
+                else:
+                    register_pydantic_type(annotation)
                 args = ActionTypeHint.prepare_add_argument(
                     args=args,
                     kwargs=kwargs,
@@ -546,8 +550,8 @@ def is_factory_class(value):
 
 def dataclass_to_dict(value) -> dict:
     if pydantic_support:
-        pydantic = import_pydantic('dataclass_to_dict')
-        if isinstance(value, pydantic.BaseModel):
+        from pydantic import BaseModel  # pylint: disable=no-name-in-module
+        if isinstance(value, BaseModel):
             return value.dict()
     if isinstance(value, LazyInitBaseClass):
         return value.lazy_get_init_data().as_dict()

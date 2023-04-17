@@ -1,13 +1,15 @@
 """Collection of types and type generators."""
 
+import inspect
 import operator
 import os
 import pathlib
 import re
+from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
-from ._common import is_final_class
-from .optionals import final
+from ._common import is_final_class, is_subclass
+from .optionals import final, pydantic_support
 from .util import Path, get_import_path, get_private_kwargs, import_object
 
 __all__ = [
@@ -398,6 +400,54 @@ def bytearray_deserializer(value: str) -> bytearray:
 
 register_type_on_first_use('builtins.bytes', serializer=bytes_serializer, deserializer=bytes_deserializer)
 register_type_on_first_use('builtins.bytearray', serializer=bytes_serializer, deserializer=bytearray_deserializer)
+
+
+pydantic_types: Tuple[type, ...] = tuple()
+if pydantic_support:
+    import pydantic
+    for module in [pydantic.types, pydantic.networks]:
+        pydantic_types += tuple(
+            v for k, v in vars(module).items()
+            if inspect.isclass(v) and k in module.__all__ and not issubclass(v, Enum)
+        )
+
+
+def pydantic_deserializer(type_class):
+    from pydantic import create_model  # pylint: disable=no-name-in-module
+    pydantic_model = create_model('pydantic_model', pydantic_field=(type_class, ...))
+
+    def deserialize(value):
+        return pydantic_model(pydantic_field=value).pydantic_field
+
+    return deserialize
+
+
+def pydantic_serializer(type_class):
+    serializer = str
+    for base in [int, float, bool, list, dict, (set, list)]:
+        if not isinstance(base, tuple):
+            base = (base, base)
+        if issubclass(type_class, base[0]):
+            serializer = base[1]
+            break
+    return serializer
+
+
+def is_pydantic_type(type_class):
+    return pydantic_support and is_subclass(type_class, pydantic_types)
+
+
+def register_pydantic_type(type_class):
+    if not is_pydantic_type(type_class):
+        return
+    if not get_registered_type(type_class):
+        from pydantic import ValidationError
+        register_type(
+            type_class=type_class,
+            serializer=pydantic_serializer(type_class),
+            deserializer=pydantic_deserializer(type_class),
+            deserializer_exceptions=ValidationError,
+        )
 
 
 del _fail_already_registered

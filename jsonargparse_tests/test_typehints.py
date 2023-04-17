@@ -1299,9 +1299,11 @@ class TypeHintsTests(unittest.TestCase):
 
     def test_typehint_serialize_list(self):
         parser = ArgumentParser()
-        action = parser.add_argument('--list', type=Union[PositiveInt, List[PositiveInt]])
-        self.assertEqual([1, 2], action.serialize([PositiveInt(1), PositiveInt(2)]))
-        self.assertRaises(ValueError, lambda: action.serialize([1, -2]))
+        parser.add_argument('--list', type=Union[PositiveInt, List[PositiveInt]])
+        dump = yaml.safe_load(parser.dump(Namespace(list=[1, 2])))
+        self.assertEqual([1, 2], dump['list'])
+        with self.assertRaises(TypeError):
+            parser.dump(Namespace(list=[1, -2]))
 
 
     def test_typehint_serialize_enum(self):
@@ -1311,9 +1313,11 @@ class TypeHintsTests(unittest.TestCase):
             b = 2
 
         parser = ArgumentParser()
-        action = parser.add_argument('--enum', type=Optional[MyEnum])
-        self.assertEqual('b', action.serialize(MyEnum.b))
-        self.assertRaises(ValueError, lambda: action.serialize('x'))
+        parser.add_argument('--enum', type=Optional[MyEnum])
+        dump = yaml.safe_load(parser.dump(Namespace(enum=MyEnum.b)))
+        self.assertEqual('b', dump['enum'])
+        with self.assertRaises(TypeError):
+            parser.dump(Namespace(enum='x'))
 
 
     def test_unsupported_type(self):
