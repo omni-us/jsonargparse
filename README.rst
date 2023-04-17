@@ -436,16 +436,20 @@ Some notes about this support are:
   ``Optional[str] = None`` would be shown in the help as ``type: Union[str,
   null], default: null``.
 
-- ``dataclasses`` are supported even when nested. Final classes, attrs'
-  ``define`` decorator, and pydantic's ``dataclass`` decorator and ``BaseModel``
-  classes are supported and behave like standard dataclasses. If a dataclass
-  inherits from a normal class, the type is considered a subclass instead of a
-  dataclass, see :ref:`sub-classes`.
-
 - Normal classes can be used as a type, which are specified with a dict
   containing ``class_path`` and optionally ``init_args``.
   :py:meth:`.ArgumentParser.instantiate_classes` can be used to instantiate all
   classes in a config object. For more details see :ref:`sub-classes`.
+
+- ``dataclasses`` are supported even when nested. Final classes, attrs'
+  ``define`` decorator, and pydantic's ``dataclass`` decorator and ``BaseModel``
+  classes are supported and behave like standard dataclasses. For more details
+  see :ref:`dataclass-like`. If a dataclass is mixed inheriting from a normal
+  class, it is considered a subclass type instead of a dataclass.
+
+- `Pydantic types <https://docs.pydantic.dev/usage/types/#pydantic-types>`__ are
+  supported. There might be edge cases which don't work as expected. Please
+  report any encountered issues.
 
 - ``Callable`` is supported by either giving a dot import path to a callable
   object or by giving a dict with a ``class_path`` and optionally ``init_args``
@@ -836,6 +840,54 @@ be achieved as follows:
 
     >>> parser.parse_args(['--dict.key1=val1', '--dict.key2=val2'])
     Namespace(dict={'key1': 'val1', 'key2': 'val2'})
+
+
+.. _dataclass-like:
+
+Dataclass-like classes
+----------------------
+
+In contrast to subclasses, which requires the user to provide a ``class_path``,
+in some cases it is not expected to have subclasses. In this case the init args
+are given directly in a dictionary without specifying a ``class_path``. This is
+the behavior for standard ``dataclasses``, ``final`` classes, attrs' ``define``
+decorator, and pydantic's ``dataclass`` decorator and ``BaseModel`` classes.
+
+As an example, take a class that is decorated with :func:`.final`, meaning that
+it shouldn't be subclassed. The code below would accept the corresponding yaml
+structure.
+
+.. testsetup:: final_classes
+
+    cwd = os.getcwd()
+    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    os.chdir(tmpdir)
+    with open('config.yaml', 'w') as f:
+        f.write('data:\n  number: 8\n  accepted: true\n')
+
+.. testcleanup:: final_classes
+
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
+
+.. testcode:: final_classes
+
+    from jsonargparse.typing import final
+
+    @final
+    class FinalClass:
+        def __init__(self, number: int = 0, accepted: bool = False):
+            ...
+
+    parser = ArgumentParser()
+    parser.add_argument('--data', type=FinalClass)
+    cfg = parser.parse_path('config.yaml')
+
+.. code-block:: yaml
+
+    data:
+      number: 8
+      accepted: true
 
 
 .. _callable-type:
@@ -1845,45 +1897,6 @@ Like this, the parsed default will be a dict with ``class_path`` and
     gets saved in the config file is the import path. To overcome this problem
     use the :func:`.register_unresolvable_import_paths` function giving it the
     module from where the respective object can be imported.
-
-Final classes
--------------
-
-When a class is decorated with :func:`.final` there shouldn't be any derived
-subclass. Using a final class as a type hint works similar to subclasses. The
-difference is that the init args are given directly in a dictionary without
-specifying a ``class_path``. Therefore, the code below would accept the
-corresponding yaml structure.
-
-.. testsetup:: final_classes
-
-    cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
-    os.chdir(tmpdir)
-    with open('config.yaml', 'w') as f:
-        f.write('calendar:\n  firstweekday: 1\n')
-
-.. testcleanup:: final_classes
-
-    os.chdir(cwd)
-    shutil.rmtree(tmpdir)
-
-.. testcode:: final_classes
-
-    from jsonargparse.typing import final
-
-    @final
-    class FinalCalendar(Calendar):
-        ...
-
-    parser = ArgumentParser()
-    parser.add_argument('--calendar', type=FinalCalendar)
-    cfg = parser.parse_path('config.yaml')
-
-.. code-block:: yaml
-
-    calendar:
-      firstweekday: 1
 
 
 .. _argument-linking:

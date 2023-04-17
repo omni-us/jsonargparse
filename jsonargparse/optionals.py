@@ -135,18 +135,6 @@ def import_reconplogger(importer):
     return reconplogger
 
 
-def import_pydantic(importer):
-    with missing_package_raise('pydantic', importer):
-        import pydantic
-    return pydantic
-
-
-def import_attrs(importer):
-    with missing_package_raise('attrs', importer):
-        import attrs
-    return attrs
-
-
 def set_config_read_mode(
     urls_enabled: bool = False,
     fsspec_enabled: bool = False,

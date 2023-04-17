@@ -5,7 +5,6 @@ from contextvars import ContextVar
 from typing import Optional, Union
 
 from .namespace import Namespace
-from .optionals import attrs_support, import_attrs, import_pydantic, pydantic_support
 from .type_checking import ArgumentParser
 
 parent_parser: ContextVar['ArgumentParser'] = ContextVar('parent_parser')
@@ -58,12 +57,13 @@ def is_dataclass_like(cls) -> bool:
         return True
     classes = [c for c in inspect.getmro(cls) if c != object]
     all_dataclasses = all(dataclasses.is_dataclass(c) for c in classes)
+    from .optionals import attrs_support, pydantic_support
     if not all_dataclasses and pydantic_support:
-        pydantic = import_pydantic('is_dataclass_like')
+        import pydantic.utils
         classes = [c for c in classes if c != pydantic.utils.Representation]
         all_dataclasses = all(is_subclass(c, pydantic.BaseModel) for c in classes)
     if not all_dataclasses and attrs_support:
-        attrs = import_attrs('is_dataclass_like')
+        import attrs
         if attrs.has(cls):
             return True
     return all_dataclasses

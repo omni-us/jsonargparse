@@ -768,11 +768,11 @@ def get_parameters_from_pydantic(
     method_or_property: Optional[str],
     logger: logging.Logger,
 ) -> Optional[ParamList]:
-    from .optionals import import_pydantic, pydantic_support
+    from .optionals import pydantic_support
     if not pydantic_support or method_or_property:
         return None
-    pydantic = import_pydantic('get_parameters_from_pydantic')
-    if not is_subclass(function_or_class, pydantic.BaseModel):
+    from pydantic import BaseModel  # pylint: disable=no-name-in-module
+    if not is_subclass(function_or_class, BaseModel):
         return None
     params = []
     doc_params = parse_docs(function_or_class, None, logger)

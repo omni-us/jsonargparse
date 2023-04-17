@@ -55,7 +55,7 @@ from .optionals import (
     get_files_completer,
     typing_extensions_import,
 )
-from .typing import get_registered_type
+from .typing import get_registered_type, is_pydantic_type
 from .util import (
     ClassType,
     NestedArg,
@@ -234,6 +234,7 @@ class ActionTypeHint(Action):
         return inspect.isclass(typehint) and \
             typehint not in leaf_or_root_types and \
             not get_registered_type(typehint) and \
+            not is_pydantic_type(typehint) and \
             not is_dataclass_like(typehint) and \
             typehint_origin is None and \
             not is_subclass(typehint, (Path, Enum))
@@ -600,10 +601,7 @@ def adapt_typehints(
     elif get_registered_type(typehint):
         registered_type = get_registered_type(typehint)
         if serialize:
-            if registered_type.is_value_of_type(val):
-                val = registered_type.serializer(val)
-            else:
-                registered_type.deserializer(val)
+            val = registered_type.serializer(val)
         elif not serialize and not registered_type.is_value_of_type(val):
             val = registered_type.deserializer(val)
 
@@ -612,10 +610,7 @@ def adapt_typehints(
         if serialize:
             if isinstance(val, typehint):
                 val = val.name
-            else:
-                if val not in typehint.__members__:
-                    raise_unexpected_value(f'Expected a member of {typehint}: {iter_to_set_str(typehint.__members__)}', val)
-        elif not serialize and not isinstance(val, typehint):
+        elif not isinstance(val, typehint):
             try:
                 val = typehint[val]
             except KeyError as ex:

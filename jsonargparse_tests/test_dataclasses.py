@@ -12,8 +12,6 @@ from jsonargparse import ArgumentError, ArgumentParser, Namespace, compose_datac
 from jsonargparse.optionals import (
     attrs_support,
     docstring_parser_support,
-    import_attrs,
-    import_pydantic,
     pydantic_support,
     set_docstring_parse_options,
 )
@@ -349,7 +347,8 @@ class PydanticTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.pydantic = import_pydantic('PydanticTests')
+        import pydantic
+        cls.pydantic = pydantic
 
 
     def test_dataclass(self):
@@ -408,12 +407,41 @@ class PydanticTests(unittest.TestCase):
         self.assertIn('p2 help (type: int, default: 2)', help_str.getvalue())
 
 
+    def test_pydantic_types(self):
+        def none(x):
+            return x
+
+        for valid_value, invalid_value, cast, pydantic_type in [
+            ('abc',           'a',   none, self.pydantic.constr(min_length=2, max_length=4)),
+            (2,               0,     none, self.pydantic.conint(ge=1)),
+            (-1.0,            1.0,   none, self.pydantic.confloat(lt=0.0)),
+            ([1],             [],    none, self.pydantic.conlist(int, min_items=1)),
+            ([],              [3,4], none, self.pydantic.conlist(int, max_items=1)),
+            ([1],             'x',   list, self.pydantic.conset(int, min_items=1)),
+            ('http://abc.es', '-',   none, self.pydantic.HttpUrl),
+            ('127.0.0.1',     '0',   str,  self.pydantic.IPvAnyAddress),
+        ]:
+            with self.subTest((valid_value, invalid_value, pydantic_type)):
+                class Model(self.pydantic.BaseModel):
+                    param: pydantic_type
+
+                parser = ArgumentParser(exit_on_error=False)
+                parser.add_argument('--model', type=Model)
+                cfg = parser.parse_args([f'--model.param={valid_value}'])
+                self.assertEqual(cast(cfg.model.param), valid_value)
+                dump = yaml.safe_load(parser.dump(cfg))
+                self.assertEqual(dump, {'model': {'param': valid_value}})
+                with self.assertRaises(ArgumentError):
+                    parser.parse_args([f'--model.param={invalid_value}'])
+
+
 @unittest.skipIf(not attrs_support, 'attrs package is required')
 class AttrsTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.attrs = import_attrs('AttrsTests')
+        import attrs
+        cls.attrs = attrs
 
     def test_define(self):
         @self.attrs.define
