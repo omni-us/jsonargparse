@@ -1689,10 +1689,9 @@ Many of the types defined in stub files use the latest syntax for type hints,
 that is, bitwise or operator ``|`` for unions and generics, e.g.
 ``list[<type>]`` instead of ``typing.List[<type>]``, see PEPs `604
 <https://peps.python.org/pep-0604>`__ and `585
-<https://peps.python.org/pep-0585>`__. The types with this new syntax can't be
-evaluated at runtime in Python versions older than ``3.10``. Since jsonargparse
-needs to interpret the types at runtime, these will only be resolved in newer
-versions of Python.
+<https://peps.python.org/pep-0585>`__. On python>=3.10 these are fully
+supported. On python<=3.9 backporting these types is attempted and in some cases
+it can fail. On failure the type annotation is set to ``Any``.
 
 Most of the types in the Python standard library have their types in stubs. An
 example from the standard library would be:

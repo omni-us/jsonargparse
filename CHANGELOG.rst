@@ -21,6 +21,9 @@ Added
 - Support for pydantic models and attr defines similar to dataclasses.
 - Support for `pydantic types
   <https://docs.pydantic.dev/usage/types/#pydantic-types>`__.
+- Backport type stubs in python<=3.9 to support PEP `585
+  <https://peps.python.org/pep-0585/>`__ and `604
+  <https://peps.python.org/pep-0604/>`__ syntax.
 
 Fixed
 ^^^^^
@@ -39,6 +42,8 @@ Changed
 - Include enum members in error when invalid value is given
   (`pytorch-lightning#17247
   <https://github.com/Lightning-AI/lightning/issues/17247>`__).
+- The ``signatures`` extras now installs the ``typing-extensions`` package on
+  python<=3.9.
 
 Deprecated
 ^^^^^^^^^^

@@ -95,9 +95,10 @@ class StubsResolverTests(unittest.TestCase):
         self.assertEqual(['a', 'version'], get_param_names(params))
         if sys.version_info >= (3, 10):
             self.assertEqual('int | float | str | bytes | bytearray | None', str(params[0].annotation))
+        elif sys.version_info[:2] == (3, 9):
+            self.assertEqual('typing.Union[int, float, str, bytes, bytearray, NoneType]', str(params[0].annotation))
         else:
-            expected = Any if sys.version_info < (3, 9) else inspect._empty
-            self.assertEqual(expected, params[0].annotation)
+            self.assertEqual(Any, params[0].annotation)
         self.assertEqual(int, params[1].annotation)
         with mock_typeshed_client_unavailable():
             params = get_params(Random, 'seed')
@@ -140,7 +141,7 @@ class StubsResolverTests(unittest.TestCase):
     def test_get_param_relative_import_from_init(self):
         params = get_params(yaml.safe_load)
         self.assertEqual(['stream'], get_param_names(params))
-        if sys.version_info >= (3, 10):
+        if sys.version_info >= (3, 8):
             self.assertNotEqual(params[0].annotation, inspect._empty)
         else:
             self.assertEqual(params[0].annotation, inspect._empty)

@@ -49,6 +49,7 @@ all = [
     "jsonargparse[reconplogger]",
 ]
 signatures = [
+    "jsonargparse[typing-extensions]",
     "docstring-parser>=0.15",
     "typeshed-client>=2.1.0",
 ]
@@ -75,7 +76,7 @@ omegaconf = [
     "omegaconf>=2.1.1",
 ]
 typing-extensions = [
-    "typing-extensions>=3.10.0.0; python_version < '3.8'",
+    "typing-extensions>=3.10.0.0; python_version < '3.10'",
 ]
 reconplogger = [
     "reconplogger>=4.4.0",
