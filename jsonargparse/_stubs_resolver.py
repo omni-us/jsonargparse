@@ -293,6 +293,10 @@ def get_arg_type(arg_ast, aliases):
             type_alias = typing_extensions_import('TypeAlias')
             if type_alias:
                 exec_vars['TypeAlias'] = type_alias
+    if sys.version_info < (3, 10):
+        from ._backports import BackportTypeHints
+        backporter = BackportTypeHints()
+        type_ast = backporter.backport(type_ast, exec_vars)
     try:
         exec(compile(type_ast, filename="<ast>", mode="exec"), exec_vars, exec_vars)
     except NameError as ex:
