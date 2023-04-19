@@ -129,7 +129,7 @@ is:
         print(f'{name} won {prize}€!')
 
     if __name__ == '__main__':
-        CLI()
+        CLI(command)
 
 Note that the ``name`` and ``prize`` parameters have type hints and are
 described in the docstring. These are shown in the help of the command line
@@ -151,11 +151,6 @@ tool. In a shell you could see the help and run a command as follows:
     Parsing of docstrings is an optional feature. For this example to work as
     shown, jsonargparse needs to be installed with the ``signatures`` extras
     require as explained in section :ref:`installation`.
-
-:func:`.CLI` without arguments searches for functions and classes defined in the
-same module and in the local context where :func:`.CLI` is called. Giving a
-single or a list of functions/classes as first argument to :func:`.CLI` skips
-the automatic search and only includes what is given.
 
 When :func:`.CLI` receives a single class, the first arguments are for
 parameters to instantiate the class, then a method name is expected (i.e.
@@ -203,6 +198,37 @@ Then in a shell you could run:
     >>> CLI(Main, args=['--max_prize=1000', 'person', 'Lucky'])  # doctest: +ELLIPSIS
     'Lucky won ...€!'
 
+If the class given does not have any methods, there will be no sub-commands and
+:func:`.CLI` will return an instance of the class. For example:
+
+.. testcode::
+
+    from dataclasses import dataclass
+    from jsonargparse import CLI
+
+    @dataclass
+    class Settings:
+        name: str
+        prize: int = 100
+
+    if __name__ == '__main__':
+        print(CLI(Settings, as_positional=False))
+
+Then in a shell you could run:
+
+.. code-block:: bash
+
+    $ python example.py --name=Lucky
+    Settings(name='Lucky', prize=100)
+
+.. doctest:: :hide:
+
+    >>> CLI(Settings, as_positional=False, args=['--name=Lucky'])  # doctest: +ELLIPSIS
+    Settings(name='Lucky', prize=100)
+
+Note the use of ``as_positional=False`` to make required arguments as
+non-positional.
+
 If more than one function is given to :func:`.CLI`, then any of them can be run
 via :ref:`sub-commands` similar to the single class example above, i.e.
 ``example.py function [arguments]`` where ``function`` is the name of the
@@ -214,7 +240,7 @@ class and the second the name of the method, i.e. ``example.py class
 
 .. note::
 
-    The two examples above are extremely simple, only defining parameters with
+    The examples above are extremely simple, only defining parameters with
     ``str`` and ``int`` type hints. The true power of jsonargparse is its
     support for a wide range of types, see :ref:`type-hints`. It is even
     possible to use general classes as type hints, allowing to easily implement

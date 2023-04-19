@@ -114,9 +114,18 @@ def get_help_str(component, logger):
 def _add_component_to_parser(component, parser, as_positional, fail_untyped, config_help):
     kwargs = dict(as_positional=as_positional, fail_untyped=fail_untyped, sub_configs=True)
     if inspect.isclass(component):
+        subcommand_keys = [
+            k for k, v in inspect.getmembers(component)
+            if callable(v) and k[0] != '_'
+        ]
+        if not subcommand_keys:
+            added_args = parser.add_class_arguments(component, as_group=False, **kwargs)
+            if not parser.description:
+                parser.description = get_help_str(component, parser.logger)
+            return added_args
         added_args = parser.add_class_arguments(component, **kwargs)
         subcommands = parser.add_subcommands(required=True)
-        for key in [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != '_']:
+        for key in subcommand_keys:
             description = get_help_str(getattr(component, key), parser.logger)
             subparser = type(parser)(description=description)
             subparser.add_argument('--config', action=ActionConfigFile, help=config_help)
@@ -137,6 +146,8 @@ def _run_component(component, cfg):
     if not inspect.isclass(component):
         return component(**cfg)
     subcommand = cfg.pop('subcommand')
+    if not subcommand:
+        return component(**cfg)
     subcommand_cfg = cfg.pop(subcommand, {})
     subcommand_cfg.pop('config', None)
     component_obj = component(**cfg)
