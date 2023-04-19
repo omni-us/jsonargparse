@@ -196,6 +196,26 @@ class SignaturesTests(unittest.TestCase):
         self.assertEqual([], parser.add_class_arguments(NoValidArgs))
 
 
+    def test_instantiate_nested_class_without_args(self):
+        class CallbackWithArgs:
+            def __init__(self, p1: int):
+                self.p1 = p1
+
+        class CallbackWithoutArgs:
+            pass
+
+        parser = ArgumentParser()
+        parser.add_class_arguments(CallbackWithArgs, 'callbacks.first')
+        parser.add_class_arguments(CallbackWithoutArgs, 'callbacks.second')
+
+        cfg = parser.parse_args(['--callbacks.first.p1=2'])
+        self.assertEqual(cfg.callbacks.first, Namespace(p1=2))
+        self.assertNotIn('callbacks.second', cfg)
+        init = parser.instantiate_classes(cfg)
+        self.assertIsInstance(init.callbacks.first, CallbackWithArgs)
+        self.assertIsInstance(init.callbacks.second, CallbackWithoutArgs)
+
+
     def test_add_function_with_dict_int_keys_arg(self):
         def func(a1: Union[int, Dict[int, int]] = 1):
             pass
