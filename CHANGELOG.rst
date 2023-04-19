@@ -37,6 +37,8 @@ Fixed
 - ``dataclass`` from pydantic not working (`#100 comment
   <https://github.com/omni-us/jsonargparse/issues/100#issuecomment-1408413796>`__).
 - ``add_dataclass_arguments`` not forwarding ``sub_configs`` parameter.
+- Failure to instantiate nested class group without arguments (`lightning#17263
+  <https://github.com/Lightning-AI/lightning/issues/17263>`__).
 
 Changed
 ^^^^^^^

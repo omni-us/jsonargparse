@@ -534,7 +534,6 @@ def group_instantiate_class(group, cfg):
         value = {}
         parent = cfg
         key = group.dest
-        assert '.' not in key
     parent[key] = group.group_class(**value)
 
 
