@@ -4,6 +4,7 @@ import sys
 import unittest
 import unittest.mock
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import asdict, dataclass
 from io import StringIO
 from typing import Optional
 
@@ -250,6 +251,20 @@ class CLITests(unittest.TestCase):
             mock_getmodule.return_value = sys.modules['jsonargparse.core']
             self.assertEqual(6.7, non_empty_context_1())
             self.assertEqual(('a', 2), non_empty_context_2())
+
+
+    def test_class_without_methods_cli(self):
+        @dataclass
+        class SettingsClass:
+            p1: str
+            p2: int = 3
+
+        settings = CLI(SettingsClass, args=['--p1=x', '--p2=0'], as_positional=False)
+        self.assertIsInstance(settings, SettingsClass)
+        self.assertEqual(asdict(settings), {'p1': 'x', 'p2': 0})
+
+        parser = capture_parser(lambda: CLI(SettingsClass, args=[], as_positional=False))
+        self.assertEqual(parser.groups, {})
 
 
 class CLITempDirTests(TempDirTestCase):

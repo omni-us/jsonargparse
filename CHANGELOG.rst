@@ -44,6 +44,8 @@ Changed
   <https://github.com/Lightning-AI/lightning/issues/17247>`__).
 - The ``signatures`` extras now installs the ``typing-extensions`` package on
   python<=3.9.
+- ``CLI`` now when given a class without methods, the class instance is
+  returned.
 
 Deprecated
 ^^^^^^^^^^
