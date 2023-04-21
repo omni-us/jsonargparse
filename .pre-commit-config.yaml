@@ -57,11 +57,12 @@ repos:
         CHANGELOG=$(grep -E "^v.+\..+\..+ \(....-..-..\)" CHANGELOG.rst | head -n 1);
         EXPECTED="v$BUMPVERSION_NEW_VERSION ($(date -u +%Y-%m-%d))";
         if [ "$CHANGELOG" != "$EXPECTED" ] && [ $(echo $BUMPVERSION_NEW_VERSION | grep -cE "[0-9.]+(\.dev|rc)[0-9]+") = 0 ]; then
-          if [ ! -z "${BUMPVERSION_UPDATE_CHANGELOG+x}" ] && [ $(grep -c "^v$BUMPVERSION_NEW_VERSION " CHANGELOG.rst) = 1 ]; then
+          if [ $(grep -c "^v$BUMPVERSION_NEW_VERSION " CHANGELOG.rst) = 1 ]; then
+            echo "Updating the date for v$BUMPVERSION_NEW_VERSION in CHANGELOG.rst";
             sed -i "s|^v$BUMPVERSION_NEW_VERSION .*|$EXPECTED|" CHANGELOG.rst;
             git add CHANGELOG.rst;
           else
-            echo "Expected latest release in CHANGELOG.rst to be $EXPECTED. Set BUMPVERSION_UPDATE_CHANGELOG to auto update.";
+            echo "Expected release in CHANGELOG.rst to be "$EXPECTED" or not have a definitive date.";
             exit 1;
           fi
         fi
