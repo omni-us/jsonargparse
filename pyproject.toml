@@ -91,6 +91,7 @@ test = [
 ]
 test-no-urls = [
     "coverage>=4.5.1",
+    "pytest>=6.2.5",
 ]
 dev = [
     "jsonargparse[test]",
@@ -147,10 +148,18 @@ jsonargparse = [
 ]
 
 
+[tool.pytest.ini_options]
+addopts = "-s"
+testpaths = [
+    "jsonargparse_tests",
+]
+
+
 [tool.mypy]
 ignore_missing_imports = true
 allow_redefinition = true
 warn_unused_ignores = true
+disable_error_code = "annotation-unchecked"
 
 
 [tool.pylint]
@@ -174,8 +183,11 @@ extras =
     all-extras: test,all
     no-extras: test-no-urls
 changedir = jsonargparse_tests
-commands = python -m unittest
+commands = python -m pytest
 usedevelop = true
+
+[testenv:pypy3]
+extras = test
 
 [testenv:omegaconf]
 extras = test,all

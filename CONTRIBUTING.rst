@@ -48,13 +48,15 @@ To build the documentation run:
 
 Then to see it, open the file ``sphinx/_build/index.html`` in a browser.
 
-Running the unit tests can be done either using using `tox
-<https://tox.readthedocs.io/en/stable/>`__ or the ``setup.py`` script. The unit
-tests are also installed with the package, thus can be run in a production
-system.
+Running the unit tests can be done either using using `pytest
+<https://docs.pytest.org/>`__ or `tox
+<https://tox.readthedocs.io/en/stable/>`__. For convenience, the ``setup.py``
+script can run the tests and create an html coverage report. The tests are also
+installed with the package, thus can be run in a production system.
 
 .. code-block:: bash
 
-    tox                            # Run tests using tox
+    tox                            # Run tests using tox on available python versions
+    pytest                         # Run tests using pytest on the python of the environment
     ./setup.py test_coverage       # Run tests and generate coverage report
-    python3 -m jsonargparse_tests  # Run tests for installed package
+    python3 -m jsonargparse_tests  # Run tests for installed package (requires pytest)

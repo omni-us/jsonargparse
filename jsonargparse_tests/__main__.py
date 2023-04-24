@@ -2,18 +2,21 @@
 
 import os
 import sys
-import unittest
 import warnings
+from pathlib import Path
 
-testing_package = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+import pytest
 
 
 def run_tests():
     filter_action = 'default'
     warnings.simplefilter(filter_action)
     os.environ['PYTHONWARNINGS'] = filter_action
-    tests = unittest.defaultTestLoader.discover(testing_package)
-    if not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful():
+    testing_package = str(Path(__file__).parent)
+    exit_code = pytest.main(
+        ['-v', '-s', f'--rootdir={testing_package}', '--pyargs', testing_package]
+    )
+    if exit_code != 0:
         sys.exit(True)
 
 
@@ -33,7 +36,7 @@ def run_test_coverage():
     if 'xml' in sys.argv:
         outfile = sys.argv[sys.argv.index('xml')+1]
         cov.xml_report(outfile=outfile)
-        print('\nSaved coverage report to '+outfile+'.')
+        print(f'\nSaved coverage report to {outfile}.')
     else:
         cov.html_report(directory='htmlcov')
         print('\nSaved html coverage report to htmlcov directory.')
