@@ -127,11 +127,14 @@ dict_ast = ast.dump(ast_variable_load('dict'))
 
 
 def ast_is_dict_assign(node):
-    return isinstance(node, ast_assign_type) and isinstance(node.value, ast.Call) and ast.dump(node.value.func) == dict_ast
+    return isinstance(node, ast_assign_type) and (
+        isinstance(node.value, ast.Dict) or
+        (isinstance(node.value, ast.Call) and ast.dump(node.value.func) == dict_ast)
+    )
 
 
 def ast_is_dict_assign_with_value(node, value):
-    if ast_is_dict_assign(node):
+    if ast_is_dict_assign(node) and getattr(node.value, 'keywords', None):
         value_dump = ast.dump(value)
         for keyword in [k.value for k in node.value.keywords]:
             if ast.dump(keyword) == value_dump:

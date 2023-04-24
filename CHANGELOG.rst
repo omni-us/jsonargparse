@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.21.1 (2023-04-??)
+--------------------
+
+Fixed
+^^^^^
+- AST resolver not working for dict used in a method when the dict is created
+  using the curly braces syntax.
+
+
 v4.21.0 (2023-04-21)
 --------------------
 
