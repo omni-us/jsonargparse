@@ -4,7 +4,8 @@ import os
 import pathlib
 import sys
 import unittest
-from contextlib import ExitStack, redirect_stderr
+import unittest.mock
+from contextlib import ExitStack, contextmanager
 from enum import Enum
 from io import StringIO
 from typing import List, Optional
@@ -18,6 +19,13 @@ from jsonargparse.optionals import (
 )
 from jsonargparse.typing import Email, Path_fr, PositiveFloat, PositiveInt
 from jsonargparse_tests.base import TempDirTestCase, is_cpython, is_posix
+
+
+@contextmanager
+def mock_fdopen():
+    out = StringIO()
+    with unittest.mock.patch('os.fdopen', return_value=out):
+        yield out
 
 
 @unittest.skipIf(not argcomplete_support, 'argcomplete package is required')
@@ -55,7 +63,7 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
         out = StringIO()
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(SystemExit), mock_fdopen():
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
         self.assertEqual(out.getvalue(), '--group1.op')
 
@@ -68,7 +76,7 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
         out = StringIO()
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(SystemExit), mock_fdopen():
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
         self.assertEqual(out.getvalue(), '--group2.op1\x0b--group2.op2')
 
@@ -95,8 +103,8 @@ class ArgcompleteTests(TempDirTestCase):
             os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
             with self.subTest(os.environ['COMP_LINE']):
-                out, err = StringIO(), StringIO()
-                with redirect_stderr(err), self.assertRaises(SystemExit):
+                out = StringIO()
+                with self.assertRaises(SystemExit), mock_fdopen() as err:
                     self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(out.getvalue(), '')
                 self.assertIn(expected, err.getvalue())
@@ -115,7 +123,7 @@ class ArgcompleteTests(TempDirTestCase):
 
             with self.subTest(os.environ['COMP_LINE']):
                 out = StringIO()
-                with self.assertRaises(SystemExit):
+                with self.assertRaises(SystemExit), mock_fdopen():
                     self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(expected, out.getvalue())
 
@@ -137,7 +145,7 @@ class ArgcompleteTests(TempDirTestCase):
 
             with self.subTest(os.environ['COMP_LINE']):
                 out = StringIO()
-                with self.assertRaises(SystemExit):
+                with self.assertRaises(SystemExit), mock_fdopen():
                     self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(expected, out.getvalue())
 
@@ -154,7 +162,7 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
         out = StringIO()
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(SystemExit), mock_fdopen():
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
         self.assertEqual(out.getvalue(), 'abc\x0babd')
 
@@ -174,7 +182,7 @@ class ArgcompleteTests(TempDirTestCase):
 
             with self.subTest(os.environ['COMP_LINE']):
                 out = StringIO()
-                with self.assertRaises(SystemExit):
+                with self.assertRaises(SystemExit), mock_fdopen():
                     self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(expected, out.getvalue())
 
@@ -190,15 +198,15 @@ class ArgcompleteTests(TempDirTestCase):
             os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
             with self.subTest(os.environ['COMP_LINE']):
-                out, err = StringIO(), StringIO()
-                with redirect_stderr(err), self.assertRaises(SystemExit):
+                out = StringIO()
+                with self.assertRaises(SystemExit), mock_fdopen() as err:
                     self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(out.getvalue(), '')
                 self.assertIn(expected, err.getvalue())
 
                 with unittest.mock.patch('os.popen') as popen_mock:
                     popen_mock.side_effect = ValueError
-                    with redirect_stderr(err), self.assertRaises(SystemExit):
+                    with self.assertRaises(SystemExit), mock_fdopen() as err:
                         self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                     self.assertEqual(out.getvalue(), '')
                     self.assertIn(expected, err.getvalue())
@@ -206,8 +214,8 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_LINE'] = 'tool.py --json='
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out, err = StringIO(), StringIO()
-        with redirect_stderr(err), self.assertRaises(SystemExit):
+        out = StringIO()
+        with self.assertRaises(SystemExit), mock_fdopen() as err:
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
         self.assertEqual(err.getvalue(), '')
         self.assertIn('value not yet valid', out.getvalue().replace('\xa0', ' ').replace('_', ' '))
@@ -219,8 +227,8 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_LINE'] = "tool.py --list='[1, 2, 3]'"
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out, err = StringIO(), StringIO()
-        with redirect_stderr(err), self.assertRaises(SystemExit):
+        out = StringIO()
+        with self.assertRaises(SystemExit), mock_fdopen() as err:
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
         self.assertEqual(out.getvalue(), '')
         self.assertIn('value already valid, expected type List[int]', err.getvalue())
@@ -228,8 +236,8 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_LINE'] = 'tool.py --list='
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-        out, err = StringIO(), StringIO()
-        with redirect_stderr(err), self.assertRaises(SystemExit):
+        out = StringIO()
+        with self.assertRaises(SystemExit), mock_fdopen() as err:
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
         self.assertEqual(err.getvalue(), '')
         self.assertIn('value not yet valid', out.getvalue().replace('\xa0', ' ').replace('_', ' '))
@@ -241,7 +249,7 @@ class ArgcompleteTests(TempDirTestCase):
         os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
         out = StringIO()
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(SystemExit), mock_fdopen():
             self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
         self.assertEqual(out.getvalue(), 'true\x0bfalse')
 
@@ -260,7 +268,7 @@ class ArgcompleteTests(TempDirTestCase):
 
             with self.subTest(os.environ['COMP_LINE']):
                 out = StringIO()
-                with self.assertRaises(SystemExit):
+                with self.assertRaises(SystemExit), mock_fdopen():
                     self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(expected, out.getvalue())
 

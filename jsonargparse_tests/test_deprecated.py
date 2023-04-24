@@ -218,7 +218,7 @@ class DeprecatedTests(unittest.TestCase):
             parser = ArgumentParser(error_handler=usage_and_exit_error_handler)
             self.assertIn('error_handler was deprecated in v4.20.0', str(w[-1].message))
         self.assertEqual(parser.error_handler, usage_and_exit_error_handler)
-        with suppress_stderr(), self.assertRaises(SystemExit):
+        with suppress_stderr(), self.assertRaises(SystemExit), catch_warnings(record=True):
             parser.parse_args(['--invalid'])
 
 
