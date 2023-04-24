@@ -126,7 +126,7 @@ class ClassF1:
 
 class ClassF2:
     def __init__(self, **kw):
-        self._ini: Dict[str, Any] = dict(k2=4)
+        self._ini: Dict[str, Any] = {'k2': 4}
         self._ini.update(**kw)
 
     def _run(self):

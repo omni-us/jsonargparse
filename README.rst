@@ -1629,9 +1629,8 @@ unrelated to these variables.
 
     class DictUpdateUseInMethod:
         def __init__(self, **kwargs):
-            self._kwargs = dict(p1=1)
-            self._kwargs.update(**kwargs)
-            # Could also be: self._kwargs = dict(p1=1, **kwargs)
+            self._kwargs = dict(p1=1)     # Can also be: self._kwargs = {'p1': 1}
+            self._kwargs.update(**kwargs) # Can also be: self._kwargs = dict(p1=1, **kwargs)
 
         def a_method(self):
             a_callable(**self._kwargs)
