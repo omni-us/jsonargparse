@@ -762,8 +762,3 @@ class _ActionSubCommands(_SubParsersAction):
             # Handle inner subcommands
             if subparser._subparsers is not None:
                 _ActionSubCommands.handle_subcommands(subparser, cfg, env, defaults, key+'.', fail_no_subcommand=fail_no_subcommand)
-
-
-def get_alias_dest(action):
-    return [optstr.lstrip('-').replace('-', '_')
-            for optstr in action.option_strings]

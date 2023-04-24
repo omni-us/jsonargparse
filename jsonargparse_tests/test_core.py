@@ -1224,10 +1224,14 @@ class OtherTests(unittest.TestCase):
 
 
     def test_parser_alias(self):
-        import jsonargparse
+        # TODO:
+        # Successful parsing of a value in an alias saved as the dest key and the alias not appearing in the namespace.
+        # Failure to parse alias because the value does not agree with the argument type.
+        # Alias in a nested namespace.
+        # Alias with name that includes dashes -.
 
         # Create a parser where --bar is an alias for --foo
-        parser = jsonargparse.ArgumentParser()
+        parser = ArgumentParser()
         parser.add_argument('--foo', '--bar')
 
         parsed = parser.parse_string('foo: "aaa"')
