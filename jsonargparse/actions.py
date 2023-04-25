@@ -39,6 +39,19 @@ __all__ = [
 class Action(LoggerProperty, ArgparseAction):
     """Base for jsonargparse Action classes."""
 
+    @property
+    def aliases(self):
+        return _action_aliases(self)
+
+
+def _action_aliases(self):
+    if not hasattr(self, '_aliases'):
+        options = {optstr.lstrip('-').replace('-', '_')
+                   for optstr in self.option_strings}
+        options = {opt for opt in options if len(opt) > 1}
+        self._aliases =  {self.dest} | options
+    return self._aliases
+
 
 def _is_branch_key(parser, key: str) -> bool:
     root_key = split_key_root(key)[0]
@@ -69,8 +82,11 @@ def _find_action_and_subcommand(
     if exclude is not None:
         actions = [a for a in actions if not isinstance(a, exclude)]
     fallback_action = None
+
     for action in actions:
-        if action.dest == dest:
+        # _StoreAction seems to break the property
+        # if dest in action.aliases:
+        if dest in _action_aliases(action):
             if isinstance(action, _ActionConfigLoad):
                 fallback_action = action
             else:

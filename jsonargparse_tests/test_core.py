@@ -1223,5 +1223,26 @@ class OtherTests(unittest.TestCase):
             parser.add_argument('--cfg2', action=ActionConfigFile)
 
 
+    def test_parser_alias(self):
+        # TODO:
+        # Successful parsing of a value in an alias saved as the dest key and the alias not appearing in the namespace.
+        # Failure to parse alias because the value does not agree with the argument type.
+        # Alias in a nested namespace.
+        # Alias with name that includes dashes -.
+
+        # Create a parser where --bar is an alias for --foo
+        parser = ArgumentParser()
+        parser.add_argument('--foo', '--bar')
+
+        parsed = parser.parse_string('foo: "aaa"')
+        assert parsed.foo == 'aaa'
+
+        parsed = parser.parse_string('bar: "bbb"')
+        assert parsed.foo == 'bbb'
+
+        parsed = parser.parse_args(['--bar', 'ccc'])
+        assert parsed.foo == 'ccc'
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
