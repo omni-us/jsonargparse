@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import unittest
 import unittest.mock
@@ -138,7 +136,3 @@ class LoadersTests(unittest.TestCase):
     )
     def test_omegaconf_as_yaml_loader(self):
         self.assertIs(loaders['yaml'], loaders['omegaconf'])
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import json
 import os
 import textwrap
@@ -1524,7 +1522,3 @@ class SignaturesConfigTests(TempDirTestCase):
             self.assertIsInstance(init.main, Main)
             self.assertTrue(init.main.sub['init_args']['s2'], 2)
             self.assertTrue(any("discarding init_args: {'s1': 1}" in o for o in log.output))
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

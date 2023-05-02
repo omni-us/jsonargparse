@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import pathlib
 import sys
@@ -271,7 +269,3 @@ class ArgcompleteTests(TempDirTestCase):
                 with self.assertRaises(SystemExit), mock_fdopen():
                     self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
                 self.assertEqual(expected, out.getvalue())
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

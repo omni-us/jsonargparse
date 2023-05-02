@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import unittest
 
@@ -257,7 +255,3 @@ class NamespaceTests(unittest.TestCase):
         self.assertEqual(ns.get('x.get.y'), 3)
         self.assertEqual(ns.as_dict(), {'x': {'get': {'y': 3}}})
         self.assertEqual(ns.pop('x.get.y'), 3)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

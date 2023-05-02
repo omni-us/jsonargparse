@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import inspect
 import sys
 import unittest
@@ -249,7 +247,3 @@ class StubsResolverTests(unittest.TestCase):
                 with mock_typeshed_client_unavailable():
                     params = get_params(cls)
                 self.assertTrue(any(p.annotation == inspect._empty for p in params))
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

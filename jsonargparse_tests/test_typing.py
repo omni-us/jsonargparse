@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import pathlib
 import pickle
@@ -286,7 +284,3 @@ class OtherTests(unittest.TestCase):
         self.assertEqual(cfg.elems.elems, [1, 2, 3])
         dump = parser.dump(cfg, format='json')
         self.assertEqual(dump, '{"elems":[1,2,3]}')
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

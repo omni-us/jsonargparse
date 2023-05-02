@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import json
 import os
 import pathlib
@@ -1817,7 +1815,3 @@ class OtherTests(unittest.TestCase):
         for typehint, ref_type, expected in params:
             with self.subTest(str(typehint)):
                 self.assertEqual(expected, is_optional(typehint, ref_type))
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

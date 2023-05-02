@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import json
 import os
 import unittest
@@ -610,7 +608,3 @@ class LinkArgumentsTempDirTests(TempDirTestCase):
 
             config_init = parser.instantiate_classes(config)
             self.assertIsInstance(config_init["b"].a_map["name"].d, D)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

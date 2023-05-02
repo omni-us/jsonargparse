@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import pathlib
 import unittest
@@ -411,7 +409,3 @@ class DeprecatedTempDirTests(TempDirTestCase):
         self.assertRaises(ValueError, lambda: parser.add_argument('--op1', action=ActionPathList))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op2', action=ActionPathList(mode='fr'), nargs='*'))
         self.assertRaises(ValueError, lambda: parser.add_argument('--op3', action=ActionPathList(mode='fr', rel='.')))
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

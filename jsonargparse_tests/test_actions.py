@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import json
 import os
 import unittest
@@ -247,7 +245,3 @@ class ActionParserTests(TempDirTestCase):
 
         self.assertIn('ActionParser title', outval)
         self.assertIn('ActionParser description', outval)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

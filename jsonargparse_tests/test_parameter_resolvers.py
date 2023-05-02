@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import calendar
 import inspect
 import unittest
@@ -647,7 +645,3 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: get_params('invalid'))
         self.assertRaises(ValueError, lambda: get_params(Param, 'p1'))
         self.assertRaises(AttributeError, lambda: get_params(Param, 'p2'))
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import json
 import os
 import re
@@ -126,7 +124,3 @@ class JsonSchemaTests(TempDirTestCase):
         outval = out.getvalue()
         schema = re.sub('^.*schema:([^()]+)[^{}]*$', r'\1', outval.replace('\n', ' '))
         self.assertEqual(schema1, json.loads(schema))
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

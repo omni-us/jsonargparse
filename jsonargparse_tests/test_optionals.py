@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import unittest
 from importlib.util import find_spec
 
@@ -189,7 +187,3 @@ class ConfigReadModeTests(unittest.TestCase):
         self.assertEqual('fr', get_config_read_mode())
         set_config_read_mode(fsspec_enabled=False)
         self.assertEqual('fr', get_config_read_mode())
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

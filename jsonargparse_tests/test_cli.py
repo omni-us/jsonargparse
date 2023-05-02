@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import sys
 import unittest
 import unittest.mock
@@ -347,7 +345,3 @@ class CLITempDirTests(TempDirTestCase):
 
             out = CLI(run, args=['--config=config.yaml'])
             self.assertEqual('a yaml', out)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

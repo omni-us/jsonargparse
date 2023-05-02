@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import json
 import os
 import pathlib
@@ -1221,7 +1219,3 @@ class OtherTests(unittest.TestCase):
         parser.add_argument('--cfg1', action=ActionConfigFile)
         with self.assertRaises(ValueError):
             parser.add_argument('--cfg2', action=ActionConfigFile)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

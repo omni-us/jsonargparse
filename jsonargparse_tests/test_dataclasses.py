@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import dataclasses
 import sys
 import unittest
@@ -455,7 +453,3 @@ class AttrsTests(unittest.TestCase):
         self.assertEqual(Namespace(p1=0.1, p2='-'), defaults.data)
         cfg = parser.parse_args(['--data.p1=0.2', '--data.p2=x'])
         self.assertEqual(Namespace(p1=0.2, p2='x'), cfg.data)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

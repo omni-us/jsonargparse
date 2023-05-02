@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import json
 import os
 import pathlib
@@ -223,7 +221,3 @@ class JsonnetTests(TempDirTestCase):
 
         cfg2 = parser.parse_object({'ext_vars': {'param': 123}})
         self.assertEqual(cfg.ext_vars, cfg2.ext_vars)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

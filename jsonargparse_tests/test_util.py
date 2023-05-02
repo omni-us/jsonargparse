@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import logging
 import os
 import pathlib
@@ -450,7 +448,3 @@ class OtherTests(unittest.TestCase):
     def test_unique(self):
         data = [1.0, 2, {}, 'x', ([], {}), 2, [], {}, [], ([], {}), 2]
         self.assertEqual(unique(data), [1.0, 2, {}, 'x', ([], {}), []])
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

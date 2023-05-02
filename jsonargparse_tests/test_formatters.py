@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import unittest
 from io import StringIO
@@ -111,7 +109,3 @@ class DefaultFormatterTmpdirTests(TempDirTestCase):
 
         self.assertIn('req description', outval)
         self.assertIn('from yaml', outval)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)
