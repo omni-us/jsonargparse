@@ -62,6 +62,9 @@ def CLI(
     elif not isinstance(components, list):
         components = [components]
 
+    if len(components) == 0:
+        raise ValueError('components argument not allowed to be an empty list')
+
     unexpected = [c for c in components if not (inspect.isclass(c) or callable(c))]
     if unexpected:
         raise ValueError(f'Unexpected components, not class or function: {unexpected}')
