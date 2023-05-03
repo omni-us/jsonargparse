@@ -1,271 +1,223 @@
 import os
-import pathlib
 import sys
 import unittest
 import unittest.mock
 from contextlib import ExitStack, contextmanager
 from enum import Enum
+from importlib.util import find_spec
 from io import StringIO
+from pathlib import Path
 from typing import List, Optional
+from unittest.mock import patch
 
-from jsonargparse import ActionConfigFile, ActionJsonSchema, ActionYesNo, ArgumentParser
+import pytest
+
+from jsonargparse import ActionConfigFile, ActionJsonSchema, ActionYesNo
 from jsonargparse._common import parser_context
-from jsonargparse.optionals import (
-    argcomplete_support,
-    import_argcomplete,
-    jsonschema_support,
-)
 from jsonargparse.typing import Email, Path_fr, PositiveFloat, PositiveInt
-from jsonargparse_tests.base import TempDirTestCase, is_cpython, is_posix
+from jsonargparse_tests.conftest import (
+    skip_if_jsonschema_unavailable,
+    skip_if_not_cpython,
+    skip_if_not_posix,
+)
+
+
+@pytest.fixture(autouse=True)
+def skip_if_argcomplete_unavailable():
+    if not find_spec('argcomplete'):
+        pytest.skip('argcomplete package is required')
 
 
 @contextmanager
 def mock_fdopen():
-    out = StringIO()
-    with unittest.mock.patch('os.fdopen', return_value=out):
-        yield out
+    err = StringIO()
+    with unittest.mock.patch('os.fdopen', return_value=err):
+        yield err
 
 
-@unittest.skipIf(not argcomplete_support, 'argcomplete package is required')
-class ArgcompleteTests(TempDirTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.orig_environ = os.environ.copy()
-        cls.argcomplete = import_argcomplete('ArgcompleteTests')
-
-
-    @classmethod
-    def tearDownClass(cls):
-        os.environ.clear()
-        os.environ.update(cls.orig_environ)
-
-
-    def setUp(self):
-        super().setUp()
-        self.tearDownClass()
-        os.environ['_ARGCOMPLETE'] = '1'
-        os.environ['_ARGCOMPLETE_SUPPRESS_SPACE'] = '1'
-        os.environ['_ARGCOMPLETE_COMP_WORDBREAKS'] = " \t\n\"'><=;|&(:"
-        os.environ['COMP_TYPE'] = str(ord('?'))   # ='63'  str(ord('\t'))='9'
-        self.parser = ArgumentParser()
-        stack = ExitStack()
-        stack.enter_context(parser_context(load_value_mode='yaml'))
-        self.addCleanup(stack.close)
-
-
-    def test_complete_nested_one_option(self):
-        self.parser.add_argument('--group1.op')
-
-        os.environ['COMP_LINE'] = 'tool.py --group1'
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
+def complete_line(parser, value):
+    stack = ExitStack()
+    stack.enter_context(parser_context(load_value_mode='yaml'))
+    with patch.dict(os.environ, {
+        '_ARGCOMPLETE': '1',
+        '_ARGCOMPLETE_SUPPRESS_SPACE': '1',
+        '_ARGCOMPLETE_COMP_WORDBREAKS': " \t\n\"'><=;|&(:",
+        'COMP_TYPE': str(ord('?')),   # ='63'  str(ord('\t'))='9'
+        'COMP_LINE': value,
+        'COMP_POINT': str(len(value)),
+    }):
+        import argcomplete
         out = StringIO()
-        with self.assertRaises(SystemExit), mock_fdopen():
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-        self.assertEqual(out.getvalue(), '--group1.op')
+        with pytest.raises(SystemExit), mock_fdopen() as err:
+            argcomplete.autocomplete(parser, exit_method=sys.exit, output_stream=out)
+    stack.close()
+    return out.getvalue(), err.getvalue()
 
 
-    def test_complete_nested_two_options(self):
-        self.parser.add_argument('--group2.op1')
-        self.parser.add_argument('--group2.op2')
-
-        os.environ['COMP_LINE'] = 'tool.py --group2'
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-        out = StringIO()
-        with self.assertRaises(SystemExit), mock_fdopen():
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-        self.assertEqual(out.getvalue(), '--group2.op1\x0b--group2.op2')
+def test_complete_nested_one_option(parser):
+    parser.add_argument('--group1.op')
+    out, err = complete_line(parser, 'tool.py --group1')
+    assert out == '--group1.op'
+    assert err == ''
 
 
-    @unittest.skipIf(not is_cpython, 'only CPython supported')
-    def test_simple_types(self):
-        self.parser.add_argument('--int', type=int)
-        self.parser.add_argument('--float', type=float)
-        self.parser.add_argument('--pint', type=PositiveInt)
-        self.parser.add_argument('--pfloat', type=PositiveFloat)
-        self.parser.add_argument('--email', type=Email)
-
-        for arg, expected in [('--int=a',       'value not yet valid, expected type int'),
-                              ('--int=1',       'value already valid, expected type int'),
-                              ('--float=a',     'value not yet valid, expected type float'),
-                              ('--float=1',     'value already valid, expected type float'),
-                              ('--pint=0',      'value not yet valid, expected type PositiveInt'),
-                              ('--pint=1',      'value already valid, expected type PositiveInt'),
-                              ('--pfloat=0',    'value not yet valid, expected type PositiveFloat'),
-                              ('--pfloat=1',    'value already valid, expected type PositiveFloat'),
-                              ('--email=a',     'value not yet valid, expected type Email'),
-                              ('--email=a@b.c', 'value already valid, expected type Email')]:
-            os.environ['COMP_LINE'] = 'tool.py '+arg
-            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-            with self.subTest(os.environ['COMP_LINE']):
-                out = StringIO()
-                with self.assertRaises(SystemExit), mock_fdopen() as err:
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-                self.assertEqual(out.getvalue(), '')
-                self.assertIn(expected, err.getvalue())
+def test_complete_nested_two_options(parser):
+    parser.add_argument('--group2.op1')
+    parser.add_argument('--group2.op2')
+    out, err = complete_line(parser, 'tool.py --group2')
+    assert out == '--group2.op1\x0b--group2.op2'
+    assert err == ''
 
 
-    @unittest.skipIf(not is_posix, 'Path class currently only supported in posix systems')
-    def test_ActionConfigFile(self):
-        self.parser.add_argument('--cfg', action=ActionConfigFile)
-        pathlib.Path('file1').touch()
-        pathlib.Path('config.yaml').touch()
-
-        for arg, expected in [('--cfg=',  'config.yaml\x0bfile1'),
-                              ('--cfg=c', 'config.yaml')]:
-            os.environ['COMP_LINE'] = 'tool.py '+arg
-            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-            with self.subTest(os.environ['COMP_LINE']):
-                out = StringIO()
-                with self.assertRaises(SystemExit), mock_fdopen():
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-                self.assertEqual(expected, out.getvalue())
-
-
-    def test_ActionYesNo(self):
-        self.parser.add_argument('--op1', action=ActionYesNo)
-        self.parser.add_argument('--op2', nargs='?', action=ActionYesNo)
-        self.parser.add_argument('--with-op3', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
-
-        for arg, expected in [('--op1',         '--op1'),
-                              ('--no_op1',      '--no_op1'),
-                              ('--op2',         '--op2'),
-                              ('--no_op2',      '--no_op2'),
-                              ('--op2=',        'true\x0bfalse\x0byes\x0bno'),
-                              ('--with-op3',    '--with-op3'),
-                              ('--without-op3', '--without-op3')]:
-            os.environ['COMP_LINE'] = 'tool.py '+arg
-            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-            with self.subTest(os.environ['COMP_LINE']):
-                out = StringIO()
-                with self.assertRaises(SystemExit), mock_fdopen():
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-                self.assertEqual(expected, out.getvalue())
+@skip_if_not_cpython
+@pytest.mark.parametrize(
+    ['value', 'expected'],
+    [
+        ('--int=a',       'value not yet valid, expected type int'),
+        ('--int=1',       'value already valid, expected type int'),
+        ('--float=a',     'value not yet valid, expected type float'),
+        ('--float=1',     'value already valid, expected type float'),
+        ('--pint=0',      'value not yet valid, expected type PositiveInt'),
+        ('--pint=1',      'value already valid, expected type PositiveInt'),
+        ('--pfloat=0',    'value not yet valid, expected type PositiveFloat'),
+        ('--pfloat=1',    'value already valid, expected type PositiveFloat'),
+        ('--email=a',     'value not yet valid, expected type Email'),
+        ('--email=a@b.c', 'value already valid, expected type Email'),
+    ],
+)
+def test_stderr_instruction_simple_types(parser, value, expected):
+    parser.add_argument('--int', type=int)
+    parser.add_argument('--float', type=float)
+    parser.add_argument('--pint', type=PositiveInt)
+    parser.add_argument('--pfloat', type=PositiveFloat)
+    parser.add_argument('--email', type=Email)
+    out, err = complete_line(parser, 'tool.py ' + value)
+    assert out == ''
+    assert expected in err
 
 
-    def test_ActionEnum(self):
-        class MyEnum(Enum):
-            abc = 1
-            xyz = 2
-            abd = 3
+@skip_if_not_posix
+def test_action_config_file(parser, tmp_cwd):
+    parser.add_argument('--cfg', action=ActionConfigFile)
+    Path('file1').touch()
+    Path('config.yaml').touch()
 
-        self.parser.add_argument('--enum', type=MyEnum)
-
-        os.environ['COMP_LINE'] = 'tool.py --enum=ab'
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-        out = StringIO()
-        with self.assertRaises(SystemExit), mock_fdopen():
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-        self.assertEqual(out.getvalue(), 'abc\x0babd')
+    out, err = complete_line(parser, 'tool.py --cfg=')
+    assert out == 'config.yaml\x0bfile1'
+    assert err == ''
+    out, err = complete_line(parser, 'tool.py --cfg=c')
+    assert out == 'config.yaml'
+    assert err == ''
 
 
-    def test_optional(self):
-        class MyEnum(Enum):
-            A = 1
-            B = 2
-
-        self.parser.add_argument('--enum', type=Optional[MyEnum])
-        self.parser.add_argument('--bool', type=Optional[bool])
-
-        for arg, expected in [('--enum=', 'A\x0bB\x0bnull'),
-                              ('--bool=', 'true\x0bfalse\x0bnull')]:
-            os.environ['COMP_LINE'] = 'tool.py '+arg
-            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-            with self.subTest(os.environ['COMP_LINE']):
-                out = StringIO()
-                with self.assertRaises(SystemExit), mock_fdopen():
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-                self.assertEqual(expected, out.getvalue())
-
-
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
-    @unittest.skipIf(not is_cpython, 'only CPython supported')
-    def test_json(self):
-        self.parser.add_argument('--json', action=ActionJsonSchema(schema={'type': 'object'}))
-
-        for arg, expected in [('--json=1',            'value not yet valid'),
-                              ("--json='{\"a\": 1}'", 'value already valid')]:
-            os.environ['COMP_LINE'] = 'tool.py '+arg
-            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-            with self.subTest(os.environ['COMP_LINE']):
-                out = StringIO()
-                with self.assertRaises(SystemExit), mock_fdopen() as err:
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-                self.assertEqual(out.getvalue(), '')
-                self.assertIn(expected, err.getvalue())
-
-                with unittest.mock.patch('os.popen') as popen_mock:
-                    popen_mock.side_effect = ValueError
-                    with self.assertRaises(SystemExit), mock_fdopen() as err:
-                        self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-                    self.assertEqual(out.getvalue(), '')
-                    self.assertIn(expected, err.getvalue())
-
-        os.environ['COMP_LINE'] = 'tool.py --json='
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-        out = StringIO()
-        with self.assertRaises(SystemExit), mock_fdopen() as err:
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-        self.assertEqual(err.getvalue(), '')
-        self.assertIn('value not yet valid', out.getvalue().replace('\xa0', ' ').replace('_', ' '))
+@pytest.mark.parametrize(
+    ['value', 'expected'],
+    [
+        ('--op1',         '--op1'),
+        ('--no_op1',      '--no_op1'),
+        ('--op2',         '--op2'),
+        ('--no_op2',      '--no_op2'),
+        ('--op2=',        'true\x0bfalse\x0byes\x0bno'),
+        ('--with-op3',    '--with-op3'),
+        ('--without-op3', '--without-op3'),
+    ],
+)
+def test_action_yes_no(parser, value, expected):
+    parser.add_argument('--op1', action=ActionYesNo)
+    parser.add_argument('--op2', nargs='?', action=ActionYesNo)
+    parser.add_argument('--with-op3', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
+    out, err = complete_line(parser, 'tool.py ' + value)
+    assert out == expected
+    assert err == ''
 
 
-    def test_list(self):
-        self.parser.add_argument('--list', type=List[int])
-
-        os.environ['COMP_LINE'] = "tool.py --list='[1, 2, 3]'"
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-        out = StringIO()
-        with self.assertRaises(SystemExit), mock_fdopen() as err:
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-        self.assertEqual(out.getvalue(), '')
-        self.assertIn('value already valid, expected type List[int]', err.getvalue())
-
-        os.environ['COMP_LINE'] = 'tool.py --list='
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
-
-        out = StringIO()
-        with self.assertRaises(SystemExit), mock_fdopen() as err:
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-        self.assertEqual(err.getvalue(), '')
-        self.assertIn('value not yet valid', out.getvalue().replace('\xa0', ' ').replace('_', ' '))
+def test_bool(parser):
+    parser.add_argument('--bool', type=bool)
+    out, err = complete_line(parser, 'tool.py --bool=')
+    assert out == 'true\x0bfalse'
+    assert err == ''
+    out, err = complete_line(parser, 'tool.py --bool=f')
+    assert out == 'false'
+    assert err == ''
 
 
-    def test_bool(self):
-        self.parser.add_argument('--bool', type=bool)
-        os.environ['COMP_LINE'] = 'tool.py --bool='
-        os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
+def test_enum(parser):
+    class EnumType(Enum):
+        abc = 1
+        xyz = 2
+        abd = 3
 
-        out = StringIO()
-        with self.assertRaises(SystemExit), mock_fdopen():
-            self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-        self.assertEqual(out.getvalue(), 'true\x0bfalse')
+    parser.add_argument('--enum', type=EnumType)
+    out, err = complete_line(parser, 'tool.py --enum=ab')
+    assert out == 'abc\x0babd'
+    assert err == ''
 
 
-    @unittest.skipIf(not is_posix, 'Path class currently only supported in posix systems')
-    def test_optional_path(self):
-        self.parser.add_argument('--path', type=Optional[Path_fr])
-        pathlib.Path('file1').touch()
-        pathlib.Path('file2').touch()
+def test_optional_bool(parser):
+    parser.add_argument('--bool', type=Optional[bool])
+    out, err = complete_line(parser, 'tool.py --bool=')
+    assert out == 'true\x0bfalse\x0bnull'
+    assert err == ''
 
-        for arg, expected in [('--path=',  'null\x0bfile1\x0bfile2'),
-                              ('--path=n', 'null'),
-                              ('--path=f', 'file1\x0bfile2')]:
-            os.environ['COMP_LINE'] = 'tool.py '+arg
-            os.environ['COMP_POINT'] = str(len(os.environ['COMP_LINE']))
 
-            with self.subTest(os.environ['COMP_LINE']):
-                out = StringIO()
-                with self.assertRaises(SystemExit), mock_fdopen():
-                    self.argcomplete.autocomplete(self.parser, exit_method=sys.exit, output_stream=out)
-                self.assertEqual(expected, out.getvalue())
+def test_optional_enum(parser):
+    class EnumType(Enum):
+        A = 1
+        B = 2
+
+    parser.add_argument('--enum', type=Optional[EnumType])
+    out, err = complete_line(parser, 'tool.py --enum=')
+    assert out == 'A\x0bB\x0bnull'
+    assert err == ''
+
+
+@skip_if_not_cpython
+@skip_if_jsonschema_unavailable
+def test_action_jsonschema(parser):
+    parser.add_argument('--json', action=ActionJsonSchema(schema={'type': 'object'}))
+
+    for value, expected in [
+        ('--json=1',            'value not yet valid'),
+        ("--json='{\"a\": 1}'", 'value already valid'),
+    ]:
+        out, err = complete_line(parser, f'tool.py {value}')
+        assert out == ''
+        assert expected in err
+
+        with patch('os.popen') as popen_mock:
+            popen_mock.side_effect = ValueError
+            out, err = complete_line(parser, f'tool.py {value}')
+            assert out == ''
+            assert expected in err
+
+    out, err = complete_line(parser, 'tool.py --json ')
+    assert 'value not yet valid' in out.replace('\xa0', ' ').replace('_', ' ')
+    assert err == ''
+
+
+def test_list(parser):
+    parser.add_argument('--list', type=List[int])
+
+    out, err = complete_line(parser, "tool.py --list='[1, 2, 3]'")
+    assert out == ''
+    assert 'value already valid, expected type List[int]' in err
+
+    out, err = complete_line(parser, 'tool.py --list=')
+    assert 'value not yet valid' in out.replace('\xa0', ' ').replace('_', ' ')
+    assert err == ''
+
+
+@skip_if_not_posix
+def test_optional_path(parser, tmp_cwd):
+    parser.add_argument('--path', type=Optional[Path_fr])
+    Path('file1').touch()
+    Path('file2').touch()
+
+    for value, expected in [
+        ('--path=',  'null\x0bfile1\x0bfile2'),
+        ('--path=n', 'null'),
+        ('--path=f', 'file1\x0bfile2'),
+    ]:
+        out, err = complete_line(parser, f'tool.py {value}')
+        assert out == expected
+        assert err == ''
