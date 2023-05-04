@@ -13,6 +13,7 @@ from io import StringIO
 from random import randint, shuffle
 from typing import Optional
 
+import pytest
 import yaml
 
 from jsonargparse import (
@@ -53,6 +54,24 @@ from jsonargparse_tests.base import (
     responses_activate,
     responses_available,
 )
+from jsonargparse_tests.conftest import skip_if_not_posix
+
+
+def test_check_config_skip_none(parser):
+    parser.add_argument('--op1', type=int)
+    parser.add_argument('--op2', type=float)
+    cfg = parser.parse_args(['--op2=2.2'])
+    parser.check_config(cfg, skip_none=True)
+    with pytest.raises(TypeError):
+        parser.check_config(cfg, skip_none=False)
+
+
+@skip_if_not_posix
+def test_parse_path_file_not_readable(parser, tmp_cwd):
+    config_path = pathlib.Path('config.yaml')
+    config_path.touch()
+    config_path.chmod(0)
+    pytest.raises(TypeError, lambda: parser.parse_path(str(config_path)))
 
 
 def example_parser():

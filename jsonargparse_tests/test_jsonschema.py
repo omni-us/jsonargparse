@@ -1,126 +1,126 @@
 import json
-import os
 import re
-import unittest
-from io import StringIO
+from importlib.util import find_spec
 
-from jsonargparse import (
-    ActionConfigFile,
-    ActionJsonSchema,
-    ArgumentError,
-    ArgumentParser,
-)
-from jsonargparse.optionals import jsonschema_support
-from jsonargparse_tests.base import TempDirTestCase, is_posix
+import pytest
 
-schema1 = {
+from jsonargparse import ActionConfigFile, ActionJsonSchema, ArgumentError
+from jsonargparse_tests.conftest import get_parser_help
+
+
+@pytest.fixture(autouse=True)
+def skip_if_jsonschema_unavailable():
+    if not find_spec('jsonschema'):
+        pytest.skip('jsonschema package is required')
+
+
+# test schema array
+
+schema_array = {
     'type': 'array',
     'items': {'type': 'integer'},
 }
 
-schema2 = {
-    'type': 'object',
-    'properties': {
-        'k1': {'type': 'string'},
-        'k2': {'type': 'integer'},
-        'k3': {
-            'type': 'number',
-            'default': 17,
-        },
-    },
-    'additionalProperties': False,
-}
 
-schema3 = {
-    'type': 'object',
-    'properties': {
-        'n1': {
-            'type': 'array',
-            'minItems': 1,
-            'items': {
-                'type': 'object',
-                'properties': {
-                    'k1': {'type': 'string'},
-                    'k2': {'type': 'integer'},
-                },
+@pytest.fixture
+def parser_schema_array(parser):
+    parser.add_argument(
+        '--op1',
+        action=ActionJsonSchema(schema=schema_array),
+        help='schema: %s',
+    )
+    return parser
+
+
+@pytest.mark.usefixtures('parser_schema_array')
+def test_schema_in_help(parser):
+    help_str = get_parser_help(parser)
+    help_schema = re.sub(
+        '^.*schema:([^()]+)[^{}]*$',
+        r'\1',
+        help_str.replace('\n', ' '),
+    )
+    assert schema_array == json.loads(help_schema)
+
+
+@pytest.mark.usefixtures('parser_schema_array')
+def test_schema_array_parse_args(parser):
+    assert [0, 1, 2] == parser.parse_args(['--op1', '[0, 1, 2]']).op1
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--op1', '[1, "two"]']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--op1', '[1.5, 2]']))
+
+
+@pytest.mark.usefixtures('parser_schema_array')
+def test_schema_array_parse_string(parser):
+    cfg = parser.parse_string('op1: [3, 7]')
+    assert [3, 7] == cfg['op1']
+
+
+@pytest.mark.usefixtures('parser_schema_array')
+def test_schema_array_parse_path(parser, tmp_path):
+    path = tmp_path / 'op1.json'
+    path.write_text('{"op1": [-1, 1, 0]}')
+    cfg = parser.parse_path(str(path))
+    assert [-1, 1, 0] == cfg['op1']
+
+
+# test schema object
+
+@pytest.fixture
+def parser_schema_object(parser):
+    schema_object = {
+        'type': 'object',
+        'properties': {
+            'k1': {'type': 'string'},
+            'k2': {'type': 'integer'},
+            'k3': {
+                'type': 'number',
+                'default': 17,
             },
         },
-    },
-}
+        'additionalProperties': False,
+    }
+    parser.add_argument('--op2', action=ActionJsonSchema(schema=schema_object))
+    parser.add_argument('--cfg', action=ActionConfigFile)
+    return parser
 
 
-@unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
-class JsonSchemaTests(TempDirTestCase):
-
-    def test_ActionJsonSchema(self):
-        parser = ArgumentParser(prog='app', default_meta=False, exit_on_error=False)
-        parser.add_argument('--op1',
-            action=ActionJsonSchema(schema=schema1))
-        parser.add_argument('--op2',
-            action=ActionJsonSchema(schema=schema2))
-        parser.add_argument('--op3',
-            action=ActionJsonSchema(schema=schema3))
-        parser.add_argument('--cfg',
-            action=ActionConfigFile)
-
-        op1_val = [1, 2, 3, 4]
-        op2_val = {'k1': 'one', 'k2': 2, 'k3': 3.3}
-
-        self.assertEqual(op1_val, parser.parse_args(['--op1', str(op1_val)]).op1)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op1', '[1, "two"]']))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op1', '[1.5, 2]']))
-
-        self.assertEqual(op2_val, parser.parse_args(['--op2', str(op2_val)]).op2)
-        self.assertEqual(17, parser.parse_args(['--op2', '{"k2": 2}']).op2['k3'])
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op2', '{"k1": 1}']))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op2', '{"k2": "2"}']))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--op2', '{"k4": 4}']))
-
-        op1_file = os.path.join(self.tmpdir, 'op1.json')
-        op2_file = os.path.join(self.tmpdir, 'op2.json')
-        cfg1_file = os.path.join(self.tmpdir, 'cfg1.yaml')
-        cfg3_file = os.path.join(self.tmpdir, 'cfg3.yaml')
-        cfg2_str = 'op1:\n  '+str(op1_val)+'\nop2:\n  '+str(op2_val)+'\n'
-        with open(op1_file, 'w') as f:
-            f.write(str(op1_val))
-        with open(op2_file, 'w') as f:
-            f.write(str(op2_val))
-        with open(cfg1_file, 'w') as f:
-            f.write('op1:\n  '+op1_file+'\nop2:\n  '+op2_file+'\n')
-        with open(cfg3_file, 'w') as f:
-            f.write('op3:\n  n1:\n  - '+str(op2_val)+'\n')
-
-        cfg = parser.parse_path(cfg1_file)
-        self.assertEqual(op1_val, cfg['op1'])
-        self.assertEqual(op2_val, cfg['op2'])
-
-        cfg = parser.parse_string(cfg2_str)
-        self.assertEqual(op1_val, cfg['op1'])
-        self.assertEqual(op2_val, cfg['op2'])
-
-        cfg = parser.parse_args(['--cfg', cfg3_file])
-        self.assertEqual(op2_val, cfg.op3['n1'][0])
-        parser.check_config(cfg, skip_none=True)
-
-        if is_posix:
-            os.chmod(op1_file, 0)
-            self.assertRaises(ArgumentError, lambda: parser.parse_path(cfg1_file))
+@pytest.mark.usefixtures('parser_schema_object')
+def test_schema_object_parse_args(parser):
+    op2_val = {'k1': 'one', 'k2': 2, 'k3': 3.3}
+    assert op2_val == parser.parse_args(['--op2', str(op2_val)]).op2
+    assert 17 == parser.parse_args(['--op2', '{"k2": 2}']).op2['k3']
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--op2', '{"k1": 1}']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--op2', '{"k2": "2"}']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--op2', '{"k4": 4}']))
 
 
-    def test_ActionJsonSchema_failures(self):
-        self.assertRaises(ValueError, lambda: ActionJsonSchema())
-        self.assertRaises(ValueError, lambda: ActionJsonSchema(schema=':'+json.dumps(schema1)))
+@pytest.mark.usefixtures('parser_schema_object')
+def test_schema_object_parse_string(parser):
+    op2_val = {'k1': 'two', 'k2': 7, 'k3': 2.4}
+    cfg = parser.parse_string(f'op2:\n  {op2_val}\n')
+    assert op2_val == cfg['op2']
 
 
-    def test_ActionJsonSchema_help(self):
-        parser = ArgumentParser()
-        parser.add_argument('--op1',
-            action=ActionJsonSchema(schema=schema1),
-            help='schema: %s')
+@pytest.mark.usefixtures('parser_schema_object')
+def test_schema_object_parse_config(parser, tmp_path):
+    op2_val = {'k1': 'three', 'k2': -3, 'k3': 0.4}
+    path = tmp_path / 'op2.json'
+    path.write_text(f'op2:\n  {op2_val}\n')
+    cfg = parser.parse_args([f'--cfg={path}'])
+    assert op2_val == cfg['op2']
 
-        out = StringIO()
-        parser.print_help(out)
 
-        outval = out.getvalue()
-        schema = re.sub('^.*schema:([^()]+)[^{}]*$', r'\1', outval.replace('\n', ' '))
-        self.assertEqual(schema1, json.loads(schema))
+# other tests
+
+def test_action_jsonschema_schema_dict_or_str():
+    action1 = ActionJsonSchema(schema=schema_array)
+    action2 = ActionJsonSchema(schema=json.dumps(schema_array))
+    assert action1._validator.schema == action2._validator.schema
+
+
+def test_action_jsonschema_init_failures():
+    pytest.raises(ValueError, ActionJsonSchema)
+    pytest.raises(ValueError, lambda: ActionJsonSchema(schema=':'))
+    from jsonschema.exceptions import SchemaError
+    pytest.raises(SchemaError, lambda: ActionJsonSchema(schema='.'))
