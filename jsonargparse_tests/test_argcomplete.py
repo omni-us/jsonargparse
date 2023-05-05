@@ -1,7 +1,5 @@
 import os
 import sys
-import unittest
-import unittest.mock
 from contextlib import ExitStack, contextmanager
 from enum import Enum
 from importlib.util import find_spec
@@ -31,7 +29,7 @@ def skip_if_argcomplete_unavailable():
 @contextmanager
 def mock_fdopen():
     err = StringIO()
-    with unittest.mock.patch('os.fdopen', return_value=err):
+    with patch('os.fdopen', return_value=err):
         yield err
 
 
