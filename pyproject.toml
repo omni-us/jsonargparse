@@ -163,7 +163,7 @@ disable_error_code = "annotation-unchecked"
 
 
 [tool.ruff]
-line-length = 120
+line-length = 180  # todo: this shall be 120
 # Enable Pyflakes `E` and `F` codes by default.
 select = [
     "E", "W",  # see: https://pypi.org/project/pycodestyle

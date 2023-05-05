@@ -55,7 +55,7 @@ autodoc_default_options = {
 os.environ['SPHINX_BUILD'] = ''
 
 # doctest extensions
-import doctest
+import doctest  # noqa: E402
 
 IGNORE_RESULT = doctest.register_optionflag('IGNORE_RESULT')
 
