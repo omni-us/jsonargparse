@@ -1,257 +1,293 @@
 import argparse
-import unittest
+import platform
 
-from jsonargparse.namespace import Namespace, dict_to_namespace, namespace_to_dict
-from jsonargparse_tests.base import is_cpython
+import pytest
+
+from jsonargparse import Namespace, dict_to_namespace, namespace_to_dict
+
+skip_if_no_setattr_insertion_order = pytest.mark.skipif(
+    platform.python_implementation() != 'CPython',
+    reason='requires __setattr__ insertion order',
+)
 
 
-class NamespaceTests(unittest.TestCase):
+def test_shallow_dot_set_get():
+    ns = Namespace()
+    ns.a = 1
+    assert 1 == ns.a
+    assert ns == Namespace(a=1)
 
-    def test_shallow_dot_set_get(self):
-        ns = Namespace()
-        ns.a = 1
-        self.assertEqual(1, ns.a)
-        self.assertEqual(ns, Namespace(a=1))
 
-    def test_shallow_attr_set_get_del(self):
-        ns = Namespace()
-        setattr(ns, 'a', 1)
-        self.assertEqual(1, getattr(ns, 'a'))
-        self.assertEqual(ns, Namespace(a=1))
-        delattr(ns, 'a')
-        self.assertRaises(AttributeError, lambda: getattr(ns, 'a'))
+def test_shallow_attr_set_get_del():
+    ns = Namespace()
+    setattr(ns, 'a', 1)
+    assert 1 == getattr(ns, 'a')
+    assert ns == Namespace(a=1)
+    delattr(ns, 'a')
+    with pytest.raises(AttributeError):
+        getattr(ns, 'a')
 
-    def test_shallow_item_set_get_del(self):
-        ns = Namespace()
-        ns['a'] = 1
-        self.assertEqual(1, ns['a'])
-        self.assertEqual(ns, Namespace(a=1))
-        del ns['a']
-        self.assertRaises(KeyError, lambda: ns['a'])
 
-    def test_nested_item_set_get(self):
-        ns = Namespace()
-        ns['x.y.z'] = 1
-        self.assertEqual(Namespace(x=Namespace(y=Namespace(z=1))), ns)
-        self.assertEqual(1, ns['x.y.z'])
-        self.assertEqual(1, ns['x']['y']['z'])
-        self.assertEqual(Namespace(z=1), ns['x.y'])
-        self.assertEqual(Namespace(z=1), ns['x']['y'])
-        ns['x.y'] = 2
-        self.assertEqual(2, ns['x.y'])
+def test_shallow_item_set_get_del():
+    ns = Namespace()
+    ns['a'] = 1
+    assert 1 == ns['a']
+    assert ns == Namespace(a=1)
+    del ns['a']
+    with pytest.raises(KeyError):
+        ns['a']
 
-    def test_nested_item_set_del(self):
-        ns = Namespace()
-        ns['x.y'] = 1
-        self.assertEqual(Namespace(x=Namespace(y=1)), ns)
-        del ns['x.y']
-        self.assertEqual(Namespace(x=Namespace()), ns)
 
-    def test_get(self):
-        ns = Namespace()
-        ns['x.y'] = 1
-        self.assertEqual(1, ns.get('x.y'))
-        self.assertEqual(Namespace(y=1), ns.get('x'))
-        self.assertEqual(2, ns.get('z', 2))
-        self.assertIsNone(ns.get('z'))
+def test_nested_item_set_get():
+    ns = Namespace()
+    ns['x.y.z'] = 1
+    assert Namespace(x=Namespace(y=Namespace(z=1))) == ns
+    assert 1 == ns['x.y.z']
+    assert 1 == ns['x']['y']['z']
+    assert Namespace(z=1) == ns['x.y']
+    assert Namespace(z=1) == ns['x']['y']
+    ns['x.y'] = 2
+    assert 2 == ns['x.y']
 
-    def test_get_non_str_key(self):
-        ns = Namespace()
-        for key in [None, True, False, 1, 2.3]:
-            with self.subTest(str(key)):
-                self.assertIsNone(ns.get(key))
-                self.assertEqual(ns.get(key, 'abc'), 'abc')
 
-    def test_set_item_nested_dict(self):
-        ns = Namespace(d={'a': 1})
-        ns['d.b'] = 2
-        self.assertEqual(2, ns['d']['b'])
+def test_nested_item_set_del():
+    ns = Namespace()
+    ns['x.y'] = 1
+    assert Namespace(x=Namespace(y=1)) == ns
+    del ns['x.y']
+    assert Namespace(x=Namespace()) == ns
 
-    def test_contains_non_str_key(self):
-        ns = Namespace()
-        for key in [None, True, False, 1, 2.3]:
-            with self.subTest(str(key)):
-                self.assertNotIn(key, ns)
 
-    def test_pop(self):
-        ns = Namespace()
-        ns['x.y.z'] = 1
-        self.assertEqual(1, ns.pop('x.y.z'))
-        self.assertEqual(ns, Namespace(x=Namespace(y=Namespace())))
+def test_get():
+    ns = Namespace()
+    ns['x.y'] = 1
+    assert 1 == ns.get('x.y')
+    assert Namespace(y=1) == ns.get('x')
+    assert 2 == ns.get('z', 2)
+    assert ns.get('z') is None
 
-    def test_nested_item_invalid_set(self):
-        ns = Namespace()
-        with self.assertRaises(KeyError):
-            ns['x.'] = 1
-        with self.assertRaises(KeyError):
-            ns['x .y'] = 2
 
-    def test_nested_key_in(self):
-        ns = Namespace()
-        ns['x.y.z'] = 1
-        self.assertIn('x', ns)
-        self.assertIn('x.y', ns)
-        self.assertIn('x.y.z', ns)
-        self.assertNotIn('a', ns)
-        self.assertNotIn('x.a', ns)
-        self.assertNotIn('x.y.a', ns)
-        self.assertNotIn('x.y.z.a', ns)
-        self.assertNotIn('x..y', ns)
-        self.assertNotIn(123, ns)
+@pytest.mark.parametrize('key', [None, True, False, 1, 2.3])
+def test_get_non_str_key(key):
+    ns = Namespace()
+    assert ns.get(key) is None
+    assert ns.get(key, 'abc') == 'abc'
 
-    @unittest.skipIf(not is_cpython, 'requires __setattr__ insertion order')
-    def test_items_generator(self):
-        ns = Namespace()
-        ns['a'] = 1
-        ns['b.c'] = 2
-        ns['b.d'] = 3
-        ns['p.q.r'] = {'x': 4, 'y': 5}
-        items = list(ns.items())
-        self.assertEqual(items, [('a', 1), ('b.c', 2), ('b.d', 3), ('p.q.r', {'x': 4, 'y': 5})])
 
-    @unittest.skipIf(not is_cpython, 'requires __setattr__ insertion order')
-    def test_keys_generator(self):
-        ns = Namespace()
-        ns['a'] = 1
-        ns['b.c'] = 2
-        ns['b.d'] = 3
-        ns['p.q.r'] = {'x': 4, 'y': 5}
-        keys = list(ns.keys())
-        self.assertEqual(keys, ['a', 'b.c', 'b.d', 'p.q.r'])
+def test_set_item_nested_dict():
+    ns = Namespace(d={'a': 1})
+    ns['d.b'] = 2
+    assert 2 == ns['d']['b']
 
-    @unittest.skipIf(not is_cpython, 'requires __setattr__ insertion order')
-    def test_values_generator(self):
-        ns = Namespace()
-        ns['a'] = 1
-        ns['b.c'] = 2
-        ns['b.d'] = 3
-        ns['p.q.r'] = {'x': 4, 'y': 5}
-        values = list(ns.values())
-        self.assertEqual(values, [1, 2, 3, {'x': 4, 'y': 5}])
 
-    def test_namespace_from_dict(self):
-        dic = {'a': 1, 'b': {'c': 2}}
-        ns = Namespace(dic)
-        self.assertEqual(ns, Namespace(a=1, b={'c': 2}))
+@pytest.mark.parametrize('key', [None, True, False, 1, 2.3])
+def test_contains_non_str_key(key):
+    ns = Namespace()
+    assert key not in ns
 
-    def test_as_dict(self):
-        ns = Namespace()
-        ns['w'] = 1
-        ns['x.y'] = 2
-        ns['x.z'] = 3
-        ns['p'] = {'q': Namespace(r=4)}
-        self.assertEqual(ns.as_dict(), {'w': 1, 'x': {'y': 2, 'z': 3}, 'p': {'q': {'r': 4}}})
-        self.assertEqual(Namespace().as_dict(), {})
 
-    def test_as_flat(self):
-        ns = Namespace()
-        ns['w'] = 1
-        ns['x.y.z'] = 2
-        flat = ns.as_flat()
-        self.assertIsInstance(flat, argparse.Namespace)
-        self.assertEqual(vars(flat), {'w': 1, 'x.y.z': 2})
+def test_pop():
+    ns = Namespace()
+    ns['x.y.z'] = 1
+    assert 1 == ns.pop('x.y.z')
+    assert ns == Namespace(x=Namespace(y=Namespace()))
 
-    def test_clone(self):
-        ns = Namespace()
-        pqr = {'x': 4, 'y': 5}
-        ns['a'] = 1
-        ns['p.q.r'] = pqr
-        self.assertIs(ns['p.q.r'], pqr)
-        self.assertEqual(ns.clone(), ns)
-        self.assertIsNot(ns.clone()['p.q.r'], pqr)
-        self.assertIsNot(ns.clone()['p.q'], ns['p.q'])
 
-    def test_update_shallow(self):
-        ns_from = Namespace(a=1, b=None)
-        ns_to = Namespace(a=None, b=2, c=3)
-        ns_to.update(ns_from)
-        self.assertEqual(ns_to, Namespace(a=1, b=None, c=3))
+def test_nested_item_invalid_set():
+    ns = Namespace()
+    with pytest.raises(KeyError):
+        ns['x.'] = 1
+    with pytest.raises(KeyError):
+        ns['x .y'] = 2
 
-    def test_update_invalid(self):
-        ns = Namespace()
-        self.assertRaises(KeyError, lambda: ns.update(123))
 
-    def test_init_from_argparse_flat_namespace(self):
-        argparse_ns = argparse.Namespace()
-        setattr(argparse_ns, 'w', 0)
-        setattr(argparse_ns, 'x.y.a', 1)
-        setattr(argparse_ns, 'x.y.b', 2)
-        setattr(argparse_ns, 'z.c', 3)
-        ns = Namespace(argparse_ns)
-        self.assertEqual(ns, Namespace(w=0, x=Namespace(y=Namespace(a=1, b=2)), z=Namespace(c=3)))
+def test_nested_key_in():
+    ns = Namespace()
+    ns['x.y.z'] = 1
+    assert 'x' in ns
+    assert 'x.y' in ns
+    assert 'x.y.z' in ns
+    assert 'a' not in ns
+    assert 'x.a' not in ns
+    assert 'x.y.a' not in ns
+    assert 'x.y.z.a' not in ns
+    assert 'x..y' not in ns
+    assert 123 not in ns
 
-    def test_init_invalid(self):
-        self.assertRaises(ValueError, lambda: Namespace(1))
-        self.assertRaises(ValueError, lambda: Namespace(argparse.Namespace(), x=1))
 
-    def test_namespace_to_dict(self):
-        ns = Namespace()
-        ns['w'] = 1
-        ns['x.y'] = 2
-        ns['x.z'] = 3
-        dic1 = namespace_to_dict(ns)
-        dic2 = ns.as_dict()
-        self.assertEqual(dic1, dic2)
-        self.assertIsNot(dic1, dic2)
+@skip_if_no_setattr_insertion_order
+def test_items_generator():
+    ns = Namespace()
+    ns['a'] = 1
+    ns['b.c'] = 2
+    ns['b.d'] = 3
+    ns['p.q.r'] = {'x': 4, 'y': 5}
+    items = list(ns.items())
+    assert items == [('a', 1), ('b.c', 2), ('b.d', 3), ('p.q.r', {'x': 4, 'y': 5})]
 
-    def test_dict_to_namespace(self):
-        ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
-        dic = {'a': 1, 'b': {'c': 2}, 'd': [{'e': 3}]}
-        ns2 = dict_to_namespace(dic)
-        self.assertEqual(ns1, ns2)
 
-    def test_use_for_kwargs(self):
-        def func(a=1, b=2, c=3):
-            return a, b, c
+@skip_if_no_setattr_insertion_order
+def test_keys_generator():
+    ns = Namespace()
+    ns['a'] = 1
+    ns['b.c'] = 2
+    ns['b.d'] = 3
+    ns['p.q.r'] = {'x': 4, 'y': 5}
+    keys = list(ns.keys())
+    assert keys == ['a', 'b.c', 'b.d', 'p.q.r']
 
-        kwargs = Namespace(a=4, c=5)
-        val = func(**kwargs)
-        self.assertEqual(val, (4, 2, 5))
 
-    def test_shallow_clashing_keys(self):
-        ns = Namespace()
-        self.assertNotIn('get', ns)
-        exec('ns.get = 1')
-        self.assertIn('get', ns)
-        self.assertEqual(ns.get('get'), 1)
-        self.assertEqual(dict(ns.items()), {'get': 1})
-        ns['pop'] = 2
-        self.assertEqual(ns['pop'], 2)
-        self.assertEqual(ns.as_dict(), {'get': 1, 'pop': 2})
-        self.assertEqual(ns.pop('get'), 1)
-        self.assertEqual(dict(**ns), {'pop': 2})
-        self.assertEqual(ns.as_flat(), argparse.Namespace(pop=2))
-        del ns['pop']
-        self.assertEqual(ns, Namespace())
-        self.assertEqual(namespace_to_dict(Namespace(update=3)), {'update': 3})
+@skip_if_no_setattr_insertion_order
+def test_values_generator():
+    ns = Namespace()
+    ns['a'] = 1
+    ns['b.c'] = 2
+    ns['b.d'] = 3
+    ns['p.q.r'] = {'x': 4, 'y': 5}
+    values = list(ns.values())
+    assert values == [1, 2, 3, {'x': 4, 'y': 5}]
 
-    def test_leaf_clashing_keys(self):
-        ns = Namespace()
-        ns['x.get'] = 1
-        self.assertIn('x.get', ns)
-        self.assertEqual(ns.get('x.get'), 1)
-        self.assertEqual(ns['x.get'], 1)
-        self.assertEqual(ns['x']['get'], 1)
-        self.assertEqual(ns.as_dict(), {'x': {'get': 1}})
-        self.assertEqual(dict(ns.items()), {'x.get': 1})
-        self.assertEqual(str(ns.as_flat()), "Namespace(**{'x.get': 1})")
-        self.assertEqual(ns.pop('x.get'), 1)
-        self.assertIs(ns.get('x.get'), None)
 
-    def test_shallow_branch_clashing_keys(self):
-        ns = Namespace(get=Namespace(x=2))
-        self.assertIn('get.x', ns)
-        self.assertEqual(ns.get('get.x'), 2)
-        self.assertEqual(ns['get.x'], 2)
-        self.assertEqual(ns['get'], Namespace(x=2))
-        self.assertEqual(ns.as_dict(), {'get': {'x': 2}})
-        self.assertEqual(dict(ns.items()), {'get.x': 2})
-        self.assertEqual(ns.pop('get.x'), 2)
+def test_namespace_from_dict():
+    dic = {'a': 1, 'b': {'c': 2}}
+    ns = Namespace(dic)
+    assert ns == Namespace(a=1, b={'c': 2})
 
-    def test_nested_branch_clashing_keys(self):
-        ns = Namespace()
-        ns['x.get.y'] = 3
-        self.assertIn('x.get.y', ns)
-        self.assertEqual(ns.get('x.get.y'), 3)
-        self.assertEqual(ns.as_dict(), {'x': {'get': {'y': 3}}})
-        self.assertEqual(ns.pop('x.get.y'), 3)
+
+def test_as_dict():
+    ns = Namespace()
+    ns['w'] = 1
+    ns['x.y'] = 2
+    ns['x.z'] = 3
+    ns['p'] = {'q': Namespace(r=4)}
+    assert ns.as_dict() == {'w': 1, 'x': {'y': 2, 'z': 3}, 'p': {'q': {'r': 4}}}
+    assert Namespace().as_dict() == {}
+
+
+def test_as_flat():
+    ns = Namespace()
+    ns['w'] = 1
+    ns['x.y.z'] = 2
+    flat = ns.as_flat()
+    assert isinstance(flat, argparse.Namespace)
+    assert vars(flat) == {'w': 1, 'x.y.z': 2}
+
+
+def test_clone():
+    ns = Namespace()
+    pqr = {'x': 4, 'y': 5}
+    ns['a'] = 1
+    ns['p.q.r'] = pqr
+    assert ns['p.q.r'] is pqr
+    assert ns.clone() == ns
+    assert ns.clone()['p.q.r'] is not pqr
+    assert ns.clone()['p.q'] is not ns['p.q']
+
+
+def test_update_shallow():
+    ns_from = Namespace(a=1, b=None)
+    ns_to = Namespace(a=None, b=2, c=3)
+    ns_to.update(ns_from)
+    assert ns_to == Namespace(a=1, b=None, c=3)
+
+
+def test_update_invalid():
+    ns = Namespace()
+    with pytest.raises(KeyError):
+        ns.update(123)
+
+
+def test_init_from_argparse_flat_namespace():
+    argparse_ns = argparse.Namespace()
+    setattr(argparse_ns, 'w', 0)
+    setattr(argparse_ns, 'x.y.a', 1)
+    setattr(argparse_ns, 'x.y.b', 2)
+    setattr(argparse_ns, 'z.c', 3)
+    ns = Namespace(argparse_ns)
+    assert ns == Namespace(w=0, x=Namespace(y=Namespace(a=1, b=2)), z=Namespace(c=3))
+
+
+def test_init_invalid():
+    with pytest.raises(ValueError):
+        Namespace(1)
+    with pytest.raises(ValueError):
+        Namespace(argparse.Namespace(), x=1)
+
+
+def test_namespace_to_dict():
+    ns = Namespace()
+    ns['w'] = 1
+    ns['x.y'] = 2
+    ns['x.z'] = 3
+    dic1 = namespace_to_dict(ns)
+    dic2 = ns.as_dict()
+    assert dic1 == dic2
+    assert dic1 is not dic2
+
+
+def test_dict_to_namespace():
+    ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
+    dic = {'a': 1, 'b': {'c': 2}, 'd': [{'e': 3}]}
+    ns2 = dict_to_namespace(dic)
+    assert ns1 == ns2
+
+
+def test_use_for_kwargs():
+    def func(a=1, b=2, c=3):
+        return a, b, c
+
+    kwargs = Namespace(a=4, c=5)
+    val = func(**kwargs)
+    assert val == (4, 2, 5)
+
+
+def test_shallow_clashing_keys():
+    ns = Namespace()
+    assert 'get' not in ns
+    exec('ns.get = 1')
+    assert 'get' in ns
+    assert ns.get('get') == 1
+    assert dict(ns.items()) == {'get': 1}
+    ns['pop'] = 2
+    assert ns['pop'] == 2
+    assert ns.as_dict() == {'get': 1, 'pop': 2}
+    assert ns.pop('get') == 1
+    assert dict(**ns) == {'pop': 2}
+    assert ns.as_flat() == argparse.Namespace(pop=2)
+    del ns['pop']
+    assert ns == Namespace()
+    assert namespace_to_dict(Namespace(update=3)) == {'update': 3}
+
+
+def test_leaf_clashing_keys():
+    ns = Namespace()
+    ns['x.get'] = 1
+    assert 'x.get' in ns
+    assert ns.get('x.get') == 1
+    assert ns['x.get'] == 1
+    assert ns['x']['get'] == 1
+    assert ns.as_dict() == {'x': {'get': 1}}
+    assert dict(ns.items()) == {'x.get': 1}
+    assert str(ns.as_flat()) == "Namespace(**{'x.get': 1})"
+    assert ns.pop('x.get') == 1
+    assert ns.get('x.get') is None
+
+
+def test_shallow_branch_clashing_keys():
+    ns = Namespace(get=Namespace(x=2))
+    assert 'get.x' in ns
+    assert ns.get('get.x') == 2
+    assert ns['get.x'] == 2
+    assert ns['get'] == Namespace(x=2)
+    assert ns.as_dict() == {'get': {'x': 2}}
+    assert dict(ns.items()) == {'get.x': 2}
+    assert ns.pop('get.x') == 2
+
+
+def test_nested_branch_clashing_keys():
+    ns = Namespace()
+    ns['x.get.y'] = 3
+    assert 'x.get.y' in ns
+    assert ns.get('x.get.y') == 3
+    assert ns.as_dict() == {'x': {'get': {'y': 3}}}
+    assert ns.pop('x.get.y') == 3

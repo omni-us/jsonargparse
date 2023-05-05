@@ -1,5 +1,4 @@
-import unittest
-from importlib.util import find_spec
+import pytest
 
 from jsonargparse import get_config_read_mode, set_config_read_mode
 from jsonargparse.optionals import (
@@ -21,169 +20,160 @@ from jsonargparse.optionals import (
     url_support,
 )
 
+# jsonschema support
 
-class JsonSchemaSupportTests(unittest.TestCase):
-
-    @unittest.skipIf(not jsonschema_support, 'jsonschema package is required')
-    def test_jsonschema_support_true(self):
-        import_jsonschema('test_jsonschema_support_true')
-
-
-    @unittest.skipIf(jsonschema_support, 'jsonschema package should not be installed')
-    def test_jsonschema_support_false(self):
-        with self.assertRaises(ImportError) as context:
-            import_jsonschema('test_jsonschema_support_false')
-            self.assertIn('test_jsonschema_support_false', context.msg)
+@pytest.mark.skipif(not jsonschema_support, reason='jsonschema package is required')
+def test_jsonschema_support_true():
+    import_jsonschema('test_jsonschema_support_true')
 
 
-class JsonnetSupportTests(unittest.TestCase):
-
-    @unittest.skipIf(not jsonnet_support, 'jsonnet package is required')
-    def test_jsonnet_support_true(self):
-        import_jsonnet('test_jsonnet_support_true')
-
-
-    @unittest.skipIf(jsonnet_support, 'jsonnet package should not be installed')
-    def test_jsonnet_support_false(self):
-        with self.assertRaises(ImportError) as context:
-            import_jsonnet('test_jsonnet_support_false')
-            self.assertIn('test_jsonnet_support_false', context.msg)
+@pytest.mark.skipif(jsonschema_support, reason='jsonschema package should not be installed')
+def test_jsonschema_support_false():
+    with pytest.raises(ImportError) as context:
+        import_jsonschema('test_jsonschema_support_false')
+    assert 'test_jsonschema_support_false' in str(context.value)
 
 
-class UrlSupportTests(unittest.TestCase):
+# jsonnet support
 
-    @unittest.skipIf(not url_support, 'requests package is required')
-    def test_url_support_true(self):
-        import_requests('test_url_support_true')
-
-
-    @unittest.skipIf(url_support, 'requests package should not be installed')
-    def test_url_support_false(self):
-        if find_spec('requests') is None:
-            with self.assertRaises(ImportError) as context:
-                import_requests('test_url_support_false')
-                self.assertIn('test_url_support_false', context.msg)
+@pytest.mark.skipif(not jsonnet_support, reason='jsonnet package is required')
+def test_jsonnet_support_true():
+    import_jsonnet('test_jsonnet_support_true')
 
 
-class DocstringParserSupportTests(unittest.TestCase):
-
-    @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
-    def test_docstring_parser_support_true(self):
-        import_docstring_parser('test_docstring_parser_support_true')
-
-
-    @unittest.skipIf(docstring_parser_support, 'docstring-parser package should not be installed')
-    def test_docstring_parser_support_false(self):
-        with self.assertRaises(ImportError) as context:
-            import_docstring_parser('test_docstring_parser_support_false')
-            self.assertIn('test_docstring_parser_support_false', context.msg)
+@pytest.mark.skipif(jsonnet_support, reason='jsonnet package should not be installed')
+def test_jsonnet_support_false():
+    with pytest.raises(ImportError) as context:
+        import_jsonnet('test_jsonnet_support_false')
+        assert 'test_jsonnet_support_false' in str(context.value)
 
 
-    @unittest.skipIf(not docstring_parser_support, 'docstring-parser package is required')
-    def test_docstring_parse_options(self):
-        from docstring_parser import DocstringStyle
-        options = get_docstring_parse_options()
-        options['style'] = None
-        options = get_docstring_parse_options()
+# requests support
 
-        with self.subTest('style'):
-            for style in [DocstringStyle.NUMPYDOC, DocstringStyle.GOOGLE]:
-                set_docstring_parse_options(style=style)
-                self.assertEqual(options['style'], style)
-            with self.assertRaises(ValueError):
-                set_docstring_parse_options(style='invalid')
-
-        with self.subTest('attribute_docstrings'):
-            self.assertIs(options['attribute_docstrings'], False)
-            for attribute_docstrings in [True, False]:
-                set_docstring_parse_options(attribute_docstrings=attribute_docstrings)
-                self.assertIs(options['attribute_docstrings'], attribute_docstrings)
-            with self.assertRaises(ValueError):
-                set_docstring_parse_options(attribute_docstrings='invalid')
+@pytest.mark.skipif(not url_support, reason='requests package is required')
+def test_url_support_true():
+    import_requests('test_url_support_true')
 
 
-class ArgcompleteSupportTests(unittest.TestCase):
-
-    @unittest.skipIf(not argcomplete_support, 'argcomplete package is required')
-    def test_argcomplete_support_true(self):
-        import_argcomplete('test_argcomplete_support_true')
-
-
-    @unittest.skipIf(argcomplete_support, 'argcomplete package should not be installed')
-    def test_argcomplete_support_false(self):
-        with self.assertRaises(ImportError) as context:
-            import_argcomplete('test_argcomplete_support_false')
-            self.assertIn('test_argcomplete_support_false', context.msg)
+@pytest.mark.skipif(url_support, reason='requests package should not be installed')
+def test_url_support_false():
+    with pytest.raises(ImportError) as context:
+        import_requests('test_url_support_false')
+        assert 'test_url_support_false' in str(context.value)
 
 
-class FsspecSupportTests(unittest.TestCase):
+# docstring-parser support
 
-    @unittest.skipIf(not fsspec_support, 'fsspec package is required')
-    def test_fsspec_support_true(self):
-        import_fsspec('test_fsspec_support_true')
-
-
-    @unittest.skipIf(fsspec_support, 'fsspec package should not be installed')
-    def test_fsspec_support_false(self):
-        with self.assertRaises(ImportError) as context:
-            import_fsspec('test_fsspec_support_false')
-            self.assertIn('test_fsspec_support_false', context.msg)
+@pytest.mark.skipif(not docstring_parser_support, reason='docstring-parser package is required')
+def test_docstring_parser_support_true():
+    import_docstring_parser('test_docstring_parser_support_true')
 
 
-class RuyamlSupportTests(unittest.TestCase):
-
-    @unittest.skipIf(not ruyaml_support, 'ruyaml package is required')
-    def test_ruyaml_support_true(self):
-        import_ruyaml('test_ruyaml_support_true')
-
-
-    @unittest.skipIf(ruyaml_support, 'ruyaml package should not be installed')
-    def test_ruyaml_support_false(self):
-        with self.assertRaises(ImportError) as context:
-            import_ruyaml('test_ruyaml_support_false')
-            self.assertIn('test_ruyaml_support_false', context.msg)
+@pytest.mark.skipif(docstring_parser_support, reason='docstring-parser package should not be installed')
+def test_docstring_parser_support_false():
+    with pytest.raises(ImportError) as context:
+        import_docstring_parser('test_docstring_parser_support_false')
+        assert 'test_docstring_parser_support_false' in str(context.value)
 
 
-class ConfigReadModeTests(unittest.TestCase):
+@pytest.mark.skipif(not docstring_parser_support, reason='docstring-parser package is required')
+def test_docstring_parse_options():
+    from docstring_parser import DocstringStyle
+    options = get_docstring_parse_options()
+    options['style'] = None
+    options = get_docstring_parse_options()
 
-    @classmethod
-    def setUpClass(cls):
-        set_config_read_mode()
+    for style in [DocstringStyle.NUMPYDOC, DocstringStyle.GOOGLE]:
+        set_docstring_parse_options(style=style)
+        assert options['style'] == style
+    with pytest.raises(ValueError):
+        set_docstring_parse_options(style='invalid')
+
+    assert options['attribute_docstrings'] is False
+    for attribute_docstrings in [True, False]:
+        set_docstring_parse_options(attribute_docstrings=attribute_docstrings)
+        assert options['attribute_docstrings'] is attribute_docstrings
+    with pytest.raises(ValueError):
+        set_docstring_parse_options(attribute_docstrings='invalid')
 
 
-    @unittest.skipIf(not url_support, 'requests package is required')
-    def test_url_support_true(self):
-        self.assertEqual('fr', get_config_read_mode())
+# argcomplete support
+
+@pytest.mark.skipif(not argcomplete_support, reason='argcomplete package is required')
+def test_argcomplete_support_true():
+    import_argcomplete('test_argcomplete_support_true')
+
+
+@pytest.mark.skipif(argcomplete_support, reason='argcomplete package should not be installed')
+def test_argcomplete_support_false():
+    with pytest.raises(ImportError) as context:
+        import_argcomplete('test_argcomplete_support_false')
+        assert 'test_argcomplete_support_false' in str(context.value)
+
+
+# fsspec support
+
+@pytest.mark.skipif(not fsspec_support, reason='fsspec package is required')
+def test_fsspec_support_true():
+    import_fsspec('test_fsspec_support_true')
+
+
+@pytest.mark.skipif(fsspec_support, reason='fsspec package should not be installed')
+def test_fsspec_support_false():
+    with pytest.raises(ImportError) as context:
+        import_fsspec('test_fsspec_support_false')
+        assert 'test_fsspec_support_false' in str(context.value)
+
+
+# ruyaml support
+
+@pytest.mark.skipif(not ruyaml_support, reason='ruyaml package is required')
+def test_ruyaml_support_true():
+    import_ruyaml('test_ruyaml_support_true')
+
+
+@pytest.mark.skipif(ruyaml_support, reason='ruyaml package should not be installed')
+def test_ruyaml_support_false():
+    with pytest.raises(ImportError) as context:
+        import_ruyaml('test_ruyaml_support_false')
+        assert 'test_ruyaml_support_false' in str(context.value)
+
+
+# config read mode tests
+
+@pytest.mark.skipif(not url_support, reason='requests package is required')
+def test_config_read_mode_url_support_true():
+    assert 'fr' == get_config_read_mode()
+    set_config_read_mode(urls_enabled=True)
+    assert 'fur' == get_config_read_mode()
+    set_config_read_mode(urls_enabled=False)
+    assert 'fr' == get_config_read_mode()
+
+
+@pytest.mark.skipif(url_support, reason='request package should not be installed')
+def test_config_read_mode_url_support_false():
+    assert 'fr' == get_config_read_mode()
+    with pytest.raises(ImportError):
         set_config_read_mode(urls_enabled=True)
-        self.assertEqual('fur', get_config_read_mode())
-        set_config_read_mode(urls_enabled=False)
-        self.assertEqual('fr', get_config_read_mode())
+    assert 'fr' == get_config_read_mode()
+    set_config_read_mode(urls_enabled=False)
+    assert 'fr' == get_config_read_mode()
 
 
-    @unittest.skipIf(url_support, 'request package should not be installed')
-    def test_url_support_false(self):
-        self.assertEqual('fr', get_config_read_mode())
-        with self.assertRaises(ImportError):
-            set_config_read_mode(urls_enabled=True)
-        self.assertEqual('fr', get_config_read_mode())
-        set_config_read_mode(urls_enabled=False)
-        self.assertEqual('fr', get_config_read_mode())
+@pytest.mark.skipif(not fsspec_support, reason='fsspec package is required')
+def test_config_read_mode_fsspec_support_true():
+    assert 'fr' == get_config_read_mode()
+    set_config_read_mode(fsspec_enabled=True)
+    assert 'fsr' == get_config_read_mode()
+    set_config_read_mode(fsspec_enabled=False)
+    assert 'fr' == get_config_read_mode()
 
 
-    @unittest.skipIf(not fsspec_support, 'fsspec package is required')
-    def test_fsspec_support_true(self):
-        self.assertEqual('fr', get_config_read_mode())
+@pytest.mark.skipif(fsspec_support, reason='fsspec package should not be installed')
+def test_config_read_mode_fsspec_support_false():
+    assert 'fr' == get_config_read_mode()
+    with pytest.raises(ImportError):
         set_config_read_mode(fsspec_enabled=True)
-        self.assertEqual('fsr', get_config_read_mode())
-        set_config_read_mode(fsspec_enabled=False)
-        self.assertEqual('fr', get_config_read_mode())
-
-
-    @unittest.skipIf(fsspec_support, 'fsspec package should not be installed')
-    def test_fsspec_support_false(self):
-        self.assertEqual('fr', get_config_read_mode())
-        with self.assertRaises(ImportError):
-            set_config_read_mode(fsspec_enabled=True)
-        self.assertEqual('fr', get_config_read_mode())
-        set_config_read_mode(fsspec_enabled=False)
-        self.assertEqual('fr', get_config_read_mode())
+    assert 'fr' == get_config_read_mode()
+    set_config_read_mode(fsspec_enabled=False)
+    assert 'fr' == get_config_read_mode()
