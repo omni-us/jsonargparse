@@ -2,7 +2,6 @@ fail_fast: true
 
 ci:
   skip:
-  - mypy
   - pycodestyle
   - pylint
   - tox
@@ -81,14 +80,6 @@ repos:
       fi'
     language: system
     files: .circleci/config.yml
-    pass_filenames: false
-    verbose: true
-
-  - id: mypy
-    name: mypy jsonargparse*/*.py
-    entry: bash -c "mypy jsonargparse*/*.py"
-    language: system
-    types: [python]
     pass_filenames: false
     verbose: true
 
