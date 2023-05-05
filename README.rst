@@ -116,19 +116,18 @@ is:
 
     from jsonargparse import CLI
 
-    def command(
-        name: str,
-        prize: int = 100
-    ):
+
+    def command(name: str, prize: int = 100):
         """Prints the prize won by a person.
 
         Args:
             name: Name of winner.
             prize: Amount won.
         """
-        print(f'{name} won {prize}€!')
+        print(f"{name} won {prize}€!")
 
-    if __name__ == '__main__':
+
+    if __name__ == "__main__":
         CLI(command)
 
 Note that the ``name`` and ``prize`` parameters have type hints and are
@@ -162,28 +161,24 @@ parameters of this method. An example would be:
     from random import randint
     from jsonargparse import CLI
 
+
     class Main:
-        def __init__(
-            self,
-            max_prize: int = 100
-        ):
+        def __init__(self, max_prize: int = 100):
             """
             Args:
                 max_prize: Maximum prize that can be awarded.
             """
             self.max_prize = max_prize
 
-        def person(
-            self,
-            name: str
-        ):
+        def person(self, name: str):
             """
             Args:
                 name: Name of winner.
             """
-            return f'{name} won {randint(0, self.max_prize)}€!'
+            return f"{name} won {randint(0, self.max_prize)}€!"
 
-    if __name__ == '__main__':
+
+    if __name__ == "__main__":
         print(CLI(Main))
 
 Then in a shell you could run:
@@ -195,7 +190,7 @@ Then in a shell you could run:
 
 .. doctest:: :hide:
 
-    >>> CLI(Main, args=['--max_prize=1000', 'person', 'Lucky'])  # doctest: +ELLIPSIS
+    >>> CLI(Main, args=["--max_prize=1000", "person", "Lucky"])  # doctest: +ELLIPSIS
     'Lucky won ...€!'
 
 If the class given does not have any methods, there will be no sub-commands and
@@ -206,12 +201,14 @@ If the class given does not have any methods, there will be no sub-commands and
     from dataclasses import dataclass
     from jsonargparse import CLI
 
+
     @dataclass
     class Settings:
         name: str
         prize: int = 100
 
-    if __name__ == '__main__':
+
+    if __name__ == "__main__":
         print(CLI(Settings, as_positional=False))
 
 Then in a shell you could run:
@@ -223,7 +220,7 @@ Then in a shell you could run:
 
 .. doctest:: :hide:
 
-    >>> CLI(Settings, as_positional=False, args=['--name=Lucky'])  # doctest: +ELLIPSIS
+    >>> CLI(Settings, as_positional=False, args=["--name=Lucky"])  # doctest: +ELLIPSIS
     Settings(name='Lucky', prize=100)
 
 Note the use of ``as_positional=False`` to make required arguments as
@@ -307,24 +304,11 @@ create a parser object and then add arguments to it. A simple example would be:
 
     from jsonargparse import ArgumentParser
 
-    parser = ArgumentParser(
-        prog='app',
-        description='Description for my app.'
-    )
+    parser = ArgumentParser(prog="app", description="Description for my app.")
 
-    parser.add_argument(
-        '--opt1',
-        type=int,
-        default=0,
-        help='Help for option 1.'
-    )
+    parser.add_argument("--opt1", type=int, default=0, help="Help for option 1.")
 
-    parser.add_argument(
-        '--opt2',
-        type=float,
-        default=1.0,
-        help='Help for option 2.'
-    )
+    parser.add_argument("--opt2", type=float, default=1.0, help="Help for option 2.")
 
 
 After creating the parser, you can use it to parse command line arguments with
@@ -336,7 +320,7 @@ shown above you would observe:
 
 .. doctest::
 
-    >>> cfg = parser.parse_args(['--opt2', '2.3'])
+    >>> cfg = parser.parse_args(["--opt2", "2.3"])
     >>> cfg.opt1, type(cfg.opt1)
     (0, <class 'int'>)
     >>> cfg.opt2, type(cfg.opt2)
@@ -380,13 +364,15 @@ then parses. For example, one might have:
 
     from jsonargparse import ArgumentParser
 
+
     def main_cli():
         parser = ArgumentParser()
         ...
         cfg = parser.parse_args()
         ...
 
-    if __name__ == '__main__':
+
+    if __name__ == "__main__":
         main_cli()
 
 For some use cases it is necessary to get an instance of the parser object,
@@ -400,6 +386,7 @@ Having a CLI function this could be easily implemented with
 .. testcode::
 
     from jsonargparse import capture_parser
+
 
     def get_parser():
         return capture_parser(main_cli)
@@ -424,7 +411,8 @@ syntax. For example, an argument that can be ``None`` or a float in the range
 
     from typing import Optional, Union
     from jsonargparse.typing import PositiveInt, OpenUnitInterval
-    parser.add_argument('--op', type=Optional[Union[PositiveInt, OpenUnitInterval]])
+
+    parser.add_argument("--op", type=Optional[Union[PositiveInt, OpenUnitInterval]])
 
 The types in :py:mod:`jsonargparse.typing` are included for convenience since
 they are useful in argument parsing use cases and not available in standard
@@ -503,14 +491,20 @@ are:
 .. testcode::
 
     from jsonargparse.typing import PositiveInt, PositiveFloat, restricted_number_type
+
     # float larger than zero
-    parser.add_argument('--op1', type=PositiveFloat)
+    parser.add_argument("--op1", type=PositiveFloat)
     # between 0 and 10
-    from_0_to_10 = restricted_number_type('from_0_to_10', int, [('>=', 0), ('<=', 10)])
-    parser.add_argument('--op2', type=from_0_to_10)
+    from_0_to_10 = restricted_number_type("from_0_to_10", int, [(">=", 0), ("<=", 10)])
+    parser.add_argument("--op2", type=from_0_to_10)
+
+
     # either int larger than zero or 'off' string
-    def int_or_off(x): return x if x == 'off' else PositiveInt(x)
-    parser.add_argument('--op3', type=int_or_off)
+    def int_or_off(x):
+        return x if x == "off" else PositiveInt(x)
+
+
+    parser.add_argument("--op3", type=int_or_off)
 
 
 .. _restricted-strings:
@@ -527,9 +521,10 @@ argument required to be exactly four uppercase letters:
 .. testcode::
 
     from jsonargparse.typing import Email, restricted_string_type
-    CodeType = restricted_string_type('CodeType', '^[A-Z]{4}$')
-    parser.add_argument('--code', type=CodeType)
-    parser.add_argument('--email', type=Email)
+
+    CodeType = restricted_string_type("CodeType", "^[A-Z]{4}$")
+    parser.add_argument("--code", type=CodeType)
+    parser.add_argument("--email", type=Email)
 
 
 .. _parsing-paths:
@@ -561,14 +556,14 @@ that exists and is readable, the following could be done:
 .. testsetup:: paths
 
     cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    tmpdir = tempfile.mkdtemp(prefix="_jsonargparse_doctest_")
     os.chdir(tmpdir)
-    os.mkdir('app')
-    os.mkdir('app/data')
-    with open('app/config.yaml', 'w') as f:
-        f.write('databases:\n  info: data/info.db\n')
-    with open('app/data/info.db', 'w') as f:
-        f.write('info\n')
+    os.mkdir("app")
+    os.mkdir("app/data")
+    with open("app/config.yaml", "w") as f:
+        f.write("databases:\n  info: data/info.db\n")
+    with open("app/data/info.db", "w") as f:
+        f.write("info\n")
 
 .. testcleanup:: paths
 
@@ -579,9 +574,10 @@ that exists and is readable, the following could be done:
 
     from jsonargparse import ArgumentParser
     from jsonargparse.typing import Path_fr
+
     parser = ArgumentParser()
-    parser.add_argument('--databases.info', type=Path_fr)
-    cfg = parser.parse_path('app/config.yaml')
+    parser.add_argument("--databases.info", type=Path_fr)
+    cfg = parser.parse_path("app/config.yaml")
 
 The ``fr`` in the type are flags that stand for file and readable. After
 parsing, the value of ``databases.info`` will be an instance of the
@@ -618,14 +614,14 @@ Example:
 .. testsetup:: path_list
 
     cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    tmpdir = tempfile.mkdtemp(prefix="_jsonargparse_doctest_")
     os.chdir(tmpdir)
-    pathlib.Path('paths.lst').write_text('paths.lst\n')
+    pathlib.Path("paths.lst").write_text("paths.lst\n")
 
     parser = ArgumentParser()
 
     stdin = sys.stdin
-    sys.stdin = StringIO('paths.lst\n')
+    sys.stdin = StringIO("paths.lst\n")
 
 .. testcleanup:: path_list
 
@@ -636,9 +632,10 @@ Example:
 .. testcode:: path_list
 
     from jsonargparse.typing import Path_fr
-    parser.add_argument('--list', type=List[Path_fr], enable_path=True)
-    cfg = parser.parse_args(['--list', 'paths.lst'])  # File with list of paths
-    cfg = parser.parse_args(['--list', '-'])          # List of paths from stdin
+
+    parser.add_argument("--list", type=List[Path_fr], enable_path=True)
+    cfg = parser.parse_args(["--list", "paths.lst"])  # File with list of paths
+    cfg = parser.parse_args(["--list", "-"])  # List of paths from stdin
 
 If ``nargs='+'`` is given to ``add_argument`` with ``List[<path_type>]`` and
 ``enable_path=True`` then for each argument a list of paths is generated.
@@ -713,9 +710,9 @@ corresponding parsed values would be ``True`` or ``False``. For example:
 
 .. doctest:: boolean
 
-    >>> parser.add_argument('--op1', type=bool, default=False)  # doctest: +IGNORE_RESULT
-    >>> parser.add_argument('--op2', type=bool, default=True)   # doctest: +IGNORE_RESULT
-    >>> parser.parse_args(['--op1', 'yes', '--op2', 'false'])
+    >>> parser.add_argument("--op1", type=bool, default=False)  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--op2", type=bool, default=True)  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(["--op1", "yes", "--op2", "false"])
     Namespace(op1=True, op2=False)
 
 Sometimes it is also useful to define two paired options, one to set ``True``
@@ -729,10 +726,11 @@ straightforward. A couple of examples would be:
 .. testcode:: yes_no
 
     from jsonargparse import ActionYesNo
+
     # --opt1 for true and --no_opt1 for false.
-    parser.add_argument('--op1', action=ActionYesNo)
+    parser.add_argument("--op1", action=ActionYesNo)
     # --with-opt2 for true and --without-opt2 for false.
-    parser.add_argument('--with-op2', action=ActionYesNo(yes_prefix='with-', no_prefix='without-'))
+    parser.add_argument("--with-op2", action=ActionYesNo(yes_prefix="with-", no_prefix="without-"))
 
 If the :class:`.ActionYesNo` class is used in conjunction with ``nargs='?'`` the
 options can also be set by giving as value any of ``{'true', 'yes', 'false',
@@ -760,8 +758,9 @@ desired values. For example:
     ...     choice1 = -1
     ...     choice2 = 0
     ...     choice3 = 1
-    >>> parser.add_argument('--op', type=MyEnum)  # doctest: +IGNORE_RESULT
-    >>> parser.parse_args(['--op=choice1'])
+    ...
+    >>> parser.add_argument("--op", type=MyEnum)  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(["--op=choice1"])
     Namespace(op=<MyEnum.choice1: -1>)
 
 
@@ -780,14 +779,17 @@ can be achieved by adding ``+`` as suffix to the argument key, for example:
 .. testsetup:: append
 
     parser = ArgumentParser()
-    class MyBaseClass: pass
+
+
+    class MyBaseClass:
+        pass
 
 .. doctest:: append
 
-    >>> parser.add_argument('--list', type=List[int])  # doctest: +IGNORE_RESULT
-    >>> parser.parse_args(['--list=[1]', '--list+=[2, 3]'])
+    >>> parser.add_argument("--list", type=List[int])  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(["--list=[1]", "--list+=[2, 3]"])
     Namespace(list=[1, 2, 3])
-    >>> parser.parse_args(['--list=[4]', '--list+=5'])
+    >>> parser.parse_args(["--list=[4]", "--list+=5"])
     Namespace(list=[4, 5])
 
 Append is also supported in config files. For instance the following two config
@@ -815,7 +817,7 @@ added to a parser as:
 
 .. testcode:: append
 
-    parser.add_argument('--list_of_instances', type=List[MyBaseClass])
+    parser.add_argument("--list_of_instances", type=List[MyBaseClass])
 
 Thanks to the short notation, command line arguments don't require to specify
 ``class_path`` and ``init_args``. Thus, multiple classes can be appended and its
@@ -854,7 +856,7 @@ e.g.:
 
 .. doctest:: dict_items
 
-    >>> parser.add_argument('--dict', type=dict)  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--dict", type=dict)  # doctest: +IGNORE_RESULT
     >>> parser.parse_args(['--dict={"key1": "val1", "key2": "val2"}'])
     Namespace(dict={'key1': 'val1', 'key2': 'val2'})
 
@@ -864,7 +866,7 @@ be achieved as follows:
 
 .. doctest:: dict_items
 
-    >>> parser.parse_args(['--dict.key1=val1', '--dict.key2=val2'])
+    >>> parser.parse_args(["--dict.key1=val1", "--dict.key2=val2"])
     Namespace(dict={'key1': 'val1', 'key2': 'val2'})
 
 
@@ -886,10 +888,10 @@ structure.
 .. testsetup:: final_classes
 
     cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    tmpdir = tempfile.mkdtemp(prefix="_jsonargparse_doctest_")
     os.chdir(tmpdir)
-    with open('config.yaml', 'w') as f:
-        f.write('data:\n  number: 8\n  accepted: true\n')
+    with open("config.yaml", "w") as f:
+        f.write("data:\n  number: 8\n  accepted: true\n")
 
 .. testcleanup:: final_classes
 
@@ -900,14 +902,16 @@ structure.
 
     from jsonargparse.typing import final
 
+
     @final
     class FinalClass:
         def __init__(self, number: int = 0, accepted: bool = False):
             ...
 
+
     parser = ArgumentParser()
-    parser.add_argument('--data', type=FinalClass)
-    cfg = parser.parse_path('config.yaml')
+    parser.add_argument("--data", type=FinalClass)
+    cfg = parser.parse_path("config.yaml")
 
 .. code-block:: yaml
 
@@ -930,8 +934,8 @@ option is the import path of a callable object, for example:
 
 .. testcode:: callable
 
-    parser.add_argument('--callable', type=Callable)
-    parser.parse_args(['--callable=time.sleep'])
+    parser.add_argument("--callable", type=Callable)
+    parser.parse_args(["--callable=time.sleep"])
 
 A second option is a class that once instantiated becomes callable:
 
@@ -940,6 +944,7 @@ A second option is a class that once instantiated becomes callable:
     class OffsetSum:
         def __init__(self, offset: int):
             self.offset = offset
+
         def __call__(self, value: int):
             return self.offset + value
 
@@ -951,13 +956,13 @@ A second option is a class that once instantiated becomes callable:
 .. doctest:: callable
 
     >>> value = {
-    ...     'class_path': '__main__.OffsetSum',
-    ...     'init_args': {
-    ...         'offset': 3,
-    ...     }
+    ...     "class_path": "__main__.OffsetSum",
+    ...     "init_args": {
+    ...         "offset": 3,
+    ...     },
     ... }
 
-    >>> cfg = parser.parse_args(['--callable', str(value)])
+    >>> cfg = parser.parse_args(["--callable", str(value)])
     >>> cfg.callable
     Namespace(class_path='__main__.OffsetSum', init_args=Namespace(offset=3))
     >>> init = parser.instantiate_classes(cfg)
@@ -977,6 +982,7 @@ example the classes:
         def __init__(self, params: Iterable):
             self.params = params
 
+
     class SGD(Optimizer):
         def __init__(self, params: Iterable, lr: float):
             super().__init__(params)
@@ -992,14 +998,14 @@ A possible parser and callable behavior would be:
 .. doctest:: callable
 
     >>> value = {
-    ...     'class_path': 'SGD',
-    ...     'init_args': {
-    ...         'lr': 0.01,
-    ...     }
+    ...     "class_path": "SGD",
+    ...     "init_args": {
+    ...         "lr": 0.01,
+    ...     },
     ... }
 
-    >>> parser.add_argument('--optimizer', type=Callable[[Iterable], Optimizer])  # doctest: +IGNORE_RESULT
-    >>> cfg = parser.parse_args(['--optimizer', str(value)])
+    >>> parser.add_argument("--optimizer", type=Callable[[Iterable], Optimizer])  # doctest: +IGNORE_RESULT
+    >>> cfg = parser.parse_args(["--optimizer", str(value)])
     >>> cfg.optimizer
     Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.01))
     >>> init = parser.instantiate_classes(cfg)
@@ -1068,17 +1074,20 @@ requires to give both a serializer and a deserializer as seen below.
     from jsonargparse import ArgumentParser
     from jsonargparse.typing import register_type
 
+
     def serializer(v):
         return v.isoformat()
 
+
     def deserializer(v):
-        return datetime.strptime(v, '%Y-%m-%dT%H:%M:%S')
+        return datetime.strptime(v, "%Y-%m-%dT%H:%M:%S")
+
 
     register_type(datetime, serializer, deserializer)
 
     parser = ArgumentParser()
-    parser.add_argument('--datetime', type=datetime)
-    parser.parse_args(['--datetime=2008-09-03T20:56:35'])
+    parser.add_argument("--datetime", type=datetime)
+    parser.parse_args(["--datetime=2008-09-03T20:56:35"])
 
 .. note::
 
@@ -1099,9 +1108,9 @@ you could do the following:
 
 .. doctest::
 
-    >>> parser = ArgumentParser(prog='app')
-    >>> parser.add_argument('--lev1.opt1', default='from default 1')  # doctest: +IGNORE_RESULT
-    >>> parser.add_argument('--lev1.opt2', default='from default 2')  # doctest: +IGNORE_RESULT
+    >>> parser = ArgumentParser(prog="app")
+    >>> parser.add_argument("--lev1.opt1", default="from default 1")  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--lev1.opt2", default="from default 2")  # doctest: +IGNORE_RESULT
     >>> cfg = parser.get_defaults()
     >>> cfg.lev1.opt1
     'from default 1'
@@ -1116,6 +1125,7 @@ An example analogous to the one above would be:
 
     from dataclasses import dataclass
 
+
     @dataclass
     class Level1Options:
         """Level 1 options
@@ -1123,11 +1133,13 @@ An example analogous to the one above would be:
             opt1: Option 1
             opt2: Option 2
         """
-        opt1: str = 'from default 1'
-        opt2: str = 'from default 2'
+
+        opt1: str = "from default 1"
+        opt2: str = "from default 2"
+
 
     parser = ArgumentParser()
-    parser.add_argument('--lev1', type=Level1Options, default=Level1Options())
+    parser.add_argument("--lev1", type=Level1Options, default=Level1Options())
 
 The :class:`.Namespace` class is an extension of the one from argparse, having
 some additional features. In particular, keys can be accessed like a dictionary
@@ -1177,10 +1189,10 @@ the following would be observed:
 .. testsetup:: config
 
     cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    tmpdir = tempfile.mkdtemp(prefix="_jsonargparse_doctest_")
     os.chdir(tmpdir)
-    with open('example.yaml', 'w') as f:
-        f.write('lev1:\n  opt1: from yaml 1\n  opt2: from yaml 2\n')
+    with open("example.yaml", "w") as f:
+        f.write("lev1:\n  opt1: from yaml 1\n  opt2: from yaml 2\n")
 
 .. testcleanup:: config
 
@@ -1191,12 +1203,10 @@ the following would be observed:
 
     >>> from jsonargparse import ArgumentParser, ActionConfigFile
     >>> parser = ArgumentParser()
-    >>> parser.add_argument('--lev1.opt1', default='from default 1')  # doctest: +IGNORE_RESULT
-    >>> parser.add_argument('--lev1.opt2', default='from default 2')  # doctest: +IGNORE_RESULT
-    >>> parser.add_argument('--config', action=ActionConfigFile)      # doctest: +IGNORE_RESULT
-    >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1',
-    ...                          '--config', 'example.yaml',
-    ...                          '--lev1.opt2', 'from arg 2'])
+    >>> parser.add_argument("--lev1.opt1", default="from default 1")  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--lev1.opt2", default="from default 2")  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--config", action=ActionConfigFile)  # doctest: +IGNORE_RESULT
+    >>> cfg = parser.parse_args(["--lev1.opt1", "from arg 1", "--config", "example.yaml", "--lev1.opt2", "from arg 2"])
     >>> cfg.lev1.opt1
     'from yaml 1'
     >>> cfg.lev1.opt2
@@ -1207,7 +1217,7 @@ configuration content can also be provided.
 
 .. doctest:: config
 
-    >>> cfg = parser.parse_args(['--config', '{"lev1":{"opt1":"from string 1"}}'])
+    >>> cfg = parser.parse_args(["--config", '{"lev1":{"opt1":"from string 1"}}'])
     >>> cfg.lev1.opt1
     'from string 1'
 
@@ -1244,10 +1254,12 @@ and ``json_indented``. It is possible to add more dumping formats by using the
     import yaml
     from jsonargparse import set_dumper
 
+
     def custom_yaml_dump(data):
         return yaml.safe_dump(data, default_flow_style=True)
 
-    set_dumper('yaml_custom', custom_yaml_dump)
+
+    set_dumper("yaml_custom", custom_yaml_dump)
 
 .. _custom-loaders:
 
@@ -1271,15 +1283,18 @@ loader it can be registered and used as follows:
     import yaml
     from jsonargparse import ArgumentParser, set_loader
 
+
     class CustomLoader(yaml.SafeLoader):
         ...
+
 
     def custom_yaml_load(stream):
         return yaml.load(stream, Loader=CustomLoader)
 
-    set_loader('yaml_custom', custom_yaml_load)
 
-    parser = ArgumentParser(parser_mode='yaml_custom')
+    set_loader("yaml_custom", custom_yaml_load)
+
+    parser = ArgumentParser(parser_mode="yaml_custom")
 
 When setting a loader based on a library different from PyYAML, the ``exceptions``
 that it raises when there are failures should be given to :func:`.set_loader`.
@@ -1301,12 +1316,16 @@ Take for example a class with its init and a method with docstrings as follows:
 
 .. testsetup:: class_method
 
-    sys.argv = ['', '--myclass.init.foo={}', '--myclass.method.bar=0']
-    class MyBaseClass: pass
+    sys.argv = ["", "--myclass.init.foo={}", "--myclass.method.bar=0"]
+
+
+    class MyBaseClass:
+        pass
 
 .. testcode:: class_method
 
     from typing import Dict, Union, List
+
 
     class MyClass(MyBaseClass):
         def __init__(self, foo: Dict[str, Union[int, List[int]]], **kwargs):
@@ -1335,8 +1354,8 @@ initialized and the method executed as follows:
     from jsonargparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_class_arguments(MyClass, 'myclass.init')
-    parser.add_method_arguments(MyClass, 'mymethod', 'myclass.method')
+    parser.add_class_arguments(MyClass, "myclass.init")
+    parser.add_method_arguments(MyClass, "mymethod", "myclass.method")
 
     cfg = parser.parse_args()
     myclass = MyClass(**cfg.myclass.init.as_dict())
@@ -1432,9 +1451,11 @@ that don't have attribute docstrings. To enable, do as follows:
 
     set_docstring_parse_options(attribute_docstrings=True)
 
+
     @dataclass
     class Options:
         """Options for a competition winner."""
+
         name: str
         """Name of winner."""
         prize: int = 100
@@ -1456,7 +1477,10 @@ this function, the example above would change to:
 
 .. testsetup:: class_from_function
 
-    class MyClass: pass
+    class MyClass:
+        pass
+
+
     def instantiate_myclass() -> MyClass:
         return MyClass()
 
@@ -1466,7 +1490,7 @@ this function, the example above would change to:
 
     parser = ArgumentParser()
     dynamic_class = class_from_function(instantiate_myclass)
-    parser.add_class_arguments(dynamic_class, 'myclass.init')
+    parser.add_class_arguments(dynamic_class, "myclass.init")
 
 .. note::
 
@@ -1500,14 +1524,16 @@ Take for example the following parsing and instantiation:
 
 .. testsetup:: unresolved
 
-    sys.argv = ['', '--myclass=MyClass']
+    sys.argv = ["", "--myclass=MyClass"]
+
 
     class MyClass:
         def __init__(self, foo: int = 0, **kwargs):
             super().__init__(**kwargs)
             ...
 
-    MyClass.__module__ = 'jsonargparse_tests'
+
+    MyClass.__module__ = "jsonargparse_tests"
     jsonargparse_tests.MyClass = MyClass
 
 .. testcode:: unresolved
@@ -1515,7 +1541,7 @@ Take for example the following parsing and instantiation:
     from jsonargparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument('--myclass', type=MyClass)
+    parser.add_argument("--myclass", type=MyClass)
     cfg = parser.parse_args()
     cfg_init = parser.instantiate_classes(cfg)
 
@@ -1560,10 +1586,15 @@ unrelated to these variables.
 
 .. testsetup:: ast_resolver
 
-    class BaseClass: pass
+    class BaseClass:
+        pass
+
+
     class SomeClass:
         def __init__(self, **kwargs):
             pass
+
+
     class ChildClass(BaseClass):
         def __init__(self, *args, **kwargs):
             pass
@@ -1575,22 +1606,28 @@ unrelated to these variables.
     def calls_a_function(*args, **kwargs):
         a_function(*args, **kwargs)
 
+
     def calls_a_method(*args, **kwargs):
         an_instance = SomeClass()
         an_instance.a_method(*args, **kwargs)
+
 
     def calls_a_static_method(*args, **kwargs):
         an_instance = SomeClass()
         an_instance.a_static_method(*args, **kwargs)
 
+
     def calls_a_class_method(*args, **kwargs):
         SomeClass.a_class_method(*args, **kwargs)
 
+
     def pops_from_kwargs(**kwargs):
-        val = kwargs.pop('name', 'default')
+        val = kwargs.pop("name", "default")
+
 
     def gets_from_kwargs(**kwargs):
-        val = kwargs.get('name', 'default')
+        val = kwargs.get("name", "default")
+
 
     def constant_conditional(**kwargs):
         if global_boolean_1:
@@ -1608,9 +1645,11 @@ unrelated to these variables.
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
+
     class CallMethod:
         def __init__(self, *args, **kwargs):
             self.a_method(*args, **kwargs)
+
 
     class AttributeUseInMethod:
         def __init__(self, **kwargs):
@@ -1618,6 +1657,7 @@ unrelated to these variables.
 
         def a_method(self):
             a_callable(**self._kwargs)
+
 
     class AttributeUseInProperty:
         def __init__(self, **kwargs):
@@ -1627,18 +1667,21 @@ unrelated to these variables.
         def a_property(self):
             return a_callable(**self._kwargs)
 
+
     class DictUpdateUseInMethod:
         def __init__(self, **kwargs):
-            self._kwargs = dict(p1=1)     # Can also be: self._kwargs = {'p1': 1}
-            self._kwargs.update(**kwargs) # Can also be: self._kwargs = dict(p1=1, **kwargs)
+            self._kwargs = dict(p1=1)  # Can also be: self._kwargs = {'p1': 1}
+            self._kwargs.update(**kwargs)  # Can also be: self._kwargs = dict(p1=1, **kwargs)
 
         def a_method(self):
             a_callable(**self._kwargs)
+
 
     class InstanceInClassmethod:
         @classmethod
         def get_instance(cls, **kwargs):
             return cls(**kwargs)
+
 
     class NonImmediateSuper(BaseClass):
         def __init__(self, *args, **kwargs):
@@ -1726,8 +1769,8 @@ example from the standard library would be:
     >>> from random import uniform
 
     >>> parser = ArgumentParser()
-    >>> parser.add_function_arguments(uniform, 'uniform')  # doctest: +IGNORE_RESULT
-    >>> parser.parse_args(['--uniform.a=0.7', '--uniform.b=3.4'])
+    >>> parser.add_function_arguments(uniform, "uniform")  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(["--uniform.a=0.7", "--uniform.b=3.4"])
     Namespace(uniform=Namespace(a=0.7, b=3.4))
 
 Without the stubs resolver, the
@@ -1771,10 +1814,10 @@ Then in python:
 .. testsetup:: subclasses
 
     cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    tmpdir = tempfile.mkdtemp(prefix="_jsonargparse_doctest_")
     os.chdir(tmpdir)
-    with open('config.yaml', 'w') as f:
-        f.write('myclass:\n  calendar:\n    class_path: calendar.Calendar\n    init_args:\n      firstweekday: 1\n')
+    with open("config.yaml", "w") as f:
+        f.write("myclass:\n  calendar:\n    class_path: calendar.Calendar\n    init_args:\n      firstweekday: 1\n")
 
 .. testcleanup:: subclasses
 
@@ -1788,11 +1831,12 @@ Then in python:
     >>> class MyClass:
     ...     def __init__(self, calendar: Calendar):
     ...         self.calendar = calendar
+    ...
 
     >>> parser = ArgumentParser()
-    >>> parser.add_class_arguments(MyClass, 'myclass')  # doctest: +IGNORE_RESULT
+    >>> parser.add_class_arguments(MyClass, "myclass")  # doctest: +IGNORE_RESULT
 
-    >>> cfg = parser.parse_path('config.yaml')
+    >>> cfg = parser.parse_path("config.yaml")
     >>> cfg.myclass.calendar.as_dict()
     {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
 
@@ -1833,7 +1877,7 @@ help option that receives the import path. Take for example a parser defined as:
     from jsonargparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument('--calendar', type=Calendar)
+    parser.add_argument("--calendar", type=Calendar)
 
 The help for a corresponding subclass could be printed as:
 
@@ -1903,6 +1947,7 @@ example above, this would be:
 
     from jsonargparse import lazy_instance
 
+
     class MyClass:
         def __init__(
             self,
@@ -1950,14 +1995,16 @@ example would be the following:
         def __init__(self, batch_size: int):
             self.batch_size = batch_size
 
+
     class Data:
         def __init__(self, batch_size: int = 5):
             self.batch_size = batch_size
 
+
     parser = ArgumentParser()
-    parser.add_class_arguments(Model, 'model')
-    parser.add_class_arguments(Data, 'data')
-    parser.link_arguments('data.batch_size', 'model.batch_size', apply_on='parse')
+    parser.add_class_arguments(Model, "model")
+    parser.add_class_arguments(Data, "data")
+    parser.link_arguments("data.batch_size", "model.batch_size", apply_on="parse")
 
 As argument and in config files only ``data.batch_size`` should be specified.
 Then whatever value it has will be propagated to ``model.batch_size``.
@@ -1977,14 +2024,16 @@ graph. An example would be the following:
         def __init__(self, num_classes: int):
             self.num_classes = num_classes
 
+
     class Data:
         def __init__(self):
             self.num_classes = get_num_classes()
 
+
     parser = ArgumentParser()
-    parser.add_class_arguments(Model, 'model')
-    parser.add_class_arguments(Data, 'data')
-    parser.link_arguments('data.num_classes', 'model.num_classes', apply_on='instantiate')
+    parser.add_class_arguments(Model, "model")
+    parser.add_class_arguments(Data, "data")
+    parser.link_arguments("data.num_classes", "model.num_classes", apply_on="instantiate")
 
 This link would imply that :py:meth:`.ArgumentParser.instantiate_classes`
 instantiates :class:`Data` first, then use the ``num_classes`` attribute to
@@ -2020,9 +2069,9 @@ Take for example a yaml file as:
       url: http://${server.host}:${server.port}/
     """
     cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    tmpdir = tempfile.mkdtemp(prefix="_jsonargparse_doctest_")
     os.chdir(tmpdir)
-    with open('example.yaml', 'w') as f:
+    with open("example.yaml", "w") as f:
         f.write(example)
 
 .. testcleanup:: omegaconf
@@ -2038,17 +2087,19 @@ This yaml could be parsed as follows:
     ... class ServerOptions:
     ...     host: str
     ...     port: int
+    ...
 
     >>> @dataclass
     ... class ClientOptions:
     ...     url: str
+    ...
 
-    >>> parser = ArgumentParser(parser_mode='omegaconf')
-    >>> parser.add_argument('--server', type=ServerOptions)       # doctest: +IGNORE_RESULT
-    >>> parser.add_argument('--client', type=ClientOptions)       # doctest: +IGNORE_RESULT
-    >>> parser.add_argument('--config', action=ActionConfigFile)  # doctest: +IGNORE_RESULT
+    >>> parser = ArgumentParser(parser_mode="omegaconf")
+    >>> parser.add_argument("--server", type=ServerOptions)  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--client", type=ClientOptions)  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--config", action=ActionConfigFile)  # doctest: +IGNORE_RESULT
 
-    >>> cfg = parser.parse_args(['--config=example.yaml'])
+    >>> cfg = parser.parse_args(["--config=example.yaml"])
     >>> cfg.client.url
     'http://localhost:80/'
 
@@ -2083,15 +2134,15 @@ command line arguments, that is:
 
 .. testsetup:: env
 
-    os.environ['APP_LEV1__OPT1'] = 'from env 1'
-    os.environ['APP_LEV1__OPT2'] = 'from env 2'
+    os.environ["APP_LEV1__OPT1"] = "from env 1"
+    os.environ["APP_LEV1__OPT2"] = "from env 2"
 
 .. doctest:: env
 
-    >>> parser = ArgumentParser(env_prefix='APP', default_env=True)
-    >>> parser.add_argument('--lev1.opt1', default='from default 1')  # doctest: +IGNORE_RESULT
-    >>> parser.add_argument('--lev1.opt2', default='from default 2')  # doctest: +IGNORE_RESULT
-    >>> cfg = parser.parse_args(['--lev1.opt1', 'from arg 1'])
+    >>> parser = ArgumentParser(env_prefix="APP", default_env=True)
+    >>> parser.add_argument("--lev1.opt1", default="from default 1")  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--lev1.opt2", default="from default 2")  # doctest: +IGNORE_RESULT
+    >>> cfg = parser.parse_args(["--lev1.opt1", "from arg 1"])
     >>> cfg.lev1.opt1
     'from arg 1'
     >>> cfg.lev1.opt2
@@ -2130,26 +2181,27 @@ parser with sub-commands is the following:
 .. testcode::
 
     from jsonargparse import ArgumentParser
+
     ...
     parser_subcomm1 = ArgumentParser()
-    parser_subcomm1.add_argument('--op1')
+    parser_subcomm1.add_argument("--op1")
     ...
     parser_subcomm2 = ArgumentParser()
-    parser_subcomm2.add_argument('--op2')
+    parser_subcomm2.add_argument("--op2")
     ...
-    parser = ArgumentParser(prog='app')
-    parser.add_argument('--op0')
+    parser = ArgumentParser(prog="app")
+    parser.add_argument("--op0")
     subcommands = parser.add_subcommands()
-    subcommands.add_subcommand('subcomm1', parser_subcomm1)
-    subcommands.add_subcommand('subcomm2', parser_subcomm2)
+    subcommands.add_subcommand("subcomm1", parser_subcomm1)
+    subcommands.add_subcommand("subcomm2", parser_subcomm2)
 
 Then some examples of parsing are the following:
 
 .. doctest::
 
-    >>> parser.parse_args(['subcomm1', '--op1', 'val1'])
+    >>> parser.parse_args(["subcomm1", "--op1", "val1"])
     Namespace(op0=None, subcomm1=Namespace(op1='val1'), subcommand='subcomm1')
-    >>> parser.parse_args(['--op0', 'val0', 'subcomm2', '--op2', 'val2'])
+    >>> parser.parse_args(["--op0", "val0", "subcomm2", "--op2", "val2"])
     Namespace(op0='val0', subcomm2=Namespace(op2='val2'), subcommand='subcomm2')
 
 Parsing config files with :py:meth:`.ArgumentParser.parse_path` or
@@ -2207,9 +2259,9 @@ using a json schema is done like in the following example:
     ... }
 
     >>> parser = ArgumentParser()
-    >>> parser.add_argument('--json', action=ActionJsonSchema(schema=schema))  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--json", action=ActionJsonSchema(schema=schema))  # doctest: +IGNORE_RESULT
 
-    >>> parser.parse_args(['--json', '{"price": 1.5, "name": "cookie"}'])
+    >>> parser.parse_args(["--json", '{"price": 1.5, "name": "cookie"}'])
     Namespace(json={'price': 1.5, 'name': 'cookie'})
 
 Instead of giving a json string as argument value, it is also possible to
@@ -2240,10 +2292,10 @@ config files to be in jsonnet format instead. Example:
 .. testsetup:: jsonnet
 
     cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp(prefix='_jsonargparse_doctest_')
+    tmpdir = tempfile.mkdtemp(prefix="_jsonargparse_doctest_")
     os.chdir(tmpdir)
-    with open('example.jsonnet', 'w') as f:
-        f.write('{}\n')
+    with open("example.jsonnet", "w") as f:
+        f.write("{}\n")
 
 .. testcleanup:: jsonnet
 
@@ -2253,9 +2305,10 @@ config files to be in jsonnet format instead. Example:
 .. testcode:: jsonnet
 
     from jsonargparse import ArgumentParser, ActionConfigFile
-    parser = ArgumentParser(parser_mode='jsonnet')
-    parser.add_argument('--config', action=ActionConfigFile)
-    cfg = parser.parse_args(['--config', 'example.jsonnet'])
+
+    parser = ArgumentParser(parser_mode="jsonnet")
+    parser.add_argument("--config", action=ActionConfigFile)
+    cfg = parser.parse_args(["--config", "example.jsonnet"])
 
 Jsonnet files are commonly parametrized, thus requiring external variables for
 parsing. For these cases, instead of changing the parser mode away from yaml,
@@ -2268,19 +2321,17 @@ dictionary of variables. Its use would be as follows:
 .. testcode:: jsonnet
 
     from jsonargparse import ArgumentParser, ActionJsonnet, ActionJsonnetExtVars
+
     parser = ArgumentParser()
-    parser.add_argument('--in_ext_vars',
-        action=ActionJsonnetExtVars())
-    parser.add_argument('--in_jsonnet',
-        action=ActionJsonnet(ext_vars='in_ext_vars'))
+    parser.add_argument("--in_ext_vars", action=ActionJsonnetExtVars())
+    parser.add_argument("--in_jsonnet", action=ActionJsonnet(ext_vars="in_ext_vars"))
 
 For example, if a jsonnet file required some external variable ``param``, then
 the jsonnet and the external variable could be given as:
 
 .. testcode:: jsonnet
 
-    cfg = parser.parse_args(['--in_ext_vars', '{"param": 123}',
-                             '--in_jsonnet', 'example.jsonnet'])
+    cfg = parser.parse_args(["--in_ext_vars", '{"param": 123}', "--in_jsonnet", "example.jsonnet"])
 
 Note that the external variables argument must be provided before the jsonnet
 path so that this dictionary already exists when parsing the jsonnet.
@@ -2304,13 +2355,12 @@ following:
 .. testcode::
 
     from jsonargparse import ArgumentParser, ActionParser
-    inner_parser = ArgumentParser(prog='app1')
-    inner_parser.add_argument('--op1')
+
+    inner_parser = ArgumentParser(prog="app1")
+    inner_parser.add_argument("--op1")
     ...
-    outer_parser = ArgumentParser(prog='app2')
-    outer_parser.add_argument('--inner.node',
-        title='Inner node title',
-        action=ActionParser(parser=inner_parser))
+    outer_parser = ArgumentParser(prog="app2")
+    outer_parser.add_argument("--inner.node", title="Inner node title", action=ActionParser(parser=inner_parser))
 
 When using the :class:`.ActionParser` class, the value of the node in a config
 file can be either the complex node itself, or the path to a file which will be
@@ -2356,7 +2406,7 @@ argcomplete compatible tools or for each `individual
 
 .. testsetup:: tab_completion
 
-    sys.argv = ['']
+    sys.argv = [""]
 
 .. testcode:: tab_completion
 
@@ -2366,7 +2416,7 @@ argcomplete compatible tools or for each `individual
     from jsonargparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument('--bool', type=Optional[bool])
+    parser.add_argument("--bool", type=Optional[bool])
 
     parser.parse_args()
 
