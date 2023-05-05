@@ -3,8 +3,6 @@ fail_fast: true
 ci:
   skip:
   - mypy
-  - pycodestyle
-  - pylint
   - tox
   - coverage
 

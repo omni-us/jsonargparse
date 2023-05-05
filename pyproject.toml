@@ -96,14 +96,10 @@ test-no-urls = [
 dev = [
     "jsonargparse[test]",
     "jsonargparse[doc]",
-    "jsonargparse[pylint]",
     "jsonargparse[mypy]",
     "pre-commit>=2.19.0",
     "tox>=3.25.0",
     "pycodestyle>=2.5.0",
-]
-pylint = [
-    "pylint>=2.15.6",
 ]
 mypy = [
     "jsonargparse[types-pyyaml]",
