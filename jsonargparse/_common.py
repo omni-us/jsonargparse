@@ -7,11 +7,11 @@ from typing import Optional, Union
 from .namespace import Namespace
 from .type_checking import ArgumentParser
 
-parent_parser: ContextVar['ArgumentParser'] = ContextVar('parent_parser')
-parser_capture: ContextVar[bool] = ContextVar('parser_capture', default=False)
-defaults_cache: ContextVar[Optional[Namespace]] = ContextVar('defaults_cache', default=None)
-lenient_check: ContextVar[Union[bool, str]] = ContextVar('lenient_check', default=False)
-load_value_mode: ContextVar[Optional[str]] = ContextVar('load_value_mode', default=None)
+parent_parser: ContextVar["ArgumentParser"] = ContextVar("parent_parser")
+parser_capture: ContextVar[bool] = ContextVar("parser_capture", default=False)
+defaults_cache: ContextVar[Optional[Namespace]] = ContextVar("defaults_cache", default=None)
+lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", default=False)
+load_value_mode: ContextVar[Optional[str]] = ContextVar("load_value_mode", default=None)
 
 
 parser_context_vars = dict(
@@ -47,7 +47,7 @@ def is_subclass(cls, class_or_tuple) -> bool:
 
 def is_final_class(cls) -> bool:
     """Checks whether a class is final, i.e. decorated with ``typing.final``."""
-    return getattr(cls, '__final__', False)
+    return getattr(cls, "__final__", False)
 
 
 def is_dataclass_like(cls) -> bool:
@@ -58,12 +58,15 @@ def is_dataclass_like(cls) -> bool:
     classes = [c for c in inspect.getmro(cls) if c != object]
     all_dataclasses = all(dataclasses.is_dataclass(c) for c in classes)
     from .optionals import attrs_support, pydantic_support
+
     if not all_dataclasses and pydantic_support:
         import pydantic.utils
+
         classes = [c for c in classes if c != pydantic.utils.Representation]
         all_dataclasses = all(is_subclass(c, pydantic.BaseModel) for c in classes)
     if not all_dataclasses and attrs_support:
         import attrs
+
         if attrs.has(cls):
             return True
     return all_dataclasses

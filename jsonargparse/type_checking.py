@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
 __all__ = [
-    '_ArgumentGroup',
-    'ArgumentParser',
-    'ruyamlCommentedMap',
+    "_ArgumentGroup",
+    "ArgumentParser",
+    "ruyamlCommentedMap",
 ]
 
 if TYPE_CHECKING:  # pragma: no cover

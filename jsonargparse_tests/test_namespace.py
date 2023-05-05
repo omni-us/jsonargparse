@@ -6,8 +6,8 @@ import pytest
 from jsonargparse import Namespace, dict_to_namespace, namespace_to_dict
 
 skip_if_no_setattr_insertion_order = pytest.mark.skipif(
-    platform.python_implementation() != 'CPython',
-    reason='requires __setattr__ insertion order',
+    platform.python_implementation() != "CPython",
+    reason="requires __setattr__ insertion order",
 )
 
 
@@ -20,67 +20,67 @@ def test_shallow_dot_set_get():
 
 def test_shallow_attr_set_get_del():
     ns = Namespace()
-    setattr(ns, 'a', 1)
-    assert 1 == getattr(ns, 'a')
+    setattr(ns, "a", 1)
+    assert 1 == getattr(ns, "a")
     assert ns == Namespace(a=1)
-    delattr(ns, 'a')
+    delattr(ns, "a")
     with pytest.raises(AttributeError):
-        getattr(ns, 'a')
+        getattr(ns, "a")
 
 
 def test_shallow_item_set_get_del():
     ns = Namespace()
-    ns['a'] = 1
-    assert 1 == ns['a']
+    ns["a"] = 1
+    assert 1 == ns["a"]
     assert ns == Namespace(a=1)
-    del ns['a']
+    del ns["a"]
     with pytest.raises(KeyError):
-        ns['a']
+        ns["a"]
 
 
 def test_nested_item_set_get():
     ns = Namespace()
-    ns['x.y.z'] = 1
+    ns["x.y.z"] = 1
     assert Namespace(x=Namespace(y=Namespace(z=1))) == ns
-    assert 1 == ns['x.y.z']
-    assert 1 == ns['x']['y']['z']
-    assert Namespace(z=1) == ns['x.y']
-    assert Namespace(z=1) == ns['x']['y']
-    ns['x.y'] = 2
-    assert 2 == ns['x.y']
+    assert 1 == ns["x.y.z"]
+    assert 1 == ns["x"]["y"]["z"]
+    assert Namespace(z=1) == ns["x.y"]
+    assert Namespace(z=1) == ns["x"]["y"]
+    ns["x.y"] = 2
+    assert 2 == ns["x.y"]
 
 
 def test_nested_item_set_del():
     ns = Namespace()
-    ns['x.y'] = 1
+    ns["x.y"] = 1
     assert Namespace(x=Namespace(y=1)) == ns
-    del ns['x.y']
+    del ns["x.y"]
     assert Namespace(x=Namespace()) == ns
 
 
 def test_get():
     ns = Namespace()
-    ns['x.y'] = 1
-    assert 1 == ns.get('x.y')
-    assert Namespace(y=1) == ns.get('x')
-    assert 2 == ns.get('z', 2)
-    assert ns.get('z') is None
+    ns["x.y"] = 1
+    assert 1 == ns.get("x.y")
+    assert Namespace(y=1) == ns.get("x")
+    assert 2 == ns.get("z", 2)
+    assert ns.get("z") is None
 
 
-@pytest.mark.parametrize('key', [None, True, False, 1, 2.3])
+@pytest.mark.parametrize("key", [None, True, False, 1, 2.3])
 def test_get_non_str_key(key):
     ns = Namespace()
     assert ns.get(key) is None
-    assert ns.get(key, 'abc') == 'abc'
+    assert ns.get(key, "abc") == "abc"
 
 
 def test_set_item_nested_dict():
-    ns = Namespace(d={'a': 1})
-    ns['d.b'] = 2
-    assert 2 == ns['d']['b']
+    ns = Namespace(d={"a": 1})
+    ns["d.b"] = 2
+    assert 2 == ns["d"]["b"]
 
 
-@pytest.mark.parametrize('key', [None, True, False, 1, 2.3])
+@pytest.mark.parametrize("key", [None, True, False, 1, 2.3])
 def test_contains_non_str_key(key):
     ns = Namespace()
     assert key not in ns
@@ -88,100 +88,100 @@ def test_contains_non_str_key(key):
 
 def test_pop():
     ns = Namespace()
-    ns['x.y.z'] = 1
-    assert 1 == ns.pop('x.y.z')
+    ns["x.y.z"] = 1
+    assert 1 == ns.pop("x.y.z")
     assert ns == Namespace(x=Namespace(y=Namespace()))
 
 
 def test_nested_item_invalid_set():
     ns = Namespace()
     with pytest.raises(KeyError):
-        ns['x.'] = 1
+        ns["x."] = 1
     with pytest.raises(KeyError):
-        ns['x .y'] = 2
+        ns["x .y"] = 2
 
 
 def test_nested_key_in():
     ns = Namespace()
-    ns['x.y.z'] = 1
-    assert 'x' in ns
-    assert 'x.y' in ns
-    assert 'x.y.z' in ns
-    assert 'a' not in ns
-    assert 'x.a' not in ns
-    assert 'x.y.a' not in ns
-    assert 'x.y.z.a' not in ns
-    assert 'x..y' not in ns
+    ns["x.y.z"] = 1
+    assert "x" in ns
+    assert "x.y" in ns
+    assert "x.y.z" in ns
+    assert "a" not in ns
+    assert "x.a" not in ns
+    assert "x.y.a" not in ns
+    assert "x.y.z.a" not in ns
+    assert "x..y" not in ns
     assert 123 not in ns
 
 
 @skip_if_no_setattr_insertion_order
 def test_items_generator():
     ns = Namespace()
-    ns['a'] = 1
-    ns['b.c'] = 2
-    ns['b.d'] = 3
-    ns['p.q.r'] = {'x': 4, 'y': 5}
+    ns["a"] = 1
+    ns["b.c"] = 2
+    ns["b.d"] = 3
+    ns["p.q.r"] = {"x": 4, "y": 5}
     items = list(ns.items())
-    assert items == [('a', 1), ('b.c', 2), ('b.d', 3), ('p.q.r', {'x': 4, 'y': 5})]
+    assert items == [("a", 1), ("b.c", 2), ("b.d", 3), ("p.q.r", {"x": 4, "y": 5})]
 
 
 @skip_if_no_setattr_insertion_order
 def test_keys_generator():
     ns = Namespace()
-    ns['a'] = 1
-    ns['b.c'] = 2
-    ns['b.d'] = 3
-    ns['p.q.r'] = {'x': 4, 'y': 5}
+    ns["a"] = 1
+    ns["b.c"] = 2
+    ns["b.d"] = 3
+    ns["p.q.r"] = {"x": 4, "y": 5}
     keys = list(ns.keys())
-    assert keys == ['a', 'b.c', 'b.d', 'p.q.r']
+    assert keys == ["a", "b.c", "b.d", "p.q.r"]
 
 
 @skip_if_no_setattr_insertion_order
 def test_values_generator():
     ns = Namespace()
-    ns['a'] = 1
-    ns['b.c'] = 2
-    ns['b.d'] = 3
-    ns['p.q.r'] = {'x': 4, 'y': 5}
+    ns["a"] = 1
+    ns["b.c"] = 2
+    ns["b.d"] = 3
+    ns["p.q.r"] = {"x": 4, "y": 5}
     values = list(ns.values())
-    assert values == [1, 2, 3, {'x': 4, 'y': 5}]
+    assert values == [1, 2, 3, {"x": 4, "y": 5}]
 
 
 def test_namespace_from_dict():
-    dic = {'a': 1, 'b': {'c': 2}}
+    dic = {"a": 1, "b": {"c": 2}}
     ns = Namespace(dic)
-    assert ns == Namespace(a=1, b={'c': 2})
+    assert ns == Namespace(a=1, b={"c": 2})
 
 
 def test_as_dict():
     ns = Namespace()
-    ns['w'] = 1
-    ns['x.y'] = 2
-    ns['x.z'] = 3
-    ns['p'] = {'q': Namespace(r=4)}
-    assert ns.as_dict() == {'w': 1, 'x': {'y': 2, 'z': 3}, 'p': {'q': {'r': 4}}}
+    ns["w"] = 1
+    ns["x.y"] = 2
+    ns["x.z"] = 3
+    ns["p"] = {"q": Namespace(r=4)}
+    assert ns.as_dict() == {"w": 1, "x": {"y": 2, "z": 3}, "p": {"q": {"r": 4}}}
     assert Namespace().as_dict() == {}
 
 
 def test_as_flat():
     ns = Namespace()
-    ns['w'] = 1
-    ns['x.y.z'] = 2
+    ns["w"] = 1
+    ns["x.y.z"] = 2
     flat = ns.as_flat()
     assert isinstance(flat, argparse.Namespace)
-    assert vars(flat) == {'w': 1, 'x.y.z': 2}
+    assert vars(flat) == {"w": 1, "x.y.z": 2}
 
 
 def test_clone():
     ns = Namespace()
-    pqr = {'x': 4, 'y': 5}
-    ns['a'] = 1
-    ns['p.q.r'] = pqr
-    assert ns['p.q.r'] is pqr
+    pqr = {"x": 4, "y": 5}
+    ns["a"] = 1
+    ns["p.q.r"] = pqr
+    assert ns["p.q.r"] is pqr
     assert ns.clone() == ns
-    assert ns.clone()['p.q.r'] is not pqr
-    assert ns.clone()['p.q'] is not ns['p.q']
+    assert ns.clone()["p.q.r"] is not pqr
+    assert ns.clone()["p.q"] is not ns["p.q"]
 
 
 def test_update_shallow():
@@ -199,10 +199,10 @@ def test_update_invalid():
 
 def test_init_from_argparse_flat_namespace():
     argparse_ns = argparse.Namespace()
-    setattr(argparse_ns, 'w', 0)
-    setattr(argparse_ns, 'x.y.a', 1)
-    setattr(argparse_ns, 'x.y.b', 2)
-    setattr(argparse_ns, 'z.c', 3)
+    setattr(argparse_ns, "w", 0)
+    setattr(argparse_ns, "x.y.a", 1)
+    setattr(argparse_ns, "x.y.b", 2)
+    setattr(argparse_ns, "z.c", 3)
     ns = Namespace(argparse_ns)
     assert ns == Namespace(w=0, x=Namespace(y=Namespace(a=1, b=2)), z=Namespace(c=3))
 
@@ -216,9 +216,9 @@ def test_init_invalid():
 
 def test_namespace_to_dict():
     ns = Namespace()
-    ns['w'] = 1
-    ns['x.y'] = 2
-    ns['x.z'] = 3
+    ns["w"] = 1
+    ns["x.y"] = 2
+    ns["x.z"] = 3
     dic1 = namespace_to_dict(ns)
     dic2 = ns.as_dict()
     assert dic1 == dic2
@@ -227,7 +227,7 @@ def test_namespace_to_dict():
 
 def test_dict_to_namespace():
     ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
-    dic = {'a': 1, 'b': {'c': 2}, 'd': [{'e': 3}]}
+    dic = {"a": 1, "b": {"c": 2}, "d": [{"e": 3}]}
     ns2 = dict_to_namespace(dic)
     assert ns1 == ns2
 
@@ -243,51 +243,51 @@ def test_use_for_kwargs():
 
 def test_shallow_clashing_keys():
     ns = Namespace()
-    assert 'get' not in ns
-    exec('ns.get = 1')
-    assert 'get' in ns
-    assert ns.get('get') == 1
-    assert dict(ns.items()) == {'get': 1}
-    ns['pop'] = 2
-    assert ns['pop'] == 2
-    assert ns.as_dict() == {'get': 1, 'pop': 2}
-    assert ns.pop('get') == 1
-    assert dict(**ns) == {'pop': 2}
+    assert "get" not in ns
+    exec("ns.get = 1")
+    assert "get" in ns
+    assert ns.get("get") == 1
+    assert dict(ns.items()) == {"get": 1}
+    ns["pop"] = 2
+    assert ns["pop"] == 2
+    assert ns.as_dict() == {"get": 1, "pop": 2}
+    assert ns.pop("get") == 1
+    assert dict(**ns) == {"pop": 2}
     assert ns.as_flat() == argparse.Namespace(pop=2)
-    del ns['pop']
+    del ns["pop"]
     assert ns == Namespace()
-    assert namespace_to_dict(Namespace(update=3)) == {'update': 3}
+    assert namespace_to_dict(Namespace(update=3)) == {"update": 3}
 
 
 def test_leaf_clashing_keys():
     ns = Namespace()
-    ns['x.get'] = 1
-    assert 'x.get' in ns
-    assert ns.get('x.get') == 1
-    assert ns['x.get'] == 1
-    assert ns['x']['get'] == 1
-    assert ns.as_dict() == {'x': {'get': 1}}
-    assert dict(ns.items()) == {'x.get': 1}
+    ns["x.get"] = 1
+    assert "x.get" in ns
+    assert ns.get("x.get") == 1
+    assert ns["x.get"] == 1
+    assert ns["x"]["get"] == 1
+    assert ns.as_dict() == {"x": {"get": 1}}
+    assert dict(ns.items()) == {"x.get": 1}
     assert str(ns.as_flat()) == "Namespace(**{'x.get': 1})"
-    assert ns.pop('x.get') == 1
-    assert ns.get('x.get') is None
+    assert ns.pop("x.get") == 1
+    assert ns.get("x.get") is None
 
 
 def test_shallow_branch_clashing_keys():
     ns = Namespace(get=Namespace(x=2))
-    assert 'get.x' in ns
-    assert ns.get('get.x') == 2
-    assert ns['get.x'] == 2
-    assert ns['get'] == Namespace(x=2)
-    assert ns.as_dict() == {'get': {'x': 2}}
-    assert dict(ns.items()) == {'get.x': 2}
-    assert ns.pop('get.x') == 2
+    assert "get.x" in ns
+    assert ns.get("get.x") == 2
+    assert ns["get.x"] == 2
+    assert ns["get"] == Namespace(x=2)
+    assert ns.as_dict() == {"get": {"x": 2}}
+    assert dict(ns.items()) == {"get.x": 2}
+    assert ns.pop("get.x") == 2
 
 
 def test_nested_branch_clashing_keys():
     ns = Namespace()
-    ns['x.get.y'] = 3
-    assert 'x.get.y' in ns
-    assert ns.get('x.get.y') == 3
-    assert ns.as_dict() == {'x': {'get': {'y': 3}}}
-    assert ns.pop('x.get.y') == 3
+    ns["x.get.y"] = 3
+    assert "x.get.y" in ns
+    assert ns.get("x.get.y") == 3
+    assert ns.as_dict() == {"x": {"get": {"y": 3}}}
+    assert ns.pop("x.get.y") == 3

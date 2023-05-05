@@ -31,18 +31,18 @@ def get_parser_help(parser: ArgumentParser) -> str:
 
 
 skip_if_not_cpython = pytest.mark.skipif(
-    platform.python_implementation() != 'CPython',
-    reason='only supported in CPython',
+    platform.python_implementation() != "CPython",
+    reason="only supported in CPython",
 )
 
 
 skip_if_not_posix = pytest.mark.skipif(
-    os.name != 'posix',
-    reason='only supported in posix systems',
+    os.name != "posix",
+    reason="only supported in posix systems",
 )
 
 
 skip_if_jsonschema_unavailable = pytest.mark.skipif(
-    not find_spec('jsonschema'),
-    reason='jsonschema package is required',
+    not find_spec("jsonschema"),
+    reason="jsonschema package is required",
 )
