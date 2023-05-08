@@ -28,22 +28,22 @@ from .optionals import import_ruyaml
 from .type_checking import ArgumentParser, ruyamlCommentedMap
 from .typehints import ActionTypeHint, type_to_str
 
-__all__ = ['DefaultHelpFormatter']
+__all__ = ["DefaultHelpFormatter"]
 
 
-empty_help: str = '_EMPTY_HELP_'
+empty_help: str = "_EMPTY_HELP_"
 
 
 class PercentTemplate(Template):
-    delimiter = '%'
-    pattern = r'''
+    delimiter = "%"
+    pattern = r"""
     \%\((?:
     (?P<escaped>\%\%)|
     (?P<named>[_a-z][_a-z0-9]*)\)s|
     (?P<braced>[_a-z][_a-z0-9]*)\)s|
     (?P<invalid>)
     )
-    '''  # type: ignore
+    """  # type: ignore
 
 
 class DefaultHelpFormatter(HelpFormatter):
@@ -57,30 +57,31 @@ class DefaultHelpFormatter(HelpFormatter):
     """
 
     def _get_help_string(self, action: Action) -> str:
-        action_help = ' ' if action.help == empty_help else action.help
+        action_help = " " if action.help == empty_help else action.help
         assert isinstance(action_help, str)
         if isinstance(action, ActionConfigFile):
             return action_help
         if isinstance(action, _HelpAction):
             help_str = action_help[0].upper() + action_help[1:]
-            if help_str[-1] != '.':
-                help_str += '.'
+            if help_str[-1] != ".":
+                help_str += "."
             return help_str
-        help_str = ''
-        is_required = hasattr(action, '_required') and action._required
+        help_str = ""
+        is_required = hasattr(action, "_required") and action._required
         if is_required:
-            help_str = 'required'
-        if '%(type)' not in action_help and self._get_type_str(action) is not None:
-            help_str += (', ' if help_str else '') + 'type: %(type)s'
-        if '%(default)' not in action_help and \
-           action.default != SUPPRESS and \
-           (action.default is not None or not is_required) and \
-           (action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE}):
-            help_str += (', ' if help_str else '') + 'default: %(default)s'
+            help_str = "required"
+        if "%(type)" not in action_help and self._get_type_str(action) is not None:
+            help_str += (", " if help_str else "") + "type: %(type)s"
+        if (
+            "%(default)" not in action_help
+            and action.default != SUPPRESS
+            and (action.default is not None or not is_required)
+            and (action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE})
+        ):
+            help_str += (", " if help_str else "") + "default: %(default)s"
         if isinstance(action, ActionTypeHint):
             help_str += action.extra_help()
-        return action_help + (' ('+help_str+')' if help_str else '')
-
+        return action_help + (" (" + help_str + ")" if help_str else "")
 
     def _format_usage(self, *args, **kwargs) -> str:
         usage = super()._format_usage(*args, **kwargs)
@@ -90,76 +91,70 @@ class DefaultHelpFormatter(HelpFormatter):
                 default = parser.get_default(key)
             except KeyError:
                 default = None
-            if default is None and f'[--{key} ' in usage:
-                usage = re.sub(f'\\[(--{key} [^\\]]+)]', r'\1', usage, count=1)
+            if default is None and f"[--{key} " in usage:
+                usage = re.sub(f"\\[(--{key} [^\\]]+)]", r"\1", usage, count=1)
         return usage
-
 
     def _format_action_invocation(self, action: Action) -> str:
         parser = parent_parser.get()
         if action.option_strings == [] or action.default == SUPPRESS or not parser.default_env:
             return super()._format_action_invocation(action)
-        extr = ''
+        extr = ""
         if parser.default_env:
-            extr += '\n  ENV:   ' + get_env_var(self, action)
-        return 'ARG:   ' + super()._format_action_invocation(action) + extr
-
+            extr += "\n  ENV:   " + get_env_var(self, action)
+        return "ARG:   " + super()._format_action_invocation(action) + extr
 
     def _get_default_metavar_for_optional(self, action: Action) -> str:
-        return action.dest.rsplit('.')[-1].upper()
-
+        return action.dest.rsplit(".")[-1].upper()
 
     def _expand_help(self, action: Action) -> str:
         params = dict(vars(action), prog=self._prog)
-        if params.get('choices') is not None:
-            choices_str = ', '.join([str(c) for c in params['choices']])
-            params['choices'] = choices_str
+        if params.get("choices") is not None:
+            choices_str = ", ".join([str(c) for c in params["choices"]])
+            params["choices"] = choices_str
         type_str = self._get_type_str(action)
         if type_str is not None:
-            params['type'] = type_str
+            params["type"] = type_str
         orig_default = action.default
-        if params.get('default') == SUPPRESS:
-            del params['default']
-        elif 'default' in params:
+        if params.get("default") == SUPPRESS:
+            del params["default"]
+        elif "default" in params:
             defaults = defaults_cache.get()
             if defaults is not None:
-                params['default'] = action.default = defaults.get(action.dest)
-            if params['default'] is None:
-                params['default'] = 'null'
-            elif isinstance(params['default'], Namespace):
-                params['default'] = params['default'].as_dict()
+                params["default"] = action.default = defaults.get(action.dest)
+            if params["default"] is None:
+                params["default"] = "null"
+            elif isinstance(params["default"], Namespace):
+                params["default"] = params["default"].as_dict()
         help_str = PercentTemplate(self._get_help_string(action)).safe_substitute(params)
         action.default = orig_default
         return help_str
 
-
     def _get_type_str(self, action: Action) -> Optional[str]:
         type_str = None
         if isinstance(action, ActionYesNo):
-            type_str = 'bool'
+            type_str = "bool"
         elif action.type is not None:
             type_str = type_to_str(action.type)
         elif isinstance(action, ActionTypeHint):
             type_str = type_to_str(action._typehint)
         return type_str
 
-
     def add_usage(self, usage: Optional[str], actions: Iterable[Action], *args, **kwargs) -> None:
         actions = [a for a in actions if not isinstance(a, ActionLink)]
         super().add_usage(usage, actions, *args, **kwargs)
 
-
     def add_yaml_comments(self, cfg: str) -> str:
         """Adds help text as yaml comments."""
-        ruyaml = import_ruyaml('add_yaml_comments')
+        ruyaml = import_ruyaml("add_yaml_comments")
         yaml = ruyaml.YAML()
         cfg = yaml.load(cfg)
 
-        def get_subparsers(parser, prefix=''):
+        def get_subparsers(parser, prefix=""):
             subparsers = {}
             if parser._subparsers is not None:
                 for key, subparser in parser._subparsers._group_actions[0].choices.items():
-                    full_key = (prefix+'.' if prefix else '')+key
+                    full_key = (prefix + "." if prefix else "") + key
                     subparsers[full_key] = subparser
                     subparsers.update(get_subparsers(subparser, prefix=full_key))
             return subparsers
@@ -171,17 +166,19 @@ class DefaultHelpFormatter(HelpFormatter):
         group_titles = {}
         for parser_key, parser in parsers.items():
             group_titles[parser_key] = parser.description
-            prefix = '' if parser_key is None else parser_key + '.'
+            prefix = "" if parser_key is None else parser_key + "."
             for group in parser._action_groups:
                 actions = filter_default_actions(group._group_actions)
-                actions = [a for a in actions if not isinstance(a, (_ActionConfigLoad, ActionConfigFile, _ActionSubCommands))]
-                keys = {re.sub(r'\.?[^.]+$', '', a.dest) for a in actions if '.' in a.dest}
+                actions = [
+                    a for a in actions if not isinstance(a, (_ActionConfigLoad, ActionConfigFile, _ActionSubCommands))
+                ]
+                keys = {re.sub(r"\.?[^.]+$", "", a.dest) for a in actions if "." in a.dest}
                 for key in keys:
                     group_titles[prefix + key] = group.title
 
-        def set_comments(cfg, prefix='', depth=0):
+        def set_comments(cfg, prefix="", depth=0):
             for key in cfg.keys():
-                full_key = (prefix+'.' if prefix else '')+key
+                full_key = (prefix + "." if prefix else "") + key
                 action = _find_action(parser, full_key)
                 text = None
                 if full_key in group_titles and isinstance(cfg[key], dict):
@@ -191,7 +188,7 @@ class DefaultHelpFormatter(HelpFormatter):
                 if isinstance(cfg[key], dict):
                     if text:
                         self.set_yaml_group_comment(text, cfg, key, depth)
-                    set_comments(cfg[key], full_key, depth+1)
+                    set_comments(cfg[key], full_key, depth + 1)
                 elif text:
                     self.set_yaml_argument_comment(text, cfg, key, depth)
 
@@ -202,11 +199,10 @@ class DefaultHelpFormatter(HelpFormatter):
         yaml.dump(cfg, out)
         return out.getvalue()
 
-
     def set_yaml_start_comment(
         self,
         text: str,
-        cfg: 'ruyamlCommentedMap',
+        cfg: "ruyamlCommentedMap",
     ):
         """Sets the start comment to a ruyaml object.
 
@@ -216,11 +212,10 @@ class DefaultHelpFormatter(HelpFormatter):
         """
         cfg.yaml_set_start_comment(text)
 
-
     def set_yaml_group_comment(
         self,
         text: str,
-        cfg: 'ruyamlCommentedMap',
+        cfg: "ruyamlCommentedMap",
         key: str,
         depth: int,
     ):
@@ -232,13 +227,12 @@ class DefaultHelpFormatter(HelpFormatter):
             key: The key of the group.
             depth: The nested level of the group.
         """
-        cfg.yaml_set_comment_before_after_key(key, before='\n'+text, indent=2*depth)
-
+        cfg.yaml_set_comment_before_after_key(key, before="\n" + text, indent=2 * depth)
 
     def set_yaml_argument_comment(
         self,
         text: str,
-        cfg: 'ruyamlCommentedMap',
+        cfg: "ruyamlCommentedMap",
         key: str,
         depth: int,
     ):
@@ -250,11 +244,11 @@ class DefaultHelpFormatter(HelpFormatter):
             key: The key of the argument.
             depth: The nested level of the argument.
         """
-        cfg.yaml_set_comment_before_after_key(key, before='\n'+text, indent=2*depth)
+        cfg.yaml_set_comment_before_after_key(key, before="\n" + text, indent=2 * depth)
 
 
 def get_env_var(
-    parser_or_formatter: Union['ArgumentParser', DefaultHelpFormatter],
+    parser_or_formatter: Union["ArgumentParser", DefaultHelpFormatter],
     action: Optional[Action] = None,
 ) -> str:
     """Returns the environment variable name for a given parser or formatter and action."""
@@ -262,10 +256,10 @@ def get_env_var(
         parser = parent_parser.get()
     else:
         parser = parser_or_formatter
-    env_var = ''
+    env_var = ""
     if isinstance(parser.env_prefix, str):
-        env_var = parser.env_prefix + '_'
+        env_var = parser.env_prefix + "_"
     if action:
         env_var += action.dest
-    env_var = env_var.replace('.', '__').upper()
+    env_var = env_var.replace(".", "__").upper()
     return env_var

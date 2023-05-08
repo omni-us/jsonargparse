@@ -11,53 +11,54 @@ from .optionals import import_jsonnet, omegaconf_support
 from .type_checking import ArgumentParser
 
 __all__ = [
-    'set_loader',
-    'set_dumper',
+    "set_loader",
+    "set_dumper",
 ]
 
 
-regex_curly_comma = re.compile(' *[{},] *')
+regex_curly_comma = re.compile(" *[{},] *")
 
 
-class DefaultLoader(getattr(yaml, 'CSafeLoader', yaml.SafeLoader)):  # type: ignore
+class DefaultLoader(getattr(yaml, "CSafeLoader", yaml.SafeLoader)):  # type: ignore
     pass
 
 
 # https://stackoverflow.com/a/37958106/2732151
 def remove_implicit_resolver(cls, tag_to_remove):
-    if 'yaml_implicit_resolvers' not in cls.__dict__:
+    if "yaml_implicit_resolvers" not in cls.__dict__:
         cls.yaml_implicit_resolvers = cls.yaml_implicit_resolvers.copy()
 
     for first_letter, mappings in cls.yaml_implicit_resolvers.items():
-        cls.yaml_implicit_resolvers[first_letter] = [
-            (tag, regexp) for tag, regexp in mappings if tag != tag_to_remove
-        ]
+        cls.yaml_implicit_resolvers[first_letter] = [(tag, regexp) for tag, regexp in mappings if tag != tag_to_remove]
 
 
-remove_implicit_resolver(DefaultLoader, 'tag:yaml.org,2002:timestamp')
-remove_implicit_resolver(DefaultLoader, 'tag:yaml.org,2002:float')
+remove_implicit_resolver(DefaultLoader, "tag:yaml.org,2002:timestamp")
+remove_implicit_resolver(DefaultLoader, "tag:yaml.org,2002:float")
 
 
 DefaultLoader.add_implicit_resolver(
-    'tag:yaml.org,2002:float',
-    re.compile('''^(?:
+    "tag:yaml.org,2002:float",
+    re.compile(
+        """^(?:
      [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
     |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
     |\\.[0-9_]+(?:[eE][-+][0-9]+)?
     |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
     |[-+]?\\.(?:inf|Inf|INF)
-    |\\.(?:nan|NaN|NAN))$''', re.X),
-    list('-+0123456789.'),
+    |\\.(?:nan|NaN|NAN))$""",
+        re.X,
+    ),
+    list("-+0123456789."),
 )
 
 
 def yaml_load(stream):
-    if stream.strip() == '-':
+    if stream.strip() == "-":
         value = stream
     else:
         value = yaml.load(stream, Loader=DefaultLoader)
     if isinstance(value, dict) and value and all(v is None for v in value.values()):
-        if len(value) == 1 and stream.strip() == next(iter(value.keys())) + ':':
+        if len(value) == 1 and stream.strip() == next(iter(value.keys())) + ":":
             value = stream
         else:
             keys = {k for k in regex_curly_comma.split(stream) if k}
@@ -66,10 +67,11 @@ def yaml_load(stream):
     return value
 
 
-def jsonnet_load(stream, path='', ext_vars=None):
+def jsonnet_load(stream, path="", ext_vars=None):
     from .jsonnet import ActionJsonnet
+
     ext_vars, ext_codes = ActionJsonnet.split_ext_vars(ext_vars)
-    _jsonnet = import_jsonnet('jsonnet_load')
+    _jsonnet = import_jsonnet("jsonnet_load")
     try:
         val = _jsonnet.evaluate_snippet(path, stream, ext_vars=ext_vars, ext_codes=ext_codes)
     except RuntimeError as ex:
@@ -81,16 +83,16 @@ def jsonnet_load(stream, path='', ext_vars=None):
 
 
 loaders: Dict[str, Callable] = {
-    'yaml': yaml_load,
-    'jsonnet': jsonnet_load,
+    "yaml": yaml_load,
+    "jsonnet": jsonnet_load,
 }
 
 pyyaml_exceptions = (yaml.YAMLError,)
 jsonnet_exceptions = pyyaml_exceptions + (ValueError,)
 
 loader_exceptions: Dict[str, Tuple[Type[Exception], ...]] = {
-    'yaml': pyyaml_exceptions,
-    'jsonnet': jsonnet_exceptions,
+    "yaml": pyyaml_exceptions,
+    "jsonnet": jsonnet_exceptions,
 }
 
 
@@ -117,14 +119,14 @@ def load_value(value: str, simple_types: bool = False, **kwargs):
 
 
 dump_yaml_kwargs = {
-    'default_flow_style': False,
-    'allow_unicode': True,
-    'sort_keys': False,
+    "default_flow_style": False,
+    "allow_unicode": True,
+    "sort_keys": False,
 }
 
 dump_json_kwargs = {
-    'ensure_ascii': False,
-    'sort_keys': False,
+    "ensure_ascii": False,
+    "sort_keys": False,
 }
 
 
@@ -133,50 +135,52 @@ def yaml_dump(data):
 
 
 def yaml_comments_dump(data, parser):
-    dump = dumpers['yaml'](data)
+    dump = dumpers["yaml"](data)
     formatter = parser.formatter_class(parser.prog)
     return formatter.add_yaml_comments(dump)
 
 
 def json_dump(data):
     import json
-    return json.dumps(data, separators=(',', ':'), **dump_json_kwargs)
+
+    return json.dumps(data, separators=(",", ":"), **dump_json_kwargs)
 
 
 def json_indented_dump(data):
     import json
-    return json.dumps(data, indent=2, **dump_json_kwargs)+'\n'
+
+    return json.dumps(data, indent=2, **dump_json_kwargs) + "\n"
 
 
 dumpers: Dict[str, Callable] = {
-    'yaml': yaml_dump,
-    'yaml_comments': yaml_comments_dump,
-    'json': json_dump,
-    'json_indented': json_indented_dump,
-    'jsonnet': json_indented_dump,
+    "yaml": yaml_dump,
+    "yaml_comments": yaml_comments_dump,
+    "json": json_dump,
+    "json_indented": json_indented_dump,
+    "jsonnet": json_indented_dump,
 }
 
-comment_prefix: Dict[str,str] = {
-    'yaml': '# ',
-    'yaml_comments': '# ',
-    'jsonnet': '// ',
+comment_prefix: Dict[str, str] = {
+    "yaml": "# ",
+    "yaml_comments": "# ",
+    "jsonnet": "// ",
 }
 
 
 def check_valid_dump_format(dump_format: str):
-    if dump_format not in {'parser_mode'}.union(set(dumpers)):
+    if dump_format not in {"parser_mode"}.union(set(dumpers)):
         raise ValueError(f'Unknown output format "{dump_format}".')
 
 
-def dump_using_format(parser: 'ArgumentParser', data: dict, dump_format: str) -> str:
-    if dump_format == 'parser_mode':
-        dump_format = parser.parser_mode if parser.parser_mode in dumpers else 'yaml'
-    args = (data, parser) if dump_format == 'yaml_comments' else (data,)
+def dump_using_format(parser: "ArgumentParser", data: dict, dump_format: str) -> str:
+    if dump_format == "parser_mode":
+        dump_format = parser.parser_mode if parser.parser_mode in dumpers else "yaml"
+    args = (data, parser) if dump_format == "yaml_comments" else (data,)
     dump = dumpers[dump_format](*args)
     if parser.dump_header and comment_prefix.get(dump_format):
         prefix = comment_prefix[dump_format]
-        header = '\n'.join(prefix + line for line in parser.dump_header)
-        dump = f'{header}\n{dump}'
+        header = "\n".join(prefix + line for line in parser.dump_header)
+        dump = f"{header}\n{dump}"
     return dump
 
 
@@ -209,6 +213,7 @@ def set_dumper(format_name: str, dumper_fn: Callable[[Any], str]):
 
 
 def set_omegaconf_loader():
-    if omegaconf_support and 'omegaconf' not in loaders:
+    if omegaconf_support and "omegaconf" not in loaders:
         from .optionals import get_omegaconf_loader
-        set_loader('omegaconf', get_omegaconf_loader())
+
+        set_loader("omegaconf", get_omegaconf_loader())

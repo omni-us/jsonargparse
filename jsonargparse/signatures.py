@@ -20,8 +20,8 @@ from .typing import register_pydantic_type
 from .util import LoggerProperty, get_import_path, iter_to_set_str
 
 __all__ = [
-    'compose_dataclasses',
-    'SignatureArguments',
+    "compose_dataclasses",
+    "SignatureArguments",
 ]
 
 
@@ -87,14 +87,13 @@ class SignatureArguments(LoggerProperty):
 
         if default:
             skip = skip or set()
-            prefix = nested_key+'.' if nested_key else ''
+            prefix = nested_key + "." if nested_key else ""
             defaults = default.lazy_get_init_args()
             if defaults:
-                defaults = {prefix+k: v for k, v in defaults.items() if k not in skip}
+                defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
                 self.set_defaults(**defaults)  # type: ignore
 
         return added_args
-
 
     def add_method_arguments(
         self,
@@ -144,7 +143,6 @@ class SignatureArguments(LoggerProperty):
             sub_configs=sub_configs,
         )
 
-
     def add_function_arguments(
         self,
         function: Callable,
@@ -189,7 +187,6 @@ class SignatureArguments(LoggerProperty):
             sub_configs=sub_configs,
         )
 
-
     def _add_signature_arguments(
         self,
         function_or_class,
@@ -227,10 +224,12 @@ class SignatureArguments(LoggerProperty):
         skip_positionals = [s for s in (skip or []) if isinstance(s, int)]
         if skip_positionals:
             if len(skip_positionals) > 1 or any(p <= 0 for p in skip_positionals):
-                raise ValueError(f'Unexpected number of positionals to skip: {skip_positionals}')
-            names = {p.name for p in params[:skip_positionals[0]]}
-            params = params[skip_positionals[0]:]
-            self.logger.debug(f'Skipping parameters {names} because {skip_positionals[0]} positionals requested to be skipped.')
+                raise ValueError(f"Unexpected number of positionals to skip: {skip_positionals}")
+            names = {p.name for p in params[: skip_positionals[0]]}
+            params = params[skip_positionals[0] :]
+            self.logger.debug(
+                f"Skipping parameters {names} because {skip_positionals[0]} positionals requested to be skipped."
+            )
 
         ## Create group if requested ##
         doc_group = get_doc_short_description(function_or_class, method_name, logger=self.logger)
@@ -261,7 +260,6 @@ class SignatureArguments(LoggerProperty):
 
         return added_args
 
-
     def _add_signature_parameter(
         self,
         group,
@@ -275,7 +273,7 @@ class SignatureArguments(LoggerProperty):
         instantiate: bool = True,
         linked_targets: Optional[Set[str]] = None,
         default: Any = inspect_empty,
-        **kwargs
+        **kwargs,
     ):
         name = param.name
         kind = param.kind
@@ -292,52 +290,56 @@ class SignatureArguments(LoggerProperty):
         if is_required and linked_targets is not None and name in linked_targets:
             default = None
             is_required = False
-        if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or \
-           (not is_required and name[0] == '_') or \
-           (annotation == inspect_empty and not is_required and default is None):
+        if (
+            kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD}
+            or (not is_required and name[0] == "_")
+            or (annotation == inspect_empty and not is_required and default is None)
+        ):
             return
         elif skip and name in skip:
-            self.logger.debug(skip_message+'Parameter requested to be skipped.')
+            self.logger.debug(skip_message + "Parameter requested to be skipped.")
             return
         if is_factory_class(default):
             default = param.parent.__dataclass_fields__[name].default_factory()
         if annotation == inspect_empty and not is_required:
             annotation = type(default)
-        if 'help' not in kwargs:
-            kwargs['help'] = param.doc
+        if "help" not in kwargs:
+            kwargs["help"] = param.doc
         if not is_required:
-            kwargs['default'] = default
+            kwargs["default"] = default
             if default is None and not is_optional(annotation, object):
                 annotation = Optional[annotation]
         elif not as_positional:
-            kwargs['required'] = True
+            kwargs["required"] = True
         is_subclass_typehint = False
         is_dataclass_like_typehint = is_dataclass_like(annotation)
-        dest = (nested_key+'.' if nested_key else '') + name
-        args = [dest if is_required and as_positional else '--'+dest]
+        dest = (nested_key + "." if nested_key else "") + name
+        args = [dest if is_required and as_positional else "--" + dest]
         if param.origin:
-            group_name = '; '.join(str(o) for o in param.origin)
+            group_name = "; ".join(str(o) for o in param.origin)
             if group_name in group.parser.groups:
                 group = group.parser.groups[group_name]
             else:
                 group = group.parser.add_argument_group(
-                    f'Conditional arguments [origins: {group_name}]',
+                    f"Conditional arguments [origins: {group_name}]",
                     name=group_name,
                 )
-        if annotation in {str, int, float, bool} or \
-           is_subclass(annotation, (str, int, float)) or \
-           is_dataclass_like_typehint:
-            kwargs['type'] = annotation
+        if (
+            annotation in {str, int, float, bool}
+            or is_subclass(annotation, (str, int, float))
+            or is_dataclass_like_typehint
+        ):
+            kwargs["type"] = annotation
             register_pydantic_type(annotation)
         elif annotation != inspect_empty:
             try:
                 is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation, all_subtypes=False)
-                kwargs['type'] = annotation
-                sub_add_kwargs: dict = {'fail_untyped': fail_untyped, 'sub_configs': sub_configs}
+                kwargs["type"] = annotation
+                sub_add_kwargs: dict = {"fail_untyped": fail_untyped, "sub_configs": sub_configs}
                 if is_subclass_typehint:
-                    prefix = name + '.init_args.'
-                    subclass_skip = {s[len(prefix):] for s in skip or [] if s.startswith(prefix)}
-                    sub_add_kwargs['skip'] = subclass_skip
+                    prefix = name + ".init_args."
+                    subclass_skip = {s[len(prefix) :] for s in skip or [] if s.startswith(prefix)}
+                    sub_add_kwargs["skip"] = subclass_skip
                 else:
                     register_pydantic_type(annotation)
                 args = ActionTypeHint.prepare_add_argument(
@@ -349,28 +351,27 @@ class SignatureArguments(LoggerProperty):
                     sub_add_kwargs=sub_add_kwargs,
                 )
             except ValueError as ex:
-                self.logger.debug(skip_message+str(ex))
-        if 'type' in kwargs or 'action' in kwargs:
+                self.logger.debug(skip_message + str(ex))
+        if "type" in kwargs or "action" in kwargs:
             sub_add_kwargs = {
-                'fail_untyped': fail_untyped,
-                'sub_configs': sub_configs,
-                'instantiate': instantiate,
+                "fail_untyped": fail_untyped,
+                "sub_configs": sub_configs,
+                "instantiate": instantiate,
             }
             if is_dataclass_like_typehint:
                 kwargs.update(sub_add_kwargs)
             action = group.add_argument(*args, **kwargs)
             action.sub_add_kwargs = sub_add_kwargs
             if is_subclass_typehint and len(subclass_skip) > 0:
-                action.sub_add_kwargs['skip'] = subclass_skip
+                action.sub_add_kwargs["skip"] = subclass_skip
             added_args.append(dest)
         elif is_required and fail_untyped:
             msg = f'With fail_untyped=True, all mandatory parameters must have a supported type. Parameter "{name}" from "{src}" '
             if isinstance(annotation, str):
-                msg += 'specifies the type as a string. Types as a string and `from __future__ import annotations` is currently not supported.'
+                msg += "specifies the type as a string. Types as a string and `from __future__ import annotations` is currently not supported."
             else:
-                msg += 'does not specify a type.'
+                msg += "does not specify a type."
             raise ValueError(msg)
-
 
     def add_dataclass_arguments(
         self,
@@ -379,7 +380,7 @@ class SignatureArguments(LoggerProperty):
         default: Optional[Union[Type, dict]] = None,
         as_group: bool = True,
         fail_untyped: bool = True,
-        **kwargs
+        **kwargs,
     ) -> List[str]:
         """Adds arguments from a dataclass based on its field types and docstrings.
 
@@ -401,7 +402,7 @@ class SignatureArguments(LoggerProperty):
             raise ValueError(f'Expected "theclass" argument to be a dataclass-like, given {theclass}')
 
         doc_group = get_doc_short_description(theclass, logger=self.logger)
-        for key in ['help', 'title']:
+        for key in ["help", "title"]:
             if key in kwargs and kwargs[key] is not None:
                 doc_group = kwargs.pop(key)
         group = self._create_group_if_requested(theclass, nested_key, as_group, doc_group, config_load_type=theclass)
@@ -412,11 +413,13 @@ class SignatureArguments(LoggerProperty):
                 with suppress(TypeError):
                     default = theclass(**default)
             if not isinstance(default, theclass):
-                raise ValueError(f'Expected "default" argument to be an instance of "{theclass.__name__}" or its kwargs dict, given {default}')
+                raise ValueError(
+                    f'Expected "default" argument to be an instance of "{theclass.__name__}" or its kwargs dict, given {default}'
+                )
             defaults = dataclass_to_dict(default)
 
         added_args: List[str] = []
-        param_kwargs = {k: v for k, v in kwargs.items() if k == 'sub_configs'}
+        param_kwargs = {k: v for k, v in kwargs.items() if k == "sub_configs"}
         for param in get_signature_parameters(theclass, None, logger=self.logger):
             self._add_signature_parameter(
                 group,
@@ -430,7 +433,6 @@ class SignatureArguments(LoggerProperty):
 
         return added_args
 
-
     def add_subclass_arguments(
         self,
         baseclass: Union[Type, Tuple[Type, ...]],
@@ -439,9 +441,9 @@ class SignatureArguments(LoggerProperty):
         skip: Optional[Set[str]] = None,
         instantiate: bool = True,
         required: bool = False,
-        metavar: str = 'CONFIG | CLASS_PATH_OR_NAME | .INIT_ARG_NAME VALUE',
+        metavar: str = "CONFIG | CLASS_PATH_OR_NAME | .INIT_ARG_NAME VALUE",
         help: str = 'One or more arguments specifying "class_path" and "init_args" for any subclass of %(baseclass_name)s.',
-        **kwargs
+        **kwargs,
     ):
         """Adds arguments to allow specifying any subclass of the given base class.
 
@@ -485,31 +487,35 @@ class SignatureArguments(LoggerProperty):
 
         added_args: List[str] = []
         if skip is not None:
-            skip = {nested_key+'.init_args.'+s for s in skip}
+            skip = {nested_key + ".init_args." + s for s in skip}
         param = ParamData(name=nested_key, annotation=Union[baseclass], component=baseclass)
         str_baseclass = iter_to_set_str(get_import_path(x) for x in baseclass)
-        kwargs.update({
-            'metavar': metavar,
-            'help': (help % {'baseclass_name': str_baseclass}),
-        })
-        if 'default' not in kwargs:
-            kwargs['default'] = SUPPRESS
+        kwargs.update(
+            {
+                "metavar": metavar,
+                "help": (help % {"baseclass_name": str_baseclass}),
+            }
+        )
+        if "default" not in kwargs:
+            kwargs["default"] = SUPPRESS
         self._add_signature_parameter(
-            group,
-            None,
-            param,
-            added_args,
-            skip,
-            sub_configs=True,
-            instantiate=instantiate,
-            **kwargs
+            group, None, param, added_args, skip, sub_configs=True, instantiate=instantiate, **kwargs
         )
 
-
-    def _create_group_if_requested(self, obj, nested_key, as_group, doc_group, config_load=True, config_load_type=None, required=False, instantiate=True):
+    def _create_group_if_requested(
+        self,
+        obj,
+        nested_key,
+        as_group,
+        doc_group,
+        config_load=True,
+        config_load_type=None,
+        required=False,
+        instantiate=True,
+    ):
         if required:
             if nested_key is None:
-                raise ValueError('A nested_key is mandatory to make required.')
+                raise ValueError("A nested_key is mandatory to make required.")
             self.required_args.add(nested_key)
 
         group = self
@@ -519,7 +525,7 @@ class SignatureArguments(LoggerProperty):
             name = obj.__name__ if nested_key is None else nested_key
             group = self.add_argument_group(strip_title(doc_group), name=name)
             if config_load and nested_key is not None:
-                group.add_argument('--'+nested_key, action=_ActionConfigLoad(basetype=config_load_type))
+                group.add_argument("--" + nested_key, action=_ActionConfigLoad(basetype=config_load_type))
             if inspect.isclass(obj) and nested_key is not None and instantiate:
                 group.dest = nested_key
                 group.group_class = obj
@@ -539,7 +545,7 @@ def group_instantiate_class(group, cfg):
 
 def strip_title(value):
     if value is not None:
-        value = re.sub(r'\.$', '', value.strip())
+        value = re.sub(r"\.$", "", value.strip())
     return value
 
 
@@ -550,6 +556,7 @@ def is_factory_class(value):
 def dataclass_to_dict(value) -> dict:
     if pydantic_support:
         from pydantic import BaseModel  # pylint: disable=no-name-in-module
+
         if isinstance(value, BaseModel):
             return value.dict()
     if isinstance(value, LazyInitBaseClass):
@@ -564,7 +571,7 @@ def compose_dataclasses(*args):
     class ComposedDataclass(*args):
         def __post_init__(self):
             for arg in args:
-                if hasattr(arg, '__post_init__'):
+                if hasattr(arg, "__post_init__"):
                     arg.__post_init__(self)
 
     return ComposedDataclass

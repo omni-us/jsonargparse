@@ -24,13 +24,13 @@ from .typehints import *  # noqa: F403
 from .util import *  # noqa: F403
 
 __all__ = [
-    'ArgumentError',
-    'OPTIONAL',
-    'REMAINDER',
-    'SUPPRESS',
-    'PARSER',
-    'ONE_OR_MORE',
-    'ZERO_OR_MORE',
+    "ArgumentError",
+    "OPTIONAL",
+    "REMAINDER",
+    "SUPPRESS",
+    "PARSER",
+    "ONE_OR_MORE",
+    "ZERO_OR_MORE",
 ]
 
 
@@ -67,4 +67,4 @@ __all__ += util.__all__
 __all__ += deprecated.__all__
 
 
-__version__ = '4.21.0'
+__version__ = "4.21.0"
