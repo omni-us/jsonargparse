@@ -45,7 +45,7 @@ def is_meta_key(key: str) -> bool:
 
 @overload
 def strip_meta(cfg: "Namespace") -> "Namespace":
-    ...
+    ...  # pragma: no cover
 
 
 @overload
