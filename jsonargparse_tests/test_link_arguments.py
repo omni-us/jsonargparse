@@ -608,3 +608,28 @@ class LinkArgumentsTempDirTests(TempDirTestCase):
 
             config_init = parser.instantiate_classes(config)
             self.assertIsInstance(config_init["b"].a_map["name"].d, D)
+
+
+class DeepTarget:
+    def __init__(self, a: int, b: int) -> None:
+        self.a = a
+        self.b = b
+
+class Node:
+    def __init__(self, sub_class: DeepTarget) -> None:
+        self.sub_class = sub_class
+
+class Source:
+    def __init__(self) -> None:
+        self. a = 1
+
+
+def test_on_instantiate_linking_deep_targets_multiple(parser):
+    parser.add_subclass_arguments(Node, "Node")
+    parser.add_class_arguments(Source, "Source")
+    parser.link_arguments("Source.a", "Node.init_args.sub_class.init_args.a", apply_on="instantiate")
+    parser.link_arguments("Source.a", "Node.init_args.sub_class.init_args.b", apply_on="instantiate")
+    cfg = parser.parse_args(["--Node=Node", "--Node.init_args.sub_class=DeepTarget"])
+    init = parser.instantiate_classes(cfg)
+    assert 1 == init.Node.sub_class.a
+    assert 1 == init.Node.sub_class.b
