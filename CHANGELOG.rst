@@ -19,6 +19,8 @@ Fixed
 ^^^^^
 - AST resolver not working for dict used in a method when the dict is created
   using the curly braces syntax.
+- Failure on multiple deep arguments linked on instantiation (`#275
+  <https://github.com/omni-us/jsonargparse/issues/275>`__).
 
 
 v4.21.0 (2023-04-21)

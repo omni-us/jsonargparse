@@ -3,8 +3,6 @@ fail_fast: true
 ci:
   skip:
   - mypy
-  - pycodestyle
-  - pylint
   - tox
   - coverage
 
@@ -27,23 +25,11 @@ repos:
   hooks:
   - id: isort
 
-- repo: https://github.com/psf/black
-  rev: 23.3.0
+- repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: v0.0.264
   hooks:
-    - id: black
-
-- repo: https://github.com/asottile/blacken-docs
-  rev: 1.13.0
-  hooks:
-    - id: blacken-docs
-      args:
-        - "--line-length=120"
-        - "--skip-errors"
-
-- repo: https://github.com/PyCQA/autoflake
-  rev: v2.0.1
-  hooks:
-  - id: autoflake
+    - id: ruff
+      args: ["--fix"]
 
 - repo: local
   hooks:
@@ -103,20 +89,6 @@ repos:
     language: system
     types: [python]
     pass_filenames: false
-    verbose: true
-
-  - id: pycodestyle
-    name: pycodestyle
-    entry: pycodestyle --exclude=sphinx/conf.py,setup.py --ignore=E241,E265,E128,E266,E226,E722,E252,E231,W291,E303,E221,E402,E306,E704,E251,E301,W504,E302 --max-line-length=180
-    language: system
-    types: [python]
-    verbose: true
-
-  - id: pylint
-    name: pylint
-    entry: pylint
-    language: system
-    types: [python]
     verbose: true
 
   - id: tox

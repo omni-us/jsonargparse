@@ -1460,7 +1460,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         self._dump_header = dump_header
 
 
-from .deprecated import instantiate_subclasses_patch, parse_as_dict_patch
+from .deprecated import instantiate_subclasses_patch, parse_as_dict_patch  # noqa: E402
 
 instantiate_subclasses_patch()
 if "SPHINX_BUILD" not in os.environ:

@@ -384,7 +384,7 @@ def function_pop_get_from_kwargs(kn1: int = 0, **kw):
 
 
 def function_with_bug(**kws):
-    return does_not_exist(**kws)  # pylint: disable=undefined-variable
+    return does_not_exist(**kws)  # noqa: F821
 
 
 def function_unsupported_component(**kwds):

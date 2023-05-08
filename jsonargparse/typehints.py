@@ -1019,8 +1019,6 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
             sub_add_kwargs.setdefault("linked_targets", set())
             sub_add_kwargs["linked_targets"].add(key)
 
-            break
-
     discard_init_args_on_class_path_change(parser, prev_val, value)
 
     dict_kwargs = value.pop("dict_kwargs", {})

@@ -350,6 +350,6 @@ def del_clash_mark(key: str) -> str:
 
 
 # Temporal to provide backward compatibility in pytorch-lightning
-import yaml
+import yaml  # noqa: E402
 
 yaml.SafeDumper.add_representer(Namespace, lambda d, x: d.represent_mapping("tag:yaml.org,2002:map", x.as_dict()))
