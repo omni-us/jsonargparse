@@ -50,7 +50,7 @@ def strip_meta(cfg: "Namespace") -> "Namespace":
 
 @overload
 def strip_meta(cfg: Dict[str, Any]) -> Dict[str, Any]:
-    ...
+    ...  # pragma: no cover
 
 
 def strip_meta(cfg):
