@@ -1135,7 +1135,7 @@ class SignaturesTests(unittest.TestCase):
 
     def test_invalid_class_from_function(self):
 
-        def get_unknown() -> 'Unknown':  # type: ignore
+        def get_unknown() -> 'Unknown':  # type: ignore  # noqa: F821
             return None
 
         self.assertRaises(ValueError, lambda: class_from_function(get_unknown))

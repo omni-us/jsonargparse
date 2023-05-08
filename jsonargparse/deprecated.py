@@ -500,6 +500,6 @@ class ParserDeprecations:
 ParserError = ArgumentError
 
 
-import jsonargparse.optionals
+import jsonargparse.optionals  # noqa: E402
 
 jsonargparse.optionals.import_docstring_parse = import_docstring_parse  # type: ignore

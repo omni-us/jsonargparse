@@ -393,7 +393,7 @@ class TypeHintsTests(unittest.TestCase):
         with mock_module(Class) as module:
             cfg = parser.parse_args([f'--val+={module}.Class', '--val.p1=1', '--val.p2=2', '--val.p1=3'])
             self.assertEqual(cfg.val, [Namespace(class_path=f'{module}.Class', init_args=Namespace(p1=3, p2=2))])
-            cfg = parser.parse_args([f'--val+=Class', '--val.p2=2', '--val.p1=1'])
+            cfg = parser.parse_args(['--val+=Class', '--val.p2=2', '--val.p1=1'])
             self.assertEqual(cfg.val, [Namespace(class_path=f'{module}.Class', init_args=Namespace(p1=1, p2=2))])
 
 
@@ -1149,9 +1149,9 @@ class TypeHintsTests(unittest.TestCase):
             parser.add_argument('--data', type=Data)
             parser.set_defaults({'data': {'class_path': f'{module}.Data'}})
             cfg = parser.parse_args([
-                f'--data.init_args.p1=2',
-                f'--data.init_args.p2=y',
-                f'--data.init_args.p3=true',
+                '--data.init_args.p1=2',
+                '--data.init_args.p2=y',
+                '--data.init_args.p3=true',
             ])
             self.assertEqual(cfg.data.init_args, Namespace(p1=2, p2='y', p3=True))
 
@@ -1167,7 +1167,7 @@ class TypeHintsTests(unittest.TestCase):
 
         out = StringIO()
         with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args([f'--op.help=TextCalendar'])
+            parser.parse_args(['--op.help=TextCalendar'])
         self.assertIn('--op.init_args.firstweekday', out.getvalue())
 
 
@@ -1322,9 +1322,9 @@ class TypeHintsTests(unittest.TestCase):
         for typehint in [
             lambda: None,
             'unsupported',
-            Optional['unsupported'],
-            Tuple[int, 'unsupported'],
-            Union['unsupported1', 'unsupported2'],
+            Optional['unsupported'],  # noqa: F821
+            Tuple[int, 'unsupported'],  # noqa: F821
+            Union['unsupported1', 'unsupported2'],  # noqa: F821
         ]:
             with self.subTest(typehint):
                 with self.assertRaises(ValueError):
@@ -1334,7 +1334,7 @@ class TypeHintsTests(unittest.TestCase):
     def test_union_partially_unsupported_type(self):
         parser = ArgumentParser(logger={'level': 'DEBUG'})
         with self.assertLogs(logger=parser.logger, level='DEBUG') as log:
-            parser.add_argument('--union', type=Union[int, str, 'unsupported'])
+            parser.add_argument('--union', type=Union[int, str, 'unsupported'])  # noqa: F821
             self.assertEqual(1, len(log.output))
             self.assertIn('Discarding unsupported subtypes', log.output[0])
 
