@@ -3,22 +3,21 @@ from collections import namedtuple
 from copy import deepcopy
 from typing import Dict, FrozenSet, List, Set, Tuple, Type, Union
 
-var_map = namedtuple('var_map', 'name value')
-none_map = var_map(name='NoneType', value=type(None))
-union_map = var_map(name='Union', value=Union)
+var_map = namedtuple("var_map", "name value")
+none_map = var_map(name="NoneType", value=type(None))
+union_map = var_map(name="Union", value=Union)
 pep585_map = {
-    'dict': var_map(name='Dict', value=Dict),
-    'frozenset': var_map(name='FrozenSet', value=FrozenSet),
-    'list': var_map(name='List', value=List),
-    'set': var_map(name='Set', value=Set),
-    'tuple': var_map(name='Tuple', value=Tuple),
-    'type': var_map(name='Type', value=Type),
+    "dict": var_map(name="Dict", value=Dict),
+    "frozenset": var_map(name="FrozenSet", value=FrozenSet),
+    "list": var_map(name="List", value=List),
+    "set": var_map(name="Set", value=Set),
+    "tuple": var_map(name="Tuple", value=Tuple),
+    "type": var_map(name="Type", value=Type),
 }
 
 
 class BackportTypeHints(ast.NodeTransformer):
-
-    _typing = __import__('typing')
+    _typing = __import__("typing")
 
     def visit_Subscript(self, node: ast.Subscript) -> ast.Subscript:
         if isinstance(node.value, ast.Name) and node.value.id in pep585_map:
@@ -60,13 +59,13 @@ class BackportTypeHints(ast.NodeTransformer):
             elts.append(self.visit(node))
 
     def new_name_load(self, var: var_map) -> ast.Name:
-        name = f'_{self.__class__.__name__}_{var.name}'
+        name = f"_{self.__class__.__name__}_{var.name}"
         self.exec_vars[name] = var.value
         return ast.Name(id=name, ctx=ast.Load())
 
     def backport(self, input_ast: ast.AST, exec_vars: dict) -> ast.AST:
         for key, value in exec_vars.items():
-            if getattr(value, '__module__', '') == 'collections.abc':
+            if getattr(value, "__module__", "") == "collections.abc":
                 if hasattr(self._typing, key):
                     exec_vars[key] = getattr(self._typing, key)
         self.exec_vars = exec_vars

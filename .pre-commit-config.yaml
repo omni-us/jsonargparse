@@ -19,6 +19,11 @@ repos:
   - id: trailing-whitespace
     exclude: .bumpversion.cfg
 
+- repo: https://github.com/psf/black
+  rev: 22.10.0
+  hooks:
+  - id: black
+
 - repo: https://github.com/pycqa/isort
   rev: 5.12.0
   hooks:

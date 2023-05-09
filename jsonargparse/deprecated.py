@@ -13,13 +13,13 @@ from .optionals import FilesCompleterMethod
 from .type_checking import ArgumentParser
 
 __all__ = [
-    'ActionEnum',
-    'ActionOperators',
-    'ActionPath',
-    'ActionPathList',
-    'ParserError',
-    'set_url_support',
-    'usage_and_exit_error_handler',
+    "ActionEnum",
+    "ActionOperators",
+    "ActionPath",
+    "ActionPathList",
+    "ParserError",
+    "set_url_support",
+    "usage_and_exit_error_handler",
 ]
 
 
@@ -31,11 +31,12 @@ class JsonargparseDeprecationWarning(DeprecationWarning):
 
 
 def deprecation_warning(component, message):
-    env_var = os.environ.get('JSONARGPARSE_DEPRECATION_WARNINGS', '').lower()
-    show_warnings = env_var != 'off'
-    all_warnings = env_var == 'all'
+    env_var = os.environ.get("JSONARGPARSE_DEPRECATION_WARNINGS", "").lower()
+    show_warnings = env_var != "off"
+    all_warnings = env_var == "all"
     if show_warnings and (component not in shown_deprecation_warnings or all_warnings):
         from .util import warning
+
         if len(shown_deprecation_warnings) == 0 and not all_warnings:
             warning(
                 """
@@ -51,12 +52,12 @@ def deprecation_warning(component, message):
 
 
 def deprecated(message):
-
     def deprecated_decorator(component):
-        warning = '\n\n.. warning::\n    ' + message + '\n'
-        component.__doc__ = ('' if component.__doc__ is None else component.__doc__) + warning
+        warning = "\n\n.. warning::\n    " + message + "\n"
+        component.__doc__ = ("" if component.__doc__ is None else component.__doc__) + warning
 
         if inspect.isclass(component):
+
             @functools.wraps(component.__init__)
             def init_wrap(self, *args, **kwargs):
                 deprecation_warning(component, message)
@@ -67,6 +68,7 @@ def deprecated(message):
             decorated = component
 
         else:
+
             @functools.wraps(component)
             def decorated(*args, **kwargs):
                 deprecation_warning(component, message)
@@ -85,7 +87,8 @@ def parse_as_dict_patch():
     removal.
     """
     from .core import ArgumentParser
-    assert not hasattr(ArgumentParser, '_unpatched_init')
+
+    assert not hasattr(ArgumentParser, "_unpatched_init")
 
     message = """
     ``parse_as_dict`` parameter was deprecated in v4.0.0 and will be removed in
@@ -109,7 +112,7 @@ def parse_as_dict_patch():
 
     # Patch parse methods
     def patch_parse_method(method_name):
-        unpatched_method_name = '_unpatched_'+method_name
+        unpatched_method_name = "_unpatched_" + method_name
 
         def patched_parse(self, *args, _skip_check: bool = False, **kwargs) -> Union[Namespace, Dict[str, Any]]:
             parse_method = getattr(self, unpatched_method_name)
@@ -119,13 +122,15 @@ def parse_as_dict_patch():
         setattr(ArgumentParser, unpatched_method_name, getattr(ArgumentParser, method_name))
         setattr(ArgumentParser, method_name, patched_parse)
 
-    patch_parse_method('parse_args')
-    patch_parse_method('parse_object')
-    patch_parse_method('parse_env')
-    patch_parse_method('parse_string')
+    patch_parse_method("parse_args")
+    patch_parse_method("parse_object")
+    patch_parse_method("parse_env")
+    patch_parse_method("parse_string")
 
     # Patch instantiate_classes
-    def patched_instantiate_classes(self, cfg: Union[Namespace, Dict[str, Any]], **kwargs) -> Union[Namespace, Dict[str, Any]]:
+    def patched_instantiate_classes(
+        self, cfg: Union[Namespace, Dict[str, Any]], **kwargs
+    ) -> Union[Namespace, Dict[str, Any]]:
         if isinstance(cfg, dict):
             cfg = self._apply_actions(cfg)
         cfg = self._unpatched_instantiate_classes(cfg, **kwargs)
@@ -153,9 +158,11 @@ def parse_as_dict_patch():
     ArgumentParser.save = patched_save
 
 
-@deprecated("""
+@deprecated(
+    """
     instantiate_subclasses was deprecated in v4.0.0 and will be removed in v5.0.0.
-""")
+"""
+)
 def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
     """Calls instantiate_classes with instantiate_groups=False.
 
@@ -170,58 +177,71 @@ def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
 
 def instantiate_subclasses_patch():
     from .core import ArgumentParser
+
     ArgumentParser.instantiate_subclasses = instantiate_subclasses
 
 
-@deprecated("""
+@deprecated(
+    """
     ActionEnum was deprecated in v3.9.0 and will be removed in v5.0.0. Enums now
     should be given directly as a type as explained in :ref:`enums`.
-""")
+"""
+)
 class ActionEnum:
     """An action based on an Enum that maps to-from strings and enum values."""
 
     def __init__(self, **kwargs):
-        if 'enum' in kwargs:
+        if "enum" in kwargs:
             from ._common import is_subclass
-            if not is_subclass(kwargs['enum'], Enum):
-                raise ValueError('Expected enum to be an subclass of Enum.')
-            self._type = kwargs['enum']
+
+            if not is_subclass(kwargs["enum"], Enum):
+                raise ValueError("Expected enum to be an subclass of Enum.")
+            self._type = kwargs["enum"]
         else:
-            raise ValueError('Expected enum keyword argument.')
+            raise ValueError("Expected enum keyword argument.")
 
     def __call__(self, *args, **kwargs):
         from .typehints import ActionTypeHint
+
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
-@deprecated("""
+@deprecated(
+    """
     ActionOperators was deprecated in v3.0.0 and will be removed in v5.0.0. Now
     types should be used as explained in :ref:`restricted-numbers`.
-""")
+"""
+)
 class ActionOperators:
     """Action to restrict a value with comparison operators."""
 
     def __init__(self, **kwargs):
-        if 'expr' in kwargs:
-            restrictions = [kwargs['expr']] if isinstance(kwargs['expr'], tuple) else kwargs['expr']
-            register_key = (tuple(sorted(restrictions)), kwargs.get('type', int), kwargs.get('join', 'and'))
+        if "expr" in kwargs:
+            restrictions = [kwargs["expr"]] if isinstance(kwargs["expr"], tuple) else kwargs["expr"]
+            register_key = (tuple(sorted(restrictions)), kwargs.get("type", int), kwargs.get("join", "and"))
             from .typing import registered_types, restricted_number_type
+
             if register_key in registered_types:
                 self._type = registered_types[register_key]
             else:
-                self._type = restricted_number_type(None, kwargs.get('type', int), kwargs['expr'], kwargs.get('join', 'and'))
+                self._type = restricted_number_type(
+                    None, kwargs.get("type", int), kwargs["expr"], kwargs.get("join", "and")
+                )
         else:
-            raise ValueError('Expected expr keyword argument.')
+            raise ValueError("Expected expr keyword argument.")
 
     def __call__(self, *args, **kwargs):
         from .typehints import ActionTypeHint
+
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
-@deprecated("""
+@deprecated(
+    """
     ActionPath was deprecated in v3.11.0 and will be removed in v5.0.0. Paths
     now should be given directly as a type as explained in :ref:`parsing-paths`.
-""")
+"""
+)
 class ActionPath:
     """Action to check and store a path."""
 
@@ -231,26 +251,25 @@ class ActionPath:
         skip_check: bool = False,
     ):
         from .typing import path_type
+
         self._type = path_type(mode, skip_check=skip_check)
 
     def __call__(self, *args, **kwargs):
         from .typehints import ActionTypeHint
+
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
-@deprecated("""
+@deprecated(
+    """
     ActionPathList was deprecated in v4.20.0 and will be removed in v5.0.0. Instead
     use as type ``List[<path_type>]`` with ``enable_path=True``.
-""")
+"""
+)
 class ActionPathList(Action, FilesCompleterMethod):
     """Action to check and store a list of file paths read from a plain text file or stream."""
 
-    def __init__(
-        self,
-        mode: Optional[str] = None,
-        rel: str = 'cwd',
-        **kwargs
-    ):
+    def __init__(self, mode: Optional[str] = None, rel: str = "cwd", **kwargs):
         """Initializer for ActionPathList instance.
 
         Args:
@@ -262,15 +281,16 @@ class ActionPathList(Action, FilesCompleterMethod):
         """
         if mode is not None:
             from .typing import path_type
+
             self._type = path_type(mode)
             self._rel = rel
-            if self._rel not in {'cwd', 'list'}:
+            if self._rel not in {"cwd", "list"}:
                 raise ValueError(f'rel must be either "cwd" or "list", got {self._rel}.')
-        elif '_type' not in kwargs:
-            raise ValueError('Expected mode keyword argument.')
+        elif "_type" not in kwargs:
+            raise ValueError("Expected mode keyword argument.")
         else:
-            self._type = kwargs.pop('_type')
-            self._rel = kwargs.pop('_rel')
+            self._type = kwargs.pop("_type")
+            self._rel = kwargs.pop("_rel")
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -280,10 +300,10 @@ class ActionPathList(Action, FilesCompleterMethod):
             TypeError: If the argument is not a valid PathList.
         """
         if len(args) == 0:
-            if 'nargs' in kwargs and kwargs['nargs'] not in {'+', 1}:
+            if "nargs" in kwargs and kwargs["nargs"] not in {"+", 1}:
                 raise ValueError('ActionPathList only supports nargs of 1 or "+".')
-            kwargs['_type'] = self._type
-            kwargs['_rel'] = self._rel
+            kwargs["_type"] = self._type
+            kwargs["_rel"] = self._rel
             return ActionPathList(**kwargs)
         setattr(args[1], self.dest, self._check_type(args[2]))
         return None
@@ -292,6 +312,7 @@ class ActionPathList(Action, FilesCompleterMethod):
         if value == []:
             return value
         from .actions import _is_action_value_list
+
         islist = _is_action_value_list(self)
         if not islist and not isinstance(value, list):
             value = [value]
@@ -300,36 +321,39 @@ class ActionPathList(Action, FilesCompleterMethod):
             value = []
             for path_list_file in path_list_files:
                 try:
-                    with sys.stdin if path_list_file == '-' else open(path_list_file) as f:
+                    with sys.stdin if path_list_file == "-" else open(path_list_file) as f:
                         path_list = [x.strip() for x in f.readlines()]
                 except FileNotFoundError as ex:
-                    raise TypeError(f'Problems reading path list: {path_list_file} :: {ex}') from ex
+                    raise TypeError(f"Problems reading path list: {path_list_file} :: {ex}") from ex
                 cwd = os.getcwd()
-                if self._rel == 'list' and path_list_file != '-':
+                if self._rel == "list" and path_list_file != "-":
                     os.chdir(os.path.abspath(os.path.join(path_list_file, os.pardir)))
                 try:
                     for num, val in enumerate(path_list):
                         try:
                             path_list[num] = self._type(val)
                         except TypeError as ex:
-                            raise TypeError(f'Path number {num+1} in list {path_list_file}, {ex}') from ex
+                            raise TypeError(f"Path number {num+1} in list {path_list_file}, {ex}") from ex
                 finally:
                     os.chdir(cwd)
                 value += path_list
         return value
 
 
-@deprecated("""
+@deprecated(
+    """
     set_url_support was deprecated in v3.12.0 and will be removed in v5.0.0.
     Optional config read modes should now be set using function
     set_config_read_mode.
-""")
-def set_url_support(enabled:bool):
+"""
+)
+def set_url_support(enabled: bool):
     """Enables/disables URL support for config read mode."""
     from .optionals import get_config_read_mode, set_config_read_mode
+
     set_config_read_mode(
         urls_enabled=enabled,
-        fsspec_enabled=True if 's' in get_config_read_mode() else False,
+        fsspec_enabled=True if "s" in get_config_read_mode() else False,
     )
 
 
@@ -340,7 +364,7 @@ cli_return_parser_message = """
 
 
 def deprecation_warning_cli_return_parser():
-    deprecation_warning('CLI.__init__.return_parser', cli_return_parser_message)
+    deprecation_warning("CLI.__init__.return_parser", cli_return_parser_message)
 
 
 logger_property_none_message = """
@@ -354,15 +378,18 @@ env_prefix_property_none_message = """
 """
 
 
-@deprecated("""
+@deprecated(
+    """
     Only use the public API as described in
     https://jsonargparse.readthedocs.io/en/stable/#api-reference. Keeping
     import_docstring_parse function as deprecated only to provide backward
     compatibility with old versions of pytorch-lightning. Will be removed in
     v5.0.0.
-""")
+"""
+)
 def import_docstring_parse(importer):
     from .optionals import import_docstring_parser
+
     return import_docstring_parser(importer).parse
 
 
@@ -374,7 +401,7 @@ path_skip_check_message = """
 
 
 def path_skip_check_deprecation():
-    deprecation_warning('Path.__init__', path_skip_check_message)
+    deprecation_warning("Path.__init__", path_skip_check_message)
 
 
 path_immutable_attrs_message = """
@@ -385,26 +412,26 @@ path_immutable_attrs_message = """
     -> ``absolute``, ``cwd`` no name change, ``skip_check`` will be removed.
 """
 
-class PathDeprecations:
 
+class PathDeprecations:
     @property
     def rel_path(self):
-        deprecation_warning('Path attr get', path_immutable_attrs_message)
+        deprecation_warning("Path attr get", path_immutable_attrs_message)
         return self._relative
 
     @rel_path.setter
     def rel_path(self, rel_path):
-        deprecation_warning('Path attr set', path_immutable_attrs_message)
+        deprecation_warning("Path attr set", path_immutable_attrs_message)
         self._relative = rel_path
 
     @property
     def abs_path(self):
-        deprecation_warning('Path attr get', path_immutable_attrs_message)
+        deprecation_warning("Path attr get", path_immutable_attrs_message)
         return self._absolute
 
     @abs_path.setter
     def abs_path(self, abs_path):
-        deprecation_warning('Path attr set', path_immutable_attrs_message)
+        deprecation_warning("Path attr set", path_immutable_attrs_message)
         self._absolute = abs_path
 
     @property
@@ -413,18 +440,19 @@ class PathDeprecations:
 
     @cwd.setter
     def cwd(self, cwd):
-        deprecation_warning('Path attr set', path_immutable_attrs_message)
+        deprecation_warning("Path attr set", path_immutable_attrs_message)
         self._cwd = cwd
 
     def _deprecated_kwargs(self, kwargs):
         from .util import get_private_kwargs
+
         self._skip_check = get_private_kwargs(kwargs, skip_check=False)
         if self._skip_check:
             path_skip_check_deprecation()
 
     def _repr_skip_check(self, name):
         if self._skip_check:
-            name += '_skip_check'
+            name += "_skip_check"
         return name
 
     @property
@@ -433,7 +461,7 @@ class PathDeprecations:
 
     @skip_check.setter
     def skip_check(self, skip_check):
-        deprecation_warning('Path attr set', path_immutable_attrs_message)
+        deprecation_warning("Path attr set", path_immutable_attrs_message)
         self._skip_check = skip_check
 
 
@@ -441,12 +469,14 @@ class DebugException(Exception):
     pass
 
 
-@deprecated("""
+@deprecated(
+    """
     usage_and_exit_error_handler was deprecated in v4.20.0 and will be removed
     in v5.0.0. With the removal of error_handler, there is no longer a need for
     this function.
-""")
-def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None:
+"""
+)
+def usage_and_exit_error_handler(parser: "ArgumentParser", message: str) -> None:
     """Prints the usage and exits with error code 2 (same behavior as argparse).
 
     Args:
@@ -454,8 +484,8 @@ def usage_and_exit_error_handler(parser: 'ArgumentParser', message: str) -> None
         message: The message describing the error being handled.
     """
     parser.print_usage(sys.stderr)
-    args = {'prog': parser.prog, 'message': message}
-    sys.stderr.write('%(prog)s: error: %(message)s\n' % args)
+    args = {"prog": parser.prog, "message": message}
+    sys.stderr.write("%(prog)s: error: %(message)s\n" % args)
     parser.exit(2)
 
 
@@ -466,17 +496,16 @@ error_handler_message = """
 
 
 def deprecation_warning_error_handler():
-    deprecation_warning('ArgumentParser.error_handler', error_handler_message)
+    deprecation_warning("ArgumentParser.error_handler", error_handler_message)
 
 
 class ParserDeprecations:
-
     def __init__(self, *args, error_handler=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.error_handler = error_handler
 
     @property
-    def error_handler(self) -> Optional[Callable[['ArgumentParser', str], None]]:
+    def error_handler(self) -> Optional[Callable[["ArgumentParser", str], None]]:
         """Property for the error_handler function that is called when there are parsing errors.
 
         :getter: Returns the current error_handler function.
@@ -494,7 +523,7 @@ class ParserDeprecations:
         if callable(error_handler) or error_handler in {None, False}:
             self._error_handler = error_handler
         else:
-            raise ValueError('error_handler can be either a Callable or None.')
+            raise ValueError("error_handler can be either a Callable or None.")
 
 
 ParserError = ArgumentError

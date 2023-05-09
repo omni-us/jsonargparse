@@ -13,40 +13,40 @@ from .optionals import final, pydantic_support
 from .util import Path, get_import_path, get_private_kwargs, import_object
 
 __all__ = [
-    'final',
-    'is_final_class',
-    'register_type',
-    'restricted_number_type',
-    'restricted_string_type',
-    'path_type',
-    'PositiveInt',
-    'NonNegativeInt',
-    'PositiveFloat',
-    'NonNegativeFloat',
-    'ClosedUnitInterval',
-    'OpenUnitInterval',
-    'NotEmptyStr',
-    'Email',
-    'Path_fr',
-    'Path_fc',
-    'Path_dw',
-    'Path_dc',
-    'Path_drw',
+    "final",
+    "is_final_class",
+    "register_type",
+    "restricted_number_type",
+    "restricted_string_type",
+    "path_type",
+    "PositiveInt",
+    "NonNegativeInt",
+    "PositiveFloat",
+    "NonNegativeFloat",
+    "ClosedUnitInterval",
+    "OpenUnitInterval",
+    "NotEmptyStr",
+    "Email",
+    "Path_fr",
+    "Path_fc",
+    "Path_dw",
+    "Path_dc",
+    "Path_drw",
 ]
 
 
 _operators1 = {
-    operator.gt: '>',
-    operator.ge: '>=',
-    operator.lt: '<',
-    operator.le: '<=',
-    operator.eq: '==',
-    operator.ne: '!=',
+    operator.gt: ">",
+    operator.ge: ">=",
+    operator.lt: "<",
+    operator.le: "<=",
+    operator.eq: "==",
+    operator.ne: "!=",
 }
 _operators2 = {v: k for k, v in _operators1.items()}
 
 registered_types: Dict[tuple, type] = {}
-registered_type_handlers: Dict[type, 'RegisteredType'] = {}
+registered_type_handlers: Dict[type, "RegisteredType"] = {}
 registration_pending: Dict[str, Callable] = {}
 
 
@@ -58,15 +58,13 @@ def create_type(
     docstring: Optional[str] = None,
     extra_attrs: Optional[dict] = None,
 ) -> type:
-
     if register_key in registered_types:
         registered_type = registered_types[register_key]
         if registered_type.__name__ != name:
-            raise ValueError(f'Same type already registered with a different name: {registered_type.__name__}.')
+            raise ValueError(f"Same type already registered with a different name: {registered_type.__name__}.")
         return registered_type
 
     class TypeCore:
-
         _check_value = check_value
 
         def __new__(cls, v):
@@ -77,7 +75,7 @@ def create_type(
         for key, value in extra_attrs.items():
             setattr(TypeCore, key, value)
 
-    created_type = type(name, (TypeCore, base_type), {'__doc__': docstring})
+    created_type = type(name, (TypeCore, base_type), {"__doc__": docstring})
     add_type(created_type, register_key)
 
     return created_type
@@ -87,7 +85,7 @@ def restricted_number_type(
     name: Optional[str],
     base_type: type,
     restrictions: Union[Tuple, List[Tuple]],
-    join: str = 'and',
+    join: str = "and",
     docstring: Optional[str] = None,
 ) -> type:
     """Creates or returns an already registered restricted number type class.
@@ -103,45 +101,48 @@ def restricted_number_type(
         The created or retrieved type class.
     """
     if base_type not in {int, float}:
-        raise ValueError('Expected base_type to be one of {int, float}.')
-    if join not in {'or', 'and'}:
+        raise ValueError("Expected base_type to be one of {int, float}.")
+    if join not in {"or", "and"}:
         raise ValueError("Expected join to be one of {'or', 'and'}.")
 
     restrictions = [restrictions] if isinstance(restrictions, tuple) else restrictions
-    if not isinstance(restrictions, list) or \
-       not all(isinstance(x, tuple) and len(x) == 2 for x in restrictions) or \
-       not all(x[0] in _operators2 and x[1] == base_type(x[1]) for x in restrictions):
-        raise ValueError('Expected restrictions to be a list of tuples each with a comparison operator '
-                         f'(> >= < <= == !=) and a reference value of type {base_type.__name__}.')
+    if (
+        not isinstance(restrictions, list)
+        or not all(isinstance(x, tuple) and len(x) == 2 for x in restrictions)
+        or not all(x[0] in _operators2 and x[1] == base_type(x[1]) for x in restrictions)
+    ):
+        raise ValueError(
+            "Expected restrictions to be a list of tuples each with a comparison operator "
+            f"(> >= < <= == !=) and a reference value of type {base_type.__name__}."
+        )
 
     register_key = (tuple(sorted(restrictions)), base_type, join)
 
     restrictions = [(_operators2[x[0]], x[1]) for x in restrictions]
-    expression = (' '+join+' ').join(['v'+_operators1[op]+str(ref) for op, ref in restrictions])
+    expression = (" " + join + " ").join(["v" + _operators1[op] + str(ref) for op, ref in restrictions])
 
     if name is None:
         name = base_type.__name__
         for num, (comparison, ref) in enumerate(restrictions):
-            name += '_'+join+'_' if num > 0 else '_'
-            name += comparison.__name__ + str(ref).replace('.', '')
+            name += "_" + join + "_" if num > 0 else "_"
+            name += comparison.__name__ + str(ref).replace(".", "")
 
     extra_attrs = {
-        '_restrictions': restrictions,
-        '_expression': expression,
-        '_join': join,
-        '_type': base_type,
+        "_restrictions": restrictions,
+        "_expression": expression,
+        "_join": join,
+        "_type": base_type,
     }
 
     def check_value(cls, v):
         if isinstance(v, bool):
-            raise ValueError(f'{v} not a number')
+            raise ValueError(f"{v} not a number")
         if cls._type == int and isinstance(v, float) and not float.is_integer(v):
-            raise ValueError(f'{v} not an integer')
+            raise ValueError(f"{v} not an integer")
         vv = cls._type(v)
         check = [comparison(vv, ref) for comparison, ref in cls._restrictions]
-        if (cls._join == 'and' and not all(check)) or \
-           (cls._join == 'or' and not any(check)):
-            raise ValueError(f'{v} does not conform to restriction {cls._expression}')
+        if (cls._join == "and" and not all(check)) or (cls._join == "or" and not any(check)):
+            raise ValueError(f"{v} does not conform to restriction {cls._expression}")
 
     return create_type(
         name=name,
@@ -149,7 +150,7 @@ def restricted_number_type(
         check_value=check_value,
         register_key=register_key,
         docstring=docstring,
-        extra_attrs=extra_attrs
+        extra_attrs=extra_attrs,
     )
 
 
@@ -170,17 +171,17 @@ def restricted_string_type(
     """
     if isinstance(regex, str):
         regex = re.compile(regex)
-    expression = 'matching '+regex.pattern
+    expression = "matching " + regex.pattern
 
     extra_attrs = {
-        '_regex': regex,
-        '_expression': expression,
-        '_type': str,
+        "_regex": regex,
+        "_expression": expression,
+        "_type": str,
     }
 
     def check_value(cls, v):
         if not cls._regex.match(v):
-            raise ValueError(f'{v} does not match regular expression {cls._regex.pattern}')
+            raise ValueError(f"{v} does not match regular expression {cls._regex.pattern}")
 
     return create_type(
         name=name,
@@ -188,7 +189,7 @@ def restricted_string_type(
         check_value=check_value,
         register_key=(expression, str),
         docstring=docstring,
-        extra_attrs=extra_attrs
+        extra_attrs=extra_attrs,
     )
 
 
@@ -196,11 +197,7 @@ def _is_path_type(value, type_class):
     return isinstance(value, Path)
 
 
-def path_type(
-    mode: str,
-    docstring: Optional[str] = None,
-    **kwargs
-) -> type:
+def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> type:
     """Creates or returns an already registered path type class.
 
     Args:
@@ -211,22 +208,22 @@ def path_type(
         The created or retrieved type class.
     """
     Path._check_mode(mode)
-    name = 'Path_'+mode
-    key_name = 'path '+''.join(sorted(mode))
+    name = "Path_" + mode
+    key_name = "path " + "".join(sorted(mode))
 
     skip_check = get_private_kwargs(kwargs, skip_check=False)
     if skip_check:
         from .deprecated import path_skip_check_deprecation
+
         path_skip_check_deprecation()
-        name += '_skip_check'
-        key_name += ' skip_check'
+        name += "_skip_check"
+        key_name += " skip_check"
 
     register_key = (key_name, str)
     if register_key in registered_types:
         return registered_types[register_key]
 
     class PathType(Path):
-
         _expression = name
         _mode = mode
         _skip_check = skip_check
@@ -235,7 +232,7 @@ def path_type(
         def __init__(self, v, **k):
             super().__init__(v, mode=self._mode, skip_check=self._skip_check, **k)
 
-    restricted_type = type(name, (PathType,), {'__doc__': docstring})
+    restricted_type = type(name, (PathType,), {"__doc__": docstring})
     add_type(restricted_type, register_key, type_check=_is_path_type)
 
     return restricted_type
@@ -257,7 +254,7 @@ class RegisteredType:
         self.type_check = type_check
 
     def __eq__(self, other):
-        return all(getattr(self, k) == getattr(other, k) for k in ['type_class', 'serializer', 'base_deserializer'])
+        return all(getattr(self, k) == getattr(other, k) for k in ["type_class", "serializer", "base_deserializer"])
 
     def is_value_of_type(self, value):
         return self.type_check(value, self.type_class)
@@ -266,15 +263,19 @@ class RegisteredType:
         try:
             return self.base_deserializer(value)
         except self.deserializer_exceptions as ex:
-            type_class_name = getattr(self.type_class, '__name__', str(self.type_class))
-            raise ValueError(f'Not of type {type_class_name}: {ex}') from ex
+            type_class_name = getattr(self.type_class, "__name__", str(self.type_class))
+            raise ValueError(f"Not of type {type_class_name}: {ex}") from ex
 
 
 def register_type(
     type_class: Any,
     serializer: Callable = str,
     deserializer: Optional[Callable] = None,
-    deserializer_exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]] = (ValueError, TypeError, AttributeError),
+    deserializer_exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]] = (
+        ValueError,
+        TypeError,
+        AttributeError,
+    ),
     type_check: Callable = lambda v, t: v.__class__ == t,
     fail_already_registered: bool = True,
     uniqueness_key: Optional[Tuple] = None,
@@ -291,7 +292,7 @@ def register_type(
         uniqueness_key: Key to determine uniqueness of type.
     """
     type_handler = RegisteredType(type_class, serializer, deserializer, deserializer_exceptions, type_check)
-    fail_already_registered = globals().get('_fail_already_registered', fail_already_registered)
+    fail_already_registered = globals().get("_fail_already_registered", fail_already_registered)
     if not uniqueness_key and fail_already_registered and get_registered_type(type_class):
         if type_handler == registered_type_handlers[type_class]:
             return
@@ -312,6 +313,7 @@ def register_type_on_first_use(import_path: str, *args, **kwargs):
 def get_registered_type(type_class) -> Optional[RegisteredType]:
     if type_class not in registered_type_handlers:
         from contextlib import suppress
+
         with suppress(AttributeError, ValueError):
             import_path = get_import_path(type_class)
             if import_path in registration_pending:
@@ -324,41 +326,41 @@ def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Opti
     if type_class.__name__ in globals():
         raise ValueError(f'Type name "{type_class.__name__}" clashes with name already defined in jsonargparse.typing.')
     globals()[type_class.__name__] = type_class
-    kwargs = {'uniqueness_key': uniqueness_key}
+    kwargs = {"uniqueness_key": uniqueness_key}
     if type_check is not None:
-        kwargs['type_check'] = type_check  # type: ignore
+        kwargs["type_check"] = type_check  # type: ignore
     register_type(type_class, type_class._type, **kwargs)  # type: ignore
 
 
 _fail_already_registered = False
 
-PositiveInt        = restricted_number_type('PositiveInt',        int, ('>', 0),
-                                            docstring='int restricted to be >0')
-NonNegativeInt     = restricted_number_type('NonNegativeInt',     int, ('>=', 0),
-                                            docstring='int restricted to be ≥0')
-PositiveFloat      = restricted_number_type('PositiveFloat',      float, ('>', 0),
-                                            docstring='float restricted to be >0')
-NonNegativeFloat   = restricted_number_type('NonNegativeFloat',   float, ('>=', 0),
-                                            docstring='float restricted to be ≥0')
-ClosedUnitInterval = restricted_number_type('ClosedUnitInterval', float, [('>=', 0), ('<=', 1)],
-                                            docstring='float restricted to be ≥0 and ≤1')
-OpenUnitInterval   = restricted_number_type('OpenUnitInterval',   float, [('>', 0), ('<', 1)],
-                                            docstring='float restricted to be >0 and <1')
+PositiveInt = restricted_number_type("PositiveInt", int, (">", 0), docstring="int restricted to be >0")
+NonNegativeInt = restricted_number_type("NonNegativeInt", int, (">=", 0), docstring="int restricted to be ≥0")
+PositiveFloat = restricted_number_type("PositiveFloat", float, (">", 0), docstring="float restricted to be >0")
+NonNegativeFloat = restricted_number_type("NonNegativeFloat", float, (">=", 0), docstring="float restricted to be ≥0")
+ClosedUnitInterval = restricted_number_type(
+    "ClosedUnitInterval", float, [(">=", 0), ("<=", 1)], docstring="float restricted to be ≥0 and ≤1"
+)
+OpenUnitInterval = restricted_number_type(
+    "OpenUnitInterval", float, [(">", 0), ("<", 1)], docstring="float restricted to be >0 and <1"
+)
 
-NotEmptyStr = restricted_string_type('NotEmptyStr', r'^.*[^ ].*$',
-                                     docstring=r'str restricted to not-empty pattern ^.*[^ ].*$')
-Email       = restricted_string_type('Email', r'^[^@ ]+@[^@ ]+\.[^@ ]+$',
-                                     docstring=r'str restricted to the email pattern ^[^@ ]+@[^@ ]+\.[^@ ]+$')
+NotEmptyStr = restricted_string_type(
+    "NotEmptyStr", r"^.*[^ ].*$", docstring=r"str restricted to not-empty pattern ^.*[^ ].*$"
+)
+Email = restricted_string_type(
+    "Email", r"^[^@ ]+@[^@ ]+\.[^@ ]+$", docstring=r"str restricted to the email pattern ^[^@ ]+@[^@ ]+\.[^@ ]+$"
+)
 
-Path_fr = path_type('fr', docstring='path to a file that exists and is readable')
-Path_fc = path_type('fc', docstring='path to a file that can be created if it does not exist')
-Path_dw = path_type('dw', docstring='path to a directory that exists and is writeable')
-Path_dc = path_type('dc', docstring='path to a directory that can be created if it does not exist')
-Path_drw = path_type('drw', docstring='path to a directory that exists and is readable and writeable')
+Path_fr = path_type("fr", docstring="path to a file that exists and is readable")
+Path_fc = path_type("fc", docstring="path to a file that can be created if it does not exist")
+Path_dw = path_type("dw", docstring="path to a directory that exists and is writeable")
+Path_dc = path_type("dc", docstring="path to a directory that can be created if it does not exist")
+Path_drw = path_type("drw", docstring="path to a directory that exists and is readable and writeable")
 
 register_type(os.PathLike, str, str)
 register_type(complex)
-register_type_on_first_use('uuid.UUID')
+register_type_on_first_use("uuid.UUID")
 
 for _path in [pathlib.Path, pathlib.PosixPath, pathlib.WindowsPath]:
     register_type(_path, str, _path, type_check=isinstance)
@@ -367,54 +369,60 @@ for _path in [pathlib.Path, pathlib.PosixPath, pathlib.WindowsPath]:
 def timedelta_deserializer(value):
     def raise_error():
         raise ValueError(f'Expected a string with form "h:m:s" or "d days, h:m:s" but got "{value}"')
+
     if not isinstance(value, str):
         raise_error()
-    pattern = r'(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d[\.\d+]*)'
-    if 'day' in value:
-        pattern = r'(?P<days>[-\d]+) day[s]*, ' + pattern
+    pattern = r"(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d[\.\d+]*)"
+    if "day" in value:
+        pattern = r"(?P<days>[-\d]+) day[s]*, " + pattern
     match = re.match(pattern, value)
     if not match:
         raise_error()
     kwargs = {key: float(val) for key, val in match.groupdict().items()}
     from datetime import timedelta
+
     return timedelta(**kwargs)
 
 
-register_type_on_first_use('datetime.timedelta', deserializer=timedelta_deserializer)
+register_type_on_first_use("datetime.timedelta", deserializer=timedelta_deserializer)
 
 
 def bytes_serializer(value: Union[bytes, bytearray]) -> str:
     from base64 import b64encode
+
     return b64encode(value).decode()
 
 
 def bytes_deserializer(value: str) -> bytes:
     from base64 import b64decode
+
     return b64decode(value)
 
 
 def bytearray_deserializer(value: str) -> bytearray:
     from base64 import b64decode
+
     return bytearray(b64decode(value))
 
 
-register_type_on_first_use('builtins.bytes', serializer=bytes_serializer, deserializer=bytes_deserializer)
-register_type_on_first_use('builtins.bytearray', serializer=bytes_serializer, deserializer=bytearray_deserializer)
+register_type_on_first_use("builtins.bytes", serializer=bytes_serializer, deserializer=bytes_deserializer)
+register_type_on_first_use("builtins.bytearray", serializer=bytes_serializer, deserializer=bytearray_deserializer)
 
 
 pydantic_types: Tuple[type, ...] = tuple()
 if pydantic_support:
     import pydantic
+
     for module in [pydantic.types, pydantic.networks]:
         pydantic_types += tuple(
-            v for k, v in vars(module).items()
-            if inspect.isclass(v) and k in module.__all__ and not issubclass(v, Enum)
+            v for k, v in vars(module).items() if inspect.isclass(v) and k in module.__all__ and not issubclass(v, Enum)
         )
 
 
 def pydantic_deserializer(type_class):
     from pydantic import create_model  # pylint: disable=no-name-in-module
-    pydantic_model = create_model('pydantic_model', pydantic_field=(type_class, ...))
+
+    pydantic_model = create_model("pydantic_model", pydantic_field=(type_class, ...))
 
     def deserialize(value):
         return pydantic_model(pydantic_field=value).pydantic_field
@@ -442,6 +450,7 @@ def register_pydantic_type(type_class):
         return
     if not get_registered_type(type_class):
         from pydantic import ValidationError
+
         register_type(
             type_class=type_class,
             serializer=pydantic_serializer(type_class),

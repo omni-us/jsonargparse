@@ -92,6 +92,7 @@ test = [
 test-no-urls = [
     "coverage>=4.5.1",
     "pytest>=6.2.5",
+    "pytest-subtests>=0.8.0",
 ]
 dev = [
     "jsonargparse[test]",
@@ -189,6 +190,12 @@ ignore-init-module-imports = true
 [tool.ruff.pydocstyle]
 # Use Google-style docstrings.
 convention = "google"
+
+
+[tool.black]
+# https://github.com/psf/black
+line-length = 120
+exclude = "(.eggs|.git|.hg|.mypy_cache|.venv|_build|buck-out|build|dist)"
 
 
 [tool.isort]

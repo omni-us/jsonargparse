@@ -45,17 +45,17 @@ from .optionals import (
 from .type_checking import ArgumentParser
 
 __all__ = [
-    'capture_parser',
-    'class_from_function',
-    'LoggerProperty',
-    'null_logger',
-    'Path',
-    'register_unresolvable_import_paths',
+    "capture_parser",
+    "class_from_function",
+    "LoggerProperty",
+    "null_logger",
+    "Path",
+    "register_unresolvable_import_paths",
 ]
 
 
-logging_levels = {'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'}
-null_logger = logging.getLogger('jsonargparse_null_logger')
+logging_levels = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}
+null_logger = logging.getLogger("jsonargparse_null_logger")
 null_logger.addHandler(logging.NullHandler())
 null_logger.parent = None
 
@@ -63,7 +63,7 @@ null_logger.parent = None
 NoneType = type(None)
 
 
-default_config_option_help = 'Path to a configuration file.'
+default_config_option_help = "Path to a configuration file."
 
 
 @dataclass
@@ -82,16 +82,16 @@ class JsonargparseWarning(UserWarning):
 
 def warning(message, category=JsonargparseWarning, stacklevel=1):
     warnings.warn(
-        re.sub('\n\n+', '\n\n', re.sub('\n +', '\n  ', message)),
+        re.sub("\n\n+", "\n\n", re.sub("\n +", "\n  ", message)),
         category=category,
-        stacklevel=stacklevel+1,
+        stacklevel=stacklevel + 1,
     )
 
 
 class CaptureParserException(Exception):
     def __init__(self, parser: Optional[ArgumentParser]):
         self.parser = parser
-        super().__init__('' if parser else 'No parse_args call to capture the parser.')
+        super().__init__("" if parser else "No parse_args call to capture the parser.")
 
 
 def capture_parser(function: Callable, *args, **kwargs) -> ArgumentParser:
@@ -125,10 +125,12 @@ def identity(value):
     return value
 
 
-NestedArg = namedtuple('NestedArg', 'key val')
+NestedArg = namedtuple("NestedArg", "key val")
 
 
-def parse_value_or_config(value: Any, enable_path: bool = True, simple_types: bool = False) -> Tuple[Any, Optional['Path']]:
+def parse_value_or_config(
+    value: Any, enable_path: bool = True, simple_types: bool = False
+) -> Tuple[Any, Optional["Path"]]:
     """Parses yaml/json config in a string or a path"""
     nested_arg: Union[bool, NestedArg] = False
     if isinstance(value, NestedArg):
@@ -143,12 +145,12 @@ def parse_value_or_config(value: Any, enable_path: bool = True, simple_types: bo
         else:
             with cfg_path.relative_path_context():
                 value = load_value(cfg_path.get_content(), simple_types=simple_types)
-    if type(value) is str and value.strip() != '':
+    if type(value) is str and value.strip() != "":
         parsed_val = load_value(value, simple_types=simple_types)
         if type(parsed_val) is not str:
             value = parsed_val
     if isinstance(value, dict) and cfg_path is not None:
-        value['__path__'] = cfg_path
+        value["__path__"] = cfg_path
     if nested_arg:
         value = NestedArg(key=nested_arg.key, val=value)  # type: ignore
     return value, cfg_path
@@ -168,17 +170,17 @@ def read_stdin() -> str:
 
 def import_object(name: str):
     """Returns an object in a module given its dot import path."""
-    if not isinstance(name, str) or '.' not in name:
-        raise ValueError(f'Expected a dot import path string: {name}')
-    if not all(x.isidentifier() for x in name.split('.')):
-        raise ValueError(f'Unexpected import path format: {name}')
-    name_module, name_object = name.rsplit('.', 1)
+    if not isinstance(name, str) or "." not in name:
+        raise ValueError(f"Expected a dot import path string: {name}")
+    if not all(x.isidentifier() for x in name.split(".")):
+        raise ValueError(f"Unexpected import path format: {name}")
+    name_module, name_object = name.rsplit(".", 1)
     try:
         parent = __import__(name_module, fromlist=[name_object])
     except ModuleNotFoundError as ex:
-        if '.' not in name_module:
+        if "." not in name_module:
             raise ex
-        name_module, name_object1 = name_module.rsplit('.', 1)
+        name_module, name_object1 = name_module.rsplit(".", 1)
         parent = getattr(__import__(name_module, fromlist=[name_object1]), name_object1)
     return getattr(parent, name_object)
 
@@ -193,54 +195,55 @@ def register_unresolvable_import_paths(*modules: ModuleType):
     """
     for module in modules:
         for val in vars(module).values():
-            if getattr(val, '__module__', None) is None and \
-               getattr(val, '__name__', None) and \
-               type(val) in {BuiltinFunctionType, FunctionType, Type}:
-                unresolvable_import_paths[val] = f'{module.__name__}.{val.__name__}'
+            if (
+                getattr(val, "__module__", None) is None
+                and getattr(val, "__name__", None)
+                and type(val) in {BuiltinFunctionType, FunctionType, Type}
+            ):
+                unresolvable_import_paths[val] = f"{module.__name__}.{val.__name__}"
 
 
 def get_module_var_path(module_path: str, value: Any) -> Optional[str]:
     module = import_module(module_path)
     for name, var in vars(module).items():
         if var is value:
-            return module_path + '.' + name
+            return module_path + "." + name
     return None
 
 
 def get_import_path(value: Any) -> Optional[str]:
     """Returns the shortest dot import path for the given object."""
     path = None
-    module_path = getattr(value, '__module__', None)
-    qualname = getattr(value, '__qualname__', '')
+    module_path = getattr(value, "__module__", None)
+    qualname = getattr(value, "__qualname__", "")
 
     if module_path is None:
         path = unresolvable_import_paths.get(value)
         if path:
-            module_path, _ = path.rsplit('.', 1)
-    elif (
-        (not qualname and not inspect.isclass(value)) or
-        (inspect.ismethod(value) and not inspect.isclass(value.__self__))
+            module_path, _ = path.rsplit(".", 1)
+    elif (not qualname and not inspect.isclass(value)) or (
+        inspect.ismethod(value) and not inspect.isclass(value.__self__)
     ):
         path = get_module_var_path(module_path, value)
     elif qualname:
-        path = module_path + '.' + qualname
+        path = module_path + "." + qualname
 
     if not path:
-        raise ValueError(f'Not possible to determine the import path for object {value}.')
+        raise ValueError(f"Not possible to determine the import path for object {value}.")
 
-    if qualname and module_path and '.' in module_path:
-        module_parts = module_path.split('.')
+    if qualname and module_path and "." in module_path:
+        module_parts = module_path.split(".")
         for num in range(len(module_parts)):
-            module_path = '.'.join(module_parts[:num+1])
+            module_path = ".".join(module_parts[: num + 1])
             module = import_module(module_path)
-            if '.' in qualname:
-                obj_name, attr = qualname.rsplit('.', 1)
+            if "." in qualname:
+                obj_name, attr = qualname.rsplit(".", 1)
                 obj = getattr(module, obj_name, None)
                 if getattr(obj, attr, None) is value:
-                    path = module_path + '.' + qualname
+                    path = module_path + "." + qualname
                     break
             elif getattr(module, qualname, None) is value:
-                path = module_path + '.' + qualname
+                path = module_path + "." + qualname
                 break
     return path
 
@@ -253,20 +256,20 @@ def object_path_serializer(value):
             raise ValueError
         return path
     except Exception as ex:
-        raise ValueError(f'Only possible to serialize an importable object, given {value}: {ex}') from ex
+        raise ValueError(f"Only possible to serialize an importable object, given {value}: {ex}") from ex
 
 
 def get_typehint_origin(typehint):
-    if not hasattr(typehint, '__origin__') and get_import_path(typehint.__class__) == 'types.UnionType':
+    if not hasattr(typehint, "__origin__") and get_import_path(typehint.__class__) == "types.UnionType":
         return Union
-    return getattr(typehint, '__origin__', None)
+    return getattr(typehint, "__origin__", None)
 
 
-current_path_dir: ContextVar[Optional[str]] = ContextVar('current_path_dir', default=None)
+current_path_dir: ContextVar[Optional[str]] = ContextVar("current_path_dir", default=None)
 
 
 @contextmanager
-def change_to_path_dir(path: Optional['Path']) -> Iterator[Optional[str]]:
+def change_to_path_dir(path: Optional["Path"]) -> Iterator[Optional[str]]:
     """A context manager for running code in the directory of a path."""
     path_dir = current_path_dir.get()
     chdir: Union[bool, str] = False
@@ -275,10 +278,10 @@ def change_to_path_dir(path: Optional['Path']) -> Iterator[Optional[str]]:
             scheme = path._url_data.scheme
             path_dir = path._url_data.url_path
         else:
-            scheme = ''
+            scheme = ""
             path_dir = path.absolute
             chdir = True
-        if 'd' not in path.mode:
+        if "d" not in path.mode:
             path_dir = os.path.dirname(path_dir)
         path_dir = scheme + path_dir
 
@@ -318,34 +321,35 @@ def unique(iterable):
     return unique_items
 
 
-def iter_to_set_str(val, sep=','):
+def iter_to_set_str(val, sep=","):
     val = unique(val)
     if len(val) == 1:
         return str(val[0])
-    return '{'+sep.join(str(x) for x in val)+'}'
+    return "{" + sep.join(str(x) for x in val) + "}"
 
 
 def indent_text(text: str, first_line: bool = True) -> str:
     if first_line:
-        return textwrap.indent(text, '  ')
+        return textwrap.indent(text, "  ")
     lines = text.splitlines()
     if len(lines) == 1:
         return text
-    return lines[0] + os.linesep + textwrap.indent(os.linesep.join(lines[1:]), '  ')
+    return lines[0] + os.linesep + textwrap.indent(os.linesep.join(lines[1:]), "  ")
 
 
 def get_private_kwargs(data, **kwargs):
     extracted = [data.pop(name, default) for name, default in kwargs.items()]
     if data:
-        raise ValueError(f'Unexpected keyword parameters: {set(data.keys())}')
+        raise ValueError(f"Unexpected keyword parameters: {set(data.keys())}")
     return extracted[0] if len(extracted) == 1 else extracted
 
 
 def known_to_fsspec(path: str) -> bool:
-    import_fsspec('known_to_fsspec')
+    import_fsspec("known_to_fsspec")
     from fsspec.registry import known_implementations
+
     for protocol in known_implementations:
-        if path.startswith(protocol+'://') or path.startswith(protocol+'::'):
+        if path.startswith(protocol + "://") or path.startswith(protocol + "::"):
             return True
     return False
 
@@ -354,7 +358,7 @@ class ClassFromFunctionBase:
     wrapped_function: Callable
 
 
-ClassType = TypeVar('ClassType')
+ClassType = TypeVar("ClassType")
 
 
 def class_from_function(func: Callable[..., ClassType]) -> Type[ClassType]:
@@ -368,7 +372,7 @@ def class_from_function(func: Callable[..., ClassType]) -> Type[ClassType]:
         caller_frame = inspect.currentframe().f_back  # type: ignore
         func_return = caller_frame.f_locals.get(func_return) or caller_frame.f_globals.get(func_return)  # type: ignore
         if func_return is None:
-            raise ValueError(f'Unable to dereference {func_return} the return type of {func}.')
+            raise ValueError(f"Unable to dereference {func_return} the return type of {func}.")
 
     @wraps(func)
     def __new__(cls, *args, **kwargs):
@@ -385,30 +389,30 @@ def class_from_function(func: Callable[..., ClassType]) -> Type[ClassType]:
 
 
 def parse_url(url: str) -> Optional[UrlData]:
-    index = url.rfind('://')
+    index = url.rfind("://")
     if index <= 0:
         return None
     return UrlData(
-        scheme=url[:index+3],
-        url_path=url[index+3:],
+        scheme=url[: index + 3],
+        url_path=url[index + 3 :],
     )
 
 
 def is_absolute_path(path: str) -> bool:
-    if path.find('://') > 0:
+    if path.find("://") > 0:
         return True
     return os.path.isabs(path)
 
 
 def resolve_relative_path(path: str) -> str:
-    parts = path.split('/')
+    parts = path.split("/")
     resolved: List[str] = []
     for part in parts:
-        if part == '..':
+        if part == "..":
             resolved.pop()
-        elif part != '.':
+        elif part != ".":
             resolved.append(part)
-    return '/'.join(resolved)
+    return "/".join(resolved)
 
 
 class Path(PathDeprecations):
@@ -429,12 +433,12 @@ class Path(PathDeprecations):
     """
 
     _url_data: Optional[UrlData]
-    _file_scheme = re.compile('^file:///?')
+    _file_scheme = re.compile("^file:///?")
 
     def __init__(
         self,
-        path: Union[str, 'Path'],
-        mode: str = 'fr',
+        path: Union[str, "Path"],
+        mode: str = "fr",
         cwd: Optional[str] = None,
         **kwargs,
     ):
@@ -464,23 +468,20 @@ class Path(PathDeprecations):
         elif isinstance(path, str):
             abs_path = os.path.expanduser(path)
             if self._file_scheme.match(abs_path):
-                abs_path = self._file_scheme.sub('' if os.name == 'nt' else '/', abs_path)
+                abs_path = self._file_scheme.sub("" if os.name == "nt" else "/", abs_path)
             is_absolute = is_absolute_path(abs_path)
             url_data = parse_url(abs_path)
             cwd_url_data = parse_url(cwd or current_path_dir.get() or os.getcwd())
-            if (
-                ('u' in mode or 's' in mode) and
-                (url_data or (cwd_url_data and not is_absolute))
-            ):
+            if ("u" in mode or "s" in mode) and (url_data or (cwd_url_data and not is_absolute)):
                 if cwd_url_data and not is_absolute:
-                    abs_path = resolve_relative_path(cwd_url_data.url_path + '/' + path)
+                    abs_path = resolve_relative_path(cwd_url_data.url_path + "/" + path)
                     abs_path = cwd_url_data.scheme + abs_path
                     url_data = parse_url(abs_path)
                 if cwd is None:
                     cwd = current_path_dir.get() or os.getcwd()
-                if 'u' in mode and url_support:
+                if "u" in mode and url_support:
                     is_url = True
-                elif 's' in mode and fsspec_support and known_to_fsspec(abs_path):
+                elif "s" in mode and fsspec_support and known_to_fsspec(abs_path):
                     is_fsspec = True
             else:
                 if cwd is None:
@@ -488,67 +489,67 @@ class Path(PathDeprecations):
                 abs_path = abs_path if is_absolute else os.path.join(cwd, abs_path)
                 url_data = None
         else:
-            raise TypeError('Expected path to be a string or a Path object.')
+            raise TypeError("Expected path to be a string or a Path object.")
 
         if not self._skip_check and is_url:
-            if 'r' in mode:
-                requests = import_requests('Path with URL support')
+            if "r" in mode:
+                requests = import_requests("Path with URL support")
                 try:
                     requests.head(abs_path).raise_for_status()
                 except requests.HTTPError as ex:
-                    raise TypeError(f'{abs_path} HEAD not accessible :: {ex}') from ex
+                    raise TypeError(f"{abs_path} HEAD not accessible :: {ex}") from ex
         elif not self._skip_check and is_fsspec:
-            fsspec_mode = ''.join(c for c in mode if c in {'r','w'})
+            fsspec_mode = "".join(c for c in mode if c in {"r", "w"})
             if fsspec_mode:
-                fsspec = import_fsspec('Path')
+                fsspec = import_fsspec("Path")
                 try:
                     handle = fsspec.open(abs_path, fsspec_mode)
                     handle.open()
                     handle.close()
                 except (FileNotFoundError, KeyError) as ex:
-                    raise TypeError('Path does not exist: '+abs_path) from ex
+                    raise TypeError("Path does not exist: " + abs_path) from ex
                 except PermissionError as ex:
-                    raise TypeError('Path exists but no permission to access: '+abs_path) from ex
+                    raise TypeError("Path exists but no permission to access: " + abs_path) from ex
         elif not self._skip_check:
-            ptype = 'Directory' if 'd' in mode else 'File'
-            if 'c' in mode:
-                pdir = os.path.realpath(os.path.join(abs_path, '..'))
-                if not os.path.isdir(pdir) and mode.count('c') == 2:
+            ptype = "Directory" if "d" in mode else "File"
+            if "c" in mode:
+                pdir = os.path.realpath(os.path.join(abs_path, ".."))
+                if not os.path.isdir(pdir) and mode.count("c") == 2:
                     ppdir = None
                     while not os.path.isdir(pdir) and pdir != ppdir:
                         ppdir = pdir
-                        pdir = os.path.realpath(os.path.join(pdir, '..'))
+                        pdir = os.path.realpath(os.path.join(pdir, ".."))
                 if not os.path.isdir(pdir):
-                    raise TypeError(ptype+' is not creatable since parent directory does not exist: '+abs_path)
+                    raise TypeError(ptype + " is not creatable since parent directory does not exist: " + abs_path)
                 if not os.access(pdir, os.W_OK):
-                    raise TypeError(ptype+' is not creatable since parent directory not writeable: '+abs_path)
-                if 'd' in mode and os.access(abs_path, os.F_OK) and not os.path.isdir(abs_path):
-                    raise TypeError(ptype+' is not creatable since path already exists: '+abs_path)
-                if 'f' in mode and os.access(abs_path, os.F_OK) and not os.path.isfile(abs_path):
-                    raise TypeError(ptype+' is not creatable since path already exists: '+abs_path)
-            elif 'd' in mode or 'f' in mode:
+                    raise TypeError(ptype + " is not creatable since parent directory not writeable: " + abs_path)
+                if "d" in mode and os.access(abs_path, os.F_OK) and not os.path.isdir(abs_path):
+                    raise TypeError(ptype + " is not creatable since path already exists: " + abs_path)
+                if "f" in mode and os.access(abs_path, os.F_OK) and not os.path.isfile(abs_path):
+                    raise TypeError(ptype + " is not creatable since path already exists: " + abs_path)
+            elif "d" in mode or "f" in mode:
                 if not os.access(abs_path, os.F_OK):
-                    raise TypeError(ptype+' does not exist: '+abs_path)
-                if 'd' in mode and not os.path.isdir(abs_path):
-                    raise TypeError('Path is not a directory: '+abs_path)
-                if 'f' in mode and not (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
-                    raise TypeError('Path is not a file: '+abs_path)
-            if 'r' in mode and not os.access(abs_path, os.R_OK):
-                raise TypeError(ptype+' is not readable: '+abs_path)
-            if 'w' in mode and not os.access(abs_path, os.W_OK):
-                raise TypeError(ptype+' is not writeable: '+abs_path)
-            if 'x' in mode and not os.access(abs_path, os.X_OK):
-                raise TypeError(ptype+' is not executable: '+abs_path)
-            if 'D' in mode and os.path.isdir(abs_path):
-                raise TypeError('Path is a directory: '+abs_path)
-            if 'F' in mode and (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
-                raise TypeError('Path is a file: '+abs_path)
-            if 'R' in mode and os.access(abs_path, os.R_OK):
-                raise TypeError(ptype+' is readable: '+abs_path)
-            if 'W' in mode and os.access(abs_path, os.W_OK):
-                raise TypeError(ptype+' is writeable: '+abs_path)
-            if 'X' in mode and os.access(abs_path, os.X_OK):
-                raise TypeError(ptype+' is executable: '+abs_path)
+                    raise TypeError(ptype + " does not exist: " + abs_path)
+                if "d" in mode and not os.path.isdir(abs_path):
+                    raise TypeError("Path is not a directory: " + abs_path)
+                if "f" in mode and not (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
+                    raise TypeError("Path is not a file: " + abs_path)
+            if "r" in mode and not os.access(abs_path, os.R_OK):
+                raise TypeError(ptype + " is not readable: " + abs_path)
+            if "w" in mode and not os.access(abs_path, os.W_OK):
+                raise TypeError(ptype + " is not writeable: " + abs_path)
+            if "x" in mode and not os.access(abs_path, os.X_OK):
+                raise TypeError(ptype + " is not executable: " + abs_path)
+            if "D" in mode and os.path.isdir(abs_path):
+                raise TypeError("Path is a directory: " + abs_path)
+            if "F" in mode and (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
+                raise TypeError("Path is a file: " + abs_path)
+            if "R" in mode and os.access(abs_path, os.R_OK):
+                raise TypeError(ptype + " is readable: " + abs_path)
+            if "W" in mode and os.access(abs_path, os.W_OK):
+                raise TypeError(ptype + " is writeable: " + abs_path)
+            if "X" in mode and os.access(abs_path, os.X_OK):
+                raise TypeError(ptype + " is executable: " + abs_path)
 
         self._relative = path
         self._absolute = abs_path
@@ -582,12 +583,12 @@ class Path(PathDeprecations):
         return self._relative
 
     def __repr__(self):
-        name = 'Path_'+self._mode
+        name = "Path_" + self._mode
         name = self._repr_skip_check(name)
-        cwd = ''
+        cwd = ""
         if self._relative != self._absolute:
-            cwd = ', cwd='+self._cwd
-        return f'{name}({self._relative}{cwd})'
+            cwd = ", cwd=" + self._cwd
+        return f"{name}({self._relative}{cwd})"
 
     def __fspath__(self) -> str:
         return self._absolute
@@ -607,16 +608,16 @@ class Path(PathDeprecations):
         """
         return self._absolute if absolute else self._relative
 
-    def get_content(self, mode: str = 'r') -> str:
+    def get_content(self, mode: str = "r") -> str:
         """Returns the contents of the file or the remote path."""
         if self._is_url:
-            assert mode == 'r'
-            requests = import_requests('Path.get_content')
+            assert mode == "r"
+            requests = import_requests("Path.get_content")
             response = requests.get(self._absolute)
             response.raise_for_status()
             return response.text
         elif self._is_fsspec:
-            fsspec = import_fsspec('Path.get_content')
+            fsspec = import_fsspec("Path.get_content")
             with fsspec.open(self._absolute, mode) as handle:
                 with handle as input_file:
                     return input_file.read()
@@ -625,12 +626,12 @@ class Path(PathDeprecations):
                 return input_file.read()
 
     @contextmanager
-    def open(self, mode: str = 'r') -> Iterator[IO]:
+    def open(self, mode: str = "r") -> Iterator[IO]:
         """Return an opened file object for the path."""
         if self._is_url:
             yield StringIO(self.get_content())
         elif self._is_fsspec:
-            fsspec = import_fsspec('Path.open')
+            fsspec = import_fsspec("Path.open")
             with fsspec.open(self._absolute, mode) as handle:
                 yield handle
         else:
@@ -647,17 +648,17 @@ class Path(PathDeprecations):
     @staticmethod
     def _check_mode(mode: str):
         if not isinstance(mode, str):
-            raise ValueError('Expected mode to be a string.')
-        if len(set(mode)-set('fdrwxcusFDRWX')) > 0:
-            raise ValueError('Expected mode to only include [fdrwxcusFDRWX] flags.')
+            raise ValueError("Expected mode to be a string.")
+        if len(set(mode) - set("fdrwxcusFDRWX")) > 0:
+            raise ValueError("Expected mode to only include [fdrwxcusFDRWX] flags.")
         for flag, count in Counter(mode).items():
-            if count > (2 if flag == 'c' else 1):
+            if count > (2 if flag == "c" else 1):
                 raise ValueError(f'Too many occurrences ({count}) for flag "{flag}".')
-        if 'f' in mode and 'd' in mode:
+        if "f" in mode and "d" in mode:
             raise ValueError('Both modes "f" and "d" not possible.')
-        if 'u' in mode and 'd' in mode:
+        if "u" in mode and "d" in mode:
             raise ValueError('Both modes "d" and "u" not possible.')
-        if 's' in mode and 'd' in mode:
+        if "s" in mode and "d" in mode:
             raise ValueError('Both modes "d" and "s" not possible.')
 
 
@@ -665,13 +666,13 @@ def setup_default_logger(data, level, caller):
     name = caller
     if isinstance(data, str):
         name = data
-    elif isinstance(data, dict) and 'name' in data:
-        name = data['name']
+    elif isinstance(data, dict) and "name" in data:
+        name = data["name"]
     logger = logging.getLogger(name)
     logger.parent = None
     if len(logger.handlers) == 0:
         handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
         logger.addHandler(handler)
     level = getattr(logging, level)
     for handler in logger.handlers:
@@ -681,19 +682,19 @@ def setup_default_logger(data, level, caller):
 
 def parse_logger(logger: Union[bool, str, dict, logging.Logger], caller):
     if not isinstance(logger, (bool, str, dict, logging.Logger)):
-        raise ValueError(f'Expected logger to be an instance of (bool, str, dict, logging.Logger), but got {logger}.')
-    if isinstance(logger, dict) and len(set(logger.keys())-{'name', 'level'}) > 0:
-        value = {k: v for k, v in logger.items() if k not in {'name', 'level'}}
-        raise ValueError(f'Unexpected data to configure logger: {value}.')
+        raise ValueError(f"Expected logger to be an instance of (bool, str, dict, logging.Logger), but got {logger}.")
+    if isinstance(logger, dict) and len(set(logger.keys()) - {"name", "level"}) > 0:
+        value = {k: v for k, v in logger.items() if k not in {"name", "level"}}
+        raise ValueError(f"Unexpected data to configure logger: {value}.")
     if logger is False:
         return null_logger
-    level = 'WARNING'
-    if isinstance(logger, dict) and 'level' in logger:
-        level = logger['level']
+    level = "WARNING"
+    if isinstance(logger, dict) and "level" in logger:
+        level = logger["level"]
     if level not in logging_levels:
-        raise ValueError(f'Got logger level {level!r} but must be one of {logging_levels}.')
-    if (logger is True or (isinstance(logger, dict) and 'name' not in logger)) and reconplogger_support:
-        logger = import_reconplogger('parse_logger').logger_setup(level=level)
+        raise ValueError(f"Got logger level {level!r} but must be one of {logging_levels}.")
+    if (logger is True or (isinstance(logger, dict) and "name" not in logger)) and reconplogger_support:
+        logger = import_reconplogger("parse_logger").logger_setup(level=level)
     if not isinstance(logger, logging.Logger):
         logger = setup_default_logger(logger, level, caller)
     return logger
@@ -706,7 +707,6 @@ class LoggerProperty:
         """Initializer for LoggerProperty class."""
         self.logger = logger  # type: ignore
         super().__init__(*args, **kwargs)
-
 
     @property
     def logger(self) -> logging.Logger:
@@ -726,12 +726,13 @@ class LoggerProperty:
     def logger(self, logger: Union[bool, str, dict, logging.Logger]):
         if logger is None:
             from .deprecated import deprecation_warning, logger_property_none_message
+
             deprecation_warning((LoggerProperty.logger, None), logger_property_none_message)
             logger = False
-        if not logger and 'JSONARGPARSE_DEBUG' in os.environ:
-            logger = {'level': 'DEBUG'}
+        if not logger and "JSONARGPARSE_DEBUG" in os.environ:
+            logger = {"level": "DEBUG"}
         self._logger = parse_logger(logger, type(self).__name__)
 
 
-if 'JSONARGPARSE_DEBUG' in os.environ:
-    os.environ['LOGGER_LEVEL'] = 'DEBUG'  # pragma: no cover
+if "JSONARGPARSE_DEBUG" in os.environ:
+    os.environ["LOGGER_LEVEL"] = "DEBUG"  # pragma: no cover

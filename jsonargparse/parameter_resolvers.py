@@ -39,8 +39,8 @@ ParamList = List[ParamData]
 parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]  # type: ignore
 kinds = inspect._ParameterKind
 ast_assign_type: Tuple[Type[ast.AST], ...] = (ast.AnnAssign, ast.Assign)
-param_kwargs_get = '**.get()'
-param_kwargs_pop = '**.pop()'
+param_kwargs_get = "**.get()"
+param_kwargs_pop = "**.pop()"
 
 
 class SourceNotAvailable(Exception):
@@ -51,27 +51,25 @@ class UnknownDefault:
     def __init__(self, resolver: str, data: Any = inspect._empty) -> None:
         self.resolver = resolver
         self.data = data
+
     def __repr__(self) -> str:
         value = f"{type(self).__name__.replace('Default', '')}<{self.resolver}>"
         if self.data != inspect._empty:
-            value = f'{value} {self.data}'
+            value = f"{value} {self.data}"
         return value
 
 
 class ConditionalDefault(UnknownDefault):
     def __init__(self, resolver: str, data: Any) -> None:
-        super().__init__(resolver, iter_to_set_str(data, sep=', '))
+        super().__init__(resolver, iter_to_set_str(data, sep=", "))
 
 
 def get_parameter_origins(component, parent) -> Optional[str]:
     if isinstance(component, tuple):
         assert parent is None or len(component) == len(parent)
-        return iter_to_set_str(
-            get_parameter_origins(c, parent[n] if parent else None)
-            for n, c in enumerate(component)
-        )
+        return iter_to_set_str(get_parameter_origins(c, parent[n] if parent else None) for n, c in enumerate(component))
     if parent:
-        return f'{get_import_path(parent)}.{component.__name__}'
+        return f"{get_import_path(parent)}.{component.__name__}"
     return get_import_path(component)
 
 
@@ -80,7 +78,9 @@ def is_staticmethod(attr) -> bool:
 
 
 def is_method(attr) -> bool:
-    return (inspect.isfunction(attr) or attr.__class__.__name__ == 'cython_function_or_method') and not is_staticmethod(attr)
+    return (inspect.isfunction(attr) or attr.__class__.__name__ == "cython_function_or_method") and not is_staticmethod(
+        attr
+    )
 
 
 def is_property(attr) -> bool:
@@ -96,11 +96,11 @@ def is_classmethod(parent, component) -> bool:
 
 
 def is_lambda(value: Any) -> bool:
-    return callable(value) and value.__name__ == '<lambda>'
+    return callable(value) and value.__name__ == "<lambda>"
 
 
 def ast_str(node):
-    return getattr(ast, 'unparse', ast.dump)(node)
+    return getattr(ast, "unparse", ast.dump)(node)
 
 
 def ast_variable_load(name):
@@ -123,18 +123,17 @@ def ast_is_not(node) -> bool:
     return isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not)
 
 
-dict_ast = ast.dump(ast_variable_load('dict'))
+dict_ast = ast.dump(ast_variable_load("dict"))
 
 
 def ast_is_dict_assign(node):
     return isinstance(node, ast_assign_type) and (
-        isinstance(node.value, ast.Dict) or
-        (isinstance(node.value, ast.Call) and ast.dump(node.value.func) == dict_ast)
+        isinstance(node.value, ast.Dict) or (isinstance(node.value, ast.Call) and ast.dump(node.value.func) == dict_ast)
     )
 
 
 def ast_is_dict_assign_with_value(node, value):
-    if ast_is_dict_assign(node) and getattr(node.value, 'keywords', None):
+    if ast_is_dict_assign(node) and getattr(node.value, "keywords", None):
         value_dump = ast.dump(value)
         for keyword in [k.value for k in node.value.keywords]:
             if ast.dump(keyword) == value_dump:
@@ -143,19 +142,19 @@ def ast_is_dict_assign_with_value(node, value):
 
 
 def ast_is_call_with_value(node, value_dump) -> bool:
-    for argtype in ['args', 'keywords']:
+    for argtype in ["args", "keywords"]:
         for arg in getattr(node, argtype):
-            if isinstance(getattr(arg, 'value', None), ast.AST) and ast.dump(arg.value) == value_dump:
+            if isinstance(getattr(arg, "value", None), ast.AST) and ast.dump(arg.value) == value_dump:
                 return True
     return False
 
 
 ast_constant_attr = {
-    ast.Constant: 'value',
+    ast.Constant: "value",
     # python <= 3.7:
-    ast.NameConstant: 'value',
-    ast.Num: 'n',
-    ast.Str: 's',
+    ast.NameConstant: "value",
+    ast.Num: "n",
+    ast.Str: "s",
 }
 
 
@@ -180,21 +179,21 @@ def ast_get_name_and_attrs(node) -> List[str]:
 
 def ast_is_kwargs_pop_or_get(node, value_dump) -> bool:
     return (
-        isinstance(node.func, ast.Attribute) and
-        value_dump == ast.dump(node.func.value) and
-        node.func.attr in {'pop', 'get'} and
-        len(node.args) == 2 and
-        isinstance(ast_get_constant_value(node.args[0]), str)
+        isinstance(node.func, ast.Attribute)
+        and value_dump == ast.dump(node.func.value)
+        and node.func.attr in {"pop", "get"}
+        and len(node.args) == 2
+        and isinstance(ast_get_constant_value(node.args[0]), str)
     )
 
 
 def ast_is_super_call(node) -> bool:
     return (
-        isinstance(node, ast.Call) and
-        isinstance(node.func, ast.Attribute) and
-        isinstance(node.func.value, ast.Call) and
-        isinstance(node.func.value.func, ast.Name) and
-        node.func.value.func.id == 'super'
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Call)
+        and isinstance(node.func.value.func, ast.Name)
+        and node.func.value.func.id == "super"
     )
 
 
@@ -204,21 +203,21 @@ def ast_is_supported_super_call(node, self_name, log_debug) -> bool:
     if not args and not node.func.value.keywords:
         supported = True
     elif (
-        args and
-        len(args) == 2 and
-        all(isinstance(a, ast.Name) for a in args) and
-        self_name == args[1].id and
-        not node.func.value.keywords
+        args
+        and len(args) == 2
+        and all(isinstance(a, ast.Name) for a in args)
+        and self_name == args[1].id
+        and not node.func.value.keywords
     ):
         classes, idx = current_mro.get()
         module = inspect.getmodule(classes[idx])
         for offset, cls in enumerate(classes[idx:]):
             if args[0].id == cls.__name__ and cls is getattr(module, cls.__name__, None):
-                current_mro.set((classes, idx+offset))
+                current_mro.set((classes, idx + offset))
                 supported = True
                 break
     if not supported:
-        log_debug(f'unsupported super parameters: {ast_str(node)}')
+        log_debug(f"unsupported super parameters: {ast_str(node)}")
     return supported
 
 
@@ -233,7 +232,7 @@ def ast_get_call_kwarg_with_value(node, value):
     value_dump = ast.dump(value)
     kwarg = None
     for arg in node.keywords:
-        if isinstance(getattr(arg, 'value', None), ast.AST) and ast.dump(arg.value) == value_dump:
+        if isinstance(getattr(arg, "value", None), ast.AST) and ast.dump(arg.value) == value_dump:
             kwarg = arg
             break
     return kwarg
@@ -289,19 +288,18 @@ def add_stub_types(stubs: Optional[Dict[str, Any]], params: ParamList, component
     known_params = {p.name for p in params}
     for name, stub in stubs.items():
         if name not in known_params:
-            params.append(ParamData(
-                name=name,
-                annotation=stub,
-                default=UnknownDefault('stubs-resolver'),
-                kind=kinds.KEYWORD_ONLY,
-                component=component,
-            ))
+            params.append(
+                ParamData(
+                    name=name,
+                    annotation=stub,
+                    default=UnknownDefault("stubs-resolver"),
+                    kind=kinds.KEYWORD_ONLY,
+                    component=component,
+                )
+            )
 
 
-ast_literals = {
-    ast.dump(ast.parse(v, mode='eval').body): partial(ast.literal_eval, v)
-    for v in ['{}', '[]']
-}
+ast_literals = {ast.dump(ast.parse(v, mode="eval").body): partial(ast.literal_eval, v) for v in ["{}", "[]"]}
 
 
 def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, log_debug):
@@ -314,7 +312,7 @@ def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, log_deb
             default = ast_literals[default]()
         else:
             default = None
-            log_debug(f'unsupported kwargs pop/get default: {ast_str(node)}')
+            log_debug(f"unsupported kwargs pop/get default: {ast_str(node)}")
     return ParamData(
         name=name,
         annotation=inspect._empty,
@@ -323,7 +321,7 @@ def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, log_deb
         doc=doc_params.get(name),
         parent=parent,
         component=component,
-        origin=param_kwargs_get if node.func.attr == 'get' else param_kwargs_pop,
+        origin=param_kwargs_get if node.func.attr == "get" else param_kwargs_pop,
     )
 
 
@@ -331,15 +329,13 @@ def is_param_subclass_instance_default(param: ParamData) -> bool:
     if is_dataclass_like(type(param.default)):
         return False
     from .typehints import ActionTypeHint, get_subclass_types
+
     class_types = get_subclass_types(param.annotation)
-    return (
-        (class_types and isinstance(param.default, class_types)) or
-        (
-            is_lambda(param.default) and
-            ActionTypeHint.is_callable_typehint(param.annotation, all_subtypes=False) and
-            param.annotation.__args__ and
-            ActionTypeHint.is_subclass_typehint(param.annotation.__args__[-1], all_subtypes=False)
-        )
+    return (class_types and isinstance(param.default, class_types)) or (
+        is_lambda(param.default)
+        and ActionTypeHint.is_callable_typehint(param.annotation, all_subtypes=False)
+        and param.annotation.__args__
+        and ActionTypeHint.is_subclass_typehint(param.annotation.__args__[-1], all_subtypes=False)
     )
 
 
@@ -353,13 +349,13 @@ def replace_args_and_kwargs(params: ParamList, args: ParamList, kwargs: ParamLis
     args_idx = get_arg_kind_index(params, kinds.VAR_POSITIONAL)
     kwargs_idx = get_arg_kind_index(params, kinds.VAR_KEYWORD)
     if args_idx >= 0:
-        params = params[:args_idx] + args + params[args_idx+1:]
+        params = params[:args_idx] + args + params[args_idx + 1 :]
         if kwargs_idx >= 0:
             kwargs_idx += len(args) - 1
     if kwargs_idx >= 0:
-        existing_names = set(p.name for p in params[:kwargs_idx] + params[kwargs_idx+1:])
+        existing_names = set(p.name for p in params[:kwargs_idx] + params[kwargs_idx + 1 :])
         kwargs = [p for p in kwargs if p.name not in existing_names]
-        params = params[:kwargs_idx] + kwargs + params[kwargs_idx+1:]
+        params = params[:kwargs_idx] + kwargs + params[kwargs_idx + 1 :]
     return params
 
 
@@ -392,7 +388,7 @@ def group_parameters(params_list: List[ParamList]) -> ParamList:
             gparam.component = tuple(p.component for p in params)
             gparam.origin = tuple(p.origin for p in params)
             gparam.default = ConditionalDefault(
-                'ast-resolver',
+                "ast-resolver",
                 (p.default for p in params) if len(defaults) > 1 else defaults,
             )
             if len(types) > 1:
@@ -406,13 +402,13 @@ def group_parameters(params_list: List[ParamList]) -> ParamList:
 def has_dunder_new_method(cls, attr_name):
     classes = inspect.getmro(cls)[1:]
     return (
-        attr_name == '__init__' and
-        cls.__new__ is not object.__new__ and
-        not any(cls.__new__ is c.__new__ for c in classes)
+        attr_name == "__init__"
+        and cls.__new__ is not object.__new__
+        and not any(cls.__new__ is c.__new__ for c in classes)
     )
 
 
-current_mro: ContextVar = ContextVar('current_mro', default=(None, None))
+current_mro: ContextVar = ContextVar("current_mro", default=(None, None))
 
 
 @contextmanager
@@ -432,9 +428,9 @@ def mro_context(parent):
 
 def get_mro_parameters(method_name, get_parameters_fn, logger):
     classes, idx = current_mro.get()
-    for num, cls in enumerate(classes[idx+1:], start=idx+1):
+    for num, cls in enumerate(classes[idx + 1 :], start=idx + 1):
         method = getattr(cls, method_name, None)
-        remainder = classes[num+1:] + [object]
+        remainder = classes[num + 1 :] + [object]
         if method and not any(method is getattr(c, method_name, None) for c in remainder):
             current_mro.set((classes, num))
             return get_parameters_fn(cls, method, logger=logger)
@@ -445,11 +441,11 @@ def get_component_and_parent(
     function_or_class: Union[Callable, Type],
     method_or_property: Optional[Union[str, Callable]] = None,
 ):
-    if is_subclass(function_or_class, ClassFromFunctionBase) and method_or_property in {None, '__init__'}:
+    if is_subclass(function_or_class, ClassFromFunctionBase) and method_or_property in {None, "__init__"}:
         function_or_class = function_or_class.wrapped_function  # type: ignore
         method_or_property = None
     elif inspect.isclass(function_or_class) and method_or_property is None:
-        method_or_property = '__init__'
+        method_or_property = "__init__"
     elif method_or_property and not isinstance(method_or_property, str):
         method_or_property = method_or_property.__name__
     parent = component = None
@@ -460,7 +456,7 @@ def get_component_and_parent(
             return component, parent, method_or_property
         parent = function_or_class
         if has_dunder_new_method(function_or_class, method_or_property):
-            component = getattr(function_or_class, '__new__')
+            component = getattr(function_or_class, "__new__")
         elif is_method(attr):
             component = attr
         elif is_property(attr):
@@ -468,16 +464,17 @@ def get_component_and_parent(
         elif isinstance(attr, classmethod):
             component = getattr(function_or_class, method_or_property)
         elif attr is not object.__init__:
-            raise ValueError(f'Invalid or unsupported input: class={function_or_class}, method_or_property={method_or_property}')
+            raise ValueError(
+                f"Invalid or unsupported input: class={function_or_class}, method_or_property={method_or_property}"
+            )
     else:
         if not callable(function_or_class):
-            raise ValueError(f'Non-callable input: function={function_or_class}')
+            raise ValueError(f"Non-callable input: function={function_or_class}")
         component = function_or_class
     return component, parent, method_or_property
 
 
 class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
-
     def __init__(
         self,
         function_or_class: Union[Callable, Type],
@@ -488,11 +485,11 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         self.component, self.parent, _ = get_component_and_parent(function_or_class, method_or_property)
 
     def log_debug(self, message) -> None:
-        self.logger.debug(f'AST resolver: {message}')
+        self.logger.debug(f"AST resolver: {message}")
 
     def parse_source_tree(self):
         """Parses the component's AST and sets the component and parent nodes."""
-        if hasattr(self, 'component_node'):
+        if hasattr(self, "component_node"):
             return
         try:
             source = textwrap.dedent(inspect.getsource(self.component))
@@ -501,7 +498,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             self.component_node = tree.body[0]
             self.self_name = self.component_node.args.args[0].arg if self.parent else None
         except Exception as ex:
-            raise SourceNotAvailable(f'Problems getting source code for {self.component}: {ex}') from ex
+            raise SourceNotAvailable(f"Problems getting source code for {self.component}: {ex}") from ex
 
     def visit_Assign(self, node):
         do_generic_visit = True
@@ -578,7 +575,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 elif hasattr(container, node.func.attr):
                     function_or_class = getattr(container, node.func.attr)
         if not function_or_class:
-            self.log_debug(f'not supported: {ast_str(node)}')
+            self.log_debug(f"not supported: {ast_str(node)}")
             return None
         return function_or_class, method_or_property
 
@@ -590,7 +587,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             kwarg = ast_get_call_kwarg_with_value(node, value)
             if kwarg:
                 if kwarg.arg:
-                    self.log_debug(f'kwargs attribute given as keyword parameter not supported: {ast_str(node)}')
+                    self.log_debug(f"kwargs attribute given as keyword parameter not supported: {ast_str(node)}")
                 else:
                     get_param_args = self.get_node_component(node)
                     if get_param_args:
@@ -605,6 +602,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             default_nodes = self.get_default_nodes({p.name for p in params})
             assert len(params) == len(default_nodes)
             from .typehints import get_subclass_types
+
             for param, default_node in zip(params, default_nodes):
                 lambda_default = is_lambda(param.default)
                 node = default_node
@@ -619,19 +617,19 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 subclass_spec: dict = dict(class_path=get_import_path(class_type), init_args=dict())
                 for kwarg in node.keywords:
                     if kwarg.arg and ast_is_constant(kwarg.value):
-                        subclass_spec['init_args'][kwarg.arg] = ast_get_constant_value(kwarg.value)
+                        subclass_spec["init_args"][kwarg.arg] = ast_get_constant_value(kwarg.value)
                     else:
                         subclass_spec.clear()
                         break
                 if not subclass_spec or len(node.args) - num_positionals > 0:
-                    self.log_debug(f'unsupported class instance default: {ast_str(default_node)}')
+                    self.log_debug(f"unsupported class instance default: {ast_str(default_node)}")
                 elif subclass_spec:
-                    if not subclass_spec['init_args']:
-                        del subclass_spec['init_args']
+                    if not subclass_spec["init_args"]:
+                        del subclass_spec["init_args"]
                     param.default = subclass_spec
 
     def get_call_class_type(self, node) -> Optional[type]:
-        names = ast_get_name_and_attrs(getattr(node, 'func', None))
+        names = ast_get_name_and_attrs(getattr(node, "func", None))
         class_type = self.component.__globals__.get(names[0]) if names else None
         for name in names[1:]:
             class_type = getattr(class_type, name, None)
@@ -639,15 +637,15 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
 
     def get_default_nodes(self, param_names: set):
         node = self.component_node.args
-        arg_nodes = getattr(node, 'posonlyargs', []) + node.args
+        arg_nodes = getattr(node, "posonlyargs", []) + node.args
         default_nodes = [None] * (len(arg_nodes) - len(node.defaults)) + node.defaults
         default_nodes = [d for n, d in enumerate(default_nodes) if arg_nodes[n].arg in param_names]
         return default_nodes
 
     def get_parameters_args_and_kwargs(self) -> Tuple[ParamList, ParamList]:
         self.parse_source_tree()
-        args_name = getattr(self.component_node.args.vararg, 'arg', None)
-        kwargs_name = getattr(self.component_node.args.kwarg, 'arg', None)
+        args_name = getattr(self.component_node.args.vararg, "arg", None)
+        kwargs_name = getattr(self.component_node.args.kwarg, "arg", None)
         values_to_find = {}
         if args_name:
             values_to_find[args_name] = ast_variable_load(args_name)
@@ -664,13 +662,15 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         for node in [v for k, v in values_found if k == kwargs_name]:
             if isinstance(node, ast.Call):
                 if ast_is_kwargs_pop_or_get(node, kwargs_value_dump):
-                    param = get_kwargs_pop_or_get_parameter(node, self.component, self.parent, self.doc_params, self.log_debug)
+                    param = get_kwargs_pop_or_get_parameter(
+                        node, self.component, self.parent, self.doc_params, self.log_debug
+                    )
                     params_list.append([param])
                     continue
                 kwarg = ast_get_call_kwarg_with_value(node, kwargs_value)
                 params = []
                 if kwarg.arg:
-                    self.log_debug(f'kwargs given as keyword parameter not supported: {ast_str(node)}')
+                    self.log_debug(f"kwargs given as keyword parameter not supported: {ast_str(node)}")
                 elif self.parent and ast_is_super_call(node):
                     if ast_is_supported_super_call(node, self.self_name, self.log_debug):
                         params = get_mro_parameters(node.func.attr, get_signature_parameters, self.logger)  # type: ignore
@@ -690,7 +690,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                         self.add_node_origins(params, node)
                         params_list.append(params)
                 else:
-                    self.log_debug(f'unsupported type of assign: {ast_str(node)}')
+                    self.log_debug(f"unsupported type of assign: {ast_str(node)}")
 
         params = group_parameters(params_list)
         return split_args_and_kwargs(params)
@@ -698,8 +698,9 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
     def get_parameters_attr_use_in_members(self, attr_name) -> ParamList:
         attr_value = ast_attribute_load(self.self_name, attr_name)
         member_names = [
-            name for name, _ in inspect.getmembers(self.parent)
-            if not name.startswith('__') and is_method_or_property(inspect.getattr_static(self.parent, name))
+            name
+            for name, _ in inspect.getmembers(self.parent)
+            if not name.startswith("__") and is_method_or_property(inspect.getattr_static(self.parent, name))
         ]
         for member_name in member_names:
             assert self.parent is not None
@@ -707,7 +708,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             kwargs = visitor.get_parameters_call_attr(attr_name, attr_value)
             if kwargs is not None:
                 return kwargs
-        self.log_debug(f'did not find use of {self.self_name}.{attr_name} in members of {self.parent}')
+        self.log_debug(f"did not find use of {self.self_name}.{attr_name} in members of {self.parent}")
         return []
 
     def add_node_origins(self, params: ParamList, node) -> None:
@@ -715,7 +716,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         for param in params:
             if param.origin is None:
                 if not origin:
-                    origin = f'{get_parameter_origins(self.component, self.parent)}:{node.lineno}'
+                    origin = f"{get_parameter_origins(self.component, self.parent)}:{node.lineno}"
                 param.origin = origin
 
     def get_parameters_call_attr(self, attr_name: str, attr_value: ast.AST) -> Optional[ParamList]:
@@ -735,7 +736,9 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
     def get_parameters(self) -> ParamList:
         if self.component is None:
             return []
-        params, args_idx, kwargs_idx, doc_params, stubs = get_signature_parameters_and_indexes(self.component, self.parent, self.logger)
+        params, args_idx, kwargs_idx, doc_params, stubs = get_signature_parameters_and_indexes(
+            self.component, self.parent, self.logger
+        )
         self.replace_param_default_subclass_specs(params)
         if args_idx >= 0 or kwargs_idx >= 0:
             self.doc_params = doc_params
@@ -772,9 +775,11 @@ def get_parameters_from_pydantic(
     logger: logging.Logger,
 ) -> Optional[ParamList]:
     from .optionals import pydantic_support
+
     if not pydantic_support or method_or_property:
         return None
     from pydantic import BaseModel  # pylint: disable=no-name-in-module
+
     if not is_subclass(function_or_class, BaseModel):
         return None
     params = []
@@ -786,14 +791,16 @@ def get_parameters_from_pydantic(
             default = field.default_factory()
         else:
             default = field.default
-        params.append(ParamData(
-            name=field.name,
-            annotation=field.annotation,
-            default=default,
-            kind=kinds.KEYWORD_ONLY,
-            doc=field.field_info.description or doc_params.get(field.name),
-            component=function_or_class,
-        ))
+        params.append(
+            ParamData(
+                name=field.name,
+                annotation=field.annotation,
+                default=default,
+                kind=kinds.KEYWORD_ONLY,
+                doc=field.field_info.description or doc_params.get(field.name),
+                component=function_or_class,
+            )
+        )
     return params
 
 
@@ -815,7 +822,7 @@ def get_signature_parameters(
             the parameters for ``__init__``.
         logger: Useful for debugging. Only logs at ``DEBUG`` level.
     """
-    logger = parse_logger(logger, 'get_signature_parameters')
+    logger = parse_logger(logger, "get_signature_parameters")
     try:
         params = get_parameters_from_pydantic(function_or_class, method_or_property, logger)
         if params is not None:
@@ -823,14 +830,14 @@ def get_signature_parameters(
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
         return visitor.get_parameters()
     except Exception as ex:
-        cause = 'Source not available'
+        cause = "Source not available"
         exc_info = None
         if not isinstance(ex, SourceNotAvailable):
-            cause = 'Problems with AST resolving'
+            cause = "Problems with AST resolving"
             exc_info = ex
         logger.debug(
-            f'{cause}, falling back to parameters by assumptions: function_or_class={function_or_class} '
-            f'method_or_property={method_or_property}: {ex}',
+            f"{cause}, falling back to parameters by assumptions: function_or_class={function_or_class} "
+            f"method_or_property={method_or_property}: {ex}",
             exc_info=exc_info,
         )
         return get_parameters_by_assumptions(function_or_class, method_or_property, logger)
