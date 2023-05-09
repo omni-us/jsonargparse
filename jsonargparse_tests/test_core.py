@@ -47,14 +47,14 @@ from jsonargparse.typing import (
     PositiveInt,
 )
 from jsonargparse.util import CaptureParserException, capture_parser
-from jsonargparse_tests.base import (
-    TempDirTestCase,
+from jsonargparse_tests.base import TempDirTestCase
+from jsonargparse_tests.conftest import (
     is_cpython,
     is_posix,
     responses_activate,
     responses_available,
+    skip_if_not_posix,
 )
-from jsonargparse_tests.conftest import skip_if_not_posix
 
 
 def test_check_config_skip_none(parser):
@@ -109,7 +109,10 @@ example_env = {"APP_LEV1__LEV2__OPT1": "opt1_env", "APP_NUMS__VAL1": "0"}
 class ParsersTests(TempDirTestCase):
     def test_parse_args(self):
         parser = example_parser()
-        self.assertEqual("opt1_arg", parser.parse_args(["--lev1.lev2.opt1", "opt1_arg"]).lev1.lev2.opt1)
+        self.assertEqual(
+            "opt1_arg",
+            parser.parse_args(["--lev1.lev2.opt1", "opt1_arg"]).lev1.lev2.opt1,
+        )
         self.assertEqual(9, parser.parse_args(["--nums.val1", "9"]).nums.val1)
         self.assertEqual(6.4, parser.parse_args(["--nums.val2", "6.4"]).nums.val2)
         self.assertRaises(ArgumentError, lambda: parser.parse_args(["--nums.val1", "7.5"]))
@@ -299,9 +302,13 @@ class ParsersTests(TempDirTestCase):
         self.assertEqual("from env var", parser.parse_args([]).op1)
         os.environ["APP_CFG"] = input2_config_file
         self.assertEqual("from arg", parser.parse_args(["--op1", "from arg"]).op1)
-        self.assertEqual("from arg", parser.parse_args(["--cfg", input1_config_file, "--op1", "from arg"]).op1)
         self.assertEqual(
-            "from input config file", parser.parse_args(["--op1", "from arg", "--cfg", input1_config_file]).op1
+            "from arg",
+            parser.parse_args(["--cfg", input1_config_file, "--op1", "from arg"]).op1,
+        )
+        self.assertEqual(
+            "from input config file",
+            parser.parse_args(["--op1", "from arg", "--cfg", input1_config_file]).op1,
         )
 
         cfg = parser.parse_args(["--cfg", input1_config_file])
@@ -422,7 +429,13 @@ class AdvancedFeaturesTests(unittest.TestCase):
         parser.add_argument("--cfg", action=ActionConfigFile)
         cfg = parser.parse_args(['--cfg={"o1": "o1_arg"}', "a", "ap1_arg"]).as_dict()
         self.assertEqual(
-            cfg, {"a": {"ao1": "ao1_def", "ap1": "ap1_arg"}, "cfg": [None], "o1": "o1_arg", "subcommand": "a"}
+            cfg,
+            {
+                "a": {"ao1": "ao1_def", "ap1": "ap1_arg"},
+                "cfg": [None],
+                "o1": "o1_arg",
+                "subcommand": "a",
+            },
         )
 
         cfg = parser.parse_args(["--o1", "o1_arg", "a", "ap1_arg"])
@@ -452,7 +465,10 @@ class AdvancedFeaturesTests(unittest.TestCase):
         cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}}').as_dict()
         self.assertEqual(cfg["subcommand"], "a")
         self.assertEqual(cfg["a"], {"ap1": "ap1_cfg", "ao1": "ao1_def"})
-        self.assertRaises(ArgumentError, lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'))
+        self.assertRaises(
+            ArgumentError,
+            lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'),
+        )
 
         with warnings.catch_warnings(record=True) as w:
             cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
@@ -467,7 +483,13 @@ class AdvancedFeaturesTests(unittest.TestCase):
         cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', "a"])
         cfg = cfg.as_dict()
         self.assertEqual(
-            cfg, {"o1": "o1_def", "subcommand": "a", "cfg": [None], "a": {"ap1": "ap1_cfg", "ao1": "ao1_def"}}
+            cfg,
+            {
+                "o1": "o1_def",
+                "subcommand": "a",
+                "cfg": [None],
+                "a": {"ap1": "ap1_cfg", "ao1": "ao1_def"},
+            },
         )
         cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', "b"])
         self.assertFalse(hasattr(cfg, "a"))
@@ -495,7 +517,13 @@ class AdvancedFeaturesTests(unittest.TestCase):
         self.assertEqual(cfg["subcommand"], "a")
         self.assertEqual(cfg["a"], {"ap1": "ap1_env", "ao1": "ao1_env"})
 
-        for key in ["APP_O1", "APP_A__AP1", "APP_A__AO1", "APP_B__LEV1__LEV2__OPT2", "APP_SUBCOMMAND"]:
+        for key in [
+            "APP_O1",
+            "APP_A__AP1",
+            "APP_A__AO1",
+            "APP_B__LEV1__LEV2__OPT2",
+            "APP_SUBCOMMAND",
+        ]:
             del os.environ[key]
 
     def test_subsubcommands(self):
@@ -517,15 +545,27 @@ class AdvancedFeaturesTests(unittest.TestCase):
 
         cfg = parser.parse_args(["a", "b"]).as_dict()
         self.assertEqual(
-            cfg, {"subcommand": "a", "a": {"subcommand": "b", "os1a": "os1a_def", "b": {"os2b": "os2b_def"}}}
+            cfg,
+            {
+                "subcommand": "a",
+                "a": {"subcommand": "b", "os1a": "os1a_def", "b": {"os2b": "os2b_def"}},
+            },
         )
         cfg = parser.parse_args(["a", "--os1a=os1a_arg", "b"]).as_dict()
         self.assertEqual(
-            cfg, {"subcommand": "a", "a": {"subcommand": "b", "os1a": "os1a_arg", "b": {"os2b": "os2b_def"}}}
+            cfg,
+            {
+                "subcommand": "a",
+                "a": {"subcommand": "b", "os1a": "os1a_arg", "b": {"os2b": "os2b_def"}},
+            },
         )
         cfg = parser.parse_args(["a", "b", "--os2b=os2b_arg"]).as_dict()
         self.assertEqual(
-            cfg, {"subcommand": "a", "a": {"subcommand": "b", "os1a": "os1a_def", "b": {"os2b": "os2b_arg"}}}
+            cfg,
+            {
+                "subcommand": "a",
+                "a": {"subcommand": "b", "os1a": "os1a_def", "b": {"os2b": "os2b_arg"}},
+            },
         )
 
     def test_subsubcommands_bad_order(self):
@@ -569,7 +609,10 @@ class AdvancedFeaturesTests(unittest.TestCase):
             parser.parse_args(["a", "--print_config"])
         self.assertEqual(yaml.safe_load(out.getvalue()), {"o": 1})
 
-    @unittest.skipIf(not (url_support and responses_available), "requests and responses packages are required")
+    @unittest.skipIf(
+        not (url_support and responses_available),
+        "requests and responses packages are required",
+    )
     @responses_activate
     def test_urls(self):
         set_config_read_mode(urls_enabled=True)
@@ -584,9 +627,17 @@ class AdvancedFeaturesTests(unittest.TestCase):
                     "b": {"type": "number"},
                 },
             }
-            parser.add_argument("--schema", default={"a": 1, "b": 2}, action=ActionJsonSchema(schema=schema))
+            parser.add_argument(
+                "--schema",
+                default={"a": 1, "b": 2},
+                action=ActionJsonSchema(schema=schema),
+            )
         if jsonnet_support:
-            parser.add_argument("--jsonnet", default={"c": 3, "d": 4}, action=ActionJsonnet(ext_vars=None))
+            parser.add_argument(
+                "--jsonnet",
+                default={"c": 3, "d": 4},
+                action=ActionJsonnet(ext_vars=None),
+            )
 
         cfg1 = parser.get_defaults()
 
@@ -673,7 +724,10 @@ class OutputTests(TempDirTestCase):
         self.assertEqual(parser.dump(cfg), "op1: 123\nop2: abc\n")
         self.assertEqual(parser.dump(cfg, format="yaml"), parser.dump(cfg))
         self.assertEqual(parser.dump(cfg, format="json"), '{"op1":123,"op2":"abc"}')
-        self.assertEqual(parser.dump(cfg, format="json_indented"), '{\n  "op1": 123,\n  "op2": "abc"\n}\n')
+        self.assertEqual(
+            parser.dump(cfg, format="json_indented"),
+            '{\n  "op1": 123,\n  "op2": "abc"\n}\n',
+        )
         self.assertRaises(ValueError, lambda: parser.dump(cfg, format="invalid"))
 
     def test_dump_skip_default(self):
@@ -690,8 +744,14 @@ class OutputTests(TempDirTestCase):
         parser.add_argument("--g2.op1", type=int, default=987)
         parser.add_argument("--g2.op2", type=str, default="xyz")
         self.assertEqual(parser.dump(parser.get_defaults(), skip_default=True), "{}\n")
-        self.assertEqual(parser.dump(parser.parse_args(["--g1.op1=0"]), skip_default=True), "g1:\n  op1: 0\n")
-        self.assertEqual(parser.dump(parser.parse_args(["--g2.op2=pqr"]), skip_default=True), "g2:\n  op2: pqr\n")
+        self.assertEqual(
+            parser.dump(parser.parse_args(["--g1.op1=0"]), skip_default=True),
+            "g1:\n  op1: 0\n",
+        )
+        self.assertEqual(
+            parser.dump(parser.parse_args(["--g2.op2=pqr"]), skip_default=True),
+            "g2:\n  op2: pqr\n",
+        )
 
     def test_dump_order(self):
         args = {}
@@ -724,9 +784,17 @@ class OutputTests(TempDirTestCase):
                     "b": {"type": "number"},
                 },
             }
-            parser.add_argument("--schema", default={"a": 1, "b": 2}, action=ActionJsonSchema(schema=schema))
+            parser.add_argument(
+                "--schema",
+                default={"a": 1, "b": 2},
+                action=ActionJsonSchema(schema=schema),
+            )
         if jsonnet_support:
-            parser.add_argument("--jsonnet", default={"c": 3, "d": 4}, action=ActionJsonnet(ext_vars=None))
+            parser.add_argument(
+                "--jsonnet",
+                default={"c": 3, "d": 4},
+                action=ActionJsonnet(ext_vars=None),
+            )
 
         indir = os.path.join(self.tmpdir, "input")
         outdir = os.path.join(self.tmpdir, "output")
@@ -825,7 +893,10 @@ class OutputTests(TempDirTestCase):
         parser.save(cfg, "memory://config.yaml", multifile=False)
         path = Path("memory://config.yaml", mode="sr")
         self.assertEqual(cfg, parser.parse_string(path.get_content()))
-        self.assertRaises(NotImplementedError, lambda: parser.save(cfg, "memory://config.yaml", multifile=True))
+        self.assertRaises(
+            NotImplementedError,
+            lambda: parser.save(cfg, "memory://config.yaml", multifile=True),
+        )
 
     def test_save_failures(self):
         parser = ArgumentParser()
@@ -833,7 +904,10 @@ class OutputTests(TempDirTestCase):
             output_file.write("should not be overritten\n")
         cfg = parser.get_defaults()
         self.assertRaises(ValueError, lambda: parser.save(cfg, "existing.yaml"))
-        self.assertRaises(ValueError, lambda: parser.save(cfg, "invalid_format.yaml", format="invalid"))
+        self.assertRaises(
+            ValueError,
+            lambda: parser.save(cfg, "invalid_format.yaml", format="invalid"),
+        )
 
         parser.add_argument("--parser", action=ActionParser(parser=example_parser()))
         cfg = parser.get_defaults()
@@ -971,7 +1045,8 @@ class ConfigFilesTests(TempDirTestCase):
         cfg = parser.parse_args([])
         self.assertEqual(str(cfg.__default_config__), "config.yaml")
         self.assertEqual(
-            strip_meta(cfg), Namespace(output="test", prepare=Namespace(media="test"), subcommand="prepare")
+            strip_meta(cfg),
+            Namespace(output="test", prepare=Namespace(media="test"), subcommand="prepare"),
         )
 
     def test_ActionConfigFile(self):
@@ -999,9 +1074,13 @@ class ConfigFilesTests(TempDirTestCase):
     def test_ActionConfigFile_failures(self):
         parser = ArgumentParser(exit_on_error=False)
         self.assertRaises(
-            ValueError, lambda: parser.add_argument("--cfg", default="config.yaml", action=ActionConfigFile)
+            ValueError,
+            lambda: parser.add_argument("--cfg", default="config.yaml", action=ActionConfigFile),
         )
-        self.assertRaises(ValueError, lambda: parser.add_argument("--nested.cfg", action=ActionConfigFile))
+        self.assertRaises(
+            ValueError,
+            lambda: parser.add_argument("--nested.cfg", action=ActionConfigFile),
+        )
 
         parser.add_argument("--cfg", action=ActionConfigFile)
         self.assertRaises(ArgumentError, lambda: parser.parse_args(["--cfg", '"""']))
