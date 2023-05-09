@@ -604,13 +604,15 @@ class DeepTarget:
         self.a = a
         self.b = b
 
+
 class Node:
     def __init__(self, sub_class: DeepTarget) -> None:
         self.sub_class = sub_class
 
+
 class Source:
     def __init__(self) -> None:
-        self. a = 1
+        self.a = 1
 
 
 def test_on_instantiate_linking_deep_targets_multiple(parser):
