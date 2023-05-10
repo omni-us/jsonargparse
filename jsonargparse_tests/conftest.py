@@ -1,7 +1,7 @@
 import logging
 import os
 import platform
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, redirect_stderr
 from importlib.util import find_spec
 from io import StringIO
 from pathlib import Path
@@ -67,6 +67,13 @@ def capture_logs(logger: logging.Logger):
             if isinstance(handler, logging.StreamHandler):
                 stack.enter_context(patch.object(handler, "stream", captured))
         yield captured
+
+
+@contextmanager
+def suppress_stderr():
+    with open(os.devnull, "w") as fnull:
+        with redirect_stderr(fnull):
+            yield
 
 
 def get_parser_help(parser: ArgumentParser) -> str:
