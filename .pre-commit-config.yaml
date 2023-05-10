@@ -21,7 +21,7 @@ repos:
     exclude: .bumpversion.cfg
 
 - repo: https://github.com/psf/black
-  rev: 22.10.0
+  rev: 23.3.0
   hooks:
   - id: black
 
@@ -31,10 +31,10 @@ repos:
   - id: isort
 
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.0.264
+  rev: v0.0.265
   hooks:
-    - id: ruff
-      args: ["--fix"]
+  - id: ruff
+    args: ["--fix"]
 
 - repo: local
   hooks:

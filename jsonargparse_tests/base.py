@@ -6,7 +6,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from contextlib import contextmanager, redirect_stderr, suppress
+from contextlib import contextmanager, suppress
 
 from jsonargparse.optionals import docstring_parser_support, set_docstring_parse_options
 from jsonargparse.util import unresolvable_import_paths
@@ -51,14 +51,6 @@ def doctest_mock_class_in_main(cls):
     cls.__module__ = None
     setattr(sys.modules["__main__"], cls.__name__, cls)
     unresolvable_import_paths[cls] = f"__main__.{cls.__name__}"
-
-
-@contextmanager
-def suppress_stderr():
-    """A context manager that redirects stderr to devnull."""
-    with open(os.devnull, "w") as fnull:
-        with redirect_stderr(fnull):
-            yield None
 
 
 class TempDirTestCase(unittest.TestCase):

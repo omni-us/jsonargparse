@@ -24,7 +24,8 @@ from jsonargparse import (
 from jsonargparse.actions import _find_action
 from jsonargparse.optionals import docstring_parser_support
 from jsonargparse.typing import OpenUnitInterval, PositiveFloat, PositiveInt, final
-from jsonargparse_tests.base import TempDirTestCase, mock_module, suppress_stderr
+from jsonargparse_tests.base import TempDirTestCase, mock_module
+from jsonargparse_tests.conftest import suppress_stderr
 
 
 class SignaturesTests(unittest.TestCase):
@@ -850,7 +851,6 @@ class SignaturesTests(unittest.TestCase):
         self.assertRaises(ArgumentError, lambda: parser.parse_args(['--config={"d": {"a": "b"}}']))
 
     def test_logger_debug(self):
-
         with suppress_stderr():
 
             class Class1:
@@ -1124,7 +1124,6 @@ class SignaturesTests(unittest.TestCase):
                 pass
 
         with mock_module(Module, Network, Model) as module:
-
             config = f"""model:
               encoder:
                 class_path: {module}.Network
@@ -1313,7 +1312,6 @@ class SignaturesConfigTests(TempDirTestCase):
                 pass
 
         with mock_module(SubModule, Model) as module:
-
             defaults = f"""model:
               sub_module:
                 class_path: {module}.SubModule
