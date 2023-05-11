@@ -14,6 +14,7 @@ from jsonargparse.util import (
     current_path_dir,
     get_import_path,
     import_object,
+    object_path_serializer,
     parse_url,
     register_unresolvable_import_paths,
     unique,
@@ -515,6 +516,29 @@ def test_register_unresolvable_import_paths():
     pytest.raises(ValueError, lambda: get_import_path(unresolvable_import))
     register_unresolvable_import_paths(import_module(__name__))
     assert get_import_path(unresolvable_import) == f"{__name__}.unresolvable_import"
+
+
+class Class:
+    @staticmethod
+    def method1():
+        pass
+
+    def method2(self):
+        pass
+
+
+def test_object_path_serializer_class_method():
+    assert object_path_serializer(Class.method1) == f"{__name__}.Class.method1"
+    assert object_path_serializer(Class.method2) == f"{__name__}.Class.method2"
+
+
+def test_object_path_serializer_reimport_differs():
+    class FakeClass:
+        pass
+
+    FakeClass.__module__ = Class.__module__
+    FakeClass.__qualname__ = Class.__qualname__
+    pytest.raises(ValueError, lambda: object_path_serializer(FakeClass))
 
 
 # other tests
