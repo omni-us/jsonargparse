@@ -69,6 +69,13 @@ def capture_logs(logger: logging.Logger):
         yield captured
 
 
+def get_debug_level_logger(name):
+    logger = logging.getLogger(name)
+    logger.level = logging.DEBUG
+    logger.addHandler(logging.StreamHandler())
+    return logger
+
+
 @contextmanager
 def suppress_stderr():
     with open(os.devnull, "w") as fnull:
