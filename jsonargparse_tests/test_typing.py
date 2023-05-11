@@ -1,10 +1,12 @@
 import os
 import pathlib
 import pickle
-import unittest
 from datetime import timedelta
+from typing import Iterator
 
-from jsonargparse import ArgumentError, ArgumentParser
+import pytest
+
+from jsonargparse import ArgumentError
 from jsonargparse.typing import (
     ClosedUnitInterval,
     Email,
@@ -22,242 +24,262 @@ from jsonargparse.typing import (
     restricted_number_type,
     restricted_string_type,
 )
-from jsonargparse.util import object_path_serializer
-from jsonargparse_tests.base import TempDirTestCase, mock_module
+
+# restricted number tests
 
 
-class RestrictedNumberTests(unittest.TestCase):
-    def test_PositiveInt(self):
-        self.assertEqual(1, PositiveInt(1))
-        self.assertEqual(2, PositiveInt("2"))
-        self.assertRaises(ValueError, lambda: PositiveInt(0))
-        self.assertRaises(ValueError, lambda: PositiveInt("-3"))
-        self.assertRaises(ValueError, lambda: PositiveInt("4.0"))
-        self.assertRaises(ValueError, lambda: PositiveInt(5.6))
-
-    def test_NonNegativeInt(self):
-        self.assertEqual(0, NonNegativeInt(0))
-        self.assertEqual(1, NonNegativeInt("1"))
-        self.assertRaises(ValueError, lambda: NonNegativeInt(-1))
-        self.assertRaises(ValueError, lambda: NonNegativeInt("-2"))
-        self.assertRaises(ValueError, lambda: NonNegativeInt("3.0"))
-        self.assertRaises(ValueError, lambda: NonNegativeInt(4.5))
-
-    def test_PositiveFloat(self):
-        self.assertEqual(0.1, PositiveFloat(0.1))
-        self.assertEqual(0.2, PositiveFloat("0.2"))
-        self.assertEqual(3.0, PositiveFloat(3))
-        self.assertRaises(ValueError, lambda: PositiveFloat(0))
-        self.assertRaises(ValueError, lambda: PositiveFloat("-0.4"))
-
-    def test_NonNegativeFloat(self):
-        self.assertEqual(0.0, NonNegativeFloat(0.0))
-        self.assertEqual(0.1, NonNegativeFloat("0.1"))
-        self.assertEqual(2.0, NonNegativeFloat(2))
-        self.assertRaises(ValueError, lambda: NonNegativeFloat(-0.1))
-        self.assertRaises(ValueError, lambda: NonNegativeFloat("-2"))
-
-    def test_ClosedUnitInterval(self):
-        self.assertEqual(0.0, ClosedUnitInterval(0.0))
-        self.assertEqual(1.0, ClosedUnitInterval("1"))
-        self.assertEqual(0.5, ClosedUnitInterval(0.5))
-        self.assertRaises(ValueError, lambda: ClosedUnitInterval(-0.1))
-        self.assertRaises(ValueError, lambda: ClosedUnitInterval("1.1"))
-
-    def test_OpenUnitInterval(self):
-        self.assertEqual(0.1, OpenUnitInterval(0.1))
-        self.assertEqual(0.9, OpenUnitInterval("0.9"))
-        self.assertEqual(0.5, OpenUnitInterval(0.5))
-        self.assertRaises(ValueError, lambda: OpenUnitInterval(0))
-        self.assertRaises(ValueError, lambda: OpenUnitInterval("1.0"))
-
-    def test_invalid_restricted_number_type(self):
-        self.assertRaises(ValueError, lambda: restricted_number_type("Invalid", str, ("<", 0)))
-        self.assertRaises(ValueError, lambda: restricted_number_type("Invalid", int, ("<", 0), join="xor"))
-        self.assertRaises(ValueError, lambda: restricted_number_type("Invalid", int, ["<", 0]))
-
-    def test_already_registered(self):
-        NewClosedUnitInterval = restricted_number_type("ClosedUnitInterval", float, [("<=", 1), (">=", 0)])
-        self.assertEqual(ClosedUnitInterval, NewClosedUnitInterval)
-        self.assertRaises(ValueError, lambda: restricted_number_type("NewName", float, [("<=", 1), (">=", 0)]))
-
-    def test_other_operators(self):
-        NotTwoOrThree = restricted_number_type("NotTwoOrThree", float, [("!=", 2), ("!=", 3)])
-        self.assertEqual(1.0, NotTwoOrThree(1))
-        self.assertRaises(ValueError, lambda: NotTwoOrThree(2))
-        self.assertRaises(ValueError, lambda: NotTwoOrThree("3"))
-        PositiveOrMinusOne = restricted_number_type("PositiveOrMinusOne", float, [(">", 0), ("==", -1)], join="or")
-        self.assertEqual(1.0, PositiveOrMinusOne(1))
-        self.assertEqual(-1.0, PositiveOrMinusOne("-1.0"))
-        self.assertRaises(ValueError, lambda: PositiveOrMinusOne(-0.5))
-        self.assertRaises(ValueError, lambda: PositiveOrMinusOne("-2"))
-
-    def test_add_argument_type(self):
-        TenToTwenty = restricted_number_type("TenToTwenty", int, [(">=", 10), ("<=", 20)])
-
-        def gt0_or_off(x):
-            return x if x == "off" else PositiveInt(x)
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--le0", type=NonNegativeFloat)
-        parser.add_argument("--f10t20", type=TenToTwenty, nargs="+")
-        parser.add_argument("--gt0_or_off", type=gt0_or_off)
-        parser.add_argument("--multi_gt0_or_off", type=gt0_or_off, nargs="+")
-
-        self.assertEqual(0.0, parser.parse_args(["--le0", "0"]).le0)
-        self.assertEqual(5.6, parser.parse_args(["--le0", "5.6"]).le0)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--le0", "-2.1"]))
-
-        self.assertEqual([11, 14, 16], parser.parse_args(["--f10t20", "11", "14", "16"]).f10t20)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--f10t20", "9"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--f10t20", "21"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--f10t20", "10.5"]))
-
-        self.assertEqual(1, parser.parse_args(["--gt0_or_off", "1"]).gt0_or_off)
-        self.assertEqual("off", parser.parse_args(["--gt0_or_off", "off"]).gt0_or_off)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--gt0_or_off", "0"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--gt0_or_off", "on"]))
-
-        self.assertEqual([1, "off"], parser.parse_args(["--multi_gt0_or_off", "1", "off"]).multi_gt0_or_off)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--multi_gt0_or_off", "1", "0"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_object({"multi_gt0_or_off": [1, 0]}))
+def test_positive_int():
+    assert 1 == PositiveInt(1)
+    assert 2 == PositiveInt("2")
+    pytest.raises(ValueError, lambda: PositiveInt(0))
+    pytest.raises(ValueError, lambda: PositiveInt("-3"))
+    pytest.raises(ValueError, lambda: PositiveInt("4.0"))
+    pytest.raises(ValueError, lambda: PositiveInt(5.6))
 
 
-class RestrictedStringTests(unittest.TestCase):
-    def test_Email(self):
-        self.assertEqual("name@eg.org", Email("name@eg.org"))
-        self.assertRaises(ValueError, lambda: Email(""))
-        self.assertRaises(ValueError, lambda: Email("name @ eg.org"))
-        self.assertRaises(ValueError, lambda: Email("name_at_eg.org"))
-
-    def test_already_registered(self):
-        NewEmail = restricted_string_type("Email", r"^[^@ ]+@[^@ ]+\.[^@ ]+$")
-        self.assertEqual(Email, NewEmail)
-        self.assertRaises(ValueError, lambda: restricted_string_type("NewName", r"^[^@ ]+@[^@ ]+\.[^@ ]+$"))
-
-    def test_add_argument_type(self):
-        FourDigits = restricted_string_type("FourDigits", "^[0-9]{4}$")
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--op", type=FourDigits)
-        self.assertEqual("1234", parser.parse_args(["--op", "1234"]).op)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--op", "123"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--op", "12345"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--op", "abcd"]))
+def test_non_negative_int():
+    assert 0 == NonNegativeInt(0)
+    assert 1 == NonNegativeInt("1")
+    pytest.raises(ValueError, lambda: NonNegativeInt(-1))
+    pytest.raises(ValueError, lambda: NonNegativeInt("-2"))
+    pytest.raises(ValueError, lambda: NonNegativeInt("3.0"))
+    pytest.raises(ValueError, lambda: NonNegativeInt(4.5))
 
 
-class PathTypeTests(TempDirTestCase):
-    def setUp(self):
-        super().setUp()
-        self.file_fr = "file_r"
-        pathlib.Path(self.file_fr).touch()
-
-    def test_Path_fr(self):
-        path = Path_fr(self.file_fr)
-        self.assertEqual(path, self.file_fr)
-        self.assertEqual(path(), os.path.realpath(self.file_fr))
-        self.assertRaises(TypeError, lambda: Path_fr("does_not_exist"))
-
-    def test_Path_fc_with_kwargs(self):
-        path = Path_fc("some-file.txt", cwd=self.tmpdir)
-        self.assertEqual(path(), os.path.join(self.tmpdir, "some-file.txt"))
-
-    def test_already_registered(self):
-        NewPath_fr = path_type("fr")
-        self.assertEqual(Path_fr, NewPath_fr)
-
-    def test_path_like(self):
-        parser = ArgumentParser()
-        parser.add_argument("--path", type=os.PathLike)
-        self.assertEqual(self.file_fr, parser.parse_args([f"--path={self.file_fr}"]).path)
-
-    def test_pathlib_path(self):
-        parser = ArgumentParser()
-        parser.add_argument("--path", type=pathlib.Path)
-        cfg = parser.parse_args([f"--path={self.file_fr}"])
-        self.assertIsInstance(cfg.path, pathlib.Path)
-        self.assertEqual(str(cfg.path), self.file_fr)
-        self.assertEqual(parser.dump(cfg), "path: file_r\n")
+def test_positive_float():
+    assert 0.1 == PositiveFloat(0.1)
+    assert 0.2 == PositiveFloat("0.2")
+    assert 3.0 == PositiveFloat(3)
+    pytest.raises(ValueError, lambda: PositiveFloat(0))
+    pytest.raises(ValueError, lambda: PositiveFloat("-0.4"))
 
 
-class OtherTests(unittest.TestCase):
-    def test_pickle_module_types(self):
-        for type_class in registered_types.values():
-            with self.subTest(str(type_class)):
-                self.assertEqual(type_class, pickle.loads(pickle.dumps(type_class)))
+def test_non_negative_float():
+    assert 0.0 == NonNegativeFloat(0.0)
+    assert 0.1 == NonNegativeFloat("0.1")
+    assert 2.0 == NonNegativeFloat(2)
+    pytest.raises(ValueError, lambda: NonNegativeFloat(-0.1))
+    pytest.raises(ValueError, lambda: NonNegativeFloat("-2"))
 
-    def test_name_clash(self):
-        self.assertRaises(ValueError, lambda: restricted_string_type("List", "^clash$"))
 
-    def test_serialize_class_method_path(self):
-        class MyClass:
-            @staticmethod
-            def my_method1():
-                pass
+def test_closed_unit_interval():
+    assert 0.0 == ClosedUnitInterval(0.0)
+    assert 1.0 == ClosedUnitInterval("1")
+    assert 0.5 == ClosedUnitInterval(0.5)
+    pytest.raises(ValueError, lambda: ClosedUnitInterval(-0.1))
+    pytest.raises(ValueError, lambda: ClosedUnitInterval("1.1"))
 
-            def my_method2(self):
-                pass
 
-        with mock_module(MyClass) as module:
-            self.assertEqual(object_path_serializer(MyClass.my_method1), f"{module}.MyClass.my_method1")
-            self.assertEqual(object_path_serializer(MyClass.my_method2), f"{module}.MyClass.my_method2")
+def test_open_unit_interval():
+    assert 0.1 == OpenUnitInterval(0.1)
+    assert 0.9 == OpenUnitInterval("0.9")
+    assert 0.5 == OpenUnitInterval(0.5)
+    pytest.raises(ValueError, lambda: OpenUnitInterval(0))
+    pytest.raises(ValueError, lambda: OpenUnitInterval("1.0"))
 
-    def test_object_path_serializer_reimport_differs(self):
-        class MyClass:
-            pass
 
-        with mock_module(MyClass) as module:
+def test_restricted_number_invalid_type():
+    pytest.raises(ValueError, lambda: restricted_number_type("Invalid", str, ("<", 0)))
+    pytest.raises(ValueError, lambda: restricted_number_type("Invalid", int, ("<", 0), join="xor"))
+    pytest.raises(ValueError, lambda: restricted_number_type("Invalid", int, ["<", 0]))
 
-            class FakeMyClass:
-                pass
 
-            FakeMyClass.__module__ = module
-            FakeMyClass.__qualname__ = MyClass.__qualname__
-            self.assertRaises(ValueError, lambda: object_path_serializer(FakeMyClass))
+def test_restricted_number_already_registered():
+    NewClosedUnitInterval = restricted_number_type("ClosedUnitInterval", float, [("<=", 1), (">=", 0)])
+    assert ClosedUnitInterval is NewClosedUnitInterval
+    pytest.raises(
+        ValueError,
+        lambda: restricted_number_type("NewName", float, [("<=", 1), (">=", 0)]),
+    )
 
-    def test_timedelta(self):
-        timedelta_type = get_registered_type(timedelta)
-        for delta_in, delta_out in [
-            ("1:2:3", "1:02:03"),
-            ("0:05:30", "0:05:30"),
-            ("3 days, 2:0:0", "3 days, 2:00:00"),
-            ("345:0:0", "14 days, 9:00:00"),
-        ]:
-            with self.subTest(delta_in):
-                delta = timedelta_type.deserializer(delta_in)
-                self.assertIsInstance(delta, timedelta)
-                self.assertEqual(str(delta), delta_out)
-        for delta_in in ["not delta", 1234]:
-            with self.subTest(delta_in):
-                self.assertRaises(ValueError, lambda: timedelta_type.deserializer(delta_in))
 
-    def test_bytes_and_bytearray(self):
-        for type_class in [bytes, bytearray]:
-            with self.subTest(type_class):
-                bytes_type = get_registered_type(type_class)
-                for serialized, deserialized in [
-                    ("", type_class(b"")),
-                    ("iVBORw0KGgo=", type_class(b"\x89PNG\r\n\x1a\n")),
-                    ("AAAAB3NzaC1yc2E=", type_class(b"\x00\x00\x00\x07ssh-rsa")),
-                ]:
-                    with self.subTest(serialized):
-                        self.assertEqual(deserialized, bytes_type.deserializer(serialized))
-                        self.assertEqual(serialized, bytes_type.serializer(deserialized))
+def test_restricted_number_not_equal_operator():
+    NotTwoOrThree = restricted_number_type("NotTwoOrThree", float, [("!=", 2), ("!=", 3)])
+    assert 1.0 == NotTwoOrThree(1)
+    pytest.raises(ValueError, lambda: NotTwoOrThree(2))
+    pytest.raises(ValueError, lambda: NotTwoOrThree("3"))
 
-    def test_register_non_bool_cast_type(self):
-        class Elems:
-            def __init__(self, *elems):
-                self.elems = list(elems)
 
-            def __bool__(self):
-                raise TypeError("bool not supported")
+def test_restricted_number_operator_join():
+    PositiveOrMinusOne = restricted_number_type("PositiveOrMinusOne", float, [(">", 0), ("==", -1)], join="or")
+    assert 1.0 == PositiveOrMinusOne(1)
+    assert -1.0 == PositiveOrMinusOne("-1.0")
+    pytest.raises(ValueError, lambda: PositiveOrMinusOne(-0.5))
+    pytest.raises(ValueError, lambda: PositiveOrMinusOne("-2"))
 
-        self.assertRaises(TypeError, lambda: not Elems(1, 2))
-        register_type(Elems, lambda x: x.elems, lambda x: Elems(*x))
 
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--elems", type=Elems)
-        cfg = parser.parse_args(["--elems=[1, 2, 3]"])
-        self.assertIsInstance(cfg.elems, Elems)
-        self.assertEqual(cfg.elems.elems, [1, 2, 3])
-        dump = parser.dump(cfg, format="json")
-        self.assertEqual(dump, '{"elems":[1,2,3]}')
+def test_non_negative_float_add_argument(parser):
+    parser.add_argument("--le0", type=NonNegativeFloat)
+    assert 0.0 == parser.parse_args(["--le0", "0"]).le0
+    assert 5.6 == parser.parse_args(["--le0", "5.6"]).le0
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--le0", "-2.1"]))
+
+
+def test_restricted_number_add_argument(parser):
+    TenToTwenty = restricted_number_type("TenToTwenty", int, [(">=", 10), ("<=", 20)])
+    parser.add_argument("--f10t20", type=TenToTwenty, nargs="+")
+    assert [11, 14, 16] == parser.parse_args(["--f10t20", "11", "14", "16"]).f10t20
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--f10t20", "9"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--f10t20", "21"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--f10t20", "10.5"]))
+
+
+def test_add_argument_type_function(parser):
+    def gt0_or_off(x):
+        return x if x == "off" else PositiveInt(x)
+
+    parser.add_argument("--gt0_or_off", type=gt0_or_off)
+    parser.add_argument("--multi_gt0_or_off", type=gt0_or_off, nargs="+")
+
+    assert 1 == parser.parse_args(["--gt0_or_off", "1"]).gt0_or_off
+    assert "off" == parser.parse_args(["--gt0_or_off", "off"]).gt0_or_off
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--gt0_or_off", "0"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--gt0_or_off", "on"]))
+
+    assert [1, "off"] == parser.parse_args(["--multi_gt0_or_off", "1", "off"]).multi_gt0_or_off
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--multi_gt0_or_off", "1", "0"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_object({"multi_gt0_or_off": [1, 0]}))
+
+
+# restricted string tests
+
+
+def test_email():
+    assert "name@eg.org" == Email("name@eg.org")
+    pytest.raises(ValueError, lambda: Email(""))
+    pytest.raises(ValueError, lambda: Email("name @ eg.org"))
+    pytest.raises(ValueError, lambda: Email("name_at_eg.org"))
+
+
+def test_restricted_string_already_registered():
+    NewEmail = restricted_string_type("Email", r"^[^@ ]+@[^@ ]+\.[^@ ]+$")
+    assert Email is NewEmail
+    pytest.raises(
+        ValueError,
+        lambda: restricted_string_type("NewName", r"^[^@ ]+@[^@ ]+\.[^@ ]+$"),
+    )
+
+
+def test_restricted_string_add_argument(parser):
+    FourDigits = restricted_string_type("FourDigits", "^[0-9]{4}$")
+    parser.add_argument("--op", type=FourDigits)
+    assert "1234" == parser.parse_args(["--op", "1234"]).op
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--op", "123"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--op", "12345"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--op", "abcd"]))
+
+
+# path tests
+
+
+@pytest.fixture
+def file_fr(tmp_cwd) -> Iterator[str]:
+    file_fr = "file_r"
+    pathlib.Path(file_fr).touch()
+    yield file_fr
+
+
+def test_path_fr(file_fr):
+    path = Path_fr(file_fr)
+    assert path == file_fr
+    assert path() == os.path.realpath(file_fr)
+    pytest.raises(TypeError, lambda: Path_fr("does_not_exist"))
+
+
+def test_path_fc_with_kwargs(tmpdir):
+    path = Path_fc("some-file.txt", cwd=str(tmpdir))
+    assert path() == os.path.join(tmpdir, "some-file.txt")
+
+
+def test_path_fr_already_registered():
+    assert Path_fr is path_type("fr")
+
+
+def test_os_pathlike(parser, file_fr):
+    parser.add_argument("--path", type=os.PathLike)
+    assert file_fr == parser.parse_args([f"--path={file_fr}"]).path
+
+
+def test_pathlib_path(parser, file_fr):
+    parser.add_argument("--path", type=pathlib.Path)
+    cfg = parser.parse_args([f"--path={file_fr}"])
+    assert isinstance(cfg.path, pathlib.Path)
+    assert str(cfg.path) == file_fr
+    assert parser.dump(cfg) == "path: file_r\n"
+
+
+# other types
+
+
+@pytest.mark.parametrize(
+    ["delta_in", "delta_out"],
+    [
+        ("1:2:3", "1:02:03"),
+        ("0:05:30", "0:05:30"),
+        ("3 days, 2:0:0", "3 days, 2:00:00"),
+        ("345:0:0", "14 days, 9:00:00"),
+    ],
+)
+def test_timedelta_deserializer(delta_in, delta_out):
+    delta = get_registered_type(timedelta).deserializer(delta_in)
+    assert isinstance(delta, timedelta)
+    assert str(delta) == delta_out
+
+
+@pytest.mark.parametrize("delta_in", ["not delta", 1234])
+def test_timedelta_deserializer_failure(delta_in):
+    with pytest.raises(ValueError):
+        get_registered_type(timedelta).deserializer(delta_in)
+
+
+bytes_parametrize = (
+    ["serialized", "deserialized"],
+    [
+        ("", b""),
+        ("iVBORw0KGgo=", b"\x89PNG\r\n\x1a\n"),
+        ("AAAAB3NzaC1yc2E=", b"\x00\x00\x00\x07ssh-rsa"),
+    ],
+)
+
+
+@pytest.mark.parametrize(*bytes_parametrize)
+def test_bytes(serialized, deserialized):
+    assert deserialized == get_registered_type(bytes).deserializer(serialized)
+    assert serialized == get_registered_type(bytes).serializer(deserialized)
+
+
+@pytest.mark.parametrize(*bytes_parametrize)
+def test_bytearray(serialized, deserialized):
+    deserialized = bytearray(deserialized)
+    assert deserialized == get_registered_type(bytearray).deserializer(serialized)
+    assert serialized == get_registered_type(bytearray).serializer(deserialized)
+
+
+# other tests
+
+
+@pytest.mark.parametrize("type_class", registered_types.values())
+def test_pickle_module_type(type_class):
+    assert type_class == pickle.loads(pickle.dumps(type_class))
+
+
+def test_module_name_clash():
+    pytest.raises(ValueError, lambda: restricted_string_type("List", "^clash$"))
+
+
+def test_register_non_bool_cast_type(parser):
+    class Elems:
+        def __init__(self, *elems):
+            self.elems = list(elems)
+
+        def __bool__(self):
+            raise TypeError("bool not supported")
+
+    pytest.raises(TypeError, lambda: not Elems(1, 2))
+    register_type(Elems, lambda x: x.elems, lambda x: Elems(*x))
+
+    parser.add_argument("--elems", type=Elems)
+    cfg = parser.parse_args(["--elems=[1, 2, 3]"])
+    assert isinstance(cfg.elems, Elems)
+    assert [1, 2, 3] == cfg.elems.elems
+    assert '{"elems":[1,2,3]}' == parser.dump(cfg, format="json")
