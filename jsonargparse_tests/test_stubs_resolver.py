@@ -1,11 +1,9 @@
 import inspect
 import sys
-import unittest
 from calendar import Calendar, TextCalendar
 from contextlib import contextmanager
 from email.headerregistry import DateHeader
 from importlib.util import find_spec
-from io import StringIO
 from ipaddress import ip_network
 from random import Random, SystemRandom, uniform
 from tarfile import TarFile
@@ -13,15 +11,26 @@ from typing import Any
 from unittest.mock import patch
 from uuid import UUID, uuid5
 
+import pytest
 import yaml
 
-from jsonargparse import ArgumentParser
 from jsonargparse._stubs_resolver import get_mro_method_parent, get_stubs_resolver
+from jsonargparse.optionals import url_support
 from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
-from jsonargparse_tests.base import get_debug_level_logger
+from jsonargparse_tests.conftest import (
+    capture_logs,
+    get_debug_level_logger,
+    get_parser_help,
+)
 
 logger = get_debug_level_logger(__name__)
 torch_available = find_spec("torch")
+
+
+@pytest.fixture(autouse=True)
+def skip_if_typeshed_client_unavailable():
+    if not find_spec("typeshed_client"):
+        pytest.skip("typeshed-client package is required")
 
 
 @contextmanager
@@ -38,240 +47,266 @@ def get_param_names(params):
     return [p.name for p in params]
 
 
-@unittest.skipIf(not find_spec("typeshed_client"), "typeshed-client package is required")
-class StubsResolverTests(unittest.TestCase):
-    def test_get_mro_method_parent(self):
-        class WithoutParent:
-            ...
+class WithoutParent:
+    ...
 
-        self.assertIs(None, get_mro_method_parent(WithoutParent, "__init__"))
-        self.assertIs(None, get_mro_method_parent(SystemRandom, "unknown"))
-        self.assertIs(Random, get_mro_method_parent(Random, "__init__"))
-        self.assertIs(Random, get_mro_method_parent(SystemRandom, "__init__"))
-        self.assertIs(Random, get_mro_method_parent(SystemRandom, "uniform"))
-        self.assertIs(SystemRandom, get_mro_method_parent(SystemRandom, "getrandbits"))
 
-    @unittest.skipIf(not find_spec("requests"), "requests package is required")
-    def test_stubs_resolver_get_imported_info(self):
-        resolver = get_stubs_resolver()
-        imported_info = resolver.get_imported_info("requests.api.get")
-        self.assertEqual(imported_info.source_module, ("requests", "api"))
-        imported_info = resolver.get_imported_info("requests.get")
-        self.assertEqual(imported_info.source_module, ("requests", "api"))
+@pytest.mark.parametrize(
+    ["cls", "method", "expected"],
+    [
+        (WithoutParent, "__init__", None),
+        (SystemRandom, "unknown", None),
+        (Random, "__init__", Random),
+        (SystemRandom, "__init__", Random),
+        (SystemRandom, "uniform", Random),
+        (SystemRandom, "getrandbits", SystemRandom),
+    ],
+)
+def test_get_mro_method_parent(cls, method, expected):
+    assert get_mro_method_parent(cls, method) is expected
 
-    def test_get_params_class_without_inheritance(self):
+
+@pytest.mark.skipif(not url_support, reason="requests package is required")
+def test_stubs_resolver_get_imported_info():
+    resolver = get_stubs_resolver()
+    imported_info = resolver.get_imported_info("requests.api.get")
+    assert imported_info.source_module == ("requests", "api")
+    imported_info = resolver.get_imported_info("requests.get")
+    assert imported_info.source_module == ("requests", "api")
+
+
+def test_get_params_class_without_inheritance():
+    params = get_params(Calendar)
+    assert [("firstweekday", int)] == get_param_types(params)
+    with mock_typeshed_client_unavailable():
         params = get_params(Calendar)
-        self.assertEqual([("firstweekday", int)], get_param_types(params))
-        with mock_typeshed_client_unavailable():
-            params = get_params(Calendar)
-        self.assertEqual([("firstweekday", inspect._empty)], get_param_types(params))
+    assert [("firstweekday", inspect._empty)] == get_param_types(params)
 
-    def test_get_params_class_with_inheritance(self):
+
+def test_get_params_class_with_inheritance():
+    params = get_params(TextCalendar)
+    assert [("firstweekday", int)] == get_param_types(params)
+    with mock_typeshed_client_unavailable():
         params = get_params(TextCalendar)
-        self.assertEqual([("firstweekday", int)], get_param_types(params))
-        with mock_typeshed_client_unavailable():
-            params = get_params(TextCalendar)
-        self.assertEqual([("firstweekday", inspect._empty)], get_param_types(params))
+    assert [("firstweekday", inspect._empty)] == get_param_types(params)
 
-    def test_get_params_method(self):
+
+def test_get_params_method():
+    params = get_params(Random, "randint")
+    assert [("a", int), ("b", int)] == get_param_types(params)
+    with mock_typeshed_client_unavailable():
         params = get_params(Random, "randint")
-        self.assertEqual([("a", int), ("b", int)], get_param_types(params))
-        with mock_typeshed_client_unavailable():
-            params = get_params(Random, "randint")
-        self.assertEqual([("a", inspect._empty), ("b", inspect._empty)], get_param_types(params))
+    assert [("a", inspect._empty), ("b", inspect._empty)] == get_param_types(params)
 
-    def test_get_params_object_instance_method(self):
+
+def test_get_params_object_instance_method():
+    params = get_params(uniform)
+    assert [("a", float), ("b", float)] == get_param_types(params)
+    with mock_typeshed_client_unavailable():
         params = get_params(uniform)
-        self.assertEqual([("a", float), ("b", float)], get_param_types(params))
-        with mock_typeshed_client_unavailable():
-            params = get_params(uniform)
-        self.assertEqual([("a", inspect._empty), ("b", inspect._empty)], get_param_types(params))
+    assert [("a", inspect._empty), ("b", inspect._empty)] == get_param_types(params)
 
-    def test_get_params_conditional_python_version(self):
+
+def test_get_params_conditional_python_version():
+    params = get_params(Random, "seed")
+    assert ["a", "version"] == get_param_names(params)
+    if sys.version_info >= (3, 10):
+        assert "int | float | str | bytes | bytearray | None" == str(params[0].annotation)
+    elif sys.version_info[:2] == (3, 9):
+        assert "typing.Union[int, float, str, bytes, bytearray, NoneType]" == str(params[0].annotation)
+    else:
+        assert Any is params[0].annotation
+    assert int is params[1].annotation
+    with mock_typeshed_client_unavailable():
         params = get_params(Random, "seed")
-        self.assertEqual(["a", "version"], get_param_names(params))
-        if sys.version_info >= (3, 10):
-            self.assertEqual("int | float | str | bytes | bytearray | None", str(params[0].annotation))
-        elif sys.version_info[:2] == (3, 9):
-            self.assertEqual("typing.Union[int, float, str, bytes, bytearray, NoneType]", str(params[0].annotation))
-        else:
-            self.assertEqual(Any, params[0].annotation)
-        self.assertEqual(int, params[1].annotation)
-        with mock_typeshed_client_unavailable():
-            params = get_params(Random, "seed")
-        self.assertEqual([("a", inspect._empty), ("version", inspect._empty)], get_param_types(params))
+    assert [("a", inspect._empty), ("version", inspect._empty)] == get_param_types(params)
 
-    @patch("jsonargparse._stubs_resolver.exec")
-    def test_get_params_exec_failure(self, mock_exec):
-        mock_exec.side_effect = NameError("failed")
-        params = get_params(Random, "seed")
-        self.assertEqual([("a", inspect._empty), ("version", inspect._empty)], get_param_types(params))
 
-    def test_get_params_classmethod(self):
+@patch("jsonargparse._stubs_resolver.exec")
+def test_get_params_exec_failure(mock_exec):
+    mock_exec.side_effect = NameError("failed")
+    params = get_params(Random, "seed")
+    assert [("a", inspect._empty), ("version", inspect._empty)] == get_param_types(params)
+
+
+def test_get_params_classmethod():
+    params = get_params(TarFile, "open")
+    expected = [
+        "name",
+        "mode",
+        "fileobj",
+        "bufsize",
+        "format",
+        "tarinfo",
+        "dereference",
+        "ignore_zeros",
+        "encoding",
+        "errors",
+        "pax_headers",
+        "debug",
+        "errorlevel",
+    ]
+    assert expected == get_param_names(params)[: len(expected)]
+    if sys.version_info >= (3, 10):
+        assert all(p.annotation is not inspect._empty for p in params)
+    with mock_typeshed_client_unavailable():
         params = get_params(TarFile, "open")
-        expected = [
-            "name",
-            "mode",
-            "fileobj",
-            "bufsize",
-            "format",
-            "tarinfo",
-            "dereference",
-            "ignore_zeros",
-            "encoding",
-            "errors",
-            "pax_headers",
-            "debug",
-            "errorlevel",
-        ]
-        self.assertEqual(expected, get_param_names(params)[: len(expected)])
-        if sys.version_info >= (3, 10):
-            self.assertTrue(all(p.annotation != inspect._empty for p in params))
-        with mock_typeshed_client_unavailable():
-            params = get_params(TarFile, "open")
-        self.assertEqual(expected, get_param_names(params)[: len(expected)])
-        self.assertTrue(all(p.annotation == inspect._empty for p in params))
+    assert expected == get_param_names(params)[: len(expected)]
+    assert all(p.annotation is inspect._empty for p in params)
 
-    def test_get_params_staticmethod(self):
+
+def test_get_params_staticmethod():
+    params = get_params(DateHeader, "value_parser")
+    assert [("value", str)] == get_param_types(params)
+    with mock_typeshed_client_unavailable():
         params = get_params(DateHeader, "value_parser")
-        self.assertEqual([("value", str)], get_param_types(params))
-        with mock_typeshed_client_unavailable():
-            params = get_params(DateHeader, "value_parser")
-        self.assertEqual([("value", inspect._empty)], get_param_types(params))
+    assert [("value", inspect._empty)] == get_param_types(params)
 
-    def test_get_params_function(self):
+
+def test_get_params_function():
+    params = get_params(ip_network)
+    assert ["address", "strict"] == get_param_names(params)
+    if sys.version_info >= (3, 10):
+        assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
+    assert bool is params[1].annotation
+    with mock_typeshed_client_unavailable():
         params = get_params(ip_network)
-        self.assertEqual(["address", "strict"], get_param_names(params))
-        if sys.version_info >= (3, 10):
-            self.assertIn("int | str | bytes | ipaddress.IPv4Address | ", str(params[0].annotation))
-        self.assertEqual(bool, params[1].annotation)
-        with mock_typeshed_client_unavailable():
-            params = get_params(ip_network)
-        self.assertEqual([("address", inspect._empty), ("strict", inspect._empty)], get_param_types(params))
+    assert [("address", inspect._empty), ("strict", inspect._empty)] == get_param_types(params)
 
-    def test_get_param_relative_import_from_init(self):
+
+def test_get_params_relative_import_from_init():
+    params = get_params(yaml.safe_load)
+    assert ["stream"] == get_param_names(params)
+    if sys.version_info >= (3, 8):
+        assert params[0].annotation is not inspect._empty
+    else:
+        assert params[0].annotation is inspect._empty
+    with mock_typeshed_client_unavailable():
         params = get_params(yaml.safe_load)
-        self.assertEqual(["stream"], get_param_names(params))
-        if sys.version_info >= (3, 8):
-            self.assertNotEqual(params[0].annotation, inspect._empty)
-        else:
-            self.assertEqual(params[0].annotation, inspect._empty)
-        with mock_typeshed_client_unavailable():
-            params = get_params(yaml.safe_load)
-        self.assertEqual(["stream"], get_param_names(params))
-        self.assertEqual(params[0].annotation, inspect._empty)
+    assert ["stream"] == get_param_names(params)
+    assert params[0].annotation is inspect._empty
 
-    def test_get_params_non_unique_alias(self):
-        params = get_params(uuid5)
-        self.assertEqual([("namespace", UUID), ("name", str)], get_param_types(params))
 
-        def alias_is_unique(aliases, name, source, value):
-            if name == "UUID":
-                aliases[name] = ("module", "problem")
-            return name != "UUID"
+def test_get_params_non_unique_alias():
+    params = get_params(uuid5)
+    assert [("namespace", UUID), ("name", str)], get_param_types(params)
 
-        with patch("jsonargparse._stubs_resolver.alias_is_unique", alias_is_unique):
-            with self.assertLogs(logger, level="DEBUG") as log:
-                params = get_params(uuid5, logger=logger)
-                self.assertEqual([("namespace", inspect._empty), ("name", str)], get_param_types(params))
-                self.assertIn("non-unique alias 'UUID': problem (module)", log.output[0])
+    def alias_is_unique(aliases, name, source, value):
+        if name == "UUID":
+            aliases[name] = ("module", "problem")
+        return name != "UUID"
 
-    @unittest.skipIf(not find_spec("requests"), "requests package is required")
-    def test_get_params_complex_function_requests_get(self):
-        from requests import get
+    with patch("jsonargparse._stubs_resolver.alias_is_unique", alias_is_unique):
+        with capture_logs(logger) as logs:
+            params = get_params(uuid5, logger=logger)
+        assert [("namespace", inspect._empty), ("name", str)] == get_param_types(params)
+        assert "non-unique alias 'UUID': problem (module)" in logs.getvalue()
 
-        with mock_typeshed_client_unavailable():
-            params = get_params(get)
-        expected = ["url", "params"]
-        self.assertEqual(expected, get_param_names(params))
-        self.assertTrue(all(p.annotation == inspect._empty for p in params))
 
+@pytest.mark.skipif(not url_support, reason="requests package is required")
+def test_get_params_complex_function_requests_get(parser):
+    from requests import get
+
+    with mock_typeshed_client_unavailable():
         params = get_params(get)
-        expected += [
-            "data",
-            "headers",
-            "cookies",
-            "files",
-            "auth",
-            "timeout",
-            "allow_redirects",
-            "proxies",
-            "hooks",
-            "stream",
-            "verify",
-            "cert",
-            "json",
-        ]
-        self.assertEqual(expected, get_param_names(params))
-        if sys.version_info >= (3, 10):
-            self.assertTrue(all(p.annotation != inspect._empty for p in params))
+    expected = ["url", "params"]
+    assert expected == get_param_names(params)
+    assert all(p.annotation is inspect._empty for p in params)
 
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_function_arguments(get, fail_untyped=False)
-        self.assertEqual(["url", "params"], list(parser.get_defaults().keys()))
-        help_str = StringIO()
-        parser.print_help(help_str)
-        self.assertIn("default: Unknown<stubs-resolver>", help_str.getvalue())
+    params = get_params(get)
+    expected += [
+        "data",
+        "headers",
+        "cookies",
+        "files",
+        "auth",
+        "timeout",
+        "allow_redirects",
+        "proxies",
+        "hooks",
+        "stream",
+        "verify",
+        "cert",
+        "json",
+    ]
+    assert expected == get_param_names(params)
+    if sys.version_info >= (3, 10):
+        assert all(p.annotation is not inspect._empty for p in params)
 
-    @unittest.skipIf(not torch_available, "torch package is required")
-    def test_get_params_torch_optimizer(self):
-        import torch.optim  # pylint: disable=import-error
+    parser.add_function_arguments(get, fail_untyped=False)
+    assert ["url", "params"] == list(parser.get_defaults().keys())
+    help_str = get_parser_help(parser)
+    assert "default: Unknown<stubs-resolver>" in help_str
 
-        def skip_stub_inconsistencies(cls, params):
-            # https://github.com/pytorch/pytorch/pull/90216
-            skip = {("Optimizer", "defaults"), ("SGD", "maximize"), ("SGD", "differentiable")}
-            return [p for p in params if (cls.__name__, p.name) not in skip]
 
-        for class_name in [
-            "Optimizer",
-            "Adadelta",
-            "Adagrad",
-            "Adam",
-            "Adamax",
-            "AdamW",
-            "ASGD",
-            "LBFGS",
-            "NAdam",
-            "RAdam",
-            "RMSprop",
-            "Rprop",
-            "SGD",
-            "SparseAdam",
-        ]:
-            with self.subTest(class_name):
-                cls = getattr(torch.optim, class_name)
-                params = get_params(cls)
-                self.assertTrue(all(p.annotation != inspect._empty for p in skip_stub_inconsistencies(cls, params)))
-                with mock_typeshed_client_unavailable():
-                    params = get_params(cls)
-                self.assertTrue(any(p.annotation == inspect._empty for p in params))
+# pytorch tests
 
-    @unittest.skipIf(not torch_available, "torch package is required")
-    def test_get_params_torch_lr_scheduler(self):
-        import torch.optim.lr_scheduler  # pylint: disable=import-error
+if torch_available:
+    import torch.optim  # pylint: disable=import-error
+    import torch.optim.lr_scheduler  # pylint: disable=import-error
 
-        for class_name in [
-            "_LRScheduler",
-            "LambdaLR",
-            "MultiplicativeLR",
-            "StepLR",
-            "MultiStepLR",
-            "ConstantLR",
-            "LinearLR",
-            "ExponentialLR",
-            "ChainedScheduler",
-            "SequentialLR",
-            "CosineAnnealingLR",
-            "ReduceLROnPlateau",
-            "CyclicLR",
-            "CosineAnnealingWarmRestarts",
-            "OneCycleLR",
-            "PolynomialLR",
-        ]:
-            with self.subTest(class_name):
-                cls = getattr(torch.optim.lr_scheduler, class_name)
-                params = get_params(cls)
-                self.assertTrue(all(p.annotation != inspect._empty for p in params))
-                with mock_typeshed_client_unavailable():
-                    params = get_params(cls)
-                self.assertTrue(any(p.annotation == inspect._empty for p in params))
+
+def skip_stub_inconsistencies(cls, params):
+    # https://github.com/pytorch/pytorch/pull/90216
+    skip = {("Optimizer", "defaults"), ("SGD", "maximize"), ("SGD", "differentiable")}
+    return [p for p in params if (cls.__name__, p.name) not in skip]
+
+
+@pytest.mark.skipif(not torch_available, reason="torch package is required")
+@pytest.mark.parametrize(
+    "class_name",
+    [
+        "Optimizer",
+        "Adadelta",
+        "Adagrad",
+        "Adam",
+        "Adamax",
+        "AdamW",
+        "ASGD",
+        "LBFGS",
+        "NAdam",
+        "RAdam",
+        "RMSprop",
+        "Rprop",
+        "SGD",
+        "SparseAdam",
+    ],
+)
+def test_get_params_torch_optimizer(class_name):
+    cls = getattr(torch.optim, class_name)
+    params = get_params(cls)
+    assert all(p.annotation is not inspect._empty for p in skip_stub_inconsistencies(cls, params))
+    with mock_typeshed_client_unavailable():
+        params = get_params(cls)
+    assert any(p.annotation is inspect._empty for p in params)
+
+
+@pytest.mark.skipif(not torch_available, reason="torch package is required")
+@pytest.mark.parametrize(
+    "class_name",
+    [
+        "_LRScheduler",
+        "LambdaLR",
+        "MultiplicativeLR",
+        "StepLR",
+        "MultiStepLR",
+        "ConstantLR",
+        "LinearLR",
+        "ExponentialLR",
+        "ChainedScheduler",
+        "SequentialLR",
+        "CosineAnnealingLR",
+        "ReduceLROnPlateau",
+        "CyclicLR",
+        "CosineAnnealingWarmRestarts",
+        "OneCycleLR",
+        "PolynomialLR",
+    ],
+)
+def test_get_params_torch_lr_scheduler(class_name):
+    cls = getattr(torch.optim.lr_scheduler, class_name)
+    params = get_params(cls)
+    assert all(p.annotation is not inspect._empty for p in params)
+    with mock_typeshed_client_unavailable():
+        params = get_params(cls)
+    assert any(p.annotation is inspect._empty for p in params)
