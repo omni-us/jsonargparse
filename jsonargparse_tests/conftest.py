@@ -72,6 +72,7 @@ def capture_logs(logger: logging.Logger):
 def get_debug_level_logger(name):
     logger = logging.getLogger(name)
     logger.level = logging.DEBUG
+    logger.parent = None
     logger.addHandler(logging.StreamHandler())
     return logger
 
