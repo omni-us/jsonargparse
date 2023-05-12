@@ -29,6 +29,7 @@ from typing import (
     Union,
 )
 
+import pytest
 import yaml
 
 from jsonargparse import (
@@ -56,6 +57,13 @@ from jsonargparse.typing import (
     restricted_number_type,
 )
 from jsonargparse_tests.base import TempDirTestCase, mock_module
+
+
+def test_invalid_class_path_value(parser):
+    parser.add_argument("--cal", type=Calendar, default=lazy_instance(Calendar))
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--cal.class_path.init_args.firstweekday=2"])
+    assert 'Parser key "cal"' in str(ctx.value)
 
 
 class TypeHintsTests(unittest.TestCase):
