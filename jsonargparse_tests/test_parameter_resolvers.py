@@ -13,9 +13,7 @@ from jsonargparse import Namespace, class_from_function
 from jsonargparse.optionals import docstring_parser_support
 from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse.parameter_resolvers import is_lambda
-from jsonargparse_tests.conftest import capture_logs, get_debug_level_logger
-
-logger = get_debug_level_logger(__name__)
+from jsonargparse_tests.conftest import capture_logs
 
 
 class ClassA:
@@ -642,7 +640,7 @@ def test_get_params_function_call_classmethod():
         assert_params(get_params(function_make_class_b), ["k1"])
 
 
-def test_get_params_function_pop_get_from_kwargs():
+def test_get_params_function_pop_get_from_kwargs(logger):
     with capture_logs(logger) as logs:
         params = get_params(function_pop_get_from_kwargs, logger=logger)
     assert_params(params, ["kn1", "k2", "kn2", "kn3", "kn4", "pk1"])
@@ -682,43 +680,43 @@ def test_conditional_calls_kwargs():
 # unsupported cases
 
 
-def test_unsupported_component():
+def test_unsupported_component(logger):
     with capture_logs(logger) as logs:
         assert [] == get_params(function_unsupported_component, logger=logger)
     assert "not supported" in logs.getvalue()
 
 
-def test_unsupported_type_of_assign():
+def test_unsupported_type_of_assign(logger):
     with capture_logs(logger) as logs:
         get_params(ClassU1, logger=logger)
     assert "unsupported type of assign" in logs.getvalue()
 
 
-def test_unsupported_kwarg_as_keyword():
+def test_unsupported_kwarg_as_keyword(logger):
     with capture_logs(logger) as logs:
         get_params(ClassU2, logger=logger)
     assert "kwargs given as keyword parameter not supported" in logs.getvalue()
 
 
-def test_unsupported_super_with_arbitrary_params():
+def test_unsupported_super_with_arbitrary_params(logger):
     with capture_logs(logger) as logs:
         get_params(ClassU3, logger=logger)
     assert "unsupported super parameters" in logs.getvalue()
 
 
-def test_unsupported_self_attr_not_found_in_members():
+def test_unsupported_self_attr_not_found_in_members(logger):
     with capture_logs(logger) as logs:
         get_params(ClassU4, logger=logger)
     assert "did not find use of self._ka in members of" in logs.getvalue()
 
 
-def test_unsupported_kwarg_attr_as_keyword():
+def test_unsupported_kwarg_attr_as_keyword(logger):
     with capture_logs(logger) as logs:
         get_params(ClassU5, logger=logger)
     assert "kwargs attribute given as keyword parameter not supported" in logs.getvalue()
 
 
-def test_get_params_non_existent_call():
+def test_get_params_non_existent_call(logger):
     with capture_logs(logger) as logs:
         assert [] == get_params(function_with_bug, logger=logger)
     assert "does_not_exist" in logs.getvalue()

@@ -1,8 +1,9 @@
 import os
-import pathlib
 import pickle
-from datetime import timedelta
-from typing import Iterator
+import random
+import uuid
+from datetime import datetime, timedelta
+from typing import List, Optional, Union
 
 import pytest
 
@@ -20,10 +21,13 @@ from jsonargparse.typing import (
     get_registered_type,
     path_type,
     register_type,
+    register_type_on_first_use,
     registered_types,
+    registration_pending,
     restricted_number_type,
     restricted_string_type,
 )
+from jsonargparse_tests.conftest import get_parser_help
 
 # restricted number tests
 
@@ -87,10 +91,8 @@ def test_restricted_number_invalid_type():
 def test_restricted_number_already_registered():
     NewClosedUnitInterval = restricted_number_type("ClosedUnitInterval", float, [("<=", 1), (">=", 0)])
     assert ClosedUnitInterval is NewClosedUnitInterval
-    pytest.raises(
-        ValueError,
-        lambda: restricted_number_type("NewName", float, [("<=", 1), (">=", 0)]),
-    )
+    with pytest.raises(ValueError):
+        restricted_number_type("NewName", float, [("<=", 1), (">=", 0)])
 
 
 def test_restricted_number_not_equal_operator():
@@ -115,7 +117,19 @@ def test_non_negative_float_add_argument(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--le0", "-2.1"]))
 
 
-def test_restricted_number_add_argument(parser):
+def test_restricted_number_add_argument_optional(parser):
+    limit_val = random.randint(100, 10000)
+    larger_than = restricted_number_type(f"larger_than_{limit_val}", int, (">", limit_val))
+    parser.add_argument("--val", type=larger_than, default=limit_val + 1, help="Help")
+
+    assert limit_val + 1 == parser.parse_args([f"--val={limit_val+1}"]).val
+    pytest.raises(ArgumentError, lambda: parser.parse_args([f"--val={limit_val-1}"]))
+
+    help_str = get_parser_help(parser)
+    assert f"Help (type: larger_than_{limit_val}, default: {limit_val+1})" in help_str
+
+
+def test_restricted_number_add_argument_optional_nargs_plus(parser):
     TenToTwenty = restricted_number_type("TenToTwenty", int, [(">=", 10), ("<=", 20)])
     parser.add_argument("--f10t20", type=TenToTwenty, nargs="+")
     assert [11, 14, 16] == parser.parse_args(["--f10t20", "11", "14", "16"]).f10t20
@@ -124,7 +138,26 @@ def test_restricted_number_add_argument(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--f10t20", "10.5"]))
 
 
-def test_add_argument_type_function(parser):
+def test_restricted_number_positional_nargs_questionmark(parser):
+    parser.add_argument("p1")
+    parser.add_argument("p2", nargs="?", type=OpenUnitInterval)
+    assert None is parser.parse_args(["a"]).p2
+    assert 0.5 == parser.parse_args(["a", "0.5"]).p2
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["a", "b"]))
+
+
+def test_restricted_numbers_optional_union(parser):
+    parser.add_argument("--num", type=Optional[Union[PositiveInt, OpenUnitInterval]])
+    assert 0.1 == parser.parse_args(["--num", "0.1"]).num
+    assert 0.9 == parser.parse_args(["--num", "0.9"]).num
+    assert 1 == parser.parse_args(["--num", "1"]).num
+    assert 12 == parser.parse_args(["--num", "12"]).num
+    assert None is parser.parse_args(["--num=null"]).num
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--num", "0.0"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--num", "4.5"]))
+
+
+def test_type_function_add_argument(parser):
     def gt0_or_off(x):
         return x if x == "off" else PositiveInt(x)
 
@@ -151,6 +184,13 @@ def test_email():
     pytest.raises(ValueError, lambda: Email("name_at_eg.org"))
 
 
+def test_optional_email_add_argument(parser):
+    parser.add_argument("--email", type=Optional[Email])
+    assert "a@b.c" == parser.parse_args(["--email", "a@b.c"]).email
+    assert None is parser.parse_args(["--email=null"]).email
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--email", "abc"]))
+
+
 def test_restricted_string_already_registered():
     NewEmail = restricted_string_type("Email", r"^[^@ ]+@[^@ ]+\.[^@ ]+$")
     assert Email is NewEmail
@@ -172,17 +212,10 @@ def test_restricted_string_add_argument(parser):
 # path tests
 
 
-@pytest.fixture
-def file_fr(tmp_cwd) -> Iterator[str]:
-    file_fr = "file_r"
-    pathlib.Path(file_fr).touch()
-    yield file_fr
-
-
-def test_path_fr(file_fr):
-    path = Path_fr(file_fr)
-    assert path == file_fr
-    assert path() == os.path.realpath(file_fr)
+def test_path_fr(file_r):
+    path = Path_fr(file_r)
+    assert path == file_r
+    assert path() == os.path.realpath(file_r)
     pytest.raises(TypeError, lambda: Path_fr("does_not_exist"))
 
 
@@ -193,19 +226,6 @@ def test_path_fc_with_kwargs(tmpdir):
 
 def test_path_fr_already_registered():
     assert Path_fr is path_type("fr")
-
-
-def test_os_pathlike(parser, file_fr):
-    parser.add_argument("--path", type=os.PathLike)
-    assert file_fr == parser.parse_args([f"--path={file_fr}"]).path
-
-
-def test_pathlib_path(parser, file_fr):
-    parser.add_argument("--path", type=pathlib.Path)
-    cfg = parser.parse_args([f"--path={file_fr}"])
-    assert isinstance(cfg.path, pathlib.Path)
-    assert str(cfg.path) == file_fr
-    assert parser.dump(cfg) == "path: file_r\n"
 
 
 # other types
@@ -283,3 +303,44 @@ def test_register_non_bool_cast_type(parser):
     assert isinstance(cfg.elems, Elems)
     assert [1, 2, 3] == cfg.elems.elems
     assert '{"elems":[1,2,3]}' == parser.dump(cfg, format="json")
+
+
+def test_register_type_datetime(parser):
+    def serializer(v):
+        return v.isoformat()
+
+    def deserializer(v):
+        return datetime.strptime(v, "%Y-%m-%dT%H:%M:%S")
+
+    register_type(datetime, serializer, deserializer)
+
+    parser.add_argument("--datetime", type=datetime)
+    cfg = parser.parse_args(["--datetime=2008-09-03T20:56:35"])
+    assert cfg.datetime == datetime(2008, 9, 3, 20, 56, 35)
+    assert parser.dump(cfg) == "datetime: '2008-09-03T20:56:35'\n"
+
+    register_type(datetime, serializer, deserializer)  # identical re-registering is okay
+    pytest.raises(ValueError, lambda: register_type(datetime))  # different registration not okay
+
+
+class RegisterOnFirstUse:
+    pass
+
+
+def test_register_type_on_first_use():
+    register_type_on_first_use(f"{__name__}.RegisterOnFirstUse")
+    assert f"{__name__}.RegisterOnFirstUse" in registration_pending
+    registered = get_registered_type(RegisterOnFirstUse)
+    assert registered.type_class is RegisterOnFirstUse
+    assert f"{__name__}.RegisterOnFirstUse" not in registration_pending
+
+
+def test_uuid(parser):
+    id1 = uuid.uuid4()
+    id2 = uuid.uuid4()
+    parser.add_argument("--uuid", type=uuid.UUID)
+    parser.add_argument("--uuids", type=List[uuid.UUID])
+    cfg = parser.parse_args([f"--uuid={id1}", f'--uuids=["{id1}", "{id2}"]'])
+    assert cfg.uuid == id1
+    assert cfg.uuids == [id1, id2]
+    assert f"uuid: {id1}\nuuids:\n- {id1}\n- {id2}\n" == parser.dump(cfg)

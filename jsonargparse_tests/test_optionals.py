@@ -19,6 +19,7 @@ from jsonargparse.optionals import (
     set_docstring_parse_options,
     url_support,
 )
+from jsonargparse_tests.conftest import skip_if_docstring_parser_unavailable
 
 # jsonschema support
 
@@ -68,7 +69,7 @@ def test_url_support_false():
 # docstring-parser support
 
 
-@pytest.mark.skipif(not docstring_parser_support, reason="docstring-parser package is required")
+@skip_if_docstring_parser_unavailable
 def test_docstring_parser_support_true():
     import_docstring_parser("test_docstring_parser_support_true")
 
@@ -80,7 +81,7 @@ def test_docstring_parser_support_false():
         assert "test_docstring_parser_support_false" in str(context.value)
 
 
-@pytest.mark.skipif(not docstring_parser_support, reason="docstring-parser package is required")
+@skip_if_docstring_parser_unavailable
 def test_docstring_parse_options():
     from docstring_parser import DocstringStyle
 

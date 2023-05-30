@@ -84,7 +84,12 @@ from typing import Callable, Iterable, List
 import jsonargparse_tests
 from jsonargparse import *
 from jsonargparse.typing import *
-from jsonargparse_tests.base import doctest_mock_class_in_main
+from jsonargparse.util import unresolvable_import_paths
+
+def doctest_mock_class_in_main(cls):
+    cls.__module__ = None
+    setattr(sys.modules["__main__"], cls.__name__, cls)
+    unresolvable_import_paths[cls] = f"__main__.{cls.__name__}"
 """
 
 # Add any paths that contain templates here, relative to this directory.

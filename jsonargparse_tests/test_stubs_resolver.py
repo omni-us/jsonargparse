@@ -17,13 +17,8 @@ import yaml
 from jsonargparse._stubs_resolver import get_mro_method_parent, get_stubs_resolver
 from jsonargparse.optionals import url_support
 from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
-from jsonargparse_tests.conftest import (
-    capture_logs,
-    get_debug_level_logger,
-    get_parser_help,
-)
+from jsonargparse_tests.conftest import capture_logs, get_parser_help
 
-logger = get_debug_level_logger(__name__)
 torch_available = find_spec("torch")
 
 
@@ -187,7 +182,7 @@ def test_get_params_relative_import_from_init():
     assert params[0].annotation is inspect._empty
 
 
-def test_get_params_non_unique_alias():
+def test_get_params_non_unique_alias(logger):
     params = get_params(uuid5)
     assert [("namespace", UUID), ("name", str)], get_param_types(params)
 
