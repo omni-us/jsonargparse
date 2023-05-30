@@ -1,19 +1,9 @@
-import json
-import os
-import pathlib
 import random
-import re
 import sys
 import time
-import unittest
 import uuid
-from calendar import Calendar, HTMLCalendar, TextCalendar
-from contextlib import redirect_stderr, redirect_stdout
-from copy import deepcopy
-from datetime import datetime
+from calendar import Calendar
 from enum import Enum
-from gzip import GzipFile
-from io import StringIO
 from typing import (
     Any,
     Callable,
@@ -32,1713 +22,803 @@ from typing import (
 import pytest
 import yaml
 
-from jsonargparse import (
-    CLI,
-    ActionConfigFile,
-    ArgumentError,
-    ArgumentParser,
-    Namespace,
-    Path,
-    lazy_instance,
-)
+from jsonargparse import ActionConfigFile, ArgumentError, Namespace, lazy_instance
 from jsonargparse.typehints import ActionTypeHint, Literal, is_optional
 from jsonargparse.typing import (
-    Email,
     NotEmptyStr,
-    OpenUnitInterval,
-    Path_drw,
     Path_fc,
     Path_fr,
     PositiveFloat,
     PositiveInt,
-    final,
-    path_type,
-    register_type,
-    restricted_number_type,
 )
-from jsonargparse_tests.base import TempDirTestCase, mock_module
+from jsonargparse_tests.conftest import (
+    capture_logs,
+    get_parse_args_stdout,
+    get_parser_help,
+)
 
 
-def test_invalid_class_path_value(parser):
-    parser.add_argument("--cal", type=Calendar, default=lazy_instance(Calendar))
+def test_add_argument_failure_given_type_and_action(parser):
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument("--op1", type=Optional[bool], action=True)
+    assert "Providing both type and action not allowed" in str(ctx.value)
+
+
+# basic types tests
+
+
+def test_str_no_strip(parser):
+    parser.add_argument("--op", type=Optional[str])
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    assert "  " == parser.parse_args(["--op", "  "]).op
+    assert "" == parser.parse_args(["--op", ""]).op
+    assert " abc " == parser.parse_args(["--op= abc "]).op
+    assert "xyz: " == parser.parse_args(["--op=xyz: "]).op
+    assert " " == parser.parse_args(['--cfg={"op":" "}']).op
+    assert None is parser.parse_args(["--op=null"]).op
+
+
+@pytest.mark.parametrize("value", ["2022-04-12", "2022-04-32"])
+def test_str_not_timestamp(parser, value):
+    parser.add_argument("foo", type=str)
+    assert value == parser.parse_args([value]).foo
+
+
+@pytest.mark.parametrize("value", ["1", "02", "3.40", "5.7e-8"])
+def test_str_number_value(parser, value):
+    parser.add_argument("--val", type=str)
+    assert value == parser.parse_args([f"--val={value}"]).val
+
+
+def test_str_yaml_constructor_error(parser):
+    parser.add_argument("--val", type=str)
+    assert "{{something}}" == parser.parse_args(["--val={{something}}"]).val
+
+
+def test_bool_parse(parser):
+    parser.add_argument("--val", type=bool)
+    assert None is parser.get_defaults().val
+    assert True is parser.parse_args(["--val", "true"]).val
+    assert True is parser.parse_args(["--val", "TRUE"]).val
+    assert False is parser.parse_args(["--val", "false"]).val
+    assert False is parser.parse_args(["--val", "FALSE"]).val
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--val", "1"]))
+
+
+@pytest.mark.parametrize("num_type", [int, float, PositiveInt, PositiveFloat])
+def test_bool_not_a_number(parser, num_type):
+    parser.add_argument("--num", type=num_type)
+    for value in [True, False]:
+        with pytest.raises(ArgumentError):
+            parser.parse_object({"num": value})
+
+
+def test_float_scientific_notation(parser):
+    parser.add_argument("--num", type=float)
+    assert 1e-3 == parser.parse_args(["--num=1e-3"]).num
+
+
+def test_complex_number(parser):
+    parser.add_argument("--complex", type=complex)
+    cfg = parser.parse_args(["--complex=(2+3j)"])
+    assert cfg.complex == 2 + 3j
+    assert parser.dump(cfg) == "complex: (2+3j)\n"
+
+
+@pytest.mark.skipif(not Literal, reason="Literal introduced in python 3.8 or backported in typing_extensions")
+def test_literal(parser):
+    parser.add_argument("--str", type=Literal["a", "b", None])
+    parser.add_argument("--int", type=Literal[3, 4])
+    parser.add_argument("--true", type=Literal[True])
+    parser.add_argument("--false", type=Literal[False])
+    assert "a" == parser.parse_args(["--str=a"]).str
+    assert "b" == parser.parse_args(["--str=b"]).str
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--str=x"]))
+    assert None is parser.parse_args(["--str=null"]).str
+    assert 4 == parser.parse_args(["--int=4"]).int
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--int=5"]))
+    assert True is parser.parse_args(["--true=true"]).true
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--true=false"]))
+    assert False is parser.parse_args(["--false=false"]).false
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--false=true"]))
+    help_str = get_parser_help(parser)
+    for value in ["--str {a,b,null}", "--int {3,4}", "--true True", "--false False"]:
+        assert value in help_str
+
+
+def test_type_any(parser):
+    parser.add_argument("--any", type=Any)
+    assert "abc" == parser.parse_args(["--any=abc"]).any
+    assert 123 == parser.parse_args(["--any=123"]).any
+    assert 5.6 == parser.parse_args(["--any=5.6"]).any
+    assert [7, 8] == parser.parse_args(["--any=[7, 8]"]).any
+    assert {"a": 0, "b": 1} == parser.parse_args(['--any={"a":0, "b":1}']).any
+    assert True is parser.parse_args(["--any=True"]).any
+    assert False is parser.parse_args(["--any=False"]).any
+    assert None is parser.parse_args(["--any=null"]).any
+    assert " " == parser.parse_args(["--any= "]).any
+    assert " xyz " == parser.parse_args(["--any= xyz "]).any
+    assert "[[[" == parser.parse_args(["--any=[[["]).any
+
+
+def test_type_any_dump(parser):
+    parser.add_argument("--any", type=Any, default=EnumABC.B)
+    cfg = parser.parse_args([])
+    assert "any: B\n" == parser.dump(cfg)
+
+
+def test_type_typehint_without_arg(parser):
+    type_class = Type if sys.version_info < (3, 9) else type
+    parser.add_argument("--type", type=type_class)
+    cfg = parser.parse_args(["--type=uuid.UUID"])
+    assert cfg.type is uuid.UUID
+    assert parser.dump(cfg) == "type: uuid.UUID\n"
+
+
+def test_type_typehint_with_arg(parser):
+    type_class = Type if sys.version_info < (3, 9) else type
+    parser.add_argument("--cal", type=type_class[Calendar])
+    cfg = parser.parse_args(["--cal=calendar.Calendar"])
+    assert cfg.cal is Calendar
+    assert parser.dump(cfg) == "cal: calendar.Calendar\n"
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cal=uuid.UUID"]))
+
+
+def test_type_typehint_help_known_subclasses(parser):
+    parser.add_argument("--cal", type=Type[Calendar])
+    help_str = get_parser_help(parser)
+    assert "known subclasses: calendar.Calendar," in help_str
+
+
+# enum tests
+
+
+class EnumABC(Enum):
+    A = 1
+    B = 2
+    C = 3
+
+
+def test_enum_parse(parser):
+    parser.add_argument("--enum", type=EnumABC)
+    for val in ["A", "B", "C"]:
+        assert EnumABC[val] == parser.parse_args([f"--enum={val}"]).enum
+    for val in ["X", "b", 2]:
+        pytest.raises(ArgumentError, lambda: parser.parse_args([f"--enum={val}"]))
+
+
+def test_enum_dump(parser):
+    parser.add_argument("--enum", type=EnumABC)
+    cfg = parser.parse_args(["--enum=C"])
+    assert "enum: C\n" == parser.dump(cfg)
+    with pytest.raises(TypeError):
+        parser.dump(Namespace(enum="x"))
+
+
+def test_enum_help(parser):
+    parser.add_argument("--enum", type=EnumABC, default=EnumABC.B, help="Help")
+    assert EnumABC.B == parser.get_defaults().enum
+    help_str = get_parser_help(parser)
+    assert "--enum {A,B,C}" in help_str
+    assert "Help (type: EnumABC, default: B)" in help_str
+
+
+def test_enum_optional(parser):
+    parser.add_argument("--enum", type=Optional[EnumABC])
+    assert EnumABC.B == parser.parse_args(["--enum=B"]).enum
+    assert None is parser.parse_args(["--enum=null"]).enum
+    help_str = get_parser_help(parser)
+    assert "--enum {A,B,C,null}" in help_str
+
+
+class EnumStr(str, Enum):
+    A = "A"
+    B = "B"
+
+
+def test_enum_str_optional(parser):
+    parser.add_argument("--enum", type=Optional[EnumStr])
+    assert "B" == parser.parse_args(["--enum=B"]).enum
+    assert None is parser.parse_args(["--enum=null"]).enum
+
+
+# set tests
+
+
+def test_set(parser):
+    parser.add_argument("--set", type=Set[int])
+    assert {1, 2} == parser.parse_args(["--set=[1, 2]"]).set
     with pytest.raises(ArgumentError) as ctx:
-        parser.parse_args(["--cal.class_path.init_args.firstweekday=2"])
-    assert 'Parser key "cal"' in str(ctx.value)
-
-
-class TypeHintsTests(unittest.TestCase):
-    def test_add_argument_type_hint(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--op1", type=Optional[Union[PositiveInt, OpenUnitInterval]])
-        self.assertEqual(0.1, parser.parse_args(["--op1", "0.1"]).op1)
-        self.assertEqual(0.9, parser.parse_args(["--op1", "0.9"]).op1)
-        self.assertEqual(1, parser.parse_args(["--op1", "1"]).op1)
-        self.assertEqual(12, parser.parse_args(["--op1", "12"]).op1)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--op1", "0.0"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--op1", "4.5"]))
-        parser.add_argument("--op2", type=Optional[Email])
-        self.assertEqual("a@b.c", parser.parse_args(["--op2", "a@b.c"]).op2)
-        self.assertIsNone(parser.parse_args(["--op2=null"]).op2)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--op2", "abc"]))
-
-    def test_type_hint_action_failure(self):
-        parser = ArgumentParser(exit_on_error=False)
-        self.assertRaises(ValueError, lambda: parser.add_argument("--op1", type=Optional[bool], action=True))
-
-    def test_bool(self):
-        parser = ArgumentParser(prog="app", default_env=True, exit_on_error=False)
-        parser.add_argument("--val", type=bool)
-        self.assertEqual(None, parser.get_defaults().val)
-        self.assertEqual(True, parser.parse_args(["--val", "true"]).val)
-        self.assertEqual(True, parser.parse_args(["--val", "TRUE"]).val)
-        self.assertEqual(False, parser.parse_args(["--val", "false"]).val)
-        self.assertEqual(False, parser.parse_args(["--val", "FALSE"]).val)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--val", "1"]))
-
-        os.environ["APP_VAL"] = "true"
-        self.assertEqual(True, parser.parse_args([]).val)
-        os.environ["APP_VAL"] = "True"
-        self.assertEqual(True, parser.parse_args([]).val)
-        os.environ["APP_VAL"] = "false"
-        self.assertEqual(False, parser.parse_args([]).val)
-        os.environ["APP_VAL"] = "False"
-        self.assertEqual(False, parser.parse_args([]).val)
-        os.environ["APP_VAL"] = "2"
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--val", "a"]))
-        del os.environ["APP_VAL"]
-
-    def test_no_str_strip(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--op", type=Optional[str])
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        self.assertEqual("  ", parser.parse_args(["--op", "  "]).op)
-        self.assertEqual("", parser.parse_args(["--op", ""]).op)
-        self.assertEqual(" abc ", parser.parse_args(["--op= abc "]).op)
-        self.assertEqual("xyz: ", parser.parse_args(["--op=xyz: "]).op)
-        self.assertEqual(" ", parser.parse_args(['--cfg={"op":" "}']).op)
-        self.assertIsNone(parser.parse_args(["--op=null"]).op)
-
-    def test_str_not_timestamp_issue_135(self):
-        parser = ArgumentParser()
-        parser.add_argument("foo", type=str)
-        self.assertEqual("2022-04-12", parser.parse_args(["2022-04-12"]).foo)
-        self.assertEqual("2022-04-32", parser.parse_args(["2022-04-32"]).foo)
-
-    def test_float_scientific_notation(self):
-        parser = ArgumentParser()
-        parser.add_argument("--num", type=float)
-        self.assertEqual(1e-3, parser.parse_args(["--num=1e-3"]).num)
-
-    def test_str_with_number_value(self):
-        class Class:
-            def __init__(self, val: str = "-"):
-                pass
-
-        with mock_module(Class):
-            parser = ArgumentParser()
-            parser.add_argument("--val", type=str)
-            parser.add_argument("--cls", type=Class, default=lazy_instance(Class))
-
-            for value in ["1", "02", "3.40", "5.7e-8"]:
-                with self.subTest(value):
-                    self.assertEqual(value, parser.parse_args([f"--val={value}"]).val)
-                    self.assertEqual(value, parser.parse_args([f"--cls.val={value}"]).cls.init_args.val)
-
-    def test_boolean_not_a_number(self):
-        for argtype in [int, float, PositiveInt, PositiveFloat]:
-            with self.subTest(argtype):
-                parser = ArgumentParser(exit_on_error=False)
-                parser.add_argument("--num", type=argtype)
-                for value in [True, False]:
-                    with self.assertRaises(ArgumentError):
-                        parser.parse_object({"num": value})
-
-    def test_str_with_yaml_constructor_error(self):
-        parser = ArgumentParser()
-        parser.add_argument("--val", type=str)
-        self.assertEqual("{{something}}", parser.parse_args(["--val={{something}}"]).val)
-
-    def test_list(self):
-        for list_type in [Iterable, List, Sequence]:
-            with self.subTest(str(list_type)):
-                parser = ArgumentParser()
-                parser.add_argument("--list", type=list_type[int])
-                cfg = parser.parse_args(["--list=[1, 2]"])
-                self.assertEqual([1, 2], cfg.list)
-
-    def test_enum(self):
-        class MyEnum(Enum):
-            A = 1
-            B = 2
-            C = 3
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--enum", type=MyEnum, default=MyEnum.C, help="Description")
-
-        for val in ["A", "B", "C"]:
-            self.assertEqual(MyEnum[val], parser.parse_args(["--enum=" + val]).enum)
-        for val in ["X", "b", 2]:
-            self.assertRaises(ArgumentError, lambda: parser.parse_args(["--enum=" + str(val)]))
-
-        cfg = parser.parse_args(["--enum=C"], with_meta=False)
-        self.assertEqual("enum: C\n", parser.dump(cfg))
-
-        help_str = StringIO()
-        parser.print_help(help_str)
-        self.assertIn("Description (type: MyEnum, default: C)", help_str.getvalue())
-
-    def test_list_enum(self):
-        class MyEnum(Enum):
-            ab = 0
-            xy = 1
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--list", type=List[MyEnum])
-        self.assertEqual([MyEnum.xy, MyEnum.ab], parser.parse_args(['--list=["xy", "ab"]']).list)
-
-    def test_list_union(self):
-        class MyEnum(Enum):
-            ab = 1
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--list1", type=List[Union[float, str, type(None)]])
-        parser.add_argument("--list2", type=List[Union[int, MyEnum]])
-        self.assertEqual([1.2, "ab"], parser.parse_args(['--list1=[1.2, "ab"]']).list1)
-        self.assertEqual([3, MyEnum.ab], parser.parse_args(['--list2=[3, "ab"]']).list2)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--list1={"a":1, "b":"2"}']))
-
-    def test_dict(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--dict", type=dict)
-        self.assertEqual({}, parser.parse_args(["--dict={}"])["dict"])
-        self.assertEqual({"a": 1, "b": "2"}, parser.parse_args(['--dict={"a":1, "b":"2"}'])["dict"])
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--dict=1"]))
-
-    def test_dict_items(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--dict", type=Dict[str, int])
-        cfg = parser.parse_args(["--dict.one=1", "--dict.two=2"])
-        self.assertEqual(cfg.dict, {"one": 1, "two": 2})
-
-    def test_subclass_dict_items(self):
-        class Class:
-            def __init__(self, param: Dict[str, int]):
-                pass
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--val", type=Class)
-
-        with mock_module(Class) as module:
-            for init_args in ["", ".init_args"]:
-                cfg = parser.parse_args(
-                    [
-                        f"--val={module}.Class",
-                        f"--val{init_args}.param.one=1",
-                        f"--val{init_args}.param.two=2",
-                    ]
-                )
-                self.assertEqual(cfg.val.class_path, f"{module}.Class")
-                self.assertEqual(cfg.val.init_args.param, {"one": 1, "two": 2})
-
-    def test_dict_union(self):
-        class MyEnum(Enum):
-            ab = 1
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--dict1", type=Dict[int, Optional[Union[float, MyEnum]]])
-        parser.add_argument("--dict2", type=Dict[str, Union[bool, Path_fc]])
-        cfg = parser.parse_args(['--dict1={"2":4.5, "6":"ab"}', '--dict2={"a":true, "b":"f"}'])
-        self.assertEqual({2: 4.5, 6: MyEnum.ab}, cfg["dict1"])
-        self.assertEqual({"a": True, "b": "f"}, cfg["dict2"])
-        self.assertIsInstance(cfg["dict2"]["b"], Path)
-        self.assertEqual({5: None}, parser.parse_args(['--dict1={"5":null}'])["dict1"])
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--dict1=["a", "b"]']))
-        cfg = yaml.safe_load(parser.dump(cfg))
-        self.assertEqual({"dict1": {"2": 4.5, "6": "ab"}, "dict2": {"a": True, "b": "f"}}, cfg)
-
-    def test_set(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--set", type=Set[int])
-        self.assertEqual({1, 2}, parser.parse_args(["--set=[1, 2]"]).set)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--set=["a", "b"]']))
-
-    def test_tuple(self):
-        class MyEnum(Enum):
-            ab = 1
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--tuple", type=Tuple[Union[int, MyEnum], Path_fc, NotEmptyStr])
-        cfg = parser.parse_args(['--tuple=[2, "a", "b"]'])
-        self.assertEqual((2, "a", "b"), cfg.tuple)
-        self.assertIsInstance(cfg.tuple[1], Path)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--tuple=[]"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a", "b", 5]']))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--tuple={"a":1, "b":"2"}']))
-        out = StringIO()
-        parser.print_help(out)
-        self.assertIn(
-            "--tuple [ITEM,...]  (type: Tuple[Union[int, MyEnum], Path_fc, NotEmptyStr], default: null)", out.getvalue()
-        )
-
-    def test_tuple_untyped(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--tuple", type=tuple)
-        cfg = parser.parse_args(['--tuple=[1, "a", True]'])
-        self.assertEqual((1, "a", True), cfg.tuple)
-        out = StringIO()
-        parser.print_help(out)
-        self.assertIn("--tuple [ITEM,...]  (type: tuple, default: null)", out.getvalue())
-
-    def test_nested_tuples(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--tuple", type=Tuple[Tuple[str, str], Tuple[Tuple[int, float], Tuple[int, float]]])
-        cfg = parser.parse_args(['--tuple=[["foo", "bar"], [[1, 2.02], [3, 3.09]]]'])
-        self.assertEqual((("foo", "bar"), ((1, 2.02), (3, 3.09))), cfg.tuple)
-
-    def test_list_tuple(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--list", type=List[Tuple[int, float]])
-        cfg = parser.parse_args(["--list=[[1, 2.02], [3, 3.09]]"])
-        self.assertEqual([(1, 2.02), (3, 3.09)], cfg.list)
-
-    def test_list_str_positional(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("list", type=List[str])
-        cfg = parser.parse_args(['["a", "b"]'])
-        self.assertEqual(cfg.list, ["a", "b"])
-
-    def test_sequence_tuple_default(self):
-        parser = ArgumentParser()
-        parser.add_argument("--seq", type=Sequence[str], default=("one", "two"))
-        cfg = parser.parse_args([])
-        self.assertEqual(cfg, parser.get_defaults())
-
-    def test_tuple_ellipsis(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--tuple", type=Tuple[float, ...])
-        self.assertEqual((1.2,), parser.parse_args(["--tuple=[1.2]"]).tuple)
-        self.assertEqual((1.2, 3.4), parser.parse_args(["--tuple=[1.2, 3.4]"]).tuple)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--tuple=[]"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--tuple", type=Tuple[Tuple[str, str], Tuple[Tuple[int, float], ...]])
-        cfg = parser.parse_args(['--tuple=[["foo", "bar"], [[1, 2.02], [3, 3.09]]]'])
-        self.assertEqual((("foo", "bar"), ((1, 2.02), (3, 3.09))), cfg.tuple)
-
-    def test_complex_number(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--complex", type=complex)
-        cfg = parser.parse_args(["--complex=(2+3j)"])
-        self.assertEqual(cfg.complex, 2 + 3j)
-        self.assertEqual(parser.dump(cfg), "complex: (2+3j)\n")
-
-    def test_list_append(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--val", type=Union[int, float, List[int]])
-        self.assertEqual(0, parser.parse_args(["--val=0"]).val)
-        self.assertEqual([0], parser.parse_args(["--val+=0"]).val)
-        self.assertEqual([1, 2, 3], parser.parse_args(["--val=1", "--val+=2", "--val+=3"]).val)
-        self.assertEqual([1, 2, 3], parser.parse_args(["--val=[1,2]", "--val+=3"]).val)
-        self.assertEqual([1], parser.parse_args(["--val=0.1", "--val+=1"]).val)
-        self.assertEqual(3, parser.parse_args(["--val=[1,2]", "--val=3"]).val)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--val=a", "--val+=1"]))
-
-    def test_list_append_default_empty(self):
-        parser = ArgumentParser()
-        parser.add_argument("--list", type=List[str], default=[])
-        self.assertEqual([], parser.get_defaults().list)
-        self.assertEqual(["a"], parser.parse_args(["--list=[a]"]).list)
-        self.assertEqual([], parser.get_defaults().list)
-        self.assertEqual(["b", "c"], parser.parse_args(["--list+=[b, c]"]).list)
-        self.assertEqual([], parser.get_defaults().list)
-
-    def test_list_append_config(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        parser.add_argument("--val", type=List[int], default=[1, 2])
-        self.assertEqual([3, 4], parser.parse_args(["--cfg", "val: [3, 4]"]).val)
-        self.assertEqual([1, 2, 3], parser.parse_args(["--cfg", "val+: 3"]).val)
-        self.assertEqual([1, 2, 3, 4], parser.parse_args(["--cfg", "val+: [3, 4]"]).val)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--cfg", "val+: a"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--val=2", "--cfg", "val+: 3"]))
-
-    def test_list_append_subclass_init_args(self):
-        class Class:
-            def __init__(self, p1: int = 0, p2: int = 0):
-                pass
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--val", type=Union[Class, List[Class]])
-
-        with mock_module(Class) as module:
-            cfg = parser.parse_args([f"--val+={module}.Class", "--val.p1=1", "--val.p2=2", "--val.p1=3"])
-            self.assertEqual(cfg.val, [Namespace(class_path=f"{module}.Class", init_args=Namespace(p1=3, p2=2))])
-            cfg = parser.parse_args(["--val+=Class", "--val.p2=2", "--val.p1=1"])
-            self.assertEqual(cfg.val, [Namespace(class_path=f"{module}.Class", init_args=Namespace(p1=1, p2=2))])
-
-    def test_list_append_subclass_nonclass_default(self):
-        @final
-        class Class:
-            def __init__(self, cal: Union[Calendar, Iterable[Calendar], bool] = True):
-                self.cal = cal
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("cls", type=Class)
-
-        cfg = parser.parse_args(["--cls.cal=calendar.TextCalendar", "--cls.cal.firstweekday=2"])
-        self.assertNotIsInstance(cfg.cls.cal, list)
-        self.assertEqual("calendar.TextCalendar", cfg.cls.cal.class_path)
-        self.assertEqual(2, cfg.cls.cal.init_args.firstweekday)
-
-        cfg = parser.parse_args(["--cls.cal=calendar.TextCalendar", "--cls.cal+=calendar.HTMLCalendar"])
-        self.assertIsInstance(cfg.cls.cal, list)
-        self.assertEqual(["TextCalendar", "HTMLCalendar"], [c.class_path.split(".")[1] for c in cfg.cls.cal])
-
-    def test_list_append_subclass(self):
-        class A:
-            def __init__(self, cals: Optional[Union[Calendar, List[Calendar]]] = None):
-                self.cals = cals
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_class_arguments(A, "a")
-        cfg = parser.parse_args(
-            [
-                "--a.cals+=Calendar",
-                "--a.cals.firstweekday=3",
-                "--a.cals+=TextCalendar",
-                "--a.cals.firstweekday=1",
-            ]
-        )
-        self.assertEqual(["calendar.Calendar", "calendar.TextCalendar"], [x.class_path for x in cfg.a.cals])
-        self.assertEqual([3, 1], [x.init_args.firstweekday for x in cfg.a.cals])
-        cfg = parser.parse_args([f"--a={json.dumps(cfg.a.as_dict())}", "--a.cals.firstweekday=4"])
-        self.assertEqual(Namespace(firstweekday=4), cfg.a.cals[-1].init_args)
-        args = ["--a.cals+=Invalid", "--a.cals+=TextCalendar"]
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(args))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(args + ["--print_config"]))
-
-    def test_list_append_subcommand_subclass(self):
-        class A:
-            def __init__(self, cals: Optional[Union[Calendar, List[Calendar]]] = None):
-                self.cals = cals
-
-        parser = ArgumentParser(exit_on_error=False)
-        subparser = ArgumentParser()
-        subparser.add_class_arguments(A, "a")
-        subcommands = parser.add_subcommands()
-        subcommands.add_subcommand("cmd", subparser)
-        cfg = parser.parse_args(
-            [
-                "cmd",
-                "--a.cals+=Calendar",
-                "--a.cals.firstweekday=3",
-                "--a.cals+=TextCalendar",
-                "--a.cals.firstweekday=1",
-            ]
-        )
-        self.assertEqual(["calendar.Calendar", "calendar.TextCalendar"], [x.class_path for x in cfg.cmd.a.cals])
-        self.assertEqual([3, 1], [x.init_args.firstweekday for x in cfg.cmd.a.cals])
-        cfg = parser.parse_args(["cmd", f"--a={json.dumps(cfg.cmd.a.as_dict())}", "--a.cals.firstweekday=4"])
-        self.assertEqual(Namespace(firstweekday=4), cfg.cmd.a.cals[-1].init_args)
-        args = ["cmd", "--a.cals+=Invalid", "--a.cals+=TextCalendar"]
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(args))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(args + ["--print_config"]))
-
-    def test_restricted_number_type(self):
-        limit_val = random.randint(100, 10000)
-        larger_than = restricted_number_type(f"larger_than_{limit_val}", int, (">", limit_val))
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--val", type=larger_than, default=limit_val + 1, help="Description")
-
-        self.assertEqual(limit_val + 1, parser.parse_args([f"--val={limit_val+1}"]).val)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args([f"--val={limit_val-1}"]))
-
-        help_str = StringIO()
-        parser.print_help(help_str)
-        self.assertIn(f"Description (type: larger_than_{limit_val}, default: {limit_val+1})", help_str.getvalue())
-
-    def test_type_Any(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--any", type=Any)
-        self.assertEqual("abc", parser.parse_args(["--any=abc"])["any"])
-        self.assertEqual(123, parser.parse_args(["--any=123"])["any"])
-        self.assertEqual(5.6, parser.parse_args(["--any=5.6"])["any"])
-        self.assertEqual([7, 8], parser.parse_args(["--any=[7, 8]"])["any"])
-        self.assertEqual({"a": 0, "b": 1}, parser.parse_args(['--any={"a":0, "b":1}'])["any"])
-        self.assertTrue(parser.parse_args(["--any=True"])["any"])
-        self.assertFalse(parser.parse_args(["--any=False"])["any"])
-        self.assertIsNone(parser.parse_args(["--any=null"])["any"])
-        self.assertEqual(" ", parser.parse_args(["--any= "])["any"])
-        self.assertEqual(" xyz ", parser.parse_args(["--any= xyz "])["any"])
-        self.assertEqual("[[[", parser.parse_args(["--any=[[["])["any"])
-
-    def test_type_any_subclasses(self):
-        class Class:
-            def __init__(self, cal1: Calendar, cal2: Any):
-                self.cal1 = cal1
-                self.cal2 = cal2
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--any", type=Any)
-
-        with mock_module(Class) as module:
-            value = {
-                "class_path": f"{module}.Class",
-                "init_args": {
-                    "cal1": {
-                        "class_path": "calendar.TextCalendar",
-                        "init_args": {"firstweekday": 1},
-                    },
-                    "cal2": {
-                        "class_path": "calendar.HTMLCalendar",
-                        "init_args": {"firstweekday": 2},
-                    },
-                },
-            }
-
-            cfg = parser.parse_args([f"--any={value}"])
-            init = parser.instantiate_classes(cfg)
-            self.assertIsInstance(init.any, Class)
-            self.assertIsInstance(init.any.cal1, TextCalendar)
-            self.assertIsInstance(init.any.cal2, HTMLCalendar)
-            self.assertEqual(init.any.cal1.firstweekday, 1)
-            self.assertEqual(init.any.cal2.firstweekday, 2)
-
-            value["init_args"]["cal2"]["class_path"] = "does.not.exist"
-            cfg = parser.parse_args([f"--any={value}"])
-            self.assertIsInstance(cfg.any.init_args.cal1, Namespace)
-            self.assertIsInstance(cfg.any.init_args.cal2, dict)
-            init = parser.instantiate_classes(cfg)
-            self.assertIsInstance(init.any, Class)
-            self.assertIsInstance(init.any.cal1, TextCalendar)
-            self.assertIsInstance(init.any.cal2, dict)
-            self.assertEqual(init.any.cal1.firstweekday, 1)
-            self.assertEqual(init.any.cal2["init_args"]["firstweekday"], 2)
-
-            value["init_args"]["cal1"]["class_path"] = "does.not.exist"
-            cfg = parser.parse_args([f"--any={value}"])
-            self.assertIsInstance(cfg.any, dict)
-
-    def test_type_any_list_of_subclasses(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--any", type=Any)
-
-        value = [
-            {
-                "class_path": "calendar.TextCalendar",
-                "init_args": {"firstweekday": 1},
-            },
-            {
-                "class_path": "calendar.HTMLCalendar",
-                "init_args": {"firstweekday": 2},
-            },
-        ]
-
-        cfg = parser.parse_args([f"--any={value}"])
-        init = parser.instantiate_classes(cfg)
-        self.assertIsInstance(init.any, list)
-        self.assertEqual(len(init.any), 2)
-        self.assertIsInstance(init.any[0], TextCalendar)
-        self.assertIsInstance(init.any[1], HTMLCalendar)
-        self.assertEqual(init.any[0].firstweekday, 1)
-        self.assertEqual(init.any[1].firstweekday, 2)
-
-    def test_type_any_dict_of_subclasses(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--any", type=Any)
-
-        value = {
-            "k1": {
-                "class_path": "calendar.TextCalendar",
-                "init_args": {"firstweekday": 1},
-            },
-            "k2": {
-                "class_path": "calendar.HTMLCalendar",
-                "init_args": {"firstweekday": 2},
-            },
-        }
-
-        cfg = parser.parse_args([f"--any={value}"])
-        init = parser.instantiate_classes(cfg)
-        self.assertIsInstance(init.any, dict)
-        self.assertEqual(len(init.any), 2)
-        self.assertIsInstance(init.any["k1"], TextCalendar)
-        self.assertIsInstance(init.any["k2"], HTMLCalendar)
-        self.assertEqual(init.any["k1"].firstweekday, 1)
-        self.assertEqual(init.any["k2"].firstweekday, 2)
-
-    def test_union_subtypes_order(self):
-        for subtypes, arg, expected in [
-            ((bool, str), "=true", True),
-            ((str, bool), "=true", "true"),
-            ((int, str), "=1", 1),
-            ((str, int), "=2", "2"),
-            ((float, int), "=3", 3.0),
-            ((int, float), "=4", 4),
-            ((int, List[int]), "=5", 5),
-            ((List[int], int), "=6", 6),
-            ((int, List[int]), "+=7", [7]),
-            ((List[int], int), "+=8", [8]),
-        ]:
-            with self.subTest(f"{subtypes}, {arg}, {expected}"):
-                parser = ArgumentParser()
-                parser.add_argument("--val", type=Union[subtypes])
-                val = parser.parse_args([f"--val{arg}"]).val
-                self.assertIsInstance(val, type(expected))
-                self.assertEqual(val, expected)
-
-    @unittest.skipIf(not Literal, "Literal introduced in python 3.8 or backported in typing_extensions")
-    def test_Literal(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--str", type=Literal["a", "b", None])
-        parser.add_argument("--int", type=Literal[3, 4])
-        parser.add_argument("--true", type=Literal[True])
-        parser.add_argument("--false", type=Literal[False])
-        self.assertEqual("a", parser.parse_args(["--str=a"]).str)
-        self.assertEqual("b", parser.parse_args(["--str=b"]).str)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--str=x"]))
-        self.assertIsNone(parser.parse_args(["--str=null"]).str)
-        self.assertEqual(4, parser.parse_args(["--int=4"]).int)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--int=5"]))
-        self.assertIs(True, parser.parse_args(["--true=true"]).true)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--true=false"]))
-        self.assertIs(False, parser.parse_args(["--false=false"]).false)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--false=true"]))
-        out = StringIO()
-        parser.print_help(out)
-        for value in ["--str {a,b,null}", "--int {3,4}", "--true True", "--false False"]:
-            self.assertIn(value, out.getvalue())
-
-    def test_nested_mapping_without_args(self):
-        parser = ArgumentParser()
-        parser.add_argument("--map", type=Mapping[str, Union[int, Mapping]])
-        self.assertEqual(parser.parse_args(['--map={"a": 1}']).map, {"a": 1})
-        self.assertEqual(parser.parse_args(['--map={"b": {"c": 2}}']).map, {"b": {"c": 2}})
-
-    def _test_typehint_non_parameterized_types(self, type):
-        parser = ArgumentParser(exit_on_error=False)
-        ActionTypeHint.is_supported_typehint(type, full=True)
-        parser.add_argument("--type", type=type)
-        cfg = parser.parse_args(["--type=uuid.UUID"])
-        self.assertEqual(cfg.type, uuid.UUID)
-        self.assertEqual(parser.dump(cfg), "type: uuid.UUID\n")
-
-    def _test_typehint_parameterized_types(self, type):
-        parser = ArgumentParser(exit_on_error=False)
-        ActionTypeHint.is_supported_typehint(type, full=True)
-        parser.add_argument("--cal", type=type[Calendar])
-        cfg = parser.parse_args(["--cal=calendar.Calendar"])
-        self.assertEqual(cfg.cal, Calendar)
-        self.assertEqual(parser.dump(cfg), "cal: calendar.Calendar\n")
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--cal=uuid.UUID"]))
-
-    def test_typehint_Type(self):
-        self._test_typehint_non_parameterized_types(type=Type)
-        self._test_typehint_parameterized_types(type=Type)
-
-    def test_typehint_non_parameterized_type(self):
-        self._test_typehint_non_parameterized_types(type=type)
-
-    @unittest.skipIf(sys.version_info < (3, 9), "[] support for builtins introduced in python 3.9")
-    def test_typehint_parametrized_type(self):
-        self._test_typehint_parameterized_types(type=type)
-
-    def test_uuid(self):
-        id1 = uuid.uuid4()
-        id2 = uuid.uuid4()
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--uuid", type=uuid.UUID)
-        parser.add_argument("--uuids", type=List[uuid.UUID])
-        cfg = parser.parse_args(["--uuid=" + str(id1), '--uuids=["' + str(id1) + '", "' + str(id2) + '"]'])
-        self.assertEqual(cfg.uuid, id1)
-        self.assertEqual(cfg.uuids, [id1, id2])
-        self.assertEqual("uuid: " + str(id1) + "\nuuids:\n- " + str(id1) + "\n- " + str(id2) + "\n", parser.dump(cfg))
-
-    @unittest.skipIf(sys.version_info < (3, 10), "new union syntax introduced in python 3.10")
-    def test_union_new_syntax(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--val", type=eval("int | None"))
-        self.assertEqual(123, parser.parse_args(["--val=123"]).val)
-        self.assertIsNone(parser.parse_args(["--val=null"]).val)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--val=abc"]))
-
-    @unittest.skipIf(sys.version_info < (3, 10), "new union syntax introduced in python 3.10")
-    def test_union_new_syntax_subclasses(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--op", type=eval("Calendar | bool"))
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(["--op.help=TextCalendar"])
-        self.assertIn("--op.init_args.firstweekday", out.getvalue())
-
-    def test_Callable_with_function_path(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--callable", type=Callable, default=time.time)
-        parser.add_argument("--list", type=List[Callable])
+        parser.parse_args(['--set=["a", "b"]'])
+    assert "Expected a <class 'int'>" in str(ctx.value)
 
+
+# tuple tests
+
+
+def test_tuple_without_arg(parser):
+    parser.add_argument("--tuple", type=tuple)
+    cfg = parser.parse_args(['--tuple=[1, "a", True]'])
+    assert (1, "a", True) == cfg.tuple
+    help_str = get_parser_help(parser)
+    assert "--tuple [ITEM,...]  (type: tuple, default: null)" in help_str
+
+
+def test_tuples_nested(parser):
+    parser.add_argument("--tuple", type=Tuple[Tuple[str, str], Tuple[Tuple[int, float], Tuple[int, float]]])
+    cfg = parser.parse_args(['--tuple=[["foo", "bar"], [[1, 2.02], [3, 3.09]]]'])
+    assert (("foo", "bar"), ((1, 2.02), (3, 3.09))) == cfg.tuple
+
+
+def test_tuple_ellipsis(parser):
+    parser.add_argument("--tuple", type=Tuple[float, ...])
+    assert (1.2,) == parser.parse_args(["--tuple=[1.2]"]).tuple
+    assert (1.2, 3.4) == parser.parse_args(["--tuple=[1.2, 3.4]"]).tuple
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--tuple=[]"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
+
+
+def test_tuples_nested_ellipsis(parser):
+    parser.add_argument("--tuple", type=Tuple[Tuple[str, str], Tuple[Tuple[int, float], ...]])
+    cfg = parser.parse_args(['--tuple=[["foo", "bar"], [[1, 2.02], [3, 3.09]]]'])
+    assert (("foo", "bar"), ((1, 2.02), (3, 3.09))) == cfg.tuple
+
+
+def test_tuple_union(parser, tmp_cwd):
+    parser.add_argument("--tuple", type=Tuple[Union[int, EnumABC], Path_fc, NotEmptyStr])
+    cfg = parser.parse_args(['--tuple=[2, "a", "b"]'])
+    assert (2, "a", "b") == cfg.tuple
+    assert isinstance(cfg.tuple[1], Path_fc)
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--tuple=[]"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a", "b", 5]']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple={"a":1, "b":"2"}']))
+    help_str = get_parser_help(parser)
+    assert "--tuple [ITEM,...]  (type: Tuple[Union[int, EnumABC], Path_fc, NotEmptyStr], default: null)" in help_str
+
+
+# list tests
+
+
+@pytest.mark.parametrize("list_type", [Iterable, List, Sequence], ids=lambda v: str(v))
+def test_list_variants(parser, list_type):
+    parser.add_argument("--list", type=list_type[int])
+    cfg = parser.parse_args(["--list=[1, 2]"])
+    assert [1, 2] == cfg.list
+
+
+def test_list_dump(parser):
+    parser.add_argument("--list", type=Union[PositiveInt, List[PositiveInt]])
+    dump = yaml.safe_load(parser.dump(Namespace(list=[1, 2])))
+    assert [1, 2] == dump["list"]
+    with pytest.raises(TypeError):
+        parser.dump(Namespace(list=[1, -2]))
+
+
+def test_list_enum(parser):
+    parser.add_argument("--list", type=List[EnumABC])
+    assert [EnumABC.B, EnumABC.A] == parser.parse_args(['--list=["B", "A"]']).list
+
+
+def test_list_tuple(parser):
+    parser.add_argument("--list", type=List[Tuple[int, float]])
+    cfg = parser.parse_args(["--list=[[1, 2.02], [3, 3.09]]"])
+    assert [(1, 2.02), (3, 3.09)] == cfg.list
+
+
+def test_list_union(parser):
+    parser.add_argument("--list1", type=List[Union[float, str, type(None)]])
+    parser.add_argument("--list2", type=List[Union[int, EnumABC]])
+    assert [1.2, "B"] == parser.parse_args(['--list1=[1.2, "B"]']).list1
+    assert [3, EnumABC.B] == parser.parse_args(['--list2=[3, "B"]']).list2
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--list1={"a":1, "b":"2"}']))
+
+
+def test_list_str_positional(parser):
+    parser.add_argument("list", type=List[str])
+    cfg = parser.parse_args(['["a", "b"]'])
+    assert cfg.list == ["a", "b"]
+
+
+def test_sequence_default_tuple(parser):
+    parser.add_argument("--seq", type=Sequence[str], default=("one", "two"))
+    cfg = parser.parse_args([])
+    assert cfg == parser.get_defaults()
+
+
+# list append tests
+
+
+def test_list_append(parser):
+    parser.add_argument("--val", type=Union[int, float, List[int]])
+    assert 0 == parser.parse_args(["--val=0"]).val
+    assert [0] == parser.parse_args(["--val+=0"]).val
+    assert [1, 2, 3] == parser.parse_args(["--val=1", "--val+=2", "--val+=3"]).val
+    assert [1, 2, 3] == parser.parse_args(["--val=[1,2]", "--val+=3"]).val
+    assert [1] == parser.parse_args(["--val=0.1", "--val+=1"]).val
+    assert 3 == parser.parse_args(["--val=[1,2]", "--val=3"]).val
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--val=a", "--val+=1"]))
+
+
+def test_list_append_default_empty(parser):
+    parser.add_argument("--list", type=List[str], default=[])
+    assert [] == parser.get_defaults().list
+    assert ["a"] == parser.parse_args(["--list=[a]"]).list
+    assert [] == parser.get_defaults().list
+    assert ["b", "c"] == parser.parse_args(["--list+=[b, c]"]).list
+    assert [] == parser.get_defaults().list
+
+
+def test_list_append_config(parser):
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--val", type=List[int], default=[1, 2])
+    assert [3, 4] == parser.parse_args(["--cfg", "val: [3, 4]"]).val
+    assert [1, 2, 3] == parser.parse_args(["--cfg", "val+: 3"]).val
+    assert [1, 2, 3, 4] == parser.parse_args(["--cfg", "val+: [3, 4]"]).val
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", "val+: a"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--val=2", "--cfg", "val+: 3"]))
+
+
+def test_list_append_default_config_files(parser, tmp_cwd, subtests):
+    config_path = tmp_cwd / "config.yaml"
+    parser.default_config_files = [str(config_path)]
+    parser.add_argument("--nums", type=List[int], default=[0])
+
+    with subtests.test("replace"):
+        config_path.write_text("nums: [1]\n")
+        cfg = parser.parse_args(["--nums+=2"])
+        assert cfg.nums == [1, 2]
+        cfg = parser.parse_args(["--nums+=[2, 3]"])
+        assert cfg.nums == [1, 2, 3]
+
+    with subtests.test("append"):
+        config_path.write_text("nums+: [1]\n")
         cfg = parser.get_defaults()
-        self.assertEqual(time.time, cfg.callable)
-        self.assertEqual(parser.dump(cfg), "callable: time.time\n")
-        cfg = parser.parse_args(["--callable=random.randint"])
-        self.assertEqual(random.randint, cfg.callable)
-        self.assertEqual(parser.dump(cfg), "callable: random.randint\n")
-        cfg = parser.parse_args(["--callable=jsonargparse.CLI"])
-        self.assertEqual(CLI, cfg.callable)
-        self.assertEqual(parser.dump(cfg), "callable: jsonargparse.CLI\n")
-        self.assertEqual([CLI], parser.parse_args(["--list=[jsonargparse.CLI]"]).list)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--callable=jsonargparse.not_exist"]))
+        assert cfg.nums == [0, 1]
+        cfg = parser.parse_args(["--nums+=2"])
+        assert cfg.nums == [0, 1, 2]
+        cfg = parser.parse_args(["--nums+=[2, 3]"])
+        assert cfg.nums == [0, 1, 2, 3]
+        assert str(cfg.__default_config__) == str(config_path)
 
-        out = StringIO()
-        parser.print_help(out)
-        self.assertIn("(type: Callable, default: time.time)", out.getvalue())
+    with subtests.test("append in second default config"):
+        config_path2 = tmp_cwd / "config2.yaml"
+        config_path2.write_text("nums+: [2]\n")
+        parser.default_config_files += [str(config_path2)]
+        cfg = parser.get_defaults()
+        assert cfg.nums == [0, 1, 2]
+        assert [str(c) for c in cfg.__default_config__] == parser.default_config_files
 
-    def test_Callable_with_class_path(self):
-        class MyFunc1:
-            def __init__(self, p1: int = 1):
-                self.p1 = p1
 
-            def __call__(self):
-                return self.p1
+def test_list_append_subcommand_global_default_config_files(parser, subparser, tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    parser.default_config_files = [str(config_path)]
+    subcommands = parser.add_subcommands()
+    subparser.add_argument("--nums", type=List[int], default=[0])
+    subcommands.add_subcommand("sub", subparser)
+    config_path.write_text("sub:\n  nums: [1]\n")
 
-        class MyFunc2(MyFunc1):
-            pass
+    cfg = parser.parse_args(["sub", "--nums+=2"])
+    assert cfg.sub.nums == [1, 2]
+    assert str(cfg.__default_config__) == str(config_path)
+    cfg = parser.parse_args(["sub", "--nums+=2"], defaults=False)
+    assert cfg.sub.nums == [2]
 
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--callable", type=Callable)
 
-        with mock_module(MyFunc1, MyFunc2) as module:
-            value = {"class_path": f"{module}.MyFunc2", "init_args": {"p1": 1}}
-            cfg = parser.parse_args([f"--callable={module}.MyFunc2"])
-            self.assertEqual(cfg.callable.as_dict(), value)
-            value = {"class_path": f"{module}.MyFunc1", "init_args": {"p1": 2}}
-            cfg = parser.parse_args([f"--callable={json.dumps(value)}"])
-            self.assertEqual(cfg.callable.as_dict(), value)
-            self.assertEqual(yaml.safe_load(parser.dump(cfg))["callable"], value)
-            cfg_init = parser.instantiate_classes(cfg)
-            self.assertIsInstance(cfg_init.callable, MyFunc1)
-            self.assertEqual(cfg_init.callable(), 2)
+def test_list_append_subcommand_subparser_default_config_files(parser, subparser, tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    subcommands = parser.add_subcommands()
+    subparser.default_config_files = [str(config_path)]
+    subparser.add_argument("--nums", type=List[int], default=[0])
+    subcommands.add_subcommand("sub", subparser)
+    config_path.write_text("nums: [1]\n")
 
-            self.assertRaises(ArgumentError, lambda: parser.parse_args(["--callable={}"]))
-            self.assertRaises(ArgumentError, lambda: parser.parse_args(["--callable=jsonargparse.SUPPRESS"]))
-            self.assertRaises(ArgumentError, lambda: parser.parse_args(["--callable=calendar.Calendar"]))
-            value = {"class_path": f"{module}.MyFunc1", "key": "val"}
-            self.assertRaises(ArgumentError, lambda: parser.parse_args([f"--callable={json.dumps(value)}"]))
+    cfg = parser.parse_args(["sub", "--nums+=2"])
+    assert cfg.sub.nums == [1, 2]
+    assert str(cfg.sub.__default_config__) == str(config_path)
+    cfg = parser.parse_args(["sub", "--nums+=2"], defaults=False)
+    assert cfg.sub.nums == [2]
 
-    def test_callable_with_class_path_short_init_args(self):
-        class MyCallable:
-            def __init__(self, name: str):
-                self.name = name
 
-            def __call__(self):
-                return self.name
+# dict tests
 
-        parser = ArgumentParser()
-        parser.add_argument("--call", type=Callable)
 
-        with mock_module(MyCallable) as module:
-            cfg = parser.parse_args([f"--call={module}.MyCallable", "--call.name=Bob"])
-            self.assertEqual(cfg.call.class_path, f"{module}.MyCallable")
-            self.assertEqual(cfg.call.init_args, Namespace(name="Bob"))
-            init = parser.instantiate_classes(cfg)
-            self.assertEqual(init.call(), "Bob")
+def test_dict_without_arg(parser):
+    parser.add_argument("--dict", type=dict)
+    assert {} == parser.parse_args(["--dict={}"])["dict"]
+    assert {"a": 1, "b": "2"} == parser.parse_args(['--dict={"a":1, "b":"2"}'])["dict"]
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--dict=1"]))
 
-    def test_union_callable_with_class_path_short_init_args(self):
-        class MyCallable:
-            def __init__(self, name: str):
-                self.name = name
 
-            def __call__(self):
-                return self.name
+def test_dict_int_keys(parser):
+    parser.add_argument("--d", type=Dict[int, str])
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    cfg = {"d": {1: "val1", 2: "val2"}}
+    assert cfg["d"] == parser.parse_args(["--cfg", str(cfg)]).d
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--cfg={"d": {"a": "b"}}']))
 
-        parser = ArgumentParser()
-        parser.add_argument("--call", type=Union[Callable, None])
 
-        with mock_module(MyCallable) as module:
-            cfg = parser.parse_args([f"--call={module}.MyCallable", "--call.name=Bob"])
-            self.assertEqual(cfg.call.class_path, f"{module}.MyCallable")
-            self.assertEqual(cfg.call.init_args, Namespace(name="Bob"))
-            init = parser.instantiate_classes(cfg)
-            self.assertEqual(init.call(), "Bob")
+def test_dict_union(parser, tmp_cwd):
+    parser.add_argument("--dict1", type=Dict[int, Optional[Union[float, EnumABC]]])
+    parser.add_argument("--dict2", type=Dict[str, Union[bool, Path_fc]])
+    cfg = parser.parse_args(['--dict1={"2":4.5, "6":"C"}', '--dict2={"a":true, "b":"f"}'])
+    assert {2: 4.5, 6: EnumABC.C} == cfg.dict1
+    assert {"a": True, "b": "f"} == cfg.dict2
+    assert isinstance(cfg.dict2["b"], Path_fc)
+    assert {5: None} == parser.parse_args(['--dict1={"5":null}']).dict1
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--dict1=["a", "b"]']))
+    cfg = yaml.safe_load(parser.dump(cfg))
+    assert {"dict1": {"2": 4.5, "6": "C"}, "dict2": {"a": True, "b": "f"}} == cfg
 
-    def test_typed_Callable_with_function_path(self):
-        def my_func_1(p: int) -> str:
-            return str(p)
 
-        def my_func_2(p: str) -> int:
-            return int(p)
+def test_dict_union_int_keys(parser):
+    parser.add_argument("--dict", type=Union[int, Dict[int, int]], default=1)
+    assert 1 == parser.get_defaults().dict
+    assert {2: 7, 4: 9} == parser.parse_args(['--dict={"2": 7, "4": 9}']).dict
 
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--callable", type=Callable[[int], str])
 
-        with mock_module(my_func_1, my_func_2) as module:
-            cfg = parser.parse_args([f"--callable={module}.my_func_1"])
-            self.assertEqual(my_func_1, cfg.callable)
-            cfg = parser.parse_args([f"--callable={module}.my_func_2"])
-            self.assertEqual(my_func_2, cfg.callable)  # Currently callable types are ignored
+def test_dict_command_line_set_items(parser):
+    parser.add_argument("--dict", type=Dict[str, int])
+    cfg = parser.parse_args(["--dict.one=1", "--dict.two=2"])
+    assert cfg.dict == {"one": 1, "two": 2}
 
-    def test_typed_callable_with_return_type_class(self):
-        class Optimizer:
-            def __init__(self, params: List[float], lr: float = 1e-3):
-                self.params = params
-                self.lr = lr
 
-        class SGD(Optimizer):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
+def test_mapping_nested_without_args(parser):
+    parser.add_argument("--map", type=Mapping[str, Union[int, Mapping]])
+    assert {"a": 1} == parser.parse_args(['--map={"a": 1}']).map
+    assert {"b": {"c": 2}} == parser.parse_args(['--map={"b": {"c": 2}}']).map
 
-        class Adam(Optimizer):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
 
+# union tests
+
+
+@pytest.mark.parametrize(
+    ["subtypes", "arg", "expected"],
+    [
+        ((bool, str), "=true", True),
+        ((str, bool), "=true", "true"),
+        ((int, str), "=1", 1),
+        ((str, int), "=2", "2"),
+        ((float, int), "=3", 3.0),
+        ((int, float), "=4", 4),
+        ((int, List[int]), "=5", 5),
+        ((List[int], int), "=6", 6),
+        ((int, List[int]), "+=7", [7]),
+        ((List[int], int), "+=8", [8]),
+    ],
+    ids=lambda v: str(v),
+)
+def test_union_subtypes_order(parser, subtypes, arg, expected):
+    parser.add_argument("--val", type=Union[subtypes])
+    val = parser.parse_args([f"--val{arg}"]).val
+    assert isinstance(val, type(expected))
+    assert val == expected
+
+
+def test_union_unsupported_subtype(parser, logger):
+    parser.logger = logger
+    with capture_logs(logger) as logs:
+        parser.add_argument("--union", type=Union[int, str, "unsupported"])  # noqa: F821
+    assert "Discarding unsupported subtypes" in logs.getvalue()
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="new union syntax introduced in python 3.10")
+def test_union_new_syntax_simple_types(parser):
+    parser.add_argument("--val", type=eval("int | None"))
+    assert 123 == parser.parse_args(["--val=123"]).val
+    assert None is parser.parse_args(["--val=null"]).val
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--val=abc"]))
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="new union syntax introduced in python 3.10")
+def test_union_new_syntax_subclass_type(parser):
+    parser.add_argument("--op", type=eval("Calendar | bool"))
+    help_str = get_parse_args_stdout(parser, ["--op.help=calendar.TextCalendar"])
+    assert "--op.init_args.firstweekday" in help_str
+
+
+# callable tests
+
+
+def test_callable_function_path(parser):
+    parser.add_argument("--callable", type=Callable, default=time.time)
+
+    cfg = parser.get_defaults()
+    assert cfg.callable is time.time
+    assert parser.dump(cfg) == "callable: time.time\n"
+
+    cfg = parser.parse_args(["--callable=random.randint"])
+    assert cfg.callable is random.randint
+    assert parser.dump(cfg) == "callable: random.randint\n"
+
+    help_str = get_parser_help(parser)
+    assert "(type: Callable, default: time.time)" in help_str
+
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--callable=jsonargparse.not_exist"])
+    assert "Callable expects a function or a callable class" in str(ctx.value)
+
+
+def test_callable_list_of_function_paths(parser):
+    parser.add_argument("--callables", type=List[Callable])
+
+    cfg = parser.parse_args(["--callables=[random.randint, time.time]"])
+    assert [random.randint, time.time] == cfg.callables
+
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--callables=[jsonargparse.not_exist]"])
+    assert "Callable expects a function or a callable class" in str(ctx.value)
+
+
+class CallableClassPath:
+    def __init__(self, p1: int = 1):
+        self.p1 = p1
+
+    def __call__(self):
+        return self.p1
+
+
+def test_callable_class_path_simple(parser):
+    parser.add_argument("--callable", type=Callable)
+
+    value = {"class_path": f"{__name__}.CallableClassPath", "init_args": {"p1": 2}}
+    cfg = parser.parse_args([f"--callable={value}"])
+    assert value == cfg.callable.as_dict()
+    assert value == yaml.safe_load(parser.dump(cfg))["callable"]
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.callable, CallableClassPath)
+    assert 2 == init.callable()
+
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--callable={}"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--callable=jsonargparse.SUPPRESS"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--callable=calendar.Calendar"]))
+    value = {"class_path": f"{__name__}.CallableClassPath", "key": "val"}
+    pytest.raises(ArgumentError, lambda: parser.parse_args([f"--callable={value}"]))
+
+
+class CallableParent(CallableClassPath):
+    pass
+
+
+def test_callable_class_path_parent(parser):
+    parser.add_argument("--callable", type=Callable)
+    value = {"class_path": f"{__name__}.CallableParent", "init_args": {"p1": 1}}
+    cfg = parser.parse_args([f"--callable={__name__}.CallableParent"])
+    assert value == cfg.callable.as_dict()
+
+
+class CallableGiveName:
+    def __init__(self, name: str):
+        self.name = name
+
+    def __call__(self):
+        return self.name
+
+
+@pytest.mark.parametrize("callable_type", [Callable, Optional[Callable], Union[int, Callable]])
+def test_callable_class_path_short_init_args(parser, callable_type):
+    parser.add_argument("--call", type=callable_type)
+    cfg = parser.parse_args([f"--call={__name__}.CallableGiveName", "--call.name=Bob"])
+    assert cfg.call.class_path == f"{__name__}.CallableGiveName"
+    assert cfg.call.init_args == Namespace(name="Bob")
+    init = parser.instantiate_classes(cfg)
+    assert init.call() == "Bob"
+
+
+def int_to_str(p: int) -> str:
+    return str(p)
+
+
+def str_to_int(p: str) -> int:
+    return int(p)
+
+
+def test_callable_args_function_path(parser):
+    parser.add_argument("--callable", type=Callable[[int], str])
+    cfg = parser.parse_args([f"--callable={__name__}.int_to_str"])
+    assert int_to_str is cfg.callable
+    cfg = parser.parse_args([f"--callable={__name__}.str_to_int"])
+    assert str_to_int is cfg.callable  # Currently callable args are ignored
+
+
+class Optimizer:
+    def __init__(self, params: List[float], lr: float = 1e-3):
+        self.params = params
+        self.lr = lr
+
+
+class SGD(Optimizer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class Adam(Optimizer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+def test_callable_args_return_type_class(parser, subtests):
+    parser.add_argument("--optimizer", type=Callable[[List[float]], Optimizer], default=SGD)
+
+    with subtests.test("default"):
+        cfg = parser.get_defaults()
+        init = parser.instantiate_classes(cfg)
+        optimizer = init.optimizer([0.1, 2, 3])
+        assert isinstance(optimizer, SGD)
+        assert [0.1, 2, 3] == optimizer.params
+        assert 1e-3 == optimizer.lr
+
+    with subtests.test("parse dict"):
         value = {
             "class_path": "Adam",
             "init_args": {
                 "lr": 0.01,
             },
         }
+        cfg = parser.parse_args([f"--optimizer={value}"])
+        assert f"{__name__}.Adam" == cfg.optimizer.class_path
+        assert Namespace(lr=0.01) == cfg.optimizer.init_args
+        init = parser.instantiate_classes(cfg)
+        optimizer = init.optimizer([4.5, 6.7])
+        assert isinstance(optimizer, Adam)
+        assert [4.5, 6.7] == optimizer.params
+        assert 0.01 == optimizer.lr
+        dump = parser.dump(cfg)
+        assert yaml.safe_load(dump) == cfg.as_dict()
 
-        with mock_module(Optimizer, SGD, Adam) as module:
-            parser = ArgumentParser(exit_on_error=False)
-            parser.add_argument("--optimizer", type=Callable[[List[float]], Optimizer], default=SGD)
+    with subtests.test("short notation"):
+        assert cfg == parser.parse_args(["--optimizer=Adam", "--optimizer.lr=0.01"])
 
-            cfg = parser.get_defaults()
-            init = parser.instantiate_classes(cfg)
-            optim = init.optimizer([0.1, 2, 3])
-            self.assertIsInstance(optim, SGD)
-            self.assertEqual(optim.params, [0.1, 2, 3])
-            self.assertEqual(optim.lr, 1e-3)
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        for name in ["Optimizer", "SGD", "Adam"]:
+            assert f"{__name__}.{name}" in help_str
 
-            cfg = parser.parse_args(["--optimizer", str(value)])
-            self.assertEqual(cfg.optimizer.class_path, f"{module}.Adam")
-            self.assertEqual(cfg.optimizer.init_args, Namespace(lr=0.01))
-            init = parser.instantiate_classes(cfg)
-            optim = init.optimizer([4.5, 6.7])
-            self.assertIsInstance(optim, Adam)
-            self.assertEqual(optim.params, [4.5, 6.7])
-            self.assertEqual(optim.lr, 0.01)
-            dump = parser.dump(cfg)
-            self.assertEqual(yaml.safe_load(dump), cfg.as_dict())
 
-            self.assertEqual(cfg, parser.parse_args(["--optimizer=Adam", "--optimizer.lr=0.01"]))
+class StepLR:
+    def __init__(self, optimizer: Optimizer, last_epoch: int = -1):
+        self.optimizer = optimizer
+        self.last_epoch = last_epoch
 
-            help_str = StringIO()
-            parser.print_help(help_str)
-            for name in ["Optimizer", "SGD", "Adam"]:
-                self.assertIn(f"{module}.{name}", help_str.getvalue())
 
-    def test_typed_callable_with_return_type_union_of_classes(self):
-        class Optimizer:
-            pass
+class ReduceLROnPlateau:
+    def __init__(self, optimizer: Optimizer, monitor: str):
+        self.optimizer = optimizer
+        self.monitor = monitor
 
-        class StepLR:
-            def __init__(self, optimizer: Optimizer, last_epoch: int = -1):
-                self.optimizer = optimizer
-                self.last_epoch = last_epoch
 
-        class ReduceLROnPlateau:
-            def __init__(self, optimizer: Optimizer, monitor: str):
-                self.optimizer = optimizer
-                self.monitor = monitor
+def test_callable_args_return_type_union_of_classes(parser, subtests):
+    parser.add_argument(
+        "--scheduler",
+        type=Callable[[Optimizer], Union[StepLR, ReduceLROnPlateau]],
+        default=StepLR,
+    )
+    optimizer = Optimizer([])
 
-        optim = Optimizer()
+    with subtests.test("default"):
+        cfg = parser.get_defaults()
+        init = parser.instantiate_classes(cfg)
+        scheduler = init.scheduler(optimizer)
+        assert isinstance(scheduler, StepLR)
+        assert scheduler.optimizer is optimizer
+        assert -1 == scheduler.last_epoch
+
+    with subtests.test("parse"):
         value = {
             "class_path": "ReduceLROnPlateau",
             "init_args": {
                 "monitor": "loss",
             },
         }
-
-        with mock_module(StepLR, ReduceLROnPlateau) as module:
-            parser = ArgumentParser(exit_on_error=False)
-            parser.add_argument(
-                "--scheduler", type=Callable[[Optimizer], Union[StepLR, ReduceLROnPlateau]], default=StepLR
-            )
-
-            cfg = parser.get_defaults()
-            init = parser.instantiate_classes(cfg)
-            sched = init.scheduler(optim)
-            self.assertIsInstance(sched, StepLR)
-            self.assertIs(sched.optimizer, optim)
-            self.assertEqual(sched.last_epoch, -1)
-
-            cfg = parser.parse_args(["--scheduler", str(value)])
-            self.assertEqual(cfg.scheduler.class_path, f"{module}.ReduceLROnPlateau")
-            self.assertEqual(cfg.scheduler.init_args, Namespace(monitor="loss"))
-            init = parser.instantiate_classes(cfg)
-            sched = init.scheduler(optim)
-            self.assertIsInstance(sched, ReduceLROnPlateau)
-            self.assertIs(sched.optimizer, optim)
-            self.assertEqual(sched.monitor, "loss")
-
-            help_str = StringIO()
-            parser.print_help(help_str)
-            for name in ["StepLR", "ReduceLROnPlateau"]:
-                self.assertIn(f"{module}.{name}", help_str.getvalue())
-
-    def test_class_type(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--op", type=Optional[List[Calendar]])
-
-        class_path = '"class_path": "calendar.Calendar"'
-        expected = [{"class_path": "calendar.Calendar", "init_args": {"firstweekday": 0}}]
-        cfg = parser.parse_args(["--op=[{" + class_path + "}]"])
-        self.assertEqual(cfg.as_dict()["op"], expected)
-        cfg = parser.parse_args(['--op=["calendar.Calendar"]'])
-        self.assertEqual(cfg.as_dict()["op"], expected)
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg["op"][0], Calendar)
-
-        with self.assertRaises(ArgumentError):
-            parser.parse_args(['--op=[{"class_path": "jsonargparse.ArgumentParser"}]'])
-        with self.assertRaises(ArgumentError):
-            parser.parse_args(['--op=[{"class_path": "jsonargparse.NotExist"}]'])
-        with self.assertRaises(ArgumentError):
-            parser.parse_args(['--op=[{"class_path": "jsonargparse0.IncorrectModule"}]'])
-        with self.assertRaises(ArgumentError):
-            parser.parse_args(["--op=[1]"])
-
-        init_args = '"init_args": {"bad_arg": True}'
-        with self.assertRaises(ArgumentError):
-            parser.parse_args(["--op=[{" + class_path + ", " + init_args + "}]"])
-
-        init_args = '"init_args": {"firstweekday": 3}'
-        cfg = parser.parse_args(["--op=[{" + class_path + ", " + init_args + "}]"])
-        self.assertEqual(cfg["op"][0]["init_args"].as_dict(), {"firstweekday": 3})
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg["op"][0], Calendar)
-        self.assertEqual(3, cfg["op"][0].firstweekday)
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--n.op", type=Optional[Calendar])
-        cfg = parser.parse_args(["--n.op={" + class_path + ", " + init_args + "}"])
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg["n"]["op"], Calendar)
-        self.assertEqual(3, cfg["n"]["op"].firstweekday)
-
-        parser = ArgumentParser()
-        parser.add_argument("--op", type=Calendar)
-        cfg = parser.parse_args(["--op={" + class_path + ", " + init_args + "}"])
-        cfg = parser.instantiate_classes(cfg)
-        self.assertIsInstance(cfg["op"], Calendar)
-        self.assertEqual(3, cfg["op"].firstweekday)
-
-        cfg = parser.instantiate_classes(parser.parse_args([]))
-        self.assertIsNone(cfg["op"])
-
-    def test_class_type_without_defaults(self):
-        class MyCal(Calendar):
-            def __init__(self, p1: int = 1, p2: str = "2"):
-                pass
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--op", type=MyCal)
-
-        with mock_module(MyCal) as module:
-            cfg = parser.parse_args([f"--op.class_path={module}.MyCal", "--op.init_args.p1=3"], defaults=False)
-            self.assertEqual(cfg.op, Namespace(class_path=f"{module}.MyCal", init_args=Namespace(p1=3)))
-            cfg = parser.parse_args(["--op.class_path", f"{module}.MyCal", "--op.init_args.p1", "3"], defaults=False)
-            self.assertEqual(cfg.op, Namespace(class_path=f"{module}.MyCal", init_args=Namespace(p1=3)))
-
-    def test_class_type_required_params(self):
-        class MyCal(Calendar):
-            def __init__(self, p1: int, p2: str):
-                pass
-
-        with mock_module(MyCal) as module:
-            parser = ArgumentParser(exit_on_error=False)
-            parser.add_argument("--op", type=MyCal, default=lazy_instance(MyCal))
-
-            cfg = parser.get_defaults()
-            self.assertEqual(cfg.op.class_path, f"{module}.MyCal")
-            self.assertEqual(cfg.op.init_args, Namespace(p1=None, p2=None))
-            self.assertRaises(ArgumentError, lambda: parser.parse_args([f"--op={module}.MyCal"]))
-
-    def test_class_type_subclass_given_by_name_issue_84(self):
-        class LocalCalendar(Calendar):
-            pass
-
-        parser = ArgumentParser()
-        parser.add_argument("--op", type=Union[Calendar, GzipFile, None])
-        cfg = parser.parse_args(["--op=TextCalendar"])
-        self.assertEqual(cfg.op.class_path, "calendar.TextCalendar")
-
-        out = StringIO()
-        parser.print_help(out)
-        for class_path in ["calendar.Calendar", "calendar.TextCalendar", "gzip.GzipFile"]:
-            self.assertIn(class_path, out.getvalue())
-        self.assertNotIn("LocalCalendar", out.getvalue())
-
-        class HTMLCalendar(Calendar):
-            pass
-
-        with mock_module(HTMLCalendar) as module:
-            err = StringIO()
-            with redirect_stderr(err), self.assertRaises(SystemExit):
-                parser.parse_args(["--op.help=HTMLCalendar"])
-            self.assertIn("Give the full class path to avoid ambiguity", err.getvalue())
-            self.assertIn(f"{module}.HTMLCalendar", err.getvalue())
-
-    def test_class_type_set_defaults_class_name(self):
-        parser = ArgumentParser()
-        parser.add_argument("--cal", type=Calendar)
-        parser.set_defaults(
-            {
-                "cal": {
-                    "class_path": "TextCalendar",
-                    "init_args": {
-                        "firstweekday": 1,
-                    },
-                }
-            }
-        )
-        cal = parser.get_default("cal").as_dict()
-        self.assertEqual(cal, {"class_path": "calendar.TextCalendar", "init_args": {"firstweekday": 1}})
-
-    def test_class_type_subclass_short_init_args(self):
-        parser = ArgumentParser()
-        parser.add_argument("--op", type=Calendar)
-        cfg = parser.parse_args(["--op=TextCalendar", "--op.firstweekday=2"])
-        self.assertEqual(cfg.op.class_path, "calendar.TextCalendar")
-        self.assertEqual(cfg.op.init_args, Namespace(firstweekday=2))
-
-    def test_class_type_invalid_class_name_then_init_args(self):
-        parser = ArgumentParser()
-        parser.add_argument("--cal", type=Calendar)
-        err = StringIO()
-        with redirect_stderr(err), self.assertRaises(SystemExit):
-            parser.parse_args(["--cal=NotCalendarSubclass", "--cal.firstweekday=2"])
-        # self.assertIn('NotCalendarSubclass', err.getvalue())  # Need new way to show NotCalendarSubclass
-
-    def test_class_type_config_merge_init_args(self):
-        class MyCal(Calendar):
-            def __init__(self, param_a: int = 1, param_b: str = "x", **kwargs):
-                super().__init__(**kwargs)
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        parser.add_argument("--cal", type=Calendar)
-
-        with mock_module(MyCal) as module:
-            config1 = {
-                "cal": {
-                    "class_path": f"{module}.MyCal",
-                    "init_args": {
-                        "firstweekday": 2,
-                        "param_b": "y",
-                    },
-                }
-            }
-            config2 = deepcopy(config1)
-            config2["cal"]["init_args"] = {
-                "param_a": 2,
-                "firstweekday": 3,
-            }
-            expected = deepcopy(config1["cal"])
-            expected["init_args"].update(config2["cal"]["init_args"])
-
-            cfg = parser.parse_args([f"--cfg={yaml.safe_dump(config1)}", f"--cfg={yaml.safe_dump(config2)}"])
-            self.assertEqual(cfg.cal.as_dict(), expected)
-
-    def test_init_args_without_class_path(self):
-        parser = ArgumentParser()
-        parser.add_argument("--config", action=ActionConfigFile)
-        parser.add_argument("--cal", type=Calendar)
-
-        config = """cal:
-          class_path: TextCalendar
-          init_args:
-            firstweekday: 2
-        """
-        cal = """init_args:
-            firstweekday: 3
-        """
-
-        cfg = parser.parse_args([f"--config={config}", f"--cal={cal}"])
-        self.assertEqual(cfg.cal.init_args, Namespace(firstweekday=3))
-
-        cfg = parser.parse_args([f"--config={config}", f"--cal={cfg.cal.init_args.as_dict()}"])
-        self.assertEqual(cfg.cal.init_args, Namespace(firstweekday=3))
-
-    def test_class_type_subclass_nested_init_args(self):
-        class Class:
-            def __init__(self, cal: Calendar, p1: int = 0):
-                self.cal = cal
-
-        for full in ["init_args.", ""]:
-            with self.subTest("full" if full else "short"), mock_module(Class) as module:
-                parser = ArgumentParser()
-                parser.add_argument("--op", type=Class)
-                cfg = parser.parse_args(
-                    [
-                        f"--op={module}.Class",
-                        f"--op.{full}p1=1",
-                        f"--op.{full}cal=calendar.TextCalendar",
-                        f"--op.{full}cal.{full}firstweekday=2",
-                    ]
-                )
-                self.assertEqual(cfg.op.class_path, f"{module}.Class")
-                self.assertEqual(cfg.op.init_args.p1, 1)
-                self.assertEqual(cfg.op.init_args.cal.class_path, "calendar.TextCalendar")
-                self.assertEqual(cfg.op.init_args.cal.init_args, Namespace(firstweekday=2))
-
-    def test_class_type_in_union_with_str(self):
-        parser = ArgumentParser()
-        parser.add_argument("--op", type=Optional[Union[str, Calendar]])
-        cfg = parser.parse_args(["--op=value"])
-        self.assertEqual(cfg.op, "value")
-        cfg = parser.parse_args(
-            [
-                "--op=TextCalendar",
-                "--op.firstweekday=1",
-                "--op.firstweekday=2",
-            ]
-        )
-        self.assertEqual(cfg.op, Namespace(class_path="calendar.TextCalendar", init_args=Namespace(firstweekday=2)))
-
-    def test_class_type_dict_default_nested_init_args(self):
-        class Data:
-            def __init__(self, p1: int = 1, p2: str = "x", p3: bool = False):
-                pass
-
-        with mock_module(Data) as module:
-            parser = ArgumentParser()
-            parser.add_argument("--data", type=Data)
-            parser.set_defaults({"data": {"class_path": f"{module}.Data"}})
-            cfg = parser.parse_args(
-                [
-                    "--data.init_args.p1=2",
-                    "--data.init_args.p2=y",
-                    "--data.init_args.p3=true",
-                ]
-            )
-            self.assertEqual(cfg.data.init_args, Namespace(p1=2, p2="y", p3=True))
-
-    def test_class_type_subclass_in_union_help(self):
-        parser = ArgumentParser()
-        parser.add_argument("--op", type=Union[str, Mapping[str, int], Calendar])
-
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(["--help"])
-        self.assertIn("Show the help for the given subclass of Calendar", out.getvalue())
-
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(["--op.help=TextCalendar"])
-        self.assertIn("--op.init_args.firstweekday", out.getvalue())
-
-    def test_class_type_subclass_nested_help(self):
-        class Class:
-            def __init__(self, cal: Calendar, p1: int = 0):
-                self.cal = cal
-
-        parser = ArgumentParser()
-        parser.add_argument("--op", type=Class)
-
-        for pattern in [r"[\s=]", r"\s"]:
-            with self.subTest('" "' if "=" in pattern else '"="'), mock_module(Class) as module:
-                out = StringIO()
-                args = re.split(pattern, f"--op.help={module}.Class --op.init_args.cal.help=TextCalendar")
-                with redirect_stdout(out), self.assertRaises(SystemExit):
-                    parser.parse_args(args)
-                self.assertIn("--op.init_args.cal.init_args.firstweekday", out.getvalue())
-
-        with self.subTest("invalid"), mock_module(Class) as module:
-            err = StringIO()
-            with redirect_stderr(err), self.assertRaises(SystemExit):
-                parser.parse_args([f"--op.help={module}.Class", "--op.init_args.p1=1"])
-            self.assertIn("Expected a nested --*.help option", err.getvalue())
-
-    def test_class_type_unresolved_parameters(self):
-        class Class:
-            def __init__(self, p1: int = 1, p2: str = "2", **kwargs):
-                self.kwargs = kwargs
-
-        with mock_module(Class) as module:
-            config = f"""cls:
-              class_path: {module}.Class
-              init_args:
-                  p1: 5
-              dict_kwargs:
-                  p2: '6'
-                  p3: 7.0
-                  p4: x
-            """
-            expected = Namespace(
-                class_path=f"{module}.Class",
-                init_args=Namespace(p1=5, p2="6"),
-                dict_kwargs={"p3": 7.0, "p4": "x"},
-            )
-
-            parser = ArgumentParser(exit_on_error=False)
-            parser.add_argument("--config", action=ActionConfigFile)
-            parser.add_argument("--cls", type=Class)
-
-            cfg = parser.parse_args([f"--config={config}"])
-            self.assertEqual(cfg.cls, expected)
-            cfg_init = parser.instantiate_classes(cfg)
-            self.assertIsInstance(cfg_init.cls, Class)
-            self.assertEqual(cfg_init.cls.kwargs, expected.dict_kwargs)
-
-            cfg = parser.parse_args(
-                ["--cls=Class", "--cls.dict_kwargs.p4=-", "--cls.dict_kwargs.p3=7.0", "--cls.dict_kwargs.p4=x"]
-            )
-            self.assertEqual(cfg.cls.dict_kwargs, expected.dict_kwargs)
-
-            with self.assertRaises(ArgumentError):
-                parser.parse_args(["--cls=Class", "--cls.dict_kwargs=1"])
-
-            out = StringIO()
-            with redirect_stdout(out), self.assertRaises(SystemExit):
-                parser.parse_args([f"--config={config}", "--print_config"])
-            data = yaml.safe_load(out.getvalue())["cls"]
-            self.assertEqual(data, expected.as_dict())
-
-    def test_class_type_unresolved_name_clash(self):
-        class Class:
-            def __init__(self, dict_kwargs: int = 1, **kwargs):
-                self.kwargs = kwargs
-
-        with mock_module(Class) as module:
-            parser = ArgumentParser()
-            parser.add_argument("--cls", type=Class)
-            args = [f"--cls={module}.Class", "--cls.dict_kwargs=2"]
-            cfg = parser.parse_args(args)
-            self.assertEqual(cfg.cls.init_args.as_dict(), {"dict_kwargs": 2})
-            args.append("--cls.dict_kwargs.p1=3")
-            cfg = parser.parse_args(args)
-            self.assertEqual(cfg.cls.init_args.as_dict(), {"dict_kwargs": 2})
-            self.assertEqual(cfg.cls.dict_kwargs, {"p1": 3})
-
-    def test_invalid_init_args_in_yaml(self):
-        config = """cal:
-            class_path: calendar.Calendar
-            init_args:
-        """
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--config", action=ActionConfigFile)
-        parser.add_argument("--cal", type=Calendar)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args([f"--config={config}"]))
-
-    def test_help_known_subclasses_class(self):
-        parser = ArgumentParser()
-        parser.add_argument("--cal", type=Calendar)
-        out = StringIO()
-        parser.print_help(out)
-        self.assertIn("known subclasses: calendar.Calendar,", out.getvalue())
-
-    def test_help_known_subclasses_type(self):
-        parser = ArgumentParser()
-        parser.add_argument("--cal", type=Type[Calendar])
-        out = StringIO()
-        parser.print_help(out)
-        self.assertIn("known subclasses: calendar.Calendar,", out.getvalue())
-
-    def test_class_type_required(self):
-        parser = ArgumentParser()
-        parser.add_argument("cal", type=Calendar)
-
-        cfg = parser.parse_args(["TextCalendar"])
-        self.assertEqual(cfg.cal.class_path, "calendar.TextCalendar")
-
-        help_str = StringIO()
-        parser.print_help(help_str)
-        self.assertIn("required, type: <class 'Calendar'>", help_str.getvalue())
-        self.assertIn("--cal.help", help_str.getvalue())
-
-    def test_typehint_serialize_list(self):
-        parser = ArgumentParser()
-        parser.add_argument("--list", type=Union[PositiveInt, List[PositiveInt]])
-        dump = yaml.safe_load(parser.dump(Namespace(list=[1, 2])))
-        self.assertEqual([1, 2], dump["list"])
-        with self.assertRaises(TypeError):
-            parser.dump(Namespace(list=[1, -2]))
-
-    def test_typehint_serialize_enum(self):
-        class MyEnum(Enum):
-            a = 1
-            b = 2
-
-        parser = ArgumentParser()
-        parser.add_argument("--enum", type=Optional[MyEnum])
-        dump = yaml.safe_load(parser.dump(Namespace(enum=MyEnum.b)))
-        self.assertEqual("b", dump["enum"])
-        with self.assertRaises(TypeError):
-            parser.dump(Namespace(enum="x"))
-
-    def test_unsupported_type(self):
-        for typehint in [
-            lambda: None,
-            "unsupported",
-            Optional["unsupported"],  # noqa: F821
-            Tuple[int, "unsupported"],  # noqa: F821
-            Union["unsupported1", "unsupported2"],  # noqa: F821
-        ]:
-            with self.subTest(typehint):
-                with self.assertRaises(ValueError):
-                    ActionTypeHint(typehint=typehint)
-
-    def test_union_partially_unsupported_type(self):
-        parser = ArgumentParser(logger={"level": "DEBUG"})
-        with self.assertLogs(logger=parser.logger, level="DEBUG") as log:
-            parser.add_argument("--union", type=Union[int, str, "unsupported"])  # noqa: F821
-            self.assertEqual(1, len(log.output))
-            self.assertIn("Discarding unsupported subtypes", log.output[0])
-
-    def test_nargs_questionmark(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("p1")
-        parser.add_argument("p2", nargs="?", type=OpenUnitInterval)
-        self.assertIsNone(parser.parse_args(["a"]).p2)
-        self.assertEqual(0.5, parser.parse_args(["a", "0.5"]).p2)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["a", "b"]))
-
-    def test_register_type(self):
-        def serializer(v):
-            return v.isoformat()
-
-        def deserializer(v):
-            return datetime.strptime(v, "%Y-%m-%dT%H:%M:%S")
-
-        register_type(datetime, serializer, deserializer)
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--datetime", type=datetime)
-        cfg = parser.parse_args(["--datetime=2008-09-03T20:56:35"])
-        self.assertEqual(cfg.datetime, datetime(2008, 9, 3, 20, 56, 35))
-        self.assertEqual(parser.dump(cfg), "datetime: '2008-09-03T20:56:35'\n")
-        self.assertRaises(ValueError, lambda: register_type(datetime))
-        register_type(uuid.UUID)
-
-    def test_lazy_instance_invalid_kwargs(self):
-        class MyClass:
-            def __init__(self, param: int = 1):
-                pass
-
-        self.assertRaises(ValueError, lambda: lazy_instance(MyClass, param="bad"))
-
-    def test_dump_skip_default(self):
-        class MyCalendar(Calendar):
-            def __init__(self, *args, param: str = "0", **kwargs):
-                super().__init__(*args, **kwargs)
-
-        with mock_module(MyCalendar) as module:
-            parser = ArgumentParser()
-            parser.add_argument("--g1.op1", default=1)
-            parser.add_argument("--g1.op2", default="abc")
-            parser.add_argument("--g2.op1", type=Callable, default=deepcopy)
-            parser.add_argument("--g2.op2", type=Calendar, default=lazy_instance(Calendar, firstweekday=2))
-
-            cfg = parser.get_defaults()
-            dump = parser.dump(cfg, skip_default=True)
-            self.assertEqual(dump, "{}\n")
-
-            cfg.g2.op2.class_path = f"{module}.MyCalendar"
-            dump = parser.dump(cfg, skip_default=True)
-            self.assertEqual(
-                dump, f"g2:\n  op2:\n    class_path: {module}.MyCalendar\n    init_args:\n      firstweekday: 2\n"
-            )
-
-            cfg.g2.op2.init_args.firstweekday = 0
-            dump = parser.dump(cfg, skip_default=True)
-            self.assertEqual(dump, f"g2:\n  op2:\n    class_path: {module}.MyCalendar\n")
-
-            parser.link_arguments("g1.op1", "g2.op2.init_args.firstweekday")
-            parser.link_arguments("g1.op2", "g2.op2.init_args.param")
-            del cfg["g2.op2.init_args"]
-            dump = parser.dump(cfg, skip_default=True)
-            self.assertEqual(dump, f"g2:\n  op2:\n    class_path: {module}.MyCalendar\n")
-
-
-class TypeHintsTmpdirTests(TempDirTestCase):
-    def test_path(self):
-        os.mkdir(os.path.join(self.tmpdir, "example"))
-        rel_yaml_file = os.path.join("..", "example", "example.yaml")
-        abs_yaml_file = os.path.realpath(os.path.join(self.tmpdir, "example", rel_yaml_file))
-        with open(abs_yaml_file, "w") as output_file:
-            output_file.write("file: " + rel_yaml_file + "\ndir: " + self.tmpdir + "\n")
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        parser.add_argument("--file", type=Path_fr)
-        parser.add_argument("--dir", type=Path_drw)
-        parser.add_argument("--files", nargs="+", type=Path_fr)
-
-        cfg = parser.parse_args(["--cfg", abs_yaml_file])
-        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir()))
-        self.assertEqual(rel_yaml_file, str(cfg.file))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file()))
-
-        cfg = parser.parse_args(["--cfg", "file: " + abs_yaml_file + "\ndir: " + self.tmpdir + "\n"])
-        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir()))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file()))
-
-        cfg = parser.parse_args(["--file", abs_yaml_file, "--dir", self.tmpdir])
-        self.assertEqual(self.tmpdir, os.path.realpath(cfg.dir()))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.file()))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--dir", abs_yaml_file]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--file", self.tmpdir]))
-
-        cfg = parser.parse_args(["--files", abs_yaml_file, abs_yaml_file])
-        self.assertTrue(isinstance(cfg.files, list))
-        self.assertEqual(2, len(cfg.files))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.files[-1]()))
-
-    def test_list_path(self):
-        parser = ArgumentParser()
-        parser.add_argument("--paths", type=List[Path_fc])
-        cfg = parser.parse_args(['--paths=["file1", "file2"]'])
-        self.assertEqual(["file1", "file2"], cfg.paths)
-        self.assertIsInstance(cfg.paths[0], Path)
-        self.assertIsInstance(cfg.paths[1], Path)
-
-    def test_optional_path(self):
-        pathlib.Path("file_fr").touch()
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--path", type=Optional[Path_fr])
-        self.assertIsNone(parser.parse_args(["--path=null"]).path)
-        cfg = parser.parse_args(["--path=file_fr"])
-        self.assertEqual("file_fr", cfg.path)
-        self.assertIsInstance(cfg.path, Path)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--path=not_exist"]))
-
-    def test_enable_path(self):
-        data = {"a": 1, "b": 2, "c": [3, 4]}
-        cal = {"class_path": "calendar.Calendar"}
-        with open("data.yaml", "w") as f:
-            json.dump(data, f)
-        with open("cal.yaml", "w") as f:
-            json.dump(cal, f)
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--data", type=Dict[str, Any], enable_path=True)
-        parser.add_argument("--cal", type=Calendar, enable_path=True)
-        cfg = parser.parse_args(["--data=data.yaml"])
-        self.assertEqual("data.yaml", str(cfg["data"].pop("__path__")))
-        self.assertEqual(data, cfg["data"])
-        cfg = parser.instantiate_classes(parser.parse_args(["--cal=cal.yaml"]))
-        self.assertIsInstance(cfg["cal"], Calendar)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--data=does-not-exist.yaml"]))
-
-    def test_list_path_with_enable_path(self):
-        tmpdir = os.path.join(self.tmpdir, "subdir")
-        os.mkdir(tmpdir)
-        pathlib.Path(os.path.join(tmpdir, "file1")).touch()
-        pathlib.Path(os.path.join(tmpdir, "file2")).touch()
-        pathlib.Path(os.path.join(tmpdir, "file3")).touch()
-        pathlib.Path(os.path.join(tmpdir, "file4")).touch()
-        pathlib.Path(os.path.join(tmpdir, "file5")).touch()
-        list_file = os.path.join(tmpdir, "files.lst")
-        list_file2 = os.path.join(tmpdir, "files2.lst")
-        list_file3 = os.path.join(tmpdir, "files3.lst")
-        list_file4 = os.path.join(tmpdir, "files4.lst")
-        with open(list_file, "w") as output_file:
-            output_file.write("file1\nfile2\nfile3\nfile4\n")
-        with open(list_file2, "w") as output_file:
-            output_file.write("file5\n")
-        pathlib.Path(list_file3).touch()
-        with open(list_file4, "w") as output_file:
-            output_file.write("file1\nfile2\nfile6\n")
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument(
-            "--lists",
-            nargs="+",
-            type=List[Path_fr],
-            enable_path=True,
-        )
-        parser.add_argument(
-            "--list",
-            type=List[Path_fr],
-            enable_path=True,
-        )
-
-        cfg = parser.parse_args(["--list", list_file])
-        self.assertTrue(all(isinstance(x, Path_fr) for x in cfg.list))
-        self.assertEqual(["file1", "file2", "file3", "file4"], [str(x) for x in cfg.list])
-
-        with unittest.mock.patch("sys.stdin", StringIO("file1\nfile2\n")):
-            with self.assertRaises(ArgumentError):
-                parser.parse_args(["--list", "-"])
-            with Path_drw("subdir").relative_path_context():
-                cfg = parser.parse_args(["--list", "-"])
-        self.assertTrue(all(isinstance(x, Path_fr) for x in cfg.list))
-        self.assertEqual(["file1", "file2"], [str(x) for x in cfg.list])
-
-        cfg = parser.parse_args(["--lists", list_file])
-        self.assertEqual(1, len(cfg.lists))
-        self.assertTrue(all(isinstance(x, Path_fr) for x in cfg.lists[0]))
-        self.assertEqual(["file1", "file2", "file3", "file4"], [str(x) for x in cfg.lists[0]])
-
-        cfg = parser.parse_args(["--lists", list_file, list_file2])
-        self.assertEqual(2, len(cfg.lists))
-        self.assertEqual(["file1", "file2", "file3", "file4"], [str(x) for x in cfg.lists[0]])
-        self.assertEqual(["file5"], [str(x) for x in cfg.lists[1]])
-
-        cfg = parser.parse_args(["--lists", list_file3])
-        self.assertEqual([[]], cfg.lists)
-
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--lists"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--lists", list_file4]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--lists", "no-such-file"]))
-
-    def test_default_path_unregistered_type(self):
-        parser = ArgumentParser()
-        parser.add_argument("--path", type=path_type("dcc"), default=Path("test", mode="dcc"))
-        cfg = parser.parse_args([])
-        self.assertEqual("path: test\n", parser.dump(cfg))
-        out = StringIO()
-        parser.print_help(out)
-        self.assertIn("(type: Path_dcc, default: test)", out.getvalue())
-
-    def test_path_like_within_subclass(self):
-        class Data:
-            def __init__(self, path: Optional[os.PathLike] = None):
-                pass
-
-        data_path = pathlib.Path("data.json")
-        data_path.write_text('{"a": 1}')
-
-        parser = ArgumentParser()
-        parser.add_argument("--data", type=Data, enable_path=True)
-
-        with mock_module(Data) as module:
-            cfg = parser.parse_args([f"--data={module}.Data", f"--data.path={data_path}"])
-            self.assertEqual(cfg.data.class_path, f"{module}.Data")
-            self.assertEqual(cfg.data.init_args, Namespace(path=str(data_path)))
-
-    def test_list_append_default_config_files(self):
-        config_path = pathlib.Path(self.tmpdir, "config.yaml")
-        parser = ArgumentParser(default_config_files=[str(config_path)])
-        parser.add_argument("--nums", type=List[int], default=[0])
-
-        with self.subTest("replace in default config"):
-            config_path.write_text("nums: [1]\n")
-            cfg = parser.parse_args(["--nums+=2"])
-            self.assertEqual(cfg.nums, [1, 2])
-            cfg = parser.parse_args(["--nums+=[2, 3]"])
-            self.assertEqual(cfg.nums, [1, 2, 3])
-
-        with self.subTest("append in default config"):
-            config_path.write_text("nums+: [1]\n")
-            cfg = parser.get_defaults()
-            self.assertEqual(cfg.nums, [0, 1])
-            cfg = parser.parse_args(["--nums+=2"])
-            self.assertEqual(cfg.nums, [0, 1, 2])
-            cfg = parser.parse_args(["--nums+=[2, 3]"])
-            self.assertEqual(cfg.nums, [0, 1, 2, 3])
-            self.assertEqual(str(cfg.__default_config__), str(config_path))
-
-        with self.subTest("two default config appends"):
-            config_path2 = pathlib.Path(self.tmpdir, "config2.yaml")
-            config_path2.write_text("nums+: [2]\n")
-            parser.default_config_files += [str(config_path2)]
-            cfg = parser.get_defaults()
-            self.assertEqual(cfg.nums, [0, 1, 2])
-            self.assertEqual([str(c) for c in cfg.__default_config__], [str(config_path), str(config_path2)])
-
-    def test_list_append_subcommand_global_default_config_files(self):
-        config_path = pathlib.Path(self.tmpdir, "config.yaml")
-        parser = ArgumentParser(default_config_files=[str(config_path)])
-        subcommands = parser.add_subcommands()
-        subparser = ArgumentParser()
-        subparser.add_argument("--nums", type=List[int], default=[0])
-        subcommands.add_subcommand("sub", subparser)
-        config_path.write_text("sub:\n  nums: [1]\n")
-        cfg = parser.parse_args(["sub", "--nums+=2"])
-        self.assertEqual(cfg.sub.nums, [1, 2])
-        self.assertEqual(str(cfg.__default_config__), str(config_path))
-        cfg = parser.parse_args(["sub", "--nums+=2"], defaults=False)
-        self.assertEqual(cfg.sub.nums, [2])
-
-    def test_list_append_subcommand_subparser_default_config_files(self):
-        config_path = pathlib.Path(self.tmpdir, "config.yaml")
-        parser = ArgumentParser()
-        subcommands = parser.add_subcommands()
-        subparser = ArgumentParser(default_config_files=[str(config_path)])
-        subparser.add_argument("--nums", type=List[int], default=[0])
-        subcommands.add_subcommand("sub", subparser)
-        config_path.write_text("nums: [1]\n")
-        cfg = parser.parse_args(["sub", "--nums+=2"])
-        self.assertEqual(cfg.sub.nums, [1, 2])
-        self.assertEqual(str(cfg.sub.__default_config__), str(config_path))
-        cfg = parser.parse_args(["sub", "--nums+=2"], defaults=False)
-        self.assertEqual(cfg.sub.nums, [2])
-
-    def test_class_type_with_default_config_files(self):
-        config = {
-            "class_path": "calendar.Calendar",
-            "init_args": {"firstweekday": 3},
-        }
-        config_path = os.path.join(self.tmpdir, "config.yaml")
-        with open(config_path, "w") as f:
-            json.dump({"data": {"cal": config}}, f)
-
-        class MyClass:
-            def __init__(self, cal: Optional[Calendar] = None, val: int = 2):
-                self.cal = cal
-
-        parser = ArgumentParser(exit_on_error=False, default_config_files=[config_path])
-        parser.add_argument("--op", default="from default")
-        parser.add_class_arguments(MyClass, "data")
-
-        cfg = parser.get_defaults()
-        self.assertEqual(config_path, str(cfg["__default_config__"]))
-        self.assertEqual(cfg.data.cal.as_dict(), config)
-        dump = parser.dump(cfg)
-        self.assertIn("class_path: calendar.Calendar\n", dump)
-        self.assertIn("firstweekday: 3\n", dump)
-
-        with self.assertLogs(logger=parser.logger, level="DEBUG"):
-            cfg = parser.parse_args([])
-        self.assertEqual(cfg.data.cal.as_dict(), config)
-        cfg = parser.parse_args(["--data.cal.class_path=calendar.Calendar"], defaults=False)
-        self.assertEqual(cfg.data.cal, Namespace(class_path="calendar.Calendar"))
-
-    def test_class_path_override_config_with_defaults(self):
-        class Base:
-            def __init__(self, b: int = 1):
-                pass
-
-        class Subclass1(Base):
-            def __init__(self, s1: str = "-"):
-                pass
-
-        class Subclass2(Base):
-            def __init__(self, s2: str = "-"):
-                pass
-
-        with mock_module(Base, Subclass1, Subclass2) as module:
-            parser = ArgumentParser(logger={"level": "DEBUG"})
-            parser.add_argument("--cfg", action=ActionConfigFile)
-            parser.add_argument("--s", type=Base, default=lazy_instance(Subclass1, s1="v1"))
-
-            config = {"s": {"class_path": "Subclass2", "init_args": {"s2": "v2"}}}
-            with self.assertLogs(logger=parser.logger, level="DEBUG") as log:
-                cfg = parser.parse_args([f"--cfg={config}"])
-            self.assertTrue(any("discarding init_args: {'s1': 'v1'}" in o for o in log.output))
-            self.assertEqual(cfg.s.class_path, f"{module}.Subclass2")
-            self.assertEqual(cfg.s.init_args, Namespace(s2="v2"))
-
-    def test_class_path_override_with_default_config_files(self):
-        class MyCalendar(Calendar):
-            def __init__(self, *args, param: str = "0", **kwargs):
-                super().__init__(*args, **kwargs)
-
-        with mock_module(MyCalendar) as module:
-            config = {
-                "class_path": f"{module}.MyCalendar",
-                "init_args": {"firstweekday": 2, "param": "1"},
-            }
-            config_path = os.path.join(self.tmpdir, "config.yaml")
-            with open(config_path, "w") as f:
-                json.dump({"cal": config}, f)
-
-            parser = ArgumentParser(
-                exit_on_error=False,
-                logger={"level": "DEBUG"},
-                default_config_files=[config_path],
-            )
-            parser.add_argument("--cal", type=Optional[Calendar])
-
-            with self.assertLogs(logger=parser.logger, level="DEBUG"):
-                cfg = parser.instantiate_classes(parser.get_defaults())
-            self.assertIsInstance(cfg["cal"], MyCalendar)
-
-            with self.assertLogs(logger=parser.logger, level="DEBUG") as log:
-                cfg = parser.parse_args(['--cal={"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}'])
-            self.assertTrue(any("discarding init_args: {'param': '1'}" in o for o in log.output))
-            self.assertEqual(cfg.cal.init_args, Namespace(firstweekday=3))
-            self.assertEqual(type(parser.instantiate_classes(cfg)["cal"]), Calendar)
-
-    def test_mapping_class_typehint(self):
-        class A:
-            pass
-
-        class B:
-            def __init__(
-                self,
-                class_map: Mapping[str, A],
-                int_list: List[int],
-            ):
-                self.class_map = class_map
-                self.int_list = int_list
-
-        with mock_module(A, B) as module:
-            parser = ArgumentParser(exit_on_error=False)
-            parser.add_class_arguments(B, "b")
-
-            config = {
-                "b": {
-                    "class_map": {
-                        "one": {"class_path": f"{module}.A"},
-                    },
-                    "int_list": [1],
-                },
-            }
-
-            cfg = parser.parse_object(config)
-            self.assertEqual(cfg.b.class_map, {"one": Namespace(class_path=f"{module}.A")})
-            self.assertEqual(cfg.b.int_list, [1])
-
-            cfg_init = parser.instantiate_classes(cfg)
-            self.assertIsInstance(cfg_init.b, B)
-            self.assertIsInstance(cfg_init.b.class_map, dict)
-            self.assertIsInstance(cfg_init.b.class_map["one"], A)
-
-            config["b"]["int_list"] = config["b"]["class_map"]
-            self.assertRaises(ArgumentError, lambda: parser.parse_object(config))
-
-    def test_subcommand_with_subclass_default_override_lightning_issue_10859(self):
-        class Arch:
-            def __init__(self, a: int = 1):
-                pass
-
-        class ArchB(Arch):
-            def __init__(self, a: int = 2, b: int = 3):
-                pass
-
-        class ArchC(Arch):
-            def __init__(self, a: int = 4, c: int = 5):
-                pass
-
-        parser = ArgumentParser(exit_on_error=False, logger={"level": "DEBUG"})
-        parser_subcommands = parser.add_subcommands()
-        subparser = ArgumentParser()
-        subparser.add_argument("--arch", type=Arch)
-
-        with mock_module(Arch, ArchB, ArchC) as module:
-            default = {"class_path": f"{module}.ArchB"}
-            value = {"class_path": f"{module}.ArchC", "init_args": {"a": 10, "c": 11}}
-
-            subparser.set_defaults(arch=default)
-            parser_subcommands.add_subcommand("fit", subparser)
-
-            with self.assertLogs(logger=parser.logger, level="DEBUG") as log:
-                cfg = parser.parse_args(["fit", f"--arch={json.dumps(value)}"])
-            self.assertTrue(any("discarding init_args: {'b': 3}" in o for o in log.output))
-            self.assertEqual(cfg.fit.arch.as_dict(), value)
-
-
-class OtherTests(unittest.TestCase):
-    def test_is_optional(self):
-        class MyEnum(Enum):
-            A = 1
-
-        params = [
-            (Optional[bool], bool, True),
-            (Union[type(None), bool], bool, True),
-            (Dict[bool, type(None)], bool, False),
-            (Optional[Path_fr], Path, True),
-            (Union[type(None), Path_fr], Path, True),
-            (Dict[Path_fr, type(None)], Path, False),
-            (Optional[MyEnum], Enum, True),
-            (Union[type(None), MyEnum], Enum, True),
-            (Dict[MyEnum, type(None)], Enum, False),
-        ]
-
-        for typehint, ref_type, expected in params:
-            with self.subTest(str(typehint)):
-                self.assertEqual(expected, is_optional(typehint, ref_type))
+        cfg = parser.parse_args([f"--scheduler={value}"])
+        assert f"{__name__}.ReduceLROnPlateau" == cfg.scheduler.class_path
+        assert Namespace(monitor="loss") == cfg.scheduler.init_args
+        init = parser.instantiate_classes(cfg)
+        scheduler = init.scheduler(optimizer)
+        assert isinstance(scheduler, ReduceLROnPlateau)
+        assert scheduler.optimizer is optimizer
+        assert "loss" == scheduler.monitor
+
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        for name in ["StepLR", "ReduceLROnPlateau"]:
+            assert f"{__name__}.{name}" in help_str
+
+
+# lazy_instance tests
+
+
+def test_lazy_instance_init_postponed():
+    class SubCalendar(Calendar):
+        init_called = False
+        getfirst = Calendar.getfirstweekday
+
+        def __init__(self, *args, **kwargs):
+            self.init_called = True
+            super().__init__(*args, **kwargs)
+
+    lazy_calendar = lazy_instance(SubCalendar, firstweekday=3)
+    assert isinstance(lazy_calendar, SubCalendar)
+    assert lazy_calendar.init_called is False
+    assert lazy_calendar.getfirstweekday() == 3
+    assert lazy_calendar.init_called is True
+
+
+class IntParam:
+    def __init__(self, param: int = 1):
+        pass
+
+
+def test_lazy_instance_invalid_init_value():
+    with pytest.raises(ValueError) as ctx:
+        lazy_instance(IntParam, param="not an int")
+    assert "Expected a <class 'int'>" in str(ctx.value)
+
+
+# other tests
+
+
+@pytest.mark.parametrize(
+    "typehint",
+    [
+        lambda: None,
+        "unsupported",
+        Optional["unsupported"],  # noqa: F821
+        Tuple[int, "unsupported"],  # noqa: F821
+        Union["unsupported1", "unsupported2"],  # noqa: F821
+    ],
+    ids=lambda v: str(v),
+)
+def test_action_typehint_unsupported_type(typehint):
+    with pytest.raises(ValueError) as ctx:
+        ActionTypeHint(typehint=typehint)
+    assert "Unsupported type hint" in str(ctx.value)
+
+
+@pytest.mark.parametrize(
+    ["typehint", "ref_type", "expected"],
+    [
+        (Optional[bool], bool, True),
+        (Union[type(None), bool], bool, True),
+        (Dict[bool, type(None)], bool, False),  # type: ignore
+        (Optional[Path_fr], Path_fr, True),
+        (Union[type(None), Path_fr], Path_fr, True),
+        (Dict[Path_fr, type(None)], Path_fr, False),  # type: ignore
+        (Optional[EnumABC], Enum, True),
+        (Union[type(None), EnumABC], Enum, True),
+        (Dict[EnumABC, type(None)], Enum, False),  # type: ignore
+    ],
+    ids=lambda v: str(v),
+)
+def test_is_optional(typehint, ref_type, expected):
+    assert expected == is_optional(typehint, ref_type)
+
+
+class SkipDefault(Calendar):
+    def __init__(self, *args, param: str = "0", **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+def test_dump_skip_default(parser):
+    parser.add_argument("--g1.op1", default=1)
+    parser.add_argument("--g1.op2", default="abc")
+    parser.add_argument("--g2.op1", type=Callable, default=uuid.uuid4)
+    parser.add_argument("--g2.op2", type=Calendar, default=lazy_instance(Calendar, firstweekday=2))
+
+    cfg = parser.get_defaults()
+    dump = parser.dump(cfg, skip_default=True)
+    assert dump == "{}\n"
+
+    cfg.g2.op2.class_path = f"{__name__}.SkipDefault"
+    dump = parser.dump(cfg, skip_default=True)
+    assert dump == f"g2:\n  op2:\n    class_path: {__name__}.SkipDefault\n    init_args:\n      firstweekday: 2\n"
+
+    cfg.g2.op2.init_args.firstweekday = 0
+    dump = parser.dump(cfg, skip_default=True)
+    assert dump == f"g2:\n  op2:\n    class_path: {__name__}.SkipDefault\n"
+
+    parser.link_arguments("g1.op1", "g2.op2.init_args.firstweekday")
+    parser.link_arguments("g1.op2", "g2.op2.init_args.param")
+    del cfg["g2.op2.init_args"]
+    dump = parser.dump(cfg, skip_default=True)
+    assert dump == f"g2:\n  op2:\n    class_path: {__name__}.SkipDefault\n"

@@ -5,6 +5,7 @@ __pycache__
 .coverage
 coverage.xml
 .mypy_cache
+.pytest_cache
 .tox
 venv*
 sphinx/_build

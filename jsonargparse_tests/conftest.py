@@ -1,15 +1,17 @@
 import logging
 import os
 import platform
-from contextlib import ExitStack, contextmanager, redirect_stderr
+from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
 from importlib.util import find_spec
 from io import StringIO
 from pathlib import Path
+from typing import Iterator, List
 from unittest.mock import patch
 
 import pytest
 
 from jsonargparse import ArgumentParser
+from jsonargparse.optionals import docstring_parser_support, jsonschema_support
 
 is_cpython = platform.python_implementation() == "CPython"
 is_posix = os.name == "posix"
@@ -25,8 +27,13 @@ skip_if_not_posix = pytest.mark.skipif(
 )
 
 skip_if_jsonschema_unavailable = pytest.mark.skipif(
-    not find_spec("jsonschema"),
+    not jsonschema_support,
     reason="jsonschema package is required",
+)
+
+skip_if_docstring_parser_unavailable = pytest.mark.skipif(
+    not docstring_parser_support,
+    reason="docstring-parser package is required",
 )
 
 responses_available = find_spec("responses") is not None
@@ -59,6 +66,22 @@ def tmp_cwd(tmpdir):
         yield Path(tmpdir)
 
 
+@pytest.fixture
+def file_r(tmp_cwd) -> Iterator[str]:
+    filename = "file_r"
+    Path(filename).touch()
+    yield filename
+
+
+@pytest.fixture
+def logger() -> logging.Logger:
+    logger = logging.getLogger(__name__)
+    logger.level = logging.DEBUG
+    logger.parent = None
+    logger.handlers = [logging.StreamHandler()]
+    return logger
+
+
 @contextmanager
 def capture_logs(logger: logging.Logger):
     with ExitStack() as stack:
@@ -69,22 +92,22 @@ def capture_logs(logger: logging.Logger):
         yield captured
 
 
-def get_debug_level_logger(name):
-    logger = logging.getLogger(name)
-    logger.level = logging.DEBUG
-    logger.parent = None
-    logger.addHandler(logging.StreamHandler())
-    return logger
-
-
-@contextmanager
-def suppress_stderr():
-    with open(os.devnull, "w") as fnull:
-        with redirect_stderr(fnull):
-            yield
-
-
 def get_parser_help(parser: ArgumentParser) -> str:
     out = StringIO()
     parser.print_help(out)
     return out.getvalue()
+
+
+def get_parse_args_stdout(parser: ArgumentParser, args: List[str]) -> str:
+    out = StringIO()
+    with redirect_stdout(out), pytest.raises(SystemExit):
+        parser.parse_args(args)
+    return out.getvalue()
+
+
+def get_parse_args_stderr(parser: ArgumentParser, args: List[str]) -> str:
+    err = StringIO()
+    with patch.object(parser, "exit_on_error", return_value=True):
+        with redirect_stderr(err), pytest.raises(SystemExit):
+            parser.parse_args(args)
+    return err.getvalue()

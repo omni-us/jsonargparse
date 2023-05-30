@@ -3,13 +3,27 @@ import os
 import pathlib
 import stat
 import zipfile
+from calendar import Calendar
 from importlib import import_module
+from random import Random
 from unittest.mock import patch
 
 import pytest
 
-from jsonargparse import ArgumentParser, LoggerProperty, Namespace, Path, null_logger
-from jsonargparse.optionals import fsspec_support, reconplogger_support, url_support
+from jsonargparse import (
+    ArgumentParser,
+    LoggerProperty,
+    Namespace,
+    Path,
+    class_from_function,
+    null_logger,
+)
+from jsonargparse.optionals import (
+    docstring_parser_support,
+    fsspec_support,
+    reconplogger_support,
+    url_support,
+)
 from jsonargparse.util import (
     current_path_dir,
     get_import_path,
@@ -21,6 +35,7 @@ from jsonargparse.util import (
 )
 from jsonargparse_tests.conftest import (
     capture_logs,
+    get_parser_help,
     is_posix,
     responses_activate,
     responses_available,
@@ -539,6 +554,74 @@ def test_object_path_serializer_reimport_differs():
     FakeClass.__module__ = Class.__module__
     FakeClass.__qualname__ = Class.__qualname__
     pytest.raises(ValueError, lambda: object_path_serializer(FakeClass))
+
+
+# class_from_function tests
+
+
+def get_random() -> Random:
+    return Random()
+
+
+class Foo:
+    @classmethod
+    def get_foo(cls) -> "Foo":
+        return cls()
+
+
+def closure_get_foo():
+    def get_foo() -> "Foo":
+        return Foo()
+
+    return get_foo
+
+
+@pytest.mark.parametrize(
+    ["function", "class_type"],
+    [
+        (get_random, Random),
+        (Foo.get_foo, Foo),
+        (closure_get_foo(), Foo),
+    ],
+)
+def test_class_from_function(function, class_type):
+    cls = class_from_function(function)
+    assert issubclass(cls, class_type)
+    assert isinstance(cls(), class_type)
+
+
+def get_unknown() -> "Unknown":  # type: ignore  # noqa: F821
+    return None
+
+
+def test_invalid_class_from_function():
+    with pytest.raises(ValueError) as ctx:
+        class_from_function(get_unknown)
+    assert "Unable to dereference None the return type" in str(ctx.value)
+
+
+def get_calendar(a1: str, a2: int = 2) -> Calendar:
+    """Returns instance of Calendar"""
+    cal = Calendar()
+    cal.a1 = a1  # type: ignore
+    cal.a2 = a2  # type: ignore
+    return cal
+
+
+def test_add_class_from_function_arguments(parser):
+    get_calendar_class = class_from_function(get_calendar)
+    parser.add_class_arguments(get_calendar_class, "a")
+
+    if docstring_parser_support:
+        help_str = get_parser_help(parser)
+        assert "Returns instance of Calendar" in help_str
+
+    cfg = parser.parse_args(["--a.a1=v", "--a.a2=3"])
+    assert cfg.a == Namespace(a1="v", a2=3)
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.a, Calendar)
+    assert init.a.a1 == "v"
+    assert init.a.a2 == 3
 
 
 # other tests

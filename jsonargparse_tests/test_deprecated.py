@@ -1,7 +1,7 @@
 import os
 import pathlib
 from calendar import Calendar
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from enum import Enum
 from io import StringIO
 from warnings import catch_warnings
@@ -28,15 +28,25 @@ from jsonargparse.deprecated import (
     shown_deprecation_warnings,
     usage_and_exit_error_handler,
 )
-from jsonargparse.optionals import docstring_parser_support, url_support
+from jsonargparse.optionals import url_support
 from jsonargparse.util import LoggerProperty, argument_error
-from jsonargparse_tests.conftest import get_parser_help, suppress_stderr
+from jsonargparse_tests.conftest import (
+    get_parser_help,
+    skip_if_docstring_parser_unavailable,
+)
 
 
 @pytest.fixture(autouse=True)
 def clear_shown_deprecation_warnings():
     yield
     shown_deprecation_warnings.clear()
+
+
+@contextmanager
+def suppress_stderr():
+    with open(os.devnull, "w") as fnull:
+        with redirect_stderr(fnull):
+            yield
 
 
 class TestDeprecated:
@@ -191,7 +201,7 @@ class TestDeprecated:
             ArgumentParser(env_prefix=None)
             assert "env_prefix" in str(w[-1].message)
 
-    @pytest.mark.skipif(not docstring_parser_support, reason="docstring-parser package is required")
+    @skip_if_docstring_parser_unavailable
     def test_docstring_parse(self):
         with catch_warnings(record=True) as w:
             import_docstring_parse("test_docstring_parse")
