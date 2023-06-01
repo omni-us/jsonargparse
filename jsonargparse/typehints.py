@@ -312,15 +312,8 @@ class ActionTypeHint(Action):
                 action = _find_parent_action(parser, arg_base[2:])
 
         typehint = typehint_from_action(action)
-        if typehint and (
-            ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False)
-            or ActionTypeHint.is_callable_typehint(typehint, all_subtypes=False)
-            or ActionTypeHint.is_mapping_typehint(typehint)
-        ):
+        if typehint:
             return action, arg_base, explicit_arg
-        elif parser._subcommands_action and arg_string in parser._subcommands_action._name_parser_map:
-            subparser = parser._subcommands_action._name_parser_map[arg_string]
-            subclass_arg_parser.set(subparser)
         return None
 
     @staticmethod
@@ -787,7 +780,12 @@ def adapt_typehints(
 
     # Dataclass-like
     elif is_dataclass_like(typehint):
-        parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs)
+        if is_dataclass_like(type(prev_val)) and is_subclass(type(prev_val), typehint):
+            from .signatures import dataclass_to_dict
+
+            assert isinstance(sub_add_kwargs, dict)
+            sub_add_kwargs["default"] = lazy_instance(type(prev_val), **dataclass_to_dict(prev_val))
+        parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs=sub_add_kwargs)
         if instantiate_classes:
             init_args = parser.instantiate_classes(val)
             return typehint(**init_args)
@@ -795,6 +793,8 @@ def adapt_typehints(
             val = load_value(parser.dump(val, **dump_kwargs.get()))
         elif isinstance(val, (dict, Namespace)):
             val = parser.parse_object(val, defaults=sub_defaults.get())
+        elif isinstance(val, NestedArg):
+            val = parser.parse_args([f"--{val.key}={val.val}"])
         else:
             raise_unexpected_value(f"Type {typehint} expects a dict or Namespace", val)
 
@@ -1202,7 +1202,7 @@ class LazyInitBaseClass:
         self._lazy_class_type = class_type
         self._lazy_kwargs = lazy_kwargs
         self._lazy_methods = {}
-        seen_methods: Dict = {}
+        seen_methods: dict = {}
         for name, _ in inspect.getmembers(class_type, predicate=inspect.isfunction):
             method = getattr(self, name)
             if not inspect.ismethod(method) or name in {
@@ -1214,11 +1214,11 @@ class LazyInitBaseClass:
                 continue
             assert name not in self.__dict__
             self._lazy_methods[name] = method
-            if method in seen_methods:
-                self.__dict__[name] = seen_methods[method]
+            if str(method) in seen_methods:
+                self.__dict__[name] = seen_methods[str(method)]
             else:
                 self.__dict__[name] = partial(self._lazy_init_then_call_method, name)
-                seen_methods[method] = self.__dict__[name]
+                seen_methods[str(method)] = self.__dict__[name]
 
     def _lazy_init(self):
         for name in self._lazy_methods:
