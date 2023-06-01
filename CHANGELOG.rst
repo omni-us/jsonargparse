@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.21.2 (2023-06-??)
+--------------------
+
+Fixed
+^^^^^
+- Failure for nested argument in optional dataclass type (`#289
+  <https://github.com/omni-us/jsonargparse/issues/289>`__).
+
+
 v4.21.1 (2023-05-09)
 --------------------
 

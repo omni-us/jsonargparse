@@ -1,6 +1,6 @@
 import dataclasses
 import sys
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from unittest.mock import patch
 
 import pytest
@@ -299,7 +299,7 @@ def test_optional_dataclass_type_single_field():
     assert cfg == Namespace(data=Namespace(p1="y", p2=0))
 
 
-def test_optiona_dataclass_type_invalid_field():
+def test_optional_dataclass_type_invalid_field():
     with pytest.raises(ArgumentError):
         parser_optional_data.parse_args(['--data={"p1": 1}'])
 
@@ -326,6 +326,17 @@ def test_optional_dataclass_type_null_value():
     cfg = parser_optional_data.parse_args(["--data=null"])
     assert cfg == Namespace(data=None)
     assert cfg == parser_optional_data.instantiate_classes(cfg)
+
+
+@dataclasses.dataclass
+class ModelConfig:
+    data: Optional[Dict[str, Any]] = None
+
+
+def test_dataclass_optional_dict_attribute(parser):
+    parser.add_argument("--model", type=Optional[ModelConfig], default=ModelConfig(data={"A": 1, "B": 2}))
+    cfg = parser.parse_args(["--model.data.A=4"])
+    assert cfg.model.data == {"A": 4, "B": 2}
 
 
 def test_dataclass_in_union_type(parser):
