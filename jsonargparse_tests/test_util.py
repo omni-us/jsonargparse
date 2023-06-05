@@ -15,6 +15,7 @@ from jsonargparse import (
     LoggerProperty,
     Namespace,
     Path,
+    capture_parser,
     class_from_function,
     null_logger,
 )
@@ -25,6 +26,7 @@ from jsonargparse.optionals import (
     url_support,
 )
 from jsonargparse.util import (
+    CaptureParserException,
     current_path_dir,
     get_import_path,
     import_object,
@@ -39,6 +41,9 @@ from jsonargparse_tests.conftest import (
     is_posix,
     responses_activate,
     responses_available,
+    skip_if_fsspec_unavailable,
+    skip_if_requests_unavailable,
+    skip_if_responses_unavailable,
 )
 
 if responses_available:
@@ -247,10 +252,7 @@ def test_parse_url(url, scheme, path):
         assert url_data.url_path == path
 
 
-@pytest.mark.skipif(
-    not (url_support and responses_available),
-    reason="requests and responses packages are required",
-)
+@skip_if_responses_unavailable
 @responses_activate
 def test_path_url_200():
     existing = "http://example.com/existing-url"
@@ -261,17 +263,14 @@ def test_path_url_200():
     assert existing_body == path.get_content()
 
 
-@pytest.mark.skipif(
-    not (url_support and responses_available),
-    reason="requests and responses packages are required",
-)
+@skip_if_responses_unavailable
 @responses_activate
 def test_path_url_404():
     nonexisting = "http://example.com/non-existing-url"
     responses.add(responses.HEAD, nonexisting, status=404)
     with pytest.raises(TypeError) as ctx:
         Path(nonexisting, mode="ur")
-    assert "404" in str(ctx.value)
+    ctx.match("404")
 
 
 # fsspec tests
@@ -283,7 +282,7 @@ def create_zip(zip_path, file_path):
     ziph.close()
 
 
-@pytest.mark.skipif(not fsspec_support, reason="fsspec package is required")
+@skip_if_fsspec_unavailable
 def test_path_fsspec_zipfile(tmp_cwd):
     existing = pathlib.Path("existing.txt")
     existing_body = "existing content"
@@ -300,15 +299,15 @@ def test_path_fsspec_zipfile(tmp_cwd):
 
     with pytest.raises(TypeError) as ctx:
         Path(f"zip://{nonexisting}::file://{zip1_path}", mode="sr")
-    assert "does not exist" in str(ctx.value)
+    ctx.match("does not exist")
 
     if is_posix:
         with pytest.raises(TypeError) as ctx:
             Path(f"zip://{existing}::file://{zip2_path}", mode="sr")
-        assert "exists but no permission to access" in str(ctx.value)
+        ctx.match("exists but no permission to access")
 
 
-@pytest.mark.skipif(not fsspec_support, reason="fsspec package is required")
+@skip_if_fsspec_unavailable
 def test_path_fsspec_memory():
     file_content = "content in memory"
     memfile = "memfile.txt"
@@ -321,14 +320,14 @@ def test_path_fsspec_memory():
 def test_path_fsspec_invalid_mode():
     with pytest.raises(ValueError) as ctx:
         Path("memory://file.txt", mode="ds")
-    assert 'Both modes "d" and "s" not possible' in str(ctx.value)
+    ctx.match('Both modes "d" and "s" not possible')
 
 
-@pytest.mark.skipif(not fsspec_support, reason="fsspec package is required")
+@skip_if_fsspec_unavailable
 def test_path_fsspec_invalid_scheme():
     with pytest.raises(TypeError) as ctx:
         Path("unsupported://file.txt", mode="sr")
-    assert "not readable" in str(ctx.value)
+    ctx.match("not readable")
 
 
 # path open tests
@@ -341,10 +340,7 @@ def test_path_open_local(tmp_cwd):
         assert "content" == f.read()
 
 
-@pytest.mark.skipif(
-    not (url_support and responses_available),
-    reason="requests and responses packages are required",
-)
+@skip_if_responses_unavailable
 @responses_activate
 def test_path_open_url():
     url = "http://example.com/file.txt"
@@ -355,7 +351,7 @@ def test_path_open_url():
         assert "content" == f.read()
 
 
-@pytest.mark.skipif(not fsspec_support, reason="fsspec package is required")
+@skip_if_fsspec_unavailable
 def test_path_open_fsspec():
     path = Path("memory://nested/file.txt", mode="sc")
     with fsspec.open(path, "w") as f:
@@ -368,7 +364,7 @@ def test_path_open_fsspec():
 # path relative path context tests
 
 
-@pytest.mark.skipif(not url_support, reason="requests package is required")
+@skip_if_requests_unavailable
 def test_path_relative_path_context_url():
     path1 = Path("http://example.com/nested/path/file1.txt", mode="u")
     with path1.relative_path_context() as dir:
@@ -377,7 +373,7 @@ def test_path_relative_path_context_url():
         assert path2() == "http://example.com/nested/file2.txt"
 
 
-@pytest.mark.skipif(not fsspec_support, reason="fsspec package is required")
+@skip_if_fsspec_unavailable
 def test_relative_path_context_fsspec(tmp_cwd, subtests):
     local_path = tmp_cwd / "file0.txt"
     local_path.write_text("zero")
@@ -597,7 +593,7 @@ def get_unknown() -> "Unknown":  # type: ignore  # noqa: F821
 def test_invalid_class_from_function():
     with pytest.raises(ValueError) as ctx:
         class_from_function(get_unknown)
-    assert "Unable to dereference None the return type" in str(ctx.value)
+    ctx.match("Unable to dereference None the return type")
 
 
 def get_calendar(a1: str, a2: int = 2) -> Calendar:
@@ -630,3 +626,18 @@ def test_add_class_from_function_arguments(parser):
 def test_unique():
     data = [1.0, 2, {}, "x", ([], {}), 2, [], {}, [], ([], {}), 2]
     assert unique(data) == [1.0, 2, {}, "x", ([], {}), []]
+
+
+def test_capture_parser():
+    def parse_args(args=[]):
+        parser = ArgumentParser()
+        parser.add_argument("--int", type=int, default=1)
+        return parser.parse_args(args)
+
+    parser = capture_parser(parse_args, ["--int=2"])
+    assert isinstance(parser, ArgumentParser)
+    assert parser.get_defaults() == Namespace(int=1)
+
+    with pytest.raises(CaptureParserException) as ctx:
+        capture_parser(lambda: None)
+    ctx.match("No parse_args call to capture the parser")

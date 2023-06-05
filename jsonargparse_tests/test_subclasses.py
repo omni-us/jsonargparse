@@ -128,7 +128,7 @@ def test_subclass_optional_list(parser, subtests):
     with subtests.test("error"):
         with pytest.raises(ArgumentError) as ctx:
             parser.parse_args(["--op=[1]"])
-        assert "Not a valid subclass of Calendar" in str(ctx.value)
+        ctx.match("Not a valid subclass of Calendar")
 
 
 def test_subclass_union_with_str(parser):
@@ -244,7 +244,7 @@ def test_subclass_init_args_without_class_path_error(parser):
     parser.add_subclass_arguments(Calendar, "cal1")
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--cal1.init_args.firstweekday=4"])
-    assert "class path given previously" in str(ctx.value)
+    ctx.match("class path given previously")
 
 
 def test_subclass_init_args_without_class_path_dict(parser):
@@ -354,7 +354,7 @@ def test_subclass_nested_help(parser):
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--op.help={__name__}.Nested", "--op.init_args.p1=1"])
-    assert "Expected a nested --*.help option" in str(ctx.value)
+    ctx.match("Expected a nested --\\*.help option")
 
 
 class RequiredParamSubModule:
@@ -434,14 +434,14 @@ def test_subclass_invalid_class_name(parser):
     parser.add_argument("--op", type=Calendar)
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--cal=NotCalendarSubclass", "--cal.firstweekday=2"])
-    assert "NotCalendarSubclass" in str(ctx.value)
+    ctx.match("NotCalendarSubclass")
 
 
 def test_subclass_class_name_then_invalid_init_args(parser):
     parser.add_argument("--op", type=Union[Calendar, GzipFile])
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--op=TextCalendar", "--op=GzipFile", "--op.firstweekday=2"])
-    assert 'No action for destination key "firstweekday"' in str(ctx.value)
+    ctx.match('No action for destination key "firstweekday"')
 
 
 # dict parameter tests
@@ -506,7 +506,7 @@ def test_subclass_mapping_parameter(parser, subtests):
         config["b"]["int_list"] = config["b"]["class_map"]
         with pytest.raises(ArgumentError) as ctx:
             parser.parse_object(config)
-        assert 'key "b.int_list"' in str(ctx.value)
+        ctx.match('key "b.int_list"')
 
 
 class Module:
@@ -1087,7 +1087,7 @@ def test_subclass_unresolved_parameters_name_clash(parser):
 def test_add_subclass_failure_not_a_class(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_subclass_arguments(January, "jan")
-    assert 'Expected "baseclass" argument to be a class or a tuple of classes' in str(ctx.value)
+    ctx.match('Expected "baseclass" argument to be a class or a tuple of classes')
 
 
 def test_add_subclass_lazy_default(parser):
@@ -1279,21 +1279,21 @@ def test_subclass_error_not_subclass(parser):
     parser.add_argument("--op", type=Calendar)
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--op={"class_path": "jsonargparse.ArgumentParser"}'])
-    assert "does not correspond to a subclass" in str(ctx.value)
+    ctx.match("does not correspond to a subclass")
 
 
 def test_subclass_error_undefined_attribute(parser):
     parser.add_argument("--op", type=Calendar)
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--op={"class_path": "jsonargparse.DoesNotExist"}'])
-    assert "module 'jsonargparse' has no attribute 'DoesNotExist'" in str(ctx.value)
+    ctx.match("module 'jsonargparse' has no attribute 'DoesNotExist'")
 
 
 def test_subclass_error_undefined_module(parser):
     parser.add_argument("--op", type=Calendar)
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--op={"class_path": "does_not_exist_module.SubCalendar"}'])
-    assert "No module named 'does_not_exist_module'" in str(ctx.value)
+    ctx.match("No module named 'does_not_exist_module'")
 
 
 def test_subclass_error_unexpected_init_arg(parser):
@@ -1302,14 +1302,14 @@ def test_subclass_error_unexpected_init_arg(parser):
     init_args = '"init_args": {"unexpected_arg": True}'
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--op={" + class_path + ", " + init_args + "}"])
-    assert 'No action for destination key "unexpected_arg"' in str(ctx.value)
+    ctx.match('No action for destination key "unexpected_arg"')
 
 
 def test_subclass_invalid_class_path_value(parser):
     parser.add_argument("--cal", type=Calendar, default=lazy_instance(Calendar))
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--cal.class_path.init_args.firstweekday=2"])
-    assert 'Parser key "cal"' in str(ctx.value)
+    ctx.match('Parser key "cal"')
 
 
 def test_subclass_invalid_init_args_in_yaml(parser):
@@ -1334,7 +1334,7 @@ def test_subclass_required_parameters_missing(parser):
     assert defaults.op.init_args == Namespace(p1=None, p2=None)
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--op={__name__}.RequiredParamsMissing"])
-    assert " is required " in str(ctx.value)
+    ctx.match(" is required ")
 
 
 @pytest.mark.parametrize("option", ["--op", "--op.help"])
@@ -1348,7 +1348,7 @@ def test_subclass_help_not_subclass(parser):
     parser.add_argument("--op", type=Calendar)
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--op.help=calendar.January"])
-    assert "is not a subclass of" in str(ctx.value)
+    ctx.match("is not a subclass of")
 
 
 # error messages tests

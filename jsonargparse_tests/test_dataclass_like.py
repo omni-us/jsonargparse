@@ -171,7 +171,7 @@ def test_add_argument_dataclass_type_required_attr(parser):
     assert Namespace(a1="v", a2=1.2) == parser.parse_args(["--b.a1=v"]).b
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([])
-    assert '"b.a1" is required' in str(ctx.value)
+    ctx.match('"b.a1" is required')
 
 
 @dataclasses.dataclass

@@ -19,7 +19,11 @@ from jsonargparse.optionals import (
     set_docstring_parse_options,
     url_support,
 )
-from jsonargparse_tests.conftest import skip_if_docstring_parser_unavailable
+from jsonargparse_tests.conftest import (
+    skip_if_docstring_parser_unavailable,
+    skip_if_fsspec_unavailable,
+    skip_if_requests_unavailable,
+)
 
 # jsonschema support
 
@@ -54,7 +58,7 @@ def test_jsonnet_support_false():
 # requests support
 
 
-@pytest.mark.skipif(not url_support, reason="requests package is required")
+@skip_if_requests_unavailable
 def test_url_support_true():
     import_requests("test_url_support_true")
 
@@ -121,7 +125,7 @@ def test_argcomplete_support_false():
 # fsspec support
 
 
-@pytest.mark.skipif(not fsspec_support, reason="fsspec package is required")
+@skip_if_fsspec_unavailable
 def test_fsspec_support_true():
     import_fsspec("test_fsspec_support_true")
 
@@ -151,7 +155,7 @@ def test_ruyaml_support_false():
 # config read mode tests
 
 
-@pytest.mark.skipif(not url_support, reason="requests package is required")
+@skip_if_requests_unavailable
 def test_config_read_mode_url_support_true():
     assert "fr" == get_config_read_mode()
     set_config_read_mode(urls_enabled=True)
@@ -170,7 +174,7 @@ def test_config_read_mode_url_support_false():
     assert "fr" == get_config_read_mode()
 
 
-@pytest.mark.skipif(not fsspec_support, reason="fsspec package is required")
+@skip_if_fsspec_unavailable
 def test_config_read_mode_fsspec_support_true():
     assert "fr" == get_config_read_mode()
     set_config_read_mode(fsspec_enabled=True)

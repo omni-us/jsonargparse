@@ -1,10 +1,11 @@
+import os
 import sys
-import unittest.mock
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout, suppress
 from dataclasses import asdict, dataclass
 from io import StringIO
 from pathlib import Path
 from typing import Optional
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -12,6 +13,15 @@ import yaml
 from jsonargparse import CLI, capture_parser, lazy_instance
 from jsonargparse.optionals import docstring_parser_support, ruyaml_support
 from jsonargparse.typing import final
+from jsonargparse_tests.conftest import skip_if_docstring_parser_unavailable
+
+
+def get_cli_stdout(*args, **kwargs) -> str:
+    out = StringIO()
+    with redirect_stdout(out), suppress(SystemExit), patch.dict(os.environ, {"COLUMNS": "150"}):
+        CLI(*args, **kwargs)
+    return out.getvalue()
+
 
 # failure cases
 
@@ -42,11 +52,9 @@ def test_single_function_set_defaults():
 
 
 def test_single_function_help():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI(single_function, args=["--help"])
-    assert "a1" in out.getvalue()
-    assert "function single_function" in out.getvalue()
+    out = get_cli_stdout(single_function, args=["--help"])
+    assert "a1" in out
+    assert "function single_function" in out
 
 
 # callable class tests
@@ -90,17 +98,13 @@ def test_multiple_functions_set_defaults():
 
 
 def test_multiple_functions_main_help():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, cmd2], args=["--help"])
-    assert "{cmd1,cmd2}" in out.getvalue()
+    out = get_cli_stdout([cmd1, cmd2], args=["--help"])
+    assert "{cmd1,cmd2}" in out
 
 
 def test_multiple_functions_subcommand_help():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, cmd2], args=["cmd2", "--help"])
-    assert "--a2 A2" in out.getvalue()
+    out = get_cli_stdout([cmd1, cmd2], args=["cmd2", "--help"])
+    assert "--a2 A2" in out
 
 
 # single class tests
@@ -138,51 +142,40 @@ def test_single_class_invalid_method_parameter():
 
 
 def test_single_class_main_help():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI(Class1, args=["--help"])
-    assert " i1" in out.getvalue()
+    out = get_cli_stdout(Class1, args=["--help"])
+    assert " i1" in out
     if docstring_parser_support:
-        assert "Description of Class1" in out.getvalue()
-        assert "Description of method1" in out.getvalue()
+        assert "Description of Class1" in out
+        assert "Description of method1" in out
     else:
-        assert "function Class1.method1" in out.getvalue()
+        assert "function Class1.method1" in out
 
 
 def test_single_class_subcommand_help():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI(Class1, args=["x", "method1", "--help"])
-
-    assert " m1" in out.getvalue()
+    out = get_cli_stdout(Class1, args=["x", "method1", "--help"])
+    assert " m1" in out
     if docstring_parser_support:
-        assert "Description of method1" in out.getvalue()
+        assert "Description of method1" in out
 
 
-@pytest.mark.skipif(not docstring_parser_support, reason="docstring-parser not installed")
+@skip_if_docstring_parser_unavailable
 def test_single_class_help_docstring_parse_error():
-    with unittest.mock.patch("docstring_parser.parse") as docstring_parse:
+    with patch("docstring_parser.parse") as docstring_parse:
         from docstring_parser import ParseError
 
         docstring_parse.side_effect = ParseError
-        out = StringIO()
-        with redirect_stdout(out), pytest.raises(SystemExit):
-            CLI(Class1, args=["x", "method1", "--help"])
-        assert "Description of method1" not in out.getvalue()
+        out = get_cli_stdout(Class1, args=["x", "method1", "--help"])
+        assert "Description of method1" not in out
 
 
 def test_single_class_print_config_after_subcommand():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI(Class1, args=["0", "method1", "2", "--print_config"])
-    assert "m1: 2" == out.getvalue().strip()
+    out = get_cli_stdout(Class1, args=["0", "method1", "2", "--print_config"])
+    assert "m1: 2" == out.strip()
 
 
 def test_single_class_print_config_before_subcommand():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI(Class1, args=["--print_config", "0", "method1", "2"])
-    cfg = yaml.safe_load(out.getvalue())
+    out = get_cli_stdout(Class1, args=["--print_config", "0", "method1", "2"])
+    cfg = yaml.safe_load(out)
     assert cfg == {"i1": "0", "method1": {"m1": 2}}
 
 
@@ -228,88 +221,65 @@ def test_function_and_class_return(expected, args):
 
 
 def test_function_and_class_main_help():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, Cmd2, cmd3], args=["--help"])
-
-    assert "{cmd1,Cmd2,cmd3}" in out.getvalue()
-    assert "function cmd3" in out.getvalue()
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["--help"])
+    assert "{cmd1,Cmd2,cmd3}" in out
+    assert "function cmd3" in out
     if docstring_parser_support:
-        assert "Description of cmd1" in out.getvalue()
-        assert "Description of Cmd2" in out.getvalue()
+        assert "Description of cmd1" in out
+        assert "Description of Cmd2" in out
     else:
-        assert "function cmd1" in out.getvalue()
-        assert ".test_cli.Cmd2" in out.getvalue()
+        assert "function cmd1" in out
+        assert ".test_cli.Cmd2" in out
 
 
 def test_function_and_class_subcommand_help():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, Cmd2, cmd3], args=["Cmd2", "--help"])
-
-    assert "{method1,method2,method3}" in out.getvalue()
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "--help"])
+    assert "{method1,method2,method3}" in out
     if docstring_parser_support:
-        assert "Description of Cmd2:" in out.getvalue()
-        assert "Description of method2" in out.getvalue()
+        assert "Description of Cmd2:" in out
+        assert "Description of method2" in out
     else:
-        assert "function Cmd2.method2" in out.getvalue()
+        assert "function Cmd2.method2" in out
 
 
 def test_function_and_class_subsubcommand_help():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, Cmd2, cmd3], args=["Cmd2", "method2", "--help"])
-
-    assert "--m2 M2" in out.getvalue()
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "method2", "--help"])
+    assert "--m2 M2" in out
     if docstring_parser_support:
-        assert "Description of method2" in out.getvalue()
+        assert "Description of method2" in out
 
 
 def test_function_and_class_print_config_after_subsubcommand():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, Cmd2, cmd3], args=["Cmd2", "method2", "--print_config"])
-    assert "m2: 0\n" == out.getvalue()
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "method2", "--print_config"])
+    assert "m2: 0\n" == out
 
 
 def test_function_and_class_print_config_in_between_subcommands():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, Cmd2, cmd3], args=["Cmd2", "--print_config", "method2"])
-    assert "i1: d\nmethod2:\n  m2: 0\n" == out.getvalue()
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "--print_config", "method2"])
+    assert "i1: d\nmethod2:\n  m2: 0\n" == out
 
 
 def test_function_and_class_print_config_before_subcommands():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, Cmd2, cmd3], args=["--print_config", "Cmd2", "method2"])
-    assert "Cmd2:\n  i1: d\n  method2:\n    m2: 0\n" == out.getvalue()
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["--print_config", "Cmd2", "method2"])
+    assert "Cmd2:\n  i1: d\n  method2:\n    m2: 0\n" == out
 
 
-@pytest.mark.skipif(
-    not (docstring_parser_support and ruyaml_support),
-    reason="docstring-parser or ruyaml not installed",
-)
+@skip_if_docstring_parser_unavailable
+@pytest.mark.skipif(not ruyaml_support, reason="ruyaml not installed")
 def test_function_and_class_print_config_comments():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, Cmd2, cmd3], args=["--print_config=comments", "Cmd2", "method2"])
-    assert "# Description of Cmd2" in out.getvalue()
-    assert "# Description of method2" in out.getvalue()
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["--print_config=comments", "Cmd2", "method2"])
+    assert "# Description of Cmd2" in out
+    assert "# Description of method2" in out
 
 
 def test_function_and_class_method_without_parameters():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, Cmd2, cmd3], args=["Cmd2", "method3", "--help"])
-    assert "--config" not in out.getvalue()
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "method3", "--help"])
+    assert "--config" not in out
 
 
 def test_function_and_class_function_without_parameters():
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI([cmd1, Cmd2, cmd3], args=["cmd3", "--help"])
-    assert "--config" not in out.getvalue()
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["cmd3", "--help"])
+    assert "--config" not in out
 
 
 # automatic components tests
@@ -319,7 +289,7 @@ def test_automatic_components_empty_context():
     def empty_context():
         CLI()
 
-    with unittest.mock.patch("inspect.getmodule") as mock_getmodule:
+    with patch("inspect.getmodule") as mock_getmodule:
         mock_getmodule.return_value = sys.modules["jsonargparse.core"]
         pytest.raises(ValueError, empty_context)
 
@@ -331,7 +301,7 @@ def test_automatic_components_context_function():
 
         return CLI(args=["6.7"])
 
-    with unittest.mock.patch("inspect.getmodule") as mock_getmodule:
+    with patch("inspect.getmodule") as mock_getmodule:
         mock_getmodule.return_value = sys.modules["jsonargparse.core"]
         assert 6.7 == non_empty_context_function()
 
@@ -347,7 +317,7 @@ def test_automatic_components_context_class():
 
         return CLI(args=["a", "method", "2"])
 
-    with unittest.mock.patch("inspect.getmodule") as mock_getmodule:
+    with patch("inspect.getmodule") as mock_getmodule:
         mock_getmodule.return_value = sys.modules["jsonargparse.core"]
         assert ("a", 2) == non_empty_context_class()
 
@@ -403,23 +373,17 @@ def test_subclass_type_config_file(tmp_cwd):
     Path("config.yaml").write_text("a: a.yaml\n")
     Path("a.yaml").write_text(yaml.safe_dump(a_yaml))
 
-    out = StringIO()
-    with redirect_stdout(out):
-        CLI(C, args=["--config=config.yaml", "cmd_a"])
-    assert "a yaml\n" == out.getvalue()
+    out = get_cli_stdout(C, args=["--config=config.yaml", "cmd_a"])
+    assert "a yaml\n" == out
 
-    out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
-        CLI(C, args=["cmd_a", "--help"])
-    assert "--config" not in out.getvalue()
+    out = get_cli_stdout(C, args=["cmd_a", "--help"])
+    assert "--config" not in out
 
     Path("config.yaml").write_text("a: a.yaml\nb: b.yaml\n")
     Path("b.yaml").write_text(f"class_path: {__name__}.B\ninit_args:\n  a: a.yaml\n")
 
-    out = StringIO()
-    with redirect_stdout(out):
-        CLI(C, args=["--config=config.yaml", "cmd_b"])
-    assert "a yaml\n" == out.getvalue()
+    out = get_cli_stdout(C, args=["--config=config.yaml", "cmd_b"])
+    assert "a yaml\n" == out
 
 
 @final

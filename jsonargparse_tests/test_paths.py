@@ -31,6 +31,22 @@ def test_os_pathlike(parser, file_r):
 # jsonargparse path types tests
 
 
+def test_path_fr(file_r):
+    path = Path_fr(file_r)
+    assert path == file_r
+    assert path() == os.path.realpath(file_r)
+    pytest.raises(TypeError, lambda: Path_fr("does_not_exist"))
+
+
+def test_path_fc_with_kwargs(tmpdir):
+    path = Path_fc("some-file.txt", cwd=str(tmpdir))
+    assert path() == os.path.join(tmpdir, "some-file.txt")
+
+
+def test_path_fr_already_registered():
+    assert Path_fr is path_type("fr")
+
+
 def test_paths_config_relative_absolute(parser, tmp_cwd):
     parser.add_argument("--cfg", action=ActionConfigFile)
     parser.add_argument("--file", type=Path_fr)
@@ -89,6 +105,18 @@ def test_register_path_dcc_default_path(parser, tmp_cwd):
     assert "(type: Path_dcc, default: test)" in help_str
 
 
+def test_path_dump(parser, tmp_cwd):
+    parser.add_argument("--path", type=Path_fc)
+    cfg = parser.parse_string("path: path")
+    assert parser.dump(cfg) == "path: path\n"
+
+
+def test_paths_dump(parser, tmp_cwd):
+    parser.add_argument("--paths", nargs="+", type=Path_fc)
+    cfg = parser.parse_args(["--paths", "path1", "path2"])
+    assert parser.dump(cfg) == "paths:\n- path1\n- path2\n"
+
+
 # enable_path tests
 
 
@@ -102,7 +130,7 @@ def test_enable_path_dict(parser, tmp_cwd):
     assert data == cfg["data"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--data=does-not-exist.yaml"])
-    assert "does-not-exist.yaml either not accessible or invalid" in str(ctx.value)
+    ctx.match("does-not-exist.yaml either not accessible or invalid")
 
 
 def test_enable_path_subclass(parser, tmp_cwd):
@@ -160,7 +188,7 @@ def test_enable_path_list_path_fr(parser, tmp_cwd, subtests):
         with patch("sys.stdin", StringIO("file1\nfile2\n")):
             with pytest.raises(ArgumentError) as ctx:
                 parser.parse_args(["--list", "-"])
-            assert "File does not exist" in str(ctx.value)
+            ctx.match("File does not exist")
 
     with subtests.test("paths list nargs='+' single"):
         cfg = parser.parse_args(["--lists", str(list_file1)])

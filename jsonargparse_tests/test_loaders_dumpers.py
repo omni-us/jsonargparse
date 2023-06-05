@@ -81,6 +81,10 @@ def test_parser_mode_omegaconf_interpolation_in_subcommands(parser, subparser):
     assert cfg.sub.target == "hello"
 
 
+def test_invalid_parser_mode():
+    pytest.raises(ValueError, lambda: ArgumentParser(parser_mode="invalid"))
+
+
 def test_set_loader_parser_mode_subparsers(parser, subparser):
     subcommands = parser.add_subcommands()
     subcommands.add_subcommand("sub", subparser)

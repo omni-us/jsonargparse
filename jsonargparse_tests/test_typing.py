@@ -1,4 +1,3 @@
-import os
 import pickle
 import random
 import uuid
@@ -13,13 +12,11 @@ from jsonargparse.typing import (
     Email,
     NonNegativeFloat,
     NonNegativeInt,
+    NotEmptyStr,
     OpenUnitInterval,
-    Path_fc,
-    Path_fr,
     PositiveFloat,
     PositiveInt,
     get_registered_type,
-    path_type,
     register_type,
     register_type_on_first_use,
     registered_types,
@@ -146,7 +143,7 @@ def test_restricted_number_positional_nargs_questionmark(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["a", "b"]))
 
 
-def test_restricted_numbers_optional_union(parser):
+def test_restricted_number_optional_union(parser):
     parser.add_argument("--num", type=Optional[Union[PositiveInt, OpenUnitInterval]])
     assert 0.1 == parser.parse_args(["--num", "0.1"]).num
     assert 0.9 == parser.parse_args(["--num", "0.9"]).num
@@ -157,7 +154,12 @@ def test_restricted_numbers_optional_union(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--num", "4.5"]))
 
 
-def test_type_function_add_argument(parser):
+def test_restricted_number_dump(parser):
+    parser.add_argument("--float", type=PositiveFloat)
+    assert "float: 1.1\n" == parser.dump(parser.parse_args(["--float", "1.1"]))
+
+
+def test_type_function_parse(parser):
     def gt0_or_off(x):
         return x if x == "off" else PositiveInt(x)
 
@@ -184,11 +186,17 @@ def test_email():
     pytest.raises(ValueError, lambda: Email("name_at_eg.org"))
 
 
-def test_optional_email_add_argument(parser):
+def test_optional_email_parse(parser):
     parser.add_argument("--email", type=Optional[Email])
     assert "a@b.c" == parser.parse_args(["--email", "a@b.c"]).email
     assert None is parser.parse_args(["--email=null"]).email
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--email", "abc"]))
+
+
+def test_non_empty_string():
+    assert " value " == NotEmptyStr(" value ")
+    pytest.raises(ValueError, lambda: NotEmptyStr(""))
+    pytest.raises(ValueError, lambda: NotEmptyStr(" "))
 
 
 def test_restricted_string_already_registered():
@@ -200,7 +208,7 @@ def test_restricted_string_already_registered():
     )
 
 
-def test_restricted_string_add_argument(parser):
+def test_restricted_string_parse(parser):
     FourDigits = restricted_string_type("FourDigits", "^[0-9]{4}$")
     parser.add_argument("--op", type=FourDigits)
     assert "1234" == parser.parse_args(["--op", "1234"]).op
@@ -209,23 +217,10 @@ def test_restricted_string_add_argument(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--op", "abcd"]))
 
 
-# path tests
-
-
-def test_path_fr(file_r):
-    path = Path_fr(file_r)
-    assert path == file_r
-    assert path() == os.path.realpath(file_r)
-    pytest.raises(TypeError, lambda: Path_fr("does_not_exist"))
-
-
-def test_path_fc_with_kwargs(tmpdir):
-    path = Path_fc("some-file.txt", cwd=str(tmpdir))
-    assert path() == os.path.join(tmpdir, "some-file.txt")
-
-
-def test_path_fr_already_registered():
-    assert Path_fr is path_type("fr")
+def test_restricted_string_dump(parser):
+    ThreeChars = restricted_string_type("ThreeChars", "^[A-Z]{3}$")
+    parser.add_argument("--op", type=ThreeChars)
+    assert "op: ABC\n" == parser.dump(parser.parse_args(["--op", "ABC"]))
 
 
 # other types

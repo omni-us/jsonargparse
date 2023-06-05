@@ -41,7 +41,7 @@ from jsonargparse_tests.conftest import (
 def test_add_argument_failure_given_type_and_action(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_argument("--op1", type=Optional[bool], action=True)
-    assert "Providing both type and action not allowed" in str(ctx.value)
+    ctx.match("Providing both type and action not allowed")
 
 
 # basic types tests
@@ -230,7 +230,7 @@ def test_set(parser):
     assert {1, 2} == parser.parse_args(["--set=[1, 2]"]).set
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--set=["a", "b"]'])
-    assert "Expected a <class 'int'>" in str(ctx.value)
+    ctx.match("Expected a <class 'int'>")
 
 
 # tuple tests
@@ -280,7 +280,7 @@ def test_tuple_union(parser, tmp_cwd):
 # list tests
 
 
-@pytest.mark.parametrize("list_type", [Iterable, List, Sequence], ids=lambda v: str(v))
+@pytest.mark.parametrize("list_type", [Iterable, List, Sequence], ids=str)
 def test_list_variants(parser, list_type):
     parser.add_argument("--list", type=list_type[int])
     cfg = parser.parse_args(["--list=[1, 2]"])
@@ -486,7 +486,7 @@ def test_mapping_nested_without_args(parser):
         ((int, List[int]), "+=7", [7]),
         ((List[int], int), "+=8", [8]),
     ],
-    ids=lambda v: str(v),
+    ids=str,
 )
 def test_union_subtypes_order(parser, subtypes, arg, expected):
     parser.add_argument("--val", type=Union[subtypes])
@@ -536,7 +536,7 @@ def test_callable_function_path(parser):
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--callable=jsonargparse.not_exist"])
-    assert "Callable expects a function or a callable class" in str(ctx.value)
+    ctx.match("Callable expects a function or a callable class")
 
 
 def test_callable_list_of_function_paths(parser):
@@ -547,7 +547,7 @@ def test_callable_list_of_function_paths(parser):
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--callables=[jsonargparse.not_exist]"])
-    assert "Callable expects a function or a callable class" in str(ctx.value)
+    ctx.match("Callable expects a function or a callable class")
 
 
 class CallableClassPath:
@@ -752,7 +752,7 @@ class IntParam:
 def test_lazy_instance_invalid_init_value():
     with pytest.raises(ValueError) as ctx:
         lazy_instance(IntParam, param="not an int")
-    assert "Expected a <class 'int'>" in str(ctx.value)
+    ctx.match("Expected a <class 'int'>")
 
 
 # other tests
@@ -767,12 +767,12 @@ def test_lazy_instance_invalid_init_value():
         Tuple[int, "unsupported"],  # noqa: F821
         Union["unsupported1", "unsupported2"],  # noqa: F821
     ],
-    ids=lambda v: str(v),
+    ids=str,
 )
 def test_action_typehint_unsupported_type(typehint):
     with pytest.raises(ValueError) as ctx:
         ActionTypeHint(typehint=typehint)
-    assert "Unsupported type hint" in str(ctx.value)
+    ctx.match("Unsupported type hint")
 
 
 @pytest.mark.parametrize(
@@ -788,7 +788,7 @@ def test_action_typehint_unsupported_type(typehint):
         (Union[type(None), EnumABC], Enum, True),
         (Dict[EnumABC, type(None)], Enum, False),  # type: ignore
     ],
-    ids=lambda v: str(v),
+    ids=str,
 )
 def test_is_optional(typehint, ref_type, expected):
     assert expected == is_optional(typehint, ref_type)

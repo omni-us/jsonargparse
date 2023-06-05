@@ -36,7 +36,7 @@ def test_on_parse_compute_fn_single_arguments(parser, subtests):
     with subtests.test("invalid compute_fn result type"):
         with pytest.raises(ArgumentError) as ctx:
             parser.parse_args(["--a.v1=x"])
-        assert 'Parser key "b.v2"' in str(ctx.value)
+        ctx.match('Parser key "b.v2"')
 
 
 def test_on_parse_compute_fn_subclass_spec(parser, subtests):
@@ -63,7 +63,7 @@ def test_on_parse_compute_fn_subclass_spec(parser, subtests):
         parser.set_defaults(cal1=None)
         with pytest.raises(ArgumentError) as ctx:
             parser.parse_args(["--cal1.firstweekday=-"])
-        assert 'Parser key "cal1"' in str(ctx.value)
+        ctx.match('Parser key "cal1"')
 
 
 class ClassA:
@@ -479,7 +479,7 @@ def test_on_parse_link_failure_previous_target_as_source(parser):
     parser.link_arguments("a", "b")
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("b", "c")
-    assert 'Source "b" not allowed' in str(ctx.value)
+    ctx.match('Source "b" not allowed')
 
 
 def test_on_parse_link_failure_previous_source_as_target(parser):
@@ -489,7 +489,7 @@ def test_on_parse_link_failure_previous_source_as_target(parser):
     parser.link_arguments("b", "c")
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("a", "b")
-    assert 'Target "b" not allowed' in str(ctx.value)
+    ctx.match('Target "b" not allowed')
 
 
 def test_on_parse_link_failure_already_linked():
@@ -502,21 +502,21 @@ def test_on_parse_link_failure_non_existing_source():
     parser = parser_classes_links_on_parse()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("x", "b.v2")
-    assert 'No action for key "x"' in str(ctx.value)
+    ctx.match('No action for key "x"')
 
 
 def test_on_parse_link_failure_non_existing_target():
     parser = parser_classes_links_on_parse()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("a.v1", "x")
-    assert 'No action for key "x"' in str(ctx.value)
+    ctx.match('No action for key "x"')
 
 
 def test_on_parse_link_failure_multi_source_missing_compute_fn():
     parser = parser_classes_links_on_parse()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments(("a.v1", "a.v2"), "b.v3")
-    assert "Multiple source keys requires a compute function" in str(ctx.value)
+    ctx.match("Multiple source keys requires a compute function")
 
 
 def test_on_parse_link_failure_invalid_subclass_target(parser):
@@ -524,7 +524,7 @@ def test_on_parse_link_failure_invalid_subclass_target(parser):
     parser.add_subclass_arguments(Calendar, "c")
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("s.init_args.v1", "c.init_args")
-    assert 'Target key expected to start with "c.init_args."' in str(ctx.value)
+    ctx.match('Target key expected to start with "c.init_args."')
 
 
 def test_on_parse_link_failure_invalid_source_attribute(parser):
@@ -532,42 +532,42 @@ def test_on_parse_link_failure_invalid_source_attribute(parser):
     parser.add_class_arguments(ClassQ, "q")
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("p.calendar", "q.calendar", apply_on="parse")
-    assert 'key "p.calendar"' in str(ctx.value)
+    ctx.match('key "p.calendar"')
 
 
 def test_on_instantiate_link_failure_cycle_self():
     parser = get_parser_classes_links_on_instantiate()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("y.y2", "y.y3", apply_on="instantiate")
-    assert "cycle" in str(ctx.value)
+    ctx.match("cycle")
 
 
 def test_on_instantiate_link_failure_cycle_pair():
     parser = get_parser_classes_links_on_instantiate()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("x.x2", "y.y3", apply_on="instantiate")
-    assert "cycle" in str(ctx.value)
+    ctx.match("cycle")
 
 
 def test_on_instantiate_link_failure_cycle_triple():
     parser = get_parser_classes_links_on_instantiate()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("x.x2", "z.z2", apply_on="instantiate")
-    assert "cycle" in str(ctx.value)
+    ctx.match("cycle")
 
 
 def test_on_instantiate_link_failure_source_not_class():
     parser = get_parser_classes_links_on_instantiate()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("d", "c.c2", apply_on="instantiate")
-    assert "require source" in str(ctx.value)
+    ctx.match("require source")
 
 
 def test_on_instantiate_link_failure_missing_init_args():
     parser = get_parser_subclasses_link_on_instantiate()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("x.y.z", "y.y3", apply_on="instantiate")
-    assert 'Target key expected to start with "y.init_args."' in str(ctx.value)
+    ctx.match('Target key expected to start with "y.init_args."')
 
 
 # help tests
