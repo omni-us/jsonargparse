@@ -1,17 +1,13 @@
 import json
 import os
-import pathlib
 import pickle
 import sys
-import unittest
-import unittest.mock
-import warnings
 from calendar import Calendar
-from collections import OrderedDict
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import redirect_stderr
 from io import StringIO
+from pathlib import Path
 from random import randint, shuffle
-from typing import Optional
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -22,39 +18,829 @@ from jsonargparse import (
     ActionJsonnet,
     ActionJsonSchema,
     ActionParser,
-    ActionYesNo,
     ArgumentError,
     ArgumentParser,
     Namespace,
-    Path,
     set_config_read_mode,
     strip_meta,
 )
-from jsonargparse.namespace import meta_keys
-from jsonargparse.optionals import (
-    docstring_parser_support,
-    fsspec_support,
-    jsonnet_support,
-    jsonschema_support,
-    ruyaml_support,
-    url_support,
-)
-from jsonargparse.typing import (
-    NotEmptyStr,
-    Path_fc,
-    Path_fr,
-    PositiveFloat,
-    PositiveInt,
-)
-from jsonargparse.util import CaptureParserException, capture_parser
-from jsonargparse_tests.base import TempDirTestCase
+from jsonargparse.optionals import jsonnet_support, jsonschema_support, ruyaml_support
+from jsonargparse.typing import Path_fc, Path_fr, path_type
 from jsonargparse_tests.conftest import (
+    capture_logs,
+    get_parse_args_stderr,
+    get_parse_args_stdout,
+    get_parser_help,
     is_cpython,
-    is_posix,
     responses_activate,
-    responses_available,
+    skip_if_docstring_parser_unavailable,
+    skip_if_fsspec_unavailable,
     skip_if_not_posix,
+    skip_if_responses_unavailable,
 )
+
+
+def test_parse_args_simple(parser):
+    parser.add_argument("--op", type=int)
+    assert parser.parse_args(["--op=1"]) == Namespace(op=1)
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--op=1.1"]))
+
+
+def test_parse_args_nested(parser):
+    parser.add_argument("--l1.l2.op", type=float)
+    assert parser.parse_args(["--l1.l2.op=2.1"]).l1.l2.op == 2.1
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--l1.l2.op=x"]))
+
+
+def test_parse_args_unrecognized_arguments(parser):
+    err = get_parse_args_stderr(parser, ["--unrecognized"])
+    assert "Unrecognized arguments:" in err
+
+
+def test_parse_args_invalid_args(parser):
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args([{}])
+    ctx.match("expected to be strings")
+
+
+def test_parse_args_base_namespace(parser):
+    parser.add_argument("--op1")
+    parser.add_argument("--op2")
+    cfg = parser.parse_args(["--op1=abc"], Namespace(op2="xyz"))
+    assert cfg == Namespace(op1="abc", op2="xyz")
+
+
+def test_parse_args_unexpected_kwarg(parser):
+    with pytest.raises(ValueError):
+        parser.parse_args([], unexpected=True)
+
+
+def test_parse_args_nargs_plus(parser):
+    parser.add_argument("--val", nargs="+", type=int)
+    assert [9] == parser.parse_args(["--val", "9"]).val
+    assert [3, 6, 2] == parser.parse_args(["--val", "3", "6", "2"]).val
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--val"]))
+
+
+def test_parse_args_nargs_asterisk(parser):
+    parser.add_argument("--val", nargs="*", type=float)
+    assert [5.2, 1.9] == parser.parse_args(["--val", "5.2", "1.9"]).val
+    assert [] == parser.parse_args(["--val"]).val
+
+
+def test_parse_args_nargs_questionmark(parser):
+    parser.add_argument("--val", nargs="?", type=str)
+    assert "~" == parser.parse_args(["--val", "~"]).val
+    assert None is parser.parse_args(["--val"]).val
+
+
+def test_parse_args_nargs_number(parser):
+    parser.add_argument("--one", nargs=1)
+    parser.add_argument("--two", nargs=2)
+    assert parser.parse_args(["--one", "-"]) == Namespace(one=["-"], two=None)
+    assert parser.parse_args(["--two", "q", "p"]) == Namespace(one=None, two=["q", "p"])
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--two", "-"]))
+
+
+def test_parse_args_positional_nargs_questionmark(parser):
+    parser.add_argument("pos1")
+    parser.add_argument("pos2", nargs="?")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args([])
+    ctx.match('"pos1" is required')
+    assert parser.parse_args(["v1"]) == Namespace(pos1="v1", pos2=None)
+    assert parser.parse_args(["v1", "v2"]) == Namespace(pos1="v1", pos2="v2")
+
+
+def test_parse_args_positional_nargs_plus(parser):
+    parser.add_argument("pos1")
+    parser.add_argument("pos2", nargs="+")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["v1"])
+    ctx.match('"pos2" is required')
+    assert parser.parse_args(["v1", "v2", "v3"]) == Namespace(pos1="v1", pos2=["v2", "v3"])
+
+
+def test_parse_args_positional_config(parser):
+    parser.add_argument("pos1")
+    parser.add_argument("pos2", nargs="+")
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    cfg = parser.parse_args(["--cfg", '{"pos2": ["v2", "v3"]}', "v1"])
+    assert cfg == Namespace(cfg=[None], pos1="v1", pos2=["v2", "v3"])
+
+
+def test_parse_args_choices(parser):
+    parser.add_argument("--ch1", choices="ABC")
+    parser.add_argument("--ch2", choices=["v1", "v2"])
+    cfg = parser.parse_args(["--ch1", "C", "--ch2", "v1"])
+    assert cfg.as_dict() == {"ch1": "C", "ch2": "v1"}
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--ch1", "D"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--ch2", "v0"]))
+
+
+def test_parse_object_simple(parser):
+    parser.add_argument("--op", type=int)
+    assert parser.parse_object({"op": 1}) == Namespace(op=1)
+    pytest.raises(ArgumentError, lambda: parser.parse_object({"op": 1.1}))
+    pytest.raises(ArgumentError, lambda: parser.parse_object({"undefined": True}))
+
+
+def test_parse_object_nested(parser):
+    parser.add_argument("--l1.l2.op", type=float)
+    assert parser.parse_object({"l1": {"l2": {"op": 2.1}}}).l1.l2.op == 2.1
+    pytest.raises(ArgumentError, lambda: parser.parse_object({"l1": {"l2": {"op": "x"}}}))
+
+
+def test_parse_env_simple():
+    parser = ArgumentParser(prog="app", exit_on_error=False)
+    parser.add_argument("--op", type=int)
+    with patch.dict(os.environ, {"APP_OP": "1"}):
+        assert parser.parse_env() == Namespace(op=1)
+    pytest.raises(ArgumentError, lambda: parser.parse_env({"APP_OP": "1.1"}))
+
+
+def test_parse_env_nested():
+    parser = ArgumentParser(prog="app", exit_on_error=False)
+    parser.add_argument("--l1.l2.op", type=float)
+    assert parser.parse_env({"APP_L1__L2__OP": "2.1"}).l1.l2.op == 2.1
+    pytest.raises(ArgumentError, lambda: parser.parse_env({"APP_L1__L2__OP": "x"}))
+
+
+def test_parse_env_config(parser):
+    parser.env_prefix = "app"
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--l1.num", type=int)
+    cfg = parser.parse_env({"APP_CFG": '{"l1": {"num": 1}}'})
+    assert cfg.cfg == [None]
+    assert cfg.l1 == Namespace(num=1)
+    pytest.raises(ArgumentError, lambda: parser.parse_env({"APP_CFG": '{"undefined": True}'}))
+
+
+def test_parse_env_positional_nargs_plus(parser):
+    parser.env_prefix = "app"
+    parser.add_argument("req", nargs="+")
+    assert parser.parse_env({"APP_REQ": "abc"}).req == ["abc"]
+    assert parser.parse_env({"APP_REQ": '["abc", "xyz"]'}).req == ["abc", "xyz"]
+    assert parser.parse_env({"APP_REQ": '[""","""]'}).req == ['[""","""]']
+
+
+def test_default_env_property():
+    parser = ArgumentParser()
+    assert False is parser.default_env
+    parser.default_env = True
+    assert True is parser.default_env
+    parser = ArgumentParser(default_env=True)
+    assert True is parser.default_env
+    parser.default_env = False
+    assert False is parser.default_env
+    with pytest.raises(ValueError) as ctx:
+        parser.default_env = "invalid"
+    ctx.match("default_env has to be a boolean")
+
+
+@patch.dict(os.environ, {"JSONARGPARSE_DEFAULT_ENV": "True"})
+def test_default_env_override_true():
+    parser = ArgumentParser(default_env=False)
+    assert True is parser.default_env
+    parser.default_env = False
+    assert True is parser.default_env
+
+
+@patch.dict(os.environ, {"JSONARGPARSE_DEFAULT_ENV": "False"})
+def test_default_env_override_false():
+    parser = ArgumentParser(default_env=True)
+    assert False is parser.default_env
+    parser.default_env = True
+    assert False is parser.default_env
+
+
+def test_env_prefix_true():
+    parser = ArgumentParser(env_prefix=True, default_env=True, exit_on_error=False)
+    parser.add_argument("--test_arg", type=str, required=True)
+
+    with patch.dict(os.environ, {"TEST_ARG": "one"}):
+        pytest.raises(ArgumentError, lambda: parser.parse_args([]))
+
+    prefix = os.path.splitext(parser.prog)[0].upper()
+    with patch.dict(os.environ, {f"{prefix}_TEST_ARG": "one"}):
+        cfg = parser.parse_args([])
+    assert "one" == cfg.test_arg
+
+
+def test_env_prefix_false():
+    parser = ArgumentParser(env_prefix=False, default_env=True)
+    parser.add_argument("--test_arg", type=str, required=True)
+    with patch.dict(os.environ, {"TEST_ARG": "one"}):
+        cfg = parser.parse_args([])
+    assert "one" == cfg.test_arg
+
+
+def test_env_properties_set_invalid(parser):
+    with pytest.raises(ValueError):
+        parser.default_env = "invalid"
+    with pytest.raises(ValueError):
+        parser.env_prefix = lambda: "invalid"
+
+
+def test_parse_string_simple(parser):
+    parser.add_argument("--op", type=int)
+    assert parser.parse_string('{"op": 1}').op == 1
+
+
+def test_parse_string_simple_errors(parser):
+    pytest.raises(ArgumentError, lambda: parser.parse_string('{"op": 1.1}'))
+    pytest.raises(ArgumentError, lambda: parser.parse_string('{"undefined": true}'))
+    pytest.raises(ArgumentError, lambda: parser.parse_string('"""'))
+    pytest.raises(ArgumentError, lambda: parser.parse_string("not a dict"))
+
+
+def test_parse_string_nested(parser):
+    parser.add_argument("--l1.l2.op", type=float)
+    assert parser.parse_string('{"l1": {"l2": {"op": 2.1}}}').l1.l2.op == 2.1
+    pytest.raises(ArgumentError, lambda: parser.parse_string('{"l1": {"l2": {"op": "x"}}}'))
+
+
+def test_parse_path_simple(parser, tmp_cwd):
+    parser.add_argument("--op", type=int)
+    path = Path("config.json")
+    path.write_text('{"op": 1}')
+    assert parser.parse_path(str(path)) == Namespace(op=1)
+
+
+def test_parse_path_simple_errors(parser, tmp_cwd):
+    parser.add_argument("--op", type=int)
+    path = Path("config.json")
+    path.write_text('{"op": 1.1}')
+    pytest.raises(ArgumentError, lambda: parser.parse_path(str(path)))
+    path.write_text('{"undefined": true}')
+    pytest.raises(ArgumentError, lambda: parser.parse_path(str(path)))
+
+
+def test_parse_path_defaults(parser, tmp_cwd):
+    parser.add_argument("--op1", type=int, default=1)
+    parser.add_argument("--op2", type=float, default=2.3)
+    path = Path("config.json")
+    path.write_text('{"op1": 2}')
+    assert parser.parse_path(str(path), defaults=True) == Namespace(op1=2, op2=2.3)
+    assert parser.parse_path(str(path), defaults=False) == Namespace(op1=2)
+    path.write_text('{"op2": 4.5}')
+    assert parser.parse_path(str(path), defaults=False) == Namespace(op2=4.5)
+
+
+@skip_if_not_posix
+def test_parse_path_file_not_readable(parser, tmp_cwd):
+    config_path = Path("config.json")
+    config_path.touch()
+    config_path.chmod(0)
+    pytest.raises(TypeError, lambda: parser.parse_path(str(config_path)))
+
+
+def test_precedence_of_sources(tmp_cwd, subtests):
+    input1_config_file = tmp_cwd / "input1.yaml"
+    input2_config_file = tmp_cwd / "input2.yaml"
+    default_config_file = tmp_cwd / "default.yaml"
+
+    parser = ArgumentParser(prog="app", default_env=True, default_config_files=[str(default_config_file)])
+    parser.add_argument("--op1", default="from parser default")
+    parser.add_argument("--op2")
+    parser.add_argument("--cfg", action=ActionConfigFile)
+
+    input1_config_file.write_text("op1: from input config file")
+    input2_config_file.write_text("op2: unused")
+
+    # parse_env precedence
+    with subtests.test("parse_env parser default"):
+        assert "from parser default" == parser.parse_env({}).op1
+    with subtests.test("parse_env default config file"):
+        default_config_file.write_text("op1: from default config file")
+        assert "from default config file" == parser.parse_env({}).op1
+    with subtests.test("parse_env environment config string"):
+        env = {"APP_CFG": '{"op1": "from env config"}'}
+        assert "from env config" == parser.parse_env(env).op1
+    with subtests.test("parse_env environment variable"):
+        env["APP_OP1"] = "from env var"
+        assert "from env var" == parser.parse_env(env).op1
+    default_config_file.unlink()
+
+    # parse_path precedence
+    with subtests.test("parse_path parser default"):
+        assert "from parser default" == parser.parse_path(str(input2_config_file)).op1
+    with subtests.test("parse_path default config file"):
+        default_config_file.write_text("op1: from default config file")
+        assert "from default config file" == parser.parse_path(str(input2_config_file)).op1
+    env = {"APP_CFG": str(input1_config_file)}
+    with subtests.test("parse_path environment config file"), patch.dict(os.environ, env):
+        assert "from input config file" == parser.parse_path(str(input2_config_file)).op1
+    env["APP_OP1"] = "from env var"
+    with subtests.test("parse_path environment variable"), patch.dict(os.environ, env):
+        assert "from env var" == parser.parse_path(str(input2_config_file)).op1
+    env["APP_CFG"] = str(input2_config_file)
+    with subtests.test("parse_path input config file"), patch.dict(os.environ, env):
+        assert "from input config file" == parser.parse_path(str(input1_config_file)).op1
+    default_config_file.unlink()
+
+    # parse_args precedence
+    with subtests.test("parse_args parser default"):
+        assert "from parser default" == parser.parse_args([]).op1
+    with subtests.test("parse_args default config file"):
+        default_config_file.write_text("op1: from default config file")
+        assert "from default config file" == parser.parse_args([]).op1
+    env = {"APP_CFG": str(input1_config_file)}
+    with subtests.test("parse_args environment config file"), patch.dict(os.environ, env):
+        assert "from input config file" == parser.parse_args([]).op1
+    env["APP_OP1"] = "from env var"
+    with subtests.test("parse_args environment variable"), patch.dict(os.environ, env):
+        assert "from env var" == parser.parse_args([]).op1
+    env["APP_CFG"] = str(input2_config_file)
+    with subtests.test("parse_args input argument"), patch.dict(os.environ, env):
+        assert "from arg" == parser.parse_args(["--op1", "from arg"]).op1
+    with subtests.test("parse_args argument override config"), patch.dict(os.environ, env):
+        assert "from arg" == parser.parse_args([f"--cfg={input1_config_file}", "--op1=from arg"]).op1
+    with subtests.test("parse_args config override argument"), patch.dict(os.environ, env):
+        assert "from input config file" == parser.parse_args(["--op1=from arg", f"--cfg={input1_config_file}"]).op1
+
+    with subtests.test("parse_args config paths"), patch.dict(os.environ, env):
+        cfg = parser.parse_args([f"--cfg={input1_config_file}"])
+    config_paths = parser.get_config_files(cfg)
+    assert str(default_config_file) == str(config_paths[0])
+    assert str(input2_config_file) == str(config_paths[1])  # APP_CFG
+    assert str(input1_config_file) == str(config_paths[2])  # --cfg
+
+
+def test_non_positional_required(parser, subtests):
+    group = parser.add_argument_group("Group 1")
+    group.add_argument("--req1", required=True)
+    parser.add_argument("--lev1.req2", required=True)
+
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        assert "[-h] --req1 REQ1 --lev1.req2 REQ2" in help_str
+        assert "--lev1.req2 REQ2  (required)" in help_str
+
+    with subtests.test("parse_env"):
+        parser.env_prefix = "APP"
+        cfg = parser.parse_env({"APP_REQ1": "val5", "APP_LEV1__REQ2": "val6"})
+        assert cfg == Namespace(lev1=Namespace(req2="val6"), req1="val5")
+        pytest.raises(ArgumentError, lambda: parser.parse_env({}))
+
+    with subtests.test("parse_string"):
+        cfg = parser.parse_string('{"req1":"val3","lev1":{"req2":"val4"}}')
+        assert cfg == Namespace(lev1=Namespace(req2="val4"), req1="val3")
+        pytest.raises(ArgumentError, lambda: parser.parse_string('{"lev1":{"req2":"val4"}}'))
+
+    with subtests.test("parse_args"):
+        cfg = parser.parse_args(["--req1", "val1", "--lev1.req2", "val2"])
+        assert cfg == Namespace(lev1=Namespace(req2="val2"), req1="val1")
+        pytest.raises(ArgumentError, lambda: parser.parse_args(["--req1", "val1"]))
+
+    with subtests.test("parse_args config"):
+        parser.add_argument("--cfg", action=ActionConfigFile)
+        cfg = parser.parse_args(["--cfg", '{"req1":"val1","lev1":{"req2":"val2"}}'])
+        assert cfg == Namespace(cfg=[None], lev1=Namespace(req2="val2"), req1="val1")
+
+
+@pytest.fixture
+def dump_parser(parser):
+    parser.add_argument("--op1", default=123)
+    parser.add_argument("--op2", default="abc")
+    return parser
+
+
+def test_dump_complete(dump_parser):
+    cfg1 = dump_parser.get_defaults()
+    cfg2 = dump_parser.parse_string(dump_parser.dump(cfg1))
+    assert cfg1 == cfg2
+
+
+def test_dump_incomplete(dump_parser):
+    dump = dump_parser.dump(Namespace(op1=456))
+    assert "op1: 456" == dump.strip()
+
+
+@pytest.mark.skipif(not is_cpython, reason="requires __setattr__ insertion order")
+def test_dump_formats(dump_parser):
+    cfg = dump_parser.get_defaults()
+    assert dump_parser.dump(cfg) == "op1: 123\nop2: abc\n"
+    assert dump_parser.dump(cfg, format="yaml") == dump_parser.dump(cfg)
+    assert dump_parser.dump(cfg, format="json") == '{"op1":123,"op2":"abc"}'
+    assert dump_parser.dump(cfg, format="json_indented") == '{\n  "op1": 123,\n  "op2": "abc"\n}\n'
+    pytest.raises(ValueError, lambda: dump_parser.dump(cfg, format="invalid"))
+
+
+def test_dump_skip_default_simple(dump_parser):
+    assert "{}\n" == dump_parser.dump(dump_parser.get_defaults(), skip_default=True)
+    assert "op2: xyz\n" == dump_parser.dump(Namespace(op1=123, op2="xyz"), skip_default=True)
+
+
+def test_dump_skip_default_nested(parser):
+    parser.add_argument("--g1.op1", type=int, default=123)
+    parser.add_argument("--g1.op2", type=str, default="abc")
+    parser.add_argument("--g2.op1", type=int, default=987)
+    parser.add_argument("--g2.op2", type=str, default="xyz")
+    assert parser.dump(parser.get_defaults(), skip_default=True) == "{}\n"
+    assert parser.dump(parser.parse_args(["--g1.op1=0"]), skip_default=True) == "g1:\n  op1: 0\n"
+    assert parser.dump(parser.parse_args(["--g2.op2=pqr"]), skip_default=True) == "g2:\n  op2: pqr\n"
+
+
+def test_dump_order(parser, subtests):
+    args = {}
+    for num in range(50):
+        args[num] = "".join(chr(randint(97, 122)) for _ in range(8))
+
+    for num in range(len(args)):
+        parser.add_argument("--" + args[num], default=num)
+
+    with subtests.test("get_defaults"):
+        cfg = parser.get_defaults()
+        dump = parser.dump(cfg)
+        assert dump == "\n".join(v + ": " + str(n) for n, v in args.items()) + "\n"
+
+    with subtests.test("parse_string"):
+        rand = list(range(len(args)))
+        shuffle(rand)
+        yaml = "\n".join(args[n] + ": " + str(n) for n in rand) + "\n"
+        cfg = parser.parse_string(yaml)
+        dump = parser.dump(cfg)
+        assert dump == "\n".join(v + ": " + str(n) for n, v in args.items()) + "\n"
+
+
+@pytest.fixture
+def parser_schema_jsonnet(parser, example_parser):
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--subparser", action=ActionParser(parser=example_parser))
+    if jsonschema_support:
+        schema = {
+            "type": "object",
+            "properties": {
+                "a": {"type": "number"},
+                "b": {"type": "number"},
+            },
+        }
+        parser.add_argument(
+            "--schema",
+            default={"a": 1, "b": 2},
+            action=ActionJsonSchema(schema=schema),
+        )
+    if jsonnet_support:
+        parser.add_argument(
+            "--jsonnet",
+            default={"c": 3, "d": 4},
+            action=ActionJsonnet(ext_vars=None),
+        )
+    expected = parser.parse_args(["--subparser.bool=false", "--subparser.nums.val1=3"])
+    subparser_body = yaml.safe_dump(expected.subparser.as_dict())
+    schema_body = json.dumps(expected.schema) if jsonschema_support else ""
+    jsonnet_body = json.dumps(expected.jsonnet) if jsonnet_support else ""
+    return parser, expected, subparser_body, schema_body, jsonnet_body
+
+
+@skip_if_responses_unavailable
+@responses_activate
+def test_parse_args_url_config(parser_schema_jsonnet):
+    import responses
+
+    set_config_read_mode(urls_enabled=True)
+    parser, expected, subparser_body, schema_body, jsonnet_body = parser_schema_jsonnet
+
+    base_url = "http://jsonargparse.com/"
+    main_body = f"subparser: {base_url}subparser.yaml\n"
+    if jsonschema_support:
+        main_body += f"schema: {base_url}schema.yaml\n"
+    if jsonnet_support:
+        main_body += f"jsonnet: {base_url}jsonnet.yaml\n"
+
+    for name, body in [
+        ("main.yaml", main_body),
+        ("subparser.yaml", subparser_body),
+        ("schema.yaml", schema_body),
+        ("jsonnet.yaml", jsonnet_body),
+    ]:
+        responses.add(responses.GET, base_url + name, status=200, body=body)
+        responses.add(responses.HEAD, base_url + name, status=200)
+
+    cfg = parser.parse_args([f"--cfg={base_url}main.yaml"], with_meta=False)
+    assert expected.subparser == cfg.subparser
+    if jsonschema_support:
+        assert expected.schema == cfg.schema
+    if jsonnet_support:
+        assert expected.jsonnet == cfg.jsonnet
+
+    set_config_read_mode(urls_enabled=False)
+
+
+def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):
+    parser, expected, subparser_body, schema_body, jsonnet_body = parser_schema_jsonnet
+
+    in_dir = tmp_cwd / "input"
+    out_dir = tmp_cwd / "output"
+    in_dir.mkdir()
+    out_dir.mkdir()
+    main_file_in = in_dir / "main.yaml"
+    subparser_file_in = in_dir / "subparser.yaml"
+    schema_file_in = in_dir / "schema.json"
+    jsonnet_file_in = in_dir / "jsonnet.json"
+    main_file_out = out_dir / "main.yaml"
+    subparser_file_out = out_dir / "subparser.yaml"
+    schema_file_out = out_dir / "schema.json"
+    jsonnet_file_out = out_dir / "jsonnet.json"
+
+    main_body = "subparser: subparser.yaml\n"
+    if jsonschema_support:
+        main_body += "schema: schema.json\n"
+    if jsonnet_support:
+        main_body += "jsonnet: jsonnet.json\n"
+    main_file_in.write_text(main_body)
+    subparser_file_in.write_text(subparser_body)
+    if jsonschema_support:
+        schema_file_in.write_text(schema_body)
+    if jsonnet_support:
+        jsonnet_file_in.write_text(jsonnet_body)
+
+    def rm_out_files():
+        for file in [main_file_out, subparser_file_out, schema_file_out, jsonnet_file_out]:
+            if file.is_file():
+                file.unlink()
+
+    with subtests.test("parse_path with metadata"):
+        cfg1 = parser.parse_path(str(main_file_in), with_meta=True)
+        assert expected == strip_meta(cfg1)
+        assert str(cfg1.subparser["__path__"]) == "subparser.yaml"
+        if jsonschema_support:
+            assert str(cfg1.schema["__path__"]) == "schema.json"
+        if jsonnet_support:
+            assert str(cfg1.jsonnet["__path__"]) == "jsonnet.json"
+
+    with subtests.test("save with metadata (multi-file)"):
+        parser.save(cfg1, str(main_file_out))
+        assert subparser_file_out.is_file()
+        if jsonschema_support:
+            assert schema_file_out.is_file()
+        if jsonnet_support:
+            assert jsonnet_file_out.read_text() == '{"c": 3, "d": 4}'
+        cfg2 = parser.parse_path(str(main_file_out), with_meta=False)
+        assert expected == cfg2
+
+    with subtests.test("save without metadata (single-file)"):
+        rm_out_files()
+        parser.save(cfg1, str(main_file_out), multifile=False)
+        cfg3 = parser.parse_path(str(main_file_out), with_meta=False)
+        assert expected == cfg3
+
+    if jsonschema_support:
+        with subtests.test("save jsonschema yaml output"):
+            rm_out_files()
+            schema_yaml_out = out_dir / "schema.yaml"
+            cfg1.schema["__path__"] = Path_fc(str(schema_yaml_out))
+            parser.save(cfg1, str(main_file_out), multifile=True)
+            assert schema_yaml_out.read_text() == "a: 1\nb: 2\n"
+
+
+def test_save_overwrite(example_parser, tmp_cwd):
+    cfg = example_parser.parse_args(["--nums.val1=7"])
+    example_parser.save(cfg, "config.yaml")
+    with pytest.raises(ValueError) as ctx:
+        example_parser.save(cfg, "config.yaml")
+    ctx.match("Refusing to overwrite")
+    example_parser.save(cfg, "config.yaml", overwrite=True)
+
+
+def test_save_subconfig_overwrite(parser, example_parser, tmp_cwd):
+    Path("subparser.yaml").write_text(example_parser.dump(example_parser.get_defaults()))
+    parser.add_argument("--subparser", action=ActionParser(parser=example_parser))
+    cfg = parser.get_defaults()
+    cfg.subparser.__path__ = Path_fr("subparser.yaml")
+    with pytest.raises(ValueError) as ctx:
+        parser.save(cfg, "main.yaml")
+    ctx.match("Refusing to overwrite")
+    parser.save(cfg, "main.yaml", overwrite=True)
+
+
+def test_save_invalid_format(example_parser, tmp_cwd):
+    cfg = example_parser.parse_args(["--nums.val2=-1.2"])
+    with pytest.raises(ValueError) as ctx:
+        example_parser.save(cfg, "invalid_format.yaml", format="invalid")
+    ctx.match("Unknown output format")
+
+
+def test_save_path_content(parser, tmp_cwd):
+    parser.add_argument("--the.path", type=Path_fr)
+
+    Path("pathdir").mkdir()
+    Path("outdir").mkdir()
+    in_file = Path("pathdir", "file.txt")
+    out_yaml = Path("outdir", "saved.yaml")
+    out_file = Path("outdir", "file.txt")
+    in_file.write_text("file content")
+
+    cfg = parser.parse_args([f"--the.path={in_file}"])
+    parser.save_path_content.add("the.path")
+    parser.save(cfg, str(out_yaml))
+
+    assert out_yaml.read_text() == "the:\n  path: file.txt\n"
+    assert out_file.read_text() == "file content"
+
+
+@skip_if_fsspec_unavailable
+def test_save_fsspec(example_parser):
+    cfg = example_parser.parse_args(["--nums.val1=5"])
+    example_parser.save(cfg, "memory://config.yaml", multifile=False)
+    path = path_type("sr")("memory://config.yaml")
+    assert cfg == example_parser.parse_string(path.get_content())
+
+    with pytest.raises(NotImplementedError) as ctx:
+        example_parser.save(cfg, "memory://config.yaml", multifile=True)
+    ctx.match("multifile=True not supported")
+
+
+@pytest.fixture
+def print_parser(parser, subparser):
+    parser.description = "cli tool"
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--v0", help=SUPPRESS, default="0")
+    parser.add_argument("--v1", help="Option v1.", default=1)
+    parser.add_argument("--g1.v2", help="Option v2.", default="2")
+    subparser.add_argument("--v3")
+    parser.add_argument("--g2", action=ActionParser(parser=subparser))
+    return parser
+
+
+def test_print_config_normal(print_parser):
+    out = get_parse_args_stdout(print_parser, ["--print_config"])
+    assert yaml.safe_load(out) == {"g1": {"v2": "2"}, "g2": {"v3": None}, "v1": 1}
+
+
+def test_print_config_skip_null(print_parser):
+    out = get_parse_args_stdout(print_parser, ["--print_config=skip_null"])
+    assert yaml.safe_load(out) == {"g1": {"v2": "2"}, "g2": {}, "v1": 1}
+
+
+@pytest.mark.skipif(not ruyaml_support, reason="ruyaml package is required")
+@skip_if_docstring_parser_unavailable
+def test_print_config_comments(print_parser):
+    out = get_parse_args_stdout(print_parser, ["--print_config=comments"])
+    assert "# cli tool" in out
+    assert "# Option v1. (default: 1)" in out
+    assert "# Option v2. (default: 2)" in out
+
+
+def test_print_config_invalid_flag(print_parser):
+    with pytest.raises(ArgumentError) as ctx:
+        print_parser.parse_args(["--print_config=invalid"])
+    ctx.match('Invalid option "invalid"')
+
+
+def test_default_config_files(parser, subtests, tmp_cwd):
+    default_config_file = tmp_cwd / "defaults.yaml"
+    default_config_file.write_text("op1: from default config file\n")
+
+    parser.default_config_files = [str(default_config_file)]
+    parser.add_argument("--op1", default="from parser default")
+    parser.add_argument("--op2", default="from parser default")
+
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        assert "default values below are the ones overridden" in help_str
+        assert "from default config file" in help_str
+        assert "from parser default" in help_str
+
+    with subtests.test("get_defaults"):
+        cfg = parser.get_defaults()
+        assert "from default config file" == cfg.op1
+        assert "from parser default" == cfg.op2
+
+    with subtests.test("get_default"):
+        assert parser.get_default("op1") == "from default config file"
+        parser.add_subclass_arguments(Calendar, "cal")
+        with pytest.raises(KeyError) as ctx:
+            parser.get_default("cal")
+        ctx.match("does not specify a default")
+
+    with subtests.test("set invalid"):
+        with pytest.raises(ValueError) as ctx:
+            parser.default_config_files = False
+        ctx.match("default_config_files has to be None or List")
+
+
+def test_default_config_file_help_message_no_existing(parser, tmp_cwd):
+    parser.default_config_files = ["defaults.yaml"]
+    help_str = get_parser_help(parser)
+    assert "no existing default config file" in help_str
+
+
+def test_default_config_file_invalid_value(parser, tmp_cwd):
+    default_config_file = Path("defaults.yaml")
+    default_config_file.write_text("op2: v2\n")
+
+    parser.default_config_files = [str(default_config_file)]
+    parser.add_argument("--op1", default="from default")
+
+    with pytest.raises(ArgumentError) as ctx:
+        parser.get_default("op1")
+    ctx.match("Problem in default config file")
+
+    help_str = get_parser_help(parser)
+    assert "tried getting defaults considering default_config_files but failed" in help_str.replace("\n", " ")
+
+
+@skip_if_not_posix
+def test_default_config_file_unreadable(parser, tmp_cwd):
+    default_config_file = Path("defaults.yaml")
+    default_config_file.write_text("op1: from yaml\n")
+
+    parser.default_config_files = [str(default_config_file)]
+    parser.add_argument("--op1", default="from default")
+
+    assert parser.get_default("op1") == "from yaml"
+    default_config_file.chmod(0)
+    assert parser.get_default("op1") == "from default"
+
+
+def test_default_config_files_pattern(parser, subtests, tmp_cwd):
+    default_configs_pattern = tmp_cwd / "defaults_*.yaml"
+    parser.default_config_files = [str(default_configs_pattern)]
+    parser.add_argument("--op1", default="from default")
+    parser.add_argument("--op2", default="from default")
+
+    with subtests.test("one config"):
+        config_1 = tmp_cwd / "defaults_1.yaml"
+        config_1.write_text("op1: from yaml 1\nop2: from yaml 1\n")
+
+        cfg = parser.get_defaults()
+        assert cfg.op1 == "from yaml 1"
+        assert cfg.op2 == "from yaml 1"
+        assert str(cfg.__default_config__) == str(config_1)
+
+    with subtests.test("two configs"):
+        config_2 = tmp_cwd / "defaults_2.yaml"
+        config_2.write_text("op1: from yaml 2\n")
+
+        cfg = parser.get_defaults()
+        assert cfg.op1 == "from yaml 2"
+        assert cfg.op2 == "from yaml 1"
+        assert list(map(str, cfg.__default_config__)) == list(map(str, [config_1, config_2]))
+
+    with subtests.test("three configs"):
+        config_0 = tmp_cwd / "defaults_0.yaml"
+        config_0.write_text("op2: from yaml 0\n")
+
+        cfg = parser.get_defaults()
+        assert cfg.op1 == "from yaml 2"
+        assert cfg.op2 == "from yaml 1"
+        assert list(map(str, cfg.__default_config__)) == list(map(str, [config_0, config_1, config_2]))
+
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        assert "defaults_*.yaml" in help_str
+        assert "defaults_0.yaml" in help_str
+        assert "defaults_1.yaml" in help_str
+        assert "defaults_2.yaml" in help_str
+
+
+def test_named_argument_groups(parser):
+    parser.add_argument_group("Group 1", name="group1")
+    parser.add_argument_group("Group 2", name="group2")
+    assert {"group1", "group2"} == set(parser.groups.keys())
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument_group("Bad", name="group1")
+    ctx.match("Group with name group1 already exists")
+
+
+def test_set_get_defaults_single(parser):
+    parser.add_argument("--v1")
+    parser.set_defaults(v1=1)
+    assert parser.get_default("v1") == 1
+
+
+def test_set_get_defaults_multiple(parser, subparser, subtests):
+    parser.add_argument("--v1", default="1")
+    parser.add_argument("--g1.v2", default="2")
+    subparser.add_argument("--g2.v3", default="3")
+    parser.add_argument("--n", action=ActionParser(parser=subparser))
+
+    with subtests.test("set_defaults"):
+        parser.set_defaults({"g1.v2": "b", "n.g2.v3": "c"}, v1="a")
+
+    with subtests.test("get_defaults"):
+        cfg = parser.get_defaults()
+        assert cfg.as_dict() == {"v1": "a", "g1": {"v2": "b"}, "n": {"g2": {"v3": "c"}}}
+
+    with subtests.test("get_default"):
+        assert parser.get_default("v1") == cfg.v1
+        assert parser.get_default("g1.v2") == cfg.g1.v2
+        assert parser.get_default("n.g2.v3") == cfg.n.g2.v3
+
+    with subtests.test("set_defaults undefined key"):
+        pytest.raises(KeyError, lambda: parser.set_defaults(v4="d"))
+
+    with subtests.test("get_default undefined key"):
+        pytest.raises(KeyError, lambda: parser.get_default("v4"))
+
+
+def test_add_multiple_config_arguments_error(parser):
+    parser.add_argument("--cfg1", action=ActionConfigFile)
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument("--cfg2", action=ActionConfigFile)
+    ctx.match("only allowed to have a single")
 
 
 def test_check_config_skip_none(parser):
@@ -62,1174 +848,95 @@ def test_check_config_skip_none(parser):
     parser.add_argument("--op2", type=float)
     cfg = parser.parse_args(["--op2=2.2"])
     parser.check_config(cfg, skip_none=True)
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError) as ctx:
         parser.check_config(cfg, skip_none=False)
-
-
-@skip_if_not_posix
-def test_parse_path_file_not_readable(parser, tmp_cwd):
-    config_path = pathlib.Path("config.yaml")
-    config_path.touch()
-    config_path.chmod(0)
-    pytest.raises(TypeError, lambda: parser.parse_path(str(config_path)))
-
-
-def example_parser():
-    """Creates a simple parser for doing tests."""
-    parser = ArgumentParser(prog="app", default_meta=False, exit_on_error=False)
-
-    group_one = parser.add_argument_group("Group 1", name="group1")
-    group_one.add_argument("--bools.def_false", default=False, nargs="?", action=ActionYesNo)
-    group_one.add_argument("--bools.def_true", default=True, nargs="?", action=ActionYesNo)
-
-    group_two = parser.add_argument_group("Group 2", name="group2")
-    group_two.add_argument("--lev1.lev2.opt1", default="opt1_def")
-    group_two.add_argument("--lev1.lev2.opt2", default="opt2_def")
-
-    group_three = parser.add_argument_group("Group 3")
-    group_three.add_argument("--nums.val1", type=int, default=1)
-    group_three.add_argument("--nums.val2", type=float, default=2.0)
-
-    return parser
-
-
-example_yaml = """
-lev1:
-  lev2:
-    opt1: opt1_yaml
-    opt2: opt2_yaml
-
-nums:
-  val1: -1
-"""
-
-example_env = {"APP_LEV1__LEV2__OPT1": "opt1_env", "APP_NUMS__VAL1": "0"}
-
-
-class ParsersTests(TempDirTestCase):
-    def test_parse_args(self):
-        parser = example_parser()
-        self.assertEqual(
-            "opt1_arg",
-            parser.parse_args(["--lev1.lev2.opt1", "opt1_arg"]).lev1.lev2.opt1,
-        )
-        self.assertEqual(9, parser.parse_args(["--nums.val1", "9"]).nums.val1)
-        self.assertEqual(6.4, parser.parse_args(["--nums.val2", "6.4"]).nums.val2)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--nums.val1", "7.5"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--nums.val2", "eight"]))
-        self.assertEqual(9, parser.parse_args(["--nums.val1", "9"])["nums.val1"])
-
-    def test_parse_object(self):
-        parser = example_parser()
-
-        base = Namespace(**{"nums.val2": 3.4})
-        cfg = parser.parse_object(yaml.safe_load(example_yaml), cfg_base=base)
-        self.assertEqual("opt1_yaml", cfg.lev1.lev2.opt1)
-        self.assertEqual("opt2_yaml", cfg.lev1.lev2.opt2)
-        self.assertEqual(-1, cfg.nums.val1)
-        self.assertEqual(3.4, cfg.nums.val2)
-        self.assertEqual(False, cfg.bools.def_false)
-        self.assertEqual(True, cfg.bools.def_true)
-
-        self.assertRaises(ArgumentError, lambda: parser.parse_object({"undefined": True}))
-
-    def test_parse_env(self):
-        parser = example_parser()
-        cfg = parser.parse_env(example_env)
-        self.assertEqual("opt1_env", cfg.lev1.lev2.opt1)
-        self.assertEqual(0, cfg.nums.val1)
-        cfg = parser.parse_env(example_env, defaults=False)
-        self.assertFalse(hasattr(cfg, "bools"))
-        self.assertTrue(hasattr(cfg, "nums"))
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        env = OrderedDict(example_env)
-        env["APP_NUMS__VAL1"] = '"""'
-        self.assertRaises(ArgumentError, lambda: parser.parse_env(env))
-        env = OrderedDict(example_env)
-        env["APP_CFG"] = '{"nums": {"val1": 1}}'
-        self.assertEqual(0, parser.parse_env(env).nums.val1)
-        parser.add_argument("req", nargs="+")
-        env["APP_REQ"] = "abc"
-        self.assertEqual(["abc"], parser.parse_env(env).req)
-        env["APP_REQ"] = '["abc", "xyz"]'
-        self.assertEqual(["abc", "xyz"], parser.parse_env(env).req)
-        env["APP_REQ"] = '[""","""]'
-        self.assertEqual(['[""","""]'], parser.parse_env(env).req)
-        with self.assertRaises(ValueError):
-            parser.default_env = "invalid"
-        with self.assertRaises(ValueError):
-            parser.env_prefix = lambda: "invalid"
-
-    def test_default_env(self):
-        parser = ArgumentParser()
-        self.assertFalse(parser.default_env)
-        parser.default_env = True
-        self.assertTrue(parser.default_env)
-        parser = ArgumentParser(default_env=True)
-        self.assertTrue(parser.default_env)
-        parser.default_env = False
-        self.assertFalse(parser.default_env)
-        with unittest.mock.patch.dict(os.environ, {"JSONARGPARSE_DEFAULT_ENV": "True"}):
-            parser = ArgumentParser()
-            self.assertTrue(parser.default_env)
-            parser.default_env = False
-            self.assertTrue(parser.default_env)
-        with unittest.mock.patch.dict(os.environ, {"JSONARGPARSE_DEFAULT_ENV": "False"}):
-            parser = ArgumentParser(default_env=True)
-            self.assertFalse(parser.default_env)
-            parser.default_env = True
-            self.assertFalse(parser.default_env)
-
-    def test_env_prefix(self):
-        parser = ArgumentParser(env_prefix=True, default_env=True, exit_on_error=False)
-        parser.add_argument("--test_arg", type=str, required=True, help="Test argument")
-        with self.assertRaises(ArgumentError):
-            with unittest.mock.patch.dict(os.environ, {"TEST_ARG": "one"}):
-                parser.parse_args([])
-        prefix = os.path.splitext(parser.prog)[0].upper()
-        with unittest.mock.patch.dict(os.environ, {f"{prefix}_TEST_ARG": "one"}):
-            cfg = parser.parse_args([])
-            self.assertEqual("one", cfg.test_arg)
-
-        parser = ArgumentParser(env_prefix=False, default_env=True)
-        parser.add_argument("--test_arg", type=str, required=True, help="Test argument")
-        with unittest.mock.patch.dict(os.environ, {"TEST_ARG": "one"}):
-            cfg = parser.parse_args([])
-            self.assertEqual("one", cfg.test_arg)
-
-    def test_parse_string(self):
-        parser = example_parser()
-
-        cfg1 = parser.parse_string(example_yaml)
-        self.assertEqual("opt1_yaml", cfg1.lev1.lev2.opt1)
-        self.assertEqual("opt2_yaml", cfg1.lev1.lev2.opt2)
-        self.assertEqual(-1, cfg1.nums.val1)
-        self.assertEqual(2.0, cfg1.nums.val2)
-        self.assertEqual(False, cfg1.bools.def_false)
-        self.assertEqual(True, cfg1.bools.def_true)
-
-        cfg2 = parser.parse_string(example_yaml, defaults=False)
-        self.assertFalse(hasattr(cfg2, "bools"))
-        self.assertTrue(hasattr(cfg2, "nums"))
-
-        self.assertRaises(ArgumentError, lambda: parser.parse_string('"""'))
-
-    def test_parse_string_not_dict(self):
-        parser = ArgumentParser(exit_on_error=False)
-        with self.assertRaises(ArgumentError):
-            parser.parse_string("not a dict")
-
-    def test_parse_path(self):
-        parser = example_parser()
-        cfg1 = parser.parse_string(example_yaml)
-        cfg2 = parser.parse_string(example_yaml, defaults=False)
-
-        yaml_file = os.path.realpath(os.path.join(self.tmpdir, "example.yaml"))
-
-        with open(yaml_file, "w") as output_file:
-            output_file.write(example_yaml)
-        self.assertEqual(cfg1, parser.parse_path(yaml_file, defaults=True))
-        self.assertEqual(cfg2, parser.parse_path(yaml_file, defaults=False))
-        self.assertNotEqual(cfg2, parser.parse_path(yaml_file, defaults=True))
-        self.assertNotEqual(cfg1, parser.parse_path(yaml_file, defaults=False))
-
-        with open(yaml_file, "w") as output_file:
-            output_file.write(example_yaml + "  val2: eight\n")
-        self.assertRaises(ArgumentError, lambda: parser.parse_path(yaml_file))
-        with open(yaml_file, "w") as output_file:
-            output_file.write(example_yaml + "  val3: key_not_defined\n")
-        self.assertRaises(ArgumentError, lambda: parser.parse_path(yaml_file))
-
-    def test_cfg_base(self):
-        parser = ArgumentParser()
-        parser.add_argument("--op1")
-        parser.add_argument("--op2")
-        cfg = parser.parse_args(["--op1=abc"], Namespace(op2="xyz"))
-        self.assertEqual("abc", cfg.op1)
-        self.assertEqual("xyz", cfg.op2)
-
-    def test_precedence_of_sources(self):
-        input1_config_file = os.path.realpath(os.path.join(self.tmpdir, "input1.yaml"))
-        input2_config_file = os.path.realpath(os.path.join(self.tmpdir, "input2.yaml"))
-        default_config_file = os.path.realpath(os.path.join(self.tmpdir, "default.yaml"))
-
-        parser = ArgumentParser(prog="app", default_env=True, default_config_files=[default_config_file])
-        parser.add_argument("--op1", default="from parser default")
-        parser.add_argument("--op2")
-        parser.add_argument("--cfg", action=ActionConfigFile)
-
-        with open(input1_config_file, "w") as output_file:
-            output_file.write("op1: from input config file")
-        with open(input2_config_file, "w") as output_file:
-            output_file.write("op2: unused")
-
-        ## check parse_env precedence ##
-        self.assertEqual("from parser default", parser.parse_env().op1)
-        with open(default_config_file, "w") as output_file:
-            output_file.write("op1: from default config file")
-        self.assertEqual("from default config file", parser.parse_env().op1)
-        env = {"APP_CFG": '{"op1": "from env config"}'}
-        self.assertEqual("from env config", parser.parse_env(env).op1)
-        env["APP_OP1"] = "from env var"
-        self.assertEqual("from env var", parser.parse_env(env).op1)
-
-        ## check parse_path precedence ##
-        os.remove(default_config_file)
-        for key in [k for k in ["APP_CFG", "APP_OP1"] if k in os.environ]:
-            del os.environ[key]
-        self.assertEqual("from parser default", parser.parse_path(input2_config_file).op1)
-        with open(default_config_file, "w") as output_file:
-            output_file.write("op1: from default config file")
-        self.assertEqual("from default config file", parser.parse_path(input2_config_file).op1)
-        os.environ["APP_CFG"] = input1_config_file
-        self.assertEqual("from input config file", parser.parse_path(input2_config_file).op1)
-        os.environ["APP_OP1"] = "from env var"
-        self.assertEqual("from env var", parser.parse_path(input2_config_file).op1)
-        os.environ["APP_CFG"] = input2_config_file
-        self.assertEqual("from input config file", parser.parse_path(input1_config_file).op1)
-
-        ## check parse_args precedence ##
-        os.remove(default_config_file)
-        for key in ["APP_CFG", "APP_OP1"]:
-            del os.environ[key]
-        self.assertEqual("from parser default", parser.parse_args([]).op1)
-        with open(default_config_file, "w") as output_file:
-            output_file.write("op1: from default config file")
-        self.assertEqual("from default config file", parser.parse_args([]).op1)
-        os.environ["APP_CFG"] = input1_config_file
-        self.assertEqual("from input config file", parser.parse_args([]).op1)
-        os.environ["APP_OP1"] = "from env var"
-        self.assertEqual("from env var", parser.parse_args([]).op1)
-        os.environ["APP_CFG"] = input2_config_file
-        self.assertEqual("from arg", parser.parse_args(["--op1", "from arg"]).op1)
-        self.assertEqual(
-            "from arg",
-            parser.parse_args(["--cfg", input1_config_file, "--op1", "from arg"]).op1,
-        )
-        self.assertEqual(
-            "from input config file",
-            parser.parse_args(["--op1", "from arg", "--cfg", input1_config_file]).op1,
-        )
-
-        cfg = parser.parse_args(["--cfg", input1_config_file])
-        cfg_list = parser.get_config_files(cfg)
-        self.assertEqual(default_config_file, str(cfg_list[0]))
-        self.assertEqual(input2_config_file, str(cfg_list[1]))  # From os.environ['APP_CFG']
-        self.assertEqual(input1_config_file, str(cfg_list[2]))
-
-        for key in ["APP_CFG", "APP_OP1"]:
-            del os.environ[key]
-
-    def test_parse_unexpected_kwargs(self):
-        with self.assertRaises(ValueError):
-            ArgumentParser().parse_args([], unexpected=True)
-
-
-class ArgumentFeaturesTests(unittest.TestCase):
-    def test_positionals(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("pos1")
-        parser.add_argument("pos2", nargs="?")
-        self.assertRaises(ArgumentError, lambda: parser.parse_args([]))
-        self.assertIsNone(parser.parse_args(["v1"]).pos2)
-        self.assertEqual("v1", parser.parse_args(["v1"]).pos1)
-        self.assertEqual("v2", parser.parse_args(["v1", "v2"]).pos2)
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("pos1")
-        parser.add_argument("pos2", nargs="+")
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["v1"]).pos2)
-        self.assertEqual(["v2", "v3"], parser.parse_args(["v1", "v2", "v3"]).pos2)
-
-        parser.add_argument("--opt")
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        cfg = parser.parse_args(["--cfg", '{"pos2": ["v2", "v3"], "opt": "v4"}', "v1"])
-        self.assertEqual("v1", cfg.pos1)
-        self.assertEqual(["v2", "v3"], cfg.pos2)
-        self.assertEqual("v4", cfg.opt)
-
-    def test_required(self):
-        parser = ArgumentParser(env_prefix="APP", exit_on_error=False)
-        group = parser.add_argument_group("Group 1")
-        group.add_argument("--req1", required=True)
-        parser.add_argument("--lev1.req2", required=True)
-        cfg = parser.parse_args(["--req1", "val1", "--lev1.req2", "val2"])
-        self.assertEqual("val1", cfg.req1)
-        self.assertEqual("val2", cfg.lev1.req2)
-        cfg = parser.parse_string('{"req1":"val3","lev1":{"req2":"val4"}}')
-        self.assertEqual("val3", cfg.req1)
-        self.assertEqual("val4", cfg.lev1.req2)
-        cfg = parser.parse_env({"APP_REQ1": "val5", "APP_LEV1__REQ2": "val6"})
-        self.assertEqual("val5", cfg.req1)
-        self.assertEqual("val6", cfg.lev1.req2)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--req1", "val1"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_string('{"lev1":{"req2":"val4"}}'))
-        self.assertRaises(ArgumentError, lambda: parser.parse_env({}))
-
-        out = StringIO()
-        parser.print_help(out)
-        self.assertIn("[-h] --req1 REQ1 --lev1.req2 REQ2", out.getvalue())
-
-        parser = ArgumentParser(default_env=True)
-        parser.add_argument("--req1", required=True)
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        cfg = parser.parse_args(["--cfg", '{"req1": "val1"}'])
-        self.assertEqual("val1", cfg.req1)
-
-    def test_choices(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--ch1", choices="ABC")
-        parser.add_argument("--ch2", choices=["v1", "v2"])
-        cfg = parser.parse_args(["--ch1", "C", "--ch2", "v1"])
-        self.assertEqual(cfg.as_dict(), {"ch1": "C", "ch2": "v1"})
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--ch1", "D"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--ch2", "v0"]))
-
-    def test_nargs(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--val", nargs="+", type=int)
-        self.assertEqual([9], parser.parse_args(["--val", "9"]).val)
-        self.assertEqual([3, 6, 2], parser.parse_args(["--val", "3", "6", "2"]).val)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--val"]))
-        parser = ArgumentParser()
-        parser.add_argument("--val", nargs="*", type=float)
-        self.assertEqual([5.2, 1.9], parser.parse_args(["--val", "5.2", "1.9"]).val)
-        self.assertEqual([], parser.parse_args(["--val"]).val)
-        parser = ArgumentParser()
-        parser.add_argument("--val", nargs="?", type=str)
-        self.assertEqual("~", parser.parse_args(["--val", "~"]).val)
-        self.assertEqual(None, parser.parse_args(["--val"]).val)
-        parser = ArgumentParser()
-        parser.add_argument("--val", nargs=2)
-        self.assertEqual(["q", "p"], parser.parse_args(["--val", "q", "p"]).val)
-        parser = ArgumentParser()
-        parser.add_argument("--val", nargs=1)
-        self.assertEqual(["-"], parser.parse_args(["--val", "-"]).val)
-
-
-class AdvancedFeaturesTests(unittest.TestCase):
-    def test_subcommands(self):
-        parser_a = ArgumentParser(exit_on_error=False)
-        parser_a.add_argument("ap1")
-        parser_a.add_argument("--ao1", default="ao1_def")
-
-        parser = ArgumentParser(prog="app", exit_on_error=False)
-        parser.add_argument("--o1", default="o1_def")
-        subcommands = parser.add_subcommands()
-        subcommands.add_subcommand("a", parser_a)
-        subcommands.add_subcommand("b", example_parser(), aliases=["B"], help="b help")
-
-        self.assertRaises(NotImplementedError, lambda: parser.add_subparsers())
-        self.assertRaises(NotImplementedError, lambda: subcommands.add_parser(""))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["c"]))
-
-        cfg = parser.get_defaults().as_dict()
-        self.assertEqual(cfg, {"o1": "o1_def", "subcommand": None})
-
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        cfg = parser.parse_args(['--cfg={"o1": "o1_arg"}', "a", "ap1_arg"]).as_dict()
-        self.assertEqual(
-            cfg,
-            {
-                "a": {"ao1": "ao1_def", "ap1": "ap1_arg"},
-                "cfg": [None],
-                "o1": "o1_arg",
-                "subcommand": "a",
-            },
-        )
-
-        cfg = parser.parse_args(["--o1", "o1_arg", "a", "ap1_arg"])
-        self.assertEqual(cfg["o1"], "o1_arg")
-        self.assertEqual(cfg["subcommand"], "a")
-        self.assertEqual(cfg["a"].as_dict(), {"ap1": "ap1_arg", "ao1": "ao1_def"})
-        cfg = parser.parse_args(["a", "ap1_arg", "--ao1", "ao1_arg"])
-        self.assertEqual(cfg["a"].as_dict(), {"ap1": "ap1_arg", "ao1": "ao1_arg"})
-        self.assertRaises(KeyError, lambda: cfg["b"])
-
-        cfg = parser.parse_args(["b", "--lev1.lev2.opt2", "opt2_arg"]).as_dict()
-        cfg_def = example_parser().get_defaults().as_dict()
-        cfg_def["lev1"]["lev2"]["opt2"] = "opt2_arg"
-        self.assertEqual(cfg["o1"], "o1_def")
-        self.assertEqual(cfg["subcommand"], "b")
-        self.assertEqual(cfg["b"], cfg_def)
-        self.assertRaises(KeyError, lambda: cfg["a"])
-
-        parser.parse_args(["B"])
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["A"]))
-
-        self.assertRaises(ArgumentError, lambda: parser.parse_args())
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["a"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["b", "--unk"]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["c"]))
-
-        cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}}').as_dict()
-        self.assertEqual(cfg["subcommand"], "a")
-        self.assertEqual(cfg["a"], {"ap1": "ap1_cfg", "ao1": "ao1_def"})
-        self.assertRaises(
-            ArgumentError,
-            lambda: parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}'),
-        )
-
-        with warnings.catch_warnings(record=True) as w:
-            cfg = parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
-            self.assertEqual(cfg.subcommand, "a")
-            self.assertFalse(hasattr(cfg, "b"))
-            self.assertEqual(len(w), 1)
-            self.assertIn('Subcommand "a" will be used', str(w[0].message))
-
-        cfg = parser.parse_string('{"subcommand": "b", "a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
-        self.assertFalse(hasattr(cfg, "a"))
-
-        cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', "a"])
-        cfg = cfg.as_dict()
-        self.assertEqual(
-            cfg,
-            {
-                "o1": "o1_def",
-                "subcommand": "a",
-                "cfg": [None],
-                "a": {"ap1": "ap1_cfg", "ao1": "ao1_def"},
-            },
-        )
-        cfg = parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', "b"])
-        self.assertFalse(hasattr(cfg, "a"))
-        self.assertTrue(hasattr(cfg, "b"))
-
-        os.environ["APP_O1"] = "o1_env"
-        os.environ["APP_A__AP1"] = "ap1_env"
-        os.environ["APP_A__AO1"] = "ao1_env"
-        os.environ["APP_B__LEV1__LEV2__OPT2"] = "opt2_env"
-
-        cfg = parser.parse_args(["a"], env=True).as_dict()
-        self.assertEqual(cfg["o1"], "o1_env")
-        self.assertEqual(cfg["subcommand"], "a")
-        self.assertEqual(cfg["a"], {"ap1": "ap1_env", "ao1": "ao1_env"})
-        parser.default_env = True
-        cfg = parser.parse_args(["b"]).as_dict()
-        cfg_def["lev1"]["lev2"]["opt2"] = "opt2_env"
-        self.assertEqual(cfg["subcommand"], "b")
-        self.assertEqual(cfg["b"], cfg_def)
-
-        os.environ["APP_SUBCOMMAND"] = "a"
-
-        cfg = parser.parse_env().as_dict()
-        self.assertEqual(cfg["o1"], "o1_env")
-        self.assertEqual(cfg["subcommand"], "a")
-        self.assertEqual(cfg["a"], {"ap1": "ap1_env", "ao1": "ao1_env"})
-
-        for key in [
-            "APP_O1",
-            "APP_A__AP1",
-            "APP_A__AO1",
-            "APP_B__LEV1__LEV2__OPT2",
-            "APP_SUBCOMMAND",
-        ]:
-            del os.environ[key]
-
-    def test_subsubcommands(self):
-        parser_s1_a = ArgumentParser(exit_on_error=False)
-        parser_s1_a.add_argument("--os1a", default="os1a_def")
-
-        parser_s2_b = ArgumentParser(exit_on_error=False)
-        parser_s2_b.add_argument("--os2b", default="os2b_def")
-
-        parser = ArgumentParser(prog="app", exit_on_error=False, default_meta=False)
-        subcommands1 = parser.add_subcommands()
-        subcommands1.add_subcommand("a", parser_s1_a)
-
-        subcommands2 = parser_s1_a.add_subcommands()
-        subcommands2.add_subcommand("b", parser_s2_b)
-
-        self.assertRaises(ArgumentError, lambda: parser.parse_args([]))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["a"]))
-
-        cfg = parser.parse_args(["a", "b"]).as_dict()
-        self.assertEqual(
-            cfg,
-            {
-                "subcommand": "a",
-                "a": {"subcommand": "b", "os1a": "os1a_def", "b": {"os2b": "os2b_def"}},
-            },
-        )
-        cfg = parser.parse_args(["a", "--os1a=os1a_arg", "b"]).as_dict()
-        self.assertEqual(
-            cfg,
-            {
-                "subcommand": "a",
-                "a": {"subcommand": "b", "os1a": "os1a_arg", "b": {"os2b": "os2b_def"}},
-            },
-        )
-        cfg = parser.parse_args(["a", "b", "--os2b=os2b_arg"]).as_dict()
-        self.assertEqual(
-            cfg,
-            {
-                "subcommand": "a",
-                "a": {"subcommand": "b", "os1a": "os1a_def", "b": {"os2b": "os2b_arg"}},
-            },
-        )
-
-    def test_subsubcommands_bad_order(self):
-        parser_s1_a = ArgumentParser()
-        parser_s2_b = ArgumentParser()
-        parser = ArgumentParser()
-
-        subcommands2 = parser_s1_a.add_subcommands()
-        subcommands2.add_subcommand("b", parser_s2_b)
-
-        subcommands1 = parser.add_subcommands()
-        self.assertRaises(ValueError, lambda: subcommands1.add_subcommand("a", parser_s1_a))
-
-    def test_optional_subcommand(self):
-        parser = ArgumentParser(exit_on_error=False)
-        subcommands = parser.add_subcommands(required=False)
-        subparser = ArgumentParser()
-        subcommands.add_subcommand("foo", subparser)
-        cfg = parser.parse_args([])
-        self.assertEqual(cfg, Namespace(subcommand=None))
-
-    def test_subcommand_without_options(self):
-        parser = ArgumentParser()
-        subcommands = parser.add_subcommands()
-        subparser = ArgumentParser()
-        subcommands.add_subcommand("foo", subparser)
-        cfg = parser.parse_args(["foo"])
-        self.assertEqual(cfg.subcommand, "foo")
-
-    def test_subcommand_print_config_default_env_issue_126(self):
-        subparser = ArgumentParser()
-        subparser.add_argument("--config", action=ActionConfigFile)
-        subparser.add_argument("--o", type=int, default=1)
-
-        parser = ArgumentParser(exit_on_error=False, default_env=True)
-        subcommands = parser.add_subcommands()
-        subcommands.add_subcommand("a", subparser)
-
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(["a", "--print_config"])
-        self.assertEqual(yaml.safe_load(out.getvalue()), {"o": 1})
-
-    @unittest.skipIf(
-        not (url_support and responses_available),
-        "requests and responses packages are required",
-    )
-    @responses_activate
-    def test_urls(self):
-        set_config_read_mode(urls_enabled=True)
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        parser.add_argument("--parser", action=ActionParser(parser=example_parser()))
-        if jsonschema_support:
-            schema = {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number"},
-                    "b": {"type": "number"},
-                },
-            }
-            parser.add_argument(
-                "--schema",
-                default={"a": 1, "b": 2},
-                action=ActionJsonSchema(schema=schema),
-            )
-        if jsonnet_support:
-            parser.add_argument(
-                "--jsonnet",
-                default={"c": 3, "d": 4},
-                action=ActionJsonnet(ext_vars=None),
-            )
-
-        cfg1 = parser.get_defaults()
-
-        base_url = "http://example.com/"
-        main_body = "parser: " + base_url + "parser.yaml\n"
-        if jsonschema_support:
-            main_body += "schema: " + base_url + "schema.yaml\n"
-        if jsonnet_support:
-            main_body += "jsonnet: " + base_url + "jsonnet.yaml\n"
-        parser_body = example_parser().dump(cfg1["parser"])
-        schema_body = jsonnet_body = ""
-        if jsonschema_support:
-            schema_body = json.dumps(cfg1["schema"]) + "\n"
-        if jsonnet_support:
-            jsonnet_body = json.dumps(cfg1["jsonnet"]) + "\n"
-
-        urls = {
-            "main.yaml": main_body,
-            "parser.yaml": parser_body,
-            "schema.yaml": schema_body,
-            "jsonnet.yaml": jsonnet_body,
-        }
-
-        import responses
-
-        for name, body in urls.items():
-            responses.add(responses.GET, base_url + name, body=body, status=200)
-            responses.add(responses.HEAD, base_url + name, status=200)
-
-        cfg2 = parser.parse_args(["--cfg", base_url + "main.yaml"], with_meta=False)
-        self.assertEqual(cfg1["parser"], cfg2["parser"])
-        if jsonschema_support:
-            self.assertEqual(cfg1["schema"], cfg2["schema"])
-        if jsonnet_support:
-            self.assertEqual(cfg1["jsonnet"], cfg2["jsonnet"])
-
-        set_config_read_mode(urls_enabled=False)
-
-
-class OutputTests(TempDirTestCase):
-    def test_dump(self):
-        parser = example_parser()
-        cfg1 = parser.get_defaults()
-        cfg2 = parser.parse_string(parser.dump(cfg1))
-        self.assertEqual(cfg1, cfg2)
-        delattr(cfg2, "lev1")
-        parser.dump(cfg2)
-
-    def test_dump_restricted_string_type(self):
-        parser = ArgumentParser()
-        parser.add_argument("--str", type=NotEmptyStr)
-        cfg = parser.parse_string("str: not-empty")
-        self.assertEqual(parser.dump(cfg), "str: not-empty\n")
-
-    def test_dump_restricted_int_type(self):
-        parser = ArgumentParser()
-        parser.add_argument("--int", type=PositiveInt)
-        cfg = parser.parse_string("int: 1")
-        self.assertEqual(parser.dump(cfg), "int: 1\n")
-
-    def test_dump_restricted_float_type(self):
-        parser = ArgumentParser()
-        parser.add_argument("--float", type=PositiveFloat)
-        cfg = parser.parse_string("float: 1.1")
-        self.assertEqual(parser.dump(cfg), "float: 1.1\n")
-
-    def test_dump_path_type(self):
-        parser = ArgumentParser()
-        parser.add_argument("--path", type=Path_fc)
-        cfg = parser.parse_string("path: path")
-        self.assertEqual(parser.dump(cfg), "path: path\n")
-
-        parser = ArgumentParser()
-        parser.add_argument("--paths", nargs="+", type=Path_fc)
-        cfg = parser.parse_args(["--paths", "path1", "path2"])
-        self.assertEqual(parser.dump(cfg), "paths:\n- path1\n- path2\n")
-
-    @unittest.skipIf(not is_cpython, "requires __setattr__ insertion order")
-    def test_dump_formats(self):
-        parser = ArgumentParser()
-        parser.add_argument("--op1", default=123)
-        parser.add_argument("--op2", default="abc")
-        cfg = parser.get_defaults()
-        self.assertEqual(parser.dump(cfg), "op1: 123\nop2: abc\n")
-        self.assertEqual(parser.dump(cfg, format="yaml"), parser.dump(cfg))
-        self.assertEqual(parser.dump(cfg, format="json"), '{"op1":123,"op2":"abc"}')
-        self.assertEqual(
-            parser.dump(cfg, format="json_indented"),
-            '{\n  "op1": 123,\n  "op2": "abc"\n}\n',
-        )
-        self.assertRaises(ValueError, lambda: parser.dump(cfg, format="invalid"))
-
-    def test_dump_skip_default(self):
-        parser = ArgumentParser()
-        parser.add_argument("--op1", default=123)
-        parser.add_argument("--op2", default="abc")
-        self.assertEqual(parser.dump(parser.get_defaults(), skip_default=True), "{}\n")
-        self.assertEqual(parser.dump(Namespace(op1=123, op2="xyz"), skip_default=True), "op2: xyz\n")
-
-    def test_dump_skip_default_nested(self):
-        parser = ArgumentParser()
-        parser.add_argument("--g1.op1", type=int, default=123)
-        parser.add_argument("--g1.op2", type=str, default="abc")
-        parser.add_argument("--g2.op1", type=int, default=987)
-        parser.add_argument("--g2.op2", type=str, default="xyz")
-        self.assertEqual(parser.dump(parser.get_defaults(), skip_default=True), "{}\n")
-        self.assertEqual(
-            parser.dump(parser.parse_args(["--g1.op1=0"]), skip_default=True),
-            "g1:\n  op1: 0\n",
-        )
-        self.assertEqual(
-            parser.dump(parser.parse_args(["--g2.op2=pqr"]), skip_default=True),
-            "g2:\n  op2: pqr\n",
-        )
-
-    def test_dump_order(self):
-        args = {}
-        for num in range(50):
-            args[num] = "".join(chr(randint(97, 122)) for n in range(8))
-
-        parser = ArgumentParser()
-        for num in range(len(args)):
-            parser.add_argument("--" + args[num], default=num)
-
-        cfg = parser.get_defaults()
-        dump = parser.dump(cfg)
-        self.assertEqual(dump, "\n".join(v + ": " + str(n) for n, v in args.items()) + "\n")
-
-        rand = list(range(len(args)))
-        shuffle(rand)
-        yaml = "\n".join(args[n] + ": " + str(n) for n in rand) + "\n"
-        cfg = parser.parse_string(yaml)
-        dump = parser.dump(cfg)
-        self.assertEqual(dump, "\n".join(v + ": " + str(n) for n, v in args.items()) + "\n")
-
-    def test_save(self):
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--parser", action=ActionParser(parser=example_parser()))
-        if jsonschema_support:
-            schema = {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "number"},
-                    "b": {"type": "number"},
-                },
-            }
-            parser.add_argument(
-                "--schema",
-                default={"a": 1, "b": 2},
-                action=ActionJsonSchema(schema=schema),
-            )
-        if jsonnet_support:
-            parser.add_argument(
-                "--jsonnet",
-                default={"c": 3, "d": 4},
-                action=ActionJsonnet(ext_vars=None),
-            )
-
-        indir = os.path.join(self.tmpdir, "input")
-        outdir = os.path.join(self.tmpdir, "output")
-        os.mkdir(outdir)
-        os.mkdir(indir)
-        main_file_in = os.path.join(indir, "main.yaml")
-        parser_file_in = os.path.join(indir, "parser.yaml")
-        schema_file_in = os.path.join(indir, "schema.json")
-        jsonnet_file_in = os.path.join(indir, "jsonnet.json")
-        main_file_out = os.path.join(outdir, "main.yaml")
-        parser_file_out = os.path.join(outdir, "parser.yaml")
-        schema_file_out = os.path.join(outdir, "schema.json")
-        jsonnet_file_out = os.path.join(outdir, "jsonnet.json")
-        cfg1 = parser.get_defaults()
-
-        with open(main_file_in, "w") as output_file:
-            output_file.write("parser: parser.yaml\n")
-            if jsonschema_support:
-                output_file.write("schema: schema.json\n")
-            if jsonnet_support:
-                output_file.write("jsonnet: jsonnet.json\n")
-        with open(parser_file_in, "w") as output_file:
-            output_file.write(example_parser().dump(cfg1.parser))
-        if jsonschema_support:
-            with open(schema_file_in, "w") as output_file:
-                output_file.write(json.dumps(cfg1.schema) + "\n")
-        if jsonnet_support:
-            with open(jsonnet_file_in, "w") as output_file:
-                output_file.write(json.dumps(cfg1.jsonnet) + "\n")
-
-        cfg2 = parser.parse_path(main_file_in, with_meta=True)
-        self.assertEqual(cfg1.as_dict(), strip_meta(cfg2).as_dict())
-        self.assertEqual(str(cfg2.parser["__path__"]), "parser.yaml")
-        if jsonschema_support:
-            self.assertEqual(str(cfg2.schema["__path__"]), "schema.json")
-        if jsonnet_support:
-            self.assertEqual(str(cfg2.jsonnet["__path__"]), "jsonnet.json")
-
-        parser.save(cfg2, main_file_out)
-        self.assertTrue(os.path.isfile(parser_file_out))
-        if jsonschema_support:
-            self.assertTrue(os.path.isfile(schema_file_out))
-        if jsonnet_support:
-            self.assertTrue(os.path.isfile(jsonnet_file_out))
-
-        for file in [main_file_out, parser_file_out, schema_file_out, jsonnet_file_out]:
-            if os.path.isfile(file):
-                os.remove(file)
-        parser.save(cfg2, main_file_out)
-        self.assertTrue(os.path.isfile(parser_file_out))
-        if jsonschema_support:
-            self.assertTrue(os.path.isfile(schema_file_out))
-        if jsonnet_support:
-            self.assertTrue(os.path.isfile(jsonnet_file_out))
-
-        cfg3 = parser.parse_path(main_file_out, with_meta=False)
-        self.assertEqual(cfg1.as_dict(), cfg3.as_dict())
-
-        parser.save(cfg2, main_file_out, multifile=False, overwrite=True)
-        cfg4 = parser.parse_path(main_file_out, with_meta=False)
-        self.assertEqual(cfg1, cfg4)
-
-        if jsonschema_support:
-            cfg2.schema["__path__"] = Path(os.path.join(indir, "schema.yaml"), mode="fc")
-            parser.save(cfg2, main_file_out, overwrite=True)
-            self.assertTrue(os.path.isfile(os.path.join(outdir, "schema.yaml")))
-
-    def test_save_path_content(self):
-        parser = ArgumentParser()
-        parser.add_argument("--the.path", type=Path_fr)
-
-        os.mkdir("pathdir")
-        os.mkdir("outdir")
-        file_txt = os.path.join("pathdir", "file.txt")
-        out_yaml = os.path.join("outdir", "saved.yaml")
-        out_file = os.path.join("outdir", "file.txt")
-
-        with open(file_txt, "w") as output_file:
-            output_file.write("file content")
-
-        cfg = parser.parse_args(["--the.path", file_txt])
-        parser.save_path_content.add("the.path")
-        parser.save(cfg, out_yaml)
-
-        self.assertTrue(os.path.isfile(out_yaml))
-        self.assertTrue(os.path.isfile(out_file))
-        with open(out_yaml) as input_file:
-            self.assertEqual(input_file.read(), "the:\n  path: file.txt\n")
-        with open(out_file) as input_file:
-            self.assertEqual(input_file.read(), "file content")
-
-    @unittest.skipIf(not fsspec_support, "fsspec package is required")
-    def test_save_fsspec(self):
-        parser = example_parser()
-        cfg = parser.get_defaults()
-        parser.save(cfg, "memory://config.yaml", multifile=False)
-        path = Path("memory://config.yaml", mode="sr")
-        self.assertEqual(cfg, parser.parse_string(path.get_content()))
-        self.assertRaises(
-            NotImplementedError,
-            lambda: parser.save(cfg, "memory://config.yaml", multifile=True),
-        )
-
-    def test_save_failures(self):
-        parser = ArgumentParser()
-        with open("existing.yaml", "w") as output_file:
-            output_file.write("should not be overritten\n")
-        cfg = parser.get_defaults()
-        self.assertRaises(ValueError, lambda: parser.save(cfg, "existing.yaml"))
-        self.assertRaises(
-            ValueError,
-            lambda: parser.save(cfg, "invalid_format.yaml", format="invalid"),
-        )
-
-        parser.add_argument("--parser", action=ActionParser(parser=example_parser()))
-        cfg = parser.get_defaults()
-        with open("parser.yaml", "w") as output_file:
-            output_file.write(example_parser().dump(cfg.parser))
-        cfg.parser.__path__ = Path("parser.yaml")
-        self.assertRaises(ValueError, lambda: parser.save(cfg, "main.yaml"))
-
-    def test_print_config(self):
-        parser = ArgumentParser(exit_on_error=False, description="cli tool")
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        parser.add_argument("--v0", help=SUPPRESS, default="0")
-        parser.add_argument("--v1", help="Option v1.", default=1)
-        parser.add_argument("--g1.v2", help="Option v2.", default="2")
-        parser2 = ArgumentParser()
-        parser2.add_argument("--v3")
-        parser.add_argument("--g2", action=ActionParser(parser=parser2))
-
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(["--print_config"])
-
-        outval = yaml.safe_load(out.getvalue())
-        self.assertEqual(outval, {"g1": {"v2": "2"}, "g2": {"v3": None}, "v1": 1})
-
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(["--print_config=skip_null"])
-        outval = yaml.safe_load(out.getvalue())
-        self.assertEqual(outval, {"g1": {"v2": "2"}, "g2": {}, "v1": 1})
-
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--print_config=bad"]))
-
-        if docstring_parser_support and ruyaml_support:
-            out = StringIO()
-            with redirect_stdout(out), self.assertRaises(SystemExit):
-                parser.parse_args(["--print_config=comments"])
-            self.assertIn("# cli tool", out.getvalue())
-            self.assertIn("# Option v1. (default: 1)", out.getvalue())
-            self.assertIn("# Option v2. (default: 2)", out.getvalue())
-
-
-class ConfigFilesTests(TempDirTestCase):
-    def test_default_config_files(self):
-        default_config_file = os.path.realpath(os.path.join(self.tmpdir, "example.yaml"))
-        with open(default_config_file, "w") as output_file:
-            output_file.write("op1: from default config file\n")
-
-        parser = ArgumentParser(prog="app", default_config_files=[default_config_file])
-        parser.add_argument("--op1", default="from parser default")
-        parser.add_argument("--op2", default="from parser default")
-
-        cfg = parser.get_defaults()
-        self.assertEqual("from default config file", cfg.op1)
-        self.assertEqual("from parser default", cfg.op2)
-
-        with self.assertRaises(ValueError):
-            parser.default_config_files = False
-
-    def test_get_default_with_default_config_file(self):
-        default_config_file = os.path.realpath(os.path.join(self.tmpdir, "defaults.yaml"))
-        parser = ArgumentParser(default_config_files=[default_config_file], exit_on_error=False)
-        parser.add_argument("--op1", default="from default")
-
-        with open(default_config_file, "w") as output_file:
-            output_file.write("op1: from yaml\n")
-
-        self.assertEqual(parser.get_default("op1"), "from yaml")
-
-        parser.add_subclass_arguments(Calendar, "cal")
-        self.assertRaises(KeyError, lambda: parser.get_default("cal"))
-
-        with open(default_config_file, "w") as output_file:
-            output_file.write("op2: v2\n")
-        self.assertRaises(ArgumentError, lambda: parser.get_default("op1"))
-
-        out = StringIO()
-        parser.print_help(out)
-        outval = " ".join(out.getvalue().split())
-        self.assertIn("tried getting defaults considering default_config_files but failed", outval)
-
-        if is_posix:
-            os.chmod(default_config_file, 0)
-            self.assertEqual(parser.get_default("op1"), "from default")
-
-    def test_get_default_with_multiple_default_config_files(self):
-        default_configs_pattern = os.path.realpath(os.path.join(self.tmpdir, "defaults_*.yaml"))
-        parser = ArgumentParser(default_config_files=[default_configs_pattern], exit_on_error=False)
-        parser.add_argument("--op1", default="from default")
-        parser.add_argument("--op2", default="from default")
-
-        config_1 = os.path.realpath(os.path.join(self.tmpdir, "defaults_1.yaml"))
-        with open(config_1, "w") as output_file:
-            output_file.write("op1: from yaml 1\nop2: from yaml 1\n")
-
-        cfg = parser.get_defaults()
-        self.assertEqual(cfg.op1, "from yaml 1")
-        self.assertEqual(cfg.op2, "from yaml 1")
-        self.assertEqual(str(cfg.__default_config__), config_1)
-
-        config_2 = os.path.realpath(os.path.join(self.tmpdir, "defaults_2.yaml"))
-        with open(config_2, "w") as output_file:
-            output_file.write("op1: from yaml 2\n")
-
-        cfg = parser.get_defaults()
-        self.assertEqual(cfg.op1, "from yaml 2")
-        self.assertEqual(cfg.op2, "from yaml 1")
-        self.assertIsInstance(cfg.__default_config__, list)
-        self.assertEqual([str(v) for v in cfg.__default_config__], [config_1, config_2])
-
-        config_0 = os.path.realpath(os.path.join(self.tmpdir, "defaults_0.yaml"))
-        with open(config_0, "w") as output_file:
-            output_file.write("op2: from yaml 0\n")
-
-        cfg = parser.get_defaults()
-        self.assertEqual(cfg.op1, "from yaml 2")
-        self.assertEqual(cfg.op2, "from yaml 1")
-        self.assertIsInstance(cfg.__default_config__, list)
-        self.assertEqual([str(v) for v in cfg.__default_config__], [config_0, config_1, config_2])
-
-        out = StringIO()
-        parser.print_help(out)
-        self.assertIn("defaults_0.yaml", out.getvalue())
-        self.assertIn("defaults_1.yaml", out.getvalue())
-        self.assertIn("defaults_2.yaml", out.getvalue())
-
-    def test_required_arg_in_default_config_and_add_subcommands(self):
-        pathlib.Path("config.yaml").write_text("output: test\nprepare:\n  media: test\n")
-        parser = ArgumentParser(default_config_files=["config.yaml"])
-        parser.add_argument("--output", required=True)
-        subcommands = parser.add_subcommands()
-        prepare = ArgumentParser()
-        prepare.add_argument("--media", required=True)
-        subcommands.add_subcommand("prepare", prepare)
-        cfg = parser.parse_args([])
-        self.assertEqual(str(cfg.__default_config__), "config.yaml")
-        self.assertEqual(
-            strip_meta(cfg),
-            Namespace(output="test", prepare=Namespace(media="test"), subcommand="prepare"),
-        )
-
-    def test_ActionConfigFile(self):
-        os.mkdir(os.path.join(self.tmpdir, "subdir"))
-        rel_yaml_file = os.path.join("subdir", "config.yaml")
-        abs_yaml_file = os.path.realpath(os.path.join(self.tmpdir, rel_yaml_file))
-        with open(abs_yaml_file, "w") as output_file:
-            output_file.write("val: yaml\n")
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        parser.add_argument("--val")
-
-        cfg = parser.parse_args(["--cfg", abs_yaml_file, "--cfg", rel_yaml_file, "--cfg", "val: arg"])
-        self.assertEqual(3, len(cfg.cfg))
-        self.assertEqual("arg", cfg.val)
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[0]()))
-        self.assertEqual(abs_yaml_file, os.path.realpath(str(cfg.cfg[0])))
-        self.assertEqual(abs_yaml_file, os.path.realpath(cfg.cfg[1]()))
-        self.assertEqual(rel_yaml_file, str(cfg.cfg[1]))
-        self.assertEqual(None, cfg.cfg[2])
-
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--cfg", '{"k":"v"}']))
-
-    def test_ActionConfigFile_failures(self):
-        parser = ArgumentParser(exit_on_error=False)
-        self.assertRaises(
-            ValueError,
-            lambda: parser.add_argument("--cfg", default="config.yaml", action=ActionConfigFile),
-        )
-        self.assertRaises(
-            ValueError,
-            lambda: parser.add_argument("--nested.cfg", action=ActionConfigFile),
-        )
-
-        parser.add_argument("--cfg", action=ActionConfigFile)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--cfg", '"""']))
-        self.assertRaises(ArgumentError, lambda: parser.parse_args(["--cfg=not-exist"]))
-
-
-class OtherTests(unittest.TestCase):
-    def test_set_get_defaults(self):
-        parser = ArgumentParser(default_meta=False)
-        parser.add_argument("--v1", default="1")
-        parser.add_argument("--g1.v2", default="2")
-        nested_parser = ArgumentParser()
-        nested_parser.add_argument("--g2.v3", default="3")
-        parser.add_argument("--n", action=ActionParser(parser=nested_parser))
-        parser.set_defaults({"g1.v2": "b", "n.g2.v3": "c"}, v1="a")
-        cfg = parser.get_defaults()
-        self.assertEqual(cfg.as_dict(), {"v1": "a", "g1": {"v2": "b"}, "n": {"g2": {"v3": "c"}}})
-        self.assertEqual(parser.get_default("v1"), cfg.v1)
-        self.assertEqual(parser.get_default("g1.v2"), cfg.g1.v2)
-        self.assertEqual(parser.get_default("n.g2.v3"), cfg.n.g2.v3)
-
-        self.assertRaises(KeyError, lambda: parser.set_defaults(v4="d"))
-        self.assertRaises(KeyError, lambda: parser.get_default("v4"))
-
-        parser = ArgumentParser()
-        parser.add_argument("--v1")
-        parser.set_defaults(v1=1)
-        self.assertEqual(parser.get_default("v1"), 1)
-
-    def test_named_groups(self):
-        parser = example_parser()
-        self.assertEqual({"group1", "group2"}, set(parser.groups.keys()))
-        self.assertRaises(ValueError, lambda: parser.add_argument_group("Bad", name="group1"))
-
-    def test_strip_unknown(self):
-        base_parser = example_parser()
-        ext_parser = example_parser()
-        ext_parser.add_argument("--val", default="val_def")
-        ext_parser.add_argument("--lev1.lev2.opt3", default="opt3_def")
-        ext_parser.add_argument("--lev1.opt4", default="opt3_def")
-        ext_parser.add_argument("--nums.val3", type=float, default=1.5)
-        cfg = ext_parser.parse_args([])
-        cfg.__path__ = "some path"
-        cfg = base_parser.strip_unknown(cfg)
-        self.assertEqual(cfg.__path__, "some path")
-        base_parser.check_config(cfg, skip_none=False)
-
-    def test_merge_config(self):
-        parser = ArgumentParser()
-        for key in [1, 2, 3]:
-            parser.add_argument(f"--op{key}", type=Optional[int])
-        cfg_from = Namespace(op1=1, op2=None)
-        cfg_to = Namespace(op1=None, op2=2, op3=3)
-        cfg = parser.merge_config(cfg_from, cfg_to)
-        self.assertEqual(cfg, Namespace(op1=1, op2=None, op3=3))
-
-    def test_check_config_branch(self):
-        parser = example_parser()
-        cfg = parser.get_defaults()
-        parser.check_config(cfg.lev1, branch="lev1")
-
-    def test_exit_on_error(self):
-        err = StringIO()
-        with redirect_stderr(err):
-            parser = ArgumentParser(exit_on_error=True)
-            parser.add_argument("--val", type=int)
-            self.assertEqual(8, parser.parse_args(["--val", "8"]).val)
-            self.assertRaises(SystemExit, lambda: parser.parse_args(["--val", "eight"]))
-        self.assertIn('Parser key "val":', err.getvalue())
-
-    @unittest.mock.patch.dict(os.environ, {"JSONARGPARSE_DEBUG": ""})
-    def test_debug_environment_variable(self):
-        parser = ArgumentParser(logger={"level": "DEBUG"})
-        parser.add_argument("--int", type=int)
-        with self.assertLogs(logger=parser.logger, level="DEBUG") as log, self.assertRaises(ArgumentError):
-            parser.parse_args(["--int=invalid"])
-        self.assertTrue(any("Debug enabled" in o for o in log.output))
-
-    def test_version_print(self):
-        parser = ArgumentParser(prog="app", version="1.2.3")
-        out = StringIO()
-        with redirect_stdout(out), self.assertRaises(SystemExit):
-            parser.parse_args(["--version"])
-        self.assertEqual(out.getvalue(), "app 1.2.3\n")
-
-    def test_meta_key_failures(self):
-        parser = ArgumentParser()
-        for meta_key in meta_keys:
-            self.assertRaises(ValueError, lambda: parser.add_argument(meta_key))
-        self.assertEqual(parser.default_meta, True)
-        with self.assertRaises(ValueError):
-            parser.default_meta = "invalid"
-
-    def test_invalid_parser_mode(self):
-        self.assertRaises(ValueError, lambda: ArgumentParser(parser_mode="invalid"))
-
-    def test_parse_known_args(self):
-        parser = ArgumentParser()
-        self.assertRaises(NotImplementedError, lambda: parser.parse_known_args([]))
-
-    def test_parse_known_args_without_caller_module(self):
-        """
-        Test case for corner case when calling parse_known_args in IPython.
-        The caller module will not exist. Test this is handled.
-        See https://github.com/omni-us/jsonargparse/pull/179
-        """
-        with unittest.mock.patch("inspect.getmodule") as mock_getmodule:
-            mock_getmodule.return_value = None
-            parser = ArgumentParser()
-            self.assertRaises(NotImplementedError, lambda: parser.parse_known_args([]))
-
-    def test_parse_args_invalid_args(self):
-        parser = ArgumentParser(exit_on_error=False)
-        self.assertRaises(ArgumentError, lambda: parser.parse_args([{}]))
-
-    @unittest.skipIf(sys.version_info[:2] == (3, 6), "loggers not pickleable in python 3.6")
-    def test_pickle_parser(self):
-        parser1 = example_parser()
-        parser2 = pickle.loads(pickle.dumps(parser1))
-        self.assertEqual(parser1.get_defaults(), parser2.get_defaults())
-
-    def test_unrecognized_arguments(self):
-        parser = ArgumentParser()
-        err = StringIO()
-        with redirect_stderr(err):
-            self.assertRaises(SystemExit, lambda: parser.parse_args(["--unrecognized"]))
-        self.assertIn("Unrecognized arguments:", err.getvalue())
-
-    def test_capture_parser(self):
-        def parse_args(args=[]):
-            parser = ArgumentParser()
-            parser.add_argument("--int", type=int, default=1)
-            return parser.parse_args(args)
-
-        parser = capture_parser(parse_args, ["--int=2"])
-        self.assertIsInstance(parser, ArgumentParser)
-        self.assertEqual(parser.get_defaults(), Namespace(int=1))
-
-        with self.assertRaises(CaptureParserException):
-            capture_parser(lambda: None)
-
-    def test_set_defaults_config_argument_error(self):
-        parser = ArgumentParser()
-        parser.add_argument("--config", action=ActionConfigFile)
-        with self.assertRaises(ValueError):
-            parser.set_defaults(config="config.yaml")
-
-    def test_add_multiple_config_arguments_error(self):
-        parser = ArgumentParser()
-        parser.add_argument("--cfg1", action=ActionConfigFile)
-        with self.assertRaises(ValueError):
-            parser.add_argument("--cfg2", action=ActionConfigFile)
+    ctx.match("Expected a <class 'int'>")
+
+
+def test_check_config_branch(example_parser):
+    cfg = example_parser.get_defaults()
+    example_parser.check_config(cfg.nums, branch="nums")
+    cfg.nums.val1 = "invalid"
+    with pytest.raises(TypeError) as ctx:
+        example_parser.check_config(cfg.nums, branch="nums")
+    ctx.match("Expected a <class 'int'>")
+
+
+def test_merge_config(parser):
+    for key in [1, 2, 3]:
+        parser.add_argument(f"--op{key}", type=int)
+    cfg_from = Namespace(op1=1, op2=None)
+    cfg_to = Namespace(op1=None, op2=2, op3=3)
+    cfg = parser.merge_config(cfg_from, cfg_to)
+    assert cfg == Namespace(op1=1, op2=None, op3=3)
+
+
+def test_strip_unknown(parser, example_parser):
+    for key, default in example_parser.get_defaults().items():
+        parser.add_argument("--" + key, default=default)
+    parser.add_argument("--val", default="val_def")
+    parser.add_argument("--lev1.opt4", default="opt3_def")
+    parser.add_argument("--nums.val3", type=float, default=1.5)
+    cfg = parser.parse_args([])
+    cfg.__path__ = "some path"
+    stripped = example_parser.strip_unknown(cfg)
+    assert set(cfg.keys()) - set(stripped.keys()) == {"val", "nums.val3", "lev1.opt4"}
+    assert stripped.pop("__path__") == "some path"
+
+
+def test_exit_on_error():
+    parser = ArgumentParser(exit_on_error=True)
+    parser.add_argument("--val", type=int)
+    err = StringIO()
+    with redirect_stderr(err):
+        assert 8 == parser.parse_args(["--val", "8"]).val
+        pytest.raises(SystemExit, lambda: parser.parse_args(["--val", "eight"]))
+    assert 'Parser key "val":' in err.getvalue()
+
+
+def test_version_print():
+    parser = ArgumentParser(prog="app", version="1.2.3")
+    out = get_parse_args_stdout(parser, ["--version"])
+    assert out == "app 1.2.3\n"
+
+
+@patch.dict(os.environ, {"JSONARGPARSE_DEBUG": ""})
+def test_debug_environment_variable(logger):
+    parser = ArgumentParser(logger=logger)
+    parser.add_argument("--int", type=int)
+    with pytest.raises(ArgumentError), capture_logs(logger) as logs:
+        parser.parse_args(["--int=invalid"])
+    assert "Debug enabled, thus raising exception instead of exit" in logs.getvalue()
+
+
+def test_parse_known_args_not_implemented(parser):
+    pytest.raises(NotImplementedError, lambda: parser.parse_known_args([]))
+
+
+def test_parse_known_args_not_implemented_without_caller_module(parser):
+    """
+    Corner case when calling parse_known_args in IPython. The caller module will not exist.
+    See https://github.com/omni-us/jsonargparse/pull/179
+    """
+    with patch("inspect.getmodule", return_value=None):
+        pytest.raises(NotImplementedError, lambda: parser.parse_known_args([]))
+
+
+def test_default_meta_property():
+    parser = ArgumentParser()
+    assert True is parser.default_meta
+    parser.default_meta = False
+    assert False is parser.default_meta
+    parser = ArgumentParser(default_meta=False)
+    assert False is parser.default_meta
+    parser.default_meta = True
+    assert True is parser.default_meta
+    with pytest.raises(ValueError) as ctx:
+        parser.default_meta = "invalid"
+    ctx.match("default_meta has to be a boolean")
+
+
+@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="loggers not pickleable in python 3.6")
+def test_pickle_parser(example_parser):
+    parser = pickle.loads(pickle.dumps(example_parser))
+    assert example_parser.get_defaults() == parser.get_defaults()

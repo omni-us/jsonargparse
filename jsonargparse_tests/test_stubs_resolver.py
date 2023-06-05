@@ -15,9 +15,12 @@ import pytest
 import yaml
 
 from jsonargparse._stubs_resolver import get_mro_method_parent, get_stubs_resolver
-from jsonargparse.optionals import url_support
 from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
-from jsonargparse_tests.conftest import capture_logs, get_parser_help
+from jsonargparse_tests.conftest import (
+    capture_logs,
+    get_parser_help,
+    skip_if_requests_unavailable,
+)
 
 torch_available = find_spec("torch")
 
@@ -61,7 +64,7 @@ def test_get_mro_method_parent(cls, method, expected):
     assert get_mro_method_parent(cls, method) is expected
 
 
-@pytest.mark.skipif(not url_support, reason="requests package is required")
+@skip_if_requests_unavailable
 def test_stubs_resolver_get_imported_info():
     resolver = get_stubs_resolver()
     imported_info = resolver.get_imported_info("requests.api.get")
@@ -198,7 +201,7 @@ def test_get_params_non_unique_alias(logger):
         assert "non-unique alias 'UUID': problem (module)" in logs.getvalue()
 
 
-@pytest.mark.skipif(not url_support, reason="requests package is required")
+@skip_if_requests_unavailable
 def test_get_params_complex_function_requests_get(parser):
     from requests import get
 

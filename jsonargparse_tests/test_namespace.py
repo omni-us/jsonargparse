@@ -4,6 +4,7 @@ import platform
 import pytest
 
 from jsonargparse import Namespace, dict_to_namespace, namespace_to_dict
+from jsonargparse.namespace import meta_keys
 
 skip_if_no_setattr_insertion_order = pytest.mark.skipif(
     platform.python_implementation() != "CPython",
@@ -291,3 +292,10 @@ def test_nested_branch_clashing_keys():
     assert ns.get("x.get.y") == 3
     assert ns.as_dict() == {"x": {"get": {"y": 3}}}
     assert ns.pop("x.get.y") == 3
+
+
+@pytest.mark.parametrize("meta_key", meta_keys)
+def test_add_argument_meta_key_error(meta_key, parser):
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument(meta_key)
+    ctx.match(f'"{meta_key}" not allowed')

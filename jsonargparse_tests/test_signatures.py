@@ -79,13 +79,13 @@ class Class3(Class2):
 def test_add_class_failure_not_a_class(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_class_arguments("Not a class")
-    assert 'Expected "theclass" parameter to be a class' in str(ctx.value)
+    ctx.match('Expected "theclass" parameter to be a class')
 
 
 def test_add_class_failure_positional_without_type(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_class_arguments(Class2)
-    assert f'Parameter "c2_a0" from "{__name__}.Class2.__init__" does not specify a type' in str(ctx.value)
+    ctx.match(f'Parameter "c2_a0" from "{__name__}.Class2.__init__" does not specify a type')
 
 
 def test_add_class_without_nesting(parser):
@@ -119,7 +119,7 @@ def test_add_class_without_nesting(parser):
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([])
-    assert '"c3_a0" is required' in str(ctx.value)
+    ctx.match('"c3_a0" is required')
 
     if docstring_parser_support:
         assert "Class3 short description" == parser.groups["Class3"].title
@@ -180,7 +180,7 @@ def test_add_class_without_parameters(parser):
     config = {"no_params": {"class_path": f"{__name__}.NoParams"}}
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--cfg={config}"])
-    assert "'no_params' got an unexpected value" in str(ctx.value)
+    ctx.match("'no_params' got an unexpected value")
 
 
 class NestedWithParams:
@@ -386,10 +386,10 @@ class WithMethods:
 def test_add_method_failure_adding(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_method_arguments("WithMethods", "normal_method")
-    assert 'Expected "theclass" argument to be a class' in str(ctx.value)
+    ctx.match('Expected "theclass" argument to be a class')
     with pytest.raises(ValueError) as ctx:
         parser.add_method_arguments(WithMethods, "does_not_exist")
-    assert 'Expected "themethod" argument to be a callable member' in str(ctx.value)
+    ctx.match('Expected "themethod" argument to be a callable member')
 
 
 def test_add_method_normal_and_static(parser):
@@ -438,7 +438,7 @@ def test_add_method_parent_classes(parser):
 def test_add_function_failure_not_callable(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_function_arguments("not callable")
-    assert 'Expected "function" argument to be a callable' in str(ctx.value)
+    ctx.match('Expected "function" argument to be a callable')
 
 
 def func(a1="1", a2: float = 2.0, a3: bool = False, a4=None):
@@ -488,7 +488,7 @@ def test_add_function_skip_positional_and_name(parser):
 def test_add_function_skip_positionals_invalid(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_function_arguments(func_skip_params, skip={1, 2})
-    assert "Unexpected number of positionals to skip" in str(ctx.value)
+    ctx.match("Unexpected number of positionals to skip")
 
 
 def func_invalid_type(a1: None):
@@ -498,7 +498,7 @@ def func_invalid_type(a1: None):
 def test_add_function_invalid_type(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_function_arguments(func_invalid_type)
-    assert "all mandatory parameters must have a supported type" in str(ctx.value)
+    ctx.match("all mandatory parameters must have a supported type")
 
 
 def func_implicit_optional(a1: int = None):  # type: ignore
@@ -514,20 +514,20 @@ def func_untyped_params(a1, a2=None):
     return a1
 
 
+def test_add_function_fail_untyped_true_untyped_params(parser):
+    with pytest.raises(ValueError) as ctx:
+        parser.add_function_arguments(func_untyped_params, fail_untyped=True)
+    ctx.match('Parameter "a1" from .* does not specify a type')
+
+
 def func_type_as_string(a2: "int"):
     return a2
 
 
-def test_add_function_fail_untyped_true(parser):
-    with pytest.raises(ValueError) as ctx:
-        parser.add_function_arguments(func_untyped_params, fail_untyped=True)
-    assert 'Parameter "a1" from' in str(ctx.value)
-    assert "does not specify a type" in str(ctx.value)
-
+def test_add_function_fail_untyped_true_str_type(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_function_arguments(func_type_as_string, fail_untyped=True)
-    assert 'Parameter "a2" from' in str(ctx.value)
-    assert "specifies the type as a string" in str(ctx.value)
+    ctx.match('Parameter "a2" from .* specifies the type as a string')
 
 
 def test_add_function_fail_untyped_false(parser):
@@ -555,7 +555,7 @@ def test_add_function_group_config(parser, tmp_cwd):
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--func="""'])
-    assert "Unable to load config" in str(ctx.value)
+    ctx.match("Unable to load config")
 
 
 def test_add_function_group_config_within_config(parser, tmp_cwd):

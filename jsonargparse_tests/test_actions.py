@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from jsonargparse import (
@@ -6,9 +8,56 @@ from jsonargparse import (
     ActionYesNo,
     ArgumentError,
     ArgumentParser,
+    Namespace,
     strip_meta,
 )
 from jsonargparse_tests.conftest import get_parser_help
+
+# ActionConfigFile tests
+
+
+def test_action_config_file(parser, tmp_cwd):
+    rel_yaml_file = Path("subdir", "config.yaml")
+    abs_yaml_file = (tmp_cwd / rel_yaml_file).resolve()
+    abs_yaml_file.parent.mkdir()
+    abs_yaml_file.write_text("val: yaml\n")
+
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--val")
+
+    cfg = parser.parse_args([f"--cfg={abs_yaml_file}", f"--cfg={rel_yaml_file}", "--cfg", "val: arg"])
+    assert 3 == len(cfg.cfg)
+    assert "arg" == cfg.val
+    assert str(abs_yaml_file) == cfg.cfg[0].absolute
+    assert str(rel_yaml_file) == cfg.cfg[1].relative
+    assert None is cfg.cfg[2]
+
+
+def test_action_config_file_set_defaults_error(parser):
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    with pytest.raises(ValueError) as ctx:
+        parser.set_defaults(cfg="config.yaml")
+    ctx.match("does not accept a default, use default_config_files")
+
+
+def test_action_config_file_add_argument_default_error(parser):
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument("--cfg", default="config.yaml", action=ActionConfigFile)
+    ctx.match("does not accept a default, use default_config_files")
+
+
+def test_action_config_file_nested_error(parser):
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument("--nested.cfg", action=ActionConfigFile)
+    ctx.match("ActionConfigFile must be a top level option")
+
+
+def test_action_config_file_argument_errors(parser, tmp_cwd):
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", '"""']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg=not-exist"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", '{"k":"v"}']))
+
 
 # ActionYesNo tests
 
@@ -72,19 +121,19 @@ def test_yes_no_action_prefixes(parser):
 def test_yes_no_action_invalid_yes_prefix(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_argument("--arg", action=ActionYesNo(yes_prefix="yes_"))
-    assert 'Expected option string to start with "--yes_"' in str(ctx.value)
+    ctx.match('Expected option string to start with "--yes_"')
 
 
 def test_yes_no_action_invalid_no_prefix(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_argument("--arg", nargs="?", action=ActionYesNo(no_prefix=None))
-    assert "no_prefix=None only supports nargs=1" in str(ctx.value)
+    ctx.match("no_prefix=None only supports nargs=1")
 
 
 def test_yes_no_action_invalid_positional(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_argument("pos", action=ActionYesNo)
-    assert "not intended for positional" in str(ctx.value)
+    ctx.match("not intended for positional")
 
 
 def test_yes_no_action_parse_env(parser):
@@ -98,7 +147,13 @@ def test_yes_no_action_parse_env(parser):
     assert False is parser.parse_env({"APP_DEFAULT_TRUE": "no"}).default_true
 
 
-# ArgumentParser tests
+def test_yes_no_action_move_to_subparser(parser, subparser):
+    subparser.add_argument("--g.key", default=False, action=ActionYesNo)
+    parser.add_argument("--subparser", action=ActionParser(parser=subparser))
+    assert parser.parse_args([]) == Namespace(subparser=Namespace(g=Namespace(key=False)))
+
+
+# ActionParser tests
 
 
 @pytest.fixture(scope="module")
@@ -212,7 +267,7 @@ def test_action_parser_required_argument(parser, subparser):
     assert "1" == parser.parse_args(["--op2.op1=1"]).op2.op1
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([])
-    assert '"op2.op1" is required' in str(ctx.value)
+    ctx.match('"op2.op1" is required')
 
 
 def test_action_parser_init_failures(parser, subparser):
@@ -227,13 +282,13 @@ def test_action_parser_init_failures(parser, subparser):
 def test_action_parser_failure_add_parser_to_self(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_argument("--subparser", action=ActionParser(parser=parser))
-    assert "cannot be added as a subparser of itself" in str(ctx.value)
+    ctx.match("cannot be added as a subparser of itself")
 
 
 def test_action_parser_failure_only_single_optional(parser, subparser):
     with pytest.raises(ValueError) as ctx:
         parser.add_argument("-b", "--bad", action=ActionParser(subparser))
-    assert "only accepts a single optional" in str(ctx.value)
+    ctx.match("only accepts a single optional")
 
 
 def test_action_parser_conflict_subparser_key(parser, subparser):

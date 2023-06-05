@@ -11,7 +11,19 @@ from unittest.mock import patch
 import pytest
 
 from jsonargparse import ArgumentParser
-from jsonargparse.optionals import docstring_parser_support, jsonschema_support
+from jsonargparse.optionals import (
+    docstring_parser_support,
+    fsspec_support,
+    jsonschema_support,
+    set_docstring_parse_options,
+    url_support,
+)
+
+if docstring_parser_support:
+    from docstring_parser import DocstringStyle
+
+    set_docstring_parse_options(style=DocstringStyle.GOOGLE)
+
 
 is_cpython = platform.python_implementation() == "CPython"
 is_posix = os.name == "posix"
@@ -26,9 +38,15 @@ skip_if_not_posix = pytest.mark.skipif(
     reason="only supported in posix systems",
 )
 
+
 skip_if_jsonschema_unavailable = pytest.mark.skipif(
     not jsonschema_support,
     reason="jsonschema package is required",
+)
+
+skip_if_fsspec_unavailable = pytest.mark.skipif(
+    not fsspec_support,
+    reason="fsspec package is required",
 )
 
 skip_if_docstring_parser_unavailable = pytest.mark.skipif(
@@ -36,7 +54,17 @@ skip_if_docstring_parser_unavailable = pytest.mark.skipif(
     reason="docstring-parser package is required",
 )
 
-responses_available = find_spec("responses") is not None
+skip_if_requests_unavailable = pytest.mark.skipif(
+    not url_support,
+    reason="requests package is required",
+)
+
+responses_available = bool(find_spec("responses"))
+
+skip_if_responses_unavailable = pytest.mark.skipif(
+    not responses_available,
+    reason="responses package is required",
+)
 
 if responses_available:
     import responses
@@ -61,7 +89,18 @@ def subparser() -> ArgumentParser:
 
 
 @pytest.fixture
-def tmp_cwd(tmpdir):
+def example_parser() -> ArgumentParser:
+    parser = ArgumentParser(prog="app", exit_on_error=False)
+    group_1 = parser.add_argument_group("Group 1", name="group1")
+    group_1.add_argument("--bool", type=bool, default=True)
+    group_2 = parser.add_argument_group("Group 2")
+    group_2.add_argument("--nums.val1", type=int, default=1)
+    group_2.add_argument("--nums.val2", type=float, default=2.0)
+    return parser
+
+
+@pytest.fixture
+def tmp_cwd(tmpdir) -> Iterator[Path]:
     with tmpdir.as_cwd():
         yield Path(tmpdir)
 
@@ -83,7 +122,7 @@ def logger() -> logging.Logger:
 
 
 @contextmanager
-def capture_logs(logger: logging.Logger):
+def capture_logs(logger: logging.Logger) -> Iterator[StringIO]:
     with ExitStack() as stack:
         captured = StringIO()
         for handler in logger.handlers:
@@ -94,7 +133,8 @@ def capture_logs(logger: logging.Logger):
 
 def get_parser_help(parser: ArgumentParser) -> str:
     out = StringIO()
-    parser.print_help(out)
+    with patch.dict(os.environ, {"COLUMNS": "200"}):
+        parser.print_help(out)
     return out.getvalue()
 
 
