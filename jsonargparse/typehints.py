@@ -1198,27 +1198,23 @@ def check_lazy_kwargs(class_type: Type, lazy_kwargs: dict):
 
 class LazyInitBaseClass:
     def __init__(self, class_type: Type, lazy_kwargs: dict):
+        assert not issubclass(class_type, LazyInitBaseClass)
         check_lazy_kwargs(class_type, lazy_kwargs)
         self._lazy_class_type = class_type
         self._lazy_kwargs = lazy_kwargs
         self._lazy_methods = {}
         seen_methods: dict = {}
-        for name, _ in inspect.getmembers(class_type, predicate=inspect.isfunction):
+        for name, member in inspect.getmembers(class_type, predicate=inspect.isfunction):
             method = getattr(self, name)
-            if not inspect.ismethod(method) or name in {
-                "__init__",
-                "_lazy_init",
-                "_lazy_init_then_call_method",
-                "lazy_get_init_data",
-            }:
+            if not inspect.ismethod(method) or name == "__init__":
                 continue
             assert name not in self.__dict__
             self._lazy_methods[name] = method
-            if str(method) in seen_methods:
-                self.__dict__[name] = seen_methods[str(method)]
+            if id(member) in seen_methods:
+                self.__dict__[name] = seen_methods[id(member)]
             else:
                 self.__dict__[name] = partial(self._lazy_init_then_call_method, name)
-                seen_methods[str(method)] = self.__dict__[name]
+                seen_methods[id(member)] = self.__dict__[name]
 
     def _lazy_init(self):
         for name in self._lazy_methods:
