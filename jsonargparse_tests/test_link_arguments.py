@@ -92,7 +92,9 @@ def test_on_parse_add_class_arguments(subtests):
     parser = parser_classes_links_on_parse()
 
     with subtests.test("without defaults"):
-        assert Namespace() == parser.parse_args([], defaults=False)
+        with pytest.raises(ArgumentError) as ctx:
+            parser.parse_args([], defaults=False)
+        ctx.match('Key "a.v2" not found')
 
     with subtests.test("no arguments"):
         cfg = parser.parse_args([])

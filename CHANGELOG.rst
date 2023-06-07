@@ -19,6 +19,8 @@ Fixed
 ^^^^^
 - Failure for nested argument in optional dataclass type (`#289
   <https://github.com/omni-us/jsonargparse/issues/289>`__).
+- Argument links applied on parse silently ignored when the source validation
+  fails.
 
 
 v4.21.1 (2023-05-09)

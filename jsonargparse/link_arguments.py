@@ -248,17 +248,21 @@ class ActionLink(Action):
                 continue
             from .typehints import ActionTypeHint
 
-            try:
-                args = []
-                for source_key, source_action in action.source:
-                    if ActionTypeHint.is_subclass_typehint(source_action[0]) and source_key not in cfg:
-                        parser.logger.debug(
-                            f"Link {action.option_strings[0]} ignored since source {source_action[0]._typehint} does not have that parameter."
-                        )
-                    parser._check_value_key(source_action[0], cfg[source_action[0].dest], source_action[0].dest, None)
-                    args.append(cfg[source_key])
-            except KeyError:
+            args = []
+            skip_link = False
+            for source_key, source_action in action.source:
+                if ActionTypeHint.is_subclass_typehint(source_action[0]) and source_key not in cfg:
+                    parser.logger.debug(
+                        f"Link {action.option_strings[0]} ignored since source {source_key} not found in namespace."
+                    )
+                    skip_link = True
+                    break
+                for source_action_n in [a for a in source_action if a.dest in cfg]:
+                    parser._check_value_key(source_action_n, cfg[source_action_n.dest], source_action_n.dest, None)
+                args.append(cfg[source_key])
+            if skip_link:
                 continue
+
             if action.compute_fn is None:
                 value = args[0]
                 # Automatic namespace to dict based on link target type hint
