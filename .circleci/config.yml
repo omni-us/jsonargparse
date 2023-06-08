@@ -81,13 +81,15 @@ jobs:
             done
   publish-pypi:
     docker:
-      - image: mauvilsa/docker-twine:1.11.0
+      - image: cimg/python:3.10
     steps:
       - attach_workspace:
           at: .
       - run:
           name: Publish Release on PyPI
-          command: twine upload --username __token__ --password "${PYPI_TOKEN}" ./dist/*.whl ./dist/*.tar.gz
+          command: |
+            pip3 install -U twine
+            twine upload --username __token__ --password "${PYPI_TOKEN}" ./dist/*.whl ./dist/*.tar.gz
 
 workflows:
   version: 2
