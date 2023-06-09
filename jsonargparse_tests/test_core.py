@@ -264,16 +264,16 @@ def test_parse_path_simple(parser, tmp_cwd):
     parser.add_argument("--op", type=int)
     path = Path("config.json")
     path.write_text('{"op": 1}')
-    assert parser.parse_path(str(path)) == Namespace(op=1)
+    assert parser.parse_path(path) == Namespace(op=1)
 
 
 def test_parse_path_simple_errors(parser, tmp_cwd):
     parser.add_argument("--op", type=int)
     path = Path("config.json")
     path.write_text('{"op": 1.1}')
-    pytest.raises(ArgumentError, lambda: parser.parse_path(str(path)))
+    pytest.raises(ArgumentError, lambda: parser.parse_path(path))
     path.write_text('{"undefined": true}')
-    pytest.raises(ArgumentError, lambda: parser.parse_path(str(path)))
+    pytest.raises(ArgumentError, lambda: parser.parse_path(path))
 
 
 def test_parse_path_defaults(parser, tmp_cwd):
@@ -281,10 +281,10 @@ def test_parse_path_defaults(parser, tmp_cwd):
     parser.add_argument("--op2", type=float, default=2.3)
     path = Path("config.json")
     path.write_text('{"op1": 2}')
-    assert parser.parse_path(str(path), defaults=True) == Namespace(op1=2, op2=2.3)
-    assert parser.parse_path(str(path), defaults=False) == Namespace(op1=2)
+    assert parser.parse_path(path, defaults=True) == Namespace(op1=2, op2=2.3)
+    assert parser.parse_path(path, defaults=False) == Namespace(op1=2)
     path.write_text('{"op2": 4.5}')
-    assert parser.parse_path(str(path), defaults=False) == Namespace(op2=4.5)
+    assert parser.parse_path(path, defaults=False) == Namespace(op2=4.5)
 
 
 @skip_if_not_posix
@@ -292,7 +292,7 @@ def test_parse_path_file_not_readable(parser, tmp_cwd):
     config_path = Path("config.json")
     config_path.touch()
     config_path.chmod(0)
-    pytest.raises(TypeError, lambda: parser.parse_path(str(config_path)))
+    pytest.raises(TypeError, lambda: parser.parse_path(config_path))
 
 
 def test_precedence_of_sources(tmp_cwd, subtests):
@@ -300,7 +300,7 @@ def test_precedence_of_sources(tmp_cwd, subtests):
     input2_config_file = tmp_cwd / "input2.yaml"
     default_config_file = tmp_cwd / "default.yaml"
 
-    parser = ArgumentParser(prog="app", default_env=True, default_config_files=[str(default_config_file)])
+    parser = ArgumentParser(prog="app", default_env=True, default_config_files=[default_config_file])
     parser.add_argument("--op1", default="from parser default")
     parser.add_argument("--op2")
     parser.add_argument("--cfg", action=ActionConfigFile)
@@ -324,19 +324,19 @@ def test_precedence_of_sources(tmp_cwd, subtests):
 
     # parse_path precedence
     with subtests.test("parse_path parser default"):
-        assert "from parser default" == parser.parse_path(str(input2_config_file)).op1
+        assert "from parser default" == parser.parse_path(input2_config_file).op1
     with subtests.test("parse_path default config file"):
         default_config_file.write_text("op1: from default config file")
-        assert "from default config file" == parser.parse_path(str(input2_config_file)).op1
+        assert "from default config file" == parser.parse_path(input2_config_file).op1
     env = {"APP_CFG": str(input1_config_file)}
     with subtests.test("parse_path environment config file"), patch.dict(os.environ, env):
-        assert "from input config file" == parser.parse_path(str(input2_config_file)).op1
+        assert "from input config file" == parser.parse_path(input2_config_file).op1
     env["APP_OP1"] = "from env var"
     with subtests.test("parse_path environment variable"), patch.dict(os.environ, env):
-        assert "from env var" == parser.parse_path(str(input2_config_file)).op1
+        assert "from env var" == parser.parse_path(input2_config_file).op1
     env["APP_CFG"] = str(input2_config_file)
     with subtests.test("parse_path input config file"), patch.dict(os.environ, env):
-        assert "from input config file" == parser.parse_path(str(input1_config_file)).op1
+        assert "from input config file" == parser.parse_path(input1_config_file).op1
     default_config_file.unlink()
 
     # parse_args precedence
@@ -562,7 +562,7 @@ def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):
                 file.unlink()
 
     with subtests.test("parse_path with metadata"):
-        cfg1 = parser.parse_path(str(main_file_in), with_meta=True)
+        cfg1 = parser.parse_path(main_file_in, with_meta=True)
         assert expected == strip_meta(cfg1)
         assert str(cfg1.subparser["__path__"]) == "subparser.yaml"
         if jsonschema_support:
@@ -571,27 +571,27 @@ def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):
             assert str(cfg1.jsonnet["__path__"]) == "jsonnet.json"
 
     with subtests.test("save with metadata (multi-file)"):
-        parser.save(cfg1, str(main_file_out))
+        parser.save(cfg1, main_file_out)
         assert subparser_file_out.is_file()
         if jsonschema_support:
             assert schema_file_out.is_file()
         if jsonnet_support:
             assert jsonnet_file_out.read_text() == '{"c": 3, "d": 4}'
-        cfg2 = parser.parse_path(str(main_file_out), with_meta=False)
+        cfg2 = parser.parse_path(main_file_out, with_meta=False)
         assert expected == cfg2
 
     with subtests.test("save without metadata (single-file)"):
         rm_out_files()
-        parser.save(cfg1, str(main_file_out), multifile=False)
-        cfg3 = parser.parse_path(str(main_file_out), with_meta=False)
+        parser.save(cfg1, main_file_out, multifile=False)
+        cfg3 = parser.parse_path(main_file_out, with_meta=False)
         assert expected == cfg3
 
     if jsonschema_support:
         with subtests.test("save jsonschema yaml output"):
             rm_out_files()
             schema_yaml_out = out_dir / "schema.yaml"
-            cfg1.schema["__path__"] = Path_fc(str(schema_yaml_out))
-            parser.save(cfg1, str(main_file_out), multifile=True)
+            cfg1.schema["__path__"] = Path_fc(schema_yaml_out)
+            parser.save(cfg1, main_file_out, multifile=True)
             assert schema_yaml_out.read_text() == "a: 1\nb: 2\n"
 
 
@@ -634,7 +634,7 @@ def test_save_path_content(parser, tmp_cwd):
 
     cfg = parser.parse_args([f"--the.path={in_file}"])
     parser.save_path_content.add("the.path")
-    parser.save(cfg, str(out_yaml))
+    parser.save(cfg, out_yaml)
 
     assert out_yaml.read_text() == "the:\n  path: file.txt\n"
     assert out_file.read_text() == "file content"
@@ -693,7 +693,7 @@ def test_default_config_files(parser, subtests, tmp_cwd):
     default_config_file = tmp_cwd / "defaults.yaml"
     default_config_file.write_text("op1: from default config file\n")
 
-    parser.default_config_files = [str(default_config_file)]
+    parser.default_config_files = [default_config_file]
     parser.add_argument("--op1", default="from parser default")
     parser.add_argument("--op2", default="from parser default")
 
@@ -731,7 +731,7 @@ def test_default_config_file_invalid_value(parser, tmp_cwd):
     default_config_file = Path("defaults.yaml")
     default_config_file.write_text("op2: v2\n")
 
-    parser.default_config_files = [str(default_config_file)]
+    parser.default_config_files = [default_config_file]
     parser.add_argument("--op1", default="from default")
 
     with pytest.raises(ArgumentError) as ctx:
@@ -747,7 +747,7 @@ def test_default_config_file_unreadable(parser, tmp_cwd):
     default_config_file = Path("defaults.yaml")
     default_config_file.write_text("op1: from yaml\n")
 
-    parser.default_config_files = [str(default_config_file)]
+    parser.default_config_files = [default_config_file]
     parser.add_argument("--op1", default="from default")
 
     assert parser.get_default("op1") == "from yaml"
@@ -757,7 +757,7 @@ def test_default_config_file_unreadable(parser, tmp_cwd):
 
 def test_default_config_files_pattern(parser, subtests, tmp_cwd):
     default_configs_pattern = tmp_cwd / "defaults_*.yaml"
-    parser.default_config_files = [str(default_configs_pattern)]
+    parser.default_config_files = [default_configs_pattern]
     parser.add_argument("--op1", default="from default")
     parser.add_argument("--op2", default="from default")
 

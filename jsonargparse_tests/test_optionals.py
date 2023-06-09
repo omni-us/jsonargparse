@@ -35,9 +35,9 @@ def test_jsonschema_support_true():
 
 @pytest.mark.skipif(jsonschema_support, reason="jsonschema package should not be installed")
 def test_jsonschema_support_false():
-    with pytest.raises(ImportError) as context:
+    with pytest.raises(ImportError) as ctx:
         import_jsonschema("test_jsonschema_support_false")
-    assert "test_jsonschema_support_false" in str(context.value)
+    ctx.match("test_jsonschema_support_false")
 
 
 # jsonnet support
@@ -50,9 +50,9 @@ def test_jsonnet_support_true():
 
 @pytest.mark.skipif(jsonnet_support, reason="jsonnet package should not be installed")
 def test_jsonnet_support_false():
-    with pytest.raises(ImportError) as context:
+    with pytest.raises(ImportError) as ctx:
         import_jsonnet("test_jsonnet_support_false")
-        assert "test_jsonnet_support_false" in str(context.value)
+    ctx.match("test_jsonnet_support_false")
 
 
 # requests support
@@ -65,9 +65,9 @@ def test_url_support_true():
 
 @pytest.mark.skipif(url_support, reason="requests package should not be installed")
 def test_url_support_false():
-    with pytest.raises(ImportError) as context:
+    with pytest.raises(ImportError) as ctx:
         import_requests("test_url_support_false")
-        assert "test_url_support_false" in str(context.value)
+    ctx.match("test_url_support_false")
 
 
 # docstring-parser support
@@ -80,9 +80,9 @@ def test_docstring_parser_support_true():
 
 @pytest.mark.skipif(docstring_parser_support, reason="docstring-parser package should not be installed")
 def test_docstring_parser_support_false():
-    with pytest.raises(ImportError) as context:
+    with pytest.raises(ImportError) as ctx:
         import_docstring_parser("test_docstring_parser_support_false")
-        assert "test_docstring_parser_support_false" in str(context.value)
+    ctx.match("test_docstring_parser_support_false")
 
 
 @skip_if_docstring_parser_unavailable
@@ -117,9 +117,9 @@ def test_argcomplete_support_true():
 
 @pytest.mark.skipif(argcomplete_support, reason="argcomplete package should not be installed")
 def test_argcomplete_support_false():
-    with pytest.raises(ImportError) as context:
+    with pytest.raises(ImportError) as ctx:
         import_argcomplete("test_argcomplete_support_false")
-        assert "test_argcomplete_support_false" in str(context.value)
+    ctx.match("test_argcomplete_support_false")
 
 
 # fsspec support
@@ -132,9 +132,9 @@ def test_fsspec_support_true():
 
 @pytest.mark.skipif(fsspec_support, reason="fsspec package should not be installed")
 def test_fsspec_support_false():
-    with pytest.raises(ImportError) as context:
+    with pytest.raises(ImportError) as ctx:
         import_fsspec("test_fsspec_support_false")
-        assert "test_fsspec_support_false" in str(context.value)
+    ctx.match("test_fsspec_support_false")
 
 
 # ruyaml support
@@ -147,9 +147,9 @@ def test_ruyaml_support_true():
 
 @pytest.mark.skipif(ruyaml_support, reason="ruyaml package should not be installed")
 def test_ruyaml_support_false():
-    with pytest.raises(ImportError) as context:
+    with pytest.raises(ImportError) as ctx:
         import_ruyaml("test_ruyaml_support_false")
-        assert "test_ruyaml_support_false" in str(context.value)
+    ctx.match("test_ruyaml_support_false")
 
 
 # config read mode tests

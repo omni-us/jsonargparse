@@ -336,9 +336,9 @@ def test_add_class_group_config(parser, tmp_cwd):
 
 def test_add_class_group_config_not_found(parser, tmp_cwd):
     parser.add_class_arguments(Class0, "a")
-    with pytest.raises(ArgumentError) as ex:
+    with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--a=does_not_exist.yaml"])
-    assert 'Unable to load config "does_not_exist.yaml"' in str(ex)
+    ctx.match('Unable to load config "does_not_exist.yaml"')
 
 
 class WithDocstring:

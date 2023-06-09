@@ -39,7 +39,7 @@ def test_path_fr(file_r):
 
 
 def test_path_fc_with_kwargs(tmpdir):
-    path = Path_fc("some-file.txt", cwd=str(tmpdir))
+    path = Path_fc("some-file.txt", cwd=tmpdir)
     assert path() == os.path.join(tmpdir, "some-file.txt")
 
 

@@ -368,7 +368,7 @@ def test_list_append_config(parser):
 
 def test_list_append_default_config_files(parser, tmp_cwd, subtests):
     config_path = tmp_cwd / "config.yaml"
-    parser.default_config_files = [str(config_path)]
+    parser.default_config_files = [config_path]
     parser.add_argument("--nums", type=List[int], default=[0])
 
     with subtests.test("replace"):
@@ -399,7 +399,7 @@ def test_list_append_default_config_files(parser, tmp_cwd, subtests):
 
 def test_list_append_subcommand_global_default_config_files(parser, subparser, tmp_cwd):
     config_path = tmp_cwd / "config.yaml"
-    parser.default_config_files = [str(config_path)]
+    parser.default_config_files = [config_path]
     subcommands = parser.add_subcommands()
     subparser.add_argument("--nums", type=List[int], default=[0])
     subcommands.add_subcommand("sub", subparser)
@@ -415,7 +415,7 @@ def test_list_append_subcommand_global_default_config_files(parser, subparser, t
 def test_list_append_subcommand_subparser_default_config_files(parser, subparser, tmp_cwd):
     config_path = tmp_cwd / "config.yaml"
     subcommands = parser.add_subcommands()
-    subparser.default_config_files = [str(config_path)]
+    subparser.default_config_files = [config_path]
     subparser.add_argument("--nums", type=List[int], default=[0])
     subcommands.add_subcommand("sub", subparser)
     config_path.write_text("nums: [1]\n")

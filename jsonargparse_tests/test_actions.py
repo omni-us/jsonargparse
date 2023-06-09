@@ -198,14 +198,14 @@ def test_action_parser_unexpected_group_value(composed_parsers):
 def test_action_parser_parse_path(composed_parsers):
     parser, yaml_main = composed_parsers[:2]
     expected = {"opt1": "opt1_yaml", "inner2": {"opt2": "opt2_yaml", "inner3": {"opt3": "opt3_yaml"}}}
-    cfg = parser.parse_path(str(yaml_main))
+    cfg = parser.parse_path(yaml_main)
     assert "inner2.yaml" == str(cfg.inner2.__path__)
     assert "inner3.yaml" == str(cfg.inner2.inner3.__path__)
     assert expected == strip_meta(cfg).as_dict()
 
     yaml_main2 = yaml_main.parent / "main2.yaml"
     yaml_main2.write_text(parser.dump(cfg))
-    cfg2 = parser.parse_path(str(yaml_main2), with_meta=False)
+    cfg2 = parser.parse_path(yaml_main2, with_meta=False)
     assert expected == cfg2.as_dict()
 
 

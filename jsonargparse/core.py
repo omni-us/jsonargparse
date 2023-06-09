@@ -195,7 +195,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         print_config: Optional[str] = "--print_config",
         parser_mode: str = "yaml",
         dump_header: Optional[List[str]] = None,
-        default_config_files: Optional[List[str]] = None,
+        default_config_files: Optional[List[Union[str, os.PathLike]]] = None,
         default_env: bool = False,
         default_meta: bool = True,
         **kwargs,
@@ -520,7 +520,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
     def parse_path(
         self,
-        cfg_path: str,
+        cfg_path: Union[str, os.PathLike],
         ext_vars: Optional[dict] = None,
         env: Optional[bool] = None,
         defaults: bool = True,
@@ -561,7 +561,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
     def parse_string(
         self,
         cfg_str: str,
-        cfg_path: str = "",
+        cfg_path: Union[str, os.PathLike] = "",
         ext_vars: Optional[dict] = None,
         env: Optional[bool] = None,
         defaults: bool = True,
@@ -612,7 +612,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
     def _load_config_parser_mode(
         self,
         cfg_str: str,
-        cfg_path: str = "",
+        cfg_path: Union[str, os.PathLike] = "",
         ext_vars: Optional[dict] = None,
         prev_cfg: Optional[Namespace] = None,
     ) -> Namespace:
@@ -762,7 +762,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
     def save(
         self,
         cfg: Namespace,
-        path: str,
+        path: Union[str, os.PathLike],
         format: str = "parser_mode",
         skip_none: bool = True,
         skip_check: bool = False,
@@ -787,8 +787,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         check_valid_dump_format(format)
 
         def check_overwrite(path):
-            if not overwrite and os.path.isfile(path()):
-                raise ValueError("Refusing to overwrite existing file: " + path())
+            if not overwrite and os.path.isfile(path.absolute):
+                raise ValueError(f"Refusing to overwrite existing file: {path.absolute}")
 
         dump_kwargs = {"format": format, "skip_none": skip_none, "skip_check": skip_check}
 
@@ -800,7 +800,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             else:
                 if path_sw.is_fsspec:
                     if multifile:
-                        raise NotImplementedError("multifile=True not supported for fsspec paths: " + path)
+                        raise NotImplementedError(f"multifile=True not supported for fsspec paths: {path}")
                     fsspec = import_fsspec("ArgumentParser.save")
                     with fsspec.open(path, "w") as f:
                         f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
@@ -810,7 +810,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         check_overwrite(path_fc)
 
         if not multifile:
-            with open(path_fc(), "w") as f:
+            with open(path_fc.absolute, "w") as f:
                 f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
 
         else:
@@ -827,7 +827,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                     if isinstance(val, (Namespace, dict)) and "__path__" in val:
                         action = _find_action(self, key)
                         if isinstance(action, (ActionJsonSchema, ActionJsonnet, ActionTypeHint, _ActionConfigLoad)):
-                            val_path = Path(os.path.basename(val["__path__"]()), mode="fc")
+                            val_path = Path(os.path.basename(val["__path__"].absolute), mode="fc")
                             check_overwrite(val_path)
                             val_out = strip_meta(val)
                             if isinstance(val, Namespace):
@@ -837,20 +837,20 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                             else:
                                 is_json = str(val_path).lower().endswith(".json")
                                 val_str = dump_using_format(self, val_out, "json_indented" if is_json else format)
-                            with open(val_path(), "w") as f:
+                            with open(val_path.absolute, "w") as f:
                                 f.write(val_str)
-                            cfg[key] = os.path.basename(val_path())
+                            cfg[key] = os.path.basename(val_path.absolute)
                     elif isinstance(val, Path) and key in self.save_path_content and "r" in val.mode:
-                        val_path = Path(os.path.basename(val()), mode="fc")
+                        val_path = Path(os.path.basename(val.absolute), mode="fc")
                         check_overwrite(val_path)
-                        with open(val_path(), "w") as f:
+                        with open(val_path.absolute, "w") as f:
                             f.write(val.get_content())
                         cfg[key] = type(val)(str(val_path))
 
             with change_to_path_dir(path_fc), parser_context(parent_parser=self):
                 save_paths(cfg)
             dump_kwargs["skip_check"] = True
-            with open(path_fc(), "w") as f:
+            with open(path_fc.absolute, "w") as f:
                 f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
 
     ## Methods related to defaults ##
@@ -1320,13 +1320,15 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         return self._default_config_files
 
     @default_config_files.setter
-    def default_config_files(self, default_config_files: Optional[List[str]]):
+    def default_config_files(self, default_config_files: Optional[List[Union[str, os.PathLike]]]):
         if default_config_files is None:
             self._default_config_files = []
-        elif isinstance(default_config_files, list) and all(isinstance(x, str) for x in default_config_files):
-            self._default_config_files = default_config_files
+        elif isinstance(default_config_files, list) and all(
+            isinstance(x, (str, os.PathLike)) for x in default_config_files
+        ):
+            self._default_config_files = [os.fspath(d) for d in default_config_files]
         else:
-            raise ValueError("default_config_files has to be None or List[str].")
+            raise ValueError("default_config_files has to be None or List[str | os.PathLike].")
 
         if len(self._default_config_files) > 0:
             if not hasattr(self, "_default_config_files_group"):

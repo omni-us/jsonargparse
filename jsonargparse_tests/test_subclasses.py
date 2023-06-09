@@ -272,7 +272,7 @@ def test_subclass_with_default_config_files(parser, tmp_cwd, logger, subtests):
     config_path = tmp_cwd / "config.yaml"
     config_path.write_text(json.dumps({"data": {"cal": config}}))
 
-    parser.default_config_files = [str(config_path)]
+    parser.default_config_files = [config_path]
     parser.add_argument("--op", default="from default")
     parser.add_class_arguments(DefaultConfig, "data")
 
@@ -307,7 +307,7 @@ def test_subclass_in_subcommand_with_global_default_config_file(parser, subparse
     default_path = Path("default.yaml")
     default_path.write_text("fit:\n  model:\n    foo: 123")
 
-    parser.default_config_files = [str(default_path)]
+    parser.default_config_files = [default_path]
     parser.add_argument("--config", action=ActionConfigFile)
     subcommands = parser.add_subcommands()
 
@@ -378,7 +378,7 @@ def test_subclass_required_parameter_with_default_config_files(parser, tmp_cwd):
     defaults_path = Path("defaults.yaml")
     defaults_path.write_text(defaults)
 
-    parser.default_config_files = [str(defaults_path)]
+    parser.default_config_files = [defaults_path]
     parser.add_class_arguments(RequiredParamModel, "model")
 
     cfg = parser.parse_args(["--model.sub_module.init_args.p2=7"])
@@ -858,7 +858,7 @@ def test_subclass_discard_init_args_with_default_config_files(parser, tmp_cwd, l
     config_path = tmp_cwd / "config.yaml"
     config_path.write_text(json.dumps({"cal": config}))
 
-    parser.default_config_files = [str(config_path)]
+    parser.default_config_files = [config_path]
     parser.add_argument("--cal", type=Optional[Calendar])
 
     init = parser.instantiate_classes(parser.get_defaults())
@@ -1265,7 +1265,7 @@ def test_subclass_multifile_save(parser, tmp_cwd):
     out_main_cfg.parent.mkdir()
 
     cfg = parser.parse_args([f"--cal={cal_cfg_path}"])
-    parser.save(cfg, str(out_main_cfg), multifile=True)
+    parser.save(cfg, out_main_cfg, multifile=True)
 
     assert "cal: cal.yaml" == out_main_cfg.read_text().strip()
     cal = yaml.safe_load(Path("out", "cal.yaml").read_text())
