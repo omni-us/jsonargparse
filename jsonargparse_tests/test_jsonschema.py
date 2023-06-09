@@ -60,7 +60,7 @@ def test_schema_array_parse_string(parser):
 def test_schema_array_parse_path(parser, tmp_path):
     path = tmp_path / "op1.json"
     path.write_text('{"op1": [-1, 1, 0]}')
-    cfg = parser.parse_path(str(path))
+    cfg = parser.parse_path(path)
     assert [-1, 1, 0] == cfg["op1"]
 
 

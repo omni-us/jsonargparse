@@ -95,7 +95,7 @@ def paths(tmp_path_factory):
 
 
 def test_path_init(paths):
-    path1 = Path(str(paths.file_rw), "frw")
+    path1 = Path(paths.file_rw, "frw")
     path2 = Path(path1)
     assert path1.cwd == path2.cwd
     assert path1.absolute == path2.absolute
@@ -110,7 +110,7 @@ def test_path_init_failures(paths):
 
 
 def test_path_cwd(paths):
-    path = Path("file_rx", mode="fr", cwd=str(paths.tmp_path / paths.dir_x))
+    path = Path("file_rx", mode="fr", cwd=(paths.tmp_path / paths.dir_x))
     assert path.cwd == Path("file_rx", mode="fr", cwd=path.cwd).cwd
 
 
@@ -120,82 +120,82 @@ def test_path_empty_mode(paths):
 
 
 def test_path_pathlike(paths):
-    path = Path(str(paths.file_rw))
+    path = Path(paths.file_rw)
     assert isinstance(path, os.PathLike)
     assert os.fspath(path) == str(paths.tmp_path / paths.file_rw)
     assert os.path.dirname(path) == str(paths.tmp_path)
 
 
 def test_path_equality_operator(paths):
-    path1 = Path(str(paths.file_rw))
-    path2 = Path(str(paths.tmp_path / paths.file_rw))
+    path1 = Path(paths.file_rw)
+    path2 = Path(paths.tmp_path / paths.file_rw)
     assert path1 == path2
     assert Path("123", "fc") != 123
 
 
 def test_path_file_access_mode(paths):
-    Path(str(paths.file_rw), "frw")
-    Path(str(paths.file_r), "fr")
-    Path(str(paths.file_), "f")
-    Path(str(paths.dir_file_rx), "fr")
+    Path(paths.file_rw, "frw")
+    Path(paths.file_r, "fr")
+    Path(paths.file_, "f")
+    Path(paths.dir_file_rx, "fr")
     if is_posix:
-        pytest.raises(TypeError, lambda: Path(str(paths.file_rw), "fx"))
-        pytest.raises(TypeError, lambda: Path(str(paths.file_), "fr"))
-    pytest.raises(TypeError, lambda: Path(str(paths.file_r), "fw"))
-    pytest.raises(TypeError, lambda: Path(str(paths.dir_file_rx), "fw"))
-    pytest.raises(TypeError, lambda: Path(str(paths.dir_rx), "fr"))
+        pytest.raises(TypeError, lambda: Path(paths.file_rw, "fx"))
+        pytest.raises(TypeError, lambda: Path(paths.file_, "fr"))
+    pytest.raises(TypeError, lambda: Path(paths.file_r, "fw"))
+    pytest.raises(TypeError, lambda: Path(paths.dir_file_rx, "fw"))
+    pytest.raises(TypeError, lambda: Path(paths.dir_rx, "fr"))
     pytest.raises(TypeError, lambda: Path("file_ne", "fr"))
 
 
 def test_path_dir_access_mode(paths):
-    Path(str(paths.dir_rwx), "drwx")
-    Path(str(paths.dir_rx), "drx")
-    Path(str(paths.dir_x), "dx")
+    Path(paths.dir_rwx, "drwx")
+    Path(paths.dir_rx, "drx")
+    Path(paths.dir_x, "dx")
     if is_posix:
-        pytest.raises(TypeError, lambda: Path(str(paths.dir_rx), "dw"))
-        pytest.raises(TypeError, lambda: Path(str(paths.dir_x), "dr"))
-    pytest.raises(TypeError, lambda: Path(str(paths.file_r), "dr"))
+        pytest.raises(TypeError, lambda: Path(paths.dir_rx, "dw"))
+        pytest.raises(TypeError, lambda: Path(paths.dir_x, "dr"))
+    pytest.raises(TypeError, lambda: Path(paths.file_r, "dr"))
 
 
 def test_path_get_content(paths):
-    assert "file contents" == Path(str(paths.file_r), "fr").get_content()
+    assert "file contents" == Path(paths.file_r, "fr").get_content()
     assert "file contents" == Path(f"file://{paths.tmp_path}/{paths.file_r}", "fr").get_content()
     assert "file contents" == Path(f"file://{paths.tmp_path}/{paths.file_r}", "ur").get_content()
 
 
 def test_path_create_mode(paths):
-    Path(str(paths.file_rw), "fcrw")
-    Path(str(paths.tmp_path / "file_c"), "fc")
-    Path(str(paths.tmp_path / "not_existing_dir" / "file_c"), "fcc")
-    Path(str(paths.dir_rwx), "dcrwx")
-    Path(str(paths.tmp_path / "dir_c"), "dc")
+    Path(paths.file_rw, "fcrw")
+    Path(paths.tmp_path / "file_c", "fc")
+    Path(paths.tmp_path / "not_existing_dir" / "file_c", "fcc")
+    Path(paths.dir_rwx, "dcrwx")
+    Path(paths.tmp_path / "dir_c", "dc")
     if is_posix:
-        pytest.raises(TypeError, lambda: Path(str(paths.dir_rx / "file_c"), "fc"))
-        pytest.raises(TypeError, lambda: Path(str(paths.dir_rx / "dir_c"), "dc"))
-        pytest.raises(TypeError, lambda: Path(str(paths.dir_rx / "not_existing_dir" / "file_c"), "fcc"))
-    pytest.raises(TypeError, lambda: Path(str(paths.file_rw), "dc"))
-    pytest.raises(TypeError, lambda: Path(str(paths.dir_rwx), "fc"))
-    pytest.raises(TypeError, lambda: Path(str(paths.dir_rwx / "ne" / "file_c"), "fc"))
+        pytest.raises(TypeError, lambda: Path(paths.dir_rx / "file_c", "fc"))
+        pytest.raises(TypeError, lambda: Path(paths.dir_rx / "dir_c", "dc"))
+        pytest.raises(TypeError, lambda: Path(paths.dir_rx / "not_existing_dir" / "file_c", "fcc"))
+    pytest.raises(TypeError, lambda: Path(paths.file_rw, "dc"))
+    pytest.raises(TypeError, lambda: Path(paths.dir_rwx, "fc"))
+    pytest.raises(TypeError, lambda: Path(paths.dir_rwx / "ne" / "file_c", "fc"))
 
 
 def test_path_complement_modes(paths):
-    pytest.raises(TypeError, lambda: Path(str(paths.file_rw), "fW"))
-    pytest.raises(TypeError, lambda: Path(str(paths.file_rw), "fR"))
-    pytest.raises(TypeError, lambda: Path(str(paths.dir_rwx), "dX"))
-    pytest.raises(TypeError, lambda: Path(str(paths.file_rw), "F"))
-    pytest.raises(TypeError, lambda: Path(str(paths.dir_rwx), "D"))
+    pytest.raises(TypeError, lambda: Path(paths.file_rw, "fW"))
+    pytest.raises(TypeError, lambda: Path(paths.file_rw, "fR"))
+    pytest.raises(TypeError, lambda: Path(paths.dir_rwx, "dX"))
+    pytest.raises(TypeError, lambda: Path(paths.file_rw, "F"))
+    pytest.raises(TypeError, lambda: Path(paths.dir_rwx, "D"))
 
 
 def test_path_invalid_modes(paths):
-    pytest.raises(ValueError, lambda: Path(str(paths.file_rw), True))
-    pytest.raises(ValueError, lambda: Path(str(paths.file_rw), "≠"))
-    pytest.raises(ValueError, lambda: Path(str(paths.file_rw), "fd"))
+    pytest.raises(ValueError, lambda: Path(paths.file_rw, True))
+    pytest.raises(ValueError, lambda: Path(paths.file_rw, "≠"))
+    pytest.raises(ValueError, lambda: Path(paths.file_rw, "fd"))
     if url_support:
-        pytest.raises(ValueError, lambda: Path(str(paths.file_rw), "du"))
+        pytest.raises(ValueError, lambda: Path(paths.file_rw, "du"))
 
 
 def test_path_class_hidden_methods(paths):
-    path = Path(str(paths.file_rw), "frw")
+    path = Path(paths.file_rw, "frw")
     assert path(False) == str(paths.file_rw)
     assert path(True) == str(paths.tmp_path / paths.file_rw)
     assert path() == str(paths.tmp_path / paths.file_rw)
@@ -388,7 +388,7 @@ def test_relative_path_context_fsspec(tmp_cwd, subtests):
             assert "memory://one/two/three" == current_path_dir.get()
 
         with subtests.test("absolute local path"):
-            path0 = Path(str(local_path), mode="fr")
+            path0 = Path(local_path, mode="fr")
             assert "zero" == path0.get_content()
 
         with subtests.test("relative fsspec path"):

@@ -168,7 +168,7 @@ def test_action_jsonnet_save_config_metadata(parser, tmp_path):
     # save the config with metadata and verify it is saved as two files
     cfg = parser.parse_args(["--ext_vars", '{"param": 123}', f"--jsonnet={jsonnet_file}"])
     assert str(cfg.jsonnet["__path__"]) == str(jsonnet_file)
-    parser.save(cfg, str(output_yaml))
+    parser.save(cfg, output_yaml)
     assert output_yaml.is_file()
     assert output_jsonnet.is_file()
 
@@ -185,7 +185,7 @@ def test_action_jsonnet_save_config_metadata(parser, tmp_path):
     # save the config without metadata and verify it is saved as a single file
     output_yaml.unlink()
     output_jsonnet.unlink()
-    parser.save(strip_meta(cfg), str(output_yaml))
+    parser.save(strip_meta(cfg), output_yaml)
     assert output_yaml.is_file()
     assert not output_jsonnet.is_file()
 

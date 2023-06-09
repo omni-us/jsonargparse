@@ -76,7 +76,7 @@ def default_config_files(tmp_cwd) -> Tuple[ArgumentParser, str, Path]:
     exists = Path("config.yaml")
     exists.write_text("v1: from yaml v1\nn1.v2: from yaml v2\n")
 
-    parser = ArgumentParser(default_config_files=[not_exist, str(exists)])
+    parser = ArgumentParser(default_config_files=[not_exist, exists])
     parser.add_argument("--v1", default="from default v1")
     parser.add_argument("--n1.v2", default="from default v2")
     return parser, not_exist, exists
@@ -113,7 +113,7 @@ def test_help_default_config_files_with_required(tmp_path, parser):
     config_path = tmp_path / "config.yaml"
     config_path.write_text("v1: from yaml\n")
 
-    parser.default_config_files = [str(config_path)]
+    parser.default_config_files = [config_path]
     parser.add_argument("req", help="req description")
     parser.add_argument("--v1", default="from default")
 

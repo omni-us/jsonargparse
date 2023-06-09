@@ -437,9 +437,9 @@ class Path(PathDeprecations):
 
     def __init__(
         self,
-        path: Union[str, "Path"],
+        path: Union[str, os.PathLike, "Path"],
         mode: str = "fr",
-        cwd: Optional[str] = None,
+        cwd: Optional[Union[str, os.PathLike]] = None,
         **kwargs,
     ):
         """Initializer for Path instance.
@@ -465,7 +465,9 @@ class Path(PathDeprecations):
             cwd = path.cwd
             abs_path = path._absolute
             path = path._relative
-        elif isinstance(path, str):
+        elif isinstance(path, (str, os.PathLike)):
+            path = os.fspath(path)
+            cwd = os.fspath(cwd) if cwd else None
             abs_path = os.path.expanduser(path)
             if self._file_scheme.match(abs_path):
                 abs_path = self._file_scheme.sub("" if os.name == "nt" else "/", abs_path)
@@ -489,7 +491,7 @@ class Path(PathDeprecations):
                 abs_path = abs_path if is_absolute else os.path.join(cwd, abs_path)
                 url_data = None
         else:
-            raise TypeError("Expected path to be a string or a Path object.")
+            raise TypeError("Expected path to be a string, os.PathLike or a Path object.")
 
         if not self._skip_check and is_url:
             if "r" in mode:
@@ -507,9 +509,9 @@ class Path(PathDeprecations):
                     handle.open()
                     handle.close()
                 except (FileNotFoundError, KeyError) as ex:
-                    raise TypeError("Path does not exist: " + abs_path) from ex
+                    raise TypeError(f"Path does not exist: {abs_path!r}") from ex
                 except PermissionError as ex:
-                    raise TypeError("Path exists but no permission to access: " + abs_path) from ex
+                    raise TypeError(f"Path exists but no permission to access: {abs_path!r}") from ex
         elif not self._skip_check:
             ptype = "Directory" if "d" in mode else "File"
             if "c" in mode:
@@ -520,36 +522,36 @@ class Path(PathDeprecations):
                         ppdir = pdir
                         pdir = os.path.realpath(os.path.join(pdir, ".."))
                 if not os.path.isdir(pdir):
-                    raise TypeError(ptype + " is not creatable since parent directory does not exist: " + abs_path)
+                    raise TypeError(f"{ptype} is not creatable since parent directory does not exist: {abs_path!r}")
                 if not os.access(pdir, os.W_OK):
-                    raise TypeError(ptype + " is not creatable since parent directory not writeable: " + abs_path)
+                    raise TypeError(f"{ptype} is not creatable since parent directory not writeable: {abs_path!r}")
                 if "d" in mode and os.access(abs_path, os.F_OK) and not os.path.isdir(abs_path):
-                    raise TypeError(ptype + " is not creatable since path already exists: " + abs_path)
+                    raise TypeError(f"{ptype} is not creatable since path already exists: {abs_path!r}")
                 if "f" in mode and os.access(abs_path, os.F_OK) and not os.path.isfile(abs_path):
-                    raise TypeError(ptype + " is not creatable since path already exists: " + abs_path)
+                    raise TypeError(f"{ptype} is not creatable since path already exists: {abs_path!r}")
             elif "d" in mode or "f" in mode:
                 if not os.access(abs_path, os.F_OK):
-                    raise TypeError(ptype + " does not exist: " + abs_path)
+                    raise TypeError(f"{ptype} does not exist: {abs_path!r}")
                 if "d" in mode and not os.path.isdir(abs_path):
-                    raise TypeError("Path is not a directory: " + abs_path)
+                    raise TypeError(f"Path is not a directory: {abs_path!r}")
                 if "f" in mode and not (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
-                    raise TypeError("Path is not a file: " + abs_path)
+                    raise TypeError(f"Path is not a file: {abs_path!r}")
             if "r" in mode and not os.access(abs_path, os.R_OK):
-                raise TypeError(ptype + " is not readable: " + abs_path)
+                raise TypeError(f"{ptype} is not readable: {abs_path!r}")
             if "w" in mode and not os.access(abs_path, os.W_OK):
-                raise TypeError(ptype + " is not writeable: " + abs_path)
+                raise TypeError(f"{ptype} is not writeable: {abs_path!r}")
             if "x" in mode and not os.access(abs_path, os.X_OK):
-                raise TypeError(ptype + " is not executable: " + abs_path)
+                raise TypeError(f"{ptype} is not executable: {abs_path!r}")
             if "D" in mode and os.path.isdir(abs_path):
-                raise TypeError("Path is a directory: " + abs_path)
+                raise TypeError(f"Path is a directory: {abs_path!r}")
             if "F" in mode and (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
-                raise TypeError("Path is a file: " + abs_path)
+                raise TypeError(f"Path is a file: {abs_path!r}")
             if "R" in mode and os.access(abs_path, os.R_OK):
-                raise TypeError(ptype + " is readable: " + abs_path)
+                raise TypeError(f"{ptype} is readable: {abs_path!r}")
             if "W" in mode and os.access(abs_path, os.W_OK):
-                raise TypeError(ptype + " is writeable: " + abs_path)
+                raise TypeError(f"{ptype} is writeable: {abs_path!r}")
             if "X" in mode and os.access(abs_path, os.X_OK):
-                raise TypeError(ptype + " is executable: " + abs_path)
+                raise TypeError(f"{ptype} is executable: {abs_path!r}")
 
         self._relative = path
         self._absolute = abs_path
