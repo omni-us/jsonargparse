@@ -16,9 +16,6 @@ __all__ = [
 ]
 
 
-regex_curly_comma = re.compile(" *[{},] *")
-
-
 class DefaultLoader(getattr(yaml, "CSafeLoader", yaml.SafeLoader)):  # type: ignore
     pass
 
@@ -61,7 +58,7 @@ def yaml_load(stream):
         if len(value) == 1 and stream.strip() == next(iter(value.keys())) + ":":
             value = stream
         else:
-            keys = {k for k in regex_curly_comma.split(stream) if k}
+            keys = set(stream.strip(" {}").replace(" ", "").split(","))
             if len(keys) > 0 and keys == set(value.keys()):
                 value = stream
     return value

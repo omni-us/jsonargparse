@@ -12,6 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.21.3 (2023-06-??)
+--------------------
+
+Fixed
+^^^^^
+- Regular expressions vulnerable to polynomial runtime due to backtracking.
+
+
 v4.21.2 (2023-06-08)
 --------------------
 

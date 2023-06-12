@@ -469,12 +469,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if env_var in env and not isinstance(action, (ActionConfigFile, _ActionSubCommands)):
                 env_val = env[env_var]
                 if _is_action_value_list(action):
-                    if re.match("^ *\\[.+,.+] *$", env_val):
-                        try:
-                            env_val = load_value(env_val)
-                        except get_loader_exceptions():
-                            env_val = [env_val]
-                    else:
+                    try:
+                        list_env_val = load_value(env_val)
+                        env_val = list_env_val if isinstance(list_env_val, list) else [env_val]
+                    except get_loader_exceptions():
                         env_val = [env_val]
                 cfg[action.dest] = self._check_value_key(action, env_val, action.dest, cfg)
         self._apply_actions(cfg)
