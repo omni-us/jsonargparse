@@ -918,7 +918,10 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
         return "._" in class_path
 
     def add_subclasses(cl):
-        class_path = get_import_path(cl)
+        try:
+            class_path = get_import_path(cl)
+        except (ImportError, AttributeError):  # Attribute is added in case of dot notation imports
+            return
         if is_local(cl) or issubclass(cl, LazyInitBaseClass):
             return
         if not (inspect.isabstract(cl) or is_private(class_path)):
