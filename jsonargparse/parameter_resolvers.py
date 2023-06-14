@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from ._common import is_dataclass_like, is_subclass
 from ._stubs_resolver import get_stub_types
-from .optionals import parse_docs
+from .optionals import attrs_support, parse_docs, pydantic_support
 from .util import (
     ClassFromFunctionBase,
     LoggerProperty,
@@ -769,35 +769,56 @@ def get_parameters_by_assumptions(
     return params
 
 
-def get_parameters_from_pydantic(
+def get_parameters_from_pydantic_or_attrs(
     function_or_class: Union[Callable, Type],
     method_or_property: Optional[str],
     logger: logging.Logger,
 ) -> Optional[ParamList]:
-    from .optionals import pydantic_support
-
-    if not pydantic_support or method_or_property:
+    if method_or_property:
         return None
-    from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
-    if not is_subclass(function_or_class, BaseModel):
+    fields_iterator = None
+    if pydantic_support:
+        from pydantic import BaseModel  # pylint: disable=no-name-in-module
+
+        if is_subclass(function_or_class, BaseModel):
+            fields_iterator = function_or_class.__fields__.values()  # type: ignore
+            is_required = lambda f: f.required
+            is_factory = lambda f: f.default_factory
+            run_factory = lambda f: f.default_factory()
+            get_annotation = lambda f: f.annotation
+            get_doc = lambda f: f.field_info.description or doc_params.get(f.name)  # type: ignore
+
+    if not fields_iterator and attrs_support:
+        import attrs
+
+        if attrs.has(function_or_class):  # type: ignore
+            fields_iterator = attrs.fields(function_or_class)
+            is_required = lambda f: f.default is attrs.NOTHING
+            is_factory = lambda f: isinstance(f.default, attrs.Factory)  # type: ignore
+            run_factory = lambda f: f.default.factory()
+            get_annotation = lambda f: f.type
+            get_doc = lambda f: doc_params.get(f.name)  # type: ignore
+
+    if not fields_iterator:
         return None
+
     params = []
     doc_params = parse_docs(function_or_class, None, logger)
-    for field in function_or_class.__fields__.values():  # type: ignore
-        if field.required:
+    for field in fields_iterator:
+        if is_required(field):
             default = inspect._empty
-        elif field.default_factory:
-            default = field.default_factory()
+        elif is_factory(field):
+            default = run_factory(field)
         else:
             default = field.default
         params.append(
             ParamData(
                 name=field.name,
-                annotation=field.annotation,
+                annotation=get_annotation(field),
                 default=default,
                 kind=kinds.KEYWORD_ONLY,
-                doc=field.field_info.description or doc_params.get(field.name),
+                doc=get_doc(field),
                 component=function_or_class,
             )
         )
@@ -824,7 +845,7 @@ def get_signature_parameters(
     """
     logger = parse_logger(logger, "get_signature_parameters")
     try:
-        params = get_parameters_from_pydantic(function_or_class, method_or_property, logger)
+        params = get_parameters_from_pydantic_or_attrs(function_or_class, method_or_property, logger)
         if params is not None:
             return params
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)

@@ -402,6 +402,9 @@ if pydantic_support:
         p1: str
         p2: int = 3
 
+    class PydanticSubModel(PydanticModel):
+        p3: float = 0.1
+
     class PydanticFieldFactory(pydantic.BaseModel):
         p1: List[int] = pydantic.Field(default_factory=lambda: [1, 2])
 
@@ -433,13 +436,18 @@ class TestPydantic:
         cfg = parser.parse_args(["--model.p2=5"])
         assert Namespace(p1="a", p2=5) == cfg.model
 
+    def test_subclass(self, parser):
+        parser.add_argument("--model", type=PydanticSubModel, default=PydanticSubModel(p1="a"))
+        cfg = parser.parse_args(["--model.p3=0.2"])
+        assert Namespace(p1="a", p2=3, p3=0.2) == cfg.model
+
     def test_field_default_factory(self, parser):
         parser.add_argument("--model", type=PydanticFieldFactory)
         cfg1 = parser.parse_args([])
         cfg2 = parser.parse_args([])
         assert cfg1.model.p1 == [1, 2]
         assert cfg1.model.p1 == cfg2.model.p1
-        assert cfg1.model.p1 == cfg2.model.p1
+        assert cfg1.model.p1 is not cfg2.model.p1
 
     def test_field_description(self, parser):
         parser.add_argument("--model", type=PydanticHelp)
@@ -481,8 +489,16 @@ if attrs_support:
 
     @attrs.define
     class AttrsData:
-        p1: float = 0.1
+        p1: float
         p2: str = "-"
+
+    @attrs.define
+    class AttrsSubData(AttrsData):
+        p3: int = 3
+
+    @attrs.define
+    class AttrsFieldFactory:
+        p1: List[str] = attrs.field(factory=lambda: ["one", "two"])
 
 
 @pytest.mark.skipif(not attrs_support, reason="attrs package is required")
@@ -490,6 +506,19 @@ class TestAttrs:
     def test_define(self, parser):
         parser.add_argument("--data", type=AttrsData)
         defaults = parser.get_defaults()
-        assert Namespace(p1=0.1, p2="-") == defaults.data
+        assert Namespace(p1=None, p2="-") == defaults.data
         cfg = parser.parse_args(["--data.p1=0.2", "--data.p2=x"])
         assert Namespace(p1=0.2, p2="x") == cfg.data
+
+    def test_subclass(self, parser):
+        parser.add_argument("--data", type=AttrsSubData)
+        defaults = parser.get_defaults()
+        assert Namespace(p1=None, p2="-", p3=3) == defaults.data
+
+    def test_field_factory(self, parser):
+        parser.add_argument("--data", type=AttrsFieldFactory)
+        cfg1 = parser.parse_args([])
+        cfg2 = parser.parse_args([])
+        assert cfg1.data.p1 == ["one", "two"]
+        assert cfg1.data.p1 == cfg2.data.p1
+        assert cfg1.data.p1 is not cfg2.data.p1
