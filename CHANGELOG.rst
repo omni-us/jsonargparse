@@ -20,6 +20,8 @@ Fixed
 - Regular expressions vulnerable to polynomial runtime due to backtracking.
 - ``attrs`` fields with factory default causes parse to fail (`#299
   <https://github.com/omni-us/jsonargparse/issues/299>`__).
+- Stop subclass dive if you hit bad import (`#304
+  <https://github.com/omni-us/jsonargparse/issues/304>`__).
 
 
 v4.21.2 (2023-06-08)
