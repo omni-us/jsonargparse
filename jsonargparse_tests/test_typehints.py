@@ -24,8 +24,12 @@ import pytest
 import yaml
 
 from jsonargparse import ActionConfigFile, ArgumentError, Namespace, lazy_instance
-from jsonargparse.typehints import ActionTypeHint, Literal, is_optional, \
-    get_all_subclass_paths
+from jsonargparse.typehints import (
+    ActionTypeHint,
+    Literal,
+    get_all_subclass_paths,
+    is_optional,
+)
 from jsonargparse.typing import (
     NotEmptyStr,
     Path_fc,
