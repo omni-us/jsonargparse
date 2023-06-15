@@ -24,8 +24,12 @@ import pytest
 import yaml
 
 from jsonargparse import ActionConfigFile, ArgumentError, Namespace, lazy_instance
-from jsonargparse.typehints import ActionTypeHint, Literal, is_optional, resolve_class_path_by_name, \
-    get_all_subclass_paths
+from jsonargparse.typehints import (
+    ActionTypeHint,
+    Literal,
+    get_all_subclass_paths,
+    is_optional,
+)
 from jsonargparse.typing import (
     NotEmptyStr,
     Path_fc,
@@ -832,7 +836,6 @@ class ImportClass:
 
 
 def test_get_all_subclass_paths_import_error():
-
     def mocked_get_import_path(cls):
         if cls is ImportClass:
             raise ImportError
