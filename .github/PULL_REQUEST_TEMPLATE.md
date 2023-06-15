@@ -18,7 +18,7 @@ Use the following list as tasks to be completed before marking a pull request as
 task is not relevant or leave empty when in doubt.
 -->
 
-- [ ] Did you read the [contributing guideline](https://github.com/omni-us/jsonargparse/blob/master/CONTRIBUTING.rst)?
+- [ ] Did you read the [contributing guideline](https://github.com/omni-us/jsonargparse/blob/main/CONTRIBUTING.rst)?
 - [ ] Did you update **the documentation**? (readme and public docstrings)
 - [ ] Did you write **unit tests** such that there is 100% coverage on related code? (required for bug fixes and new features)
 - [ ] Did you verify that new and existing **tests pass locally**?
