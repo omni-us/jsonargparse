@@ -2,7 +2,7 @@
     :target: https://jsonargparse.readthedocs.io/en/stable/
 .. image:: https://github.com/omni-us/jsonargparse/actions/workflows/tests.yml/badge.svg
     :target: https://github.com/omni-us/jsonargparse/actions/workflows/tests.yml
-.. image:: https://codecov.io/gh/omni-us/jsonargparse/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/omni-us/jsonargparse/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/omni-us/jsonargparse
 .. image:: https://sonarcloud.io/api/project_badges/measure?project=omni-us_jsonargparse&metric=alert_status
     :target: https://sonarcloud.io/dashboard?id=omni-us_jsonargparse
