@@ -18,12 +18,14 @@ from typing import (
     Type,
     Union,
 )
+from unittest import mock
 
 import pytest
 import yaml
 
 from jsonargparse import ActionConfigFile, ArgumentError, Namespace, lazy_instance
-from jsonargparse.typehints import ActionTypeHint, Literal, is_optional
+from jsonargparse.typehints import ActionTypeHint, Literal, is_optional, resolve_class_path_by_name, \
+    get_all_subclass_paths
 from jsonargparse.typing import (
     NotEmptyStr,
     Path_fc,
@@ -31,6 +33,7 @@ from jsonargparse.typing import (
     PositiveFloat,
     PositiveInt,
 )
+from jsonargparse.util import get_import_path
 from jsonargparse_tests.conftest import (
     capture_logs,
     get_parse_args_stdout,
@@ -822,3 +825,19 @@ def test_dump_skip_default(parser):
     del cfg["g2.op2.init_args"]
     dump = parser.dump(cfg, skip_default=True)
     assert dump == f"g2:\n  op2:\n    class_path: {__name__}.SkipDefault\n"
+
+
+class ImportClass:
+    pass
+
+
+def test_get_all_subclass_paths_import_error():
+
+    def mocked_get_import_path(cls):
+        if cls is ImportClass:
+            raise ImportError
+        return get_import_path(cls)
+
+    with mock.patch("jsonargparse.typehints.get_import_path", mocked_get_import_path):
+        subclass_paths = get_all_subclass_paths(ImportClass)
+    assert subclass_paths == []
