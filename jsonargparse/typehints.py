@@ -4,7 +4,6 @@ import inspect
 import os
 import re
 import sys
-import traceback
 from argparse import ArgumentError
 from collections import abc, defaultdict
 from contextlib import contextmanager, suppress
@@ -921,8 +920,8 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
     def add_subclasses(cl):
         try:
             class_path = get_import_path(cl)
-        except (ImportError, AttributeError):  # Attribute is added in case of dot notation imports
-            warning(f"Hit failing import with following trace: {traceback.format_exc()}")
+        except (ImportError, AttributeError) as err:  # Attribute is added in case of dot notation imports
+            warning(f"Hit failing import with following trace: {err}")
             return
         if is_local(cl) or issubclass(cl, LazyInitBaseClass):
             return
