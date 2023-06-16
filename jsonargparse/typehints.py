@@ -921,7 +921,7 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
         try:
             class_path = get_import_path(cl)
         except (ImportError, AttributeError) as err:  # Attribute is added in case of dot notation imports
-            warning(f"Hit failing import with following trace: {err}")
+            warning(f"Hit failing import with following error: {err}")
             return
         if is_local(cl) or issubclass(cl, LazyInitBaseClass):
             return
