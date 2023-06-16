@@ -165,6 +165,7 @@ line-length = 180  # todo: this shall be 120
 select = [
     "E", "W",  # see: https://pypi.org/project/pycodestyle
     "F",  # see: https://pypi.org/project/pyflakes
+    "I",  # isort
 ]
 ignore = [
     "E731",  # Do not assign a lambda expression, use a def
@@ -196,11 +197,6 @@ convention = "google"
 # https://github.com/psf/black
 line-length = 120
 exclude = "(.eggs|.git|.hg|.mypy_cache|.venv|_build|buck-out|build|dist)"
-
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
 
 
 [tool.tox]
