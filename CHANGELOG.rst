@@ -18,6 +18,9 @@ v4.22.0 (2023-06-??)
 Added
 ^^^^^
 - Parameters that receive a path now also accept ``os.PathLike`` type.
+- ``class_from_function`` now supports ``func_return`` parameter to specify the
+  return type of the function (`lightning-flash#1564 comment
+  <https://github.com/Lightning-Universe/lightning-flash/pull/1564#discussion_r1218147330>`__).
 
 Fixed
 ^^^^^

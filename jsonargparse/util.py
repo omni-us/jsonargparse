@@ -361,13 +361,18 @@ class ClassFromFunctionBase:
 ClassType = TypeVar("ClassType")
 
 
-def class_from_function(func: Callable[..., ClassType]) -> Type[ClassType]:
+def class_from_function(
+    func: Callable[..., ClassType],
+    func_return: Optional[Type[ClassType]] = None,
+) -> Type[ClassType]:
     """Creates a dynamic class which if instantiated is equivalent to calling func.
 
     Args:
-        func: A function that returns an instance of a class. It must have a return type annotation.
+        func: A function that returns an instance of a class.
+        func_return: The return type of the function. Required if func does not have a return type annotation.
     """
-    func_return = inspect.signature(func).return_annotation
+    if func_return is None:
+        func_return = inspect.signature(func).return_annotation
     if isinstance(func_return, str):
         caller_frame = inspect.currentframe().f_back  # type: ignore
         func_return = caller_frame.f_locals.get(func_return) or caller_frame.f_globals.get(func_return)  # type: ignore
