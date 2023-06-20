@@ -596,6 +596,16 @@ def test_invalid_class_from_function():
     ctx.match("Unable to dereference None the return type")
 
 
+def get_random_untyped():
+    return Random()
+
+
+def test_class_from_function_given_return_type():
+    cls = class_from_function(get_random_untyped, Random)
+    assert issubclass(cls, Random)
+    assert isinstance(cls(), Random)
+
+
 def get_calendar(a1: str, a2: int = 2) -> Calendar:
     """Returns instance of Calendar"""
     cal = Calendar()
