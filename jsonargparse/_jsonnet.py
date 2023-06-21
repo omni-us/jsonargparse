@@ -2,17 +2,17 @@
 
 from typing import Any, Dict, Optional, Tuple, Union
 
+from ._actions import Action, _is_action_value_list
 from ._common import parser_context
-from .actions import Action, _is_action_value_list
-from .jsonschema import ActionJsonSchema
-from .loaders_dumpers import get_loader_exceptions, load_value
-from .optionals import (
+from ._jsonschema import ActionJsonSchema
+from ._loaders_dumpers import get_loader_exceptions, load_value
+from ._optionals import (
     get_config_read_mode,
     get_jsonschema_exceptions,
     import_jsonnet,
     import_jsonschema,
 )
-from .util import Path, argument_error
+from ._util import Path, argument_error
 
 __all__ = [
     "ActionJsonnetExtVars",

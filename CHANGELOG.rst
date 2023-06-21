@@ -30,6 +30,15 @@ Fixed
 - Stop subclass dive if you hit bad import (`#304
   <https://github.com/omni-us/jsonargparse/issues/304>`__).
 
+Changed
+^^^^^^^
+- Added ``_`` prefix to module names to be explicit about non-public API.
+
+Deprecated
+^^^^^^^^^^
+- Importing from original non-public module paths (without ``_`` prefix) now
+  gives a ``DeprecationWarning``. From v5.0.0 these imports will fail.
+
 
 v4.21.2 (2023-06-08)
 --------------------

@@ -10,9 +10,9 @@ from unittest.mock import patch
 import pytest
 
 from jsonargparse import Namespace, class_from_function
-from jsonargparse.optionals import docstring_parser_support
-from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
-from jsonargparse.parameter_resolvers import is_lambda
+from jsonargparse._optionals import docstring_parser_support
+from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
+from jsonargparse._parameter_resolvers import is_lambda
 from jsonargparse_tests.conftest import capture_logs
 
 

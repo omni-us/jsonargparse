@@ -286,7 +286,7 @@ def get_omegaconf_loader():
     """Returns a yaml loader function based on OmegaConf which supports variable interpolation."""
     import io
 
-    from .loaders_dumpers import yaml_load
+    from ._loaders_dumpers import yaml_load
 
     with missing_package_raise("omegaconf", "get_omegaconf_loader"):
         from omegaconf import OmegaConf

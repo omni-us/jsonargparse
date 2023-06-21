@@ -1,7 +1,7 @@
 import pytest
 
 from jsonargparse import get_config_read_mode, set_config_read_mode
-from jsonargparse.optionals import (
+from jsonargparse._optionals import (
     argcomplete_support,
     docstring_parser_support,
     fsspec_support,

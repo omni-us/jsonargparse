@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 
 from jsonargparse import ArgumentParser
-from jsonargparse.optionals import (
+from jsonargparse._optionals import (
     docstring_parser_support,
     fsspec_support,
     jsonschema_support,

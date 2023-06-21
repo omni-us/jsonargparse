@@ -1,8 +1,10 @@
 import os
 import pathlib
+import sys
 from calendar import Calendar
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from enum import Enum
+from importlib import import_module
 from io import StringIO
 from warnings import catch_warnings
 
@@ -17,19 +19,18 @@ from jsonargparse import (
     get_config_read_mode,
     set_url_support,
 )
-from jsonargparse.deprecated import (
+from jsonargparse._deprecated import (
     ActionEnum,
     ActionOperators,
     ActionPath,
     ActionPathList,
     ParserError,
     deprecation_warning,
-    import_docstring_parse,
     shown_deprecation_warnings,
     usage_and_exit_error_handler,
 )
-from jsonargparse.optionals import url_support
-from jsonargparse.util import LoggerProperty, argument_error
+from jsonargparse._optionals import url_support
+from jsonargparse._util import LoggerProperty, argument_error
 from jsonargparse_tests.conftest import (
     get_parser_help,
     skip_if_docstring_parser_unavailable,
@@ -56,7 +57,7 @@ def test_deprecation_warning():
         deprecation_warning(None, message)
         assert 2 == len(w)
         assert "only one JsonargparseDeprecationWarning per type is shown" in str(w[0].message)
-        assert message == str(w[1].message)
+        assert message == str(w[1].message).strip()
 
 
 class MyEnum(Enum):
@@ -214,13 +215,6 @@ def test_env_prefix_none():
     with catch_warnings(record=True) as w:
         ArgumentParser(env_prefix=None)
         assert "env_prefix" in str(w[-1].message)
-
-
-@skip_if_docstring_parser_unavailable
-def test_docstring_parse():
-    with catch_warnings(record=True) as w:
-        import_docstring_parse("test_docstring_parse")
-        assert "Only use the public API" in str(w[-1].message)
 
 
 def test_error_handler_parameter():
@@ -430,3 +424,52 @@ def test_ActionPathList(tmp_cwd):
         ValueError,
         lambda: parser.add_argument("--op3", action=ActionPathList(mode="fr", rel=".")),
     )
+
+
+@skip_if_docstring_parser_unavailable
+def test_import_import_docstring_parse():
+    from jsonargparse._optionals import import_docstring_parser
+
+    with catch_warnings(record=True) as w:
+        from jsonargparse.optionals import import_docstring_parse
+
+    if sys.version_info[:2] != (3, 6):
+        assert "Only use the public API" in str(w[-1].message)
+    assert import_docstring_parse is import_docstring_parser
+
+
+def test_import_from_deprecated():
+    import jsonargparse.deprecated as deprecated
+
+    with catch_warnings(record=True) as w:
+        func = deprecated.set_url_support
+
+    if sys.version_info[:2] != (3, 6):
+        assert "Only use the public API" in str(w[-1].message)
+    assert func is set_url_support
+
+
+@pytest.mark.parametrize(
+    ["module", "attr"],
+    [
+        ("actions", "ActionYesNo"),
+        ("cli", "CLI"),
+        ("core", "ArgumentParser"),
+        ("formatters", "DefaultHelpFormatter"),
+        ("jsonnet", "ActionJsonnet"),
+        ("jsonschema", "ActionJsonSchema"),
+        ("link_arguments", "ArgumentLinking"),
+        ("loaders_dumpers", "set_loader"),
+        ("namespace", "Namespace"),
+        ("signatures", "compose_dataclasses"),
+        ("typehints", "lazy_instance"),
+        ("util", "Path"),
+        ("parameter_resolvers", "ParamData"),
+    ],
+)
+def test_import_from_module(module, attr):
+    module = import_module(f"jsonargparse.{module}")
+    with catch_warnings(record=True) as w:
+        getattr(module, attr)
+    if sys.version_info[:2] != (3, 6):
+        assert "Only use the public API" in str(w[-1].message)

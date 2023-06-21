@@ -7,12 +7,12 @@ from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from .optionals import (
+from ._optionals import (
     import_typeshed_client,
     typeshed_client_support,
     typing_extensions_import,
 )
-from .util import unique
+from ._util import unique
 
 if TYPE_CHECKING:  # pragma: no cover
     import typeshed_client as tc

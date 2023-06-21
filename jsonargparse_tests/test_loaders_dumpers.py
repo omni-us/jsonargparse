@@ -7,8 +7,8 @@ import yaml
 
 from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader
 from jsonargparse._common import parser_context
-from jsonargparse.loaders_dumpers import load_value, loaders, yaml_dump
-from jsonargparse.optionals import omegaconf_support
+from jsonargparse._loaders_dumpers import load_value, loaders, yaml_dump
+from jsonargparse._optionals import omegaconf_support
 
 
 def test_set_dumper_custom_yaml(parser):
@@ -17,7 +17,7 @@ def test_set_dumper_custom_yaml(parser):
     def custom_yaml_dump(data) -> str:
         return yaml.safe_dump(data, default_flow_style=True)
 
-    with patch.dict("jsonargparse.loaders_dumpers.dumpers"):
+    with patch.dict("jsonargparse._loaders_dumpers.dumpers"):
         set_dumper("yaml_custom", custom_yaml_dump)
         cfg = parser.parse_args(["--list=[1,2,3]"])
         dump = parser.dump(cfg, format="yaml_custom")
@@ -89,7 +89,7 @@ def test_set_loader_parser_mode_subparsers(parser, subparser):
     subcommands = parser.add_subcommands()
     subcommands.add_subcommand("sub", subparser)
 
-    with patch.dict("jsonargparse.loaders_dumpers.loaders"):
+    with patch.dict("jsonargparse._loaders_dumpers.loaders"):
         set_loader("custom", yaml.safe_load)
         parser.parser_mode = "custom"
         assert "custom" == parser.parser_mode

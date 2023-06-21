@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
-from .actions import (
+from ._actions import (
     Action,
     ActionConfigFile,
     _ActionConfigLoad,
@@ -17,8 +17,8 @@ from .actions import (
     _find_parent_action,
     filter_default_actions,
 )
-from .namespace import Namespace, split_key_leaf
-from .type_checking import ArgumentParser, _ArgumentGroup
+from ._namespace import Namespace, split_key_leaf
+from ._type_checking import ArgumentParser, _ArgumentGroup
 
 __all__ = ["ArgumentLinking"]
 
@@ -46,7 +46,7 @@ def find_subclass_action_or_class_group(
     key: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
 ) -> Optional[Union[ArgparseAction, "_ArgumentGroup"]]:
-    from .typehints import ActionTypeHint
+    from ._typehints import ActionTypeHint
 
     action = _find_parent_action(parser, key, exclude=exclude)
     if ActionTypeHint.is_subclass_typehint(action):
@@ -140,7 +140,7 @@ class ActionLink(Action):
                 raise ValueError(f'No action for key "{key}".')
         assert self.target[1] is not None
 
-        from .typehints import ActionTypeHint
+        from ._typehints import ActionTypeHint
 
         is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1], all_subtypes=False)
         valid_target_init_arg = is_target_subclass and target.startswith(f"{self.target[1].dest}.init_args.")
@@ -246,7 +246,7 @@ class ActionLink(Action):
         for action in parser._links_group._group_actions:
             if action.apply_on != "parse":
                 continue
-            from .typehints import ActionTypeHint
+            from ._typehints import ActionTypeHint
 
             args = []
             skip_link = False
@@ -310,7 +310,7 @@ class ActionLink(Action):
                     source_objects.append(source_object)
                 else:
                     attr = split_key_leaf(source_key)[1]
-                    from .typehints import ActionTypeHint
+                    from ._typehints import ActionTypeHint
 
                     if ActionTypeHint.is_subclass_typehint(source_action) and not hasattr(source_object, attr):
                         parser.logger.debug(
@@ -334,7 +334,7 @@ class ActionLink(Action):
     @staticmethod
     def set_target_value(action: "ActionLink", value: Any, cfg: Namespace, logger) -> None:
         target_key, target_action = action.target
-        from .typehints import ActionTypeHint
+        from ._typehints import ActionTypeHint
 
         if ActionTypeHint.is_subclass_typehint(target_action, all_subtypes=False):
             if target_key == target_action.dest:  # type: ignore
@@ -380,7 +380,7 @@ class ActionLink(Action):
 
         for action in [a for a in parser._actions if isinstance(a, ActionLink)]:
             del_taget_key(action.target[0])
-        from .typehints import ActionTypeHint
+        from ._typehints import ActionTypeHint
 
         for action in [a for a in parser._actions if isinstance(a, ActionTypeHint) and hasattr(a, "sub_add_kwargs")]:
             for key in action.sub_add_kwargs.get("linked_targets", []):
