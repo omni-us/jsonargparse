@@ -143,10 +143,10 @@ class ActionLink(Action):
         from .typehints import ActionTypeHint
 
         is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1], all_subtypes=False)
-        valid_target_init_arg = is_target_subclass and target.startswith(self.target[1].dest + ".init_args.")
+        valid_target_init_arg = is_target_subclass and target.startswith(f"{self.target[1].dest}.init_args.")
         valid_target_leaf = self.target[1].dest == target
         if not valid_target_leaf and is_target_subclass and not valid_target_init_arg:
-            prefix = self.target[1].dest + ".init_args."
+            prefix = f"{self.target[1].dest}.init_args."
             raise ValueError(f'Target key expected to start with "{prefix}", got "{target}".')
 
         # Replace target action with link action
@@ -158,7 +158,7 @@ class ActionLink(Action):
                 if self.target[1] in group._group_actions:
                     group._group_actions.remove(self.target[1])
                     if is_target_subclass:
-                        help_dest = self.target[1].dest + ".help"
+                        help_dest = f"{self.target[1].dest}.help"
                         group._group_actions.remove(next(a for a in group._group_actions if a.dest == help_dest))
 
         # Remove target from required
@@ -384,7 +384,7 @@ class ActionLink(Action):
 
         for action in [a for a in parser._actions if isinstance(a, ActionTypeHint) and hasattr(a, "sub_add_kwargs")]:
             for key in action.sub_add_kwargs.get("linked_targets", []):
-                del_taget_key(action.dest + ".init_args." + key)
+                del_taget_key(f"{action.dest}.init_args.{key}")
 
         with _ActionSubCommands.not_single_subcommand():
             subcommands, subparsers = _ActionSubCommands.get_subcommands(parser, cfg)
