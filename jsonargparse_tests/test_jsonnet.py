@@ -14,7 +14,7 @@ from jsonargparse import (
     ArgumentParser,
     strip_meta,
 )
-from jsonargparse.optionals import jsonnet_support
+from jsonargparse._optionals import jsonnet_support
 from jsonargparse_tests.conftest import get_parser_help, skip_if_jsonschema_unavailable
 
 

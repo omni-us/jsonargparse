@@ -24,7 +24,7 @@ from jsonargparse import (
     set_config_read_mode,
     strip_meta,
 )
-from jsonargparse.optionals import jsonnet_support, jsonschema_support, ruyaml_support
+from jsonargparse._optionals import jsonnet_support, jsonschema_support, ruyaml_support
 from jsonargparse.typing import Path_fc, Path_fr, path_type
 from jsonargparse_tests.conftest import (
     capture_logs,

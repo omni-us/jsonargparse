@@ -13,8 +13,7 @@ from io import StringIO
 from string import Template
 from typing import Iterable, Optional, Union
 
-from ._common import defaults_cache, parent_parser
-from .actions import (
+from ._actions import (
     ActionConfigFile,
     ActionYesNo,
     _ActionConfigLoad,
@@ -22,11 +21,12 @@ from .actions import (
     _find_action,
     filter_default_actions,
 )
-from .link_arguments import ActionLink
-from .namespace import Namespace
-from .optionals import import_ruyaml
-from .type_checking import ArgumentParser, ruyamlCommentedMap
-from .typehints import ActionTypeHint, type_to_str
+from ._common import defaults_cache, parent_parser
+from ._link_arguments import ActionLink
+from ._namespace import Namespace
+from ._optionals import import_ruyaml
+from ._type_checking import ArgumentParser, ruyamlCommentedMap
+from ._typehints import ActionTypeHint, type_to_str
 
 __all__ = ["DefaultHelpFormatter"]
 

@@ -32,8 +32,7 @@ from typing import (
     Union,
 )
 
-from ._common import is_dataclass_like, is_subclass, parent_parser, parser_context
-from .actions import (
+from ._actions import (
     Action,
     ActionConfigFile,
     _ActionHelpClassPath,
@@ -43,20 +42,20 @@ from .actions import (
     _is_action_value_list,
     remove_actions,
 )
-from .loaders_dumpers import (
+from ._common import is_dataclass_like, is_subclass, parent_parser, parser_context
+from ._loaders_dumpers import (
     get_loader_exceptions,
     load_value,
     pyyaml_exceptions,
     yaml_load,
 )
-from .namespace import Namespace
-from .optionals import (
+from ._namespace import Namespace
+from ._optionals import (
     argcomplete_warn_redraw_prompt,
     get_files_completer,
     typing_extensions_import,
 )
-from .typing import get_registered_type, is_pydantic_type
-from .util import (
+from ._util import (
     ClassType,
     NestedArg,
     NoneType,
@@ -72,6 +71,7 @@ from .util import (
     read_stdin,
     warning,
 )
+from .typing import get_registered_type, is_pydantic_type
 
 __all__ = ["lazy_instance"]
 
@@ -693,7 +693,7 @@ def adapt_typehints(
                 val = read_stdin().splitlines()
             else:
                 with suppress(TypeError):
-                    from .optionals import get_config_read_mode
+                    from ._optionals import get_config_read_mode
 
                     list_path = Path(val, mode=get_config_read_mode())
                     val = list_path.get_content().splitlines()
@@ -781,7 +781,7 @@ def adapt_typehints(
     # Dataclass-like
     elif is_dataclass_like(typehint):
         if is_dataclass_like(type(prev_val)) and is_subclass(type(prev_val), typehint):
-            from .signatures import dataclass_to_dict
+            from ._signatures import dataclass_to_dict
 
             assert isinstance(sub_add_kwargs, dict)
             sub_add_kwargs["default"] = lazy_instance(type(prev_val), **dataclass_to_dict(prev_val))
@@ -1190,7 +1190,7 @@ def callable_instances(cls: Type):
 
 def check_lazy_kwargs(class_type: Type, lazy_kwargs: dict):
     if lazy_kwargs:
-        from .core import ArgumentParser
+        from ._core import ArgumentParser
 
         parser = ArgumentParser(exit_on_error=False)
         parser.add_class_arguments(class_type)

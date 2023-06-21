@@ -7,17 +7,17 @@ from argparse import SUPPRESS
 from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
+from ._actions import _ActionConfigLoad
 from ._common import is_dataclass_like, is_subclass
-from .actions import _ActionConfigLoad
-from .optionals import get_doc_short_description, pydantic_support
-from .parameter_resolvers import (
+from ._optionals import get_doc_short_description, pydantic_support
+from ._parameter_resolvers import (
     ParamData,
     get_parameter_origins,
     get_signature_parameters,
 )
-from .typehints import ActionTypeHint, LazyInitBaseClass, is_optional
+from ._typehints import ActionTypeHint, LazyInitBaseClass, is_optional
+from ._util import LoggerProperty, get_import_path, iter_to_set_str
 from .typing import register_pydantic_type
-from .util import LoggerProperty, get_import_path, iter_to_set_str
 
 __all__ = [
     "compose_dataclasses",

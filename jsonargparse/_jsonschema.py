@@ -3,16 +3,16 @@
 import os
 from typing import Dict, Optional, Union
 
+from ._actions import Action, _is_action_value_list
 from ._common import parser_context
-from .actions import Action, _is_action_value_list
-from .loaders_dumpers import get_loader_exceptions, load_value
-from .namespace import strip_meta
-from .optionals import (
+from ._loaders_dumpers import get_loader_exceptions, load_value
+from ._namespace import strip_meta
+from ._optionals import (
     argcomplete_warn_redraw_prompt,
     get_jsonschema_exceptions,
     import_jsonschema,
 )
-from .util import parse_value_or_config
+from ._util import parse_value_or_config
 
 __all__ = ["ActionJsonSchema"]
 

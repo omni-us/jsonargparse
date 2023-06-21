@@ -6,11 +6,14 @@ import os
 import sys
 from argparse import Action, ArgumentError
 from enum import Enum
+from importlib import import_module
+from pathlib import Path
+from types import ModuleType
 from typing import Any, Callable, Dict, Optional, Set
 
-from .namespace import Namespace
-from .optionals import FilesCompleterMethod
-from .type_checking import ArgumentParser
+from ._namespace import Namespace
+from ._optionals import FilesCompleterMethod
+from ._type_checking import ArgumentParser
 
 __all__ = [
     "ActionEnum",
@@ -35,7 +38,7 @@ def deprecation_warning(component, message):
     show_warnings = env_var != "off"
     all_warnings = env_var == "all"
     if show_warnings and (component not in shown_deprecation_warnings or all_warnings):
-        from .util import warning
+        from ._util import warning
 
         if len(shown_deprecation_warnings) == 0 and not all_warnings:
             warning(
@@ -86,7 +89,7 @@ def parse_as_dict_patch():
     cleaner code in v4.0.0 and warn users about the deprecation and future
     removal.
     """
-    from .core import ArgumentParser
+    from ._core import ArgumentParser
 
     assert not hasattr(ArgumentParser, "_unpatched_init")
 
@@ -176,7 +179,7 @@ def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
 
 
 def instantiate_subclasses_patch():
-    from .core import ArgumentParser
+    from ._core import ArgumentParser
 
     ArgumentParser.instantiate_subclasses = instantiate_subclasses
 
@@ -201,7 +204,7 @@ class ActionEnum:
             raise ValueError("Expected enum keyword argument.")
 
     def __call__(self, *args, **kwargs):
-        from .typehints import ActionTypeHint
+        from ._typehints import ActionTypeHint
 
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
@@ -231,7 +234,7 @@ class ActionOperators:
             raise ValueError("Expected expr keyword argument.")
 
     def __call__(self, *args, **kwargs):
-        from .typehints import ActionTypeHint
+        from ._typehints import ActionTypeHint
 
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
@@ -255,7 +258,7 @@ class ActionPath:
         self._type = path_type(mode, skip_check=skip_check)
 
     def __call__(self, *args, **kwargs):
-        from .typehints import ActionTypeHint
+        from ._typehints import ActionTypeHint
 
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
@@ -311,7 +314,7 @@ class ActionPathList(Action, FilesCompleterMethod):
     def _check_type(self, value, cfg=None):
         if value == []:
             return value
-        from .actions import _is_action_value_list
+        from ._actions import _is_action_value_list
 
         islist = _is_action_value_list(self)
         if not islist and not isinstance(value, list):
@@ -349,7 +352,7 @@ class ActionPathList(Action, FilesCompleterMethod):
 )
 def set_url_support(enabled: bool):
     """Enables/disables URL support for config read mode."""
-    from .optionals import get_config_read_mode, set_config_read_mode
+    from ._optionals import get_config_read_mode, set_config_read_mode
 
     set_config_read_mode(
         urls_enabled=enabled,
@@ -376,21 +379,6 @@ env_prefix_property_none_message = """
     Setting the env_prefix property to None was deprecated in v4.11.0 and will raise
     an exception in v5.0.0. Use True instead.
 """
-
-
-@deprecated(
-    """
-    Only use the public API as described in
-    https://jsonargparse.readthedocs.io/en/stable/#api-reference. Keeping
-    import_docstring_parse function as deprecated only to provide backward
-    compatibility with old versions of pytorch-lightning. Will be removed in
-    v5.0.0.
-"""
-)
-def import_docstring_parse(importer):
-    from .optionals import import_docstring_parser
-
-    return import_docstring_parser(importer).parse
 
 
 path_skip_check_message = """
@@ -444,7 +432,7 @@ class PathDeprecations:
         self._cwd = cwd
 
     def _deprecated_kwargs(self, kwargs):
-        from .util import get_private_kwargs
+        from ._util import get_private_kwargs
 
         self._skip_check = get_private_kwargs(kwargs, skip_check=False)
         if self._skip_check:
@@ -529,6 +517,65 @@ class ParserDeprecations:
 ParserError = ArgumentError
 
 
-import jsonargparse.optionals  # noqa: E402
+def deprecated_module(module_name, mappings=None):
+    module_path = f"jsonargparse.{module_name}"
+    module = ModuleType(module_path, f"deprecated {module_path}")
+    sys.modules[module_path] = module
 
-jsonargparse.optionals.import_docstring_parse = import_docstring_parse  # type: ignore
+    @deprecated(
+        f"""
+        Only use the public API as described in
+        https://jsonargparse.readthedocs.io/en/stable/#api-reference. Importing
+        from {module_path} is kept only to avoid breaking code that does not
+        correctly use the public API. It will no longer be available from v5.0.0.
+    """
+    )
+    def __getattr__(name):
+        new_module = f"_{module_name}"
+        if mappings and name in mappings:
+            new_module, name = mappings[name]
+        return getattr(import_module(f"jsonargparse.{new_module}"), name)
+
+    module.__getattr__ = __getattr__
+    module.__dict__["__file__"] = str(Path(__file__).parent / f"{module_name}.py")
+    module.__dict__["__path__"] = module_path
+
+    if sys.version_info[:2] == (3, 6):
+        _py36_deprecated_modules[module_name] = (module, mappings)
+
+
+_py36_deprecated_modules = {}  # type: ignore
+
+
+def py36_set_deprecated_module_attributes(globs):
+    for module_name, (module, mappings) in _py36_deprecated_modules.items():
+        globs[module_name] = module
+        for name, value in vars(import_module(f"jsonargparse._{module_name}")).items():
+            if name != "__all__" and name.startswith("_"):
+                continue
+            setattr(module, name, value)
+        for name, (new_module, new_name) in (mappings or {}).items():
+            value = getattr(import_module(f"jsonargparse.{new_module}"), new_name)
+            setattr(module, name, value)
+
+
+deprecated_module("actions")
+deprecated_module("cli")
+deprecated_module("core")
+deprecated_module("deprecated")
+deprecated_module("formatters")
+deprecated_module("jsonnet")
+deprecated_module("jsonschema")
+deprecated_module("link_arguments")
+deprecated_module("loaders_dumpers")
+deprecated_module("namespace")
+deprecated_module("parameter_resolvers")
+deprecated_module("signatures")
+deprecated_module("typehints")
+deprecated_module("util")
+deprecated_module(
+    "optionals",
+    {
+        "import_docstring_parse": ("_optionals", "import_docstring_parser"),
+    },
+)

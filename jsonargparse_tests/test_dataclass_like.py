@@ -13,7 +13,7 @@ from jsonargparse import (
     compose_dataclasses,
     lazy_instance,
 )
-from jsonargparse.optionals import (
+from jsonargparse._optionals import (
     attrs_support,
     docstring_parser_support,
     pydantic_support,
@@ -270,7 +270,7 @@ class WithAttrDocs:
 
 
 @skip_if_docstring_parser_unavailable
-@patch.dict("jsonargparse.optionals._docstring_parse_options")
+@patch.dict("jsonargparse._optionals._docstring_parse_options")
 def test_attribute_docstrings(parser):
     set_docstring_parse_options(attribute_docstrings=True)
     parser.add_class_arguments(WithAttrDocs)

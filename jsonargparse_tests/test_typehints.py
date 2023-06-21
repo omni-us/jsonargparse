@@ -25,12 +25,13 @@ import pytest
 import yaml
 
 from jsonargparse import ActionConfigFile, ArgumentError, Namespace, lazy_instance
-from jsonargparse.typehints import (
+from jsonargparse._typehints import (
     ActionTypeHint,
     Literal,
     get_all_subclass_paths,
     is_optional,
 )
+from jsonargparse._util import get_import_path
 from jsonargparse.typing import (
     NotEmptyStr,
     Path_fc,
@@ -38,7 +39,6 @@ from jsonargparse.typing import (
     PositiveFloat,
     PositiveInt,
 )
-from jsonargparse.util import get_import_path
 from jsonargparse_tests.conftest import (
     capture_logs,
     get_parse_args_stdout,
@@ -842,7 +842,7 @@ def test_get_all_subclass_paths_import_error():
             raise ImportError("Failed to import ImportClass")
         return get_import_path(cls)
 
-    with mock.patch("jsonargparse.typehints.get_import_path", mocked_get_import_path):
+    with mock.patch("jsonargparse._typehints.get_import_path", mocked_get_import_path):
         with catch_warnings(record=True) as w:
             subclass_paths = get_all_subclass_paths(ImportClass)
     assert "Failed to import ImportClass" in str(w[0].message)

@@ -14,8 +14,8 @@ from uuid import UUID, uuid5
 import pytest
 import yaml
 
+from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._stubs_resolver import get_mro_method_parent, get_stubs_resolver
-from jsonargparse.parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse_tests.conftest import (
     capture_logs,
     get_parser_help,
@@ -33,7 +33,7 @@ def skip_if_typeshed_client_unavailable():
 
 @contextmanager
 def mock_typeshed_client_unavailable():
-    with patch("jsonargparse.parameter_resolvers.add_stub_types"):
+    with patch("jsonargparse._parameter_resolvers.add_stub_types"):
         yield
 
 

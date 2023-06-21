@@ -11,9 +11,9 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from ._common import is_dataclass_like, is_subclass
+from ._optionals import parse_docs
 from ._stubs_resolver import get_stub_types
-from .optionals import attrs_support, parse_docs, pydantic_support
-from .util import (
+from ._util import (
     ClassFromFunctionBase,
     LoggerProperty,
     get_import_path,
@@ -328,7 +328,7 @@ def get_kwargs_pop_or_get_parameter(node, component, parent, doc_params, log_deb
 def is_param_subclass_instance_default(param: ParamData) -> bool:
     if is_dataclass_like(type(param.default)):
         return False
-    from .typehints import ActionTypeHint, get_subclass_types
+    from ._typehints import ActionTypeHint, get_subclass_types
 
     class_types = get_subclass_types(param.annotation)
     return (class_types and isinstance(param.default, class_types)) or (
@@ -601,7 +601,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             self.parse_source_tree()
             default_nodes = self.get_default_nodes({p.name for p in params})
             assert len(params) == len(default_nodes)
-            from .typehints import get_subclass_types
+            from ._typehints import get_subclass_types
 
             for param, default_node in zip(params, default_nodes):
                 lambda_default = is_lambda(param.default)
@@ -774,7 +774,9 @@ def get_parameters_from_pydantic_or_attrs(
     method_or_property: Optional[str],
     logger: logging.Logger,
 ) -> Optional[ParamList]:
-    if method_or_property:
+    from ._optionals import attrs_support, pydantic_support
+
+    if method_or_property or not (pydantic_support or attrs_support):
         return None
 
     fields_iterator = None

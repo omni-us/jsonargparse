@@ -22,8 +22,7 @@ from typing import (
     Union,
 )
 
-from ._common import is_dataclass_like, is_subclass, lenient_check, parser_context
-from .actions import (
+from ._actions import (
     ActionConfigFile,
     ActionParser,
     _ActionConfigLoad,
@@ -39,12 +38,13 @@ from .actions import (
     parent_parsers,
     previous_config,
 )
-from .deprecated import ParserDeprecations
-from .formatters import DefaultHelpFormatter, empty_help, get_env_var
-from .jsonnet import ActionJsonnet, ActionJsonnetExtVars
-from .jsonschema import ActionJsonSchema
-from .link_arguments import ActionLink, ArgumentLinking
-from .loaders_dumpers import (
+from ._common import is_dataclass_like, is_subclass, lenient_check, parser_context
+from ._deprecated import ParserDeprecations
+from ._formatters import DefaultHelpFormatter, empty_help, get_env_var
+from ._jsonnet import ActionJsonnet, ActionJsonnetExtVars
+from ._jsonschema import ActionJsonSchema
+from ._link_arguments import ActionLink, ArgumentLinking
+from ._loaders_dumpers import (
     check_valid_dump_format,
     dump_using_format,
     get_loader_exceptions,
@@ -53,7 +53,7 @@ from .loaders_dumpers import (
     set_omegaconf_loader,
     yaml_load,
 )
-from .namespace import (
+from ._namespace import (
     Namespace,
     is_meta_key,
     patch_namespace,
@@ -62,7 +62,7 @@ from .namespace import (
     split_key_leaf,
     strip_meta,
 )
-from .optionals import (
+from ._optionals import (
     argcomplete_autocomplete,
     argcomplete_namespace,
     fsspec_support,
@@ -70,10 +70,10 @@ from .optionals import (
     import_fsspec,
     import_jsonnet,
 )
-from .parameter_resolvers import UnknownDefault
-from .signatures import SignatureArguments
-from .typehints import ActionTypeHint, is_subclass_spec
-from .util import (
+from ._parameter_resolvers import UnknownDefault
+from ._signatures import SignatureArguments
+from ._typehints import ActionTypeHint, is_subclass_spec
+from ._util import (
     Path,
     argument_error,
     change_to_path_dir,
@@ -1401,7 +1401,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
     @env_prefix.setter
     def env_prefix(self, env_prefix: Union[bool, str]):
         if env_prefix is None:
-            from .deprecated import (
+            from ._deprecated import (
                 deprecation_warning,
                 env_prefix_property_none_message,
             )
@@ -1460,7 +1460,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         self._dump_header = dump_header
 
 
-from .deprecated import instantiate_subclasses_patch, parse_as_dict_patch  # noqa: E402
+from ._deprecated import instantiate_subclasses_patch, parse_as_dict_patch  # noqa: E402
 
 instantiate_subclasses_patch()
 if "SPHINX_BUILD" not in os.environ:

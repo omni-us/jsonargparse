@@ -11,7 +11,7 @@ import pytest
 import yaml
 
 from jsonargparse import CLI, capture_parser, lazy_instance
-from jsonargparse.optionals import docstring_parser_support, ruyaml_support
+from jsonargparse._optionals import docstring_parser_support, ruyaml_support
 from jsonargparse.typing import final
 from jsonargparse_tests.conftest import skip_if_docstring_parser_unavailable
 
@@ -290,7 +290,7 @@ def test_automatic_components_empty_context():
         CLI()
 
     with patch("inspect.getmodule") as mock_getmodule:
-        mock_getmodule.return_value = sys.modules["jsonargparse.core"]
+        mock_getmodule.return_value = sys.modules["jsonargparse._core"]
         pytest.raises(ValueError, empty_context)
 
 
@@ -302,7 +302,7 @@ def test_automatic_components_context_function():
         return CLI(args=["6.7"])
 
     with patch("inspect.getmodule") as mock_getmodule:
-        mock_getmodule.return_value = sys.modules["jsonargparse.core"]
+        mock_getmodule.return_value = sys.modules["jsonargparse._core"]
         assert 6.7 == non_empty_context_function()
 
 
@@ -318,7 +318,7 @@ def test_automatic_components_context_class():
         return CLI(args=["a", "method", "2"])
 
     with patch("inspect.getmodule") as mock_getmodule:
-        mock_getmodule.return_value = sys.modules["jsonargparse.core"]
+        mock_getmodule.return_value = sys.modules["jsonargparse._core"]
         assert ("a", 2) == non_empty_context_class()
 
 

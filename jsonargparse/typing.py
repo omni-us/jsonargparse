@@ -9,8 +9,8 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
 from ._common import is_final_class, is_subclass
-from .optionals import final, pydantic_support
-from .util import Path, get_import_path, get_private_kwargs, import_object
+from ._optionals import final, pydantic_support
+from ._util import Path, get_import_path, get_private_kwargs, import_object
 
 __all__ = [
     "final",
@@ -213,7 +213,7 @@ def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> type:
 
     skip_check = get_private_kwargs(kwargs, skip_check=False)
     if skip_check:
-        from .deprecated import path_skip_check_deprecation
+        from ._deprecated import path_skip_check_deprecation
 
         path_skip_check_deprecation()
         name += "_skip_check"

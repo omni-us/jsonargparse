@@ -10,11 +10,11 @@ from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from ._common import is_subclass, parser_context
-from .loaders_dumpers import get_loader_exceptions, load_value
-from .namespace import Namespace, split_key, split_key_root
-from .optionals import FilesCompleterMethod, get_config_read_mode
-from .type_checking import ArgumentParser
-from .util import (
+from ._loaders_dumpers import get_loader_exceptions, load_value
+from ._namespace import Namespace, split_key, split_key_root
+from ._optionals import FilesCompleterMethod, get_config_read_mode
+from ._type_checking import ArgumentParser
+from ._util import (
     LoggerProperty,
     NoneType,
     Path,
@@ -179,7 +179,7 @@ class ActionConfigFile(Action, FilesCompleterMethod):
 
     @staticmethod
     def apply_config(parser, cfg, dest, value) -> None:
-        from .link_arguments import skip_apply_links
+        from ._link_arguments import skip_apply_links
 
         with _ActionSubCommands.not_single_subcommand(), previous_config_context(cfg), skip_apply_links():
             kwargs = {"env": False, "defaults": False, "_skip_check": True, "_fail_no_subcommand": False}
@@ -334,7 +334,7 @@ class _ActionHelpClassPath(Action):
 
     def update_init_kwargs(self, kwargs):
         if get_typehint_origin(self._baseclass) == Union:
-            from .typehints import ActionTypeHint
+            from ._typehints import ActionTypeHint
 
             self._basename = iter_to_set_str(
                 c.__name__ for c in self._baseclass.__args__ if ActionTypeHint.is_subclass_typehint(c)
@@ -357,7 +357,7 @@ class _ActionHelpClassPath(Action):
         return self.print_help(args, self._baseclass, dest)
 
     def print_help(self, call_args, baseclass, dest):
-        from .typehints import resolve_class_path_by_name
+        from ._typehints import resolve_class_path_by_name
 
         parser, _, value, option_string = call_args
         try:

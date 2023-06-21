@@ -7,8 +7,8 @@ from typing import Any, Callable, Dict, Tuple, Type
 import yaml
 
 from ._common import load_value_mode, parent_parser
-from .optionals import import_jsonnet, omegaconf_support
-from .type_checking import ArgumentParser
+from ._optionals import import_jsonnet, omegaconf_support
+from ._type_checking import ArgumentParser
 
 __all__ = [
     "set_loader",
@@ -65,7 +65,7 @@ def yaml_load(stream):
 
 
 def jsonnet_load(stream, path="", ext_vars=None):
-    from .jsonnet import ActionJsonnet
+    from ._jsonnet import ActionJsonnet
 
     ext_vars, ext_codes = ActionJsonnet.split_ext_vars(ext_vars)
     _jsonnet = import_jsonnet("jsonnet_load")
@@ -211,6 +211,6 @@ def set_dumper(format_name: str, dumper_fn: Callable[[Any], str]):
 
 def set_omegaconf_loader():
     if omegaconf_support and "omegaconf" not in loaders:
-        from .optionals import get_omegaconf_loader
+        from ._optionals import get_omegaconf_loader
 
         set_loader("omegaconf", get_omegaconf_loader())

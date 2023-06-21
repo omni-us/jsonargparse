@@ -19,13 +19,13 @@ from jsonargparse import (
     class_from_function,
     null_logger,
 )
-from jsonargparse.optionals import (
+from jsonargparse._optionals import (
     docstring_parser_support,
     fsspec_support,
     reconplogger_support,
     url_support,
 )
-from jsonargparse.util import (
+from jsonargparse._util import (
     CaptureParserException,
     current_path_dir,
     get_import_path,
@@ -521,7 +521,7 @@ def unresolvable_import():
     pass
 
 
-@patch.dict("jsonargparse.util.unresolvable_import_paths")
+@patch.dict("jsonargparse._util.unresolvable_import_paths")
 def test_register_unresolvable_import_paths():
     unresolvable_import.__module__ = None
     pytest.raises(ValueError, lambda: get_import_path(unresolvable_import))

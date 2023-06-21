@@ -4,7 +4,7 @@ import platform
 import pytest
 
 from jsonargparse import Namespace, dict_to_namespace, namespace_to_dict
-from jsonargparse.namespace import meta_keys
+from jsonargparse._namespace import meta_keys
 
 skip_if_no_setattr_insertion_order = pytest.mark.skipif(
     platform.python_implementation() != "CPython",

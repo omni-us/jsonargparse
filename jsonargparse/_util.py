@@ -31,9 +31,9 @@ from typing import (
 )
 
 from ._common import parser_capture, parser_context
-from .deprecated import PathDeprecations
-from .loaders_dumpers import json_dump, load_value
-from .optionals import (
+from ._deprecated import PathDeprecations
+from ._loaders_dumpers import json_dump, load_value
+from ._optionals import (
     fsspec_support,
     get_config_read_mode,
     import_fsspec,
@@ -42,7 +42,7 @@ from .optionals import (
     reconplogger_support,
     url_support,
 )
-from .type_checking import ArgumentParser
+from ._type_checking import ArgumentParser
 
 __all__ = [
     "capture_parser",
@@ -81,8 +81,9 @@ class JsonargparseWarning(UserWarning):
 
 
 def warning(message, category=JsonargparseWarning, stacklevel=1):
+    message = textwrap.fill(textwrap.dedent(message), 110).strip()
     warnings.warn(
-        re.sub("\n\n+", "\n\n", re.sub("\n +", "\n  ", message)),
+        "\n" + textwrap.indent(message, "    ") + "\n",
         category=category,
         stacklevel=stacklevel + 1,
     )
@@ -732,7 +733,7 @@ class LoggerProperty:
     @logger.setter
     def logger(self, logger: Union[bool, str, dict, logging.Logger]):
         if logger is None:
-            from .deprecated import deprecation_warning, logger_property_none_message
+            from ._deprecated import deprecation_warning, logger_property_none_message
 
             deprecation_warning((LoggerProperty.logger, None), logger_property_none_message)
             logger = False
