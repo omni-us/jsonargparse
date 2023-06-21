@@ -337,7 +337,7 @@ class SignatureArguments(LoggerProperty):
                 kwargs["type"] = annotation
                 sub_add_kwargs: dict = {"fail_untyped": fail_untyped, "sub_configs": sub_configs}
                 if is_subclass_typehint:
-                    prefix = name + ".init_args."
+                    prefix = f"{name}.init_args."
                     subclass_skip = {s[len(prefix) :] for s in skip or [] if s.startswith(prefix)}
                     sub_add_kwargs["skip"] = subclass_skip
                 else:
@@ -487,7 +487,7 @@ class SignatureArguments(LoggerProperty):
 
         added_args: List[str] = []
         if skip is not None:
-            skip = {nested_key + ".init_args." + s for s in skip}
+            skip = {f"{nested_key}.init_args." + s for s in skip}
         param = ParamData(name=nested_key, annotation=Union[baseclass], component=baseclass)
         str_baseclass = iter_to_set_str(get_import_path(x) for x in baseclass)
         kwargs.update(

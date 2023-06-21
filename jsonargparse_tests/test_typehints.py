@@ -19,6 +19,7 @@ from typing import (
     Union,
 )
 from unittest import mock
+from warnings import catch_warnings
 
 import pytest
 import yaml
@@ -838,9 +839,11 @@ class ImportClass:
 def test_get_all_subclass_paths_import_error():
     def mocked_get_import_path(cls):
         if cls is ImportClass:
-            raise ImportError
+            raise ImportError("Failed to import ImportClass")
         return get_import_path(cls)
 
     with mock.patch("jsonargparse.typehints.get_import_path", mocked_get_import_path):
-        subclass_paths = get_all_subclass_paths(ImportClass)
+        with catch_warnings(record=True) as w:
+            subclass_paths = get_all_subclass_paths(ImportClass)
+    assert "Failed to import ImportClass" in str(w[0].message)
     assert subclass_paths == []
