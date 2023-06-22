@@ -131,6 +131,12 @@ def capture_logs(logger: logging.Logger) -> Iterator[StringIO]:
         yield captured
 
 
+@contextmanager
+def source_unavailable():
+    with patch("inspect.getsource", side_effect=OSError("could not get source code")):
+        yield
+
+
 def get_parser_help(parser: ArgumentParser) -> str:
     out = StringIO()
     with patch.dict(os.environ, {"COLUMNS": "200"}):

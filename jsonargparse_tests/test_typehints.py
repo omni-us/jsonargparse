@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import random
 import sys
 import time
@@ -781,6 +783,12 @@ def test_action_typehint_unsupported_type(typehint):
     with pytest.raises(ValueError) as ctx:
         ActionTypeHint(typehint=typehint)
     ctx.match("Unsupported type hint")
+
+
+def test_action_typehint_none_type_error():
+    with pytest.raises(ValueError) as ctx:
+        ActionTypeHint(typehint=None)
+    ctx.match("Expected typehint keyword argument")
 
 
 @pytest.mark.parametrize(

@@ -4,6 +4,8 @@ ci:
   skip:
   - mypy
   - tox
+  - test-py36
+  - test-without-future-annotations
   - coverage
   autofix_prs: true
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit suggestions'
@@ -100,6 +102,42 @@ repos:
     language: system
     pass_filenames: false
     verbose: true
+
+  - id: test-py36
+    name: test-py36
+    entry: bash -c '
+      if [ "$(which python3.6)" = "" ]; then
+        echo "$(tput setaf 6) Skipped, python 3.6 not found $(tput sgr0)";
+      else
+        TEST_DIR=$(mktemp -d -t _jsonargparse_tests_XXXXXX);
+        cleanup () { rm -rf "$TEST_DIR"; };
+        trap cleanup EXIT;
+        ./setup.py bdist_wheel;
+        python3.6 -m venv "$TEST_DIR/venv36";
+        . "$TEST_DIR/venv36/bin/activate";
+        pip3 install "$(ls ./dist/*.whl | tail -n 1)[all,test,test-no-urls]";
+        pip3 install pytest pytest-subtests;
+        cp jsonargparse_tests/*.py "$TEST_DIR";
+        cd "$TEST_DIR";
+        rm test_backports.py;
+        sed -i "/^from __future__ import annotations$/d" *.py;
+        pytest;
+      fi'
+    language: system
+    pass_filenames: false
+
+  - id: test-without-future-annotations
+    name: test-without-future-annotations
+    entry: bash -c '
+      TEST_DIR=$(mktemp -d -t _jsonargparse_tests_XXXXXX);
+      cleanup () { rm -rf "$TEST_DIR"; };
+      trap cleanup EXIT;
+      cp jsonargparse_tests/*.py "$TEST_DIR";
+      cd "$TEST_DIR";
+      sed -i "/^from __future__ import annotations$/d" *.py;
+      pytest $TEST_DIR;'
+    language: system
+    pass_filenames: false
 
   - id: doctest
     name: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst

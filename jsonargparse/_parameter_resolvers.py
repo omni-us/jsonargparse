@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from ._backports import evaluate_postponed_annotations
 from ._common import is_dataclass_like, is_subclass
 from ._optionals import parse_docs
 from ._stubs_resolver import get_stub_types
@@ -275,6 +276,7 @@ def get_signature_parameters_and_indexes(component, parent, logger):
             component=component,
             **{a: getattr(param, a) for a in parameter_attributes},
         )
+    evaluate_postponed_annotations(params, signature_source, logger)
     stubs = get_stub_types(params, signature_source, parent, logger)
     return params, args_idx, kwargs_idx, doc_params, stubs
 
@@ -824,6 +826,7 @@ def get_parameters_from_pydantic_or_attrs(
                 component=function_or_class,
             )
         )
+    evaluate_postponed_annotations(params, function_or_class, logger)
     return params
 
 

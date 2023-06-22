@@ -202,7 +202,7 @@ exclude = "(.eggs|.git|.hg|.mypy_cache|.venv|_build|buck-out|build|dist)"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{37,38,39,310,311}-{all,no}-extras,pypy3,omegaconf
+envlist = py{37,38,39,310,311}-{all,no}-extras,omegaconf
 skip_missing_interpreters = true
 
 [testenv]

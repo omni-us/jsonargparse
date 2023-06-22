@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import calendar
 import inspect
 import xml.dom
 from calendar import Calendar
-from contextlib import contextmanager
 from random import shuffle
 from typing import Any, Callable, Dict, List
 from unittest.mock import patch
@@ -13,7 +14,7 @@ from jsonargparse import Namespace, class_from_function
 from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._parameter_resolvers import is_lambda
-from jsonargparse_tests.conftest import capture_logs
+from jsonargparse_tests.conftest import capture_logs, source_unavailable
 
 
 class ClassA:
@@ -407,6 +408,13 @@ def function_constant_boolean(**kwargs):
         return function_with_kwargs(k1=False, **kwargs)
 
 
+def function_invalid_type(param: "invalid:" = 1):  # type: ignore # noqa: F722
+    """
+    Args:
+        param: help for param
+    """
+
+
 def cond_1(kc: int = 1, kn0: str = "x", kn1: str = "-"):
     """
     Args:
@@ -437,12 +445,6 @@ def conditional_calls(**kwargs):
         cond_2(**kwargs)
     else:
         cond_3(**kwargs)
-
-
-@contextmanager
-def source_unavailable():
-    with patch("inspect.getsource", side_effect=OSError("could not get source code")):
-        yield
 
 
 def assert_params(params, expected, origins={}):
@@ -660,6 +662,13 @@ def test_get_params_function_constant_boolean():
         assert_params(get_params(function_constant_boolean), ["pk1", "k2"])
         with patch.dict(function_constant_boolean.__globals__, {"constant_boolean_2": True}):
             assert get_params(function_constant_boolean) == []
+
+
+def test_get_params_function_invalid_type(logger):
+    with capture_logs(logger):
+        params = get_params(function_invalid_type, logger=logger)
+    assert_params(params, ["param"])
+    assert params[0].annotation.replace("'", "") == "invalid:"
 
 
 def test_conditional_calls_kwargs():

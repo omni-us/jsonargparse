@@ -15,7 +15,12 @@ from ._parameter_resolvers import (
     get_parameter_origins,
     get_signature_parameters,
 )
-from ._typehints import ActionTypeHint, LazyInitBaseClass, is_optional
+from ._typehints import (
+    ActionTypeHint,
+    LazyInitBaseClass,
+    callable_instances,
+    is_optional,
+)
 from ._util import LoggerProperty, get_import_path, iter_to_set_str
 from .typing import register_pydantic_type
 
@@ -176,9 +181,14 @@ class SignatureArguments(LoggerProperty):
         if not callable(function):
             raise ValueError('Expected "function" argument to be a callable object.')
 
+        method_name = None
+        if hasattr(function, "__class__") and callable_instances(function.__class__):
+            function = function.__class__
+            method_name = "__call__"
+
         return self._add_signature_arguments(
             function,
-            None,
+            method_name,
             nested_key,
             as_group,
             as_positional,
@@ -366,12 +376,10 @@ class SignatureArguments(LoggerProperty):
                 action.sub_add_kwargs["skip"] = subclass_skip
             added_args.append(dest)
         elif is_required and fail_untyped:
-            msg = f'With fail_untyped=True, all mandatory parameters must have a supported type. Parameter "{name}" from "{src}" '
-            if isinstance(annotation, str):
-                msg += "specifies the type as a string. Types as a string and `from __future__ import annotations` is currently not supported."
-            else:
-                msg += "does not specify a type."
-            raise ValueError(msg)
+            raise ValueError(
+                "With fail_untyped=True, all mandatory parameters must have a supported"
+                f" type. Parameter '{name}' from '{src}' does not specify a type."
+            )
 
     def add_dataclass_arguments(
         self,
