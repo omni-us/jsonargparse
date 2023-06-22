@@ -5,14 +5,10 @@ from contextlib import suppress
 from copy import deepcopy
 from importlib import import_module
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from ._optionals import (
-    import_typeshed_client,
-    typeshed_client_support,
-    typing_extensions_import,
-)
-from ._util import unique
+from ._backports import NamesVisitor, get_arg_type
+from ._optionals import import_typeshed_client, typeshed_client_support
 
 if TYPE_CHECKING:  # pragma: no cover
     import typeshed_client as tc
@@ -30,17 +26,6 @@ def import_module_or_none(path: str):
         return import_module(path)
     except ModuleNotFoundError:
         return None
-
-
-class NamesVisitor(ast.NodeVisitor):
-    def visit_Name(self, node: ast.Name) -> None:
-        self.names_found.append(node.id)
-
-    def find(self, node: ast.AST) -> list:
-        self.names_found: List[str] = []
-        self.visit(node)
-        self.names_found = unique(self.names_found)
-        return self.names_found
 
 
 class ImportsVisitor(ast.NodeVisitor):
@@ -262,49 +247,6 @@ def alias_is_unique(aliases, name, source, value):
     return True
 
 
-def get_arg_type(arg_ast, aliases):
-    type_ast = ast.parse("___arg_type___ = 0")
-    type_ast.body[0].value = arg_ast.annotation
-    exec_vars = {}
-    bad_aliases = {}
-    add_asts = False
-    for name in NamesVisitor().find(arg_ast.annotation):
-        _, value = aliases[name]
-        if isinstance(value, Exception):
-            bad_aliases[name] = value
-        elif isinstance(value, ast.AST):
-            add_asts = True
-        else:
-            exec_vars[name] = value
-    if add_asts:
-        body = []
-        for name, (_, value) in aliases.items():
-            if isinstance(value, ast.AST):
-                body.append(ast.fix_missing_locations(value))
-            elif not isinstance(value, Exception):
-                exec_vars[name] = value
-        type_ast.body = body + type_ast.body
-        if "TypeAlias" not in exec_vars:
-            type_alias = typing_extensions_import("TypeAlias")
-            if type_alias:
-                exec_vars["TypeAlias"] = type_alias
-    if sys.version_info < (3, 10):
-        from ._backports import BackportTypeHints
-
-        backporter = BackportTypeHints()
-        type_ast = backporter.backport(type_ast, exec_vars)
-    try:
-        exec(compile(type_ast, filename="<ast>", mode="exec"), exec_vars, exec_vars)
-    except NameError as ex:
-        ex_from = None
-        for name, alias_exception in bad_aliases.items():
-            if str(ex) == f"name '{name}' is not defined":
-                ex_from = alias_exception
-                break
-        raise ex from ex_from
-    return exec_vars["___arg_type___"]
-
-
 def get_stub_types(params, component, parent, logger) -> Optional[Dict[str, Any]]:
     if not typeshed_client_support:
         return None
@@ -327,7 +269,7 @@ def get_stub_types(params, component, parent, logger) -> Optional[Dict[str, Any]
         name = arg_ast.arg
         if arg_ast.annotation and (name in missing_types or name not in known_params):
             try:
-                types[name] = get_arg_type(arg_ast, aliases)
+                types[name] = get_arg_type(arg_ast.annotation, aliases)
             except Exception as ex:
                 logger.debug(
                     f"Failed to parse type stub for {component.__qualname__!r} parameter {name!r}", exc_info=ex

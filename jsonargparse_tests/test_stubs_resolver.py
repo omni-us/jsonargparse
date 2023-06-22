@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import sys
 from calendar import Calendar, TextCalendar
@@ -46,7 +48,7 @@ def get_param_names(params):
 
 
 class WithoutParent:
-    ...
+    pass
 
 
 @pytest.mark.parametrize(

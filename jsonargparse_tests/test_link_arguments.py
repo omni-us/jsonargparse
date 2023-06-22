@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from calendar import Calendar, TextCalendar
 from typing import Any, List, Mapping, Optional, Union
 

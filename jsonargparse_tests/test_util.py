@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import pathlib
@@ -566,7 +568,7 @@ class Foo:
 
 
 def closure_get_foo():
-    def get_foo() -> "Foo":
+    def get_foo() -> Foo:
         return Foo()
 
     return get_foo
@@ -593,7 +595,7 @@ def get_unknown() -> "Unknown":  # type: ignore  # noqa: F821
 def test_invalid_class_from_function():
     with pytest.raises(ValueError) as ctx:
         class_from_function(get_unknown)
-    ctx.match("Unable to dereference None the return type")
+    ctx.match("Unable to dereference '?Unknown'?, the return type of")
 
 
 def get_random_untyped():

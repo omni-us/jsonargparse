@@ -28,6 +28,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    get_type_hints,
 )
 
 from ._common import parser_capture, parser_context
@@ -375,10 +376,13 @@ def class_from_function(
     if func_return is None:
         func_return = inspect.signature(func).return_annotation
     if isinstance(func_return, str):
-        caller_frame = inspect.currentframe().f_back  # type: ignore
-        func_return = caller_frame.f_locals.get(func_return) or caller_frame.f_globals.get(func_return)  # type: ignore
-        if func_return is None:
-            raise ValueError(f"Unable to dereference {func_return} the return type of {func}.")
+        try:
+            func_return = get_type_hints(func)["return"]
+            if sys.version_info[:2] != (3, 6) and isinstance(func_return, __import__("typing").ForwardRef):
+                func_return = func_return._evaluate(func.__globals__, {})
+        except Exception as ex:
+            func_return = inspect.signature(func).return_annotation
+            raise ValueError(f"Unable to dereference {func_return}, the return type of {func}: {ex}") from ex
 
     @wraps(func)
     def __new__(cls, *args, **kwargs):

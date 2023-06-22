@@ -1,6 +1,5 @@
 """Code related to argument linking."""
 
-import inspect
 import re
 from argparse import SUPPRESS
 from argparse import Action as ArgparseAction
@@ -18,6 +17,7 @@ from ._actions import (
     filter_default_actions,
 )
 from ._namespace import Namespace, split_key_leaf
+from ._parameter_resolvers import get_signature_parameters
 from ._type_checking import ArgumentParser, _ArgumentGroup
 
 __all__ = ["ArgumentLinking"]
@@ -275,7 +275,7 @@ class ActionLink(Action):
                         value = value.as_dict()
             else:
                 # Automatic namespace to dict based on compute_fn param type hint
-                params = list(inspect.signature(action.compute_fn).parameters.values())
+                params = get_signature_parameters(action.compute_fn)
                 for n, param in enumerate(params):
                     if (
                         n < len(args)

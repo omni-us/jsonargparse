@@ -425,6 +425,13 @@ Some notes about this support are:
   nesting it is meant child types inside ``List``, ``Dict``, etc. There is no
   limit in nesting depth.
 
+- Postponed evaluation of types PEP `563 <https://peps.python.org/pep-0563/>`__
+  (i.e. ``from __future__ import annotations``) is supported. Also supported on
+  ``python<=3.9`` are PEP `585 <https://peps.python.org/pep-0585/>`__ (i.e.
+  ``list[<type>], dict[<type>], ...`` instead of ``List[<type>], Dict[<type>],
+  ...``) and `604 <https://peps.python.org/pep-0604/>`__ (i.e. ``<type> |
+  <type>`` instead of ``Union[<type>, <type>]``).
+
 - Fully supported types are: ``str``, ``bool`` (more details in
   :ref:`boolean-arguments`), ``int``, ``float``, ``complex``,
   ``bytes``/``bytearray`` (Base64 encoding), ``List`` (more details in

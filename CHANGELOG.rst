@@ -21,6 +21,13 @@ Added
 - ``class_from_function`` now supports ``func_return`` parameter to specify the
   return type of the function (`lightning-flash#1564 comment
   <https://github.com/Lightning-Universe/lightning-flash/pull/1564#discussion_r1218147330>`__).
+- Support for postponed evaluation of annotations PEP `563
+  <https://peps.python.org/pep-0563/>`__ ``from __future__ import annotations``
+  (`#120 <https://github.com/omni-us/jsonargparse/issues/120>`__).
+- Backport types in python<=3.9 to support PEP `585
+  <https://peps.python.org/pep-0585/>`__ and `604
+  <https://peps.python.org/pep-0604/>`__ for postponed evaluation of annotations
+  (`#120 <https://github.com/omni-us/jsonargparse/issues/120>`__).
 
 Fixed
 ^^^^^

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from jsonargparse import get_config_read_mode, set_config_read_mode

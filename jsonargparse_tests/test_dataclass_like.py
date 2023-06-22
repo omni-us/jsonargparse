@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 import sys
 from typing import Any, Dict, List, Optional, Union
@@ -421,7 +423,7 @@ if pydantic_support:
         return x
 
 
-@pytest.mark.skipif(sys.version_info == (3, 6), reason="pydantic not supported in python 3.6")
+@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="pydantic not supported in python 3.6")
 @pytest.mark.skipif(not pydantic_support, reason="pydantic package is required")
 class TestPydantic:
     def test_dataclass(self, parser):
@@ -456,21 +458,22 @@ class TestPydantic:
             assert "p1 help (required, type: str)" in help_str
         assert "p2 help (type: int, default: 2)" in help_str
 
-    def test_pydantic_types(self, subtests):
-        for valid_value, invalid_value, cast, pydantic_type in [
-            ("abc", "a", none, pydantic.constr(min_length=2, max_length=4)),
-            (2, 0, none, pydantic.conint(ge=1)),
-            (-1.0, 1.0, none, pydantic.confloat(lt=0.0)),
-            ([1], [], none, pydantic.conlist(int, min_items=1)),
-            ([], [3, 4], none, pydantic.conlist(int, max_items=1)),
-            ([1], "x", list, pydantic.conset(int, min_items=1)),
-            ("http://abc.es", "-", none, pydantic.HttpUrl),
-            ("127.0.0.1", "0", str, pydantic.IPvAnyAddress),
-        ]:
+    def test_pydantic_types(self, subtests, monkeypatch):
+        for num, (valid_value, invalid_value, cast, pydantic_type) in enumerate(
+            [
+                ("abc", "a", none, pydantic.constr(min_length=2, max_length=4)),
+                (2, 0, none, pydantic.conint(ge=1)),
+                (-1.0, 1.0, none, pydantic.confloat(lt=0.0)),
+                ([1], [], none, pydantic.conlist(int, min_items=1)),
+                ([], [3, 4], none, pydantic.conlist(int, max_items=1)),
+                ([1], "x", list, pydantic.conset(int, min_items=1)),
+                ("http://abc.es", "-", none, pydantic.HttpUrl),
+                ("127.0.0.1", "0", str, pydantic.IPvAnyAddress),
+            ]
+        ):
             with subtests.test(f"type={pydantic_type.__name__} valid={valid_value} invalid={invalid_value}"):
-
-                class Model(pydantic.BaseModel):
-                    param: pydantic_type
+                Model = pydantic.create_model(f"Model{num}", param=(pydantic_type, ...))
+                monkeypatch.setitem(Model.__init__.__globals__, "pydantic_type", pydantic_type)
 
                 parser = ArgumentParser(exit_on_error=False)
                 parser.add_argument("--model", type=Model)
