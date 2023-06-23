@@ -272,6 +272,33 @@ def test_bytearray(serialized, deserialized):
     assert serialized == get_registered_type(bytearray).serializer(deserialized)
 
 
+@pytest.mark.parametrize(
+    ["serialized", "expected", "reserialized"],
+    [
+        ("range(5)", [0, 1, 2, 3, 4], "="),
+        ("range(-2)", [], "="),
+        ("range(2, 6)", [2, 3, 4, 5], "="),
+        ("range(-6, -4)", [-6, -5], "="),
+        ("range(1, 7, 2)", [1, 3, 5], "="),
+        ("range(-1, -7, -2)", [-1, -3, -5], "="),
+        ("range(0, 4)", [0, 1, 2, 3], "range(4)"),
+        ("range(1, 3, 1)", [1, 2], "range(1, 3)"),
+    ],
+)
+def test_range(serialized, expected, reserialized):
+    deserialized = get_registered_type(range).deserializer(serialized)
+    assert expected == list(deserialized)
+    if reserialized == "=":
+        reserialized = serialized
+    assert reserialized == get_registered_type(range).serializer(deserialized)
+
+
+def test_range_deserialize_failure():
+    with pytest.raises(ValueError) as ex:
+        get_registered_type(range).deserializer("not a range")
+    ex.match("Expected 'range")
+
+
 # other tests
 
 

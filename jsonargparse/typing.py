@@ -409,6 +409,38 @@ register_type_on_first_use("builtins.bytes", serializer=bytes_serializer, deseri
 register_type_on_first_use("builtins.bytearray", serializer=bytes_serializer, deserializer=bytearray_deserializer)
 
 
+def range_serializer(value):
+    if value.step == 1:
+        if value.start == 0:
+            return f"range({value.stop})"
+        return f"range({value.start}, {value.stop})"
+    return f"range({value.start}, {value.stop}, {value.step})"
+
+
+re_range_stop = re.compile(r"^(-?\d+)$")
+re_range_start_stop = re.compile(r"^(-?\d+),(-?\d+)$")
+re_range_start_stop_step = re.compile(r"^(-?\d+),(-?\d+),(-?\d+)$")
+
+
+def range_deserializer(value):
+    value = value.strip()
+    if value.startswith("range(") and value.endswith(")"):
+        value = value[6:-1].replace(" ", "")
+        match = re_range_stop.match(value)
+        if match:
+            return range(int(match[1]))
+        match = re_range_start_stop.match(value)
+        if match:
+            return range(int(match[1]), int(match[2]))
+        match = re_range_start_stop_step.match(value)
+        if match:
+            return range(int(match[1]), int(match[2]), int(match[3]))
+    raise ValueError("Expected 'range(<stop>)' or 'range(<start>, <stop>)' or 'range(<start>, <stop>, <step>)'")
+
+
+register_type(range, serializer=range_serializer, deserializer=range_deserializer)
+
+
 pydantic_types: Tuple[type, ...] = tuple()
 if pydantic_support:
     import pydantic
