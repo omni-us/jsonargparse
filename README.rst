@@ -434,8 +434,8 @@ Some notes about this support are:
 
 - Fully supported types are: ``str``, ``bool`` (more details in
   :ref:`boolean-arguments`), ``int``, ``float``, ``complex``,
-  ``bytes``/``bytearray`` (Base64 encoding), ``List`` (more details in
-  :ref:`list-append`), ``Iterable``, ``Sequence``, ``Any``, ``Union``,
+  ``bytes``/``bytearray`` (Base64 encoding), ``range``, ``List`` (more details
+  in :ref:`list-append`), ``Iterable``, ``Sequence``, ``Any``, ``Union``,
   ``Optional``, ``Type``, ``Enum``, ``PathLike``, ``UUID``, ``timedelta``,
   restricted types as explained in sections :ref:`restricted-numbers` and
   :ref:`restricted-strings` and paths and URLs as explained in sections

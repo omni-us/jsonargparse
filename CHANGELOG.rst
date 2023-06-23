@@ -28,6 +28,7 @@ Added
   <https://peps.python.org/pep-0585/>`__ and `604
   <https://peps.python.org/pep-0604/>`__ for postponed evaluation of annotations
   (`#120 <https://github.com/omni-us/jsonargparse/issues/120>`__).
+- Support for ``range`` as a type.
 
 Fixed
 ^^^^^
