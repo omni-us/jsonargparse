@@ -153,6 +153,18 @@ def test_add_class_dataclass_typehint_in_subclass(parser):
     assert isinstance(init.c1.a1.b1, PositiveFloat)
 
 
+@dataclasses.dataclass
+class OptionalWithDefault:
+    param: Optional[str]
+
+
+def test_add_class_optional_without_default(parser):
+    parser.add_class_arguments(OptionalWithDefault)
+    assert parser.get_defaults() == Namespace(param=None)
+    assert parser.parse_args([]) == Namespace(param=None)
+    assert parser.parse_args(["--param=null"]) == Namespace(param=None)
+
+
 def test_add_argument_dataclass_type(parser):
     parser.add_argument("--b", type=DataClassB, default=DataClassB(b1=7.0))
     cfg = parser.get_defaults()
