@@ -12,13 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.22.0 (2023-07-??)
+v4.22.1 (2023-07-??)
 --------------------
 
 Fixed
 ^^^^^
 - Parameter without default and type optional incorrectly added as a required
   argument (`#312 <https://github.com/omni-us/jsonargparse/issues/312>`__).
+- ``class_from_function`` not failing when return annotation is missing.
 
 
 v4.22.0 (2023-06-23)

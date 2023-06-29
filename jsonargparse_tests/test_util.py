@@ -632,6 +632,16 @@ def test_add_class_from_function_arguments(parser):
     assert init.a.a2 == 3
 
 
+def without_return_type():
+    pass
+
+
+def test_class_from_function_missing_return():
+    with pytest.raises(ValueError) as ctx:
+        class_from_function(without_return_type)
+    ctx.match("does not have a return type annotation")
+
+
 # other tests
 
 
