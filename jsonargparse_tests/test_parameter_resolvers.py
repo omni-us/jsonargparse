@@ -534,7 +534,7 @@ def test_get_params_kwargs_use_in_property():
 
 
 def test_get_params_class_from_function():
-    class_a = class_from_function(function_return_class_c)
+    class_a = class_from_function(function_return_class_c, ClassC)
     params = get_params(class_a)
     assert_params(params, ["pk1", "k2", "pkb1", "kb2", "ka1"])
     with source_unavailable():

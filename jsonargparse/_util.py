@@ -375,6 +375,8 @@ def class_from_function(
     """
     if func_return is None:
         func_return = inspect.signature(func).return_annotation
+    if func_return is inspect.Signature.empty:
+        raise ValueError(f"{func} does not have a return type annotation")
     if isinstance(func_return, str):
         try:
             func_return = get_type_hints(func)["return"]
