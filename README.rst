@@ -1502,6 +1502,17 @@ this function, the example above would change to:
     :func:`.class_from_function` requires the input function to have a return
     type annotation that must be the class type it returns.
 
+Classes created with :func:`.class_from_function` can be selected using
+``class_path`` for :ref:`sub-classes`. For example, if
+:func:`.class_from_function` is run in a module ``my_module`` as:
+
+.. testcode:: class_from_function
+
+    class_from_function(instantiate_myclass, name="MyClass")
+
+Then the ``class_path`` for the created class would be ``my_module.MyClass``.
+
+
 Parameter resolvers
 -------------------
 

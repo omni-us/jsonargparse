@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.23.0 (2023-07-??)
 --------------------
 
+Added
+^^^^^
+- Classes created with ``class_from_function`` now have a valid import path
+  (`#309 <https://github.com/omni-us/jsonargparse/issues/309>`__).
+
 Fixed
 ^^^^^
 - Invalid environment variable names when ``env_prefix`` is derived from
