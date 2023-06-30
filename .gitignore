@@ -1,11 +1,10 @@
 __pycache__
-*.pyc
 *.egg-info
-.eggs
 .coverage
 coverage.xml
 .mypy_cache
 .pytest_cache
+.ruff_cache
 .tox
 venv*
 sphinx/_build

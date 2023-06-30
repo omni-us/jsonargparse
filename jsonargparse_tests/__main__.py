@@ -12,8 +12,8 @@ def run_tests():
     filter_action = "default"
     warnings.simplefilter(filter_action)
     os.environ["PYTHONWARNINGS"] = filter_action
-    testing_package = str(Path(__file__).parent)
-    exit_code = pytest.main(["-v", "-s", f"--rootdir={testing_package}", "--pyargs", testing_package])
+    testing_package = Path(__file__).parent
+    exit_code = pytest.main(["-v", "-s", f"--rootdir={testing_package.parent}", "--pyargs", str(testing_package)])
     if exit_code != 0:
         sys.exit(True)
 
