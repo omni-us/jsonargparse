@@ -586,6 +586,15 @@ def test_class_from_function(function, class_type):
     cls = class_from_function(function)
     assert issubclass(cls, class_type)
     assert isinstance(cls(), class_type)
+    module_path, name = get_import_path(cls).rsplit(".", 1)
+    assert module_path == __name__
+    assert cls is globals()[name]
+
+
+def test_class_from_function_name_clash():
+    with pytest.raises(ValueError) as ctx:
+        class_from_function(get_random, name="get_random")
+    ctx.match("already defines 'get_random', please use a different name")
 
 
 def get_unknown() -> "Unknown":  # type: ignore  # noqa: F821

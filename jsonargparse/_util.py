@@ -366,12 +366,14 @@ ClassType = TypeVar("ClassType")
 def class_from_function(
     func: Callable[..., ClassType],
     func_return: Optional[Type[ClassType]] = None,
+    name: Optional[str] = None,
 ) -> Type[ClassType]:
     """Creates a dynamic class which if instantiated is equivalent to calling func.
 
     Args:
         func: A function that returns an instance of a class.
         func_return: The return type of the function. Required if func does not have a return type annotation.
+        name: The name of the class. Defaults to function name suffixed with "_class".
     """
     if func_return is None:
         func_return = inspect.signature(func).return_annotation
@@ -386,6 +388,14 @@ def class_from_function(
             func_return = inspect.signature(func).return_annotation
             raise ValueError(f"Unable to dereference {func_return}, the return type of {func}: {ex}") from ex
 
+    if not name:
+        name = func.__qualname__.replace(".", "__") + "_class"
+
+    caller_module = inspect.getmodule(inspect.stack()[1][0]) or inspect.getmodule(class_from_function)
+    assert caller_module
+    if hasattr(caller_module, name):
+        raise ValueError(f"{caller_module.__name__} already defines {name!r}, please use a different name")
+
     @wraps(func)
     def __new__(cls, *args, **kwargs):
         return func(*args, **kwargs)
@@ -393,10 +403,13 @@ def class_from_function(
     class ClassFromFunction(func_return, ClassFromFunctionBase):  # type: ignore
         pass
 
+    setattr(caller_module, name, ClassFromFunction)
     ClassFromFunction.wrapped_function = func
     ClassFromFunction.__new__ = __new__  # type: ignore
     ClassFromFunction.__doc__ = func.__doc__
-    ClassFromFunction.__name__ = func.__name__
+    ClassFromFunction.__module__ = caller_module.__name__
+    ClassFromFunction.__name__ = name
+    ClassFromFunction.__qualname__ = name
     return ClassFromFunction
 
 
