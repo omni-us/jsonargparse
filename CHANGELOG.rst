@@ -22,6 +22,8 @@ Fixed
 - ``class_from_function`` not failing when return annotation is missing.
 - ``add_subclass_arguments`` with single base class and no docstring,
   incorrectly shown as tuple in help.
+- When all arguments of a group are derived from links, a config load option is
+  incorrectly shown in help.
 
 
 v4.22.0 (2023-06-23)
