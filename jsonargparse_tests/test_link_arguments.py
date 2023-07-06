@@ -347,6 +347,8 @@ def test_on_instantiate_link_all_group_arguments():
     init = parser.instantiate_classes(cfg)
     assert init["x"].x1 == 6
     assert init["x"].x2 == 7
+    help_str = get_parser_help(parser)
+    assert "Group 'x': All arguments are derived from links" in help_str
 
 
 def test_on_instantiate_link_from_subclass_with_compute_fn():

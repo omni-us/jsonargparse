@@ -160,6 +160,11 @@ class ActionLink(Action):
                     if is_target_subclass:
                         help_dest = f"{self.target[1].dest}.help"
                         group._group_actions.remove(next(a for a in group._group_actions if a.dest == help_dest))
+                    if group._group_actions and all(isinstance(a, _ActionConfigLoad) for a in group._group_actions):
+                        group.description = (
+                            f"Group '{group._group_actions[0].dest}': All arguments are derived from links."
+                        )
+                        group._group_actions.clear()
 
         # Remove target from required
         if target in parser.required_args:
