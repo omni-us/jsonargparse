@@ -20,6 +20,8 @@ Fixed
 - Parameter without default and type optional incorrectly added as a required
   argument (`#312 <https://github.com/omni-us/jsonargparse/issues/312>`__).
 - ``class_from_function`` not failing when return annotation is missing.
+- ``add_subclass_arguments`` with single base class and no docstring,
+  incorrectly shown as tuple in help.
 
 
 v4.22.0 (2023-06-23)

@@ -484,7 +484,9 @@ class SignatureArguments(LoggerProperty):
         if not all(inspect.isclass(c) for c in baseclass):
             raise ValueError('Expected "baseclass" argument to be a class or a tuple of classes.')
 
-        doc_group = get_doc_short_description(baseclass[0], logger=self.logger)
+        doc_group = None
+        if len(baseclass) == 1:  # type: ignore
+            doc_group = get_doc_short_description(baseclass[0], logger=self.logger)
         group = self._create_group_if_requested(
             baseclass,
             nested_key,
@@ -531,7 +533,10 @@ class SignatureArguments(LoggerProperty):
         group = self
         if as_group:
             if doc_group is None:
-                doc_group = str(obj)
+                if isinstance(obj, tuple) and len(obj) == 1:
+                    doc_group = str(obj[0])
+                else:
+                    doc_group = str(obj)
             name = obj.__name__ if nested_key is None else nested_key
             group = self.add_argument_group(strip_title(doc_group), name=name)
             if config_load and nested_key is not None:

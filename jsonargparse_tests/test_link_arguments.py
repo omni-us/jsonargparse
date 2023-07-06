@@ -13,6 +13,7 @@ from jsonargparse import (
     Namespace,
     lazy_instance,
 )
+from jsonargparse._optionals import docstring_parser_support
 from jsonargparse_tests.conftest import get_parser_help
 
 # tests for links applied on parse
@@ -225,7 +226,7 @@ class ClassD:
         a2: Optional[dict] = None,
         a3: Any = None,
     ):
-        pass
+        """ClassD title"""
 
 
 def test_on_parse_add_subclass_arguments_compute_fn_return_dict(parser):
@@ -253,6 +254,15 @@ def test_on_parse_add_subclass_arguments_compute_fn_return_dict(parser):
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.d, ClassD)
     assert isinstance(init.c, Calendar)
+
+
+def test_on_parse_add_subclass_help_group_title(parser):
+    parser.add_subclass_arguments(ClassF, "f")
+    parser.add_subclass_arguments(ClassD, "d")
+    help_str = get_parser_help(parser)
+    assert f"<class '{__name__}.ClassF'>:" in help_str
+    if docstring_parser_support:
+        assert "ClassD title:" in help_str
 
 
 class Foo:
