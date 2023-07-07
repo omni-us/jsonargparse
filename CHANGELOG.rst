@@ -24,6 +24,8 @@ Fixed
   incorrectly shown as tuple in help.
 - When all arguments of a group are derived from links, a config load option is
   incorrectly shown in help.
+- Printing help fails for parsers that have a link whose target is an argument
+  lacking type and help.
 
 
 v4.22.0 (2023-06-23)

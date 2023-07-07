@@ -19,6 +19,14 @@ from jsonargparse_tests.conftest import get_parser_help
 # tests for links applied on parse
 
 
+def test_on_parse_help_target_lacking_type_and_help(parser):
+    parser.add_argument("--a")
+    parser.add_argument("--b")
+    parser.link_arguments("a", "b")
+    help_str = get_parser_help(parser)
+    assert "Target argument 'b' lacks type and help" in help_str
+
+
 def test_on_parse_compute_fn_single_arguments(parser, subtests):
     def a_prod(a):
         return a["v1"] * a["v2"]
