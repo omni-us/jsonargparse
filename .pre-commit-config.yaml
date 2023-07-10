@@ -152,8 +152,8 @@ repos:
     verbose: true
 
   - id: coverage
-    name: ./setup.py test_coverage
-    entry: ./setup.py test_coverage
+    name: pytest -v -s --cov --cov-report=term --cov-report=html
+    entry: pytest -v -s --cov --cov-report=term --cov-report=html
     language: system
     pass_filenames: false
     verbose: true

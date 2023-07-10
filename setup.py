@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from setuptools import Command, setup
+from setuptools import setup
 
 ## Use README.rst for the package long description ##
 LONG_DESCRIPTION = re.sub(
@@ -29,31 +29,8 @@ LONG_DESCRIPTION = "\n".join(LONG_DESCRIPTION_LINES)
 LONG_DESCRIPTION = re.sub("(testcode::|doctest::).*", "code-block:: python", LONG_DESCRIPTION)
 
 
-## test_coverage target ##
-CMDCLASS = {}
-
-
-class CoverageCommand(Command):
-    description = "run test coverage and generate html report"
-    user_options = []  # type: ignore
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        __import__("jsonargparse_tests.__main__").__main__.run_test_coverage()
-
-
-CMDCLASS["test_coverage"] = CoverageCommand
-
-
 ## Run setuptools setup ##
 setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/x-rst",
-    cmdclass=CMDCLASS,
-    test_suite="jsonargparse_tests",
 )

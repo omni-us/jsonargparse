@@ -90,12 +90,16 @@ test = [
     "attrs>=22.2.0",
 ]
 test-no-urls = [
-    "coverage>=4.5.1",
     "pytest>=6.2.5",
     "pytest-subtests>=0.8.0",
 ]
+coverage = [
+    "jsonargparse[test-no-urls]",
+    "pytest-cov>=4.0.0",
+]
 dev = [
     "jsonargparse[test]",
+    "jsonargparse[coverage]",
     "jsonargparse[doc]",
     "jsonargparse[mypy]",
     "pre-commit>=2.19.0",
@@ -147,9 +151,11 @@ jsonargparse = [
 
 [tool.pytest.ini_options]
 addopts = "-s"
-testpaths = [
-    "jsonargparse_tests",
-]
+testpaths = ["jsonargparse_tests"]
+
+
+[tool.coverage.run]
+source = ["jsonargparse"]
 
 
 [tool.mypy]
