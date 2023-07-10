@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/python:3.8
+      - image: cimg/python:3.10
     steps:
       - checkout
       - run:
@@ -20,21 +20,19 @@ jobs:
     docker:
       - image: cimg/python:3.8
     steps:
-      - attach_workspace:
-          at: .
+      - checkout
       - run:
           name: Run unit tests
           command: |
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             virtualenv -p python3 venv$py
             . venv$py/bin/activate
-            pip3 install $(ls ./dist/*.whl)[test-no-urls]
-            python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
-            pip3 install $(ls ./dist/*.whl)[test,all]
-            python3 -m jsonargparse_tests coverage xml coverage_py${py}_all.xml
-            tests_dir=$(python3 -c "print(__import__('jsonargparse_tests').__file__)" | sed 's|[^/]*$||')
-            sed -i '/^from __future__ import annotations$/d' $tests_dir/test_*.py
-            python3 -m jsonargparse_tests coverage xml coverage_py${py}_types.xml
+            pip3 install .[coverage]
+            pytest --cov --cov-report=term --cov-report=xml:coverage_py$py.xml
+            pip3 install .[test,all]
+            pytest --cov --cov-report=term --cov-report=xml:coverage_py${py}_all.xml
+            sed -i '/^from __future__ import annotations$/d' jsonargparse_tests/test_*.py
+            pytest --cov --cov-report=term --cov-report=xml:coverage_py${py}_types.xml
       - persist_to_workspace:
           root: .
           paths:
@@ -67,13 +65,15 @@ jobs:
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             virtualenv -p python3 venv$py
             . venv$py/bin/activate
-            pip3 install $(ls ./dist/*.whl)[test-no-urls]
-            tests_dir=$(python3 -c "print(__import__('jsonargparse_tests').__file__)" | sed 's|[^/]*$||')
-            rm $tests_dir/test_backports.py;
+            pip3 install $(ls ./dist/*.whl)[coverage]
+            dir=$(python3 -c "print(__import__('jsonargparse').__file__)" | sed 's|jsonargparse/[^/]*$||')
+            code_dir=$dir/jsonargparse
+            tests_dir=$dir/jsonargparse_tests
+            rm $tests_dir/test_backports.py
             sed -i '/^from __future__ import annotations$/d' $tests_dir/test_*.py
-            python3 -m jsonargparse_tests coverage xml coverage_py$py.xml
+            pytest --cov=$code_dir --cov-report=term --cov-report=xml:coverage_py$py.xml $tests_dir
             pip3 install $(ls ./dist/*.whl)[test,all]
-            python3 -m jsonargparse_tests coverage xml coverage_py${py}_all.xml
+            pytest --cov=$code_dir --cov-report=term --cov-report=xml:coverage_py${py}_all.xml $tests_dir
       - persist_to_workspace:
           root: .
           paths:
@@ -99,6 +99,19 @@ jobs:
                 fi
               done
             done
+  test-py310-installed:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Run unit tests
+          command: |
+            virtualenv -p python3 venv$py
+            . venv$py/bin/activate
+            pip3 install $(ls ./dist/*.whl)[test,all]
+            python3 -m jsonargparse_tests
   publish-pypi:
     docker:
       - image: cimg/python:3.10
@@ -119,22 +132,21 @@ workflows:
           filters: &tagfilter
             tags:
               only: /^v\d+\.\d+\.\d+.*$/
-      - test-py38: &testreq
+      - test-py38:
+          <<: *buildreq
+      - test-py311:
+          <<: *buildreq
+      - test-py310:
+          <<: *buildreq
+      - test-py39:
+          <<: *buildreq
+      - test-py37:
+          <<: *buildreq
+      - test-py36:
           <<: *buildreq
           requires:
             - build
-      - test-py311:
-          <<: *testreq
-      - test-py310:
-          <<: *testreq
-      - test-py39:
-          <<: *testreq
-      - test-py37:
-          <<: *testreq
-      - test-py36:
-          <<: *testreq
       - codecov:
-          <<: *testreq
           requires:
             - test-py311
             - test-py310
@@ -142,6 +154,10 @@ workflows:
             - test-py38
             - test-py37
             - test-py36
+      - test-py310-installed:
+          <<: *buildreq
+          requires:
+            - build
       - publish-pypi:
           filters:
             branches:
@@ -149,4 +165,5 @@ workflows:
             <<: *tagfilter
           context: pypi-upload-context
           requires:
+            - build
             - codecov

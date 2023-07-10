@@ -58,5 +58,5 @@ installed with the package, thus can be run in a production system.
 
     tox                            # Run tests using tox on available python versions
     pytest                         # Run tests using pytest on the python of the environment
-    ./setup.py test_coverage       # Run tests and generate coverage report
-    python3 -m jsonargparse_tests  # Run tests for installed package (requires pytest)
+    pytest --cov                   # Run tests and generate coverage report
+    python3 -m jsonargparse_tests  # Run tests for installed package (requires pytest and pytest-subtests)

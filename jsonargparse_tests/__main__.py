@@ -18,30 +18,5 @@ def run_tests():
         sys.exit(True)
 
 
-def run_test_coverage():
-    try:
-        import coverage
-    except ImportError:
-        print("error: coverage package not found, run_test_coverage requires it.")
-        sys.exit(True)
-    package_source = os.path.dirname(__file__.replace("_tests", ""))
-    cov = coverage.Coverage(source=[package_source])
-    cov.start()
-    run_tests()
-    cov.stop()
-    cov.save()
-    cov.report()
-    if "xml" in sys.argv:
-        outfile = sys.argv[sys.argv.index("xml") + 1]
-        cov.xml_report(outfile=outfile)
-        print(f"\nSaved coverage report to {outfile}.")
-    else:
-        cov.html_report(directory="htmlcov")
-        print("\nSaved html coverage report to htmlcov directory.")
-
-
 if __name__ == "__main__":
-    if "coverage" in sys.argv:
-        run_test_coverage()
-    else:
-        run_tests()
+    run_tests()
