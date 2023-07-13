@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.22.2 (2023-07-??)
+--------------------
+
+Fixed
+^^^^^
+- Invalid environment variable names when ``env_prefix`` is derived from
+  a ``prog`` containing dashes.
+
+
 v4.22.1 (2023-07-07)
 --------------------
 

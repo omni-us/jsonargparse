@@ -26,6 +26,7 @@ from jsonargparse import (
     set_config_read_mode,
     strip_meta,
 )
+from jsonargparse._formatters import get_env_var
 from jsonargparse._optionals import jsonnet_support, jsonschema_support, ruyaml_support
 from jsonargparse.typing import Path_fc, Path_fr, path_type
 from jsonargparse_tests.conftest import (
@@ -151,6 +152,12 @@ def test_parse_object_nested(parser):
     parser.add_argument("--l1.l2.op", type=float)
     assert parser.parse_object({"l1": {"l2": {"op": 2.1}}}).l1.l2.op == 2.1
     pytest.raises(ArgumentError, lambda: parser.parse_object({"l1": {"l2": {"op": "x"}}}))
+
+
+def test_env_prefix_from_prog_with_dashes():
+    parser = ArgumentParser(prog="cli-name")
+    action = parser.add_argument("--arg")
+    assert get_env_var(parser, action) == "CLI_NAME_ARG"
 
 
 def test_parse_env_simple():

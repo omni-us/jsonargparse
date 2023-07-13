@@ -258,7 +258,7 @@ def get_env_var(
         parser = parser_or_formatter
     env_var = ""
     if isinstance(parser.env_prefix, str):
-        env_var = parser.env_prefix + "_"
+        env_var = parser.env_prefix.replace("-", "_") + "_"
     if action:
         env_var += action.dest
     env_var = env_var.replace(".", "__").upper()
