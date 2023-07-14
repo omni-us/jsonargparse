@@ -15,7 +15,7 @@ from jsonargparse import (
     Namespace,
     strip_meta,
 )
-from jsonargparse_tests.conftest import get_parse_args_stdout
+from jsonargparse_tests.conftest import get_parse_args_stdout, get_parser_help
 
 
 @pytest.fixture
@@ -79,6 +79,13 @@ def test_subcommands_parse_args_basics(subcommands_parser):
     cfg = subcommands_parser.parse_args(["b"])
     assert cfg["subcommand"] == "b"
     assert "a" not in cfg
+
+
+def test_main_subcommands_help(subcommands_parser):
+    help_str = get_parser_help(subcommands_parser)
+    assert help_str.count("{a,b,B}") == 1
+    assert "Available subcommands:" in help_str
+    assert "b (B)" in help_str
 
 
 def test_subcommands_parse_args_alias(subcommands_parser):
@@ -161,6 +168,12 @@ def test_subcommands_parse_env(subcommands_parser):
     assert cfg["o1"] == "o1_env"
     assert cfg["subcommand"] == "a"
     assert cfg["a"] == {"ap1": "ap1_env", "ao1": "ao1_env"}
+
+
+def test_subcommands_help_default_env_true(subcommands_parser):
+    subcommands_parser.default_env = True
+    help_str = get_parser_help(subcommands_parser)
+    assert "ENV:   APP_SUBCOMMAND" in help_str
 
 
 def test_subcommand_required_false(parser, subparser):

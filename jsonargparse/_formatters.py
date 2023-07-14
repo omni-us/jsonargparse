@@ -99,7 +99,12 @@ class DefaultHelpFormatter(HelpFormatter):
 
     def _format_action_invocation(self, action: Action) -> str:
         parser = parent_parser.get()
-        if not (parser.default_env and action.option_strings):
+        if isinstance(action, _ActionSubCommands):
+            value = "Available subcommands:"
+            if parser.default_env:
+                value = f"ENV:   {get_env_var(self, action)}\n\n  {value}"
+            return value
+        if action.option_strings == [] or not parser.default_env:
             return super()._format_action_invocation(action)
         extr = ""
         if not isinstance(action, (_ActionHelpClassPath, _ActionPrintConfig, _HelpAction)):
