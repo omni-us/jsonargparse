@@ -595,10 +595,11 @@ class _ActionSubCommands(_SubParsersAction):
 
         # create a pseudo-action to hold the choice help
         aliases = kwargs.pop("aliases", ())
+        help_arg = None
         if "help" in kwargs:
             help_arg = kwargs.pop("help")
-            choice_action = self._ChoicesPseudoAction(name, aliases, help_arg)
-            self._choices_actions.append(choice_action)
+        choice_action = self._ChoicesPseudoAction(name, aliases, help_arg)
+        self._choices_actions.append(choice_action)
 
         # add the parser to the name-parser map
         self._name_parser_map[name] = parser

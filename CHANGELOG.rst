@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.22.2 (2023-07-??)
+v4.23.0 (2023-07-??)
 --------------------
 
 Fixed
@@ -24,6 +24,14 @@ Fixed
 - ``typing.Literal`` types skipped on python 3.9 when typing_extensions is
   installed (`lightning#18125 comment
   <https://github.com/Lightning-AI/lightning/pull/18125#issuecomment-1644797707>`__).
+
+Changed
+^^^^^^^
+- Subcommands main parser help changes:
+    - Set notation of subcommands choices now only included in usage.
+    - In subcommands section, now each subcommand is always shown separately,
+      including the name, and if available aliases and help.
+    - When ``default_env=True`` include subcommand environment variable name.
 
 
 v4.22.1 (2023-07-07)
