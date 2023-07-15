@@ -42,6 +42,17 @@ def typing_extensions_import(name):
         return getattr(__import__("typing"), name, False)
 
 
+def final(cls):
+    """Decorator to make a class ``final``, i.e., it shouldn't be subclassed.
+
+    It is the same as ``typing.final`` or an equivalent implementation
+    depending on the python version and whether typing-extensions is
+    installed.
+    """
+    setattr(cls, "__final__", True)
+    return cls
+
+
 def is_compatible_final(final) -> bool:
     @final
     class FinalClass:
@@ -50,18 +61,9 @@ def is_compatible_final(final) -> bool:
     return getattr(FinalClass, "__final__", False)
 
 
-final = typing_extensions_import("final")
-if not final or not is_compatible_final(final) or "SPHINX_BUILD" in os.environ:
-
-    def final(cls):  # pylint: disable=function-redefined
-        """Decorator to make a class ``final``, i.e., it shouldn't be subclassed.
-
-        It is the same as ``typing.final`` or an equivalent implementation
-        depending on the python version and whether typing-extensions is
-        installed.
-        """
-        setattr(cls, "__final__", True)
-        return cls
+stdlib_final = typing_extensions_import("final")
+if stdlib_final and is_compatible_final(stdlib_final):
+    final = stdlib_final  # noqa: F811
 
 
 def import_typeshed_client():

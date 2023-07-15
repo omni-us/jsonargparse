@@ -19,6 +19,7 @@ Fixed
 ^^^^^
 - Invalid environment variable names when ``env_prefix`` is derived from
   a ``prog`` containing dashes.
+- Pylance unable to resolve types from ``jsonargparse.typing``.
 
 
 v4.22.1 (2023-07-07)
