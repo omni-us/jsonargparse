@@ -62,7 +62,7 @@ def is_compatible_final(final) -> bool:
 
 
 stdlib_final = typing_extensions_import("final")
-if stdlib_final and is_compatible_final(stdlib_final):
+if stdlib_final and is_compatible_final(stdlib_final) and "SPHINX_BUILD" not in os.environ:
     final = stdlib_final  # noqa: F811
 
 
