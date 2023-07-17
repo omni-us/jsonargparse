@@ -132,7 +132,9 @@ class ActionLink(Action):
                         f"Links applied on instantiation require source to be a subclass action or a class group: {key}"
                     )
         else:
-            self.source = [(s, find_parent_or_child_actions(parser, s, exclude=exclude)) for s in source]  # type: ignore
+            self.source = [
+                (s, find_parent_or_child_actions(parser, s, exclude=exclude)) for s in source  # type: ignore
+            ]
 
         # Set and check target action
         self.target = (target, _find_parent_action(parser, target, exclude=exclude))
@@ -261,7 +263,7 @@ class ActionLink(Action):
             for source_key, source_action in action.source:
                 if ActionTypeHint.is_subclass_typehint(source_action[0]) and source_key not in cfg:
                     parser.logger.debug(
-                        f"Link {action.option_strings[0]} ignored since source {source_key} not found in namespace."
+                        f"Link '{action.option_strings[0]}' ignored since source '{source_key}' not found in namespace."
                     )
                     skip_link = True
                     break
@@ -322,8 +324,8 @@ class ActionLink(Action):
 
                     if ActionTypeHint.is_subclass_typehint(source_action) and not hasattr(source_object, attr):
                         parser.logger.debug(
-                            f"Link {action.option_strings[0]} ignored since source "
-                            f"{source_action._typehint} does not have that parameter."
+                            f"Link '{action.option_strings[0]}' ignored since attribute '{attr}' not found "
+                            f"in source {source_object}."
                         )
                         continue
                     source_objects.append(getattr(source_object, attr))
@@ -348,7 +350,7 @@ class ActionLink(Action):
             if target_key == target_action.dest:  # type: ignore
                 target_action._check_type(value)  # type: ignore
             elif target_key not in cfg:
-                logger.debug(f"Link {action.option_strings[0]} ignored since target {target_action._typehint} does not have that parameter.")  # type: ignore
+                logger.debug(f"Link '{action.option_strings[0]}' ignored since target not found in namespace.")
                 return
         cfg[target_key] = value
 

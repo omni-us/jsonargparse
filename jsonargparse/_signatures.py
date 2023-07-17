@@ -424,7 +424,8 @@ class SignatureArguments(LoggerProperty):
                     default = theclass(**default)
             if not isinstance(default, theclass):
                 raise ValueError(
-                    f'Expected "default" argument to be an instance of "{theclass.__name__}" or its kwargs dict, given {default}'
+                    f'Expected "default" argument to be an instance of "{theclass.__name__}" '
+                    f"or its kwargs dict, given {default}"
                 )
             defaults = dataclass_to_dict(default)
 
@@ -452,7 +453,9 @@ class SignatureArguments(LoggerProperty):
         instantiate: bool = True,
         required: bool = False,
         metavar: str = "CONFIG | CLASS_PATH_OR_NAME | .INIT_ARG_NAME VALUE",
-        help: str = 'One or more arguments specifying "class_path" and "init_args" for any subclass of %(baseclass_name)s.',
+        help: str = (
+            'One or more arguments specifying "class_path" and "init_args" for any subclass of %(baseclass_name)s.'
+        ),
         **kwargs,
     ):
         """Adds arguments to allow specifying any subclass of the given base class.

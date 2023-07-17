@@ -2206,10 +2206,10 @@ Then some examples of parsing are the following:
 
 .. doctest::
 
-    >>> parser.parse_args(["subcomm1", "--op1", "val1"])
-    Namespace(op0=None, subcomm1=Namespace(op1='val1'), subcommand='subcomm1')
-    >>> parser.parse_args(["--op0", "val0", "subcomm2", "--op2", "val2"])
-    Namespace(op0='val0', subcomm2=Namespace(op2='val2'), subcommand='subcomm2')
+    >>> parser.parse_args(["subcomm1", "--op1", "val1"])  # doctest: +IGNORE_RESULT
+    Namespace(op0=None, subcommand='subcomm1', subcomm1=Namespace(op1='val1'))
+    >>> parser.parse_args(["--op0", "val0", "subcomm2", "--op2", "val2"])  # doctest: +IGNORE_RESULT
+    Namespace(op0='val0', subcommand='subcomm2', subcomm2=Namespace(op2='val2'))
 
 Parsing config files with :py:meth:`.ArgumentParser.parse_path` or
 :py:meth:`.ArgumentParser.parse_string` is also possible. The config file is not

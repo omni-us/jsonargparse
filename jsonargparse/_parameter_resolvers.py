@@ -675,7 +675,11 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     self.log_debug(f"kwargs given as keyword parameter not supported: {ast_str(node)}")
                 elif self.parent and ast_is_super_call(node):
                     if ast_is_supported_super_call(node, self.self_name, self.log_debug):
-                        params = get_mro_parameters(node.func.attr, get_signature_parameters, self.logger)  # type: ignore
+                        params = get_mro_parameters(
+                            node.func.attr,  # type: ignore
+                            get_signature_parameters,
+                            self.logger,
+                        )
                 else:
                     get_param_args = self.get_node_component(node)
                     if get_param_args:

@@ -276,8 +276,10 @@ class ActionPathList(Action, FilesCompleterMethod):
         """Initializer for ActionPathList instance.
 
         Args:
-            mode: The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument (uppercase means not), e.g. ActionPathList(mode='fr').
-            rel: Whether relative paths are with respect to current working directory 'cwd' or the list's parent directory 'list'.
+            mode: The required type and access permissions among [fdrwxcuFDRWX] as a keyword argument (uppercase means
+                not), e.g. ActionPathList(mode='fr').
+            rel: Whether relative paths are with respect to current working directory 'cwd' or the list's parent
+                directory 'list'.
 
         Raises:
             ValueError: If any of the parameters (mode or rel) are invalid.

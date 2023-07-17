@@ -467,8 +467,8 @@ def test_on_parse_subclass_link_ignored_missing_param(parser, caplog):
     parser.link_arguments("v.init_args.v1", "w.init_args.w2", apply_on="parse")
 
     parser.parse_args([f"--v={__name__}.ClassV", f"--w={__name__}.ClassW"])
-    assert "v.init_args.v2 --> w.init_args.w1 ignored since source" in caplog.text
-    assert "v.init_args.v1 --> w.init_args.w2 ignored since target" in caplog.text
+    assert "'v.init_args.v2 --> w.init_args.w1' ignored since source" in caplog.text
+    assert "'v.init_args.v1 --> w.init_args.w2' ignored since target" in caplog.text
 
 
 def test_on_instantiate_subclass_link_ignored_missing_param(parser, caplog):
@@ -482,8 +482,8 @@ def test_on_instantiate_subclass_link_ignored_missing_param(parser, caplog):
 
     cfg = parser.parse_args([f"--v={__name__}.ClassV", f"--w={__name__}.ClassW"])
     parser.instantiate_classes(cfg)
-    assert "v.init_args.v2 --> w.init_args.w1 ignored since source" in caplog.text
-    assert "v.init_args.v1 --> w.init_args.w2 ignored since target" in caplog.text
+    assert "'v.init_args.v2 --> w.init_args.w1' ignored since attribute" in caplog.text
+    assert "'v.init_args.v1 --> w.init_args.w2' ignored since target" in caplog.text
 
 
 # link creation failures

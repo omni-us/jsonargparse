@@ -212,7 +212,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             logger: Configures the logger, see :class:`.LoggerProperty`.
             version: Program version which will be printed by the --version argument.
             print_config: Add this as argument to print config, set None to disable.
-            parser_mode: Mode for parsing configuration files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
+            parser_mode: Mode for parsing config files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
             dump_header: Header to include as comment when dumping a config object.
             default_config_files: Default config file locations, e.g. :code:`['~/.config/myapp/*.yaml']`.
             default_env: Set the default value on whether to parse environment variables.
@@ -682,7 +682,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
         Args:
             cfg: The configuration object to dump.
-            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via :func:`.set_dumper`.
+            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via
+                :func:`.set_dumper`.
             skip_none: Whether to exclude entries whose value is None.
             skip_default: Whether to exclude entries whose value is the same as the default.
             skip_check: Whether to skip parser checking.
@@ -775,7 +776,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Args:
             cfg: The configuration object to save.
             path: Path to the location where to save config.
-            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via :func:`.set_dumper`.
+            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via
+                :func:`.set_dumper`.
             skip_none: Whether to exclude entries whose value is None.
             skip_check: Whether to skip parser checking.
             overwrite: Whether to overwrite existing files.

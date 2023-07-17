@@ -193,7 +193,8 @@ def set_loader(mode: str, loader_fn: Callable[[str], Any], exceptions: Tuple[Typ
     Args:
         mode: The parser mode for which to set its loader function. Example: "yaml".
         loader_fn: The loader function to set. Example: ``yaml.safe_load``.
-        exceptions: Exceptions that the loader can raise when load fails. Example: (yaml.parser.ParserError, yaml.scanner.ScannerError).
+        exceptions: Exceptions that the loader can raise when load fails.
+            Example: (yaml.parser.ParserError, yaml.scanner.ScannerError).
     """
     loaders[mode] = loader_fn
     loader_exceptions[mode] = exceptions

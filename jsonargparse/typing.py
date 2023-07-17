@@ -285,7 +285,7 @@ def register_type(
     Args:
         type_class: The type object to be registered.
         serializer: Function that converts an instance of the class to a basic type.
-        deserializer: Function that converts a basic type to an instance of the class. Default None instantiates type_class.
+        deserializer: Function that converts a basic type to an instance of the class. Default instantiates type_class.
         deserializer_exceptions: Exceptions that deserializer raises when it fails.
         type_check: Function to check if a value is of type_class. Gets as arguments the value and type_class.
         fail_already_registered: Whether to fail if type has already been registered.

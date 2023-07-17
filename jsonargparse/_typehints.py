@@ -168,7 +168,8 @@ class ActionTypeHint(Action):
                 if sum(subtype_supported) < len(subtype_supported):
                     discard = {typehint.__args__[n] for n, s in enumerate(subtype_supported) if not s}
                     kwargs["logger"].debug(f"Discarding unsupported subtypes {discard} from {typehint}")
-                    typehint = Union[tuple(t for t, s in zip(typehint.__args__, subtype_supported) if s)]  # type: ignore
+                    subtypes = tuple(t for t, s in zip(typehint.__args__, subtype_supported) if s)
+                    typehint = Union[subtypes]  # type: ignore
             self._typehint = typehint
             self._enable_path = False if is_optional(typehint, Path) else enable_path
         elif "_typehint" not in kwargs:
@@ -771,7 +772,8 @@ def adapt_typehints(
                     val_class = import_object(val["class_path"])
                     if inspect.isclass(val_class) and not (partial_classes or callable_instances(val_class)):
                         raise ImportError(
-                            f'Expected {val["class_path"]!r} to be a class that instantiates into callable or a subclass of {partial_classes}'
+                            f"Expected '{val['class_path']}' to be a class that instantiates into callable "
+                            f"or a subclass of {partial_classes}."
                         )
                     val["class_path"] = get_import_path(val_class)
                     val = adapt_class_type(val, False, instantiate_classes, sub_add_kwargs, skip_args=num_partial_args)
