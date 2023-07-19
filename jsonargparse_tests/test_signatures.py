@@ -164,6 +164,17 @@ def test_add_class_with_default(parser):
     assert defaults == Namespace(cls=Namespace(p1=2, p2="-"))
 
 
+def test_add_class_env_help(parser):
+    parser.env_prefix = "APP"
+    parser.default_env = True
+    parser.add_class_arguments(WithDefault, "cls")
+    help_str = get_parser_help(parser)
+    assert "ARG:   --cls CONFIG" in help_str
+    assert "ARG:   --cls.p1 P1" in help_str
+    assert "ENV:   APP_CLS\n" in help_str
+    assert "ENV:   APP_CLS__P1" in help_str
+
+
 class NoParams:
     pass
 

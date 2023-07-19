@@ -14,13 +14,20 @@ def parser() -> ArgumentParser:
     return ArgumentParser(prog="app", default_env=True)
 
 
+def test_help_basics(parser):
+    help_str = get_parser_help(parser)
+    assert "ARG:   -h, --help" in help_str
+    assert "APP_HELP" not in help_str
+
+
 def test_help_action_config_file(parser):
     parser.add_argument("-c", "--cfg", help="Config in yaml/json.", action=ActionConfigFile)
     help_str = get_parser_help(parser)
-    assert "--print_config" in help_str
+    assert "ARG:   --print_config" in help_str
     assert "ARG:   -c CFG, --cfg CFG" in help_str
     assert "ENV:   APP_CFG" in help_str
     assert "Config in yaml/json." in help_str
+    assert "APP_PRINT_CONFIG" not in help_str
 
 
 def test_help_required_and_default(parser):

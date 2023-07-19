@@ -20,6 +20,7 @@ Fixed
 - Invalid environment variable names when ``env_prefix`` is derived from
   a ``prog`` containing dashes.
 - Pylance unable to resolve types from ``jsonargparse.typing``.
+- Inconsistent ``ARG:`` and missing ``ENV:`` in help when ``default_env=True``.
 
 
 v4.22.1 (2023-07-07)
