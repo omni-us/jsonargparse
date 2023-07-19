@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import textwrap
 import warnings
 from calendar import Calendar, HTMLCalendar, January, TextCalendar  # type: ignore
@@ -9,6 +10,7 @@ from dataclasses import dataclass
 from gzip import GzipFile
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -322,6 +324,30 @@ def test_subclass_in_subcommand_with_global_default_config_file(parser, subparse
 
     cfg = parser.parse_args(["fit"])
     assert cfg.fit.model.foo == 123
+
+
+# environment tests
+
+
+def test_subclass_env_help(parser):
+    parser.env_prefix = "APP"
+    parser.default_env = True
+    parser.add_argument("--cal", type=Calendar)
+    help_str = get_parser_help(parser)
+    assert "ARG:   --cal CAL" in help_str
+    assert "ARG:   --cal.help" in help_str
+    assert "ENV:   APP_CAL" in help_str
+    assert "APP_CAL_HELP" not in help_str
+
+
+def test_subclass_env_config(parser):
+    parser.env_prefix = "APP"
+    parser.default_env = True
+    parser.add_argument("--cal", type=Calendar)
+    env = {"APP_CAL": "{'class_path': 'TextCalendar', 'init_args': {'firstweekday': 4}}"}
+    with patch.dict(os.environ, env):
+        cfg = parser.parse_env()
+    assert cfg.cal == Namespace(class_path="calendar.TextCalendar", init_args=Namespace(firstweekday=4))
 
 
 # nested subclass tests

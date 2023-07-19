@@ -17,6 +17,8 @@ from ._actions import (
     ActionConfigFile,
     ActionYesNo,
     _ActionConfigLoad,
+    _ActionHelpClassPath,
+    _ActionPrintConfig,
     _ActionSubCommands,
     _find_action,
     filter_default_actions,
@@ -97,10 +99,10 @@ class DefaultHelpFormatter(HelpFormatter):
 
     def _format_action_invocation(self, action: Action) -> str:
         parser = parent_parser.get()
-        if action.option_strings == [] or action.default == SUPPRESS or not parser.default_env:
+        if not (parser.default_env and action.option_strings):
             return super()._format_action_invocation(action)
         extr = ""
-        if parser.default_env:
+        if not isinstance(action, (_ActionHelpClassPath, _ActionPrintConfig, _HelpAction)):
             extr += "\n  ENV:   " + get_env_var(self, action)
         return "ARG:   " + super()._format_action_invocation(action) + extr
 
