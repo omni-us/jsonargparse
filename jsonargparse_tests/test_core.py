@@ -204,7 +204,7 @@ def test_default_env_property():
     assert False is parser.default_env
     with pytest.raises(ValueError) as ctx:
         parser.default_env = "invalid"
-    ctx.match("default_env has to be a boolean")
+    ctx.match("default_env expects a boolean")
 
 
 @patch.dict(os.environ, {"JSONARGPARSE_DEFAULT_ENV": "True"})
@@ -727,7 +727,7 @@ def test_default_config_files(parser, subtests, tmp_cwd):
     with subtests.test("set invalid"):
         with pytest.raises(ValueError) as ctx:
             parser.default_config_files = False
-        ctx.match("default_config_files has to be None or List")
+        assert "default_config_files expects None or List[str | os.PathLike]." == str(ctx.value)
 
 
 def test_default_config_file_help_message_no_existing(parser, tmp_cwd):
@@ -942,7 +942,7 @@ def test_default_meta_property():
     assert True is parser.default_meta
     with pytest.raises(ValueError) as ctx:
         parser.default_meta = "invalid"
-    ctx.match("default_meta has to be a boolean")
+    ctx.match("default_meta expects a boolean")
 
 
 @pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="loggers not pickleable in python 3.6")
