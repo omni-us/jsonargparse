@@ -305,9 +305,7 @@ create a parser object and then add arguments to it. A simple example would be:
     from jsonargparse import ArgumentParser
 
     parser = ArgumentParser(prog="app", description="Description for my app.")
-
     parser.add_argument("--opt1", type=int, default=0, help="Help for option 1.")
-
     parser.add_argument("--opt2", type=float, default=1.0, help="Help for option 2.")
 
 

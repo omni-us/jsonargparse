@@ -1330,7 +1330,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         ):
             self._default_config_files = [os.fspath(d) for d in default_config_files]
         else:
-            raise ValueError("default_config_files has to be None or List[str | os.PathLike].")
+            raise ValueError("default_config_files expects None or List[str | os.PathLike].")
 
         if len(self._default_config_files) > 0:
             if not hasattr(self, "_default_config_files_group"):
@@ -1364,7 +1364,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         elif isinstance(default_env, bool):
             self._default_env = default_env
         else:
-            raise ValueError("default_env has to be a boolean.")
+            raise ValueError("default_env expects a boolean.")
         if self._subcommands_action:
             for subparser in self._subcommands_action._name_parser_map.values():
                 subparser.default_env = self._default_env
@@ -1386,7 +1386,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         if isinstance(default_meta, bool):
             self._default_meta = default_meta
         else:
-            raise ValueError("default_meta has to be a boolean.")
+            raise ValueError("default_meta expects a boolean.")
 
     @property
     def env_prefix(self) -> Union[bool, str]:
@@ -1413,7 +1413,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         elif env_prefix is True:
             env_prefix = os.path.splitext(self.prog)[0]
         elif not isinstance(env_prefix, (bool, str)):
-            raise ValueError("env_prefix must be a string or a boolean.")
+            raise ValueError("env_prefix expects a string or a boolean.")
         self._env_prefix = env_prefix
 
     @property
