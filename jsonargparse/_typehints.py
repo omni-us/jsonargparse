@@ -138,6 +138,10 @@ sequence_origin_types = {
 mapping_origin_types = {Dict, dict, Mapping, MutableMapping, abc.Mapping, abc.MutableMapping}
 callable_origin_types = {Callable, abc.Callable}
 
+literal_types = {Literal}
+if sys.version_info[:2] == (3, 9) and Literal.__module__ == "typing_extensions":
+    root_types.add(__import__("typing").Literal)
+    literal_types.add(__import__("typing").Literal)
 
 subclass_arg_parser: ContextVar = ContextVar("subclass_arg_parser")
 sub_defaults: ContextVar = ContextVar("sub_defaults", default=False)
@@ -227,7 +231,7 @@ class ActionTypeHint(Action):
         )
         if full and supported:
             typehint_origin = get_typehint_origin(typehint) or typehint
-            if typehint not in root_types and typehint_origin in root_types and typehint_origin != Literal:
+            if typehint not in root_types and typehint_origin in root_types and typehint_origin not in literal_types:
                 num_supported_args = 0
                 subtypes = getattr(typehint, "__args__", [])
                 subtypes = [s for s in subtypes if s is not NoneType]
@@ -593,7 +597,7 @@ def adapt_typehints(
         val = adapt_classes_any(val, serialize, instantiate_classes, sub_add_kwargs)
 
     # Literal
-    elif typehint_origin == Literal:
+    elif typehint_origin in literal_types:
         if val not in subtypehints and isinstance(val, str):
             subtypes = Union[tuple(set(type(v) for v in subtypehints))]
             val = adapt_typehints(val, subtypes, **adapt_kwargs)
@@ -1158,7 +1162,7 @@ def typehint_metavar(typehint):
         metavar = "{true,false}"
     elif is_optional(typehint, bool):
         metavar = "{true,false,null}"
-    elif typehint_origin == Literal:
+    elif typehint_origin in literal_types:
         args = typehint.__args__
         metavar = iter_to_set_str(literal_to_str(a) for a in args)
     elif is_subclass(typehint, Enum):
