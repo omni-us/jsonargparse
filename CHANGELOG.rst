@@ -21,6 +21,9 @@ Fixed
   a ``prog`` containing dashes.
 - Pylance unable to resolve types from ``jsonargparse.typing``.
 - Inconsistent ``ARG:`` and missing ``ENV:`` in help when ``default_env=True``.
+- ``typing.Literal`` types skipped on python 3.9 when typing_extensions is
+  installed (`lightning#18125 comment
+  <https://github.com/Lightning-AI/lightning/pull/18125#issuecomment-1644797707>`__).
 
 
 v4.22.1 (2023-07-07)

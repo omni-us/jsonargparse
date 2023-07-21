@@ -136,6 +136,14 @@ def test_literal(parser):
         assert value in help_str
 
 
+@pytest.mark.skipif(not Literal, reason="Literal introduced in python 3.8 or backported in typing_extensions")
+def test_union_of_literals(parser):
+    literal_type = __import__("typing").Literal if sys.version_info[:2] == (3, 9) else Literal
+    parser.add_argument("--literal", type=Union[literal_type[1, 2], literal_type["a", "b"]])  # noqa: F821
+    assert "a" == parser.parse_args(["--literal=a"]).literal
+    assert 2 == parser.parse_args(["--literal=2"]).literal
+
+
 def test_type_any(parser):
     parser.add_argument("--any", type=Any)
     assert "abc" == parser.parse_args(["--any=abc"]).any
