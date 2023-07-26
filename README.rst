@@ -13,7 +13,8 @@
 jsonargparse
 ============
 
-https://github.com/omni-us/jsonargparse/
+Docs: https://jsonargparse.readthedocs.io/
+Source: https://github.com/omni-us/jsonargparse/
 
 This package is an extension to python's argparse which simplifies parsing of
 configuration options from command line arguments, json configuration files
