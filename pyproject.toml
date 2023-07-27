@@ -104,6 +104,7 @@ dev = [
     "jsonargparse[mypy]",
     "pre-commit>=2.19.0",
     "tox>=3.25.0",
+    "build>=0.10.0",
 ]
 mypy = [
     "jsonargparse[types-pyyaml]",
@@ -120,6 +121,7 @@ doc = [
 ]
 maintainer = [
     "bump2version>=0.5.11",
+    "twine>=4.0.2",
 ]
 
 [project.urls]
@@ -142,10 +144,7 @@ version = {attr = "jsonargparse.__version__"}
 
 
 [tool.setuptools.package-data]
-jsonargparse = [
-    "*.pyi",
-    "py.typed",
-]
+jsonargparse = ["py.typed"]
 
 
 [tool.pytest.ini_options]
