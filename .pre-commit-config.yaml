@@ -45,7 +45,7 @@ repos:
       if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
         echo "$(tput setaf 6) Skipped, only runs when bumping version $(tput sgr0)";
       else
-        ./setup.py bdist_wheel;
+        python3 -m build --wheel;
         twine check dist/*.whl;
       fi'
     language: system
@@ -112,7 +112,7 @@ repos:
         TEST_DIR=$(mktemp -d -t _jsonargparse_tests_XXXXXX);
         cleanup () { rm -rf "$TEST_DIR"; };
         trap cleanup EXIT;
-        ./setup.py bdist_wheel;
+        python3 -m build --wheel;
         python3.6 -m venv "$TEST_DIR/venv36";
         . "$TEST_DIR/venv36/bin/activate";
         pip3 install "$(ls ./dist/*.whl | tail -n 1)[all,test,test-no-urls]";

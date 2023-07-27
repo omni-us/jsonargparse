@@ -1,5 +1,5 @@
 .. image:: https://readthedocs.org/projects/jsonargparse/badge/?version=stable
-    :target: https://jsonargparse.readthedocs.io/en/stable/
+    :target: https://readthedocs.org/projects/jsonargparse/
 .. image:: https://github.com/omni-us/jsonargparse/actions/workflows/tests.yml/badge.svg
     :target: https://github.com/omni-us/jsonargparse/actions/workflows/tests.yml
 .. image:: https://codecov.io/gh/omni-us/jsonargparse/branch/main/graph/badge.svg
@@ -14,6 +14,7 @@ jsonargparse
 ============
 
 Docs: https://jsonargparse.readthedocs.io/
+
 Source: https://github.com/omni-us/jsonargparse/
 
 This package is an extension to python's argparse which simplifies parsing of

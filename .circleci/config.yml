@@ -9,8 +9,8 @@ jobs:
       - run:
           name: Build wheel package
           command: |
-            pip3 install -U setuptools
-            ./setup.py bdist_wheel sdist
+            pip3 install -U build
+            python3 -m build
       - persist_to_workspace:
           root: .
           paths:
