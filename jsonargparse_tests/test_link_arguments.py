@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from calendar import Calendar, TextCalendar
+from dataclasses import dataclass
 from typing import Any, List, Mapping, Optional, Union
 
 import pytest
@@ -290,6 +291,31 @@ def test_on_parse_within_subcommand(parser, subparser):
 
     init = parser.instantiate_classes(cfg)
     assert isinstance(init["cmd"]["foo"], Foo)
+
+
+class RequiredTargetA:
+    def __init__(self, a: int):
+        pass
+
+
+@dataclass
+class RequiredTargetB:
+    a: int
+
+
+class RequiredTargetC:
+    def __init__(self, b: RequiredTargetB):
+        pass
+
+
+def test_on_parse_save_required_target_subclass_param(parser, tmp_cwd):
+    parser.add_class_arguments(RequiredTargetA, "a")
+    parser.add_subclass_arguments(RequiredTargetC, "c")
+    parser.link_arguments("a.a", "c.init_args.b.a")
+    cfg = parser.parse_args(["--a.a=1", f"--c={__name__}.RequiredTargetC"])
+    parser.save(cfg, "config.yaml")
+    saved = yaml.safe_load((tmp_cwd / "config.yaml").read_text())
+    assert saved == {"a": {"a": 1}, "c": {"class_path": f"{__name__}.RequiredTargetC", "init_args": {}}}
 
 
 # tests for links applied on instantiate

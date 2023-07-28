@@ -509,6 +509,10 @@ class ActionTypeHint(Action):
         parser = type(parser)(exit_on_error=False, logger=parser.logger)
         remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
         parser.add_class_arguments(val_class, **kwargs)
+        if "linked_targets" in kwargs and parser.required_args:
+            for key in kwargs["linked_targets"]:
+                if key in parser.required_args:
+                    parser.required_args.remove(key)
         return parser
 
     def extra_help(self):
