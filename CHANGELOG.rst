@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.23.1 (2023-07-??)
+--------------------
+
+Fixed
+^^^^^
+- ``save`` fails when a link target is a required parameter nested in a subclass
+  (`#332 <https://github.com/omni-us/jsonargparse/issues/332>`__).
+
+
 v4.23.0 (2023-07-27)
 --------------------
 
