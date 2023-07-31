@@ -139,7 +139,7 @@ mapping_origin_types = {Dict, dict, Mapping, MutableMapping, abc.Mapping, abc.Mu
 callable_origin_types = {Callable, abc.Callable}
 
 literal_types = {Literal}
-if sys.version_info[:2] == (3, 9) and Literal.__module__ == "typing_extensions":
+if getattr(Literal, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), "Literal"):
     root_types.add(__import__("typing").Literal)
     literal_types.add(__import__("typing").Literal)
 
