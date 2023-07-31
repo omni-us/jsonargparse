@@ -42,6 +42,7 @@ repos:
   - id: twine-check
     name: twine check [on bumpversion]
     entry: bash -c '
+      set -e;
       if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
         echo "$(tput setaf 6) Skipped, only runs when bumping version $(tput sgr0)";
       else
@@ -55,6 +56,7 @@ repos:
   - id: changelog-check
     name: changelog check [on bumpversion]
     entry: bash -c '
+      set -e;
       if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
         echo "$(tput setaf 6) Skipped, only runs when bumping version $(tput sgr0)";
       else
@@ -78,6 +80,7 @@ repos:
   - id: circleci-config-validate
     name: circleci config validate -c .circleci/config.yml
     entry: bash -c '
+      set -e;
       if [ "$(which circleci)" = "" ]; then
         echo "$(tput setaf 6) Skipped, circleci command not found $(tput sgr0)";
       else
@@ -106,22 +109,20 @@ repos:
   - id: test-py36
     name: test-py36
     entry: bash -c '
-      if [ "$(which python3.6)" = "" ]; then
-        echo "$(tput setaf 6) Skipped, python 3.6 not found $(tput sgr0)";
+      set -e;
+      if [ "$(which docker)" = "" ]; then
+        echo "$(tput setaf 6) Skipped, docker not found $(tput sgr0)";
       else
-        TEST_DIR=$(mktemp -d -t _jsonargparse_tests_XXXXXX);
-        cleanup () { rm -rf "$TEST_DIR"; };
-        trap cleanup EXIT;
         python3 -m build --wheel;
-        python3.6 -m venv "$TEST_DIR/venv36";
-        . "$TEST_DIR/venv36/bin/activate";
-        pip3 install "$(ls ./dist/*.whl | tail -n 1)[all,test,test-no-urls]";
-        pip3 install pytest pytest-subtests;
-        cp jsonargparse_tests/*.py "$TEST_DIR";
-        cd "$TEST_DIR";
-        rm test_backports.py;
-        sed -i "/^from __future__ import annotations$/d" *.py;
-        pytest;
+        docker run --rm --workdir $PWD -v $PWD:$PWD cimg/python:3.6 bash -c "
+          set -e;
+          pip3 install $(ls ./dist/*.whl | tail -n 1)[all,test,test-no-urls];
+          mkdir /tmp/jsonargparse_tests;
+          cp jsonargparse_tests/*.py /tmp/jsonargparse_tests;
+          cd /tmp/jsonargparse_tests;
+          rm test_backports.py;
+          sed -i /__future__/d *.py;
+          pytest --color=yes";
       fi'
     language: system
     pass_filenames: false
@@ -129,6 +130,7 @@ repos:
   - id: test-without-future-annotations
     name: test-without-future-annotations
     entry: bash -c '
+      set -e;
       TEST_DIR=$(mktemp -d -t _jsonargparse_tests_XXXXXX);
       cleanup () { rm -rf "$TEST_DIR"; };
       trap cleanup EXIT;
@@ -142,6 +144,7 @@ repos:
   - id: doctest
     name: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
     entry: bash -c '
+      set -e;
       if [ "$(which sphinx-build)" = "" ]; then
         echo "$(tput setaf 6) Skipped, sphinx-build command not found $(tput sgr0)";
       else

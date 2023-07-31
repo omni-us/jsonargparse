@@ -592,6 +592,7 @@ parsing, the value of ``databases.info`` will be an instance of the
 included in the yaml file, or the corresponding absolute path:
 
 .. doctest:: paths
+    :skipif: os.name != "posix"
 
     >>> str(cfg.databases.info)
     'data/info.db'
