@@ -21,6 +21,9 @@ Fixed
   (`#332 <https://github.com/omni-us/jsonargparse/issues/332>`__).
 - ``typing.Literal`` types skipped when typing_extensions is installed
   (`lightning#18184 <https://github.com/Lightning-AI/lightning/pull/18184>`__).
+- ``class_from_function`` failing when called on the same function multiple
+  times (`lightning#18180
+  <https://github.com/Lightning-AI/lightning/issues/18180>`__).
 
 
 v4.23.0 (2023-07-27)

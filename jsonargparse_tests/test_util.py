@@ -589,6 +589,7 @@ def test_class_from_function(function, class_type):
     module_path, name = get_import_path(cls).rsplit(".", 1)
     assert module_path == __name__
     assert cls is globals()[name]
+    assert cls is class_from_function(function)
 
 
 def test_class_from_function_name_clash():
