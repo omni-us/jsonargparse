@@ -556,7 +556,9 @@ class UnexceptedClassError(ValueError):
     pass
 
 
-def raise_instantiation_error(message: str, val: Any = inspect._empty, exception: Optional[Exception] = None) -> NoReturn:
+def raise_instantiation_error(
+    message: str, val: Any = inspect._empty, exception: Optional[Exception] = None
+) -> NoReturn:
     if val is not inspect._empty:
         message += f". Got value: {val}"
     raise UnexceptedClassError(message) from exception
