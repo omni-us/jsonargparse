@@ -5,6 +5,7 @@ import locale
 import os
 from contextlib import contextmanager, suppress
 from importlib.util import find_spec
+from subprocess import PIPE, Popen
 from typing import Optional
 
 __all__ = [
@@ -277,8 +278,10 @@ def argcomplete_warn_redraw_prompt(prefix, message):
     argcomplete = import_argcomplete("argcomplete_warn_redraw_prompt")
     if prefix != "":
         argcomplete.warn(message)
-        with suppress(ValueError), os.popen(f"ps -p {os.getppid()} -oppid=") as proc:
-            shell_pid = int(proc.read().strip())
+        with suppress(Exception):
+            proc = Popen(f"ps -p {os.getppid()} -oppid=".split(), stdout=PIPE, stderr=PIPE)
+            stdout, _ = proc.communicate()
+            shell_pid = int(stdout.decode().strip())
             os.kill(shell_pid, 28)
     _ = "_" if locale.getlocale()[1] != "UTF-8" else "\xa0"
     return [_ + message.replace(" ", _), ""]

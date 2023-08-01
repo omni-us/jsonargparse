@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.23.1 (2023-07-??)
+v4.23.1 (2023-08-??)
 --------------------
 
 Fixed
@@ -24,6 +24,7 @@ Fixed
 - ``class_from_function`` failing when called on the same function multiple
   times (`lightning#18180
   <https://github.com/Lightning-AI/lightning/issues/18180>`__).
+- Prevent showing errors when running ``ps`` on windows.
 
 
 v4.23.0 (2023-07-27)
