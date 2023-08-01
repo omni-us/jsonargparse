@@ -31,7 +31,7 @@ from typing import (
     get_type_hints,
 )
 
-from ._common import parser_capture, parser_context
+from ._common import is_subclass, parser_capture, parser_context
 from ._deprecated import PathDeprecations
 from ._loaders_dumpers import json_dump, load_value
 from ._optionals import (
@@ -394,6 +394,16 @@ def class_from_function(
     caller_module = inspect.getmodule(inspect.stack()[1][0]) or inspect.getmodule(class_from_function)
     assert caller_module
     if hasattr(caller_module, name):
+        cls = getattr(caller_module, name)
+        mro = inspect.getmro(cls) if inspect.isclass(cls) else ()
+        if (
+            len(mro) > 1
+            and mro[1] is func_return
+            and is_subclass(cls, ClassFromFunctionBase)
+            and cls.wrapped_function is func
+            and cls.__name__ == name
+        ):
+            return cls
         raise ValueError(f"{caller_module.__name__} already defines {name!r}, please use a different name")
 
     @wraps(func)
