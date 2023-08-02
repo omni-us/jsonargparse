@@ -13,9 +13,8 @@
 jsonargparse
 ============
 
-Docs: https://jsonargparse.readthedocs.io/
-
-Source: https://github.com/omni-us/jsonargparse/
+| Docs: https://jsonargparse.readthedocs.io/
+| Source: https://github.com/omni-us/jsonargparse/
 
 This package is an extension to python's argparse which simplifies parsing of
 configuration options from command line arguments, json configuration files
@@ -51,13 +50,13 @@ Features
 
 - Parsing of relative paths within config files and path lists.
 
-- Support for two popular supersets of json: yaml and jsonnet.
+- Support for json, yaml, jsonnet and extendible to more.
 
 - Parsers can be configured just like with python's argparse, thus it has a
   gentle learning curve.
 
 - Several convenient types and action classes to ease common parsing use cases
-  (paths, comparison operators, json schemas, enums, regex strings, ...).
+  (paths, comparison operators, json schemas, regex strings, ...).
 
 - Support for command line tab argument completion using `argcomplete
   <https://pypi.org/project/argcomplete/>`__.
@@ -588,15 +587,15 @@ that exists and is readable, the following could be done:
 
 The ``fr`` in the type are flags that stand for file and readable. After
 parsing, the value of ``databases.info`` will be an instance of the
-:class:`.Path` class that allows to get both the original relative path as
+:class:`.Path_fr` class that allows to get both the original relative path as
 included in the yaml file, or the corresponding absolute path:
 
 .. doctest:: paths
     :skipif: os.name != "posix"
 
-    >>> str(cfg.databases.info)
+    >>> cfg.databases.info.relative
     'data/info.db'
-    >>> cfg.databases.info()  # doctest: +ELLIPSIS
+    >>> cfg.databases.info.absolute  # doctest: +ELLIPSIS
     '/.../app/data/info.db'
 
 Likewise directories can be parsed using the :class:`.Path_dw` type, which would
@@ -608,6 +607,16 @@ writeable, then using the type to cast ``Path_frw('app/config.yaml')`` would
 raise a *TypeError: File is not writeable* exception. For more information of
 all the mode flags supported, refer to the documentation of the :class:`.Path`
 class.
+
+Types created with :func:`.path_type` have as base class  :class:`.Path`. This
+class implements the ``os.PathLike`` protocol, using the absolute version as the
+actual path, thus for the previous example:
+
+.. doctest:: paths
+    :skipif: os.name != "posix"
+
+    >>> os.fspath(cfg.databases.info)  # doctest: +ELLIPSIS
+    '/.../app/data/info.db'
 
 The content of a file that a :class:`.Path` instance references can be read by
 using the :py:meth:`.Path.get_content` method. For the previous example would be
@@ -650,7 +659,7 @@ If ``nargs='+'`` is given to ``add_argument`` with ``List[<path_type>]`` and
 
 .. note::
 
-    The :class:`.Path` class is currently not fully supported in windows.
+    No all features of the :class:`.Path` class are supported in windows.
 
 
 .. _parsing-urls:
