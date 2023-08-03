@@ -1,7 +1,11 @@
 fail_fast: true
+default_install_hook_types: [pre-commit, pre-push]
 
 ci:
   skip:
+  - twine-check
+  - changelog-check
+  - circleci-config-validate
   - mypy
   - tox
   - test-py36
@@ -94,6 +98,7 @@ repos:
   - id: mypy
     name: mypy jsonargparse*/*.py
     entry: bash -c "mypy jsonargparse*/*.py"
+    stages: [pre-push]
     language: system
     types: [python]
     pass_filenames: false
@@ -102,6 +107,7 @@ repos:
   - id: tox
     name: tox --parallel
     entry: tox --parallel
+    stages: [pre-push]
     language: system
     pass_filenames: false
     verbose: true
@@ -124,6 +130,7 @@ repos:
           sed -i /__future__/d *.py;
           pytest --color=yes";
       fi'
+    stages: [pre-push]
     language: system
     pass_filenames: false
 
@@ -138,6 +145,7 @@ repos:
       cd "$TEST_DIR";
       sed -i "/^from __future__ import annotations$/d" *.py;
       pytest $TEST_DIR;'
+    stages: [pre-push]
     language: system
     pass_filenames: false
 
@@ -150,6 +158,7 @@ repos:
       else
         sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst;
       fi'
+    stages: [pre-push]
     language: system
     pass_filenames: false
     verbose: true
@@ -157,6 +166,7 @@ repos:
   - id: coverage
     name: pytest -v -s --cov --cov-report=term --cov-report=html
     entry: pytest -v -s --cov --cov-report=term --cov-report=html
+    stages: [pre-push]
     language: system
     pass_filenames: false
     verbose: true

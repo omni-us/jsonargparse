@@ -6,6 +6,9 @@ Contributions to jsonargparse are very welcome, be it just to create `issues
 proposing enhancements, or more directly by creating `pull requests
 <https://github.com/omni-us/jsonargparse/pulls>`_.
 
+Development environment
+-----------------------
+
 If you intend to work with the source code, note that this project does not
 include any ``requirements.txt`` file. This is by intention. To make it very
 clear what are the requirements for different use cases, all the requirements of
@@ -32,6 +35,9 @@ The crucial step is installing the requirements which would be done by running:
 
     pip install -e ".[dev,all]"
 
+pre-commit
+----------
+
 Please also install the `pre-commit <https://pre-commit.com/>`__ git hook
 scripts so that unit tests and code checks are automatically run locally. This
 is done as follows:
@@ -40,19 +46,31 @@ is done as follows:
 
     pre-commit install
 
+.. note::
+
+    The ``.pre-commit-config.yaml`` file was changed such that some hooks are
+    now run on ``pre-push``. If you have an old development environment, please
+    run ``pre-commit install`` again to update the git hooks.
+
+Documentation
+-------------
+
 To build the documentation run:
 
 .. code-block:: bash
 
     sphinx-build sphinx sphinx/_build sphinx/index.rst
 
-Then to see it, open the file ``sphinx/_build/index.html`` in a browser.
+Then to see the built documentation, open the file ``sphinx/_build/index.html``
+in a browser.
+
+Tests
+-----
 
 Running the unit tests can be done either using using `pytest
 <https://docs.pytest.org/>`__ or `tox
-<https://tox.readthedocs.io/en/stable/>`__. For convenience, the ``setup.py``
-script can run the tests and create an html coverage report. The tests are also
-installed with the package, thus can be run in a production system.
+<https://tox.readthedocs.io/en/stable/>`__. The tests are also installed with
+the package, thus can be run in a production system.
 
 .. code-block:: bash
 
