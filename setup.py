@@ -7,7 +7,7 @@ from setuptools import setup
 
 ## Use README.rst for the package long description ##
 LONG_DESCRIPTION = re.sub(
-    ":class:|:func:|:ref:|:py:meth:|:py:mod:|py:attr:| *# doctest:.*",
+    ":class:|:func:|:ref:|:py:meth:|:py:mod:|py:attr:| *# doctest:.*| *:skipif:.*",
     "",
     Path("README.rst").read_text(),
 )
