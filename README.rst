@@ -235,6 +235,44 @@ is given to :func:`.CLI`, to execute a method of a class, two levels of
 class and the second the name of the method, i.e. ``example.py class
 [init_arguments] method [arguments]``.
 
+Arbitrary levels of sub-commands with custom names can be defined by providing a
+``dict``. For example:
+
+.. testcode::
+
+    class Raffle:
+        def __init__(self, prize: int):
+            self.prize = prize
+
+        def __call__(self, name: str):
+            return f"{name} won {self.prize}€!"
+
+    components = {
+        "weekday": {
+            "tier1": Raffle(prize=100),
+            "tier2": Raffle(prize=50),
+        },
+        "weekend": {
+            "tier1": Raffle(prize=300),
+            "tier2": Raffle(prize=75),
+        },
+    }
+
+    if __name__ == "__main__":
+        print(CLI(components))
+
+Then in a shell:
+
+.. code-block:: bash
+
+    $ python example.py weekend tier1 Lucky
+    Lucky won 300€!
+
+.. doctest:: :hide:
+
+    >>> CLI(components, args=["weekend", "tier1", "Lucky"])
+    'Lucky won 300€!'
+
 .. note::
 
     The examples above are extremely simple, only defining parameters with

@@ -28,7 +28,7 @@ def get_cli_stdout(*args, **kwargs) -> str:
 # failure cases
 
 
-@pytest.mark.parametrize("components", [0, []])
+@pytest.mark.parametrize("components", [0, [], {"x": 0}])
 def test_unexpected_components(components):
     with pytest.raises(ValueError):
         CLI(components)
@@ -342,6 +342,45 @@ def test_dataclass_without_methods_response():
 def test_dataclass_without_methods_parser_groups():
     parser = capture_parser(lambda: CLI(SettingsClass, args=[], as_positional=False))
     assert parser.groups == {}
+
+
+# named components tests
+
+
+def test_named_components_shallow():
+    components = {"cmd1": single_function, "cmd2": callable_instance}
+    assert 3.4 == CLI(components, args=["cmd1", "3.4"])
+    assert 5 == CLI(components, as_positional=False, args=["cmd2", "--x=5"])
+
+
+def test_named_components_deep():
+    components = {
+        "lv1_a": {"lv2_x": single_function, "lv2_y": {"lv3_p": callable_instance}},
+        "lv1_b": {"lv2_z": {"lv3_q": Class1}},
+    }
+    kw = {"as_positional": False}
+    out = get_cli_stdout(components, args=["--help"], **kw)
+    assert " {lv1_a,lv1_b} ..." in out
+    out = get_cli_stdout(components, args=["lv1_a", "--help"], **kw)
+    assert " {lv2_x,lv2_y} ..." in out
+    out = get_cli_stdout(components, args=["lv1_a", "lv2_x", "--help"], **kw)
+    assert " --a1 A1" in out
+    out = get_cli_stdout(components, args=["lv1_a", "lv2_y", "--help"], **kw)
+    assert " {lv3_p} ..." in out
+    out = get_cli_stdout(components, args=["lv1_a", "lv2_y", "lv3_p", "--help"], **kw)
+    assert " --x X" in out
+    out = get_cli_stdout(components, args=["lv1_b", "--help"], **kw)
+    assert " {lv2_z} ..." in out
+    out = get_cli_stdout(components, args=["lv1_b", "lv2_z", "--help"], **kw)
+    assert " {lv3_q} ..." in out
+    out = get_cli_stdout(components, args=["lv1_b", "lv2_z", "lv3_q", "--help"], **kw)
+    assert " {method1} ..." in out
+    out = get_cli_stdout(components, args=["lv1_b", "lv2_z", "lv3_q", "method1", "--help"], **kw)
+    assert " --m1 M1" in out
+
+    assert 5.6 == CLI(components, args=["lv1_a", "lv2_x", "--a1=5.6"], **kw)
+    assert 7 == CLI(components, args=["lv1_a", "lv2_y", "lv3_p", "--x=7"], **kw)
+    assert ("w", 9) == CLI(components, args=["lv1_b", "lv2_z", "lv3_q", "--i1=w", "method1", "--m1=9"], **kw)
 
 
 # config file tests

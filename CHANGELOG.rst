@@ -19,6 +19,9 @@ Added
 ^^^^^
 - New option in ``dump`` for including link targets.
 - Support ``decimal.Decimal`` as a type.
+- ``CLI`` now accepts components as a dict, such that the keys define names of
+  the subcommands (`#334
+  <https://github.com/omni-us/jsonargparse/issues/334>`__).
 
 
 v4.23.1 (2023-08-04)
