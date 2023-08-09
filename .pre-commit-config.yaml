@@ -121,7 +121,7 @@ repos:
           mkdir /tmp/jsonargparse_tests;
           cp jsonargparse_tests/*.py /tmp/jsonargparse_tests;
           cd /tmp/jsonargparse_tests;
-          rm test_backports.py;
+          rm test_postponed_annotations.py;
           sed -i /__future__/d *.py;
           pytest --color=yes";
       fi'

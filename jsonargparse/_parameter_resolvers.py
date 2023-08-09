@@ -10,9 +10,9 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from ._backports import evaluate_postponed_annotations
 from ._common import is_dataclass_like, is_subclass
 from ._optionals import parse_docs
+from ._postponed_annotations import evaluate_postponed_annotations
 from ._stubs_resolver import get_stub_types
 from ._util import (
     ClassFromFunctionBase,

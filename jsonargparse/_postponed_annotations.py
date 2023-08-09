@@ -12,6 +12,8 @@ if sys.version_info[:2] > (3, 6):
     from typing import ForwardRef
 
 from ._optionals import typing_extensions_import
+from ._typehints import mapping_origin_types, sequence_origin_types, tuple_set_origin_types
+from ._util import get_typehint_origin
 
 var_map = namedtuple("var_map", "name value")
 none_map = var_map(name="NoneType", value=type(None))
@@ -95,6 +97,61 @@ class NamesVisitor(ast.NodeVisitor):
         return self.names_found
 
 
+class TypeCheckingVisitor(ast.NodeVisitor):
+    type_checking_names: List[str] = []
+
+    def visit_Import(self, node: ast.Import) -> None:
+        for alias in node.names:
+            if alias.name == "typing":
+                name = ast.dump(
+                    ast.Attribute(
+                        value=ast.Name(id=alias.asname or "typing", ctx=ast.Load()),
+                        attr="TYPE_CHECKING",
+                        ctx=ast.Load(),
+                    )
+                )
+                self.type_checking_names.append(name)
+                break
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        if node.module == "typing":
+            for alias in node.names:
+                if alias.name == "TYPE_CHECKING":
+                    name = ast.dump(ast.Name(id=alias.asname or "TYPE_CHECKING", ctx=ast.Load()))
+                    self.type_checking_names.append(name)
+                    break
+
+    def visit_If(self, node: ast.If) -> None:
+        if (
+            isinstance(node.test, (ast.Name, ast.Attribute))
+            and any(ast.dump(node.test) == n for n in self.type_checking_names)
+        ) or (
+            isinstance(node.test, ast.BoolOp)
+            and isinstance(node.test.op, (ast.And, ast.Or))
+            and any(ast.dump(v) == n for n in self.type_checking_names for v in node.test.values)
+        ):
+            ast_exec = ast.parse("")
+            ast_exec.body = node.body
+            try:
+                exec(compile(ast_exec, filename="<ast>", mode="exec"), self.aliases, self.aliases)
+            except Exception as ex:
+                if self.logger:
+                    self.logger.debug(f"Failed to execute 'TYPE_CHECKING' block in '{self.module}'", exc_info=ex)
+
+    def generic_visit(self, node: ast.AST) -> None:
+        if isinstance(node, (ast.If, ast.Module)):
+            super().generic_visit(node)
+
+    def update_aliases(
+        self, module_source: str, module: str, aliases: dict, logger: Optional[logging.Logger] = None
+    ) -> None:
+        self.module = module
+        self.aliases = aliases
+        self.logger = logger
+        module_tree = ast.parse(module_source)
+        self.visit(module_tree)
+
+
 def get_arg_type(arg_ast, aliases):
     type_ast = ast.parse("___arg_type___ = 0")
     type_ast.body[0].value = arg_ast
@@ -135,13 +192,67 @@ def get_arg_type(arg_ast, aliases):
                 ex_from = alias_exception
                 break
         raise ex from ex_from
-    arg_type = exec_vars["___arg_type___"]
+    return exec_vars["___arg_type___"]
+
+
+def getattr_recursive(obj, attr):
+    if "." in attr:
+        attr, *attrs = attr.split(".", 1)
+        return getattr_recursive(getattr(obj, attr), attrs[0])
+    return getattr(obj, attr)
+
+
+def resolve_forward_refs(arg_type, aliases, logger):
     if isinstance(arg_type, str) and arg_type in aliases:
         arg_type = aliases[arg_type]
-    return arg_type
+
+    def resolve_subtypes_forward_refs(typehint):
+        if has_subtypes(typehint):
+            try:
+                subtypes = []
+                for arg in typehint.__args__:
+                    if isinstance(arg, ForwardRef):
+                        forward_arg, *forward_args = arg.__forward_arg__.split(".", 1)
+                        if forward_arg in aliases:
+                            arg = aliases[forward_arg]
+                            if forward_args:
+                                arg = getattr_recursive(arg, forward_args[0])
+                        else:
+                            raise NameError(f"Name '{forward_arg}' is not defined")
+                    else:
+                        arg = resolve_subtypes_forward_refs(arg)
+                    subtypes.append(arg)
+                if subtypes != list(typehint.__args__):
+                    typehint_origin = get_typehint_origin(typehint)
+                    if sys.version_info < (3, 10):
+                        if typehint_origin in sequence_origin_types:
+                            typehint_origin = List
+                        elif typehint_origin in tuple_set_origin_types:
+                            typehint_origin = Tuple
+                        elif typehint_origin in mapping_origin_types:
+                            typehint_origin = Dict
+                    typehint = typehint_origin[tuple(subtypes)]
+            except Exception as ex:
+                if logger:
+                    logger.debug(f"Failed to resolve forward refs in {typehint}", exc_info=ex)
+        return typehint
+
+    return resolve_subtypes_forward_refs(arg_type)
+
+
+def has_subtypes(typehint):
+    typehint_origin = get_typehint_origin(typehint)
+    return (
+        typehint_origin == Union
+        or typehint_origin in sequence_origin_types
+        or typehint_origin in tuple_set_origin_types
+        or typehint_origin in mapping_origin_types
+    )
 
 
 def type_requires_eval(typehint):
+    if has_subtypes(typehint):
+        return any(type_requires_eval(a) for a in getattr(typehint, "__args__", []))
     return isinstance(typehint, (str, ForwardRef))
 
 
@@ -175,6 +286,10 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
         ex = types
         types = {}
 
+    module_source = inspect.getsource(sys.modules[obj.__module__]) if obj.__module__ in sys.modules else ""
+    if "TYPE_CHECKING" in module_source:
+        TypeCheckingVisitor().update_aliases(module_source, obj.__module__, aliases, logger)
+
     for arg_ast in node.args.args + node.args.kwonlyargs:
         name = arg_ast.arg
         if arg_ast.annotation and (name not in types or type_requires_eval(types[name])):
@@ -182,7 +297,8 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
                 if isinstance(arg_ast.annotation, ast.Constant) and arg_ast.annotation.value in aliases:
                     types[name] = aliases[arg_ast.annotation.value]
                 else:
-                    types[name] = get_arg_type(arg_ast.annotation, aliases)
+                    arg_type = get_arg_type(arg_ast.annotation, aliases)
+                    types[name] = resolve_forward_refs(arg_type, aliases, logger)
             except Exception as ex3:
                 types[name] = ex3
 
@@ -196,10 +312,7 @@ def evaluate_postponed_annotations(params, component, logger):
     if sys.version_info[:2] == (3, 6) or not (params and any(type_requires_eval(p.annotation) for p in params)):
         return
     try:
-        if sys.version_info < (3, 10):
-            types = get_types(component, logger)
-        else:
-            types = get_type_hints(component)
+        types = get_types(component, logger)
     except Exception as ex:
         logger.debug(f"Unable to evaluate types for {component}", exc_info=ex)
         return
