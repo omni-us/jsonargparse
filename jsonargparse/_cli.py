@@ -6,14 +6,20 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 from ._actions import ActionConfigFile, _ActionPrintConfig, remove_actions
 from ._core import ArgumentParser
 from ._deprecated import deprecation_warning_cli_return_parser
+from ._namespace import Namespace, dict_to_namespace
 from ._optionals import get_doc_short_description
 from ._util import default_config_option_help
 
 __all__ = ["CLI"]
 
 
+ComponentType = Union[Callable, Type]
+DictComponentsType = Dict[str, Union[ComponentType, "DictComponentsType"]]
+ComponentsType = Optional[Union[ComponentType, List[ComponentType], DictComponentsType]]
+
+
 def CLI(
-    components: Optional[Union[Callable, Type, List[Union[Callable, Type]]]] = None,
+    components: ComponentsType = None,
     args: Optional[List[str]] = None,
     config_help: str = default_config_option_help,
     set_defaults: Optional[Dict[str, Any]] = None,
@@ -55,26 +61,31 @@ def CLI(
         ]
         if len(components) == 0:
             raise ValueError(
-                "Either components argument must be given or there must be at least one "
+                "Either components parameter must be given or there must be at least one "
                 "function or class among the locals in the context where CLI is called."
             )
 
-    elif not isinstance(components, list):
-        components = [components]
+    if isinstance(components, list) and len(components) == 1:
+        components = components[0]
 
-    if len(components) == 0:
-        raise ValueError("components argument not allowed to be an empty list")
+    elif not components:
+        raise ValueError("components parameter expected to be non-empty")
 
-    unexpected = [c for c in components if not (inspect.isclass(c) or callable(c))]
+    if isinstance(components, list):
+        unexpected = [c for c in components if not (inspect.isclass(c) or callable(c))]
+    elif isinstance(components, dict):
+        ns = dict_to_namespace(components)
+        unexpected = [c for c in ns.values() if not (inspect.isclass(c) or callable(c))]
+    else:
+        unexpected = [c for c in [components] if not (inspect.isclass(c) or callable(c))]
     if unexpected:
         raise ValueError(f"Unexpected components, not class or function: {unexpected}")
 
     parser = parser_class(default_meta=False, **kwargs)
     parser.add_argument("--config", action=ActionConfigFile, help=config_help)
 
-    if len(components) == 1:
-        component = components[0]
-        _add_component_to_parser(component, parser, as_positional, fail_untyped, config_help)
+    if not isinstance(components, (list, dict)):
+        _add_component_to_parser(components, parser, as_positional, fail_untyped, config_help)
         if set_defaults is not None:
             parser.set_defaults(set_defaults)
         if return_parser:
@@ -82,18 +93,12 @@ def CLI(
             return parser
         cfg = parser.parse_args(args)
         cfg_init = parser.instantiate_classes(cfg)
-        return _run_component(component, cfg_init)
+        return _run_component(components, cfg_init)
 
-    subcommands = parser.add_subcommands(required=True)
-    comp_dict = {c.__name__: c for c in components}
-    for name, component in comp_dict.items():
-        description = get_help_str(component, parser.logger)
-        subparser = parser_class(description=description)
-        subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
-        subcommands.add_subcommand(name, subparser, help=get_help_str(component, parser.logger))
-        added_args = _add_component_to_parser(component, subparser, as_positional, fail_untyped, config_help)
-        if not added_args:
-            remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
+    elif isinstance(components, list):
+        components = {c.__name__: c for c in components}
+
+    _add_subcommands(components, parser, config_help, as_positional, fail_untyped)
 
     if set_defaults is not None:
         parser.set_defaults(set_defaults)
@@ -101,10 +106,17 @@ def CLI(
         deprecation_warning_cli_return_parser()
         return parser
     cfg = parser.parse_args(args)
-    cfg_init = parser.instantiate_classes(cfg)
-    subcommand = cfg_init.pop("subcommand")
-    component = comp_dict[subcommand]
-    return _run_component(component, cfg_init.get(subcommand))
+    init = parser.instantiate_classes(cfg)
+    components_ns = dict_to_namespace(components)
+    subcommand = init.get("subcommand")
+    while isinstance(init.get(subcommand), Namespace) and isinstance(init[subcommand].get("subcommand"), str):
+        subsubcommand = subcommand + "." + init[subcommand].get("subcommand")
+        if subsubcommand in components_ns:
+            subcommand = subsubcommand
+        else:
+            break
+    component = components_ns[subcommand]
+    return _run_component(component, init.get(subcommand))
 
 
 def get_help_str(component, logger):
@@ -112,6 +124,28 @@ def get_help_str(component, logger):
     if not help_str:
         help_str = str(component)
     return help_str
+
+
+def _add_subcommands(
+    components,
+    parser: ArgumentParser,
+    config_help: str,
+    as_positional: bool,
+    fail_untyped: bool,
+) -> None:
+    subcommands = parser.add_subcommands(required=True)
+    for name, component in components.items():
+        description = get_help_str(component, parser.logger)
+        subparser = type(parser)(description=description)
+        subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
+        if isinstance(component, dict):
+            subcommands.add_subcommand(name, subparser)
+            _add_subcommands(component, subparser, config_help, as_positional, fail_untyped)
+        else:
+            subcommands.add_subcommand(name, subparser, help=get_help_str(component, parser.logger))
+            added_args = _add_component_to_parser(component, subparser, as_positional, fail_untyped, config_help)
+            if not added_args:
+                remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
 
 
 def _add_component_to_parser(component, parser, as_positional, fail_untyped, config_help):
