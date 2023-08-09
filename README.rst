@@ -468,6 +468,11 @@ Some notes about this support are:
   ...``) and `604 <https://peps.python.org/pep-0604/>`__ (i.e. ``<type> |
   <type>`` instead of ``Union[<type>, <type>]``).
 
+- Types that use components imported inside ``TYPE_CHECKING`` blocks are
+  supported.
+
+- Resolving of forward references in types is supported.
+
 - Fully supported types are: ``str``, ``bool`` (more details in
   :ref:`boolean-arguments`), ``int``, ``float``, ``Decimal``, ``complex``,
   ``bytes``/``bytearray`` (Base64 encoding), ``range``, ``List`` (more details

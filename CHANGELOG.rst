@@ -22,6 +22,9 @@ Added
 - ``CLI`` now accepts components as a dict, such that the keys define names of
   the subcommands (`#334
   <https://github.com/omni-us/jsonargparse/issues/334>`__).
+- Resolve types that use ``TYPE_CHECKING`` blocks (`#337 comment
+  <https://github.com/omni-us/jsonargparse/issues/337#issuecomment-1665055459>`__).
+- Improved resolving of nested forward references in types.
 
 
 v4.23.1 (2023-08-04)

@@ -7,8 +7,8 @@ from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from ._backports import NamesVisitor, get_arg_type
 from ._optionals import import_typeshed_client, typeshed_client_support
+from ._postponed_annotations import NamesVisitor, get_arg_type
 
 if TYPE_CHECKING:  # pragma: no cover
     import typeshed_client as tc

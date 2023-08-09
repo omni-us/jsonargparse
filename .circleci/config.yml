@@ -69,7 +69,7 @@ jobs:
             dir=$(python3 -c "print(__import__('jsonargparse').__file__)" | sed 's|jsonargparse/[^/]*$||')
             code_dir=$dir/jsonargparse
             tests_dir=$dir/jsonargparse_tests
-            rm $tests_dir/test_backports.py
+            rm $tests_dir/test_postponed_annotations.py
             sed -i '/^from __future__ import annotations$/d' $tests_dir/test_*.py
             pytest --cov=$code_dir --cov-report=term --cov-report=xml:coverage_py$py.xml $tests_dir
             pip3 install $(ls ./dist/*.whl)[test,all]
