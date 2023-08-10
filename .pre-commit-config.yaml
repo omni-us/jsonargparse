@@ -6,11 +6,6 @@ ci:
   - twine-check
   - changelog-check
   - circleci-config-validate
-  - mypy
-  - tox
-  - test-py36
-  - test-without-future-annotations
-  - coverage
   autofix_prs: true
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit suggestions'
   autoupdate_schedule: quarterly

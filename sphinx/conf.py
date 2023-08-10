@@ -84,7 +84,7 @@ from typing import Callable, Iterable, List
 import jsonargparse_tests
 from jsonargparse import *
 from jsonargparse.typing import *
-from jsonargparse.util import unresolvable_import_paths
+from jsonargparse._util import unresolvable_import_paths
 
 def doctest_mock_class_in_main(cls):
     cls.__module__ = None
@@ -345,4 +345,4 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
