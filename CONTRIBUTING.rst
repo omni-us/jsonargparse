@@ -74,7 +74,8 @@ the package, thus can be run in a production system.
 
 .. code-block:: bash
 
-    tox                           # Run tests using tox on available python versions
-    pytest                        # Run tests using pytest on the python of the environment
-    pytest --cov                  # Run tests and generate coverage report
-    python -m jsonargparse_tests  # Run tests for installed package (requires pytest and pytest-subtests)
+    tox                                      # Run tests using tox on available python versions
+    pytest                                   # Run tests using pytest on the python of the environment
+    pytest --cov                             # Run tests and generate coverage report
+    python -m jsonargparse_tests             # Run tests for installed package (requires pytest and pytest-subtests)
+    pre-commit run -a --hook-stage pre-push  # Run pre-push git hook (tests, doctests, mypy, coverage)
