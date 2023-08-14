@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you want to cite this software, please do as follows."
+title: jsonargparse
+license: MIT
+repository-code: https://github.com/omni-us/jsonargparse
+authors:
+  - family-names: Villegas
+    given-names: Mauricio
+    orcid: https://orcid.org/0000-0001-7450-6707
+  - name: contributors
+version: 4
+date-released: 2021-11-16
