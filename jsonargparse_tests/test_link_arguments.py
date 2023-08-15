@@ -45,6 +45,10 @@ def test_on_parse_compute_fn_single_arguments(parser, subtests):
         dump = yaml.safe_load(parser.dump(cfg))
         assert dump == {"a": {"v1": 2, "v2": -5}}
 
+    with subtests.test("dump keep target"):
+        dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+        assert dump == {"a": {"v1": 2, "v2": -5}, "b": {"v2": -10}}
+
     with subtests.test("invalid compute_fn result type"):
         with pytest.raises(ArgumentError) as ctx:
             parser.parse_args(["--a.v1=x"])
@@ -120,6 +124,11 @@ def test_on_parse_add_class_arguments(subtests):
         dump = yaml.safe_load(parser.dump(cfg))
         assert dump == {"a": {"v1": 11, "v2": 7}, "b": {"v3": 2}}
 
+    with subtests.test("dump keep targets"):
+        cfg = parser.parse_args(["--a.v1=11", "--a.v2=7"])
+        dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+        assert dump == {"a": {"v1": 11, "v2": 7}, "b": {"v3": 2, "v1": 7, "v2": 18}}
+
     with subtests.test("argument error"):
         pytest.raises(ArgumentError, lambda: parser.parse_args(["--b.v1=5"]))
 
@@ -155,6 +164,10 @@ def test_on_parse_add_subclass_arguments(parser, subtests):
         cfg = parser.parse_args([f"--s={s_value}", "--c=calendar.Calendar"])
         dump = yaml.safe_load(parser.dump(cfg))
         assert dump["c"] == {"class_path": "calendar.Calendar"}
+
+    with subtests.test("dump keep target"):
+        dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+        assert dump["c"] == {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 4}}
 
     with subtests.test("compute_fn invalid result type"):
         s_value["init_args"] = {"v1": "a", "v2": "b"}
@@ -226,6 +239,10 @@ def test_on_parse_add_subclass_arguments_with_instantiate_false(parser, subtests
     with subtests.test("dump removal of target"):
         dump = yaml.safe_load(parser.dump(cfg))
         assert "c" not in dump["f"]["init_args"]
+
+    with subtests.test("dump keep target"):
+        dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+        assert dump["f"]["init_args"]["c"] == {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}
 
 
 class ClassD:

@@ -12,6 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.24.0 (2023-08-??)
+--------------------
+
+Added
+^^^^^
+- New option in ``dump`` for including link targets.
+
+
 v4.23.1 (2023-08-04)
 --------------------
 
