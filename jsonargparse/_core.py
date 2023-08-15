@@ -677,6 +677,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         skip_default: bool = False,
         skip_check: bool = False,
         yaml_comments: bool = False,
+        skip_link_targets: bool = True,
     ) -> str:
         """Generates a yaml or json string for the given configuration object.
 
@@ -688,6 +689,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             skip_default: Whether to exclude entries whose value is the same as the default.
             skip_check: Whether to skip parser checking.
             yaml_comments: Whether to add help content as comments. ``yaml_comments=True`` implies ``format='yaml'``.
+            skip_link_targets: Whether to exclude link targets.
 
         Returns:
             The configuration in yaml or json format.
@@ -698,7 +700,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         check_valid_dump_format(format)
 
         cfg = strip_meta(cfg)
-        ActionLink.strip_link_target_keys(self, cfg)
+        if skip_link_targets:
+            ActionLink.strip_link_target_keys(self, cfg)
 
         with parser_context(load_value_mode=self.parser_mode):
             if not skip_check:
