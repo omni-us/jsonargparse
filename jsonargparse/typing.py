@@ -360,6 +360,7 @@ Path_drw = path_type("drw", docstring="path to a directory that exists and is re
 
 register_type(os.PathLike, str, str)
 register_type(complex)
+register_type_on_first_use("decimal.Decimal", float)
 register_type_on_first_use("uuid.UUID")
 
 for _path in [pathlib.Path, pathlib.PosixPath, pathlib.WindowsPath]:

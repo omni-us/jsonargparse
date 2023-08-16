@@ -431,7 +431,7 @@ Some notes about this support are:
   <type>`` instead of ``Union[<type>, <type>]``).
 
 - Fully supported types are: ``str``, ``bool`` (more details in
-  :ref:`boolean-arguments`), ``int``, ``float``, ``complex``,
+  :ref:`boolean-arguments`), ``int``, ``float``, ``Decimal``, ``complex``,
   ``bytes``/``bytearray`` (Base64 encoding), ``range``, ``List`` (more details
   in :ref:`list-append`), ``Iterable``, ``Sequence``, ``Any``, ``Union``,
   ``Optional``, ``Type``, ``Enum``, ``PathLike``, ``UUID``, ``timedelta``,
