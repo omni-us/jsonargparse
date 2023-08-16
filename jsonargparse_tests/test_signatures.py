@@ -379,6 +379,20 @@ def test_add_class_docstring_parse_fail(parser, logger):
     assert "a1 description" not in help_str
 
 
+def test_add_class_custom_instantiator(parser):
+    def instantiate(cls, **kwargs):
+        instance = cls(**kwargs)
+        instance.call = "custom"
+        return instance
+
+    parser.add_class_arguments(Class0, "a")
+    parser.add_instantiator(instantiate, Class0)
+    cfg = parser.parse_args([])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.a, Class0)
+    assert init.a.call == "custom"
+
+
 # add_method_arguments tests
 
 

@@ -42,7 +42,7 @@ from ._actions import (
     _is_action_value_list,
     remove_actions,
 )
-from ._common import is_dataclass_like, is_subclass, parent_parser, parser_context
+from ._common import get_class_instantiator, is_dataclass_like, is_subclass, parent_parser, parser_context
 from ._loaders_dumpers import (
     get_loader_exceptions,
     load_value,
@@ -1044,13 +1044,16 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
             if init_args:
                 value["init_args"] = init_args
             return value
+
+        instantiator_fn = get_class_instantiator()
+
         if skip_args:
 
             def partial_instance(*args):
-                return val_class(*args, **{**init_args, **dict_kwargs})
+                return instantiator_fn(val_class, *args, **{**init_args, **dict_kwargs})
 
             return partial_instance
-        return val_class(**{**init_args, **dict_kwargs})
+        return instantiator_fn(val_class, **{**init_args, **dict_kwargs})
 
     prev_init_args = prev_val.get("init_args") if isinstance(prev_val, Namespace) else None
 

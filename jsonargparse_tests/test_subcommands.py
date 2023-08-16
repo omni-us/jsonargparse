@@ -16,6 +16,7 @@ from jsonargparse import (
     strip_meta,
 )
 from jsonargparse_tests.conftest import get_parse_args_stdout, get_parser_help
+from jsonargparse_tests.test_subclasses import CustomInstantiationBase, instantiator
 
 
 @pytest.fixture
@@ -266,3 +267,23 @@ def test_subsubcommands_wrong_add_order(parser):
     with pytest.raises(ValueError) as ctx:
         subcommands1.add_subcommand("a", parser_s1_a)
     ctx.match("Multiple levels of subcommands must be added in level order")
+
+
+def test_subcommands_custom_instantiator(parser, subparser, subtests):
+    subparser.add_argument("--cls", type=CustomInstantiationBase)
+    subcommands = parser.add_subcommands()
+    subcommands.add_subcommand("cmd", subparser)
+
+    with subtests.test("main parser"):
+        parser.add_instantiator(instantiator("main parser"), CustomInstantiationBase)
+        cfg = parser.parse_args(["cmd", "--cls", "CustomInstantiationBase"])
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.cmd.cls, CustomInstantiationBase)
+        assert init.cmd.cls.call == "main parser"
+
+    with subtests.test("subparser"):
+        subparser.add_instantiator(instantiator("subparser"), CustomInstantiationBase)
+        cfg = parser.parse_args(["cmd", "--cls", "CustomInstantiationBase"])
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.cmd.cls, CustomInstantiationBase)
+        assert init.cmd.cls.call == "subparser"
