@@ -26,6 +26,9 @@ Added
   <https://github.com/omni-us/jsonargparse/issues/337#issuecomment-1665055459>`__).
 - Improved resolving of nested forward references in types.
 - The ``ext_vars`` for an ``ActionJsonnet`` argument can now have a default.
+- New method ``ArgumentParser.add_instantiator`` that enables developers to
+  implement custom instantiation (`#170
+  <https://github.com/omni-us/jsonargparse/issues/170>`__).
 
 Deprecated
 ^^^^^^^^^^

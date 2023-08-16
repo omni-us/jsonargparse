@@ -26,12 +26,11 @@ from typing import (
     Optional,
     Tuple,
     Type,
-    TypeVar,
     Union,
     get_type_hints,
 )
 
-from ._common import is_subclass, parser_capture, parser_context
+from ._common import ClassType, is_subclass, parser_capture, parser_context
 from ._deprecated import PathDeprecations
 from ._loaders_dumpers import json_dump, load_value
 from ._optionals import (
@@ -358,9 +357,6 @@ def known_to_fsspec(path: str) -> bool:
 
 class ClassFromFunctionBase:
     wrapped_function: Callable
-
-
-ClassType = TypeVar("ClassType")
 
 
 def class_from_function(

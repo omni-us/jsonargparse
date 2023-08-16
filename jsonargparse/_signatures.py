@@ -8,7 +8,7 @@ from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from ._actions import _ActionConfigLoad
-from ._common import is_dataclass_like, is_subclass
+from ._common import get_class_instantiator, is_dataclass_like, is_subclass
 from ._optionals import get_doc_short_description, pydantic_support
 from ._parameter_resolvers import (
     ParamData,
@@ -558,7 +558,8 @@ def group_instantiate_class(group, cfg):
         value = {}
         parent = cfg
         key = group.dest
-    parent[key] = group.group_class(**value)
+    instantiator_fn = get_class_instantiator()
+    parent[key] = instantiator_fn(group.group_class, **value)
 
 
 def strip_title(value):

@@ -37,7 +37,13 @@ from ._actions import (
     parent_parsers,
     previous_config,
 )
-from ._common import is_dataclass_like, lenient_check, parser_context
+from ._common import (
+    InstantiatorCallable,
+    InstantiatorsDictType,
+    is_dataclass_like,
+    lenient_check,
+    parser_context,
+)
 from ._deprecated import ParserDeprecations
 from ._formatters import DefaultHelpFormatter, empty_help, get_env_var
 from ._jsonnet import ActionJsonnet
@@ -73,6 +79,7 @@ from ._parameter_resolvers import UnknownDefault
 from ._signatures import SignatureArguments
 from ._typehints import ActionTypeHint, is_subclass_spec
 from ._util import (
+    ClassType,
     Path,
     argument_error,
     change_to_path_dir,
@@ -176,6 +183,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
     formatter_class: Type[DefaultHelpFormatter]
     groups: Optional[Dict[str, "_ArgumentGroup"]] = None
     _subcommands_action: Optional[_ActionSubCommands] = None
+    _instantiators: Optional[InstantiatorsDictType] = None
 
     def __init__(
         self,
@@ -1073,6 +1081,45 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 message = prefix + message
             raise type(ex)(message) from ex
 
+    def add_instantiator(
+        self,
+        instantiator: InstantiatorCallable,
+        class_type: Type[ClassType],
+        subclasses: bool = True,
+        prepend: bool = False,
+    ) -> None:
+        """Adds a custom instantiator for a class type. Used by ``instantiate_classes``.
+
+        Instantiator functions are expected to have as signature ``(class_type:
+        Type[ClassType], *args, **kwargs) -> ClassType``.
+
+        For reference, the default instantiator is ``return class_type(*args,
+        **kwargs)``.
+
+        Args:
+            instantiator: Function that instantiates a class.
+            class_type: The class type to instantiate.
+            subclasses: Whether to instantiate subclasses of ``class_type``.
+            prepend: Whether to prepend the instantiator to the existing instantiators.
+        """
+        if self._instantiators is None:
+            self._instantiators = {}
+        key = (class_type, subclasses)
+        instantiators = {k: v for k, v in self._instantiators.items() if k != key}
+        if prepend:
+            self._instantiators = {key: instantiator, **instantiators}
+        else:
+            instantiators[key] = instantiator
+            self._instantiators = instantiators
+
+    def _get_instantiators(self):
+        instantiators = self._instantiators or {}
+        if hasattr(self, "parent_parser"):
+            parent_instantiators = self.parent_parser._get_instantiators()
+            instantiators = instantiators.copy()
+            instantiators.update({k: v for k, v in parent_instantiators.items() if k not in instantiators})
+        return instantiators
+
     def instantiate_classes(
         self,
         cfg: Namespace,
@@ -1113,10 +1160,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                     pass
                 else:
                     if value is not None:
-                        with parser_context(parent_parser=self):
+                        with parser_context(parent_parser=self, class_instantiators=self._get_instantiators()):
                             parent[key] = component.instantiate_classes(value)
             else:
-                with parser_context(load_value_mode=self.parser_mode):
+                with parser_context(load_value_mode=self.parser_mode, class_instantiators=self._get_instantiators()):
                     component.instantiate_class(component, cfg)
 
         ActionLink.apply_instantiation_links(self, cfg, order=order)
