@@ -4,6 +4,7 @@ import pickle
 import random
 import uuid
 from datetime import datetime, timedelta
+from decimal import Decimal
 from typing import List, Optional, Union
 
 import pytest
@@ -357,6 +358,14 @@ def test_register_type_on_first_use():
     registered = get_registered_type(RegisterOnFirstUse)
     assert registered.type_class is RegisterOnFirstUse
     assert f"{__name__}.RegisterOnFirstUse" not in registration_pending
+
+
+def test_decimal(parser):
+    parser.add_argument("--decimal", type=Decimal)
+    cfg = parser.parse_args(["--decimal=0.1"])
+    assert isinstance(cfg.decimal, Decimal)
+    assert cfg.decimal == Decimal("0.1")
+    assert parser.dump(cfg) == "decimal: 0.1\n"
 
 
 def test_uuid(parser):

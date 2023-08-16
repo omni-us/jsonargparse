@@ -18,6 +18,7 @@ v4.24.0 (2023-08-??)
 Added
 ^^^^^
 - New option in ``dump`` for including link targets.
+- Support ``decimal.Decimal`` as a type.
 
 
 v4.23.1 (2023-08-04)
