@@ -80,7 +80,7 @@ jobs:
             - ./coverage_*.xml
   codecov:
     docker:
-      - image: cimg/python:3.8
+      - image: curlimages/curl:latest
     steps:
       - checkout
       - attach_workspace:
@@ -88,14 +88,16 @@ jobs:
       - run:
           name: Code coverage
           command: |
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            chmod +x codecov
             for py in 3.6 3.7 3.8 3.9 3.10 3.11; do
               for suffix in "" "_all" "_types"; do
                 if [ -f coverage_py${py}${suffix}.xml ]; then
-                  bash <(curl -s https://codecov.io/bash) \
-                    -Z \
-                    -t $CODECOV_TOKEN_JSONARGPARSE \
-                    -F py${py}${suffix} \
-                    -f coverage_py${py}${suffix}.xml
+                  ./codecov \
+                    --nonZero \
+                    --token $CODECOV_TOKEN_JSONARGPARSE \
+                    --flags py${py}${suffix} \
+                    --file coverage_py${py}${suffix}.xml
                 fi
               done
             done
