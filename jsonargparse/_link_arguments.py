@@ -382,19 +382,19 @@ class ActionLink(Action):
 
     @staticmethod
     def strip_link_target_keys(parser, cfg):
-        def del_taget_key(target_key):
+        def del_target_key(target_key):
             cfg.pop(target_key, None)
             parent_key, _ = split_key_leaf(target_key)
             if "." in target_key and parent_key in cfg and not cfg[parent_key]:
                 del cfg[parent_key]
 
         for action in [a for a in parser._actions if isinstance(a, ActionLink)]:
-            del_taget_key(action.target[0])
+            del_target_key(action.target[0])
         from ._typehints import ActionTypeHint
 
         for action in [a for a in parser._actions if isinstance(a, ActionTypeHint) and hasattr(a, "sub_add_kwargs")]:
             for key in action.sub_add_kwargs.get("linked_targets", []):
-                del_taget_key(f"{action.dest}.init_args.{key}")
+                del_target_key(f"{action.dest}.init_args.{key}")
 
         with _ActionSubCommands.not_single_subcommand():
             subcommands, subparsers = _ActionSubCommands.get_subcommands(parser, cfg)

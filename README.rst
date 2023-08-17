@@ -1750,7 +1750,7 @@ A special case which is supported but with caveats, is multiple calls that use
         else:
             third_function(**kwargs)
 
-The resolved parameters that have the same type hint and default accross all
+The resolved parameters that have the same type hint and default across all
 calls are supported normally. When there is a discrepancy between the calls, the
 parameters behave differently and are shown in the help in special "Conditional
 arguments" sections. The main difference is that these arguments are not
