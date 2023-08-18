@@ -598,10 +598,12 @@ class Path(PathDeprecations):
 
     @property
     def relative(self) -> str:
+        """Returns the relative representation of the path (how the path was given on instance creation)."""
         return self._relative
 
     @property
     def absolute(self) -> str:
+        """Returns the absolute representation of the path."""
         return self._absolute
 
     @property
