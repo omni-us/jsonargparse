@@ -1,10 +1,21 @@
 Contributing
 ============
 
-Contributions to jsonargparse are very welcome, be it just to create `issues
-<https://github.com/omni-us/jsonargparse/issues>`_ for reporting bugs and
-proposing enhancements, or more directly by creating `pull requests
-<https://github.com/omni-us/jsonargparse/pulls>`_.
+Contributions to jsonargparse are very welcome. There are multiple ways for
+people to help and contribute, among them:
+
+- Star ⭐ the github project `<https://github.com/omni-us/jsonargparse/>`__.
+- `Sponsor 🩷 <https://github.com/sponsors/mauvilsa>`__ its maintenance and
+  development.
+- Spread the word in your community about the features you like from
+  jsonargparse.
+- Help others to learn how to use jsonargparse by creating tutorials, such as
+  blog posts and videos.
+- Become active in existing github issues and pull requests.
+- Create `issues <https://github.com/omni-us/jsonargparse/issues>`__ for
+  reporting bugs and proposing improvements.
+- Create `pull requests <https://github.com/omni-us/jsonargparse/pulls>`__ with
+  documentation improvements, bug fixes or new features.
 
 Development environment
 -----------------------
@@ -52,6 +63,11 @@ is done as follows:
     now run on ``pre-push``. If you have an old development environment, please
     run ``pre-commit install`` again to update the git hooks.
 
+The ``pre-push`` stage runs several hooks (tests, doctests, mypy, coverage) that
+take some time. These are intended to let developers know problems which must be
+resolved for any pull request to be considered for merging. If you wish to push
+without running these hooks, use the command ``git push --no-verify``.
+
 Documentation
 -------------
 
@@ -59,10 +75,10 @@ To build the documentation run:
 
 .. code-block:: bash
 
-    sphinx-build sphinx sphinx/_build sphinx/index.rst
+    sphinx-build sphinx sphinx/_build sphinx/*.rst
 
-Then to see the built documentation, open the file ``sphinx/_build/index.html``
-in a browser.
+To view the built documentation, open the file ``sphinx/_build/index.html`` in a
+browser.
 
 Tests
 -----
@@ -77,5 +93,5 @@ the package, thus can be run in a production system.
     tox                                      # Run tests using tox on available python versions
     pytest                                   # Run tests using pytest on the python of the environment
     pytest --cov                             # Run tests and generate coverage report
-    python -m jsonargparse_tests             # Run tests for installed package (requires pytest and pytest-subtests)
-    pre-commit run -a --hook-stage pre-push  # Run pre-push git hook (tests, doctests, mypy, coverage)
+    python -m jsonargparse_tests             # Run tests on installed package (requires pytest and pytest-subtests)
+    pre-commit run -a --hook-stage pre-push  # Run pre-push git hooks (tests, doctests, mypy, coverage)
