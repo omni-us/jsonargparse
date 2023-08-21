@@ -3,11 +3,12 @@ requires = ["setuptools>=65.6.3", "wheel>=0.38.4"]
 
 [project]
 name = "jsonargparse"
-dynamic = ["version", "readme"]
+dynamic = ["version"]
 description = "Implement minimal boilerplate CLIs derived from type hints and parse from command line, config files and environment variables."
 authors = [
     {name = "Mauricio Villegas", email = "mauricio@omnius.com"},
 ]
+readme = "README.rst"
 license = {file = "LICENSE.rst"}
 requires-python = ">=3.6"
 
@@ -124,6 +125,7 @@ maintainer = [
     "twine>=4.0.2",
 ]
 
+
 [project.urls]
 Documentation-stable = "https://jsonargparse.readthedocs.io/en/stable/"
 Documentation-latest = "https://jsonargparse.readthedocs.io/en/latest/"
@@ -133,6 +135,7 @@ PyPI = "https://pypi.org/project/jsonargparse"
 CircleCI = "https://circleci.com/gh/omni-us/jsonargparse"
 SonarCloud = "https://sonarcloud.io/dashboard?id=omni-us_jsonargparse"
 Codecov = "https://codecov.io/gh/omni-us/jsonargparse"
+
 
 [tool.setuptools]
 platforms = ["Any"]

@@ -1,5 +1,7 @@
 .. include:: ../README.rst
 
+.. include:: ../DOCUMENTATION.rst
+
 .. include:: ../CONTRIBUTING.rst
 
 .. _api-ref:
