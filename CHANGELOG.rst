@@ -25,6 +25,12 @@ Added
 - Resolve types that use ``TYPE_CHECKING`` blocks (`#337 comment
   <https://github.com/omni-us/jsonargparse/issues/337#issuecomment-1665055459>`__).
 - Improved resolving of nested forward references in types.
+- The ``ext_vars`` for an ``ActionJsonnet`` argument can now have a default.
+
+Deprecated
+^^^^^^^^^^
+- ``ActionJsonnetExtVars`` is deprecated and will be removed in v5.0.0. Instead
+  use ``type=dict``.
 
 
 v4.23.1 (2023-08-04)

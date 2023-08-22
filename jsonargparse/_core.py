@@ -5,7 +5,6 @@ import glob
 import inspect
 import logging
 import os
-import re
 import sys
 from contextlib import suppress
 from typing import (
@@ -38,10 +37,10 @@ from ._actions import (
     parent_parsers,
     previous_config,
 )
-from ._common import is_dataclass_like, is_subclass, lenient_check, parser_context
+from ._common import is_dataclass_like, lenient_check, parser_context
 from ._deprecated import ParserDeprecations
 from ._formatters import DefaultHelpFormatter, empty_help, get_env_var
-from ._jsonnet import ActionJsonnet, ActionJsonnetExtVars
+from ._jsonnet import ActionJsonnet
 from ._jsonschema import ActionJsonSchema
 from ._link_arguments import ActionLink, ArgumentLinking
 from ._loaders_dumpers import (
@@ -107,19 +106,13 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         """
         parser = self.parser if hasattr(self, "parser") else self
         if "action" in kwargs:
-            if isinstance(kwargs["action"], ActionParser):
-                if kwargs["action"]._parser == parser:
-                    raise ValueError("Parser cannot be added as a subparser of itself.")
+            if ActionParser._is_valid_action_parser(parser, kwargs["action"]):
                 return ActionParser._move_parser_actions(parser, args, kwargs)
-            if is_subclass(kwargs["action"], ActionConfigFile) and any(
-                isinstance(a, ActionConfigFile) for a in self._actions
-            ):
-                raise ValueError("A parser is only allowed to have a single ActionConfigFile argument.")
+            ActionConfigFile._ensure_single_config_argument(self, kwargs["action"])
         if "type" in kwargs:
             if is_dataclass_like(kwargs["type"]):
-                theclass = kwargs.pop("type")
-                nested_key = re.sub("^--", "", args[0])
-                self.add_dataclass_arguments(theclass, nested_key, **kwargs)
+                nested_key = args[0].lstrip("-")
+                self.add_dataclass_arguments(kwargs.pop("type"), nested_key, **kwargs)
                 return _find_action(parser, nested_key)
             if ActionTypeHint.is_supported_typehint(kwargs["type"]):
                 args = ActionTypeHint.prepare_add_argument(
@@ -131,8 +124,8 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
                 )
         action = super().add_argument(*args, **kwargs)
         action.logger = self._logger  # type: ignore
-        if isinstance(action, ActionConfigFile) and getattr(self, "_print_config", None) is not None:
-            self.add_argument(self._print_config, action=_ActionPrintConfig)  # type: ignore
+        ActionConfigFile._add_print_config_argument(self, action)
+        ActionJsonnet._check_ext_vars_action(parser, action)
         if is_meta_key(action.dest):
             raise ValueError(f'Argument with destination name "{action.dest}" not allowed.')
         if action.help is None:
@@ -1252,7 +1245,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if isinstance(action, _ActionConfigLoad):
                 config_keys.add(action_dest)
                 keys.append(action_dest)
-            elif isinstance(action, ActionJsonnetExtVars):
+            elif getattr(action, "jsonnet_ext_vars", False):
                 prev_cfg[action_dest] = value
             cfg[action_dest] = value
         return cfg[parent_key] if parent_key else cfg

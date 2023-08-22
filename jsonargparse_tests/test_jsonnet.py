@@ -10,7 +10,6 @@ import yaml
 from jsonargparse import (
     ActionConfigFile,
     ActionJsonnet,
-    ActionJsonnetExtVars,
     ActionJsonSchema,
     ArgumentError,
     ArgumentParser,
@@ -135,7 +134,7 @@ def test_parser_mode_jsonnet_subconfigs(parser, tmp_cwd):
 
 @skip_if_jsonschema_unavailable
 def test_action_jsonnet(parser):
-    parser.add_argument("--input.ext_vars", action=ActionJsonnetExtVars())
+    parser.add_argument("--input.ext_vars", type=dict)
     parser.add_argument(
         "--input.jsonnet",
         action=ActionJsonnet(ext_vars="input.ext_vars", schema=json.dumps(example_schema)),
@@ -157,7 +156,7 @@ def test_action_jsonnet(parser):
 
 
 def test_action_jsonnet_save_config_metadata(parser, tmp_path):
-    parser.add_argument("--ext_vars", action=ActionJsonnetExtVars())
+    parser.add_argument("--ext_vars", type=dict)
     parser.add_argument("--jsonnet", action=ActionJsonnet(ext_vars="ext_vars"))
     parser.add_argument("--cfg", action=ActionConfigFile)
 
@@ -219,6 +218,33 @@ def test_action_jsonnet_parse_method():
     assert 9 == len(parsed["records"])
     assert "#8" == parsed["records"][-2]["ref"]
     assert 15.5 == parsed["records"][-2]["val"]
+
+
+def test_action_jsonnet_ext_vars_default(parser):
+    parser.add_argument("--ext_vars", type=dict, default={"param": 432})
+    parser.add_argument("--jsonnet", action=ActionJsonnet(ext_vars="ext_vars"))
+    cfg = parser.parse_args(["--jsonnet", example_2_jsonnet])
+    assert 432 == cfg.jsonnet["param"]
+
+
+def test_action_jsonnet_ext_vars_not_defined(parser):
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument("--jsonnet", action=ActionJsonnet(ext_vars="ext_vars"))
+    ctx.match("No argument found for ext_vars")
+
+
+def test_action_jsonnet_ext_vars_invalid_type(parser):
+    parser.add_argument("--ext_vars", type=list)
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument("--jsonnet", action=ActionJsonnet(ext_vars="ext_vars"))
+    ctx.match("Type for ext_vars='ext_vars' argument must be dict")
+
+
+def test_action_jsonnet_ext_vars_invalid_default(parser):
+    parser.add_argument("--ext_vars", type=dict, default="none")
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument("--jsonnet", action=ActionJsonnet(ext_vars="ext_vars"))
+    ctx.match("Default value for the ext_vars='ext_vars' argument must be dict or None")
 
 
 # other tests

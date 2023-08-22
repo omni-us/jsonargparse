@@ -178,6 +178,16 @@ class ActionConfigFile(Action, FilesCompleterMethod):
         raise ValueError("ActionConfigFile does not accept a default, use default_config_files.")
 
     @staticmethod
+    def _ensure_single_config_argument(container, action):
+        if is_subclass(action, ActionConfigFile) and any(isinstance(a, ActionConfigFile) for a in container._actions):
+            raise ValueError("A parser is only allowed to have a single ActionConfigFile argument.")
+
+    @staticmethod
+    def _add_print_config_argument(container, action):
+        if isinstance(action, ActionConfigFile) and getattr(container, "_print_config", None) is not None:
+            container.add_argument(container._print_config, action=_ActionPrintConfig)
+
+    @staticmethod
     def apply_config(parser, cfg, dest, value) -> None:
         from ._link_arguments import skip_apply_links
 
@@ -490,6 +500,14 @@ class ActionParser:
         self._parser = parser
         if not isinstance(self._parser, import_object("jsonargparse.ArgumentParser")):
             raise ValueError("Expected parser keyword argument to be an ArgumentParser.")
+
+    @staticmethod
+    def _is_valid_action_parser(parser, action) -> bool:
+        if not isinstance(action, ActionParser):
+            return False
+        if action._parser == parser:
+            raise ValueError("Parser cannot be added as a subparser of itself.")
+        return True
 
     @staticmethod
     def _move_parser_actions(parser, args, kwargs):
