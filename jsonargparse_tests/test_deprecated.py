@@ -15,6 +15,7 @@ import pytest
 from jsonargparse import (
     CLI,
     ActionConfigFile,
+    ActionJsonnet,
     ArgumentError,
     ArgumentParser,
     Path,
@@ -23,6 +24,7 @@ from jsonargparse import (
 )
 from jsonargparse._deprecated import (
     ActionEnum,
+    ActionJsonnetExtVars,
     ActionOperators,
     ActionPath,
     ActionPathList,
@@ -31,13 +33,14 @@ from jsonargparse._deprecated import (
     shown_deprecation_warnings,
     usage_and_exit_error_handler,
 )
-from jsonargparse._optionals import url_support
+from jsonargparse._optionals import jsonnet_support, url_support
 from jsonargparse._util import LoggerProperty, argument_error
 from jsonargparse_tests.conftest import (
     get_parser_help,
     skip_if_docstring_parser_unavailable,
     skip_if_requests_unavailable,
 )
+from jsonargparse_tests.test_jsonnet import example_2_jsonnet
 
 
 @pytest.fixture(autouse=True)
@@ -475,3 +478,17 @@ def test_import_from_module(module, attr):
         getattr(module, attr)
     if sys.version_info[:2] != (3, 6):
         assert "Only use the public API" in str(w[-1].message)
+
+
+@pytest.mark.skipif(not jsonnet_support, reason="jsonnet package is required")
+def test_action_jsonnet_ext_vars(parser):
+    with catch_warnings(record=True) as w:
+        parser.add_argument("--ext_vars", action=ActionJsonnetExtVars())
+    assert "ActionJsonnetExtVars was deprecated" in str(w[-1].message)
+    parser.add_argument("--jsonnet", action=ActionJsonnet(ext_vars="ext_vars"))
+
+    cfg = parser.parse_args(["--ext_vars", '{"param": 123}', "--jsonnet", example_2_jsonnet])
+    assert 123 == cfg.jsonnet["param"]
+    assert 9 == len(cfg.jsonnet["records"])
+    assert "#8" == cfg.jsonnet["records"][-2]["ref"]
+    assert 15.5 == cfg.jsonnet["records"][-2]["val"]

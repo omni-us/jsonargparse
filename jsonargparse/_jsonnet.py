@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional, Tuple, Union
 
-from ._actions import Action, _is_action_value_list
+from ._actions import Action, _find_action, _is_action_value_list
 from ._common import parser_context
 from ._jsonschema import ActionJsonSchema
 from ._loaders_dumpers import get_loader_exceptions, load_value
@@ -12,28 +12,10 @@ from ._optionals import (
     import_jsonnet,
     import_jsonschema,
 )
+from ._typehints import ActionTypeHint
 from ._util import Path, argument_error
 
-__all__ = [
-    "ActionJsonnetExtVars",
-    "ActionJsonnet",
-]
-
-
-class ActionJsonnetExtVars(ActionJsonSchema):
-    """Action to add argument to provide ext_vars for jsonnet parsing."""
-
-    def __init__(self, **kwargs):
-        """Initializer for ActionJsonnetExtVars instance."""
-        if kwargs:
-            super().__init__(**kwargs)
-        else:
-            super().__init__(schema={"type": "object"}, with_meta=False)
-
-    def __call__(self, *args, **kwargs):
-        if len(args) == 0 and "default" not in kwargs:
-            kwargs["default"] = {}
-        return super().__call__(*args, _class_type=ActionJsonnetExtVars, **kwargs)
+__all__ = ["ActionJsonnet"]
 
 
 class ActionJsonnet(Action):
@@ -67,7 +49,7 @@ class ActionJsonnet(Action):
                         try:
                             schema = load_value(schema)
                         except get_loader_exceptions() as ex:
-                            raise ValueError(f"Problems parsing schema :: {ex}") from ex
+                            raise ValueError(f"Problems parsing schema: {ex}") from ex
                 jsonvalidator.check_schema(schema)
                 self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
             else:
@@ -112,6 +94,26 @@ class ActionJsonnet(Action):
                 elem = "" if not islist else " element " + str(num + 1)
                 raise TypeError(f'Parser key "{self.dest}"{elem}: {ex}') from ex
         return value if islist else value[0]
+
+    @staticmethod
+    def _check_ext_vars_action(parser, action):
+        if isinstance(action, ActionJsonnet) and action._ext_vars:
+            ext_vars_action = _find_action(parser, action._ext_vars)
+            if not ext_vars_action:
+                raise ValueError(f"No argument found for ext_vars='{action._ext_vars}'")
+            ext_vars_type = isinstance(ext_vars_action, ActionTypeHint) and ext_vars_action._typehint
+            if ext_vars_type not in {dict, Dict}:
+                raise ValueError(
+                    f"Type for ext_vars='{action._ext_vars}' argument must be dict, given: {ext_vars_type}"
+                )
+            if ext_vars_action.default is None:
+                ext_vars_action.default = {}
+            if not isinstance(ext_vars_action.default, dict):
+                raise ValueError(
+                    f"Default value for the ext_vars='{action._ext_vars}' argument "
+                    f"must be dict or None, given: {ext_vars_action.default}"
+                )
+            ext_vars_action.jsonnet_ext_vars = True
 
     @staticmethod
     def split_ext_vars(ext_vars: Optional[Dict[str, Any]]) -> Tuple[Dict[str, Any], Dict[str, Any]]:

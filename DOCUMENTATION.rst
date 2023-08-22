@@ -2288,10 +2288,10 @@ dictionary of variables. Its use would be as follows:
 
 .. testcode:: jsonnet
 
-    from jsonargparse import ArgumentParser, ActionJsonnet, ActionJsonnetExtVars
+    from jsonargparse import ArgumentParser, ActionJsonnet
 
     parser = ArgumentParser()
-    parser.add_argument("--in_ext_vars", action=ActionJsonnetExtVars())
+    parser.add_argument("--in_ext_vars", type=dict)
     parser.add_argument("--in_jsonnet", action=ActionJsonnet(ext_vars="in_ext_vars"))
 
 For example, if a jsonnet file required some external variable ``param``, then

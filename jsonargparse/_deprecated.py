@@ -17,6 +17,7 @@ from ._type_checking import ArgumentParser
 
 __all__ = [
     "ActionEnum",
+    "ActionJsonnetExtVars",
     "ActionOperators",
     "ActionPath",
     "ActionPathList",
@@ -581,3 +582,20 @@ deprecated_module(
         "import_docstring_parse": ("_optionals", "import_docstring_parser"),
     },
 )
+
+
+@deprecated(
+    """
+    ActionJsonnetExtVars was deprecated in v4.24.0 and will be removed in
+    v5.0.0. Instead use ``type=dict``.
+"""
+)
+class ActionJsonnetExtVars:
+    """Action to add argument to provide ext_vars for jsonnet parsing."""
+
+    def __call__(self, *args, **kwargs):
+        from ._typehints import ActionTypeHint
+
+        action = ActionTypeHint(typehint=dict)(**kwargs)
+        action.jsonnet_ext_vars = True
+        return action
