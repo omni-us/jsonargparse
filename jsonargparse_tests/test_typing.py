@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import pickle
 import random
 import uuid
@@ -28,6 +29,20 @@ from jsonargparse.typing import (
     restricted_string_type,
 )
 from jsonargparse_tests.conftest import get_parser_help
+
+
+def test_public_api():
+    import jsonargparse.typing
+
+    names = {
+        n
+        for n, v in vars(jsonargparse.typing).items()
+        if n[0] != "_"
+        and getattr(v, "__module__", "").split(".")[0] not in {"jsonargparse", "typing"}
+        and (inspect.isclass(v) or inspect.isfunction(v))
+    }
+    assert set() == names - set(jsonargparse.typing.__all__)
+
 
 # restricted number tests
 
