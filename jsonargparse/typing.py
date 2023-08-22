@@ -5,10 +5,9 @@ import operator
 import os
 import pathlib
 import re
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
-from ._common import is_final_class, is_subclass
+from ._common import is_final_class
 from ._optionals import final, pydantic_support
 from ._util import Path, get_import_path, get_private_kwargs, import_object
 
@@ -444,11 +443,17 @@ register_type(range, serializer=range_serializer, deserializer=range_deserialize
 
 pydantic_types: Tuple[type, ...] = tuple()
 if pydantic_support:
+    from enum import Enum as _Enum
+
     import pydantic
+
+    from ._common import is_subclass as _is_subclass
 
     for module in [pydantic.types, pydantic.networks]:
         pydantic_types += tuple(
-            v for k, v in vars(module).items() if inspect.isclass(v) and k in module.__all__ and not issubclass(v, Enum)
+            v
+            for k, v in vars(module).items()
+            if inspect.isclass(v) and k in module.__all__ and not issubclass(v, _Enum)
         )
 
 
@@ -475,7 +480,7 @@ def pydantic_serializer(type_class):
 
 
 def is_pydantic_type(type_class):
-    return pydantic_support and is_subclass(type_class, pydantic_types)
+    return pydantic_support and _is_subclass(type_class, pydantic_types)
 
 
 def register_pydantic_type(type_class):
