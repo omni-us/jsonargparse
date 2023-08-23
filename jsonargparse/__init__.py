@@ -68,7 +68,7 @@ __all__ += _util.__all__
 __all__ += _deprecated.__all__
 
 
-__version__ = "4.23.1"
+__version__ = "4.24.0"
 
 
 py36_set_deprecated_module_attributes(globals())

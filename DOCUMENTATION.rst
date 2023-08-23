@@ -1753,15 +1753,17 @@ that the parser would not fail if given an invalid value, for instance a string.
 Class type and sub-classes
 ==========================
 
-It is also possible to use an arbitrary class as a type such that the argument
-accepts this class or any derived subclass. In the config file a class is
-represented by a dictionary with a ``class_path`` entry indicating the dot
-notation expression to import the class, and optionally some ``init_args`` that
-would be used to instantiate it. When parsing, it will be checked that the class
-can be imported, that it is a subclass of the given type and that ``init_args``
-values correspond to valid arguments to instantiate it. After parsing, the
-config object will include the ``class_path`` and ``init_args`` entries. To get
-a config object with all sub-classes instantiated, the
+It is possible to use an arbitrary class as a type such that the argument
+accepts an instance of this class or any derived subclass. This practice is
+known as `dependency injection
+<https://en.wikipedia.org/wiki/Dependency_injection>`__. In the config file a
+class is represented by a dictionary with a ``class_path`` entry indicating the
+dot notation expression to import the class, and optionally some ``init_args``
+that would be used to instantiate it. When parsing, it will be checked that the
+class can be imported, that it is a subclass of the given type and that
+``init_args`` values correspond to valid arguments to instantiate it. After
+parsing, the config object will include the ``class_path`` and ``init_args``
+entries. To get a config object with all sub-classes instantiated, the
 :py:meth:`.ArgumentParser.instantiate_classes` method is used. The ``skip``
 parameter of the signature methods can also be used to exclude arguments within
 subclasses. This is done by giving its relative destination key, i.e. as
