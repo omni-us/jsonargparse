@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.24.1 (2023-09-??)
+--------------------
+
+Fixed
+^^^^^
+- Remove private ``linked_targets`` parameter from API Reference (`#317
+  <https://github.com/omni-us/jsonargparse/issues/317>`__).
+
+
 v4.24.0 (2023-08-23)
 --------------------
 

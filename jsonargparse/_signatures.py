@@ -21,7 +21,7 @@ from ._typehints import (
     callable_instances,
     is_optional,
 )
-from ._util import LoggerProperty, get_import_path, iter_to_set_str
+from ._util import LoggerProperty, get_import_path, get_private_kwargs, iter_to_set_str
 from .typing import register_pydantic_type
 
 __all__ = [
@@ -48,7 +48,7 @@ class SignatureArguments(LoggerProperty):
         instantiate: bool = True,
         fail_untyped: bool = True,
         sub_configs: bool = False,
-        linked_targets: Optional[Set[str]] = None,
+        **kwargs,
     ) -> List[str]:
         """Adds arguments from a class based on its type hints and docstrings.
 
@@ -76,6 +76,7 @@ class SignatureArguments(LoggerProperty):
             raise ValueError(f'Expected "theclass" parameter to be a class type, got: {theclass}.')
         if default and not (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass)):
             raise ValueError(f'Expected "default" parameter to be a lazy instance of the class, got: {default}.')
+        linked_targets = get_private_kwargs(kwargs, linked_targets=None)
 
         added_args = self._add_signature_arguments(
             theclass,
