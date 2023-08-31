@@ -576,6 +576,7 @@ def adapt_typehints(
     instantiate_classes=False,
     prev_val=None,
     append=False,
+    list_item=False,
     enable_path=False,
     sub_add_kwargs=None,
 ):
@@ -717,7 +718,7 @@ def adapt_typehints(
             for n, v in enumerate(val):
                 if isinstance(prev_val, list) and len(prev_val) == len(val):
                     adapt_kwargs_n = {**adapt_kwargs, "prev_val": prev_val[n]}
-                val[n] = adapt_typehints(v, subtypehints[0], **adapt_kwargs_n)
+                val[n] = adapt_typehints(v, subtypehints[0], list_item=True, **adapt_kwargs_n)
 
     # Dict, Mapping
     elif typehint_origin in mapping_origin_types:
@@ -802,7 +803,7 @@ def adapt_typehints(
         if serialize:
             val = load_value(parser.dump(val, **dump_kwargs.get()))
         elif isinstance(val, (dict, Namespace)):
-            val = parser.parse_object(val, defaults=sub_defaults.get())
+            val = parser.parse_object(val, defaults=sub_defaults.get() or list_item)
         elif isinstance(val, NestedArg):
             val = parser.parse_args([f"--{val.key}={val.val}"])
         else:
