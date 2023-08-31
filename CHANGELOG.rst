@@ -19,6 +19,8 @@ Fixed
 ^^^^^
 - Remove private ``linked_targets`` parameter from API Reference (`#317
   <https://github.com/omni-us/jsonargparse/issues/317>`__).
+- Dataclass nested in list not setting defaults (`#357
+  <https://github.com/omni-us/jsonargparse/issues/357>`__)
 
 
 v4.24.0 (2023-08-23)

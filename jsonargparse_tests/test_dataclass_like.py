@@ -98,6 +98,23 @@ def test_add_dataclass_arguments(parser, subtests):
             parser.add_dataclass_arguments(MixedClass, "c")
 
 
+@dataclasses.dataclass
+class NestedDefaultsA:
+    x: list = dataclasses.field(default_factory=list)
+    v: int = 1
+
+
+@dataclasses.dataclass
+class NestedDefaultsB:
+    a: List[NestedDefaultsA]
+
+
+def test_add_dataclass_nested_defaults(parser):
+    parser.add_dataclass_arguments(NestedDefaultsB, "data")
+    cfg = parser.parse_args(["--data.a=[{}]"])
+    assert cfg.data == Namespace(a=[Namespace(x=[], v=1)])
+
+
 class ClassDataAttributes:
     def __init__(
         self,
