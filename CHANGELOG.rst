@@ -21,6 +21,9 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/317>`__).
 - Dataclass nested in list not setting defaults (`#357
   <https://github.com/omni-us/jsonargparse/issues/357>`__)
+- AST resolver ``kwargs.pop()`` with conflicting defaults not setting the
+  conditional default (`#362
+  <https://github.com/omni-us/jsonargparse/issues/362>`__).
 
 
 v4.24.0 (2023-08-23)
