@@ -1693,11 +1693,11 @@ A special case which is supported but with caveats, is multiple calls that use
 
 The resolved parameters that have the same type hint and default across all
 calls are supported normally. When there is a discrepancy between the calls, the
-parameters behave differently and are shown in the help in special "Conditional
-arguments" sections. The main difference is that these arguments are not
-included in :py:meth:`.ArgumentParser.get_defaults` or the output of
-``--print_config``. This is necessary because the parser does not know which of
-the calls will be used at runtime, and adding them would cause
+parameters behave differently and are shown in the help with the default like
+``Conditional<ast-resolver> {DEFAULT_1, ...}``. The main difference is that
+these parameters are not included in :py:meth:`.ArgumentParser.get_defaults` or
+the output of ``--print_config``. This is necessary because the parser does not
+know which of the calls will be used at runtime, and adding them would cause
 :py:meth:`.ArgumentParser.instantiate_classes` to fail due to unexpected keyword
 arguments.
 
@@ -1747,6 +1747,10 @@ Without the stubs resolver, the
 given to the ``a`` and ``b`` arguments, instead of ``float``. And this means
 that the parser would not fail if given an invalid value, for instance a string.
 
+It is not possible to know the defaults of parameters discovered only because of
+the stubs. In these cases in the parser help the default is shown as
+``Unknown<stubs-resolver>`` and not included in
+:py:meth:`.ArgumentParser.get_defaults` or the output of ``--print_config``.
 
 .. _sub-classes:
 

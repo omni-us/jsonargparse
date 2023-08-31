@@ -5,15 +5,15 @@ import inspect
 import xml.dom
 from calendar import Calendar
 from random import shuffle
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Union
 from unittest.mock import patch
 
 import pytest
 
 from jsonargparse import Namespace, class_from_function
 from jsonargparse._optionals import docstring_parser_support
+from jsonargparse._parameter_resolvers import ConditionalDefault, is_lambda
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
-from jsonargparse._parameter_resolvers import is_lambda
 from jsonargparse_tests.conftest import capture_logs, source_unavailable
 
 
@@ -383,6 +383,21 @@ def function_pop_get_from_kwargs(kn1: int = 0, **kw):
     kw.pop("pk1", "")
 
 
+def function_pop_get_conditional(p1: str, **kw):
+    """
+    Args:
+        p1: help for p1
+        p2: help for p2
+        p3: help for p3
+    """
+    kw.get("p3", "x")
+    if p1 == "a":
+        kw.pop("p2", None)
+    elif p1 == "b":
+        kw.pop("p2", 3)
+        kw.get("p3", "y")
+
+
 def function_with_bug(**kws):
     return does_not_exist(**kws)  # noqa: F821
 
@@ -451,6 +466,7 @@ def assert_params(params, expected, origins={}):
     assert expected == [p.name for p in params]
     docs = [f"help for {p.name}" for p in params] if docstring_parser_support else [None] * len(params)
     assert docs == [p.doc for p in params]
+    assert all(isinstance(params[n].default, ConditionalDefault) for n in origins.keys())
     param_origins = {
         n: [o.split(f"{__name__}.", 1)[1] for o in p.origin] for n, p in enumerate(params) if p.origin is not None
     }
@@ -502,8 +518,9 @@ def test_get_params_class_with_kwargs_in_dict_attribute():
 
 
 def test_get_params_class_kwargs_in_attr_method_conditioned_on_arg():
+    params = get_params(ClassG)
     assert_params(
-        get_params(ClassG),
+        params,
         ["func", "kmg1", "kmg2", "kmg3", "kmg4"],
         {
             2: ["ClassG._run:3", "ClassG._run:5"],
@@ -511,6 +528,10 @@ def test_get_params_class_kwargs_in_attr_method_conditioned_on_arg():
             4: ["ClassG._run:5"],
         },
     )
+    assert params[2].annotation == Union[str, float]
+    assert str(params[2].default) == "Conditional<ast-resolver> {-, 2.3}"
+    assert str(params[3].default) == "Conditional<ast-resolver> {True, False}"
+    assert str(params[4].default) == "Conditional<ast-resolver> {4, NOT_ACCEPTED}"
     with source_unavailable():
         assert_params(get_params(ClassG), ["func"])
 
@@ -645,10 +666,29 @@ def test_get_params_function_call_classmethod():
 def test_get_params_function_pop_get_from_kwargs(logger):
     with capture_logs(logger) as logs:
         params = get_params(function_pop_get_from_kwargs, logger=logger)
-    assert_params(params, ["kn1", "k2", "kn2", "kn3", "kn4", "pk1"])
+    assert str(params[1].default) == "Conditional<ast-resolver> {2, 1}"
+    assert_params(
+        params,
+        ["kn1", "k2", "kn2", "kn3", "kn4", "pk1"],
+        {1: ["function_pop_get_from_kwargs:10", "function_pop_get_from_kwargs:15"]},
+    )
     assert "unsupported kwargs pop/get default" in logs.getvalue()
     with source_unavailable():
         assert_params(get_params(function_pop_get_from_kwargs), ["kn1"])
+
+
+def test_get_params_function_pop_get_conditional():
+    params = get_params(function_pop_get_conditional)
+    assert str(params[1].default) == "Conditional<ast-resolver> {x, y}"
+    assert str(params[2].default) == "Conditional<ast-resolver> {None, 3}"
+    assert_params(
+        params,
+        ["p1", "p3", "p2"],
+        {
+            1: ["function_pop_get_conditional:8", "function_pop_get_conditional:13"],
+            2: ["function_pop_get_conditional:10", "function_pop_get_conditional:12"],
+        },
+    )
 
 
 def test_get_params_function_module_class():

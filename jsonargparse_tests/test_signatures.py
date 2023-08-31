@@ -298,7 +298,7 @@ def test_add_class_conditional_kwargs(parser):
             "help for kmg1 (type: int, default: 1)",
             "help for kmg2 (type: Union[str, float], default: Conditional<ast-resolver> {-, 2.3})",
             "help for kmg3 (type: bool, default: Conditional<ast-resolver> {True, False})",
-            "help for kmg4 (type: int, default: Conditional<ast-resolver> 4)",
+            "help for kmg4 (type: int, default: Conditional<ast-resolver> {4, NOT_ACCEPTED})",
         ]
     for value in expected:
         assert value in help_str
