@@ -24,6 +24,8 @@ Fixed
 - AST resolver ``kwargs.pop()`` with conflicting defaults not setting the
   conditional default (`#362
   <https://github.com/omni-us/jsonargparse/issues/362>`__).
+- ``ActionJsonSchema`` not setting correctly defaults when schema uses
+  ``oneOf``.
 
 
 v4.24.0 (2023-08-23)

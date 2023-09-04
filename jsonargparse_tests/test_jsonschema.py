@@ -114,6 +114,37 @@ def test_schema_object_parse_config(parser, tmp_path):
     assert op2_val == cfg["op2"]
 
 
+def test_schema_oneof_add_defaults(parser):
+    schema = {
+        "oneOf": [
+            {
+                "type": "object",
+                "properties": {
+                    "kind": {"type": "string", "enum": ["x"]},
+                    "pc": {"type": "integer", "default": 1},
+                    "px": {"type": "string", "default": "dx"},
+                },
+            },
+            {
+                "type": "object",
+                "properties": {
+                    "kind": {"type": "string", "enum": ["y"]},
+                    "pc": {"type": "integer", "default": 2},
+                    "py": {"type": "string", "default": "dy"},
+                },
+            },
+        ]
+    }
+    parser.add_argument("--data", action=ActionJsonSchema(schema=schema))
+    parser.add_argument("--cfg", action=ActionConfigFile)
+
+    cfg = parser.parse_args(['--data={"kind": "x"}'])
+    assert cfg.data == {"kind": "x", "pc": 1, "px": "dx"}
+
+    cfg = parser.parse_args(['--data={"kind": "y", "pc": 3}'])
+    assert cfg.data == {"kind": "y", "pc": 3, "py": "dy"}
+
+
 # other tests
 
 
