@@ -699,6 +699,25 @@ class _ActionSubCommands(_SubParsersAction):
             if subcommand is None and not (fail_no_subcommand and action._required):  # type: ignore
                 return None, None
             if action._required and subcommand not in action._name_parser_map:  # type: ignore
+                if dest == "subcommand":
+                    # If this action is a subcommand action and no subcommand is provided,
+                    # present the user with a friendly error message to remind them of
+                    # the available subcommands and to select one.
+                    available_subcommands = list(action._name_parser_map.keys())
+                    if len(available_subcommands) < 10:
+                        candidate_subcommands_str = "{" + ",".join(available_subcommands) + "}"
+                    else:
+                        candidate_subcommands_str = (
+                            "{"
+                            + ",".join(available_subcommands[:5])
+                            + ", ..., "
+                            + ",".join(available_subcommands[-5:])
+                            + "}"
+                        )
+                    raise KeyError(
+                        f'expected "subcommand" to be one of {candidate_subcommands_str}, but it was not provided.'
+                    )
+
                 raise KeyError(f'"{dest}" is required but not given or its value is None.')
 
         return subcommand_keys, [action._name_parser_map.get(s) for s in subcommand_keys]  # type: ignore
