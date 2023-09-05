@@ -26,6 +26,9 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/362>`__).
 - ``ActionJsonSchema`` not setting correctly defaults when schema uses
   ``oneOf``.
+- Recommended ``print_config`` steps not working when ``default_config_files``
+  used due to the config file initially being empty (`#367
+  <https://github.com/omni-us/jsonargparse/issues/367>`__).
 
 
 v4.24.0 (2023-08-23)
