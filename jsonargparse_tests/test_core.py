@@ -698,6 +698,15 @@ def test_print_config_invalid_flag(print_parser):
     ctx.match('Invalid option "invalid"')
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="not supported in python 3.6")
+def test_print_config_empty_default_config_file(print_parser, tmp_cwd):
+    default_config_file = tmp_cwd / "defaults.yaml"
+    default_config_file.touch()
+    print_parser.default_config_files = [default_config_file]
+    out = get_parse_args_stdout(print_parser, ["--print_config"])
+    assert yaml.safe_load(out) == {"g1": {"v2": "2"}, "g2": {"v3": None}, "v1": 1}
+
+
 def test_default_config_files(parser, subtests, tmp_cwd):
     default_config_file = tmp_cwd / "defaults.yaml"
     default_config_file.write_text("op1: from default config file\n")
