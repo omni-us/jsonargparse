@@ -704,7 +704,7 @@ class _ActionSubCommands(_SubParsersAction):
                     # present the user with a friendly error message to remind them of
                     # the available subcommands and to select one.
                     available_subcommands = list(action._name_parser_map.keys())
-                    if len(available_subcommands) < 10:
+                    if len(available_subcommands) <= 10:
                         candidate_subcommands_str = "{" + ",".join(available_subcommands) + "}"
                     else:
                         candidate_subcommands_str = (
