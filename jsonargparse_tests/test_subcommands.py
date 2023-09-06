@@ -15,7 +15,7 @@ from jsonargparse import (
     Namespace,
     strip_meta,
 )
-from jsonargparse_tests.conftest import get_parse_args_stdout, get_parser_help
+from jsonargparse_tests.conftest import get_parse_args_stderr, get_parse_args_stdout, get_parser_help
 from jsonargparse_tests.test_subclasses import CustomInstantiationBase, instantiator
 
 
@@ -287,3 +287,16 @@ def test_subcommands_custom_instantiator(parser, subparser, subtests):
         init = parser.instantiate_classes(cfg)
         assert isinstance(init.cmd.cls, CustomInstantiationBase)
         assert init.cmd.cls.call == "subparser"
+
+
+def test_subcommands_not_give_when_subcommands_le_10(subcommands_parser):
+    err = get_parse_args_stderr(subcommands_parser, [])
+    assert "error: 'expected \"subcommand\" to be one of {a,b,B}, but it was not provided.'" in err
+
+
+def test_subcommands_not_give_when_subcommands_greater_10(parser, subparser):
+    subcommands = parser.add_subcommands()
+    for subcommand in range(ord("a"), ord("l") + 1):
+        subcommands.add_subcommand(chr(subcommand), subparser)
+    err = get_parse_args_stderr(parser, [])
+    assert "error: 'expected \"subcommand\" to be one of {a,b,c,d,e, ..., h,i,j,k,l}, but it was not provided.'" in err
