@@ -21,6 +21,7 @@ Changed
   and provide a subcommand when a subcommand is required but not
   provided (`#371<https://github.com/omni-us/jsonargparse/pull/371>`__).
 
+
 v4.24.1 (2023-09-06)
 --------------------
 
