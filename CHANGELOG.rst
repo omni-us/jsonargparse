@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.25.0 (2023-09-??)
+--------------------
+
+Changed
+^^^^^^^
+- Provide a more informative error message to remind user to select
+  and provide a subcommand when a subcommand is required but not
+  provided (`#371<https://github.com/omni-us/jsonargparse/pull/371>`__).
+
 v4.24.1 (2023-09-06)
 --------------------
 

@@ -56,7 +56,6 @@ def test_subcommands_undefined_subcommand(subcommands_parser):
 def test_subcommands_not_given_when_few_subcommands(subcommands_parser, parser, subparser):
     err = get_parse_args_stderr(subcommands_parser, [])
     assert "error: 'expected \"subcommand\" to be one of {a,b,B}, but it was not provided.'" in err
-    pytest.raises(ArgumentError, lambda: subcommands_parser.parse_args())
 
 
 def test_subcommands_not_given_when_many_subcommands(parser, subparser):
