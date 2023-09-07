@@ -43,25 +43,6 @@ from jsonargparse_tests.conftest import (
 )
 
 
-@pytest.fixture
-def auto_recover_sys_argv():
-    """With the help of this fixture,
-    a test case that changes the `sys.argv` will not affect other test cases,
-    regardless of whether this test case succeeds or fails.
-
-    This is helpful if we want to use `sys.argv` in pytest for some tests
-    because pytest is its own CLI program with its own CLI handling.
-
-    Example:
-        def test_change_sys_argv(auto_recover_sys_argv):
-            sys.argv = ["foo.py", "--value", "2"]
-            ...
-    """
-    original_sys_argv = sys.argv
-    yield original_sys_argv
-    sys.argv = original_sys_argv
-
-
 def test_parse_args_simple(parser):
     parser.add_argument("--op", type=int)
     assert parser.parse_args(["--op=1"]) == Namespace(op=1)
@@ -79,10 +60,10 @@ def test_parse_args_unrecognized_arguments(parser):
     assert "Unrecognized arguments:" in err
 
 
-def test_parse_args_from_sys_argv(parser, auto_recover_sys_argv):
+def test_parse_args_from_sys_argv(parser):
     parser.add_argument("--op", type=str)
-    sys.argv = ["", "--op", "hello"]
-    assert parser.parse_args() == Namespace(op="hello")
+    with patch("sys.argv", ["", "--op", "hello"]):
+        assert parser.parse_args() == Namespace(op="hello")
 
 
 def test_parse_args_invalid_args(parser):
