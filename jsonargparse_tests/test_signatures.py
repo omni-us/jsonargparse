@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from unittest.mock import patch
@@ -265,7 +264,6 @@ def test_add_class_with_required_parameters(parser):
     assert cfg.model == Namespace(m=0.1, n=3)
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="import forces future annotations in python 3.6")
 def test_add_class_conditional_kwargs(parser):
     from jsonargparse_tests.test_parameter_resolvers import ClassG
 
@@ -543,7 +541,6 @@ def func_type_as_string(a2: "int"):
     return a2
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="not supported in python 3.6")
 def test_add_function_fail_untyped_true_str_type(parser):
     added_args = parser.add_function_arguments(func_type_as_string, fail_untyped=True)
     assert ["a2"] == added_args

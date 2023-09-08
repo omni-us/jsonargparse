@@ -543,24 +543,6 @@ def deprecated_module(module_name, mappings=None):
     module.__dict__["__file__"] = str(Path(__file__).parent / f"{module_name}.py")
     module.__dict__["__path__"] = module_path
 
-    if sys.version_info[:2] == (3, 6):
-        _py36_deprecated_modules[module_name] = (module, mappings)
-
-
-_py36_deprecated_modules = {}  # type: ignore
-
-
-def py36_set_deprecated_module_attributes(globs):
-    for module_name, (module, mappings) in _py36_deprecated_modules.items():
-        globs[module_name] = module
-        for name, value in vars(import_module(f"jsonargparse._{module_name}")).items():
-            if name != "__all__" and name.startswith("_"):
-                continue
-            setattr(module, name, value)
-        for name, (new_module, new_name) in (mappings or {}).items():
-            value = getattr(import_module(f"jsonargparse.{new_module}"), new_name)
-            setattr(module, name, value)
-
 
 deprecated_module("actions")
 deprecated_module("cli")

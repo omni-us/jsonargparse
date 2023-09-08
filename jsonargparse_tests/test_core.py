@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import os
 import pickle
-import sys
 from calendar import Calendar
 from contextlib import redirect_stderr
 from io import StringIO
@@ -704,7 +703,6 @@ def test_print_config_invalid_flag(print_parser):
     ctx.match('Invalid option "invalid"')
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="not supported in python 3.6")
 def test_print_config_empty_default_config_file(print_parser, tmp_cwd):
     default_config_file = tmp_cwd / "defaults.yaml"
     default_config_file.touch()
@@ -960,7 +958,6 @@ def test_default_meta_property():
     ctx.match("default_meta expects a boolean")
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="loggers not pickleable in python 3.6")
 def test_pickle_parser(example_parser):
     parser = pickle.loads(pickle.dumps(example_parser))
     assert example_parser.get_defaults() == parser.get_defaults()

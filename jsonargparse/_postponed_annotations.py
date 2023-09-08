@@ -6,10 +6,7 @@ import textwrap
 from collections import namedtuple
 from copy import deepcopy
 from importlib import import_module
-from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union, get_type_hints
-
-if sys.version_info[:2] > (3, 6):
-    from typing import ForwardRef
+from typing import Any, Dict, ForwardRef, FrozenSet, List, Optional, Set, Tuple, Type, Union, get_type_hints
 
 from ._optionals import typing_extensions_import
 from ._typehints import mapping_origin_types, sequence_origin_types, tuple_set_origin_types
@@ -309,7 +306,7 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
 
 
 def evaluate_postponed_annotations(params, component, logger):
-    if sys.version_info[:2] == (3, 6) or not (params and any(type_requires_eval(p.annotation) for p in params)):
+    if not (params and any(type_requires_eval(p.annotation) for p in params)):
         return
     try:
         types = get_types(component, logger)

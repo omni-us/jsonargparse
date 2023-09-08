@@ -1,6 +1,7 @@
 import ast
 import inspect
 import logging
+import sys
 import textwrap
 from collections import defaultdict
 from contextlib import contextmanager
@@ -149,17 +150,22 @@ def ast_is_call_with_value(node, value_dump) -> bool:
     return False
 
 
-ast_constant_attr = {
-    ast.Constant: "value",
-    # python <= 3.7:
-    ast.NameConstant: "value",
-    ast.Num: "n",
-    ast.Str: "s",
-}
+ast_constant_attr = {ast.Constant: "value"}
+
+if sys.version_info[:2] == (3, 7):
+    ast_constant_attr.update(
+        {
+            ast.NameConstant: "value",
+            ast.Num: "n",
+            ast.Str: "s",
+        }
+    )
+
+ast_constant_types = tuple(ast_constant_attr.keys())
 
 
 def ast_is_constant(node):
-    return isinstance(node, (ast.Str, ast.Num, ast.NameConstant, ast.Constant))
+    return isinstance(node, ast_constant_types)
 
 
 def ast_get_constant_value(node):
@@ -331,7 +337,7 @@ def replace_args_and_kwargs(params: ParamList, args: ParamList, kwargs: ParamLis
         if kwargs_idx >= 0:
             kwargs_idx += len(args) - 1
     if kwargs_idx >= 0:
-        existing_names = set(p.name for p in params[:kwargs_idx] + params[kwargs_idx + 1 :])
+        existing_names = {p.name for p in params[:kwargs_idx] + params[kwargs_idx + 1 :]}
         kwargs = [p for p in kwargs if p.name not in existing_names]
         params = params[:kwargs_idx] + kwargs + params[kwargs_idx + 1 :]
     return params

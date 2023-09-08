@@ -12,7 +12,6 @@ from ._actions import *  # noqa: F403
 from ._cli import *  # noqa: F403
 from ._core import *  # noqa: F403
 from ._deprecated import *  # noqa: F403
-from ._deprecated import py36_set_deprecated_module_attributes
 from ._formatters import *  # noqa: F403
 from ._jsonnet import *  # noqa: F403
 from ._jsonschema import *  # noqa: F403
@@ -69,6 +68,3 @@ __all__ += _deprecated.__all__
 
 
 __version__ = "4.24.1"
-
-
-py36_set_deprecated_module_attributes(globals())
