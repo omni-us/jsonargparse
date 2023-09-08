@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import pathlib
-import sys
 from calendar import Calendar
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from enum import Enum
@@ -438,8 +437,7 @@ def test_import_import_docstring_parse():
     with catch_warnings(record=True) as w:
         from jsonargparse.optionals import import_docstring_parse
 
-    if sys.version_info[:2] != (3, 6):
-        assert "Only use the public API" in str(w[-1].message)
+    assert "Only use the public API" in str(w[-1].message)
     assert import_docstring_parse is import_docstring_parser
 
 
@@ -449,8 +447,7 @@ def test_import_from_deprecated():
     with catch_warnings(record=True) as w:
         func = deprecated.set_url_support
 
-    if sys.version_info[:2] != (3, 6):
-        assert "Only use the public API" in str(w[-1].message)
+    assert "Only use the public API" in str(w[-1].message)
     assert func is set_url_support
 
 
@@ -476,8 +473,7 @@ def test_import_from_module(module, attr):
     module = import_module(f"jsonargparse.{module}")
     with catch_warnings(record=True) as w:
         getattr(module, attr)
-    if sys.version_info[:2] != (3, 6):
-        assert "Only use the public API" in str(w[-1].message)
+    assert "Only use the public API" in str(w[-1].message)
 
 
 @pytest.mark.skipif(not jsonnet_support, reason="jsonnet package is required")

@@ -378,7 +378,7 @@ def class_from_function(
     if isinstance(func_return, str):
         try:
             func_return = get_type_hints(func)["return"]
-            if sys.version_info[:2] != (3, 6) and isinstance(func_return, __import__("typing").ForwardRef):
+            if isinstance(func_return, __import__("typing").ForwardRef):
                 func_return = func_return._evaluate(func.__globals__, {})
         except Exception as ex:
             func_return = inspect.signature(func).return_annotation

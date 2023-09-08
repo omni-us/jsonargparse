@@ -20,6 +20,7 @@ Changed
 - Provide a more informative error message to remind user to select
   and provide a subcommand when a subcommand is required but not
   provided (`#371<https://github.com/omni-us/jsonargparse/pull/371>`__).
+- Removed support for python 3.6.
 
 
 v4.24.1 (2023-09-06)

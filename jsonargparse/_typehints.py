@@ -3,7 +3,6 @@
 import inspect
 import os
 import re
-import sys
 from argparse import ArgumentError
 from collections import abc, defaultdict
 from contextlib import contextmanager, suppress
@@ -76,7 +75,7 @@ from .typing import get_registered_type, is_pydantic_type
 __all__ = ["lazy_instance"]
 
 
-Literal = False if sys.version_info[:2] == (3, 6) else typing_extensions_import("Literal")
+Literal = typing_extensions_import("Literal")
 
 
 root_types = {
@@ -604,7 +603,7 @@ def adapt_typehints(
     # Literal
     elif typehint_origin in literal_types:
         if val not in subtypehints and isinstance(val, str):
-            subtypes = Union[tuple(set(type(v) for v in subtypehints))]
+            subtypes = Union[tuple({type(v) for v in subtypehints})]
             val = adapt_typehints(val, subtypes, **adapt_kwargs)
         if val not in subtypehints:
             raise_unexpected_value(f"Expected a {typehint}", val)

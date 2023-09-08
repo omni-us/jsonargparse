@@ -112,28 +112,6 @@ repos:
     pass_filenames: false
     verbose: true
 
-  - id: test-py36
-    name: test-py36
-    entry: bash -c '
-      set -e;
-      if [ "$(which docker)" = "" ]; then
-        echo "$(tput setaf 6) Skipped, docker not found $(tput sgr0)";
-      else
-        python3 -m build --wheel;
-        docker run --rm --workdir $PWD -v $PWD:$PWD cimg/python:3.6 bash -c "
-          set -e;
-          pip3 install $(ls ./dist/*.whl | tail -n 1)[all,test,test-no-urls];
-          mkdir /tmp/jsonargparse_tests;
-          cp jsonargparse_tests/*.py /tmp/jsonargparse_tests;
-          cd /tmp/jsonargparse_tests;
-          rm test_postponed_annotations.py;
-          sed -i /__future__/d *.py;
-          pytest --color=yes";
-      fi'
-    stages: [pre-push]
-    language: system
-    pass_filenames: false
-
   - id: test-without-future-annotations
     name: test-without-future-annotations
     entry: bash -c '

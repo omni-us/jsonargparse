@@ -53,31 +53,6 @@ jobs:
     <<: *test-py38
     docker:
       - image: cimg/python:3.7
-  test-py36:
-    docker:
-      - image: cimg/python:3.6
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: Run unit tests
-          command: |
-            py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
-            virtualenv -p python3 venv$py
-            . venv$py/bin/activate
-            pip3 install $(ls ./dist/*.whl)[coverage]
-            dir=$(python3 -c "print(__import__('jsonargparse').__file__)" | sed 's|jsonargparse/[^/]*$||')
-            code_dir=$dir/jsonargparse
-            tests_dir=$dir/jsonargparse_tests
-            rm $tests_dir/test_postponed_annotations.py
-            sed -i '/^from __future__ import annotations$/d' $tests_dir/test_*.py
-            pytest --cov=$code_dir --cov-report=term --cov-report=xml:coverage_py$py.xml $tests_dir
-            pip3 install $(ls ./dist/*.whl)[test,all]
-            pytest --cov=$code_dir --cov-report=term --cov-report=xml:coverage_py${py}_all.xml $tests_dir
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./coverage_*.xml
   codecov:
     docker:
       - image: curlimages/curl:latest
@@ -90,7 +65,7 @@ jobs:
           command: |
             curl -Os https://uploader.codecov.io/latest/linux/codecov
             chmod +x codecov
-            for py in 3.6 3.7 3.8 3.9 3.10 3.11; do
+            for py in 3.7 3.8 3.9 3.10 3.11; do
               for suffix in "" "_all" "_types"; do
                 if [ -f coverage_py${py}${suffix}.xml ]; then
                   ./codecov \
@@ -144,10 +119,6 @@ workflows:
           <<: *buildreq
       - test-py37:
           <<: *buildreq
-      - test-py36:
-          <<: *buildreq
-          requires:
-            - build
       - codecov:
           requires:
             - test-py311
@@ -155,7 +126,6 @@ workflows:
             - test-py39
             - test-py38
             - test-py37
-            - test-py36
       - test-py310-installed:
           <<: *buildreq
           requires:

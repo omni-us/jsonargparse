@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
 from typing import Any, Dict, List, Optional, Union
 from unittest.mock import patch
 
@@ -452,7 +451,6 @@ if pydantic_support:
         return x
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="pydantic not supported in python 3.6")
 @pytest.mark.skipif(not pydantic_support, reason="pydantic package is required")
 class TestPydantic:
     def test_dataclass(self, parser):
