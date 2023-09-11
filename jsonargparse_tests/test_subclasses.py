@@ -4,13 +4,14 @@ import json
 import os
 import textwrap
 import warnings
-from calendar import Calendar, HTMLCalendar, January, TextCalendar  # type: ignore
+from calendar import Calendar, HTMLCalendar, TextCalendar
 from copy import deepcopy
 from dataclasses import dataclass
 from gzip import GzipFile
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 from unittest.mock import patch
+from uuid import NAMESPACE_OID
 
 import pytest
 import yaml
@@ -1182,7 +1183,7 @@ def test_subclass_unresolved_parameters_name_clash(parser):
 
 def test_add_subclass_failure_not_a_class(parser):
     with pytest.raises(ValueError) as ctx:
-        parser.add_subclass_arguments(January, "jan")
+        parser.add_subclass_arguments(NAMESPACE_OID, "oid")
     ctx.match("Expected 'baseclass' argument to be a class or a tuple of classes")
 
 
@@ -1449,7 +1450,7 @@ def test_subclass_class_name_ambiguous(parser, option):
 def test_subclass_help_not_subclass(parser):
     parser.add_argument("--op", type=Calendar)
     with pytest.raises(ArgumentError) as ctx:
-        parser.parse_args(["--op.help=calendar.January"])
+        parser.parse_args(["--op.help=uuid.UUID"])
     ctx.match("is not a subclass of")
 
 

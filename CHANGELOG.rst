@@ -19,6 +19,7 @@ Added
 ^^^^^
 - Support for user-defined generic types (`#366
   <https://github.com/omni-us/jsonargparse/issues/366>`__).
+- Support for Python 3.12.
 
 Fixed
 ^^^^^
