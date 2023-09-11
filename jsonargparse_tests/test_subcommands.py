@@ -15,7 +15,7 @@ from jsonargparse import (
     Namespace,
     strip_meta,
 )
-from jsonargparse_tests.conftest import get_parse_args_stdout, get_parser_help
+from jsonargparse_tests.conftest import get_parse_args_stderr, get_parse_args_stdout, get_parser_help
 from jsonargparse_tests.test_subclasses import CustomInstantiationBase, instantiator
 
 
@@ -53,8 +53,17 @@ def test_subcommands_undefined_subcommand(subcommands_parser):
     pytest.raises(ArgumentError, lambda: subcommands_parser.parse_args(["c"]))
 
 
-def test_subcommands_missing_required_subcommand(subcommands_parser):
-    pytest.raises(ArgumentError, lambda: subcommands_parser.parse_args())
+def test_subcommands_not_given_when_few_subcommands(subcommands_parser):
+    err = get_parse_args_stderr(subcommands_parser, [])
+    assert "error: 'expected \"subcommand\" to be one of {a,b,B}, but it was not provided.'" in err
+
+
+def test_subcommands_not_given_when_many_subcommands(parser, subparser):
+    subcommands = parser.add_subcommands()
+    for subcommand in range(ord("a"), ord("l") + 1):
+        subcommands.add_subcommand(chr(subcommand), subparser)
+    err = get_parse_args_stderr(parser, [])
+    assert "error: 'expected \"subcommand\" to be one of {a,b,c,d,e, ...}, but it was not provided.'" in err
 
 
 def test_subcommands_missing_required_subargument(subcommands_parser):

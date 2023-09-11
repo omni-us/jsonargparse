@@ -60,6 +60,12 @@ def test_parse_args_unrecognized_arguments(parser):
     assert "Unrecognized arguments:" in err
 
 
+def test_parse_args_from_sys_argv(parser):
+    parser.add_argument("--op", type=str)
+    with patch("sys.argv", ["", "--op", "hello"]):
+        assert parser.parse_args() == Namespace(op="hello")
+
+
 def test_parse_args_invalid_args(parser):
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([{}])
