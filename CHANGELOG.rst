@@ -2,7 +2,7 @@ Changelog
 =========
 
 All notable changes to this project will be documented in this file. Versions
-follow `Semantic Versioning <https://semver.org/>`_
+follow `Semantic Versioning <https://semver.org/>`__
 (``<major>.<minor>.<patch>``). Backward incompatible (breaking) changes will
 only be introduced in major versions with advance notice in the **Deprecated**
 section of releases.
@@ -19,7 +19,7 @@ Changed
 ^^^^^^^
 - Provide a more informative error message to remind user to select
   and provide a subcommand when a subcommand is required but not
-  provided (`#371<https://github.com/omni-us/jsonargparse/pull/371>`__).
+  provided (`#371 <https://github.com/omni-us/jsonargparse/pull/371>`__).
 - Removed support for python 3.6.
 
 
@@ -31,7 +31,7 @@ Fixed
 - Remove private ``linked_targets`` parameter from API Reference (`#317
   <https://github.com/omni-us/jsonargparse/issues/317>`__).
 - Dataclass nested in list not setting defaults (`#357
-  <https://github.com/omni-us/jsonargparse/issues/357>`__)
+  <https://github.com/omni-us/jsonargparse/issues/357>`__).
 - AST resolver ``kwargs.pop()`` with conflicting defaults not setting the
   conditional default (`#362
   <https://github.com/omni-us/jsonargparse/issues/362>`__).
