@@ -19,6 +19,9 @@ Added
 ^^^^^
 - Support for user-defined generic types (`#366
   <https://github.com/omni-us/jsonargparse/issues/366>`__).
+- New function ``extend_base_type`` for easy creation and registering of custom
+  types that extend a base type (`#195
+  <https://github.com/omni-us/jsonargparse/issue/195>`__).
 - Support for Python 3.12.
 
 Fixed
@@ -38,6 +41,8 @@ Changed
 - ``add_subclass_arguments`` now shows a better error message when an empty
   tuple is given (`lightning#18546
   <https://github.com/Lightning-AI/lightning/issues/18546>`__).
+- Document the requirements for creating and using custom types (`#195
+  <https://github.com/omni-us/jsonargparse/issue/195>`__).
 - Removed support for python 3.6.
 
 
