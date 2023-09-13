@@ -15,6 +15,7 @@ __all__ = [
     "final",
     "is_final_class",
     "register_type",
+    "extend_base_type",
     "restricted_number_type",
     "restricted_string_type",
     "path_type",
@@ -49,14 +50,28 @@ registered_type_handlers: Dict[type, "RegisteredType"] = {}
 registration_pending: Dict[str, Callable] = {}
 
 
-def create_type(
+def extend_base_type(
     name: str,
     base_type: type,
-    check_value: Callable,
-    register_key: Optional[Tuple] = None,
+    validation_fn: Callable,
     docstring: Optional[str] = None,
     extra_attrs: Optional[dict] = None,
+    register_key: Optional[Tuple] = None,
 ) -> type:
+    """Creates and registers an extension of base type.
+
+    Args:
+        name: How the new type will be called.
+        base_type: The type from which the created type is extended.
+        validation_fn: Function that validates the value on instantiation/casting. Gets two arguments: type_class and
+            value.
+        docstring: The __doc__ attribute value for the created type.
+        extra_attrs: Attributes set to the type class that the validation_fn can access.
+        register_key: Used to determine the uniqueness of registered types.
+
+    Raises:
+        ValueError: If the type has already been registered with a different name.
+    """
     if register_key in registered_types:
         registered_type = registered_types[register_key]
         if registered_type.__name__ != name:
@@ -64,11 +79,12 @@ def create_type(
         return registered_type
 
     class TypeCore:
-        _check_value = check_value
+        _validation_fn = validation_fn
+        _type = base_type
 
         def __new__(cls, v):
-            cls._check_value(cls, v)
-            return super().__new__(cls, v)
+            cls._validation_fn(cls, v)
+            return super().__new__(cls, cls._type(v))
 
     if extra_attrs is not None:
         for key, value in extra_attrs.items():
@@ -133,7 +149,7 @@ def restricted_number_type(
         "_type": base_type,
     }
 
-    def check_value(cls, v):
+    def validation_fn(cls, v):
         if isinstance(v, bool):
             raise ValueError(f"{v} not a number")
         if cls._type == int and isinstance(v, float) and not float.is_integer(v):
@@ -143,10 +159,10 @@ def restricted_number_type(
         if (cls._join == "and" and not all(check)) or (cls._join == "or" and not any(check)):
             raise ValueError(f"{v} does not conform to restriction {cls._expression}")
 
-    return create_type(
+    return extend_base_type(
         name=name,
         base_type=base_type,
-        check_value=check_value,
+        validation_fn=validation_fn,
         register_key=register_key,
         docstring=docstring,
         extra_attrs=extra_attrs,
@@ -178,14 +194,14 @@ def restricted_string_type(
         "_type": str,
     }
 
-    def check_value(cls, v):
+    def validation_fn(cls, v):
         if not cls._regex.match(v):
             raise ValueError(f"{v} does not match regular expression {cls._regex.pattern}")
 
-    return create_type(
+    return extend_base_type(
         name=name,
         base_type=str,
-        check_value=check_value,
+        validation_fn=validation_fn,
         register_key=(expression, str),
         docstring=docstring,
         extra_attrs=extra_attrs,

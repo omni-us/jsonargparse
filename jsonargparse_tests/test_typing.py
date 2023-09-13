@@ -20,6 +20,7 @@ from jsonargparse.typing import (
     OpenUnitInterval,
     PositiveFloat,
     PositiveInt,
+    extend_base_type,
     get_registered_type,
     register_type,
     register_type_on_first_use,
@@ -192,6 +193,17 @@ def test_type_function_parse(parser):
     assert [1, "off"] == parser.parse_args(["--multi_gt0_or_off", "1", "off"]).multi_gt0_or_off
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--multi_gt0_or_off", "1", "0"]))
     pytest.raises(ArgumentError, lambda: parser.parse_object({"multi_gt0_or_off": [1, 0]}))
+
+
+def test_extend_base_type(parser):
+    def is_even(t, v):
+        if int(v) % 2 != 0:
+            raise ValueError(f"{v} is not even")
+
+    EvenInt = extend_base_type("EvenInt", int, is_even)
+    parser.add_argument("--even_int", type=EvenInt)
+    assert 2 == parser.parse_args(["--even_int=2"]).even_int
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--even_int=3"]))
 
 
 # restricted string tests
