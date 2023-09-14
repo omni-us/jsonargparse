@@ -15,11 +15,19 @@ paths are considered internals and can change in minor and patch releases.
 v4.25.0 (2023-09-??)
 --------------------
 
+Fixed
+^^^^^
+- ``--print_config`` fails when parser has shallow links.
+- Argument links unnecessarily applied when ``--print_config`` used and parser
+  has subcommands (`#311 <https://github.com/omni-us/jsonargparse/issue/311>`__).
+
 Changed
 ^^^^^^^
 - Provide a more informative error message to remind user to select
   and provide a subcommand when a subcommand is required but not
-  provided (`#371 <https://github.com/omni-us/jsonargparse/pull/371>`__).
+  given (`#371 <https://github.com/omni-us/jsonargparse/pull/371>`__).
+- Now when an argument link ``compute_fn`` fails, the error message will say
+  this (`#311 <https://github.com/omni-us/jsonargparse/issue/311>`__).
 - Removed support for python 3.6.
 
 

@@ -13,6 +13,7 @@ from ._actions import (
     Action,
     ActionConfigFile,
     _ActionConfigLoad,
+    _ActionPrintConfig,
     _ActionSubCommands,
     _find_parent_action,
     filter_default_actions,
@@ -243,9 +244,18 @@ class ActionLink(Action):
     def _check_type(self, value, cfg=None):
         return self.parser._check_value_key(self.target[1], value, self.target[0], cfg)
 
+    def call_compute_fn(self, args):
+        try:
+            assert callable(self.compute_fn)
+            return self.compute_fn(*args)
+        except Exception as ex:
+            link = self.option_strings[0]
+            args = ", ".join(str(a) for a in args)
+            raise ValueError(f"Call to compute_fn of link '{link}' with args ({args}) failed: {ex}") from ex
+
     @staticmethod
     def apply_parsing_links(parser: "ArgumentParser", cfg: Namespace) -> None:
-        if apply_config_skip.get():
+        if apply_config_skip.get() or _ActionPrintConfig.is_print_config_requested(parser):
             return
 
         subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
@@ -294,7 +304,7 @@ class ActionLink(Action):
                     ):
                         args[n] = args[n].as_dict()
                 # Compute value
-                value = action.compute_fn(*args)
+                value = action.call_compute_fn(args)
             ActionLink.set_target_value(action, value, cfg, parser.logger)
 
     @staticmethod
@@ -334,7 +344,7 @@ class ActionLink(Action):
             elif action.compute_fn is None:
                 value = source_objects[0]
             else:
-                value = action.compute_fn(*source_objects)
+                value = action.call_compute_fn(source_objects)
             ActionLink.set_target_value(action, value, cfg, parser.logger)
             applied_links.add(action)
 
@@ -384,6 +394,8 @@ class ActionLink(Action):
     def strip_link_target_keys(parser, cfg):
         def del_target_key(target_key):
             cfg.pop(target_key, None)
+            if "." not in target_key:
+                return
             parent_key, _ = split_key_leaf(target_key)
             if "." in target_key and parent_key in cfg and not cfg[parent_key]:
                 del cfg[parent_key]
