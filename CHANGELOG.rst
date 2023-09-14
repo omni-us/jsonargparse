@@ -28,6 +28,9 @@ Changed
   given (`#371 <https://github.com/omni-us/jsonargparse/pull/371>`__).
 - Now when an argument link ``compute_fn`` fails, the error message will say
   this (`#311 <https://github.com/omni-us/jsonargparse/issue/311>`__).
+- ``add_subclass_arguments`` now shows a better error message when an empty
+  tuple is given (`lightning#18546
+  <https://github.com/Lightning-AI/lightning/issues/18546>`__).
 - Removed support for python 3.6.
 
 

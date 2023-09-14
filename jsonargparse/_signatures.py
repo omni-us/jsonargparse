@@ -485,8 +485,8 @@ class SignatureArguments(LoggerProperty):
             raise ValueError("Not allowed for dataclass-like classes.")
         if type(baseclass) is not tuple:
             baseclass = (baseclass,)  # type: ignore
-        if not all(inspect.isclass(c) for c in baseclass):
-            raise ValueError('Expected "baseclass" argument to be a class or a tuple of classes.')
+        if not baseclass or not all(inspect.isclass(c) for c in baseclass):
+            raise ValueError(f"Expected 'baseclass' argument to be a class or a tuple of classes: {baseclass}")
 
         doc_group = None
         if len(baseclass) == 1:  # type: ignore

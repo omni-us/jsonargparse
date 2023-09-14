@@ -1183,7 +1183,13 @@ def test_subclass_unresolved_parameters_name_clash(parser):
 def test_add_subclass_failure_not_a_class(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_subclass_arguments(January, "jan")
-    ctx.match('Expected "baseclass" argument to be a class or a tuple of classes')
+    ctx.match("Expected 'baseclass' argument to be a class or a tuple of classes")
+
+
+def test_add_subclass_failure_empty_tuple(parser):
+    with pytest.raises(ValueError) as ctx:
+        parser.add_subclass_arguments((), "cls")
+    ctx.match("Expected 'baseclass' argument to be a class or a tuple of classes")
 
 
 def test_add_subclass_lazy_default(parser):
