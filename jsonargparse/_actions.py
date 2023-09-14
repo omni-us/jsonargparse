@@ -283,6 +283,14 @@ class _ActionPrintConfig(Action):
             delattr(parser, "print_config")
             parser.exit()
 
+    @staticmethod
+    def is_print_config_requested(parser):
+        while parser:
+            if hasattr(parser, "print_config"):
+                return True
+            parser = getattr(parser, "parent_parser", None)
+        return False
+
 
 class _ActionConfigLoad(Action):
     def __init__(self, basetype: Optional[Type] = None, **kwargs):

@@ -15,7 +15,7 @@ from jsonargparse import (
     lazy_instance,
 )
 from jsonargparse._optionals import docstring_parser_support
-from jsonargparse_tests.conftest import get_parser_help
+from jsonargparse_tests.conftest import get_parse_args_stdout, get_parser_help
 
 # tests for links applied on parse
 
@@ -26,6 +26,38 @@ def test_on_parse_help_target_lacking_type_and_help(parser):
     parser.link_arguments("a", "b")
     help_str = get_parser_help(parser)
     assert "Target argument 'b' lacks type and help" in help_str
+
+
+def test_on_parse_shallow_print_config(parser):
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--a", type=int, default=0)
+    parser.add_argument("--b", type=str)
+    parser.link_arguments("a", "b")
+    out = get_parse_args_stdout(parser, ["--print_config"])
+    assert yaml.safe_load(out) == {"a": 0}
+
+
+def test_on_parse_subcommand_failing_compute_fn(parser, subparser, subtests):
+    def to_str(value):
+        if not value:
+            raise ValueError("value is empty")
+        return str(value)
+
+    subparser.add_argument("--a", type=int, default=0)
+    subparser.add_argument("--b", type=str)
+    subparser.link_arguments("a", "b", to_str)
+    subparser.add_argument("--config", action=ActionConfigFile)
+    subcommands = parser.add_subcommands()
+    subcommands.add_subcommand("sub", subparser)
+
+    with subtests.test("parse_args"):
+        with pytest.raises(ValueError) as ctx:
+            parser.parse_args(["sub"])
+        ctx.match("Call to compute_fn of link 'to_str.*failed: value is empty")
+
+    with subtests.test("print_config"):
+        out = get_parse_args_stdout(parser, ["sub", "--print_config"])
+        assert yaml.safe_load(out) == {"a": 0}
 
 
 def test_on_parse_compute_fn_single_arguments(parser, subtests):
@@ -400,6 +432,32 @@ def test_on_instantiate_link_all_group_arguments():
     assert init["x"].x2 == 7
     help_str = get_parser_help(parser)
     assert "Group 'x': All arguments are derived from links" in help_str
+
+
+class FailingComputeFn1:
+    def __init__(self, a: int = 0):
+        self.a = a
+
+
+class FailingComputeFn2:
+    def __init__(self, b: str):
+        self.b = b
+
+
+def test_on_instantiate_failing_compute_fn(parser):
+    def to_str(value):
+        if not value:
+            raise ValueError("value is empty")
+        return str(value)
+
+    parser.add_class_arguments(FailingComputeFn1, "c1")
+    parser.add_class_arguments(FailingComputeFn2, "c2")
+    parser.link_arguments("c1.a", "c2.b", compute_fn=to_str, apply_on="instantiate")
+
+    with pytest.raises(ValueError) as ctx:
+        cfg = parser.parse_args([])
+        parser.instantiate_classes(cfg)
+    ctx.match("Call to compute_fn of link 'to_str.*failed: value is empty")
 
 
 def test_on_instantiate_link_from_subclass_with_compute_fn():
