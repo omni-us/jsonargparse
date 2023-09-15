@@ -941,9 +941,10 @@ example the classes:
 
 
     class SGD(Optimizer):
-        def __init__(self, params: Iterable, lr: float):
+        def __init__(self, params: Iterable, lr: float, momentum: float = 0.):
             super().__init__(params)
             self.lr = lr
+            self.momentum = momentum
 
 .. testcode:: callable
     :hide:
@@ -957,20 +958,20 @@ A possible parser and callable behavior would be:
     >>> value = {
     ...     "class_path": "SGD",
     ...     "init_args": {
-    ...         "lr": 0.01,
+    ...         "momentum": 0.9,
     ...     },
     ... }
 
-    >>> parser.add_argument("--optimizer", type=Callable[[Iterable], Optimizer])  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--optimizer", type=Callable[[Iterable, float], Optimizer])  # doctest: +IGNORE_RESULT
     >>> cfg = parser.parse_args(["--optimizer", str(value)])
     >>> cfg.optimizer
-    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.01))
+    Namespace(class_path='__main__.SGD', init_args=Namespace(momentum=0.9))
     >>> init = parser.instantiate_classes(cfg)
-    >>> optimizer = init.optimizer([1, 2, 3])
+    >>> optimizer = init.optimizer([1, 2, 3], 0.01)
     >>> isinstance(optimizer, SGD)
     True
-    >>> optimizer.params, optimizer.lr
-    ([1, 2, 3], 0.01)
+    >>> optimizer.params, optimizer.lr, optimizer.momentum
+    ([1, 2, 3], 0.01, 0.9)
 
 .. note::
 
@@ -997,11 +998,11 @@ Then a parser and behavior could be:
     >>> parser.add_class_arguments(Model, 'model')
     >>> cfg = parser.get_defaults()
     >>> cfg.model.optimizer
-    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.05))
+    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.05, momentum=0.0))
     >>> init = parser.instantiate_classes(cfg)
     >>> optimizer = init.model.optimizer([1, 2, 3])
-    >>> optimizer.params, optimizer.lr
-    ([1, 2, 3], 0.05)
+    >>> optimizer.params, optimizer.lr, optimizer.momentum
+    ([1, 2, 3], 0.05, 0.0)
 
 See :ref:`ast-resolver` for limitations of lambda defaults.
 

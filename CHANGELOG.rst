@@ -20,6 +20,8 @@ Fixed
 - ``--print_config`` fails when parser has shallow links.
 - Argument links unnecessarily applied when ``--print_config`` used and parser
   has subcommands (`#311 <https://github.com/omni-us/jsonargparse/issue/311>`__).
+- ``parse_args`` fails to parse arguments when data type is a ``Callable`` with multiple input arguments
+  (`#372 <https://github.com/omni-us/jsonargparse/issues/372>`__).
 
 Changed
 ^^^^^^^

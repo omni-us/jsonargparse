@@ -640,9 +640,10 @@ def test_callable_args_function_path(parser):
 
 
 class Optimizer:
-    def __init__(self, params: List[float], lr: float = 1e-3):
+    def __init__(self, params: List[float], lr: float = 1e-3, momentum: float = 0.):
         self.params = params
         self.lr = lr
+        self.momentum = momentum
 
 
 class SGD(Optimizer):
@@ -665,6 +666,7 @@ def test_callable_args_return_type_class(parser, subtests):
         assert isinstance(optimizer, SGD)
         assert [0.1, 2, 3] == optimizer.params
         assert 1e-3 == optimizer.lr
+        assert 0. == optimizer.momentum
 
     with subtests.test("parse dict"):
         value = {
@@ -675,17 +677,58 @@ def test_callable_args_return_type_class(parser, subtests):
         }
         cfg = parser.parse_args([f"--optimizer={value}"])
         assert f"{__name__}.Adam" == cfg.optimizer.class_path
-        assert Namespace(lr=0.01) == cfg.optimizer.init_args
+        assert Namespace(lr=0.01, momentum=0.) == cfg.optimizer.init_args
         init = parser.instantiate_classes(cfg)
         optimizer = init.optimizer([4.5, 6.7])
         assert isinstance(optimizer, Adam)
         assert [4.5, 6.7] == optimizer.params
         assert 0.01 == optimizer.lr
+        assert 0.0 == optimizer.momentum
         dump = parser.dump(cfg)
         assert yaml.safe_load(dump) == cfg.as_dict()
 
     with subtests.test("short notation"):
         assert cfg == parser.parse_args(["--optimizer=Adam", "--optimizer.lr=0.01"])
+
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        for name in ["Optimizer", "SGD", "Adam"]:
+            assert f"{__name__}.{name}" in help_str
+
+
+def test_callable_multiple_args_return_type_class(parser, subtests):
+    parser.add_argument("--optimizer", type=Callable[[List[float], float], Optimizer], default=SGD)
+
+    with subtests.test("default"):
+        cfg = parser.get_defaults()
+        init = parser.instantiate_classes(cfg)
+        optimizer = init.optimizer([0.1, 2, 3], 1e-3)
+        assert isinstance(optimizer, SGD)
+        assert [0.1, 2, 3] == optimizer.params
+        assert 1e-3 == optimizer.lr
+        assert 0. == optimizer.momentum
+
+    with subtests.test("parse dict"):
+        value = {
+            "class_path": "Adam",
+            "init_args": {
+                "momentum": 0.9
+            },
+        }
+        cfg = parser.parse_args([f"--optimizer={value}"])
+        assert f"{__name__}.Adam" == cfg.optimizer.class_path
+        assert Namespace(momentum=0.9) == cfg.optimizer.init_args
+        init = parser.instantiate_classes(cfg)
+        optimizer = init.optimizer([4.5, 6.7], 0.01)
+        assert isinstance(optimizer, Adam)
+        assert [4.5, 6.7] == optimizer.params
+        assert 0.01 == optimizer.lr
+        assert 0.9 == optimizer.momentum
+        dump = parser.dump(cfg)
+        assert yaml.safe_load(dump) == cfg.as_dict()
+
+    with subtests.test("short notation"):
+        assert cfg == parser.parse_args(["--optimizer=Adam", "--optimizer.momentum=0.9"])
 
     with subtests.test("help"):
         help_str = get_parser_help(parser)
