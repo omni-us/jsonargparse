@@ -182,6 +182,10 @@ convention = "google"
 line-length = 120
 
 
+[tool.typos.default.extend-identifiers]
+Villegas = "Villegas"
+
+
 [tool.tox]
 legacy_tox_ini = """
 [tox]
