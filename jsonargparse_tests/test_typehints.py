@@ -640,7 +640,7 @@ def test_callable_args_function_path(parser):
 
 
 class Optimizer:
-    def __init__(self, params: List[float], lr: float = 1e-3, momentum: float = 0.):
+    def __init__(self, params: List[float], lr: float = 1e-3, momentum: float = 0.0):
         self.params = params
         self.lr = lr
         self.momentum = momentum
@@ -666,7 +666,7 @@ def test_callable_args_return_type_class(parser, subtests):
         assert isinstance(optimizer, SGD)
         assert [0.1, 2, 3] == optimizer.params
         assert 1e-3 == optimizer.lr
-        assert 0. == optimizer.momentum
+        assert 0.0 == optimizer.momentum
 
     with subtests.test("parse dict"):
         value = {
@@ -677,7 +677,7 @@ def test_callable_args_return_type_class(parser, subtests):
         }
         cfg = parser.parse_args([f"--optimizer={value}"])
         assert f"{__name__}.Adam" == cfg.optimizer.class_path
-        assert Namespace(lr=0.01, momentum=0.) == cfg.optimizer.init_args
+        assert Namespace(lr=0.01, momentum=0.0) == cfg.optimizer.init_args
         init = parser.instantiate_classes(cfg)
         optimizer = init.optimizer([4.5, 6.7])
         assert isinstance(optimizer, Adam)
@@ -706,14 +706,12 @@ def test_callable_multiple_args_return_type_class(parser, subtests):
         assert isinstance(optimizer, SGD)
         assert [0.1, 2, 3] == optimizer.params
         assert 1e-3 == optimizer.lr
-        assert 0. == optimizer.momentum
+        assert 0.0 == optimizer.momentum
 
     with subtests.test("parse dict"):
         value = {
             "class_path": "Adam",
-            "init_args": {
-                "momentum": 0.9
-            },
+            "init_args": {"momentum": 0.9},
         }
         cfg = parser.parse_args([f"--optimizer={value}"])
         assert f"{__name__}.Adam" == cfg.optimizer.class_path
