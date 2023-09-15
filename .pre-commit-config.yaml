@@ -40,6 +40,13 @@ repos:
   hooks:
   - id: yesqa
 
+- repo: https://github.com/crate-ci/typos
+  rev: v1.16.11
+  hooks:
+  - id: typos
+    args: []
+    verbose: true
+
 - repo: local
   hooks:
 
