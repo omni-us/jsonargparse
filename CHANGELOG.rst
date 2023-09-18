@@ -20,6 +20,7 @@ Fixed
 - ``--print_config`` fails when parser has shallow links.
 - Argument links unnecessarily applied when ``--print_config`` used and parser
   has subcommands (`#311 <https://github.com/omni-us/jsonargparse/issue/311>`__).
+- Postponed annotations not working for dataclasses.
 
 Changed
 ^^^^^^^

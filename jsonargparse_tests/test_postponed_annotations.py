@@ -1,13 +1,17 @@
 from __future__ import annotations  # keep
 
+import dataclasses
+import os
 import sys
 from random import Random
 from typing import TYPE_CHECKING, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Union
 
 import pytest
 
+from jsonargparse import Namespace
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._postponed_annotations import TypeCheckingVisitor, evaluate_postponed_annotations, get_types
+from jsonargparse.typing import Path_drw
 from jsonargparse_tests.conftest import capture_logs, source_unavailable
 
 
@@ -131,7 +135,7 @@ def test_get_types_all_types_fail():
 def test_evaluate_postponed_annotations_all_types_fail(logger):
     params = get_params(function_all_types_fail)
     with capture_logs(logger) as logs:
-        evaluate_postponed_annotations(params, function_all_types_fail, logger)
+        evaluate_postponed_annotations(params, function_all_types_fail, None, logger)
     assert "Unable to evaluate types for " in logs.getvalue()
 
 
@@ -295,3 +299,30 @@ def test_get_types_source_unavailable():
     with source_unavailable():
         types = get_types(function_source_unavailable)
     assert types == {"p1": List["TypeCheckingClass1"]}
+
+
+@dataclasses.dataclass
+class Data585:
+    a: list[int]
+    b: str = "x"
+
+
+def test_get_types_dataclass_pep585(parser):
+    types = get_types(Data585)
+    list_int = List[int] if sys.version_info < (3, 9) else list[int]
+    assert types == {"a": list_int, "b": str}
+    parser.add_dataclass_arguments(Data585, "data")
+    cfg = parser.parse_args(["--data.a=[1, 2]"])
+    assert cfg.data == Namespace(a=[1, 2], b="x")
+
+
+@dataclasses.dataclass
+class DataWithInit585(Data585):
+    def __init__(self, b: Path_drw, **kwargs):  # type: ignore
+        super().__init__(b=os.fspath(b), **kwargs)
+
+
+def test_add_dataclass_with_init_pep585(parser, tmp_cwd):
+    parser.add_dataclass_arguments(DataWithInit585, "data")
+    cfg = parser.parse_args(["--data.a=[1, 2]", "--data.b=."])
+    assert cfg.data == Namespace(a=[1, 2], b=Path_drw("."))
