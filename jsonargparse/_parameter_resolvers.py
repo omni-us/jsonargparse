@@ -281,7 +281,7 @@ def get_signature_parameters_and_indexes(component, parent, logger):
             component=component,
             **{a: getattr(param, a) for a in parameter_attributes},
         )
-    evaluate_postponed_annotations(params, signature_source, logger)
+    evaluate_postponed_annotations(params, signature_source, parent, logger)
     stubs = get_stub_types(params, signature_source, parent, logger)
     return params, args_idx, kwargs_idx, doc_params, stubs
 
@@ -831,7 +831,7 @@ def get_parameters_from_pydantic_or_attrs(
                 component=function_or_class,
             )
         )
-    evaluate_postponed_annotations(params, function_or_class, logger)
+    evaluate_postponed_annotations(params, function_or_class, None, logger)
     return params
 
 

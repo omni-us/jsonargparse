@@ -5,6 +5,7 @@ import sys
 import textwrap
 from collections import namedtuple
 from copy import deepcopy
+from dataclasses import is_dataclass
 from importlib import import_module
 from typing import Any, Dict, ForwardRef, FrozenSet, List, Optional, Set, Tuple, Type, Union, get_type_hints
 
@@ -268,7 +269,7 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
         tree = ast.parse(source)
         assert isinstance(tree, ast.Module) and len(tree.body) == 1
         node = tree.body[0]
-        assert isinstance(node, ast.FunctionDef)
+        assert isinstance(node, (ast.FunctionDef, ast.ClassDef))
     except Exception as ex2:
         if isinstance(types, Exception):
             if logger:
@@ -287,14 +288,18 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
     if "TYPE_CHECKING" in module_source:
         TypeCheckingVisitor().update_aliases(module_source, obj.__module__, aliases, logger)
 
-    for arg_ast in node.args.args + node.args.kwonlyargs:
-        name = arg_ast.arg
-        if arg_ast.annotation and (name not in types or type_requires_eval(types[name])):
+    if isinstance(node, ast.FunctionDef):
+        arg_asts = [(a.arg, a.annotation) for a in node.args.args + node.args.kwonlyargs]
+    else:
+        arg_asts = [(a.target.id, a.annotation) for a in node.body if isinstance(a, ast.AnnAssign)]  # type: ignore
+
+    for name, annotation in arg_asts:
+        if annotation and (name not in types or type_requires_eval(types[name])):
             try:
-                if isinstance(arg_ast.annotation, ast.Constant) and arg_ast.annotation.value in aliases:
-                    types[name] = aliases[arg_ast.annotation.value]
+                if isinstance(annotation, ast.Constant) and annotation.value in aliases:
+                    types[name] = aliases[annotation.value]
                 else:
-                    arg_type = get_arg_type(arg_ast.annotation, aliases)
+                    arg_type = get_arg_type(annotation, aliases)
                     types[name] = resolve_forward_refs(arg_type, aliases, logger)
             except Exception as ex3:
                 types[name] = ex3
@@ -305,11 +310,18 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
     return types
 
 
-def evaluate_postponed_annotations(params, component, logger):
+def evaluate_postponed_annotations(params, component, parent, logger):
     if not (params and any(type_requires_eval(p.annotation) for p in params)):
         return
     try:
-        types = get_types(component, logger)
+        if (
+            is_dataclass(parent)
+            and component.__name__ == "__init__"
+            and not component.__qualname__.startswith(parent.__name__ + ".")
+        ):
+            types = get_types(parent, logger)
+        else:
+            types = get_types(component, logger)
     except Exception as ex:
         logger.debug(f"Unable to evaluate types for {component}", exc_info=ex)
         return
