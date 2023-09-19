@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from ._common import is_dataclass_like, is_subclass
+from ._common import get_generic_origin, is_dataclass_like, is_generic_class, is_subclass
 from ._optionals import parse_docs
 from ._postponed_annotations import evaluate_postponed_annotations
 from ._stubs_resolver import get_stub_types
@@ -283,7 +283,26 @@ def get_signature_parameters_and_indexes(component, parent, logger):
         )
     evaluate_postponed_annotations(params, signature_source, parent, logger)
     stubs = get_stub_types(params, signature_source, parent, logger)
+    replace_generic_type_vars(params, parent)
     return params, args_idx, kwargs_idx, doc_params, stubs
+
+
+def replace_generic_type_vars(params: ParamList, parent) -> None:
+    if is_generic_class(parent) and parent.__args__ and getattr(parent.__origin__, "__parameters__", None):
+        type_vars = dict(zip(parent.__origin__.__parameters__, parent.__args__))
+
+        def replace_type_vars(annotation):
+            if annotation in type_vars:
+                return type_vars[annotation]
+            if getattr(annotation, "__args__", None):
+                origin = annotation.__origin__
+                if sys.version_info < (3, 10) and getattr(origin, "__module__", "") != "typing":
+                    origin = getattr(__import__("typing"), origin.__name__.capitalize(), origin)
+                return origin[tuple(replace_type_vars(a) for a in annotation.__args__)]
+            return annotation
+
+        for param in params:
+            param.annotation = replace_type_vars(param.annotation)
 
 
 def add_stub_types(stubs: Optional[Dict[str, Any]], params: ParamList, component) -> None:
@@ -380,7 +399,7 @@ def group_parameters(params_list: List[ParamList]) -> ParamList:
 
 
 def has_dunder_new_method(cls, attr_name):
-    classes = inspect.getmro(cls)[1:]
+    classes = inspect.getmro(get_generic_origin(cls))[1:]
     return (
         attr_name == "__init__"
         and cls.__new__ is not object.__new__
@@ -424,13 +443,13 @@ def get_component_and_parent(
     if is_subclass(function_or_class, ClassFromFunctionBase) and method_or_property in {None, "__init__"}:
         function_or_class = function_or_class.wrapped_function  # type: ignore
         method_or_property = None
-    elif inspect.isclass(function_or_class) and method_or_property is None:
+    elif inspect.isclass(get_generic_origin(function_or_class)) and method_or_property is None:
         method_or_property = "__init__"
     elif method_or_property and not isinstance(method_or_property, str):
         method_or_property = method_or_property.__name__
     parent = component = None
     if method_or_property:
-        attr = inspect.getattr_static(function_or_class, method_or_property)
+        attr = inspect.getattr_static(get_generic_origin(function_or_class), method_or_property)
         if is_staticmethod(attr):
             component = getattr(function_or_class, method_or_property)
             return component, parent, method_or_property
