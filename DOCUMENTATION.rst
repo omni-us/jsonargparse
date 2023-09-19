@@ -407,6 +407,9 @@ Some notes about this support are:
   see :ref:`dataclass-like`. If a dataclass is mixed inheriting from a normal
   class, it is considered a subclass type instead of a dataclass.
 
+- User-defined ``Generic`` types are supported. For more details see
+  :ref:`generic-types`.
+
 - `Pydantic types <https://docs.pydantic.dev/usage/types/#pydantic-types>`__ are
   supported. There might be edge cases which don't work as expected. Please
   report any encountered issues.
@@ -875,6 +878,39 @@ structure.
     data:
       number: 8
       accepted: true
+
+.. _generic-types:
+
+Generic types
+-------------
+
+Classes that inherit from ``typing.Generic``, also known as `user-defined
+generic types
+<https://docs.python.org/3/library/typing.html#user-defined-generic-types>`__,
+are supported. Take for example a point in 2D:
+
+.. testsetup:: generic_types
+
+    parser = ArgumentParser()
+
+.. testcode:: generic_types
+
+    from typing import Generic, TypeVar
+
+    Number = TypeVar("Number", float, complex)
+
+    @dataclass
+    class Point2d(Generic[Number]):
+        x: Number = 0.0
+        y: Number = 0.0
+
+Parsing complex-valued points would be:
+
+.. doctest:: generic_types
+
+    >>> parser.add_argument("--point", type=Point2d[complex])  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(["--point.x=(1+2j)"]).point
+    Namespace(x=(1+2j), y=0.0)
 
 
 .. _callable-type:

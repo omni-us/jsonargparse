@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.25.0 (2023-09-??)
 --------------------
 
+Added
+^^^^^
+- Support for user-defined generic types (`#366
+  <https://github.com/omni-us/jsonargparse/issues/366>`__).
+
 Fixed
 ^^^^^
 - ``--print_config`` fails when parser has shallow links.

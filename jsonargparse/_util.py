@@ -30,7 +30,7 @@ from typing import (
     get_type_hints,
 )
 
-from ._common import ClassType, is_subclass, parser_capture, parser_context
+from ._common import ClassType, get_generic_origin, is_subclass, parser_capture, parser_context
 from ._deprecated import PathDeprecations
 from ._loaders_dumpers import json_dump, load_value
 from ._optionals import (
@@ -215,6 +215,7 @@ def get_module_var_path(module_path: str, value: Any) -> Optional[str]:
 def get_import_path(value: Any) -> Optional[str]:
     """Returns the shortest dot import path for the given object."""
     path = None
+    value = get_generic_origin(value)
     module_path = getattr(value, "__module__", None)
     qualname = getattr(value, "__qualname__", "")
 

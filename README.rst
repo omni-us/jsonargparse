@@ -63,9 +63,9 @@ high-quality code**. It encompasses numerous powerful features, some unique to
 
 Other notable features include:
 
-- **Extensive type hint support:** nested types (union, tuple, etc.),
-  containers (list, dict, etc.), restricted types (regex, numbers), paths, URLs,
-  types from stubs (``*.pyi``), future annotations (PEP `563
+- **Extensive type hint support:** nested types (union, optional), containers
+  (list, dict, etc.), user-defined generics, restricted types (regex, numbers),
+  paths, URLs, types from stubs (``*.pyi``), future annotations (PEP `563
   <https://peps.python.org/pep-0563/>`__), and backports (PEPs `604
   <https://peps.python.org/pep-0604>`__/`585
   <https://peps.python.org/pep-0585>`__).
