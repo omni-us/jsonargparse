@@ -972,11 +972,12 @@ A possible parser and callable behavior would be:
     >>> optimizer.params, optimizer.lr
     ([1, 2, 3], 0.01)
 
-Multiple dependency injection is also supported and can be specified the same
-way with ``Callable`` type hinting. For example, for two ``Iterable``
-dependencies, you can use the following syntax:
-``Callable[[Iterable, Iterable], Type]``. Please be aware that the injected
-dependencies passed as positional arguments (that is, passed as ``*args``).
+Multiple parameters available after injection are also supported and can be
+specified the same way with a ``Callable`` type hint. For example, for two
+``Iterable`` parameters, you can use the following syntax:
+``Callable[[Iterable, Iterable], Type]``. Please be aware that the parameters
+are passed as positional arguments, this means that the injected function would
+be called like ``function(value1, value2)``.
 
 .. note::
 
