@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 from unittest.mock import patch
 
 import pytest
@@ -383,6 +383,40 @@ def test_dataclass_in_list_type(parser):
     assert ["a", "b"] == [d.p1 for d in init.list]
     assert isinstance(init.list[0], Data)
     assert isinstance(init.list[1], Data)
+
+
+T = TypeVar("T", int, float)
+
+
+@dataclasses.dataclass
+class GenericData(Generic[T]):
+    g1: T
+    g2: Tuple[T, T]
+    g3: Union[str, T]
+    g4: Dict[str, Union[T, bool]]
+
+
+def test_generic_dataclass(parser):
+    parser.add_argument("--data", type=GenericData[int])
+    help_str = get_parser_help(parser).lower()
+    assert "--data.g1 g1          (required, type: int)" in help_str
+    assert "--data.g2 [item,...]  (required, type: tuple[int, int])" in help_str
+    assert "--data.g3 g3          (required, type: union[str, int])" in help_str
+    assert "--data.g4 g4          (required, type: dict[str, union[int, bool]])" in help_str
+
+
+@dataclasses.dataclass
+class SpecificData:
+    y: GenericData[float]
+
+
+def test_nested_generic_dataclass(parser):
+    parser.add_dataclass_arguments(SpecificData, "x")
+    help_str = get_parser_help(parser).lower()
+    assert "--x.y.g1 g1          (required, type: float)" in help_str
+    assert "--x.y.g2 [item,...]  (required, type: tuple[float, float])" in help_str
+    assert "--x.y.g3 g3          (required, type: union[str, float])" in help_str
+    assert "--x.y.g4 g4          (required, type: dict[str, union[float, bool]])" in help_str
 
 
 # final classes tests

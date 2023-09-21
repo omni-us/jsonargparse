@@ -3,7 +3,7 @@ import inspect
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Dict, Optional, Tuple, Type, TypeVar, Union
+from typing import Dict, Generic, Optional, Tuple, Type, TypeVar, Union, _GenericAlias  # type: ignore
 
 from ._namespace import Namespace
 from ._type_checking import ArgumentParser
@@ -70,12 +70,22 @@ def is_final_class(cls) -> bool:
     return getattr(cls, "__final__", False)
 
 
+def is_generic_class(cls) -> bool:
+    return isinstance(cls, _GenericAlias) and getattr(cls, "__module__", "") != "typing"
+
+
+def get_generic_origin(cls):
+    return cls.__origin__ if is_generic_class(cls) else cls
+
+
 def is_dataclass_like(cls) -> bool:
+    if is_generic_class(cls):
+        return is_dataclass_like(cls.__origin__)
     if not inspect.isclass(cls):
         return False
     if is_final_class(cls):
         return True
-    classes = [c for c in inspect.getmro(cls) if c != object]
+    classes = [c for c in inspect.getmro(cls) if c not in {object, Generic}]
     all_dataclasses = all(dataclasses.is_dataclass(c) for c in classes)
     from ._optionals import attrs_support, pydantic_support
 

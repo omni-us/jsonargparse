@@ -146,9 +146,11 @@ def test_get_params_classmethod():
         "debug",
         "errorlevel",
     ]
+    if sys.version_info >= (3, 12):
+        expected = expected[:4] + ["compresslevel"] + expected[4:]
     assert expected == get_param_names(params)[: len(expected)]
     if sys.version_info >= (3, 10):
-        assert all(p.annotation is not inspect._empty for p in params)
+        assert all(p.annotation is not inspect._empty for p in params if p.name != "compresslevel")
     with mock_typeshed_client_unavailable():
         params = get_params(TarFile, "open")
     assert expected == get_param_names(params)[: len(expected)]
@@ -189,7 +191,8 @@ def test_get_params_relative_import_from_init():
 
 def test_get_params_non_unique_alias(logger):
     params = get_params(uuid5)
-    assert [("namespace", UUID), ("name", str)], get_param_types(params)
+    name_type = str if sys.version_info < (3, 12) else (str | bytes)
+    assert [("namespace", UUID), ("name", name_type)] == get_param_types(params)
 
     def alias_is_unique(aliases, name, source, value):
         if name == "UUID":
@@ -199,7 +202,7 @@ def test_get_params_non_unique_alias(logger):
     with patch("jsonargparse._stubs_resolver.alias_is_unique", alias_is_unique):
         with capture_logs(logger) as logs:
             params = get_params(uuid5, logger=logger)
-        assert [("namespace", inspect._empty), ("name", str)] == get_param_types(params)
+        assert [("namespace", inspect._empty), ("name", name_type)] == get_param_types(params)
         assert "non-unique alias 'UUID': problem (module)" in logs.getvalue()
 
 

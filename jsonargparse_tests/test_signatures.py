@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 from unittest.mock import patch
 
 import pytest
@@ -389,6 +389,22 @@ def test_add_class_custom_instantiator(parser):
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.a, Class0)
     assert init.a.call == "custom"
+
+
+X = TypeVar("X")
+Y = TypeVar("Y")
+
+
+class WithGenerics(Generic[X, Y]):
+    def __init__(self, a: X, b: Y):
+        self.a = a
+        self.b = b
+
+
+def test_add_class_generics(parser):
+    parser.add_class_arguments(WithGenerics[int, complex], "p")
+    cfg = parser.parse_args(["--p.a=5", "--p.b=(6+7j)"])
+    assert cfg.p == Namespace(a=5, b=6 + 7j)
 
 
 # add_method_arguments tests

@@ -331,6 +331,24 @@ Having a CLI function this could be easily implemented with
     :func:`.CLI` is by using :func:`.capture_parser`.
 
 
+Functions as type
+-----------------
+
+Using a function as a type, like ``int_or_off`` below, is supported though
+discouraged. A basic requirement is that the function be idempotent, i.e.,
+applying the function two or more times should not modify the value. Instead of
+a function, it is recommended to implement a type, see :ref:`custom-types`.
+
+.. testcode::
+
+    # either int larger than zero or 'off' string
+    def int_or_off(x):
+        return x if x == "off" else int(x)
+
+
+    parser.add_argument("--int_or_off", type=int_or_off)
+
+
 .. _type-hints:
 
 Type hints
@@ -407,6 +425,9 @@ Some notes about this support are:
   see :ref:`dataclass-like`. If a dataclass is mixed inheriting from a normal
   class, it is considered a subclass type instead of a dataclass.
 
+- User-defined ``Generic`` types are supported. For more details see
+  :ref:`generic-types`.
+
 - `Pydantic types <https://docs.pydantic.dev/usage/types/#pydantic-types>`__ are
   supported. There might be edge cases which don't work as expected. Please
   report any encountered issues.
@@ -443,14 +464,6 @@ are:
     # between 0 and 10
     from_0_to_10 = restricted_number_type("from_0_to_10", int, [(">=", 0), ("<=", 10)])
     parser.add_argument("--op2", type=from_0_to_10)
-
-
-    # either int larger than zero or 'off' string
-    def int_or_off(x):
-        return x if x == "off" else PositiveInt(x)
-
-
-    parser.add_argument("--op3", type=int_or_off)
 
 
 .. _restricted-strings:
@@ -876,6 +889,39 @@ structure.
       number: 8
       accepted: true
 
+.. _generic-types:
+
+Generic types
+-------------
+
+Classes that inherit from ``typing.Generic``, also known as `user-defined
+generic types
+<https://docs.python.org/3/library/typing.html#user-defined-generic-types>`__,
+are supported. Take for example a point in 2D:
+
+.. testsetup:: generic_types
+
+    parser = ArgumentParser()
+
+.. testcode:: generic_types
+
+    from typing import Generic, TypeVar
+
+    Number = TypeVar("Number", float, complex)
+
+    @dataclass
+    class Point2d(Generic[Number]):
+        x: Number = 0.0
+        y: Number = 0.0
+
+Parsing complex-valued points would be:
+
+.. doctest:: generic_types
+
+    >>> parser.add_argument("--point", type=Point2d[complex])  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(["--point.x=(1+2j)"]).point
+    Namespace(x=(1+2j), y=0.0)
+
 
 .. _callable-type:
 
@@ -1059,6 +1105,66 @@ requires to give both a serializer and a deserializer as seen below.
     class used as a type hint is considered a sub-class (see :ref:`sub-classes`)
     which might be good for many use cases. If a class is registered with
     :func:`.register_type` then the sub-class option is no longer available.
+
+
+.. _custom-types:
+
+Creating custom types
+---------------------
+
+It is possible to create new types and use them for parsing. Even though types
+can be created for specific CLI behaviors, it is recommended to create them such
+that they make sense independent of parsing. This is so that they can be used as
+type hints in functions and classes in order to improve the code in a more
+general sense.
+
+There are a few ways for creating types, the most simple being to implement a
+class. When creating a type, take as reference how basic types work, e.g.
+``int``. Properties of basic types are:
+
+- Casting a string creates an instance of the type, if the value is valid, e.g.
+  ``int("1")``.
+- Casting a string raises a ``ValueError``, if the value is not valid, e.g.
+  ``int("a")``.
+- Casting an instance of the type to string gives back the string representation
+  of the value, e.g. ``str(1) == "1"``.
+- Types are idempotent, i.e. casting an instance of the type to the type gives
+  back the same value, e.g. ``int(1) == int(int(1))``.
+
+Once a type is created, it can be registered with :func:`.register_type`. If the
+type follows the properties above, then there is no need to provide more
+parameters, just do ``register_type(MyType)``.
+
+The :func:`.extend_base_type` function can be useful for creating and
+registering new types in a single call. For example, creating a type for even
+integers could be done as:
+
+.. testcode::
+
+    from jsonargparse.typing import extend_base_type
+
+    def is_even(type_class, value):
+        if int(value) % 2 != 0:
+            raise ValueError(f"{value} is not even")
+
+    EvenInt = extend_base_type("EvenInt", int, is_even)
+
+Then this type can be used in a parser as:
+
+.. doctest::
+
+    >>> parser = ArgumentParser()
+    >>> parser.add_argument("--even_int", type=EvenInt)  # doctest: +IGNORE_RESULT
+    >>> parser.parse_args(["--even_int=2"])
+    Namespace(even_int=2)
+
+When using custom types as a type hint, defaults must be casted so that static
+type checkers don't complain. For example:
+
+.. testcode::
+
+    def fn(value: EvenInt = EvenInt(2)):
+        ...
 
 
 .. _nested-namespaces:

@@ -15,6 +15,15 @@ paths are considered internals and can change in minor and patch releases.
 v4.25.0 (2023-09-??)
 --------------------
 
+Added
+^^^^^
+- Support for user-defined generic types (`#366
+  <https://github.com/omni-us/jsonargparse/issues/366>`__).
+- New function ``extend_base_type`` for easy creation and registering of custom
+  types that extend a base type (`#195
+  <https://github.com/omni-us/jsonargparse/issue/195>`__).
+- Support for Python 3.12.
+
 Fixed
 ^^^^^
 - ``--print_config`` fails when parser has shallow links.
@@ -22,6 +31,7 @@ Fixed
   has subcommands (`#311 <https://github.com/omni-us/jsonargparse/issue/311>`__).
 - ``parse_args`` fails to parse arguments when data type is a ``Callable`` with multiple input arguments
   (`#372 <https://github.com/omni-us/jsonargparse/issues/372>`__).
+- Postponed annotations not working for dataclasses.
 
 Changed
 ^^^^^^^
@@ -33,6 +43,8 @@ Changed
 - ``add_subclass_arguments`` now shows a better error message when an empty
   tuple is given (`lightning#18546
   <https://github.com/Lightning-AI/lightning/issues/18546>`__).
+- Document the requirements for creating and using custom types (`#195
+  <https://github.com/omni-us/jsonargparse/issue/195>`__).
 - Removed support for python 3.6.
 
 
