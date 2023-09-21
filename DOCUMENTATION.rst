@@ -941,10 +941,9 @@ example the classes:
 
 
     class SGD(Optimizer):
-        def __init__(self, params: Iterable, lr: float, momentum: float = 0.):
+        def __init__(self, params: Iterable, lr: float):
             super().__init__(params)
             self.lr = lr
-            self.momentum = momentum
 
 .. testcode:: callable
     :hide:
@@ -958,20 +957,26 @@ A possible parser and callable behavior would be:
     >>> value = {
     ...     "class_path": "SGD",
     ...     "init_args": {
-    ...         "momentum": 0.9,
+    ...         "lr": 0.01,
     ...     },
     ... }
 
-    >>> parser.add_argument("--optimizer", type=Callable[[Iterable, float], Optimizer])  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--optimizer", type=Callable[[Iterable], Optimizer])  # doctest: +IGNORE_RESULT
     >>> cfg = parser.parse_args(["--optimizer", str(value)])
     >>> cfg.optimizer
-    Namespace(class_path='__main__.SGD', init_args=Namespace(momentum=0.9))
+    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.01))
     >>> init = parser.instantiate_classes(cfg)
-    >>> optimizer = init.optimizer([1, 2, 3], 0.01)
+    >>> optimizer = init.optimizer([1, 2, 3])
     >>> isinstance(optimizer, SGD)
     True
-    >>> optimizer.params, optimizer.lr, optimizer.momentum
-    ([1, 2, 3], 0.01, 0.9)
+    >>> optimizer.params, optimizer.lr
+    ([1, 2, 3], 0.01)
+
+Multiple dependency injection is also supported and can be specified the same
+way with ``Callable`` type hinting. For example, for two ``Iterable``
+dependencies, you can use the following syntax:
+``Callable[[Iterable, Iterable], Type]``. Please be aware that the injected
+dependencies passed as positional arguments (that is, passed as ``*args``).
 
 .. note::
 
@@ -998,11 +1003,11 @@ Then a parser and behavior could be:
     >>> parser.add_class_arguments(Model, 'model')
     >>> cfg = parser.get_defaults()
     >>> cfg.model.optimizer
-    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.05, momentum=0.0))
+    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.05))
     >>> init = parser.instantiate_classes(cfg)
     >>> optimizer = init.model.optimizer([1, 2, 3])
-    >>> optimizer.params, optimizer.lr, optimizer.momentum
-    ([1, 2, 3], 0.05, 0.0)
+    >>> optimizer.params, optimizer.lr
+    ([1, 2, 3], 0.05)
 
 See :ref:`ast-resolver` for limitations of lambda defaults.
 
