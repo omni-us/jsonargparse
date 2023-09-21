@@ -887,7 +887,7 @@ def subclass_spec_as_namespace(val, prev_val=None):
 def get_callable_return_type(typehint):
     return_type = None
     if len(getattr(typehint, "__args__", None) or []) > 1:
-        return_type = typehint.__args__[1]
+        return_type = typehint.__args__[-1]
     return return_type
 
 

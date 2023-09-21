@@ -1018,6 +1018,13 @@ A possible parser and callable behavior would be:
     >>> optimizer.params, optimizer.lr
     ([1, 2, 3], 0.01)
 
+Multiple parameters available after injection are also supported and can be
+specified the same way with a ``Callable`` type hint. For example, for two
+``Iterable`` parameters, you can use the following syntax:
+``Callable[[Iterable, Iterable], Type]``. Please be aware that the parameters
+are passed as positional arguments, this means that the injected function would
+be called like ``function(value1, value2)``.
+
 .. note::
 
     When the ``Callable`` has a class return type, it is possible to specify the
