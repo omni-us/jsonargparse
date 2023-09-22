@@ -87,18 +87,19 @@ def is_dataclass_like(cls) -> bool:
         return True
     classes = [c for c in inspect.getmro(cls) if c not in {object, Generic}]
     all_dataclasses = all(dataclasses.is_dataclass(c) for c in classes)
-    from ._optionals import attrs_support, pydantic_support
 
-    if not all_dataclasses and pydantic_support:
-        import pydantic.utils
+    if not all_dataclasses:
+        from ._optionals import attrs_support, is_pydantic_model
 
-        classes = [c for c in classes if c != pydantic.utils.Representation]
-        all_dataclasses = all(is_subclass(c, pydantic.BaseModel) for c in classes)
-    if not all_dataclasses and attrs_support:
-        import attrs
-
-        if attrs.has(cls):
+        if is_pydantic_model(cls):
             return True
+
+        if attrs_support:
+            import attrs
+
+            if attrs.has(cls):
+                return True
+
     return all_dataclasses
 
 

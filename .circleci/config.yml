@@ -25,8 +25,6 @@ jobs:
           name: Run unit tests
           command: |
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
-            virtualenv -p python3 venv$py
-            . venv$py/bin/activate
             pip3 install .[coverage]
             pytest --cov --cov-report=term --cov-report=xml:coverage_py$py.xml
             pip3 install .[test,all]
@@ -53,6 +51,27 @@ jobs:
     <<: *test-py38
     docker:
       - image: cimg/python:3.7
+  test-py310-pydantic-v1:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - checkout
+      - run:
+          name: Run unit tests
+          command: |
+            py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
+            pip3 install .[coverage]
+            pip3 install "pydantic<2"
+            pytest --cov --cov-report=term --cov-report=xml:coverage_py${py}_pydantic1.xml jsonargparse_tests/test_dataclass_like.py
+            sed -i "s|import pydantic|import pydantic.v1 as pydantic|" jsonargparse_tests/test_dataclass_like.py
+            sed -i "s|^annotated = .*|annotated = False|" jsonargparse_tests/test_dataclass_like.py
+            sed -i "s|test_pydantic_types|_test_pydantic_types|" jsonargparse_tests/test_dataclass_like.py
+            pip install "pydantic>=2"
+            pytest --cov --cov-report=term --cov-report=xml:coverage_py${py}_pydantic2.xml jsonargparse_tests/test_dataclass_like.py
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./coverage_*.xml
   codecov:
     docker:
       - image: curlimages/curl:latest
@@ -66,7 +85,7 @@ jobs:
             curl -Os https://uploader.codecov.io/latest/linux/codecov
             chmod +x codecov
             for py in 3.7 3.8 3.9 3.10 3.11; do
-              for suffix in "" "_all" "_types"; do
+              for suffix in "" _all _types _pydantic1 _pydantic2; do
                 if [ -f coverage_py${py}${suffix}.xml ]; then
                   ./codecov \
                     --nonZero \
@@ -85,8 +104,6 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-            virtualenv -p python3 venv$py
-            . venv$py/bin/activate
             pip3 install $(ls ./dist/*.whl)[test,all]
             python3 -m jsonargparse_tests
   publish-pypi:
@@ -119,6 +136,8 @@ workflows:
           <<: *buildreq
       - test-py37:
           <<: *buildreq
+      - test-py310-pydantic-v1:
+          <<: *buildreq
       - codecov:
           requires:
             - test-py311
@@ -126,6 +145,7 @@ workflows:
             - test-py39
             - test-py38
             - test-py37
+            - test-py310-pydantic-v1
       - test-py310-installed:
           <<: *buildreq
           requires:

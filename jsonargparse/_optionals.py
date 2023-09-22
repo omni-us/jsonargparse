@@ -26,7 +26,6 @@ fsspec_support = find_spec("fsspec") is not None
 ruyaml_support = find_spec("ruyaml") is not None
 omegaconf_support = find_spec("omegaconf") is not None
 reconplogger_support = find_spec("reconplogger") is not None
-pydantic_support = find_spec("pydantic") is not None
 attrs_support = find_spec("attrs") is not None
 
 _config_read_mode = "fr"
@@ -305,3 +304,59 @@ def get_omegaconf_loader():
         return value_pyyaml if value_omegaconf == str_ref else value_omegaconf
 
     return omegaconf_load
+
+
+annotated_alias = typing_extensions_import("_AnnotatedAlias")
+
+
+def is_annotated(typehint: type) -> bool:
+    return annotated_alias and isinstance(typehint, annotated_alias)
+
+
+def get_pydantic_support() -> int:
+    support = "0"
+    if find_spec("pydantic"):
+        try:
+            from importlib.metadata import version
+
+            support = version("pydantic")
+        except ImportError:
+            import pydantic
+
+            support = pydantic.version.VERSION
+
+    return int(support.split(".", 1)[0])
+
+
+pydantic_support = get_pydantic_support()
+
+
+def is_pydantic_model(class_type) -> int:
+    classes = inspect.getmro(class_type) if pydantic_support and inspect.isclass(class_type) else []
+    for cls in classes:
+        if getattr(cls, "__module__", "").startswith("pydantic") and getattr(cls, "__name__", "") == "BaseModel":
+            import pydantic
+
+            if issubclass(cls, pydantic.BaseModel):
+                return pydantic_support
+            elif pydantic_support > 1 and issubclass(cls, pydantic.v1.BaseModel):  # type: ignore
+                return 1
+    return 0
+
+
+def get_module(value):
+    return getattr(type(value), "__module__", "").split(".", 1)[0]
+
+
+def is_annotated_validator(typehint: type) -> bool:
+    return (
+        pydantic_support > 1
+        and is_annotated(typehint)
+        and any(get_module(m) in {"pydantic", "annotated_types"} for m in typehint.__metadata__)  # type: ignore
+    )
+
+
+def validate_annotated(value, typehint: type):
+    from pydantic import TypeAdapter
+
+    return TypeAdapter(typehint).validate_python(value)

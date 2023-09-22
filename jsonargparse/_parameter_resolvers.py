@@ -1,4 +1,5 @@
 import ast
+import dataclasses
 import inspect
 import logging
 import sys
@@ -7,12 +8,11 @@ from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
 from copy import deepcopy
-from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from ._common import get_generic_origin, is_dataclass_like, is_generic_class, is_subclass
-from ._optionals import parse_docs
+from ._optionals import is_pydantic_model, parse_docs
 from ._postponed_annotations import evaluate_postponed_annotations
 from ._stubs_resolver import get_stub_types
 from ._util import (
@@ -25,7 +25,7 @@ from ._util import (
 )
 
 
-@dataclass
+@dataclasses.dataclass
 class ParamData:
     name: str
     annotation: Any
@@ -795,6 +795,58 @@ def get_parameters_by_assumptions(
     return params
 
 
+def get_field_data_pydantic1_model(field, name, doc_params):
+    default = field.default
+    if field.required:
+        default = inspect._empty
+    elif field.default_factory:
+        default = field.default_factory()
+
+    return dict(
+        annotation=field.annotation,
+        default=default,
+        doc=field.field_info.description or doc_params.get(name),
+    )
+
+
+def get_field_data_pydantic2_dataclass(field, name, doc_params):
+    return dict(
+        annotation=field.type,
+        default=field.default,
+        doc=doc_params.get(name),
+    )
+
+
+def get_field_data_pydantic2_model(field, name, doc_params):
+    default = field.default
+    if field.is_required():
+        default = inspect._empty
+    elif field.default_factory:
+        default = field.default_factory()
+
+    return dict(
+        annotation=field.rebuild_annotation(),
+        default=default,
+        doc=field.description or doc_params.get(name),
+    )
+
+
+def get_field_data_attrs(field, name, doc_params):
+    import attrs
+
+    default = field.default
+    if default is attrs.NOTHING:
+        default = inspect._empty
+    elif isinstance(default, attrs.Factory):
+        default = default.factory()
+
+    return dict(
+        annotation=field.type,
+        default=default,
+        doc=doc_params.get(name),
+    )
+
+
 def get_parameters_from_pydantic_or_attrs(
     function_or_class: Union[Callable, Type],
     method_or_property: Optional[str],
@@ -805,49 +857,39 @@ def get_parameters_from_pydantic_or_attrs(
     if method_or_property or not (pydantic_support or attrs_support):
         return None
 
-    fields_iterator = None
+    fields_iterator = get_field_data = None
     if pydantic_support:
-        from pydantic import BaseModel  # pylint: disable=no-name-in-module
-
-        if is_subclass(function_or_class, BaseModel):
-            fields_iterator = function_or_class.__fields__.values()  # type: ignore
-            is_required = lambda f: f.required
-            is_factory = lambda f: f.default_factory
-            run_factory = lambda f: f.default_factory()
-            get_annotation = lambda f: f.annotation
-            get_doc = lambda f: f.field_info.description or doc_params.get(f.name)  # type: ignore
+        pydantic_model = is_pydantic_model(function_or_class)
+        if pydantic_model == 1:
+            fields_iterator = function_or_class.__fields__.items()  # type: ignore
+            get_field_data = get_field_data_pydantic1_model
+        elif pydantic_model > 1:
+            fields_iterator = function_or_class.model_fields.items()  # type: ignore
+            get_field_data = get_field_data_pydantic2_model
+        elif dataclasses.is_dataclass(function_or_class) and hasattr(function_or_class, "__pydantic_fields__"):
+            fields_iterator = dataclasses.fields(function_or_class)
+            fields_iterator = {v.name: v for v in fields_iterator}.items()
+            get_field_data = get_field_data_pydantic2_dataclass
 
     if not fields_iterator and attrs_support:
         import attrs
 
         if attrs.has(function_or_class):  # type: ignore
-            fields_iterator = attrs.fields(function_or_class)
-            is_required = lambda f: f.default is attrs.NOTHING
-            is_factory = lambda f: isinstance(f.default, attrs.Factory)  # type: ignore
-            run_factory = lambda f: f.default.factory()
-            get_annotation = lambda f: f.type
-            get_doc = lambda f: doc_params.get(f.name)  # type: ignore
+            fields_iterator = {f.name: f for f in attrs.fields(function_or_class)}.items()
+            get_field_data = get_field_data_attrs
 
-    if not fields_iterator:
+    if not fields_iterator or not get_field_data:
         return None
 
     params = []
     doc_params = parse_docs(function_or_class, None, logger)
-    for field in fields_iterator:
-        if is_required(field):
-            default = inspect._empty
-        elif is_factory(field):
-            default = run_factory(field)
-        else:
-            default = field.default
+    for name, field in fields_iterator:
         params.append(
             ParamData(
-                name=field.name,
-                annotation=get_annotation(field),
-                default=default,
+                name=name,
                 kind=kinds.KEYWORD_ONLY,
-                doc=get_doc(field),
                 component=function_or_class,
+                **get_field_data(field, name, doc_params),
             )
         )
     evaluate_postponed_annotations(params, function_or_class, None, logger)
