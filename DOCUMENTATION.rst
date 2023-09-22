@@ -428,9 +428,9 @@ Some notes about this support are:
 - User-defined ``Generic`` types are supported. For more details see
   :ref:`generic-types`.
 
-- `Pydantic types <https://docs.pydantic.dev/usage/types/#pydantic-types>`__ are
-  supported. There might be edge cases which don't work as expected. Please
-  report any encountered issues.
+- ``Annotated`` types are supported. If the metadata corresponds to a `pydantic
+  type <https://docs.pydantic.dev/latest/api/types/>`__, this is used for
+  validation.
 
 - ``Callable`` is supported by either giving a dot import path to a callable
   object or by giving a dict with a ``class_path`` and optionally ``init_args``
@@ -1116,7 +1116,8 @@ It is possible to create new types and use them for parsing. Even though types
 can be created for specific CLI behaviors, it is recommended to create them such
 that they make sense independent of parsing. This is so that they can be used as
 type hints in functions and classes in order to improve the code in a more
-general sense.
+general sense. An alternative to creating types, can be to use `pydantic types
+<https://docs.pydantic.dev/latest/api/types/>`__.
 
 There are a few ways for creating types, the most simple being to implement a
 class. When creating a type, take as reference how basic types work, e.g.

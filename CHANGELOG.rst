@@ -22,6 +22,10 @@ Added
 - New function ``extend_base_type`` for easy creation and registering of custom
   types that extend a base type (`#195
   <https://github.com/omni-us/jsonargparse/issue/195>`__).
+- Support for ``Annotated`` types either ignoring the metadata or using it for
+  validation in case of `pydantic types
+  <https://docs.pydantic.dev/latest/api/types/>`__ (`#384
+  <https://github.com/omni-us/jsonargparse/issue/384>`__).
 - Support for Python 3.12.
 
 Fixed
@@ -32,6 +36,7 @@ Fixed
 - ``parse_args`` fails to parse arguments when data type is a ``Callable`` with multiple input arguments
   (`#372 <https://github.com/omni-us/jsonargparse/issues/372>`__).
 - Postponed annotations not working for dataclasses.
+- Pydantic models and dataclasses not working for ``pydantic>=2.0.0``.
 
 Changed
 ^^^^^^^

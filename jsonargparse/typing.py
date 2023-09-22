@@ -457,22 +457,6 @@ def range_deserializer(value):
 register_type(range, serializer=range_serializer, deserializer=range_deserializer)
 
 
-pydantic_types: Tuple[type, ...] = tuple()
-if pydantic_support:
-    from enum import Enum as _Enum
-
-    import pydantic
-
-    from ._common import is_subclass as _is_subclass
-
-    for module in [pydantic.types, pydantic.networks]:
-        pydantic_types += tuple(
-            v
-            for k, v in vars(module).items()
-            if inspect.isclass(v) and k in module.__all__ and not issubclass(v, _Enum)
-        )
-
-
 def pydantic_deserializer(type_class):
     from pydantic import create_model  # pylint: disable=no-name-in-module
 
@@ -485,6 +469,8 @@ def pydantic_deserializer(type_class):
 
 
 def pydantic_serializer(type_class):
+    if type_class.__name__ == "Url":
+        return str
     serializer = str
     for base in [int, float, bool, list, dict, (set, list)]:
         if not isinstance(base, tuple):
@@ -495,11 +481,27 @@ def pydantic_serializer(type_class):
     return serializer
 
 
+pydantic_type_modules = {
+    "pydantic_core._pydantic_core",
+    "pydantic.types",
+    "pydantic.networks",
+    "pydantic_extra_types",
+}
+
+
 def is_pydantic_type(type_class):
-    return pydantic_support and _is_subclass(type_class, pydantic_types)
+    return (
+        pydantic_support
+        and inspect.isclass(type_class)
+        and any(getattr(t, "__module__", "") in pydantic_type_modules for t in inspect.getmro(type_class))
+    )
 
 
 def register_pydantic_type(type_class):
+    from ._optionals import is_annotated
+
+    if is_annotated(type_class):
+        type_class = type_class.__origin__
     if not is_pydantic_type(type_class):
         return
     if not get_registered_type(type_class):
@@ -509,7 +511,7 @@ def register_pydantic_type(type_class):
             type_class=type_class,
             serializer=pydantic_serializer(type_class),
             deserializer=pydantic_deserializer(type_class),
-            deserializer_exceptions=ValidationError,
+            deserializer_exceptions=(ValidationError, TypeError),
         )
 
 

@@ -52,7 +52,10 @@ from ._namespace import Namespace
 from ._optionals import (
     argcomplete_warn_redraw_prompt,
     get_files_completer,
+    is_annotated,
+    is_annotated_validator,
     typing_extensions_import,
+    validate_annotated,
 )
 from ._util import (
     ClassType,
@@ -220,6 +223,8 @@ class ActionTypeHint(Action):
     @staticmethod
     def is_supported_typehint(typehint, full=False):
         """Whether the given type hint is supported."""
+        if is_annotated(typehint):
+            typehint = get_typehint_origin(typehint)
         supported = (
             typehint in root_types
             or get_typehint_origin(typehint) in root_types
@@ -617,6 +622,16 @@ def adapt_typehints(
             val = float(val)
         if not isinstance(val, typehint) or (typehint in (int, float) and isinstance(val, bool)):
             raise_unexpected_value(f"Expected a {typehint}", val)
+
+    # Annotated
+    elif is_annotated(typehint):
+        if not serialize and is_annotated_validator(typehint):
+            try:
+                val = validate_annotated(val, typehint)
+            except Exception as ex:
+                raise_unexpected_value(str(ex), val, ex)
+        else:
+            val = adapt_typehints(val, typehint_origin, **adapt_kwargs)
 
     # Registered types
     elif get_registered_type(typehint):

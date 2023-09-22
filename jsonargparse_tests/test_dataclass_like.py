@@ -19,6 +19,7 @@ from jsonargparse._optionals import (
     docstring_parser_support,
     pydantic_support,
     set_docstring_parse_options,
+    typing_extensions_import,
 )
 from jsonargparse.typing import PositiveFloat, PositiveInt, final
 from jsonargparse_tests.conftest import (
@@ -454,6 +455,8 @@ def test_add_class_final(parser):
 
 # pydantic tests
 
+annotated = typing_extensions_import("Annotated")
+length = "length"
 if pydantic_support:
     import pydantic
 
@@ -481,12 +484,23 @@ if pydantic_support:
         p1: str
         p2: int = pydantic.Field(2, description="p2 help")
 
-    def none(x):
-        return x
+    if pydantic_support == 1:
+        length = "items"
+
+    if annotated and pydantic_support > 1:
+
+        class PydanticAnnotatedField(pydantic.BaseModel):
+            p1: annotated[int, pydantic.Field(default=2, ge=1, le=8)]  # type: ignore
+
+
+def none(x):
+    return x
 
 
 @pytest.mark.skipif(not pydantic_support, reason="pydantic package is required")
 class TestPydantic:
+    num_models = 0
+
     def test_dataclass(self, parser):
         parser.add_argument("--data", type=PydanticData)
         defaults = parser.get_defaults()
@@ -519,31 +533,44 @@ class TestPydantic:
             assert "p1 help (required, type: str)" in help_str
         assert "p2 help (type: int, default: 2)" in help_str
 
-    def test_pydantic_types(self, subtests, monkeypatch):
-        for num, (valid_value, invalid_value, cast, pydantic_type) in enumerate(
-            [
-                ("abc", "a", none, pydantic.constr(min_length=2, max_length=4)),
-                (2, 0, none, pydantic.conint(ge=1)),
-                (-1.0, 1.0, none, pydantic.confloat(lt=0.0)),
-                ([1], [], none, pydantic.conlist(int, min_items=1)),
-                ([], [3, 4], none, pydantic.conlist(int, max_items=1)),
-                ([1], "x", list, pydantic.conset(int, min_items=1)),
-                ("http://abc.es", "-", none, pydantic.HttpUrl),
-                ("127.0.0.1", "0", str, pydantic.IPvAnyAddress),
-            ]
-        ):
-            with subtests.test(f"type={pydantic_type.__name__} valid={valid_value} invalid={invalid_value}"):
-                Model = pydantic.create_model(f"Model{num}", param=(pydantic_type, ...))
-                monkeypatch.setitem(Model.__init__.__globals__, "pydantic_type", pydantic_type)
+    @pytest.mark.skipif(not (annotated and pydantic_support > 1), reason="Annotated is required")
+    def test_annotated_field(self, parser):
+        parser.add_argument("--model", type=PydanticAnnotatedField)
+        cfg = parser.parse_args([])
+        assert cfg.model.p1 == 2
+        with pytest.raises(ArgumentError) as ctx:
+            parser.parse_args(["--model.p1=0"])
+        ctx.match("model.p1")
 
-                parser = ArgumentParser(exit_on_error=False)
-                parser.add_argument("--model", type=Model)
-                cfg = parser.parse_args([f"--model.param={valid_value}"])
-                assert cast(cfg.model.param) == valid_value
-                dump = yaml.safe_load(parser.dump(cfg))
-                assert dump == {"model": {"param": valid_value}}
-                with pytest.raises(ArgumentError):
-                    parser.parse_args([f"--model.param={invalid_value}"])
+    @pytest.mark.parametrize(
+        ["valid_value", "invalid_value", "cast", "type_str"],
+        [
+            ("abc", "a", none, "constr(min_length=2, max_length=4)"),
+            (2, 0, none, "conint(ge=1)"),
+            (-1.0, 1.0, none, "confloat(lt=0.0)"),
+            ([1], [], none, f"conlist(int, min_{length}=1)"),
+            ([], [3, 4], none, f"conlist(int, max_{length}=1)"),
+            ([1], "x", list, f"conset(int, min_{length}=1)"),
+            ("http://abc.es/", "-", str, "HttpUrl"),
+            ("127.0.0.1", "0", str, "IPvAnyAddress"),
+        ],
+    )
+    def test_pydantic_types(self, valid_value, invalid_value, cast, type_str, monkeypatch):
+        pydantic_type = eval(f"pydantic.{type_str}")
+        self.num_models += 1
+        Model = pydantic.create_model(f"Model{self.num_models}", param=(pydantic_type, ...))
+        if pydantic_support == 1:
+            monkeypatch.setitem(Model.__init__.__globals__, "pydantic_type", pydantic_type)
+
+        parser = ArgumentParser(exit_on_error=False)
+        parser.add_argument("--model", type=Model)
+        cfg = parser.parse_args([f"--model.param={valid_value}"])
+        assert cast(cfg.model.param) == valid_value
+        dump = yaml.safe_load(parser.dump(cfg))
+        assert dump == {"model": {"param": valid_value}}
+        with pytest.raises(ArgumentError) as ctx:
+            parser.parse_args([f"--model.param={invalid_value}"])
+        ctx.match("model.param")
 
 
 # attrs tests

@@ -9,7 +9,7 @@ from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from ._actions import _ActionConfigLoad
 from ._common import get_class_instantiator, get_generic_origin, is_dataclass_like, is_subclass
-from ._optionals import get_doc_short_description, pydantic_support
+from ._optionals import get_doc_short_description, is_pydantic_model, pydantic_support
 from ._parameter_resolvers import (
     ParamData,
     get_parameter_origins,
@@ -575,10 +575,9 @@ def is_factory_class(value):
 
 def dataclass_to_dict(value) -> dict:
     if pydantic_support:
-        from pydantic import BaseModel  # pylint: disable=no-name-in-module
-
-        if isinstance(value, BaseModel):
-            return value.dict()
+        pydantic_model = is_pydantic_model(type(value))
+        if pydantic_model:
+            return value.dict() if pydantic_model == 1 else value.model_dump()
     if isinstance(value, LazyInitBaseClass):
         return value.lazy_get_init_data().as_dict()
     return dataclasses.asdict(value)
