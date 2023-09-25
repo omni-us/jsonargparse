@@ -37,6 +37,9 @@ Fixed
   (`#372 <https://github.com/omni-us/jsonargparse/issues/372>`__).
 - Postponed annotations not working for dataclasses.
 - Pydantic models and dataclasses not working for ``pydantic>=2.0.0``.
+- Unsupported pop/get default incorrectly sets default as ``None``
+  (`lightning#18616
+  <https://github.com/Lightning-AI/lightning/issues/18616>`__).
 
 Changed
 ^^^^^^^
@@ -50,6 +53,8 @@ Changed
   <https://github.com/Lightning-AI/lightning/issues/18546>`__).
 - Document the requirements for creating and using custom types (`#195
   <https://github.com/omni-us/jsonargparse/issue/195>`__).
+- Parameters with default and without type, now get as type
+  ``Union[type(default), Any]``.
 - Removed support for python 3.6.
 
 
