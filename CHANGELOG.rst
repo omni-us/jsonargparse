@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.25.0 (2023-09-??)
+v4.25.0 (2023-09-25)
 --------------------
 
 Added
@@ -33,13 +33,14 @@ Fixed
 - ``--print_config`` fails when parser has shallow links.
 - Argument links unnecessarily applied when ``--print_config`` used and parser
   has subcommands (`#311 <https://github.com/omni-us/jsonargparse/issue/311>`__).
-- ``parse_args`` fails to parse arguments when data type is a ``Callable`` with multiple input arguments
+- Parsing fails when data type is a ``Callable`` with multiple input arguments
   (`#372 <https://github.com/omni-us/jsonargparse/issues/372>`__).
 - Postponed annotations not working for dataclasses.
-- Pydantic models and dataclasses not working for ``pydantic>=2.0.0``.
 - Unsupported pop/get default incorrectly sets default as ``None``
   (`lightning#18616
   <https://github.com/Lightning-AI/lightning/issues/18616>`__).
+- Pydantic models and dataclasses not working for ``pydantic>=2.0.0`` (`#361
+  <https://github.com/omni-us/jsonargparse/issue/361>`__).
 
 Changed
 ^^^^^^^

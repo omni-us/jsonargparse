@@ -24,7 +24,7 @@ coverage.
 Although ``jsonargparse`` might not be widely recognized yet, it already boasts
 a `substantial user base
 <https://github.com/omni-us/jsonargparse/network/dependents>`__. Most notably,
-it serves as the engine behind `LightningCLI
+it serves as the framework behind pytorch-lightning's `LightningCLI
 <https://lightning.ai/docs/pytorch/stable/cli/lightning_cli.html>`__.
 
 
@@ -69,6 +69,9 @@ Other notable features include:
   <https://peps.python.org/pep-0563/>`__), and backports (PEPs `604
   <https://peps.python.org/pep-0604>`__/`585
   <https://peps.python.org/pep-0585>`__).
+
+- **Keyword arguments introspection:** resolving of parameters used via
+  ``**kwargs``.
 
 - **Dependency injection:** support types that expect a class instance and
   callables that return a class instance.
