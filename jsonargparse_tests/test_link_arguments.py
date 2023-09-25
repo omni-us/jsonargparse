@@ -165,7 +165,7 @@ def test_on_parse_add_class_arguments(subtests):
         pytest.raises(ArgumentError, lambda: parser.parse_args(["--b.v1=5"]))
 
 
-class ClassS:
+class ClassS1:
     def __init__(
         self,
         v1: Union[int, str] = 1,
@@ -174,37 +174,42 @@ class ClassS:
         pass
 
 
+class ClassS2:
+    def __init__(self, v3: int):
+        self.v3 = v3
+
+
 def test_on_parse_add_subclass_arguments(parser, subtests):
     def add(v1, v2):
         return v1 + v2
 
-    parser.add_subclass_arguments(ClassS, "s")
-    parser.add_subclass_arguments(Calendar, "c")
-    parser.link_arguments(("s.init_args.v1", "s.init_args.v2"), "c.init_args.firstweekday", add)
+    parser.add_subclass_arguments(ClassS1, "s1")
+    parser.add_subclass_arguments(ClassS2, "s2")
+    parser.link_arguments(("s1.init_args.v1", "s1.init_args.v2"), "s2.init_args.v3", add)
 
-    s_value = {
-        "class_path": f"{__name__}.ClassS",
+    s1_value = {
+        "class_path": f"{__name__}.ClassS1",
         "init_args": {"v2": 3},
     }
 
     with subtests.test("compute_fn result"):
-        cfg = parser.parse_args([f"--s={s_value}", "--c=calendar.Calendar"])
-        assert cfg.c.init_args.firstweekday == 4
-        assert cfg.c.init_args.firstweekday == cfg.s.init_args.v1 + cfg.s.init_args.v2
+        cfg = parser.parse_args([f"--s1={s1_value}", f"--s2={__name__}.ClassS2"])
+        assert cfg.s2.init_args.v3 == 4
+        assert cfg.s2.init_args.v3 == cfg.s1.init_args.v1 + cfg.s1.init_args.v2
 
     with subtests.test("dump removal of target"):
-        cfg = parser.parse_args([f"--s={s_value}", "--c=calendar.Calendar"])
+        cfg = parser.parse_args([f"--s1={s1_value}", f"--s2={__name__}.ClassS2"])
         dump = yaml.safe_load(parser.dump(cfg))
-        assert dump["c"] == {"class_path": "calendar.Calendar"}
+        assert dump["s2"] == {"class_path": f"{__name__}.ClassS2"}
 
     with subtests.test("dump keep target"):
         dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
-        assert dump["c"] == {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 4}}
+        assert dump["s2"] == {"class_path": f"{__name__}.ClassS2", "init_args": {"v3": 4}}
 
     with subtests.test("compute_fn invalid result type"):
-        s_value["init_args"] = {"v1": "a", "v2": "b"}
+        s1_value["init_args"] = {"v1": "a", "v2": "b"}
         with pytest.raises(ArgumentError):
-            parser.parse_args([f"--s={s_value}", "--c=calendar.Calendar"])
+            parser.parse_args([f"--s1={s1_value}", f"--s2={__name__}.ClassS2"])
 
 
 class Logger:
@@ -645,8 +650,8 @@ def test_on_parse_link_failure_multi_source_missing_compute_fn():
 
 
 def test_on_parse_link_failure_invalid_subclass_target(parser):
-    parser.add_subclass_arguments(ClassS, "s")
-    parser.add_subclass_arguments(Calendar, "c")
+    parser.add_subclass_arguments(ClassS1, "s")
+    parser.add_subclass_arguments(ClassS2, "c")
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("s.init_args.v1", "c.init_args")
     ctx.match('Target key expected to start with "c.init_args."')

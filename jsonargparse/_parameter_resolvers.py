@@ -5,7 +5,7 @@ import logging
 import sys
 import textwrap
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from copy import deepcopy
 from functools import partial
@@ -93,7 +93,10 @@ def is_method_or_property(attr) -> bool:
 
 
 def is_classmethod(parent, component) -> bool:
-    return parent and isinstance(inspect.getattr_static(parent, component.__name__), classmethod)
+    if parent:
+        with suppress(AttributeError):
+            return isinstance(inspect.getattr_static(parent, component.__name__), classmethod)
+    return False
 
 
 def is_lambda(value: Any) -> bool:
@@ -590,7 +593,10 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 else:
                     get_param_args = self.get_node_component(node)
                     if get_param_args:
-                        params = get_signature_parameters(*get_param_args, logger=self.logger)
+                        try:
+                            params = get_signature_parameters(*get_param_args, logger=self.logger)
+                        except Exception:
+                            self.log_debug(f"failed to get parameters for call that uses attr: {get_param_args}")
             params = remove_given_parameters(node, params)
         return params
 
@@ -650,7 +656,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             if default in ast_literals:
                 default = ast_literals[default]()
             else:
-                default = None
+                default = UnknownDefault("ast-resolver")
                 self.log_debug(f"unsupported kwargs pop/get default: {ast_str(node)}")
         return ParamData(
             name=name,

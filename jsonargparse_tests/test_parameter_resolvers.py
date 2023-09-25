@@ -101,7 +101,7 @@ class ClassD(Param, ClassA):
         return function_return_class_c(ksmd1, k2=2, **kw)
 
 
-class ClassE:
+class ClassE1:
     """
     Args:
         ke1: help for ke1
@@ -112,6 +112,15 @@ class ClassE:
 
     def start(self):
         return function_no_args_no_kwargs(**self._kwd)
+
+
+class ClassE2:
+    def __init__(self, **kwargs):
+        self._kwd = dict(**kwargs)
+        self.fn = lambda **kw: None
+
+    def start(self):
+        return self.fn(**self._kwd)
 
 
 class ClassF1:
@@ -509,11 +518,12 @@ def test_get_params_class_with_inheritance_parent_without_init():
 
 
 def test_get_params_class_with_kwargs_in_dict_attribute():
-    assert_params(get_params(ClassE), ["ke1", "pk1", "k2"])
+    assert_params(get_params(ClassE1), ["ke1", "pk1", "k2"])
+    assert_params(get_params(ClassE2), [])
     assert_params(get_params(ClassF1), ["ksmf1", "pk1", "k2"])
     assert_params(get_params(ClassF2), ["ksmf1", "pk1", "k2"])
     with source_unavailable():
-        assert_params(get_params(ClassE), ["ke1"])
+        assert_params(get_params(ClassE1), ["ke1"])
         assert_params(get_params(ClassF1), [])
 
 

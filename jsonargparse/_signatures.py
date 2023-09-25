@@ -315,7 +315,7 @@ class SignatureArguments(LoggerProperty):
         if is_factory_class(default):
             default = param.parent.__dataclass_fields__[name].default_factory()
         if annotation == inspect_empty and not is_required:
-            annotation = type(default)
+            annotation = Union[type(default), Any]
         if "help" not in kwargs:
             kwargs["help"] = param.doc
         if not is_required:
