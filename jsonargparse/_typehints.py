@@ -469,7 +469,7 @@ class ActionTypeHint(Action):
                 try:
                     with change_to_path_dir(config_path):
                         val = adapt_typehints(val, self._typehint, **kwargs)
-                except ValueError as ex:
+                except ValueError:
                     try:
                         if isinstance(orig_val, str):
                             with change_to_path_dir(config_path):
