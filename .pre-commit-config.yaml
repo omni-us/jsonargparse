@@ -29,7 +29,7 @@ repos:
   - id: black
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.0.291
+  rev: v0.0.292
   hooks:
   - id: ruff
     args: ["--fix"]
@@ -40,7 +40,7 @@ repos:
   - id: yesqa
 
 - repo: https://github.com/crate-ci/typos
-  rev: v1.16.14
+  rev: v1.16.17
   hooks:
   - id: typos
     args: []

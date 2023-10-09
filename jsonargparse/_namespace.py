@@ -127,7 +127,7 @@ class Namespace(argparse.Namespace):
         else:
             if len(kwargs) != 0 or len(args) != 1 or not isinstance(args[0], (argparse.Namespace, dict)):
                 raise ValueError("Expected a single positional parameter of type Namespace or dict.")
-            for key, val in args[0].items() if type(args[0]) is dict else vars(args[0]).items():
+            for key, val in args[0].items() if isinstance(args[0], dict) else vars(args[0]).items():
                 self[key] = val
 
     def _parse_key(self, key: str) -> Tuple[str, Optional["Namespace"], str]:
