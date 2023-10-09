@@ -173,6 +173,7 @@ select = [
 ]
 ignore = [
     "E731",  # Do not convert lambda assigns to a def
+    "E721",  # Allow comparing types with type()
 ]
 
 [tool.ruff.pydocstyle]
