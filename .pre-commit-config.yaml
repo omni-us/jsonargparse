@@ -46,6 +46,19 @@ repos:
     args: []
     verbose: true
 
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v1.5.1
+  hooks:
+  - id: mypy
+    files: jsonargparse.*/.*.py
+    stages: [pre-push]
+    additional_dependencies:
+      [
+        types-PyYAML,
+        types-requests,
+      ]
+    verbose: true
+
 - repo: local
   hooks:
 
@@ -84,15 +97,6 @@ repos:
         fi
       fi'
     language: system
-    pass_filenames: false
-    verbose: true
-
-  - id: mypy
-    name: mypy jsonargparse*/*.py
-    entry: bash -c "mypy jsonargparse*/*.py"
-    stages: [pre-push]
-    language: system
-    types: [python]
     pass_filenames: false
     verbose: true
 

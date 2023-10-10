@@ -82,9 +82,9 @@ reconplogger = [
 ]
 test = [
     "jsonargparse[test-no-urls]",
-    "jsonargparse[types-pyyaml]",
-    "responses>=0.12.0",
+    "types-PyYAML>=6.0.11",
     "types-requests>=2.28.9",
+    "responses>=0.12.0",
     "pydantic>=2.3.0",
     "attrs>=22.2.0",
 ]
@@ -104,13 +104,6 @@ dev = [
     "pre-commit>=2.19.0",
     "tox>=3.25.0",
     "build>=0.10.0",
-]
-mypy = [
-    "jsonargparse[types-pyyaml]",
-    "mypy>=0.701",
-]
-types-pyyaml = [
-    "types-PyYAML>=6.0.11",
 ]
 doc = [
     "Sphinx>=1.7.9",

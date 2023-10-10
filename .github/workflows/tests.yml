@@ -6,6 +6,7 @@ on:
     branches: [ "main" ]
 
 jobs:
+
   unittest-windows:
     runs-on: windows-2019
     strategy:
@@ -17,9 +18,11 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: pip
           allow-prereleases: true
       - run: pip install tox
       - run: tox -e py-all-extras
+
   unittest-macos:
     runs-on: macOS-12
     strategy:
@@ -31,24 +34,43 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: pip
       - run: pip install tox
       - run: tox -e py-all-extras
+
   unittest-omegaconf:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: "3.10"
+          cache: pip
       - run: pip install tox
       - run: tox -e omegaconf
+
   doctest:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: "3.10"
       - run: pip install -e .[all,doc]
       - name: Run doc tests
         run: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
+
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: pip
+      - uses: actions/cache@v3
+        with:
+          key: pre-commit-cache
+          path: ~/.cache/pre-commit
+      - run: pip install pre-commit
+      - run: pre-commit run -a --hook-stage pre-push mypy
