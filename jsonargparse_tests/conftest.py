@@ -75,7 +75,7 @@ else:
     def nothing_decorator(func):
         return func
 
-    responses_activate = nothing_decorator  # type: ignore
+    responses_activate = nothing_decorator
 
 
 @pytest.fixture

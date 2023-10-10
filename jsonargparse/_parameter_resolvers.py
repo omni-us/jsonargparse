@@ -880,7 +880,7 @@ def get_parameters_from_pydantic_or_attrs(
     if not fields_iterator and attrs_support:
         import attrs
 
-        if attrs.has(function_or_class):  # type: ignore
+        if attrs.has(function_or_class):
             fields_iterator = {f.name: f for f in attrs.fields(function_or_class)}.items()
             get_field_data = get_field_data_attrs
 
