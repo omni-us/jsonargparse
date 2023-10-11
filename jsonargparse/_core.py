@@ -616,6 +616,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         cfg_path: Union[str, os.PathLike] = "",
         ext_vars: Optional[dict] = None,
         prev_cfg: Optional[Namespace] = None,
+        key: Optional[str] = None,
     ) -> Namespace:
         """Loads a configuration string into a namespace.
 
@@ -633,6 +634,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             raise TypeError(f"Problems parsing config: {ex}") from ex
         if cfg_dict is None:
             return Namespace()
+        if key and isinstance(cfg_dict, dict):
+            cfg_dict = cfg_dict.get(key, {})
         if not isinstance(cfg_dict, dict):
             raise TypeError(f"Unexpected config: {cfg_str}")
         return self._apply_actions(cfg_dict, prev_cfg=prev_cfg)
@@ -954,9 +957,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         default_config_files = self._get_default_config_files()
         for key, default_config_file in default_config_files:
             with change_to_path_dir(default_config_file), parser_context(parent_parser=self):
-                cfg_file = self._load_config_parser_mode(default_config_file.get_content())
-                if key is not None:
-                    cfg_file = cfg_file.get(key)
+                cfg_file = self._load_config_parser_mode(default_config_file.get_content(), key=key)
                 cfg = self.merge_config(cfg_file, cfg)
                 try:
                     with _ActionPrintConfig.skip_print_config():
