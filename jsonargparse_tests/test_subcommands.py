@@ -212,6 +212,37 @@ def test_subcommand_print_config_default_env(subparser):
     assert yaml.safe_load(out) == {"o": 1}
 
 
+def test_subcommand_default_config_repeated_keys(parser, subparser, tmp_cwd):
+    defaults = tmp_cwd / "defaults.json"
+    defaults.write_text('{"test":{"test":"value"}}')
+    parser.default_config_files = [defaults]
+    subparser.add_argument("--test")
+    subcommands = parser.add_subcommands()
+    subcommands.add_subcommand("test", subparser)
+
+    cfg = parser.parse_args([], with_meta=False)
+    assert cfg == Namespace(subcommand="test", test=Namespace(test="value"))
+    cfg = parser.parse_args(["test", "--test=x"], with_meta=False)
+    assert cfg == Namespace(subcommand="test", test=Namespace(test="x"))
+
+
+def test_subsubcommand_default_config_repeated_keys(parser, subparser, tmp_cwd):
+    defaults = tmp_cwd / "defaults.json"
+    defaults.write_text('{"test":{"test":{"test":"value"}}}')
+    parser.default_config_files = [defaults]
+    subsubparser = ArgumentParser()
+    subsubparser.add_argument("--test")
+    subcommands1 = parser.add_subcommands()
+    subcommands1.add_subcommand("test", subparser)
+    subcommands2 = subparser.add_subcommands()
+    subcommands2.add_subcommand("test", subsubparser)
+
+    cfg = parser.parse_args([], with_meta=False)
+    assert cfg.as_dict() == {"subcommand": "test", "test": {"subcommand": "test", "test": {"test": "value"}}}
+    cfg = parser.parse_args(["test", "test", "--test=x"], with_meta=False)
+    assert cfg.as_dict() == {"subcommand": "test", "test": {"subcommand": "test", "test": {"test": "x"}}}
+
+
 def test_subcommand_required_arg_in_default_config(parser, subparser, tmp_cwd):
     Path("config.yaml").write_text("output: test\nprepare:\n  media: test\n")
     parser.default_config_files = ["config.yaml"]

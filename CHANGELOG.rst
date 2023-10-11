@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.25.1 (2023-10-??)
+--------------------
+
+Fixed
+^^^^^
+- Failures with subcommands and default_config_files when keys are repeated
+  (`#160 <https://github.com/omni-us/jsonargparse/issues/160>`__).
+
+
 v4.25.0 (2023-09-25)
 --------------------
 
