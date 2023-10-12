@@ -217,7 +217,7 @@ class Logger:
         pass
 
 
-class Trainer:
+class TrainerLoggerUnion:
     def __init__(
         self,
         save_dir: Optional[str] = None,
@@ -227,13 +227,58 @@ class Trainer:
 
 
 def test_on_parse_subclass_target_in_union(parser):
-    parser.add_class_arguments(Trainer, "trainer")
+    parser.add_class_arguments(TrainerLoggerUnion, "trainer")
     parser.link_arguments("trainer.save_dir", "trainer.logger.init_args.save_dir")
     cfg = parser.parse_args([])
     assert cfg.trainer == Namespace(logger=False, save_dir=None)
     cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=Logger"])
     assert cfg.trainer.save_dir == "logs"
     assert cfg.trainer.logger.init_args == Namespace(save_dir="logs")
+
+
+class TrainerLoggerList:
+    def __init__(
+        self,
+        save_dir: Optional[str] = None,
+        logger: List[Logger] = [],
+    ):
+        pass
+
+
+def test_on_parse_subclass_target_in_list(parser):
+    parser.add_class_arguments(TrainerLoggerList, "trainer")
+    parser.link_arguments("trainer.save_dir", "trainer.logger.init_args.save_dir")
+    cfg = parser.parse_args([])
+    assert cfg.trainer == Namespace(logger=[], save_dir=None)
+    cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=[Logger]"])
+    assert cfg.trainer.save_dir == "logs"
+    assert len(cfg.trainer.logger) == 1
+    assert cfg.trainer.logger[0].init_args == Namespace(save_dir="logs")
+    cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=[Logger, Logger]"])
+    assert len(cfg.trainer.logger) == 2
+    assert all(x.init_args == Namespace(save_dir="logs") for x in cfg.trainer.logger)
+
+
+class TrainerLoggerUnionList:
+    def __init__(
+        self,
+        save_dir: Optional[str] = None,
+        logger: Union[bool, Logger, List[Logger]] = False,
+    ):
+        pass
+
+
+def test_on_parse_subclass_target_in_union_list(parser):
+    parser.add_class_arguments(TrainerLoggerUnionList, "trainer")
+    parser.link_arguments("trainer.save_dir", "trainer.logger.init_args.save_dir")
+    cfg = parser.parse_args([])
+    assert cfg.trainer == Namespace(logger=False, save_dir=None)
+    cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=Logger"])
+    assert cfg.trainer.save_dir == "logs"
+    assert cfg.trainer.logger.init_args == Namespace(save_dir="logs")
+    cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=[Logger, Logger]"])
+    assert len(cfg.trainer.logger) == 2
+    assert all(x.init_args == Namespace(save_dir="logs") for x in cfg.trainer.logger)
 
 
 class ClassF:

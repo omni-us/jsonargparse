@@ -146,7 +146,7 @@ class ActionLink(Action):
 
         from ._typehints import ActionTypeHint
 
-        is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1], all_subtypes=False)
+        is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1], all_subtypes=False, also_lists=True)
         valid_target_init_arg = is_target_subclass and target.startswith(f"{self.target[1].dest}.init_args.")
         valid_target_leaf = self.target[1].dest == target
         if not valid_target_leaf and is_target_subclass and not valid_target_init_arg:
@@ -163,7 +163,10 @@ class ActionLink(Action):
                     group._group_actions.remove(self.target[1])
                     if is_target_subclass:
                         help_dest = f"{self.target[1].dest}.help"
-                        group._group_actions.remove(next(a for a in group._group_actions if a.dest == help_dest))
+                        for action in group._group_actions:
+                            if action.dest == help_dest:  # type: ignore
+                                group._group_actions.remove(action)
+                                break
                     if group._group_actions and all(isinstance(a, _ActionConfigLoad) for a in group._group_actions):
                         group.description = (
                             f"Group '{group._group_actions[0].dest}': All arguments are derived from links."
@@ -354,14 +357,23 @@ class ActionLink(Action):
     @staticmethod
     def set_target_value(action: "ActionLink", value: Any, cfg: Namespace, logger) -> None:
         target_key, target_action = action.target
+        assert target_action
         from ._typehints import ActionTypeHint
 
-        if ActionTypeHint.is_subclass_typehint(target_action, all_subtypes=False):
-            if target_key == target_action.dest:  # type: ignore
+        if ActionTypeHint.is_subclass_typehint(target_action, all_subtypes=False, also_lists=True):
+            if target_key == target_action.dest:
                 target_action._check_type(value)  # type: ignore
-            elif target_key not in cfg:
-                logger.debug(f"Link '{action.option_strings[0]}' ignored since target not found in namespace.")
-                return
+            else:
+                parent = cfg.get(target_action.dest)
+                child_key = target_key[len(target_action.dest) + 1 :]
+                if isinstance(parent, list) and any(isinstance(i, Namespace) and child_key in i for i in parent):
+                    for item in parent:
+                        if child_key in item:
+                            item[child_key] = value
+                    return
+                if target_key not in cfg:
+                    logger.debug(f"Link '{action.option_strings[0]}' ignored since target not found.")
+                    return
         cfg[target_key] = value
 
     @staticmethod

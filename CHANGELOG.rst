@@ -12,8 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.25.1 (2023-10-??)
+v4.26.0 (2023-10-??)
 --------------------
+
+Added
+^^^^^
+- Support for on parse argument links with target subclasses in a list (`#394
+  <https://github.com/omni-us/jsonargparse/issues/394>`__, `lightning#18161
+  <https://github.com/Lightning-AI/lightning/issues/18161>`__).
 
 Fixed
 ^^^^^
