@@ -2071,9 +2071,12 @@ There are two types of links, defined with ``apply_on='parse'`` or
 calling one of the parse methods and the latter are set when calling
 :py:meth:`.ArgumentParser.instantiate_classes`.
 
+Applied on parse
+----------------
+
 For parsing links, source keys can be individual arguments or nested groups. The
-target key has to be a single argument. The keys can be inside init_args of a
-subclass. The compute function should accept as many positional arguments as
+target key has to be a single argument. The keys can be inside ``init_args`` of
+a subclass. The compute function should accept as many positional arguments as
 there are sources and return a value of type compatible with the target. An
 example would be the following:
 
@@ -2096,6 +2099,33 @@ example would be the following:
 
 As argument and in config files only ``data.batch_size`` should be specified.
 Then whatever value it has will be propagated to ``model.batch_size``.
+
+An example of a target being in a subclass is:
+
+.. testcode::
+
+    class Logger:
+        def __init__(self, save_dir: Optional[str] = None):
+            self.save_dir = save_dir
+
+    class Trainer:
+        def __init__(
+            self,
+            save_dir: Optional[str] = None,
+            logger: Union[bool, Logger, List[Logger]] = False,
+        ):
+            self.logger = logger
+
+    parser = ArgumentParser()
+    parser.add_class_arguments(Trainer, "trainer")
+    parser.link_arguments("trainer.save_dir", "trainer.logger.init_args.save_dir")
+
+The link gets applied to the ``logger`` parameter when it is a single subclass
+and applied to all elements of a list of subclasses. If a subclass does not
+define the targeted ``init_args`` parameter, the link is ignored.
+
+Applied on instantiate
+----------------------
 
 For instantiation links, sources can be class groups (added with
 :py:meth:`.SignatureArguments.add_class_arguments`) or subclass arguments (see

@@ -254,12 +254,12 @@ class ActionTypeHint(Action):
         return supported
 
     @staticmethod
-    def is_subclass_typehint(typehint, all_subtypes=True):
+    def is_subclass_typehint(typehint, all_subtypes=True, also_lists=False):
         typehint = typehint_from_action(typehint)
         if typehint is None:
             return False
         typehint_origin = get_typehint_origin(typehint)
-        if typehint_origin == Union:
+        if typehint_origin == Union or (also_lists and typehint_origin in sequence_origin_types):
             subtypes = [a for a in typehint.__args__ if a != NoneType]
             test = all if all_subtypes else any
             return test(ActionTypeHint.is_subclass_typehint(s) for s in subtypes)
