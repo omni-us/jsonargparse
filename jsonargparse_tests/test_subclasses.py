@@ -29,6 +29,7 @@ from jsonargparse_tests.conftest import (
     get_parse_args_stderr,
     get_parse_args_stdout,
     get_parser_help,
+    source_unavailable,
 )
 
 
@@ -1209,19 +1210,6 @@ def test_add_subclass_lazy_default(parser):
     assert "'init_args': {'firstweekday': 5}" in help_str
 
 
-def test_add_subclass_instance_default(parser):
-    parser.add_subclass_arguments(Calendar, "cal")
-    parser.set_defaults({"cal": Calendar(firstweekday=2)})
-    cfg = parser.parse_args([])
-    assert isinstance(cfg["cal"], Calendar)
-    init = parser.instantiate_classes(cfg)
-    assert init["cal"] is cfg["cal"]
-    with warnings.catch_warnings(record=True) as w:
-        dump = parser.dump(cfg)
-    assert "Not possible to serialize an instance of" in str(w[0].message)
-    assert "cal: <calendar.Calendar object at " in dump
-
-
 class TupleBaseA:
     def __init__(self, a1: int = 1, a2: float = 2.3):
         self.a1 = a1
@@ -1265,6 +1253,40 @@ def test_add_subclass_not_required_group(parser):
     assert cfg == Namespace()
     init = parser.instantiate_classes(cfg)
     assert init == Namespace()
+
+
+# instance defaults tests
+
+
+def test_add_subclass_set_defaults_instance_default(parser):
+    parser.add_subclass_arguments(Calendar, "cal")
+    with pytest.raises(ValueError) as ctx:
+        parser.set_defaults({"cal": Calendar(firstweekday=2)})
+    ctx.match("Subclass types require as default either a dict with class_path or a lazy instance")
+
+
+def test_add_argument_subclass_instance_default(parser):
+    with pytest.raises(ValueError) as ctx:
+        parser.add_argument("--cal", type=Calendar, default=Calendar(firstweekday=2))
+    ctx.match("Subclass types require as default either a dict with class_path or a lazy instance")
+
+
+class InstanceDefault:
+    def __init__(self, cal: Calendar = Calendar(firstweekday=2)):
+        pass
+
+
+def test_subclass_signature_instance_default(parser):
+    with source_unavailable():
+        parser.add_class_arguments(InstanceDefault)
+    cfg = parser.parse_args([])
+    assert isinstance(cfg["cal"], Calendar)
+    init = parser.instantiate_classes(cfg)
+    assert init["cal"] is cfg["cal"]
+    with warnings.catch_warnings(record=True) as w:
+        dump = parser.dump(cfg)
+    assert "Unable to serialize instance" in str(w[0].message)
+    assert "cal: Unable to serialize instance <calendar.Calendar " in dump
 
 
 # parameter skip tests

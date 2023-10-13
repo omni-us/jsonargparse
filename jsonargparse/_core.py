@@ -884,10 +884,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                         raise KeyError(f'No action for destination key "{dest}" to set its default.')
                     elif isinstance(action, ActionConfigFile):
                         ActionConfigFile.set_default_error()
-                    action.default = default
                     if isinstance(action, ActionTypeHint):
-                        action.normalize_default()
-                    self._defaults[dest] = action.default
+                        default = action.normalize_default(default)
+                    self._defaults[dest] = action.default = default
         if kwargs:
             self.set_defaults(kwargs)
 
