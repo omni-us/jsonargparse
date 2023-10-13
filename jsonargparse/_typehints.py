@@ -146,6 +146,7 @@ if getattr(Literal, "__module__", None) == "typing_extensions" and hasattr(__imp
     literal_types.add(__import__("typing").Literal)
 
 subclass_arg_parser: ContextVar = ContextVar("subclass_arg_parser")
+allow_default_instance: ContextVar = ContextVar("allow_default_instance", default=False)
 sub_defaults: ContextVar = ContextVar("sub_defaults", default=False)
 
 
@@ -187,23 +188,26 @@ class ActionTypeHint(Action):
                 kwargs["metavar"] = typehint_metavar(self._typehint)
             super().__init__(**kwargs)
             self._supports_append = self.supports_append(self._typehint)
-            self.normalize_default()
+            self.default = self.normalize_default(self.default)
 
-    def normalize_default(self):
-        default = self.default
+    def normalize_default(self, default):
+        is_subclass_type = self.is_subclass_typehint(self._typehint, all_subtypes=False)
         if isinstance(default, LazyInitBaseClass):
-            self.default = default.lazy_get_init_data()
-        elif (
-            self.is_subclass_typehint(self._typehint, all_subtypes=False)
-            and isinstance(default, dict)
-            and "class_path" in default
-        ):
-            self.default = subclass_spec_as_namespace(default)
-            self.default.class_path = normalize_import_path(self.default.class_path, self._typehint)
+            default = default.lazy_get_init_data()
+        elif is_subclass_type and isinstance(default, dict) and "class_path" in default:
+            default = subclass_spec_as_namespace(default)
+            default.class_path = normalize_import_path(default.class_path, self._typehint)
         elif is_enum_type(self._typehint) and isinstance(default, Enum):
-            self.default = default.name
+            default = default.name
         elif is_callable_type(self._typehint) and callable(default) and not inspect.isclass(default):
-            self.default = get_import_path(default)
+            default = get_import_path(default)
+        elif is_subclass_type and not allow_default_instance.get():
+            from ._parameter_resolvers import UnknownDefault
+
+            default_type = type(default)
+            if not is_subclass(default_type, UnknownDefault) and self.is_subclass_typehint(default_type):
+                raise ValueError("Subclass types require as default either a dict with class_path or a lazy instance.")
+        return default
 
     @staticmethod
     def prepare_add_argument(args, kwargs, enable_path, container, logger, sub_add_kwargs=None):
@@ -355,6 +359,15 @@ class ActionTypeHint(Action):
     def subclass_arg_context(parser):
         subclass_arg_parser.set(parser)
         yield
+
+    @staticmethod
+    @contextmanager
+    def allow_default_instance_context():
+        token = allow_default_instance.set(True)
+        try:
+            yield
+        finally:
+            allow_default_instance.reset(token)
 
     @staticmethod
     @contextmanager
@@ -1200,15 +1213,8 @@ def typehint_metavar(typehint):
 
 
 def serialize_class_instance(val):
-    type_val = type(val)
-    val = str(val)
-    warning(
-        f"""
-        Not possible to serialize an instance of {type_val}. It will be
-        represented as the string {val}. If this was set as a default, consider
-        using lazy_instance.
-    """
-    )
+    val = f"Unable to serialize instance {val}"
+    warning(val)
     return val
 
 

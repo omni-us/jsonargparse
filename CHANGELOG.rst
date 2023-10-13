@@ -26,6 +26,12 @@ Fixed
 - Failures with subcommands and default_config_files when keys are repeated
   (`#160 <https://github.com/omni-us/jsonargparse/issues/160>`__).
 
+Changed
+^^^^^^^
+- Subclass types no longer allow class instance to be set as default
+  (`lightning#18731
+  <https://github.com/Lightning-AI/lightning/issues/18731>`__).
+
 
 v4.25.0 (2023-09-25)
 --------------------

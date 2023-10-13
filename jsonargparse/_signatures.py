@@ -373,7 +373,8 @@ class SignatureArguments(LoggerProperty):
             }
             if is_dataclass_like_typehint:
                 kwargs.update(sub_add_kwargs)
-            action = group.add_argument(*args, **kwargs)
+            with ActionTypeHint.allow_default_instance_context():
+                action = group.add_argument(*args, **kwargs)
             action.sub_add_kwargs = sub_add_kwargs
             if is_subclass_typehint and len(subclass_skip) > 0:
                 action.sub_add_kwargs["skip"] = subclass_skip
