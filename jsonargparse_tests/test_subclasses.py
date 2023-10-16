@@ -539,7 +539,7 @@ def test_subclass_class_name_then_invalid_init_args(parser):
     parser.add_argument("--op", type=Union[Calendar, GzipFile])
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--op=TextCalendar", "--op=GzipFile", "--op.firstweekday=2"])
-    ctx.match('No action for destination key "firstweekday"')
+    ctx.match('No action for key "firstweekday"')
 
 
 # dict parameter tests
@@ -1349,7 +1349,7 @@ def test_subclass_print_config(parser):
     assert obtained == {"a1": {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 0}}, "a2": 7}
 
     err = get_parse_args_stderr(parser, ["--g.a1=calendar.Calendar", "--g.a1.invalid=1", "--print_config"])
-    assert 'No action for destination key "invalid"' in err
+    assert 'No action for key "invalid"' in err
 
 
 class PrintConfigRequired:
@@ -1427,7 +1427,7 @@ def test_subclass_error_unexpected_init_arg(parser):
     init_args = '"init_args": {"unexpected_arg": True}'
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--op={" + class_path + ", " + init_args + "}"])
-    ctx.match('No action for destination key "unexpected_arg"')
+    ctx.match('No action for key "unexpected_arg"')
 
 
 def test_subclass_invalid_class_path_value(parser):
