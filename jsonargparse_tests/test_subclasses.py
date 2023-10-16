@@ -1462,6 +1462,12 @@ def test_subclass_required_parameters_missing(parser):
     ctx.match(" is required ")
 
 
+def test_subclass_get_defaults_lazy_instance(parser):
+    parser.add_argument("--op", type=RequiredParamsMissing, default=lazy_instance(RequiredParamsMissing, p1=1, p2="x"))
+    defaults = parser.get_defaults()
+    assert defaults.op.init_args == Namespace(p1=1, p2="x")
+
+
 @pytest.mark.parametrize("option", ["--op", "--op.help"])
 def test_subclass_class_name_ambiguous(parser, option):
     parser.add_argument("--op", type=Union[Calendar, GzipFile, None])
