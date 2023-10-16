@@ -26,6 +26,11 @@ __all__ = [
 meta_keys = {"__default_config__", "__path__", "__orig__"}
 
 
+class NSKeyError(KeyError):
+    def __str__(self):
+        return str(self.args[0])
+
+
 def split_key(key: str) -> List[str]:
     return key.split(".")
 
@@ -146,10 +151,10 @@ class Namespace(argparse.Namespace):
             KeyError: When given invalid key.
         """
         if " " in key:
-            raise KeyError(f'Spaces not allowed in keys: "{key}".')
+            raise NSKeyError(f'Spaces not allowed in keys: "{key}".')
         key_split = split_key(key)
         if any(k == "" for k in key_split):
-            raise KeyError(f'Empty nested key: "{key}".')
+            raise NSKeyError(f'Empty nested key: "{key}".')
         key_split = [add_clash_mark(k) for k in key_split]
         leaf_key = key_split[-1]
         parent_ns: Namespace = self
@@ -169,7 +174,7 @@ class Namespace(argparse.Namespace):
         """Same as _parse_key but raises KeyError if key not found."""
         leaf_key, parent_ns, parent_key = self._parse_key(key)
         if parent_ns is None or not hasattr(parent_ns, leaf_key):
-            raise KeyError(f'Key "{key}" not found in namespace.')
+            raise NSKeyError(f'Key "{key}" not found in namespace.')
         return leaf_key, parent_ns, parent_key
 
     def _create_nested_namespace(self, key: str) -> "Namespace":
@@ -306,7 +311,7 @@ class Namespace(argparse.Namespace):
         """
         if not isinstance(value, Namespace):
             if not key:
-                raise KeyError("Key is required if value not a Namespace.")
+                raise NSKeyError("Key is required if value not a Namespace.")
             if not only_unset or key not in self:
                 self[key] = value
         else:

@@ -55,7 +55,7 @@ def test_subcommands_undefined_subcommand(subcommands_parser):
 
 def test_subcommands_not_given_when_few_subcommands(subcommands_parser):
     err = get_parse_args_stderr(subcommands_parser, [])
-    assert "error: 'expected \"subcommand\" to be one of {a,b,B}, but it was not provided.'" in err
+    assert 'error: expected "subcommand" to be one of {a,b,B}, but it was not provided.' in err
 
 
 def test_subcommands_not_given_when_many_subcommands(parser, subparser):
@@ -63,7 +63,7 @@ def test_subcommands_not_given_when_many_subcommands(parser, subparser):
     for subcommand in range(ord("a"), ord("l") + 1):
         subcommands.add_subcommand(chr(subcommand), subparser)
     err = get_parse_args_stderr(parser, [])
-    assert "error: 'expected \"subcommand\" to be one of {a,b,c,d,e, ...}, but it was not provided.'" in err
+    assert 'error: expected "subcommand" to be one of {a,b,c,d,e, ...}, but it was not provided.' in err
 
 
 def test_subcommands_missing_required_subargument(subcommands_parser):
@@ -121,7 +121,7 @@ def test_subcommands_parse_string_implicit_subcommand(subcommands_parser):
     assert cfg["a"] == {"ap1": "ap1_cfg", "ao1": "ao1_def"}
     with pytest.raises(ArgumentError) as ctx:
         subcommands_parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}')
-    ctx.match('No action for destination key "unk"')
+    ctx.match('No action for key "unk"')
 
 
 def test_subcommands_parse_string_first_implicit_subcommand(subcommands_parser):

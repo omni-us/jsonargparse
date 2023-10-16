@@ -60,6 +60,7 @@ from ._loaders_dumpers import (
 )
 from ._namespace import (
     Namespace,
+    NSKeyError,
     is_meta_key,
     patch_namespace,
     recreate_branches,
@@ -881,7 +882,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 for dest, default in arg.items():
                     action = _find_action(self, dest)
                     if action is None:
-                        raise KeyError(f'No action for destination key "{dest}" to set its default.')
+                        raise NSKeyError(f'No action for key "{dest}" to set its default.')
                     elif isinstance(action, ActionConfigFile):
                         ActionConfigFile.set_default_error()
                     if isinstance(action, ActionTypeHint):
@@ -918,11 +919,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         """
         action, _ = _find_parent_action_and_subcommand(self, dest)
         if action is None or dest != action.dest:
-            raise KeyError(f'No action for destination key "{dest}" to get its default.')
+            raise NSKeyError(f'No action for key "{dest}" to get its default.')
 
         def check_suppressed_default():
             if action.default == argparse.SUPPRESS:
-                raise KeyError(f'Action for destination key "{dest}" does not specify a default.')
+                raise NSKeyError(f'Action for key "{dest}" does not specify a default.')
 
         if not self._get_default_config_files():
             check_suppressed_default()
@@ -1069,7 +1070,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 elif key in self.groups and hasattr(self.groups[key], "instantiate_class"):
                     raise TypeError(f"Class group {key!r} got an unexpected value: {val}.")
                 else:
-                    raise KeyError(f'No action for destination key "{key}" to check its value.')
+                    raise NSKeyError(f'No action for key "{key}" to check its value.')
 
         try:
             if not skip_required and not lenient_check.get():
@@ -1077,7 +1078,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             with parser_context(load_value_mode=self.parser_mode):
                 check_values(cfg)
         except (TypeError, KeyError) as ex:
-            prefix = "Configuration check failed :: "
+            prefix = "Validation failed: "
             message = ex.args[0]
             if prefix not in message:
                 message = prefix + message

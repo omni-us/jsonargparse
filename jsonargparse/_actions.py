@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from ._common import get_class_instantiator, is_subclass, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
-from ._namespace import Namespace, split_key, split_key_root
+from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._optionals import FilesCompleterMethod, get_config_read_mode
 from ._type_checking import ArgumentParser
 from ._util import (
@@ -715,7 +715,9 @@ class _ActionSubCommands(_SubParsersAction):
                     candidate_subcommands_str = "{" + ",".join(available_subcommands) + "}"
                 else:
                     candidate_subcommands_str = "{" + ",".join(available_subcommands[:5]) + ", ...}"
-                raise KeyError(f'expected "{dest}" to be one of {candidate_subcommands_str}, but it was not provided.')
+                raise NSKeyError(
+                    f'expected "{dest}" to be one of {candidate_subcommands_str}, but it was not provided.'
+                )
 
         return subcommand_keys, [action._name_parser_map.get(s) for s in subcommand_keys]  # type: ignore
 
