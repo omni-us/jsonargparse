@@ -1818,11 +1818,11 @@ arguments.
 .. note::
 
     The parameter resolvers log messages of failures and unsupported cases. To
-    view these logs, set the environment variable ``JSONARGPARSE_DEBUG`` to any
-    value. The supported cases are limited and it is highly encouraged that
-    people create issues requesting the support for new ones. However, note that
-    when a case is highly convoluted it could be a symptom that the respective
-    code is in need of refactoring.
+    view these logs, set the environment variable ``JSONARGPARSE_DEBUG`` to a
+    non-empty truthy value. The supported cases are limited and it is highly
+    encouraged that people create issues requesting the support for new ones.
+    However, note that when a case is highly convoluted it could be a symptom
+    that the respective code is in need of refactoring.
 
 .. _stubs-resolver:
 
@@ -2563,7 +2563,7 @@ during development since there is not enough information to track down the root
 of the problem. Without the need to change the source code, this default
 behavior can be changed such that in case of failure, a ParseError exception is
 raised and the full stack trace is printed. This is done by setting the
-``JSONARGPARSE_DEBUG`` environment variable to any value.
+``JSONARGPARSE_DEBUG`` environment variable to a non-empty truthy value.
 
 The parsers from jsonargparse log some basic events, though by default this is
 disabled. To enable, the ``logger`` argument should be set when creating an

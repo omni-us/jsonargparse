@@ -84,6 +84,7 @@ from ._util import (
     Path,
     argument_error,
     change_to_path_dir,
+    debug_mode_active,
     get_private_kwargs,
     identity,
     return_parser_if_captured,
@@ -995,12 +996,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             self._error_handler(self, message)
         if not self.exit_on_error:
             raise argument_error(message) from ex
-        elif "JSONARGPARSE_DEBUG" in os.environ:
+        elif debug_mode_active():
             self._logger.debug("Debug enabled, thus raising exception instead of exit.")
             raise argument_error(message) from ex
-        self.print_usage(sys.stderr)
-        args = {"prog": self.prog, "message": message}
-        sys.stderr.write("%(prog)s: error: %(message)s\n" % args)
+        self.print_usage()
+        sys.stderr.write(f"error: {message}\n")
         self.exit(2)
 
     def check_config(

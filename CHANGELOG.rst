@@ -32,6 +32,7 @@ Changed
 - Subclass types no longer allow class instance to be set as default
   (`lightning#18731
   <https://github.com/Lightning-AI/lightning/issues/18731>`__).
+- ``JSONARGPARSE_DEBUG`` must now have a non-empty value to enable debug mode.
 
 
 v4.25.0 (2023-09-25)

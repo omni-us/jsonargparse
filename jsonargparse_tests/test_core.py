@@ -922,7 +922,7 @@ def test_version_print():
     assert out == "app 1.2.3\n"
 
 
-@patch.dict(os.environ, {"JSONARGPARSE_DEBUG": ""})
+@patch.dict(os.environ, {"JSONARGPARSE_DEBUG": "true"})
 def test_debug_environment_variable(logger):
     parser = ArgumentParser(logger=logger)
     parser.add_argument("--int", type=int)
