@@ -765,10 +765,14 @@ class LoggerProperty:
 
             deprecation_warning((LoggerProperty.logger, None), logger_property_none_message)
             logger = False
-        if not logger and "JSONARGPARSE_DEBUG" in os.environ:
+        if not logger and debug_mode_active():
             logger = {"level": "DEBUG"}
         self._logger = parse_logger(logger, type(self).__name__)
 
 
-if "JSONARGPARSE_DEBUG" in os.environ:
+def debug_mode_active() -> bool:
+    return os.getenv("JSONARGPARSE_DEBUG", "").lower() not in {"", "false", "no", "0"}
+
+
+if debug_mode_active():
     os.environ["LOGGER_LEVEL"] = "DEBUG"  # pragma: no cover
