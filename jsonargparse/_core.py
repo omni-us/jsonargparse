@@ -1330,11 +1330,12 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         """
         if value is None and lenient_check.get():
             return value
-        if action.choices is not None and isinstance(action, _ActionSubCommands):
+        is_subcommand = isinstance(action, _ActionSubCommands)
+        if is_subcommand and action.choices:
             leaf_key = split_key_leaf(key)[-1]
             if leaf_key == action.dest:
                 return value
-            subparser = action._name_parser_map[leaf_key]
+            subparser = action._name_parser_map[leaf_key]  # type: ignore
             subparser.check_config(value)
         elif isinstance(action, _ActionConfigLoad):
             if isinstance(value, str):
@@ -1351,6 +1352,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                         value[k] = action.type(v)
             except (TypeError, ValueError) as ex:
                 raise TypeError(f'Parser key "{key}": {ex}') from ex
+        if not is_subcommand and action.choices and value not in action.choices:
+            raise TypeError(f'Parser key "{key}": {value!r} not among choices {action.choices}')
         return value
 
     ## Properties ##
