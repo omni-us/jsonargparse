@@ -123,6 +123,56 @@ class ClassE2:
         return self.fn(**self._kwd)
 
 
+class AttributeLocalImport1:
+    def __init__(self, **kwargs):
+        self._kwd = dict(**kwargs)
+
+    def run(self):
+        from jsonargparse import set_loader
+
+        return set_loader(**self._kwd)
+
+
+class AttributeLocalImport2:
+    def __init__(self, **kwargs):
+        self._kwd = dict(**kwargs)
+
+    def run(self):
+        import jsonargparse as ja
+
+        return ja.set_loader(**self._kwd)
+
+
+class AttributeLocalImport3:
+    def __init__(self, **kwargs):
+        self._kwd = dict(**kwargs)
+
+    def run(self):
+        from jsonargparse import set_loader
+
+        return set_loader(**self._kwd)
+
+
+class AttributeLocalImport4:
+    def __init__(self, **kwargs):
+        self._kwd = dict(**kwargs)
+
+    def run(self):
+        from jsonargparse import set_loader as sl
+
+        return sl(**self._kwd)
+
+
+class AttributeLocalImportFailure:
+    def __init__(self, **kwargs):
+        self._kwd = dict(**kwargs)
+
+    def run(self):
+        from jsonargparse import does_not_exist
+
+        return does_not_exist(**self._kwd)
+
+
 class ClassF1:
     def __init__(self, **kw):
         self._ini = dict(k2=4)
@@ -421,6 +471,12 @@ def function_module_class(**kwds):
     return calendar.Calendar(**kwds)
 
 
+def function_local_import(**kwds):
+    from jsonargparse import set_loader
+
+    return set_loader(**kwds)
+
+
 constant_boolean_1 = True
 constant_boolean_2 = False
 
@@ -525,6 +581,24 @@ def test_get_params_class_with_kwargs_in_dict_attribute():
     with source_unavailable():
         assert_params(get_params(ClassE1), ["ke1"])
         assert_params(get_params(ClassF1), [])
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [AttributeLocalImport1, AttributeLocalImport2, AttributeLocalImport3, AttributeLocalImport4],
+)
+def test_get_params_local_import_with_kwargs_in_dict_attribute(cls):
+    params = get_params(cls)
+    assert ["mode", "loader_fn", "exceptions"] == [p.name for p in params]
+    with source_unavailable():
+        assert get_params(cls) == []
+
+
+def test_get_params_local_import_failure_with_kwargs_in_dict_attribute(logger):
+    with capture_logs(logger) as logs:
+        params = get_params(AttributeLocalImportFailure, logger=logger)
+    assert params == []
+    assert "Failed to get 'does_not_exist'" in logs.getvalue()
 
 
 def test_get_params_class_kwargs_in_attr_method_conditioned_on_arg():
@@ -704,6 +778,11 @@ def test_get_params_function_pop_get_conditional():
 def test_get_params_function_module_class():
     params = get_params(function_module_class)
     assert ["firstweekday"] == [p.name for p in params]
+
+
+def test_get_params_function_local_import():
+    params = get_params(function_local_import)
+    assert ["mode", "loader_fn", "exceptions"] == [p.name for p in params]
 
 
 def test_get_params_function_constant_boolean():

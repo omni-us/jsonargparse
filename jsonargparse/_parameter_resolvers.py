@@ -506,11 +506,11 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         do_generic_visit = True
         for key, value in self.find_values.items():
             if ast_is_assign_with_value(node, value):
-                self.values_found.append((key, node))
+                self.add_value(key, node)
                 do_generic_visit = False
                 break
             elif ast_is_dict_assign_with_value(node, value):
-                self.values_found.append((key, node))
+                self.add_value(key, node)
                 do_generic_visit = False
         if do_generic_visit:
             if ast_is_dict_assign(node):
@@ -531,11 +531,11 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 if isinstance(node.func, ast.Attribute):
                     value_dump = ast.dump(node.func.value)
                     if value_dump in self.dict_assigns:
-                        self.values_found.append((key, self.dict_assigns[value_dump]))
+                        self.add_value(key, self.dict_assigns[value_dump])
                         continue
-                self.values_found.append((key, node))
+                self.add_value(key, node)
             elif ast_is_kwargs_pop_or_get(node, value_dump):
-                self.values_found.append((key, node))
+                self.add_value(key, node)
         self.generic_visit(node)
 
     def visit_If(self, node):
@@ -550,14 +550,45 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             node = ast.If(test=ast.Constant(value=True), body=body, orelse=[])
         self.generic_visit(node)
 
+    def visit_Import(self, node: Union[ast.Import, ast.ImportFrom]) -> None:
+        for alias in node.names:
+            self.import_names[alias.asname or alias.name] = node
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        self.visit_Import(node)
+
+    def add_value(self, key, node):
+        source = None
+        if isinstance(node, ast.Call):
+            name = False
+            if isinstance(node.func, ast.Name):
+                name = node.func.id
+            elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                name = node.func.value.id
+            if name and name in self.import_names:
+                source = self.import_names[name]
+        self.values_found.append((key, node, source))
+
     def find_values_usage(self, values):
         self.find_values = values
         self.values_found = []
         self.dict_assigns = {}
+        self.import_names = {}
         self.visit(self.component_node)
         return self.values_found
 
-    def get_node_component(self, node) -> Optional[Tuple[Type, Optional[str]]]:
+    def get_component_from_source(self, name, source):
+        aliases = {}
+        ast_exec = ast.parse("")
+        ast_exec.body = [source]
+        try:
+            exec(compile(ast_exec, filename="<ast>", mode="exec"), aliases, aliases)
+        except Exception as ex:
+            if self.logger:
+                self.logger.debug(f"Failed to get '{name}' from '{ast_str(source)}'", exc_info=ex)
+        return aliases.get(name)
+
+    def get_node_component(self, node, source) -> Optional[Tuple[Type, Optional[str]]]:
         function_or_class = method_or_property = None
         module = inspect.getmodule(self.component)
         if isinstance(node.func, ast.Name):
@@ -565,12 +596,18 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 function_or_class = self.parent
             elif hasattr(module, node.func.id):
                 function_or_class = getattr(module, node.func.id)
+            elif source:
+                function_or_class = self.get_component_from_source(node.func.id, source)
         elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
             if self.parent and ast.dump(node.func.value) == ast.dump(ast_variable_load(self.self_name)):
                 function_or_class = self.parent
                 method_or_property = node.func.attr
-            elif hasattr(module, node.func.value.id):
-                container = getattr(module, node.func.value.id)
+            else:
+                container = None
+                if hasattr(module, node.func.value.id):
+                    container = getattr(module, node.func.value.id)
+                elif source:
+                    container = self.get_component_from_source(node.func.value.id, source)
                 if inspect.isclass(container):
                     function_or_class = container
                     method_or_property = node.func.attr
@@ -581,7 +618,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             return None
         return function_or_class, method_or_property
 
-    def match_call_that_uses_attr(self, node, attr_name):
+    def match_call_that_uses_attr(self, node, source, attr_name):
         params = None
         if isinstance(node, ast.Call):
             params = []
@@ -591,7 +628,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 if kwarg.arg:
                     self.log_debug(f"kwargs attribute given as keyword parameter not supported: {ast_str(node)}")
                 else:
-                    get_param_args = self.get_node_component(node)
+                    get_param_args = self.get_node_component(node, source)
                     if get_param_args:
                         try:
                             params = get_signature_parameters(*get_param_args, logger=self.logger)
@@ -686,7 +723,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         params_list = []
         kwargs_value = kwargs_name and values_to_find[kwargs_name]
         kwargs_value_dump = kwargs_value and ast.dump(kwargs_value)
-        for node in [v for k, v in values_found if k == kwargs_name]:
+        for node, source in [(v, s) for k, v, s in values_found if k == kwargs_name]:
             if isinstance(node, ast.Call):
                 if ast_is_kwargs_pop_or_get(node, kwargs_value_dump):
                     param = self.get_kwargs_pop_or_get_parameter(node, self.component, self.parent, self.doc_params)
@@ -704,7 +741,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                             self.logger,
                         )
                 else:
-                    get_param_args = self.get_node_component(node)
+                    get_param_args = self.get_node_component(node, source)
                     if get_param_args:
                         params = get_signature_parameters(*get_param_args, logger=self.logger)
                 params = remove_given_parameters(node, params)
@@ -757,8 +794,8 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         values_found = self.find_values_usage(values_to_find)
         matched = []
         if values_found:
-            for _, node in values_found:
-                match = self.match_call_that_uses_attr(node, attr_name)
+            for _, node, source in values_found:
+                match = self.match_call_that_uses_attr(node, source, attr_name)
                 if match:
                     self.add_node_origins(match, node)
                     matched.append(match)

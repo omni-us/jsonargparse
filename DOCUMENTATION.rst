@@ -1703,6 +1703,11 @@ unrelated to these variables.
         SomeClass.a_class_method(*args, **kwargs)
 
 
+    def calls_local_import(**kwargs):
+        import some_module
+        some_module.a_callable(**kwargs)
+
+
     def pops_from_kwargs(**kwargs):
         val = kwargs.pop("name", "default")
 
