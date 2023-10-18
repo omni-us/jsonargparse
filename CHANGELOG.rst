@@ -20,6 +20,7 @@ Added
 - Support for on parse argument links with target subclasses in a list (`#394
   <https://github.com/omni-us/jsonargparse/issues/394>`__, `lightning#18161
   <https://github.com/Lightning-AI/lightning/issues/18161>`__).
+- AST resolver now supports some local import cases.
 
 Fixed
 ^^^^^

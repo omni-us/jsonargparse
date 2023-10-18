@@ -999,7 +999,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         elif debug_mode_active():
             self._logger.debug("Debug enabled, thus raising exception instead of exit.")
             raise argument_error(message) from ex
-        self.print_usage()
+        self.print_usage(sys.stderr)
         sys.stderr.write(f"error: {message}\n")
         self.exit(2)
 
