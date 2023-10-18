@@ -139,11 +139,21 @@ def test_parse_args_positional_config(parser):
 
 def test_parse_args_choices(parser):
     parser.add_argument("--ch1", choices="ABC")
-    parser.add_argument("--ch2", choices=["v1", "v2"])
+    parser.add_argument("--ch2", type=str, choices=["v1", "v2"])
     cfg = parser.parse_args(["--ch1", "C", "--ch2", "v1"])
     assert cfg.as_dict() == {"ch1": "C", "ch2": "v1"}
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--ch1", "D"]))
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--ch2", "v0"]))
+
+
+def test_parse_args_choices_config(parser):
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--ch1", choices="ABC")
+    parser.add_argument("--ch2", type=str, choices=["v1", "v2"])
+    assert parser.parse_args(["--cfg=ch1: B"]).ch1 == "B"
+    assert parser.parse_args(["--cfg=ch2: v2"]).ch2 == "v2"
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg=ch1: D"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg=ch2: v0"]))
 
 
 def test_parse_object_simple(parser):

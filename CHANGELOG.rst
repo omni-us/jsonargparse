@@ -27,6 +27,8 @@ Fixed
 - Failures with subcommands and default_config_files when keys are repeated
   (`#160 <https://github.com/omni-us/jsonargparse/issues/160>`__).
 - Key related errors printing messages within single quotes.
+- Choices not validated when value comes from config file (`#404
+  <https://github.com/omni-us/jsonargparse/issues/404>`__).
 
 Changed
 ^^^^^^^
