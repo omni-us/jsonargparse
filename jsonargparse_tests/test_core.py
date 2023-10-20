@@ -156,6 +156,15 @@ def test_parse_args_choices_config(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg=ch2: v0"]))
 
 
+def test_parse_args_non_hashable_choice(parser):
+    choices = {"A": 1, "B": 2}
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--ch1", choices=choices.keys())
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--cfg=ch1: [1,2]"])
+    ctx.match("not among choices")
+
+
 def test_parse_object_simple(parser):
     parser.add_argument("--op", type=int)
     assert parser.parse_object({"op": 1}) == Namespace(op=1)

@@ -131,6 +131,8 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
                     container=super(),
                     logger=self._logger,
                 )
+        if "choices" in kwargs and not isinstance(kwargs["choices"], (list, tuple)):
+            kwargs["choices"] = tuple(kwargs["choices"])
         action = super().add_argument(*args, **kwargs)
         action.logger = self._logger  # type: ignore
         ActionConfigFile._add_print_config_argument(self, action)

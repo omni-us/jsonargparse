@@ -12,6 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.26.1 (2023-10-??)
+--------------------
+
+Fixed
+^^^^^
+- Failures when choices is a ``dict_keys`` object and value non-hashable.
+
+
 v4.26.0 (2023-10-19)
 --------------------
 
