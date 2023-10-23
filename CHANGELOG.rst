@@ -18,6 +18,7 @@ v4.26.1 (2023-10-??)
 Fixed
 ^^^^^
 - Failures when choices is a ``dict_keys`` object and value non-hashable.
+- AST resolver not using the correct component globals in some cases.
 
 
 v4.26.0 (2023-10-19)
