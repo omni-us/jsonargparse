@@ -9,6 +9,7 @@ from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from copy import deepcopy
 from functools import partial
+from importlib import import_module
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from ._common import get_generic_origin, is_dataclass_like, is_generic_class, is_subclass
@@ -541,7 +542,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
     def visit_If(self, node):
         is_test_not = ast_is_not(node.test)
         test_node = node.test.operand if is_test_not else node.test
-        component_globals = self.component.__globals__
+        component_globals = self.get_component_globals()
         if isinstance(test_node, ast.Name) and test_node.id in component_globals:
             condition = bool(component_globals[test_node.id])
             if is_test_not:
@@ -576,6 +577,9 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         self.import_names = {}
         self.visit(self.component_node)
         return self.values_found
+
+    def get_component_globals(self):
+        return vars(import_module(self.component.__module__))
 
     def get_component_from_source(self, name, source):
         aliases = {}
@@ -672,7 +676,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
 
     def get_call_class_type(self, node) -> Optional[type]:
         names = ast_get_name_and_attrs(getattr(node, "func", None))
-        class_type = self.component.__globals__.get(names[0]) if names else None
+        class_type = self.get_component_globals().get(names[0]) if names else None
         for name in names[1:]:
             class_type = getattr(class_type, name, None)
         return class_type if inspect.isclass(class_type) else None

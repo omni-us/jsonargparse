@@ -14,7 +14,7 @@ from jsonargparse import Namespace, class_from_function
 from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._parameter_resolvers import ConditionalDefault, is_lambda
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
-from jsonargparse_tests.conftest import capture_logs, source_unavailable
+from jsonargparse_tests.conftest import BaseClass, capture_logs, source_unavailable, wrap_fn
 
 
 class ClassA:
@@ -391,6 +391,20 @@ class ClassInstanceDefaults:
         """
 
 
+GLOBAL_CONSTANT = False
+
+
+class ConditionalGlobalConstant(BaseClass):
+    @wrap_fn
+    def __init__(self, **kwargs):
+        super().__init__()
+        kwargs.get("p1", "x")
+        if GLOBAL_CONSTANT:
+            kwargs.get("p2", "y")
+        else:
+            kwargs.get("p3", "z")
+
+
 def function_no_args_no_kwargs(pk1: str, k2: int = 1):
     """
     Args:
@@ -678,6 +692,12 @@ def test_get_params_class_instance_defaults(subtests):
         assert is_lambda(params[9].default)
     with subtests.test("invalid defaults"):
         assert is_lambda(params[8].default)
+
+
+def test_get_params_class_conditional_global_constant():
+    params = get_params(ConditionalGlobalConstant)
+    assert ["p1", "p3"] == [p.name for p in params]
+    assert "GLOBAL_CONSTANT" not in ConditionalGlobalConstant.__init__.__globals__
 
 
 # class method parameters tests

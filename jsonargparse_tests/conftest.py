@@ -2,6 +2,7 @@ import logging
 import os
 import platform
 from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
+from functools import wraps
 from importlib.util import find_spec
 from io import StringIO
 from pathlib import Path
@@ -157,3 +158,16 @@ def get_parse_args_stderr(parser: ArgumentParser, args: List[str]) -> str:
         with redirect_stderr(err), pytest.raises(SystemExit):
             parser.parse_args(args)
     return err.getvalue()
+
+
+class BaseClass:
+    def __init__(self):
+        pass
+
+
+def wrap_fn(fn):
+    @wraps(fn)
+    def wrapped_fn(*args, **kwargs):
+        return fn(*args, **kwargs)
+
+    return wrapped_fn
