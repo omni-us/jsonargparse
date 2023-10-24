@@ -165,6 +165,14 @@ def test_parse_args_non_hashable_choice(parser):
     ctx.match("not among choices")
 
 
+def test_parse_args_choices_nargs_plus(parser):
+    parser.add_argument("--ch", nargs="+", choices=["A", "B"])
+    assert ["A", "B"] == parser.parse_args(["--ch", "A", "B"]).ch
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--ch", "B", "X"])
+    ctx.match("invalid choice")
+
+
 def test_parse_object_simple(parser):
     parser.add_argument("--op", type=int)
     assert parser.parse_object({"op": 1}) == Namespace(op=1)

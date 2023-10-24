@@ -19,6 +19,7 @@ Fixed
 ^^^^^
 - Failure to parse subclass added via add_argument and required arg as link
   target.
+- ``choices`` working incorrectly when ``nargs`` is ``+``, ``*`` or number.
 
 
 v4.26.1 (2023-10-23)
