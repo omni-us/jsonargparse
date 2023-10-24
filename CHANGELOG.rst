@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.26.2 (2023-10-??)
+--------------------
+
+Fixed
+^^^^^
+- Failure to parse subclass added via add_argument and required arg as link
+  target.
+
+
 v4.26.1 (2023-10-23)
 --------------------
 

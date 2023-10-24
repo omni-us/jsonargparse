@@ -637,6 +637,38 @@ def test_on_instantiate_subclass_link_ignored_missing_param(parser, caplog):
     assert "'v.init_args.v1 --> w.init_args.w2' ignored since target" in caplog.text
 
 
+class SubRequired:
+    def __init__(self):
+        pass
+
+
+class RequiredTarget:
+    def __init__(
+        self,
+        a: int,
+        b: SubRequired,
+    ):
+        self.a = a
+        self.b = b
+
+
+class RequiredSource:
+    def __init__(self, a: int):
+        self.a = a
+
+
+def test_on_instantiate_add_argument_subclass_required_params(parser):
+    parser.add_argument("--cls1", type=RequiredSource)
+    parser.add_argument("--cls2", type=RequiredTarget)
+    parser.link_arguments("cls1.a", "cls2.init_args.a", apply_on="instantiate")
+    cfg = parser.parse_args(["--cls1=RequiredSource", "--cls1.a=1", "--cls2=RequiredTarget", "--cls2.b=SubRequired"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.cls1, RequiredSource)
+    assert isinstance(init.cls2, RequiredTarget)
+    assert isinstance(init.cls2.b, SubRequired)
+    assert init.cls2.a == 1
+
+
 # link creation failures
 
 
