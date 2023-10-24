@@ -184,6 +184,7 @@ class ActionTypeHint(Action):
         else:
             self._typehint = kwargs.pop("_typehint")
             self._enable_path = kwargs.pop("_enable_path")
+            self.sub_add_kwargs: dict = {}
             if "metavar" not in kwargs:
                 kwargs["metavar"] = typehint_metavar(self._typehint)
             super().__init__(**kwargs)
