@@ -1354,8 +1354,12 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                         value[k] = action.type(v)
             except (TypeError, ValueError) as ex:
                 raise TypeError(f'Parser key "{key}": {ex}') from ex
-        if not is_subcommand and action.choices and value not in action.choices:
-            raise TypeError(f'Parser key "{key}": {value!r} not among choices {action.choices}')
+        if not is_subcommand and action.choices:
+            vals = value if _is_action_value_list(action) else [value]
+            assert isinstance(vals, list)
+            for val in vals:
+                if val not in action.choices:
+                    raise TypeError(f'Parser key "{key}": {val!r} not among choices {action.choices}')
         return value
 
     ## Properties ##
