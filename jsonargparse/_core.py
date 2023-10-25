@@ -955,7 +955,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             ):
                 cfg[action.dest] = recreate_branches(action.default)
 
-        self._logger.debug("Loaded default values from parser")
+        self._logger.debug("Loaded parser defaults: %s", cfg)
 
         default_config_files = self._get_default_config_files()
         for key, default_config_file in default_config_files:
@@ -1165,7 +1165,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                     pass
                 else:
                     if value is not None:
-                        with parser_context(parent_parser=self, class_instantiators=self._get_instantiators()):
+                        with parser_context(
+                            parent_parser=self,
+                            nested_links=ActionLink.get_nested_links(self, component),
+                            class_instantiators=self._get_instantiators(),
+                        ):
                             parent[key] = component.instantiate_classes(value)
             else:
                 with parser_context(load_value_mode=self.parser_mode, class_instantiators=self._get_instantiators()):

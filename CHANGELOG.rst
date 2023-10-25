@@ -20,6 +20,8 @@ Fixed
 - Failure to parse subclass added via add_argument and required arg as link
   target.
 - ``choices`` working incorrectly when ``nargs`` is ``+``, ``*`` or number.
+- Unable link two deep level arguments sharing the same root class (`#297
+  <https://github.com/omni-us/jsonargparse/issues/297>`__).
 
 
 v4.26.1 (2023-10-23)

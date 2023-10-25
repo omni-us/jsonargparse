@@ -118,13 +118,14 @@ class ActionLink(Action):
         if not hasattr(parser, "_links_group"):
             parser._links_group = parser.add_argument_group("Linked arguments")
         self.parser = parser
+        self._target = target
+        self._source = source = (source,) if isinstance(source, str) else source
         self.apply_on = apply_on
         self.compute_fn = compute_fn
         self._initial_input_checks(source, target)
 
         # Set and check source actions or group
         exclude = (ActionLink, _ActionConfigLoad, _ActionSubCommands, ActionConfigFile)
-        source = (source,) if isinstance(source, str) else source
         if apply_on == "instantiate":
             self.source = [(s, find_subclass_action_or_class_group(parser, s, exclude=exclude)) for s in source]
             for key, action in self.source:
@@ -219,13 +220,21 @@ class ActionLink(Action):
             help=help_str,
         )
 
+    def get_kwargs(self) -> dict:
+        return {
+            "source": self._source,
+            "target": self._target,
+            "apply_on": self.apply_on,
+            "compute_fn": self.compute_fn,
+        }
+
     def _initial_input_checks(self, source, target):
         # Check apply_on
         if self.apply_on not in {"parse", "instantiate"}:
             raise ValueError("apply_on must be 'parse' or 'instantiate'.")
 
         # Check compute function
-        if self.compute_fn is None and not isinstance(source, str):
+        if self.compute_fn is None and not (isinstance(source, str) or len(source) == 1):
             raise ValueError("Multiple source keys requires a compute function.")
 
         if self.apply_on == "parse":
@@ -266,21 +275,19 @@ class ActionLink(Action):
             ActionLink.apply_parsing_links(subparser, cfg[subcommand])  # type: ignore
         if not hasattr(parser, "_links_group"):
             return
-        for action in parser._links_group._group_actions:
-            if action.apply_on != "parse":
-                continue
+        for action in get_link_actions(parser, "parse"):
             from ._typehints import ActionTypeHint
 
             args = []
             skip_link = False
             for source_key, source_action in action.source:
-                if ActionTypeHint.is_subclass_typehint(source_action[0]) and source_key not in cfg:
+                if ActionTypeHint.is_subclass_typehint(source_action[0]) and source_key not in cfg:  # type: ignore
                     parser.logger.debug(
                         f"Link '{action.option_strings[0]}' ignored since source '{source_key}' not found in namespace."
                     )
                     skip_link = True
                     break
-                for source_action_n in [a for a in source_action if a.dest in cfg]:
+                for source_action_n in [a for a in source_action if a.dest in cfg]:  # type: ignore
                     parser._check_value_key(source_action_n, cfg[source_action_n.dest], source_action_n.dest, None)
                 args.append(cfg[source_key])
             if skip_link:
@@ -309,6 +316,7 @@ class ActionLink(Action):
                 # Compute value
                 value = action.call_compute_fn(args)
             ActionLink.set_target_value(action, value, cfg, parser.logger)
+            parser.logger.debug(f"Applied link '{action.option_strings[0]}'.")
 
     @staticmethod
     def apply_instantiation_links(parser, cfg, target=None, order=None):
@@ -317,14 +325,15 @@ class ActionLink(Action):
 
         applied_key = "__applied_instantiation_links__"
         applied_links = cfg.pop(applied_key) if applied_key in cfg else set()
-        link_actions = [
-            a for a in parser._links_group._group_actions if a.apply_on == "instantiate" and a not in applied_links
-        ]
+        link_actions = get_link_actions(parser, "instantiate", skip=applied_links)
         if order and link_actions:
             link_actions = ActionLink.reorder(order, link_actions)
 
         for action in link_actions:
-            if not (order or action.target[0] == target or action.target[0].startswith(target + ".")):
+            target_key = action.target[0]
+            if not (
+                order or target_key == target or target_key.startswith(f"{target}.")
+            ) or is_nested_instantiation_link(action):
                 continue
             source_objects = []
             for source_key, source_action in action.source:
@@ -350,9 +359,24 @@ class ActionLink(Action):
                 value = action.call_compute_fn(source_objects)
             ActionLink.set_target_value(action, value, cfg, parser.logger)
             applied_links.add(action)
+            parser.logger.debug(f"Applied link '{action.option_strings[0]}'.")
 
         if target:
             cfg[applied_key] = applied_links
+
+    @staticmethod
+    def get_nested_links(parser, action):
+        def trim_param_keys(params: dict):
+            params = params.copy()
+            params["source"] = tuple(k[len(f"{action.dest}.") :] for k in params["source"])
+            params["target"] = params["target"][len(f"{action.dest}.init_args.") :]
+            return params
+
+        links = []
+        for link in get_link_actions(parser, "instantiate"):
+            if link.target[1] is action and is_nested_instantiation_link(link):
+                links.append(trim_param_keys(link.get_kwargs()))
+        return links
 
     @staticmethod
     def set_target_value(action: "ActionLink", value: Any, cfg: Namespace, logger) -> None:
@@ -378,15 +402,14 @@ class ActionLink(Action):
 
     @staticmethod
     def instantiation_order(parser):
-        if hasattr(parser, "_links_group"):
-            actions = [a for a in parser._links_group._group_actions if a.apply_on == "instantiate"]
-            if len(actions) > 0:
-                graph = DirectedGraph()
-                for action in actions:
-                    target = re.sub(r"\.init_args$", "", split_key_leaf(action.target[0])[0])
-                    for _, source_action in action.source:
-                        graph.add_edge(source_action.dest, target)
-                return graph.get_topological_order()
+        actions = get_link_actions(parser, "instantiate")
+        if actions:
+            graph = DirectedGraph()
+            for action in actions:
+                target = re.sub(r"\.init_args$", "", split_key_leaf(action.target[0])[0])
+                for _, source_action in action.source:
+                    graph.add_edge(source_action.dest, target)
+            return graph.get_topological_order()
         return []
 
     @staticmethod
@@ -426,6 +449,25 @@ class ActionLink(Action):
             for num, subcommand in enumerate(subcommands):
                 if subcommand in cfg:
                     ActionLink.strip_link_target_keys(subparsers[num], cfg[subcommand])
+
+
+def get_link_actions(parser: "ArgumentParser", apply_on: str, skip=set()) -> List[ActionLink]:
+    if not hasattr(parser, "_links_group"):
+        return []
+    return [a for a in parser._links_group._group_actions if a.apply_on == apply_on and a not in skip]
+
+
+def is_nested_instantiation_link(action: ActionLink) -> bool:
+    from ._typehints import ActionTypeHint
+
+    target_key, target_action = action.target
+    assert target_action
+    return (
+        target_key.startswith(f"{target_action.dest}.init_args.")
+        and ActionTypeHint.is_subclass_typehint(target_action)
+        and all(a is target_action for _, a in action.source)
+        and all(k.startswith(f"{target_action.dest}.") for k, _ in action.source)
+    )
 
 
 class ArgumentLinking:
