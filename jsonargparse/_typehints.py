@@ -41,7 +41,7 @@ from ._actions import (
     _is_action_value_list,
     remove_actions,
 )
-from ._common import get_class_instantiator, is_dataclass_like, is_subclass, parent_parser, parser_context
+from ._common import get_class_instantiator, is_dataclass_like, is_subclass, nested_links, parent_parser, parser_context
 from ._loaders_dumpers import (
     get_loader_exceptions,
     load_value,
@@ -528,10 +528,15 @@ class ActionTypeHint(Action):
         parser = type(parser)(exit_on_error=False, logger=parser.logger)
         remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
         parser.add_class_arguments(val_class, **kwargs)
+
         if "linked_targets" in kwargs and parser.required_args:
             for key in kwargs["linked_targets"]:
                 if key in parser.required_args:
                     parser.required_args.remove(key)
+
+        for link_kwargs in nested_links.get():
+            parser.link_arguments(**link_kwargs)
+
         return parser
 
     def extra_help(self):

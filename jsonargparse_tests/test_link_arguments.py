@@ -669,6 +669,103 @@ def test_on_instantiate_add_argument_subclass_required_params(parser):
     assert init.cls2.a == 1
 
 
+class WithinDeepSource:
+    def __init__(self, model_name: str):
+        self.output_channels = dict(
+            modelA=16,
+            modelB=32,
+        )[model_name]
+
+
+class WithinDeepTarget:
+    def __init__(self, input_channels: int):
+        self.input_channels = input_channels
+
+
+class WithinDeepModel:
+    def __init__(
+        self,
+        encoder: WithinDeepSource,
+        decoder: WithinDeepTarget,
+    ):
+        self.encoder = encoder
+        self.decoder = decoder
+
+
+within_deep_config = {
+    "model": {
+        "class_path": f"{__name__}.WithinDeepModel",
+        "init_args": {
+            "encoder": {
+                "class_path": f"{__name__}.WithinDeepSource",
+                "init_args": {
+                    "model_name": "modelA",
+                },
+            },
+            "decoder": {
+                "class_path": f"{__name__}.WithinDeepTarget",
+            },
+        },
+    },
+}
+
+
+def test_on_instantiate_within_deep_subclass(parser, caplog):
+    parser.logger = {"level": "DEBUG"}
+    parser.logger.handlers = [caplog.handler]
+
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--model", type=WithinDeepModel)
+    parser.link_arguments(
+        "model.encoder.output_channels",
+        "model.init_args.decoder.init_args.input_channels",
+        apply_on="instantiate",
+    )
+
+    cfg = parser.parse_args([f"--cfg={within_deep_config}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.model, WithinDeepModel)
+    assert isinstance(init.model.encoder, WithinDeepSource)
+    assert isinstance(init.model.decoder, WithinDeepTarget)
+    assert init.model.decoder.input_channels == 16
+    assert "Applied link 'encoder.output_channels --> decoder.init_args.input_channels'" in caplog.text
+
+
+class WithinDeeperSystem:
+    def __init__(self, model: WithinDeepModel):
+        self.model = model
+
+
+within_deeper_config = {
+    "system": {
+        "class_path": f"{__name__}.WithinDeeperSystem",
+        "init_args": within_deep_config,
+    },
+}
+
+
+def test_on_instantiate_within_deeper_subclass(parser, caplog):
+    parser.logger = {"level": "DEBUG"}
+    parser.logger.handlers = [caplog.handler]
+
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_subclass_arguments(WithinDeeperSystem, "system")
+    parser.link_arguments(
+        "system.model.encoder.output_channels",
+        "system.init_args.model.init_args.decoder.init_args.input_channels",
+        apply_on="instantiate",
+    )
+
+    cfg = parser.parse_args([f"--cfg={within_deeper_config}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.system, WithinDeeperSystem)
+    assert isinstance(init.system.model, WithinDeepModel)
+    assert isinstance(init.system.model.encoder, WithinDeepSource)
+    assert isinstance(init.system.model.decoder, WithinDeepTarget)
+    assert init.system.model.decoder.input_channels == 16
+    assert "Applied link 'encoder.output_channels --> decoder.init_args.input_channels'" in caplog.text
+
+
 # link creation failures
 
 

@@ -3,7 +3,7 @@ import inspect
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Dict, Generic, Optional, Tuple, Type, TypeVar, Union, _GenericAlias  # type: ignore
+from typing import Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union, _GenericAlias  # type: ignore
 
 from ._namespace import Namespace
 from ._type_checking import ArgumentParser
@@ -31,6 +31,7 @@ defaults_cache: ContextVar[Optional[Namespace]] = ContextVar("defaults_cache", d
 lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", default=False)
 load_value_mode: ContextVar[Optional[str]] = ContextVar("load_value_mode", default=None)
 class_instantiators: ContextVar[Optional[InstantiatorsDictType]] = ContextVar("class_instantiators")
+nested_links: ContextVar[List[dict]] = ContextVar("nested_links", default=[])
 
 
 parser_context_vars = dict(
@@ -40,6 +41,7 @@ parser_context_vars = dict(
     lenient_check=lenient_check,
     load_value_mode=load_value_mode,
     class_instantiators=class_instantiators,
+    nested_links=nested_links,
 )
 
 
