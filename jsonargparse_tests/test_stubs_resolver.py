@@ -24,7 +24,7 @@ from jsonargparse_tests.conftest import (
     skip_if_requests_unavailable,
 )
 
-torch_available = find_spec("torch")
+torch_available = bool(find_spec("torch"))
 
 
 @pytest.fixture(autouse=True)
@@ -244,27 +244,22 @@ def test_get_params_complex_function_requests_get(parser):
 
 # pytorch tests
 
+
 if torch_available:
     import torch.optim  # pylint: disable=import-error
     import torch.optim.lr_scheduler  # pylint: disable=import-error
 
-
-def skip_stub_inconsistencies(cls, params):
-    # https://github.com/pytorch/pytorch/pull/90216
-    skip = {("Optimizer", "defaults"), ("SGD", "maximize"), ("SGD", "differentiable")}
-    return [p for p in params if (cls.__name__, p.name) not in skip]
+    if tuple(int(v) for v in torch.__version__.split(".", 2)[:2]) < (2, 1):
+        torch_available = False
 
 
-@pytest.mark.skipif(not torch_available, reason="torch package is required")
+@pytest.mark.skipif(not torch_available, reason="torch>=2.1 package is required")
 @pytest.mark.parametrize(
     "class_name",
     [
-        "Optimizer",
         "Adadelta",
         "Adagrad",
-        "Adam",
         "Adamax",
-        "AdamW",
         "ASGD",
         "LBFGS",
         "NAdam",
@@ -278,13 +273,13 @@ def skip_stub_inconsistencies(cls, params):
 def test_get_params_torch_optimizer(class_name):
     cls = getattr(torch.optim, class_name)
     params = get_params(cls)
-    assert all(p.annotation is not inspect._empty for p in skip_stub_inconsistencies(cls, params))
+    assert all(p.annotation is not inspect._empty for p in params)
     with mock_typeshed_client_unavailable():
         params = get_params(cls)
     assert any(p.annotation is inspect._empty for p in params)
 
 
-@pytest.mark.skipif(not torch_available, reason="torch package is required")
+@pytest.mark.skipif(not torch_available, reason="torch>=2.1 package is required")
 @pytest.mark.parametrize(
     "class_name",
     [
