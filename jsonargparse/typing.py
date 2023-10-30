@@ -32,6 +32,7 @@ __all__ = [
     "Path_dw",
     "Path_dc",
     "Path_drw",
+    "SecretStr",
 ]
 
 
@@ -455,6 +456,33 @@ def range_deserializer(value):
 
 
 register_type(range, serializer=range_serializer, deserializer=range_deserializer)
+
+
+class SecretStr:
+    """Holds a secret string that serializes to **********."""
+
+    def __init__(self, value: str):
+        self._value = value
+
+    def __str__(self) -> str:
+        return "**********"
+
+    def __len__(self) -> int:
+        return len(self._value)
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, self.__class__) and self._value == other._value
+
+    def __hash__(self) -> int:
+        return hash(self._value)
+
+    def get_secret_value(self) -> str:
+        """Returns the actual secret value."""
+        return self._value
+
+
+register_type(SecretStr)
+register_type_on_first_use("pydantic.SecretStr")
 
 
 def pydantic_deserializer(type_class):
