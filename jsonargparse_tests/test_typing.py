@@ -11,6 +11,7 @@ from typing import List, Optional, Union
 import pytest
 
 from jsonargparse import ArgumentError
+from jsonargparse._optionals import pydantic_support
 from jsonargparse.typing import (
     ClosedUnitInterval,
     Email,
@@ -20,6 +21,7 @@ from jsonargparse.typing import (
     OpenUnitInterval,
     PositiveFloat,
     PositiveInt,
+    SecretStr,
     extend_base_type,
     get_registered_type,
     register_type,
@@ -404,3 +406,30 @@ def test_uuid(parser):
     assert cfg.uuid == id1
     assert cfg.uuids == [id1, id2]
     assert f"uuid: {id1}\nuuids:\n- {id1}\n- {id2}\n" == parser.dump(cfg)
+
+
+def test_secret_str_methods():
+    value = SecretStr("secret")
+    assert len(value) == 6
+    assert value == SecretStr("secret")
+    assert value != SecretStr("other secret")
+    assert hash("secret") == hash(value)
+
+
+def test_secret_str_parsing(parser):
+    parser.add_argument("--password", type=SecretStr)
+    cfg = parser.parse_args(["--password=secret"])
+    assert isinstance(cfg.password, SecretStr)
+    assert cfg.password.get_secret_value() == "secret"
+    assert "secret" not in parser.dump(cfg)
+
+
+@pytest.mark.skipif(not pydantic_support, reason="pydantic package is required")
+def test_pydantic_secret_str(parser):
+    from pydantic import SecretStr
+
+    parser.add_argument("--password", type=SecretStr)
+    cfg = parser.parse_args(["--password=secret"])
+    assert isinstance(cfg.password, SecretStr)
+    assert cfg.password.get_secret_value() == "secret"
+    assert "secret" not in parser.dump(cfg)
