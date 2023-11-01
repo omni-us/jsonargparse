@@ -472,7 +472,7 @@ class ActionTypeHint(Action):
 
                 prev_val = cfg.get(self.dest) if cfg else None
                 if prev_val is None and not sub_defaults.get() and is_subclass_spec(self.default):
-                    prev_val = Namespace(class_path=self.default.class_path)
+                    prev_val = Namespace(class_path=self.default["class_path"])
 
                 kwargs = {
                     "sub_add_kwargs": getattr(self, "sub_add_kwargs", {}),

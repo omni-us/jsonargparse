@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from calendar import Calendar, TextCalendar
 from dataclasses import dataclass
-from typing import Any, List, Mapping, Optional, Union
+from typing import Any, Callable, List, Mapping, Optional, Union
 
 import pytest
 import yaml
@@ -415,6 +415,31 @@ def test_on_parse_save_required_target_subclass_param(parser, tmp_cwd):
     parser.save(cfg, "config.yaml")
     saved = yaml.safe_load((tmp_cwd / "config.yaml").read_text())
     assert saved == {"a": {"a": 1}, "c": {"class_path": f"{__name__}.RequiredTargetC", "init_args": {}}}
+
+
+class Optimizer:
+    def __init__(self, params: List[int], lr: float):
+        self.params = params
+        self.lr = lr
+
+
+class Model:
+    def __init__(self, label: str, optimizer: Callable[[List[int]], Optimizer] = lambda p: Optimizer(p, lr=0.01)):
+        self.label = label
+        self.optimizer = optimizer
+
+
+def get_model_label(model):
+    return model.init_args.label
+
+
+def test_on_parse_nested_callable(parser):
+    parser.add_subclass_arguments(Model, "model")
+    parser.add_argument("--data.label", type=str)
+    parser.link_arguments("model", "data.label", compute_fn=get_model_label)
+    cfg = parser.parse_args([f"--model={__name__}.Model", "--model.label=value"])
+    assert cfg.data == Namespace(label="value")
+    assert cfg.model.init_args.optimizer.init_args == Namespace(lr=0.01)
 
 
 # tests for links applied on instantiate
