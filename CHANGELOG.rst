@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.27.1 (2023-11-??)
+--------------------
+
+Fixed
+^^^^^
+- Confusing error message when adding signature parameters that conflict with
+  existing arguments.
+
+
 v4.27.0 (2023-11-02)
 --------------------
 

@@ -613,3 +613,14 @@ def test_add_function_group_config_within_config(parser, tmp_cwd):
     cfg = parser.parse_args([f"--cfg={cfg_path}"])
     assert str(cfg.func.__path__) == str(subcfg_path)
     assert strip_meta(cfg.func) == Namespace(a1="one", a2=2.0, a3=True)
+
+
+def func_param_conflict(p1: int, cfg: dict):
+    pass
+
+
+def test_add_function_param_conflict(parser):
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    with pytest.raises(ValueError) as ctx:
+        parser.add_function_arguments(func_param_conflict)
+    ctx.match("Unable to add parameter 'cfg' from")

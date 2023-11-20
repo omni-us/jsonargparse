@@ -242,6 +242,14 @@ class SignatureArguments(LoggerProperty):
                 f"Skipping parameters {names} because {skip_positionals[0]} positionals requested to be skipped."
             )
 
+        prefix = "--" + (nested_key + "." if nested_key else "")
+        for param in params:
+            if prefix + param.name in self._option_string_actions:  # type: ignore
+                raise ValueError(
+                    f"Unable to add parameter '{param.name}' from {function_or_class} because "
+                    f"argument '{prefix + param.name}' already exists."
+                )
+
         ## Create group if requested ##
         doc_group = get_doc_short_description(function_or_class, method_name, logger=self.logger)
         component = getattr(function_or_class, method_name) if method_name else function_or_class
