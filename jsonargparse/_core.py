@@ -1467,7 +1467,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 env_prefix_property_none_message,
             )
 
-            deprecation_warning(ArgumentParser, env_prefix_property_none_message)
+            deprecation_warning(ArgumentParser, env_prefix_property_none_message, stacklevel=3)
             env_prefix = False
         elif env_prefix is True:
             env_prefix = os.path.splitext(self.prog)[0]

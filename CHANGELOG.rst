@@ -19,6 +19,7 @@ Fixed
 ^^^^^
 - Confusing error message when adding signature parameters that conflict with
   existing arguments.
+- Deprecation warnings not printing the correct file and line of code.
 
 
 v4.27.0 (2023-11-02)

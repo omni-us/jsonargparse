@@ -36,6 +36,7 @@ from jsonargparse._optionals import jsonnet_support, url_support
 from jsonargparse._util import LoggerProperty, argument_error
 from jsonargparse_tests.conftest import (
     get_parser_help,
+    is_posix,
     skip_if_docstring_parser_unavailable,
     skip_if_requests_unavailable,
 )
@@ -53,6 +54,17 @@ def suppress_stderr():
     with open(os.devnull, "w") as fnull:
         with redirect_stderr(fnull):
             yield
+
+
+source = pathlib.Path(__file__).read_text().splitlines()
+
+
+def assert_deprecation_warn(warns, message, code):
+    assert message in str(warns[-1].message)
+    if code is None:
+        return
+    assert pathlib.Path(warns[-1].filename).name == pathlib.Path(__file__).name
+    assert code in source[warns[-1].lineno - 1]
 
 
 def test_deprecation_warning():
@@ -78,7 +90,11 @@ def test_ActionEnum():
     parser = ArgumentParser(exit_on_error=False)
     with catch_warnings(record=True) as w:
         action = ActionEnum(enum=MyEnum)
-        assert "ActionEnum was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="ActionEnum was deprecated",
+        code="ActionEnum(enum=MyEnum)",
+    )
     parser.add_argument("--enum", action=action, default=MyEnum.C, help="Description")
 
     for val in ["A", "B", "C"]:
@@ -107,7 +123,11 @@ def test_ActionOperators():
     parser = ArgumentParser(prog="app", exit_on_error=False)
     with catch_warnings(record=True) as w:
         parser.add_argument("--le0", action=ActionOperators(expr=("<", 0)))
-        assert "ActionOperators was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="ActionOperators was deprecated",
+        code='ActionOperators(expr=("<", 0))',
+    )
     parser.add_argument(
         "--gt1.a.le4",
         action=ActionOperators(expr=[(">", 1.0), ("<=", 4.0)], join="and", type=float),
@@ -155,7 +175,11 @@ def test_url_support_true():
     assert "fr" == get_config_read_mode()
     with catch_warnings(record=True) as w:
         set_url_support(True)
-        assert "set_url_support was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="set_url_support was deprecated",
+        code="set_url_support(True)",
+    )
     assert "fur" == get_config_read_mode()
     set_url_support(False)
     assert "fr" == get_config_read_mode()
@@ -179,7 +203,11 @@ def test_instantiate_subclasses():
     cfg = parser.parse_object({"cal": {"class_path": "calendar.Calendar"}})
     with catch_warnings(record=True) as w:
         cfg_init = parser.instantiate_subclasses(cfg)
-        assert "instantiate_subclasses was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="instantiate_subclasses was deprecated",
+        code="parser.instantiate_subclasses(cfg)",
+    )
     assert isinstance(cfg_init["cal"], Calendar)
 
 
@@ -190,7 +218,11 @@ def function(a1: float):
 def test_single_function_cli():
     with catch_warnings(record=True) as w:
         parser = CLI(function, return_parser=True, set_defaults={"a1": 3.4})
-        assert "return_parser parameter was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="return_parser parameter was deprecated",
+        code="CLI(function, return_parser=True,",
+    )
     assert isinstance(parser, ArgumentParser)
 
 
@@ -205,26 +237,45 @@ def cmd2(a2: str = "X"):
 def test_multiple_functions_cli():
     with catch_warnings(record=True) as w:
         parser = CLI([cmd1, cmd2], return_parser=True, set_defaults={"cmd2.a2": "Z"})
-        assert "return_parser parameter was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="return_parser parameter was deprecated",
+        code="CLI([cmd1, cmd2], return_parser=True,",
+    )
     assert isinstance(parser, ArgumentParser)
 
 
 def test_logger_property_none():
     with catch_warnings(record=True) as w:
         LoggerProperty(logger=None)
-        assert " Setting the logger property to None was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message=" Setting the logger property to None was deprecated",
+        code="LoggerProperty(logger=None)",
+    )
 
 
 def test_env_prefix_none():
     with catch_warnings(record=True) as w:
         ArgumentParser(env_prefix=None)
-        assert "env_prefix" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="env_prefix",
+        code="ArgumentParser(env_prefix=None)",
+    )
 
 
 def test_error_handler_parameter():
     with catch_warnings(record=True) as w:
         parser = ArgumentParser(error_handler=usage_and_exit_error_handler)
-        assert "error_handler was deprecated in v4.20.0" in str(w[-1].message)
+    code = "ArgumentParser(error_handler=usage_"
+    if not is_posix:
+        code = None  # for some reason the stack trace differs in windows
+    assert_deprecation_warn(
+        w,
+        message="error_handler was deprecated in v4.20.0",
+        code=code,
+    )
     assert parser.error_handler == usage_and_exit_error_handler
     with suppress_stderr(), pytest.raises(SystemExit), catch_warnings(record=True):
         parser.parse_args(["--invalid"])
@@ -238,7 +289,11 @@ def test_error_handler_property():
     parser = ArgumentParser()
     with catch_warnings(record=True) as w:
         parser.error_handler = custom_error_handler
-        assert "error_handler was deprecated in v4.20.0" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="error_handler was deprecated in v4.20.0",
+        code="parser.error_handler = custom_error_handler",
+    )
     assert parser.error_handler == custom_error_handler
 
     out = StringIO()
@@ -259,7 +314,11 @@ def test_parse_as_dict(tmp_cwd):
         f.write("{}")
     with catch_warnings(record=True) as w:
         parser = ArgumentParser(parse_as_dict=True, default_meta=False)
-        assert "``parse_as_dict`` parameter was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="``parse_as_dict`` parameter was deprecated",
+        code="ArgumentParser(parse_as_dict=True,",
+    )
     assert {} == parser.parse_args([])
     assert {} == parser.parse_env([])
     assert {} == parser.parse_string("{}")
@@ -283,7 +342,11 @@ def test_ActionPath(tmp_cwd):
     parser.add_argument("--cfg", action=ActionConfigFile)
     with catch_warnings(record=True) as w:
         parser.add_argument("--file", action=ActionPath(mode="fr"))
-        assert "ActionPath was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="ActionPath was deprecated",
+        code='ActionPath(mode="fr")',
+    )
     parser.add_argument("--dir", action=ActionPath(mode="drw"))
     parser.add_argument("--files", nargs="+", action=ActionPath(mode="fr"))
 
@@ -327,7 +390,11 @@ def test_ActionPath_skip_check(tmp_cwd):
     parser = ArgumentParser(exit_on_error=False)
     with catch_warnings(record=True) as w:
         parser.add_argument("--file", action=ActionPath(mode="fr", skip_check=True))
-        assert "skip_check parameter of Path was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="skip_check parameter of Path was deprecated",
+        code='ActionPath(mode="fr", skip_check=True)',
+    )
     cfg = parser.parse_args(["--file=not-exist"])
     assert isinstance(cfg.file, Path)
     assert str(cfg.file) == "not-exist"
@@ -395,7 +462,11 @@ def test_ActionPathList(tmp_cwd):
     parser = ArgumentParser(prog="app", exit_on_error=False)
     with catch_warnings(record=True) as w:
         parser.add_argument("--list", nargs="+", action=ActionPathList(mode="fr", rel="list"))
-        assert "ActionPathList was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="ActionPathList was deprecated",
+        code="ActionPathList(mode=",
+    )
     parser.add_argument("--list_cwd", action=ActionPathList(mode="fr", rel="cwd"))
 
     cfg = parser.parse_args(["--list", list_file])
@@ -437,7 +508,11 @@ def test_import_import_docstring_parse():
     with catch_warnings(record=True) as w:
         from jsonargparse.optionals import import_docstring_parse
 
-    assert "Only use the public API" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="Only use the public API",
+        code="from jsonargparse.optionals import import_docstring_parse",
+    )
     assert import_docstring_parse is import_docstring_parser
 
 
@@ -447,7 +522,11 @@ def test_import_from_deprecated():
     with catch_warnings(record=True) as w:
         func = deprecated.set_url_support
 
-    assert "Only use the public API" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="Only use the public API",
+        code="func = deprecated.set_url_support",
+    )
     assert func is set_url_support
 
 
@@ -473,14 +552,22 @@ def test_import_from_module(module, attr):
     module = import_module(f"jsonargparse.{module}")
     with catch_warnings(record=True) as w:
         getattr(module, attr)
-    assert "Only use the public API" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="Only use the public API",
+        code="getattr(module, attr)",
+    )
 
 
 @pytest.mark.skipif(not jsonnet_support, reason="jsonnet package is required")
 def test_action_jsonnet_ext_vars(parser):
     with catch_warnings(record=True) as w:
         parser.add_argument("--ext_vars", action=ActionJsonnetExtVars())
-    assert "ActionJsonnetExtVars was deprecated" in str(w[-1].message)
+    assert_deprecation_warn(
+        w,
+        message="ActionJsonnetExtVars was deprecated",
+        code="action=ActionJsonnetExtVars()",
+    )
     parser.add_argument("--jsonnet", action=ActionJsonnet(ext_vars="ext_vars"))
 
     cfg = parser.parse_args(["--ext_vars", '{"param": 123}', "--jsonnet", example_2_jsonnet])

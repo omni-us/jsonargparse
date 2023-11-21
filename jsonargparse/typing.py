@@ -231,7 +231,7 @@ def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> type:
     if skip_check:
         from ._deprecated import path_skip_check_deprecation
 
-        path_skip_check_deprecation()
+        path_skip_check_deprecation(stacklevel=4)
         name += "_skip_check"
         key_name += " skip_check"
 
