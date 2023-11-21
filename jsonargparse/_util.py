@@ -763,7 +763,7 @@ class LoggerProperty:
         if logger is None:
             from ._deprecated import deprecation_warning, logger_property_none_message
 
-            deprecation_warning((LoggerProperty.logger, None), logger_property_none_message)
+            deprecation_warning((LoggerProperty.logger, None), logger_property_none_message, stacklevel=2)
             logger = False
         if not logger and debug_mode_active():
             logger = {"level": "DEBUG"}

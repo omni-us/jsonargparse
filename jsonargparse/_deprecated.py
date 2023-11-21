@@ -34,7 +34,7 @@ class JsonargparseDeprecationWarning(DeprecationWarning):
     pass
 
 
-def deprecation_warning(component, message):
+def deprecation_warning(component, message, stacklevel=1):
     env_var = os.environ.get("JSONARGPARSE_DEPRECATION_WARNINGS", "").lower()
     show_warnings = env_var != "off"
     all_warnings = env_var == "all"
@@ -49,9 +49,9 @@ def deprecation_warning(component, message):
                 and to disable the warnings set JSONARGPARSE_DEPRECATION_WARNINGS=off.
                 """,
                 JsonargparseDeprecationWarning,
-                stacklevel=1,
+                stacklevel=stacklevel + 2,
             )
-        warning(message, JsonargparseDeprecationWarning, stacklevel=3)
+        warning(message, JsonargparseDeprecationWarning, stacklevel=stacklevel + 2)
         shown_deprecation_warnings.add(component)
 
 
@@ -370,7 +370,7 @@ cli_return_parser_message = """
 
 
 def deprecation_warning_cli_return_parser():
-    deprecation_warning("CLI.__init__.return_parser", cli_return_parser_message)
+    deprecation_warning("CLI.__init__.return_parser", cli_return_parser_message, stacklevel=2)
 
 
 logger_property_none_message = """
@@ -391,8 +391,8 @@ path_skip_check_message = """
 """
 
 
-def path_skip_check_deprecation():
-    deprecation_warning("Path.__init__", path_skip_check_message)
+def path_skip_check_deprecation(stacklevel=2):
+    deprecation_warning("Path.__init__", path_skip_check_message, stacklevel=stacklevel)
 
 
 path_immutable_attrs_message = """
@@ -486,8 +486,8 @@ error_handler_message = """
 """
 
 
-def deprecation_warning_error_handler():
-    deprecation_warning("ArgumentParser.error_handler", error_handler_message)
+def deprecation_warning_error_handler(stacklevel):
+    deprecation_warning("ArgumentParser.error_handler", error_handler_message, stacklevel=stacklevel)
 
 
 class ParserDeprecations:
@@ -510,7 +510,11 @@ class ParserDeprecations:
     @error_handler.setter
     def error_handler(self, error_handler):
         if error_handler is not False:
-            deprecation_warning_error_handler()
+            stacklevel = 2
+            stack = inspect.stack()[1]
+            if stack.filename.endswith("jsonargparse/_deprecated.py"):
+                stacklevel = 5
+            deprecation_warning_error_handler(stacklevel)
         if callable(error_handler) or error_handler in {None, False}:
             self._error_handler = error_handler
         else:
