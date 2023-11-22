@@ -279,6 +279,15 @@ class ActionTypeHint(Action):
         )
 
     @staticmethod
+    def is_return_subclass_typehint(typehint):
+        typehint_origin = get_typehint_origin(typehint)
+        if typehint_origin in callable_origin_types:
+            return_type = get_callable_return_type(typehint)
+            if ActionTypeHint.is_subclass_typehint(return_type):
+                return True
+        return False
+
+    @staticmethod
     def is_mapping_typehint(typehint):
         typehint_origin = get_typehint_origin(typehint) or typehint
         if (

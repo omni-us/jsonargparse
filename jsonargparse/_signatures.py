@@ -363,10 +363,13 @@ class SignatureArguments(LoggerProperty):
                     sub_add_kwargs["skip"] = subclass_skip
                 else:
                     register_pydantic_type(annotation)
+                enable_path = sub_configs and (
+                    is_subclass_typehint or ActionTypeHint.is_return_subclass_typehint(annotation)
+                )
                 args = ActionTypeHint.prepare_add_argument(
                     args=args,
                     kwargs=kwargs,
-                    enable_path=is_subclass_typehint and sub_configs,
+                    enable_path=enable_path,
                     container=group,
                     logger=self.logger,
                     sub_add_kwargs=sub_add_kwargs,

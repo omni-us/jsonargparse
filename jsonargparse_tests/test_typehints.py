@@ -6,6 +6,7 @@ import time
 import uuid
 from calendar import Calendar
 from enum import Enum
+from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -782,6 +783,27 @@ def test_callable_args_return_type_union_of_classes(parser, subtests):
         help_str = get_parser_help(parser)
         for name in ["StepLR", "ReduceLROnPlateau"]:
             assert f"{__name__}.{name}" in help_str
+
+
+class CallableSubconfig:
+    def __init__(self, o: Callable[[int], Optimizer]):
+        self.o = o
+
+
+def test_callable_args_return_type_class_subconfig(parser, tmp_cwd):
+    config = {
+        "class_path": "Adam",
+        "init_args": {"momentum": 0.8},
+    }
+    Path("optimizer.yaml").write_text(yaml.safe_dump(config))
+
+    parser.add_class_arguments(CallableSubconfig, "m", sub_configs=True)
+    cfg = parser.parse_args(["--m.o=optimizer.yaml"])
+    assert cfg.m.o.class_path == f"{__name__}.Adam"
+    init = parser.instantiate_classes(cfg)
+    optimizer = init.m.o(1)
+    assert isinstance(optimizer, Adam)
+    assert optimizer.momentum == 0.8
 
 
 # lazy_instance tests
