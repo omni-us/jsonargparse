@@ -244,6 +244,8 @@ class SignatureArguments(LoggerProperty):
 
         prefix = "--" + (nested_key + "." if nested_key else "")
         for param in params:
+            if skip and param.name in skip:
+                continue
             if prefix + param.name in self._option_string_actions:  # type: ignore
                 raise ValueError(
                     f"Unable to add parameter '{param.name}' from {function_or_class} because "
