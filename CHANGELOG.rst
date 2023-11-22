@@ -20,6 +20,8 @@ Fixed
 - Confusing error message when adding signature parameters that conflict with
   existing arguments.
 - Deprecation warnings not printing the correct file and line of code.
+- ``sub_configs=True`` not working for callable types that return a class (`#419
+  <https://github.com/omni-us/jsonargparse/issues/419>`__).
 
 
 v4.27.0 (2023-11-02)
