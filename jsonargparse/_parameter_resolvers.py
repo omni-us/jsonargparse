@@ -117,7 +117,7 @@ def ast_attribute_load(container, name):
 
 
 def ast_is_assign_with_value(node, value) -> bool:
-    return isinstance(node, ast_assign_type) and ast.dump(node.value) == ast.dump(value)
+    return isinstance(node, ast_assign_type) and ast.dump(node.value) == ast.dump(value)  # type: ignore[attr-defined]
 
 
 def ast_get_assign_targets(node):
