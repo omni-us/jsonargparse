@@ -730,7 +730,8 @@ def parse_logger(logger: Union[bool, str, dict, logging.Logger], caller):
     if level not in logging_levels:
         raise ValueError(f"Got logger level {level!r} but must be one of {logging_levels}.")
     if (logger is True or (isinstance(logger, dict) and "name" not in logger)) and reconplogger_support:
-        logger = import_reconplogger("parse_logger").logger_setup(level=level)
+        kwargs = {"level": "DEBUG", "reload": True} if debug_mode_active() else {}
+        logger = import_reconplogger("parse_logger").logger_setup(**kwargs)
     if not isinstance(logger, logging.Logger):
         logger = setup_default_logger(logger, level, caller)
     return logger

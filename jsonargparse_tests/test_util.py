@@ -427,8 +427,11 @@ log_message = "testing log message"
 
 def test_logger_true():
     test = WithLogger(logger=True)
-    assert test.logger.handlers[0].level == logging.WARNING
-    assert test.logger.name == ("plain_logger" if reconplogger_support else "WithLogger")
+    if reconplogger_support:
+        assert test.logger.name == "plain_logger"
+    else:
+        assert test.logger.handlers[0].level == logging.WARNING
+        assert test.logger.name == "WithLogger"
     with capture_logs(test.logger) as logs:
         test.logger.error(log_message)
     assert "ERROR" in logs.getvalue()
@@ -479,6 +482,7 @@ levels = {0: "DEBUG", 1: "INFO", 2: "WARNING", 3: "ERROR", 4: "CRITICAL"}
 
 
 @pytest.mark.parametrize(["num", "level"], levels.items())
+@pytest.mark.skipif(reconplogger_support, reason="level not overridden when using reconplogger")
 def test_logger_levels(num, level):
     test = WithLogger(logger={"level": level})
     with capture_logs(test.logger) as logs:
