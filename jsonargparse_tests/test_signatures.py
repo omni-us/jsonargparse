@@ -624,3 +624,13 @@ def test_add_function_param_conflict(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_function_arguments(func_param_conflict)
     ctx.match("Unable to add parameter 'cfg' from")
+
+
+def func_unmatched_default_type(p1: str, p2: bool = "deprecated"):  # type: ignore[assignment]
+    return p1
+
+
+def test_add_function_unmatched_default_type(parser):
+    parser.add_function_arguments(func_unmatched_default_type)
+    cfg = parser.parse_args(["--p1=x"])
+    assert cfg.p1 == "x"

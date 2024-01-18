@@ -18,6 +18,9 @@ v4.27.2 (2024-01-??)
 Fixed
 ^^^^^
 - reconplogger's logger level being unexpectedly overwritten.
+- Signature parameter default value that doesn't match its type considered
+  invalid (`lightning#19289 comment
+  <https://github.com/Lightning-AI/pytorch-lightning/pull/19289#issuecomment-1894063743>`__)
 
 
 v4.27.1 (2023-11-23)
