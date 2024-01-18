@@ -495,7 +495,10 @@ class ActionTypeHint(Action):
                 except ValueError as ex:
                     assert ex  # needed due to ruff bug that removes " as ex"
                     try:
-                        if isinstance(orig_val, str):
+                        if orig_val is not None and orig_val == self.default:
+                            val = orig_val
+                            ex = None
+                        elif isinstance(orig_val, str):
                             with change_to_path_dir(config_path):
                                 val = adapt_typehints(orig_val, self._typehint, **kwargs)
                             ex = None
