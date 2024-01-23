@@ -267,7 +267,8 @@ class ActionTypeHint(Action):
         if typehint_origin == Union or (also_lists and typehint_origin in sequence_origin_types):
             subtypes = [a for a in typehint.__args__ if a != NoneType]
             test = all if all_subtypes else any
-            return test(ActionTypeHint.is_subclass_typehint(s) for s in subtypes)
+            k = {"also_lists": also_lists}
+            return test(ActionTypeHint.is_subclass_typehint(s, **k) for s in subtypes)
         return (
             inspect.isclass(typehint)
             and typehint not in leaf_or_root_types
