@@ -429,9 +429,14 @@ class ActionTypeHint(Action):
         with dump_kwargs_context(dump_kwargs):
             if _is_action_value_list(self):
                 return [
-                    adapt_typehints(v, self._typehint, serialize=True, sub_add_kwargs=sub_add_kwargs) for v in value
+                    adapt_typehints(
+                        v, self._typehint, default=self.default, serialize=True, sub_add_kwargs=sub_add_kwargs
+                    )
+                    for v in value
                 ]
-            return adapt_typehints(value, self._typehint, serialize=True, sub_add_kwargs=sub_add_kwargs)
+            return adapt_typehints(
+                value, self._typehint, default=self.default, serialize=True, sub_add_kwargs=sub_add_kwargs
+            )
 
     def __call__(self, *args, **kwargs):
         """Parses an argument validating against the corresponding type hint.
@@ -496,12 +501,9 @@ class ActionTypeHint(Action):
                 except ValueError as ex:
                     assert ex  # needed due to ruff bug that removes " as ex"
                     try:
-                        if orig_val is not None and orig_val == self.default:
-                            val = orig_val
-                            ex = None
-                        elif isinstance(orig_val, str):
+                        if isinstance(orig_val, str):
                             with change_to_path_dir(config_path):
-                                val = adapt_typehints(orig_val, self._typehint, **kwargs)
+                                val = adapt_typehints(orig_val, self._typehint, default=self.default, **kwargs)
                             ex = None
                     except ValueError:
                         if self._enable_path and config_path is None and isinstance(orig_val, str):
@@ -527,7 +529,9 @@ class ActionTypeHint(Action):
             value = [value]
         sub_add_kwargs = getattr(self, "sub_add_kwargs", {})
         for num, val in enumerate(value):
-            value[num] = adapt_typehints(val, self._typehint, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs)
+            value[num] = adapt_typehints(
+                val, self._typehint, default=self.default, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs
+            )
         return value if islist else value[0]
 
     @staticmethod
@@ -616,7 +620,11 @@ def adapt_typehints(
     list_item=False,
     enable_path=False,
     sub_add_kwargs=None,
+    default=None,
 ):
+    if type(val) in {str, bool, int, float} and val == default:
+        return val
+
     adapt_kwargs = {
         "serialize": serialize,
         "instantiate_classes": instantiate_classes,

@@ -407,6 +407,21 @@ def test_add_class_generics(parser):
     assert cfg.p == Namespace(a=5, b=6 + 7j)
 
 
+class UnmatchedDefaultType:
+    def __init__(self, p1: str, p2: bool = "deprecated"):  # type: ignore[assignment]
+        self.p2 = p2
+
+
+def test_add_class_unmatched_default_type(parser):
+    parser.add_class_arguments(UnmatchedDefaultType, "cls")
+    cfg = parser.parse_args(["--cls.p1=x"])
+    assert cfg.cls == Namespace(p1="x", p2="deprecated")
+    init = parser.instantiate_classes(cfg)
+    assert init.cls.p2 == "deprecated"
+    dump = parser.dump(cfg)
+    assert dump == "cls:\n  p1: x\n  p2: deprecated\n"
+
+
 # add_method_arguments tests
 
 
@@ -624,13 +639,3 @@ def test_add_function_param_conflict(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_function_arguments(func_param_conflict)
     ctx.match("Unable to add parameter 'cfg' from")
-
-
-def func_unmatched_default_type(p1: str, p2: bool = "deprecated"):  # type: ignore[assignment]
-    return p1
-
-
-def test_add_function_unmatched_default_type(parser):
-    parser.add_function_arguments(func_unmatched_default_type)
-    cfg = parser.parse_args(["--p1=x"])
-    assert cfg.p1 == "x"
