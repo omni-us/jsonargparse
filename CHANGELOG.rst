@@ -19,6 +19,9 @@ Fixed
 ^^^^^
 - Argument links not working for target ``init_args`` in an optional list (`#433
   <https://github.com/omni-us/jsonargparse/issues/433>`__).
+- Signature parameter default that doesn't match its type failing on
+  instantiation and serialization (`lightning#19289 comment
+  <https://github.com/Lightning-AI/pytorch-lightning/pull/19289#issuecomment-1902618722>`__)
 
 
 v4.27.2 (2024-01-18)
