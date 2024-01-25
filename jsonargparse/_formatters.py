@@ -45,7 +45,7 @@ class PercentTemplate(Template):
     (?P<braced>[_a-z][_a-z0-9]*)\)s|
     (?P<invalid>)
     )
-    """  # type: ignore
+    """  # type: ignore[assignment]
 
 
 class DefaultHelpFormatter(HelpFormatter):

@@ -625,8 +625,8 @@ def test_class_from_function_given_return_type():
 def get_calendar(a1: str, a2: int = 2) -> Calendar:
     """Returns instance of Calendar"""
     cal = Calendar()
-    cal.a1 = a1  # type: ignore
-    cal.a2 = a2  # type: ignore
+    cal.a1 = a1  # type: ignore[attr-defined]
+    cal.a2 = a2  # type: ignore[attr-defined]
     return cal
 
 

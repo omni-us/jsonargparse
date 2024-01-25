@@ -176,7 +176,7 @@ class ActionTypeHint(Action):
                     discard = {typehint.__args__[n] for n, s in enumerate(subtype_supported) if not s}
                     kwargs["logger"].debug(f"Discarding unsupported subtypes {discard} from {typehint}")
                     subtypes = tuple(t for t, s in zip(typehint.__args__, subtype_supported) if s)
-                    typehint = Union[subtypes]  # type: ignore
+                    typehint = Union[subtypes]  # type: ignore[assignment]
             self._typehint = typehint
             self._enable_path = False if is_optional(typehint, Path) else enable_path
         elif "_typehint" not in kwargs:

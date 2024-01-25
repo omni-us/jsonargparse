@@ -318,7 +318,7 @@ def test_get_types_dataclass_pep585(parser):
 
 @dataclasses.dataclass
 class DataWithInit585(Data585):
-    def __init__(self, b: Path_drw, **kwargs):  # type: ignore
+    def __init__(self, b: Path_drw, **kwargs):  # type: ignore[valid-type]
         super().__init__(b=os.fspath(b), **kwargs)
 
 

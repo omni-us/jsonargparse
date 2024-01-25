@@ -39,7 +39,7 @@ class ParamData:
 
 
 ParamList = List[ParamData]
-parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]  # type: ignore
+parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]  # type: ignore[attr-defined]
 kinds = inspect._ParameterKind
 ast_assign_type: Tuple[Type[ast.AST], ...] = (ast.AnnAssign, ast.Assign)
 param_kwargs_pop_or_get = "**.pop|get():"
@@ -376,7 +376,7 @@ def group_parameters(params_list: List[ParamList]) -> ParamList:
     non_get_pop_count = 0
     params_dict = defaultdict(lambda: [])
     for params in params_list:
-        if not (params[0].origin or "").startswith(param_kwargs_pop_or_get):  # type: ignore
+        if not (params[0].origin or "").startswith(param_kwargs_pop_or_get):  # type: ignore[union-attr]
             non_get_pop_count += 1
         for param in params:
             if param.kind != kinds.POSITIONAL_ONLY:
@@ -445,7 +445,7 @@ def get_component_and_parent(
     method_or_property: Optional[Union[str, Callable]] = None,
 ):
     if is_subclass(function_or_class, ClassFromFunctionBase) and method_or_property in {None, "__init__"}:
-        function_or_class = function_or_class.wrapped_function  # type: ignore
+        function_or_class = function_or_class.wrapped_function  # type: ignore[union-attr]
         method_or_property = None
     elif inspect.isclass(get_generic_origin(function_or_class)) and method_or_property is None:
         method_or_property = "__init__"
@@ -740,7 +740,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 elif self.parent and ast_is_super_call(node):
                     if ast_is_supported_super_call(node, self.self_name, self.log_debug):
                         params = get_mro_parameters(
-                            node.func.attr,  # type: ignore
+                            node.func.attr,  # type: ignore[attr-defined]
                             get_signature_parameters,
                             self.logger,
                         )
@@ -908,10 +908,10 @@ def get_parameters_from_pydantic_or_attrs(
     if pydantic_support:
         pydantic_model = is_pydantic_model(function_or_class)
         if pydantic_model == 1:
-            fields_iterator = function_or_class.__fields__.items()  # type: ignore
+            fields_iterator = function_or_class.__fields__.items()  # type: ignore[union-attr]
             get_field_data = get_field_data_pydantic1_model
         elif pydantic_model > 1:
-            fields_iterator = function_or_class.model_fields.items()  # type: ignore
+            fields_iterator = function_or_class.model_fields.items()  # type: ignore[union-attr]
             get_field_data = get_field_data_pydantic2_model
         elif dataclasses.is_dataclass(function_or_class) and hasattr(function_or_class, "__pydantic_fields__"):
             fields_iterator = dataclasses.fields(function_or_class)

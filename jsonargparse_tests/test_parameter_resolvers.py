@@ -372,8 +372,8 @@ class ClassInstanceDefaults:
         cal2: Calendar = calendar.TextCalendar(2),
         opt1: Callable[[List[int]], Optimizer] = lambda p: SGD(p, lr=0.01),
         opt2: Callable[[List[int]], Optimizer] = lambda p: SGD(p, 0.02),
-        opt3: Callable[[List[int]], Optimizer] = lambda p, lr=0.1: SGD(p, lr=lr),  # type: ignore
-        opt4: Callable[[List[int]], Optimizer] = lambda p: Calendar(firstweekday=3),  # type: ignore
+        opt3: Callable[[List[int]], Optimizer] = lambda p, lr=0.1: SGD(p, lr=lr),  # type: ignore[misc]
+        opt4: Callable[[List[int]], Optimizer] = lambda p: Calendar(firstweekday=3),  # type: ignore[assignment,return-value]
         **kwargs,
     ):
         """

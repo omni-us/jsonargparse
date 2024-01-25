@@ -16,7 +16,7 @@ __all__ = [
 ]
 
 
-class DefaultLoader(getattr(yaml, "CSafeLoader", yaml.SafeLoader)):  # type: ignore
+class DefaultLoader(getattr(yaml, "CSafeLoader", yaml.SafeLoader)):  # type: ignore[misc]
     pass
 
 

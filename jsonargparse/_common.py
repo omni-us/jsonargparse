@@ -3,7 +3,17 @@ import inspect
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union, _GenericAlias  # type: ignore
+from typing import (  # type: ignore[attr-defined]
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    _GenericAlias,
+)
 
 from ._namespace import Namespace
 from ._type_checking import ArgumentParser

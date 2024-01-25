@@ -229,8 +229,8 @@ def test_add_class_without_valid_parameters(parser):
 class WithNew:
     def __new__(cls, a1: int = 1, a2: float = 2.3):
         obj = object.__new__(cls)
-        obj.a1 = a1  # type: ignore
-        obj.a2 = a2  # type: ignore
+        obj.a1 = a1  # type: ignore[attr-defined]
+        obj.a2 = a2  # type: ignore[attr-defined]
         return obj
 
 
@@ -559,7 +559,7 @@ def test_add_function_invalid_type(parser):
     ctx.match("all mandatory parameters must have a supported type")
 
 
-def func_implicit_optional(a1: int = None):  # type: ignore
+def func_implicit_optional(a1: int = None):  # type: ignore[assignment]
     return a1
 
 

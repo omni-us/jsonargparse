@@ -352,7 +352,7 @@ def is_annotated_validator(typehint: type) -> bool:
     return (
         pydantic_support > 1
         and is_annotated(typehint)
-        and any(get_module(m) in {"pydantic", "annotated_types"} for m in typehint.__metadata__)  # type: ignore
+        and any(get_module(m) in {"pydantic", "annotated_types"} for m in typehint.__metadata__)  # type: ignore[attr-defined]
     )
 
 
