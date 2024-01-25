@@ -344,8 +344,8 @@ def add_type(type_class: Type, uniqueness_key: Optional[Tuple], type_check: Opti
     globals()[type_class.__name__] = type_class
     kwargs = {"uniqueness_key": uniqueness_key}
     if type_check is not None:
-        kwargs["type_check"] = type_check  # type: ignore
-    register_type(type_class, type_class._type, **kwargs)  # type: ignore
+        kwargs["type_check"] = type_check  # type: ignore[assignment]
+    register_type(type_class, type_class._type, **kwargs)  # type: ignore[arg-type]
 
 
 _fail_already_registered = False

@@ -113,7 +113,7 @@ def capture_parser(function: Callable, *args, **kwargs) -> ArgumentParser:
         with parser_context(parser_capture=True):
             function(*args, **kwargs)
     except CaptureParserException as ex:
-        return ex.parser  # type: ignore
+        return ex.parser  # type: ignore[return-value]
     raise CaptureParserException(None)
 
 
@@ -153,7 +153,7 @@ def parse_value_or_config(
     if isinstance(value, dict) and cfg_path is not None:
         value["__path__"] = cfg_path
     if nested_arg:
-        value = NestedArg(key=nested_arg.key, val=value)  # type: ignore
+        value = NestedArg(key=nested_arg.key, val=value)  # type: ignore[union-attr]
     return value, cfg_path
 
 
@@ -407,12 +407,12 @@ def class_from_function(
     def __new__(cls, *args, **kwargs):
         return func(*args, **kwargs)
 
-    class ClassFromFunction(func_return, ClassFromFunctionBase):  # type: ignore
+    class ClassFromFunction(func_return, ClassFromFunctionBase):  # type: ignore[valid-type,misc]
         pass
 
     setattr(caller_module, name, ClassFromFunction)
     ClassFromFunction.wrapped_function = func
-    ClassFromFunction.__new__ = __new__  # type: ignore
+    ClassFromFunction.__new__ = __new__  # type: ignore[method-assign]
     ClassFromFunction.__doc__ = func.__doc__
     ClassFromFunction.__module__ = caller_module.__name__
     ClassFromFunction.__name__ = name
@@ -742,7 +742,7 @@ class LoggerProperty:
 
     def __init__(self, *args, logger: Union[bool, str, dict, logging.Logger] = False, **kwargs):
         """Initializer for LoggerProperty class."""
-        self.logger = logger  # type: ignore
+        self.logger = logger  # type: ignore[assignment]
         super().__init__(*args, **kwargs)
 
     @property

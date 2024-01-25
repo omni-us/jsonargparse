@@ -97,7 +97,7 @@ class SignatureArguments(LoggerProperty):
             defaults = default.lazy_get_init_args()
             if defaults:
                 defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
-                self.set_defaults(**defaults)  # type: ignore
+                self.set_defaults(**defaults)  # type: ignore[attr-defined]
 
         return added_args
 
@@ -246,7 +246,7 @@ class SignatureArguments(LoggerProperty):
         for param in params:
             if skip and param.name in skip:
                 continue
-            if prefix + param.name in self._option_string_actions:  # type: ignore
+            if prefix + param.name in self._option_string_actions:  # type: ignore[attr-defined]
                 raise ValueError(
                     f"Unable to add parameter '{param.name}' from {function_or_class} because "
                     f"argument '{prefix + param.name}' already exists."
@@ -498,12 +498,12 @@ class SignatureArguments(LoggerProperty):
         if is_dataclass_like(baseclass):
             raise ValueError("Not allowed for dataclass-like classes.")
         if type(baseclass) is not tuple:
-            baseclass = (baseclass,)  # type: ignore
+            baseclass = (baseclass,)  # type: ignore[assignment]
         if not baseclass or not all(inspect.isclass(c) for c in baseclass):
             raise ValueError(f"Expected 'baseclass' argument to be a class or a tuple of classes: {baseclass}")
 
         doc_group = None
-        if len(baseclass) == 1:  # type: ignore
+        if len(baseclass) == 1:  # type: ignore[arg-type]
             doc_group = get_doc_short_description(baseclass[0], logger=self.logger)
         group = self._create_group_if_requested(
             baseclass,

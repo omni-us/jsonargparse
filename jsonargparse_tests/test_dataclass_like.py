@@ -39,7 +39,7 @@ class DataClassA:
         a2: a2 help
     """
 
-    a1: PositiveInt = PositiveInt(1)  # type: ignore
+    a1: PositiveInt = PositiveInt(1)  # type: ignore[valid-type]
     a2: str = "2"
 
 
@@ -52,7 +52,7 @@ class DataClassB:
         b2: b2 help
     """
 
-    b1: PositiveFloat = PositiveFloat(3.0)  # type: ignore
+    b1: PositiveFloat = PositiveFloat(3.0)  # type: ignore[valid-type]
     b2: DataClassA = DataClassA()
 
 
@@ -490,7 +490,7 @@ if pydantic_support:
     if annotated and pydantic_support > 1:
 
         class PydanticAnnotatedField(pydantic.BaseModel):
-            p1: annotated[int, pydantic.Field(default=2, ge=1, le=8)]  # type: ignore
+            p1: annotated[int, pydantic.Field(default=2, ge=1, le=8)]  # type: ignore[valid-type]
 
 
 def none(x):

@@ -53,7 +53,7 @@ def CLI(
     caller = inspect.stack()[1][0]
 
     if components is None:
-        module = inspect.getmodule(caller).__name__  # type: ignore
+        module = inspect.getmodule(caller).__name__  # type: ignore[union-attr]
         components = [
             v
             for v in caller.f_locals.values()

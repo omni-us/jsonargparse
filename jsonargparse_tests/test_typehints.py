@@ -867,13 +867,13 @@ def test_action_typehint_none_type_error():
     [
         (Optional[bool], bool, True),
         (Union[type(None), bool], bool, True),
-        (Dict[bool, type(None)], bool, False),  # type: ignore
+        (Dict[bool, type(None)], bool, False),  # type: ignore[misc]
         (Optional[Path_fr], Path_fr, True),
         (Union[type(None), Path_fr], Path_fr, True),
-        (Dict[Path_fr, type(None)], Path_fr, False),  # type: ignore
+        (Dict[Path_fr, type(None)], Path_fr, False),  # type: ignore[misc,valid-type]
         (Optional[EnumABC], Enum, True),
         (Union[type(None), EnumABC], Enum, True),
-        (Dict[EnumABC, type(None)], Enum, False),  # type: ignore
+        (Dict[EnumABC, type(None)], Enum, False),  # type: ignore[misc]
     ],
     ids=str,
 )

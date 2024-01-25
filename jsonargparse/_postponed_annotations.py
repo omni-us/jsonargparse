@@ -31,7 +31,7 @@ class BackportTypeHints(ast.NodeTransformer):
         if isinstance(node.value, ast.Name) and node.value.id in pep585_map:
             value = self.new_name_load(pep585_map[node.value.id])
         else:
-            value = node.value  # type: ignore
+            value = node.value  # type: ignore[assignment]
         return ast.Subscript(
             value=value,
             slice=self.visit(node.slice),
@@ -259,7 +259,7 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
     try:
         types = get_type_hints(obj, global_vars)
     except Exception as ex1:
-        types = ex1  # type: ignore
+        types = ex1  # type: ignore[assignment]
 
     if isinstance(types, dict) and all(not type_requires_eval(t) for t in types.values()):
         return types
@@ -274,10 +274,10 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
         if isinstance(types, Exception):
             if logger:
                 logger.debug(f"Failed to parse to source code for {obj}", exc_info=ex2)
-            raise type(types)(f"{repr(types)} + {repr(ex2)}") from ex2  # type: ignore
+            raise type(types)(f"{repr(types)} + {repr(ex2)}") from ex2  # type: ignore[arg-type]
         return types
 
-    aliases = __builtins__.copy()  # type: ignore
+    aliases = __builtins__.copy()  # type: ignore[attr-defined]
     aliases.update(global_vars)
     ex = None
     if isinstance(types, Exception):
@@ -291,7 +291,7 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
     if isinstance(node, ast.FunctionDef):
         arg_asts = [(a.arg, a.annotation) for a in node.args.args + node.args.kwonlyargs]
     else:
-        arg_asts = [(a.target.id, a.annotation) for a in node.body if isinstance(a, ast.AnnAssign)]  # type: ignore
+        arg_asts = [(a.target.id, a.annotation) for a in node.body if isinstance(a, ast.AnnAssign)]  # type: ignore[union-attr]
 
     for name, annotation in arg_asts:
         if annotation and (name not in types or type_requires_eval(types[name])):

@@ -135,7 +135,7 @@ class ActionLink(Action):
                     )
         else:
             self.source = [
-                (s, find_parent_or_child_actions(parser, s, exclude=exclude)) for s in source  # type: ignore
+                (s, find_parent_or_child_actions(parser, s, exclude=exclude)) for s in source  # type: ignore[misc]
             ]
 
         # Set and check target action
@@ -165,7 +165,7 @@ class ActionLink(Action):
                     if is_target_subclass:
                         help_dest = f"{self.target[1].dest}.help"
                         for action in group._group_actions:
-                            if action.dest == help_dest:  # type: ignore
+                            if action.dest == help_dest:  # type: ignore[union-attr]
                                 group._group_actions.remove(action)
                                 break
                     if group._group_actions and all(isinstance(a, _ActionConfigLoad) for a in group._group_actions):
@@ -178,7 +178,7 @@ class ActionLink(Action):
         if target in parser.required_args:
             parser.required_args.remove(target)
         if is_target_subclass and not valid_target_leaf:
-            sub_add_kwargs = self.target[1].sub_add_kwargs  # type: ignore
+            sub_add_kwargs = self.target[1].sub_add_kwargs  # type: ignore[attr-defined]
             if "linked_targets" not in sub_add_kwargs:
                 sub_add_kwargs["linked_targets"] = set()
             subtarget = target.split(".init_args.", 1)[1]
@@ -272,7 +272,7 @@ class ActionLink(Action):
 
         subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
         if subcommand and subcommand in cfg:
-            ActionLink.apply_parsing_links(subparser, cfg[subcommand])  # type: ignore
+            ActionLink.apply_parsing_links(subparser, cfg[subcommand])  # type: ignore[arg-type]
         if not hasattr(parser, "_links_group"):
             return
         for action in get_link_actions(parser, "parse"):
@@ -281,13 +281,13 @@ class ActionLink(Action):
             args = []
             skip_link = False
             for source_key, source_action in action.source:
-                if ActionTypeHint.is_subclass_typehint(source_action[0]) and source_key not in cfg:  # type: ignore
+                if ActionTypeHint.is_subclass_typehint(source_action[0]) and source_key not in cfg:  # type: ignore[index]
                     parser.logger.debug(
                         f"Link '{action.option_strings[0]}' ignored since source '{source_key}' not found in namespace."
                     )
                     skip_link = True
                     break
-                for source_action_n in [a for a in source_action if a.dest in cfg]:  # type: ignore
+                for source_action_n in [a for a in source_action if a.dest in cfg]:  # type: ignore[union-attr]
                     parser._check_value_key(source_action_n, cfg[source_action_n.dest], source_action_n.dest, None)
                 args.append(cfg[source_key])
             if skip_link:
@@ -386,7 +386,7 @@ class ActionLink(Action):
 
         if ActionTypeHint.is_subclass_typehint(target_action, all_subtypes=False, also_lists=True):
             if target_key == target_action.dest:
-                target_action._check_type(value)  # type: ignore
+                target_action._check_type(value)  # type: ignore[attr-defined]
             else:
                 parent = cfg.get(target_action.dest)
                 child_key = target_key[len(target_action.dest) + 1 :]

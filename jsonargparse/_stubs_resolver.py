@@ -82,7 +82,7 @@ class MethodsVisitor(ast.NodeVisitor):
 
     def visit_If(self, node: ast.If) -> None:
         test_ast = ast.parse("___test___ = 0")
-        test_ast.body[0].value = node.test  # type: ignore
+        test_ast.body[0].value = node.test  # type: ignore[attr-defined]
         exec_vars = {"sys": sys}
         with suppress(Exception):
             exec(compile(test_ast, filename="<ast>", mode="exec"), exec_vars, exec_vars)

@@ -96,7 +96,7 @@ __all__ = ["ActionsContainer", "ArgumentParser"]
 class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
-    _action_groups: Sequence["_ArgumentGroup"]  # type: ignore
+    _action_groups: Sequence["_ArgumentGroup"]  # type: ignore[assignment]
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -134,7 +134,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         if "choices" in kwargs and not isinstance(kwargs["choices"], (list, tuple)):
             kwargs["choices"] = tuple(kwargs["choices"])
         action = super().add_argument(*args, **kwargs)
-        action.logger = self._logger  # type: ignore
+        action.logger = self._logger  # type: ignore[attr-defined]
         ActionConfigFile._add_print_config_argument(self, action)
         ActionJsonnet._check_ext_vars_action(parser, action)
         if is_meta_key(action.dest):
@@ -143,7 +143,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             action.help = empty_help
         if action.required:
             parser.required_args.add(action.dest)
-            action._required = True  # type: ignore
+            action._required = True  # type: ignore[attr-defined]
             action.required = False
         return action
 
@@ -229,7 +229,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         self.exit_on_error = exit_on_error
         self.required_args: Set[str] = set()
         self.save_path_content: Set[str] = set()
-        self.default_config_files = default_config_files  # type: ignore
+        self.default_config_files = default_config_files  # type: ignore[assignment]
         self.default_meta = default_meta
         self.default_env = default_env
         self.env_prefix = env_prefix
@@ -667,10 +667,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         if "description" not in kwargs:
             kwargs["description"] = "For more details of each subcommand, add it as an argument followed by --help."
         with parser_context(parent_parser=self, lenient_check=True):
-            subcommands: _ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore
+            subcommands: _ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore[assignment]
         if required:
             self.required_args.add(dest)
-        subcommands._required = required  # type: ignore
+        subcommands._required = required  # type: ignore[attr-defined]
         subcommands.required = False
         subcommands.parent_parser = self
         subcommands.env_prefix = get_env_var(self)
@@ -818,7 +818,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                         raise NotImplementedError(f"multifile=True not supported for fsspec paths: {path}")
                     fsspec = import_fsspec("ArgumentParser.save")
                     with fsspec.open(path, "w") as f:
-                        f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
+                        f.write(self.dump(cfg, **dump_kwargs))  # type: ignore[arg-type]
                     return
 
         path_fc = Path(path, mode="fc")
@@ -826,7 +826,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
         if not multifile:
             with open(path_fc.absolute, "w") as f:
-                f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
+                f.write(self.dump(cfg, **dump_kwargs))  # type: ignore[arg-type]
 
         else:
             cfg = cfg.clone()
@@ -866,7 +866,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 save_paths(cfg)
             dump_kwargs["skip_check"] = True
             with open(path_fc.absolute, "w") as f:
-                f.write(self.dump(cfg, **dump_kwargs))  # type: ignore
+                f.write(self.dump(cfg, **dump_kwargs))  # type: ignore[arg-type]
 
     ## Methods related to defaults ##
 
@@ -1151,7 +1151,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             groups = [g for g in self._action_groups if hasattr(g, "instantiate_class") and g.dest not in skip]
             components.extend(groups)
 
-        components.sort(key=lambda x: -len(split_key(x.dest)))  # type: ignore
+        components.sort(key=lambda x: -len(split_key(x.dest)))  # type: ignore[arg-type]
         order = ActionLink.instantiation_order(self)
         components = ActionLink.reorder(order, components)
 
@@ -1341,7 +1341,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             leaf_key = split_key_leaf(key)[-1]
             if leaf_key == action.dest:
                 return value
-            subparser = action._name_parser_map[leaf_key]  # type: ignore
+            subparser = action._name_parser_map[leaf_key]  # type: ignore[attr-defined]
             subparser.check_config(value)
         elif isinstance(action, _ActionConfigLoad):
             if isinstance(value, str):
@@ -1395,7 +1395,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if not hasattr(self, "_default_config_files_group"):
                 group_title = "default config file locations"
                 group = _ArgumentGroup(self, title=group_title)
-                self._action_groups = [group] + self._action_groups  # type: ignore
+                self._action_groups = [group] + self._action_groups  # type: ignore[operator]
                 self._default_config_files_group = group
         elif hasattr(self, "_default_config_files_group"):
             self._action_groups = [g for g in self._action_groups if g != self._default_config_files_group]

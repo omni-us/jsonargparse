@@ -704,9 +704,9 @@ class _ActionSubCommands(_SubParsersAction):
             subcommand_keys = [subcommand]
 
         if fail_no_subcommand:
-            if subcommand is None and not (fail_no_subcommand and action._required):  # type: ignore
+            if subcommand is None and not (fail_no_subcommand and action._required):  # type: ignore[attr-defined]
                 return None, None
-            if action._required and subcommand not in action._name_parser_map:  # type: ignore
+            if action._required and subcommand not in action._name_parser_map:  # type: ignore[attr-defined]
                 # If subcommand is required and no subcommand is provided,
                 # present the user with a friendly error message to remind them of
                 # the available subcommands and to select one.
@@ -719,7 +719,7 @@ class _ActionSubCommands(_SubParsersAction):
                     f'expected "{dest}" to be one of {candidate_subcommands_str}, but it was not provided.'
                 )
 
-        return subcommand_keys, [action._name_parser_map.get(s) for s in subcommand_keys]  # type: ignore
+        return subcommand_keys, [action._name_parser_map.get(s) for s in subcommand_keys]  # type: ignore[misc]
 
     @staticmethod
     def get_subcommand(
