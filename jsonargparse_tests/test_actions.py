@@ -158,7 +158,7 @@ def test_yes_no_action_move_to_subparser(parser, subparser):
 # ActionParser tests
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def composed_parsers(tmp_path_factory):
     parser_lv3 = ArgumentParser(prog="lv3", default_env=False)
     parser_lv3.add_argument("--opt3", default="opt3_def")
