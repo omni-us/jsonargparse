@@ -17,6 +17,7 @@ from jsonargparse import (
     ActionJsonnet,
     ArgumentError,
     ArgumentParser,
+    LoggerProperty,
     Path,
     get_config_read_mode,
     set_url_support,
@@ -33,7 +34,7 @@ from jsonargparse._deprecated import (
     usage_and_exit_error_handler,
 )
 from jsonargparse._optionals import jsonnet_support, url_support
-from jsonargparse._util import LoggerProperty, argument_error
+from jsonargparse._util import argument_error
 from jsonargparse_tests.conftest import (
     get_parser_help,
     is_posix,

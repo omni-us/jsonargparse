@@ -4,13 +4,14 @@ import functools
 import inspect
 import os
 import sys
-from argparse import Action, ArgumentError
+from argparse import ArgumentError
 from enum import Enum
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Dict, Optional, Set
 
+from ._common import Action
 from ._namespace import Namespace
 from ._optionals import FilesCompleterMethod
 from ._type_checking import ArgumentParser
@@ -314,7 +315,7 @@ class ActionPathList(Action, FilesCompleterMethod):
         setattr(args[1], self.dest, self._check_type(args[2]))
         return None
 
-    def _check_type(self, value, cfg=None):
+    def _check_type(self, value):
         if value == []:
             return value
         from ._actions import _is_action_value_list

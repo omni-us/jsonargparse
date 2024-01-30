@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, Optional, Tuple, Union
 
-from ._actions import Action, _find_action, _is_action_value_list
-from ._common import parser_context
+from ._actions import _find_action, _is_action_value_list
+from ._common import Action, parser_context
 from ._jsonschema import ActionJsonSchema
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._optionals import (
@@ -73,7 +73,7 @@ class ActionJsonnet(Action):
 
                 kwargs["help"] = kwargs["help"] % json.dumps(self._validator.schema, sort_keys=True)
             return ActionJsonnet(**kwargs)
-        setattr(args[1], self.dest, self._check_type(args[2], cfg=args[1]))
+        setattr(args[1], self.dest, self._check_type_(args[2], cfg=args[1]))
         return None
 
     def _check_type(self, value, cfg):

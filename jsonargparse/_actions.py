@@ -9,13 +9,12 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-from ._common import get_class_instantiator, is_subclass, parser_context
+from ._common import Action, get_class_instantiator, is_subclass, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._optionals import FilesCompleterMethod, get_config_read_mode
 from ._type_checking import ArgumentParser
 from ._util import (
-    LoggerProperty,
     NoneType,
     Path,
     argument_error,
@@ -33,10 +32,6 @@ __all__ = [
     "ActionYesNo",
     "ActionParser",
 ]
-
-
-class Action(LoggerProperty, ArgparseAction):
-    """Base for jsonargparse Action classes."""
 
 
 def _is_branch_key(parser, key: str) -> bool:
@@ -475,7 +470,7 @@ class ActionYesNo(Action):
                 "^--" + self._no_prefix, "--" + self._no_prefix + prefix + ".", self.option_strings[-1]
             )
 
-    def _check_type(self, value, cfg=None):
+    def _check_type(self, value):
         return ActionYesNo._boolean_type(value)
 
     @staticmethod
@@ -525,7 +520,7 @@ class ActionParser:
         description = kwargs.pop("description", subparser.description)
         if len(kwargs) > 0:
             raise ValueError(f"ActionParser does not accept the following parameters: {set(kwargs.keys())}")
-        if not (len(args) == 1 and args[0][:2] == "--"):
+        if not (len(args) == 1 and args[0].startswith("--")):
             raise ValueError(f"ActionParser only accepts a single optional key but got {args}")
         prefix = args[0][2:]
 

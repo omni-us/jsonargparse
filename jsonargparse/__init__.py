@@ -10,6 +10,7 @@ from argparse import (
 
 from ._actions import *  # noqa: F403
 from ._cli import *  # noqa: F403
+from ._common import *  # noqa: F403
 from ._core import *  # noqa: F403
 from ._deprecated import *  # noqa: F403
 from ._formatters import *  # noqa: F403
@@ -37,6 +38,7 @@ __all__ = [
 from . import (
     _actions,
     _cli,
+    _common,
     _core,
     _deprecated,
     _formatters,
@@ -64,6 +66,7 @@ __all__ += _formatters.__all__
 __all__ += _optionals.__all__
 __all__ += _loaders_dumpers.__all__
 __all__ += _util.__all__
+__all__ += _common.__all__
 __all__ += _deprecated.__all__
 
 
