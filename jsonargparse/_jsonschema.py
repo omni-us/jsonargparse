@@ -3,8 +3,8 @@
 import os
 from typing import Dict, Optional, Union
 
-from ._actions import Action, _is_action_value_list
-from ._common import parser_context
+from ._actions import _is_action_value_list
+from ._common import Action, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import strip_meta
 from ._optionals import (
@@ -76,7 +76,7 @@ class ActionJsonSchema(Action):
         setattr(args[1], self.dest, val)
         return None
 
-    def _check_type(self, value, cfg=None):
+    def _check_type(self, value):
         islist = _is_action_value_list(self)
         if not islist:
             value = [value]

@@ -40,6 +40,7 @@ from ._actions import (
 from ._common import (
     InstantiatorCallable,
     InstantiatorsDictType,
+    debug_mode_active,
     is_dataclass_like,
     lenient_check,
     parser_context,
@@ -84,7 +85,6 @@ from ._util import (
     Path,
     argument_error,
     change_to_path_dir,
-    debug_mode_active,
     get_private_kwargs,
     identity,
     return_parser_if_captured,
@@ -880,17 +880,16 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Raises:
             KeyError: If key not defined in the parser.
         """
-        if len(args) > 0:
-            for arg in args:
-                for dest, default in arg.items():
-                    action = _find_action(self, dest)
-                    if action is None:
-                        raise NSKeyError(f'No action for key "{dest}" to set its default.')
-                    elif isinstance(action, ActionConfigFile):
-                        ActionConfigFile.set_default_error()
-                    if isinstance(action, ActionTypeHint):
-                        default = action.normalize_default(default)
-                    self._defaults[dest] = action.default = default
+        for arg in args:
+            for dest, default in arg.items():
+                action = _find_action(self, dest)
+                if action is None:
+                    raise NSKeyError(f'No action for key "{dest}" to set its default.')
+                elif isinstance(action, ActionConfigFile):
+                    ActionConfigFile.set_default_error()
+                if isinstance(action, ActionTypeHint):
+                    default = action.normalize_default(default)
+                self._defaults[dest] = action.default = default
         if kwargs:
             self.set_defaults(kwargs)
 
@@ -1348,7 +1347,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 value = action.check_type(value, self)
         elif hasattr(action, "_check_type"):
             with parser_context(parent_parser=self):
-                value = action._check_type(value, cfg=cfg)
+                value = action._check_type_(value, cfg=cfg)  # type: ignore[attr-defined]
         elif action.type is not None:
             try:
                 if action.nargs in {None, "?"} or action.nargs == 0:

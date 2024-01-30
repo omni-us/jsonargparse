@@ -420,7 +420,7 @@ class ActionTypeHint(Action):
             action = _find_action(parser, key[:-1])
             if ActionTypeHint.supports_append(action):
                 with parser_context(load_value_mode=parser.parser_mode):
-                    val = action._check_type(cfg[key], append=True, cfg=cfg)
+                    val = action._check_type_(cfg[key], append=True, cfg=cfg)
                 cfg[key[:-1]] = val
                 cfg.pop(key)
 
@@ -459,7 +459,7 @@ class ActionTypeHint(Action):
                     sub_opt = opt_str[len(f"--{self.dest}.") :]
                 val = NestedArg(key=sub_opt, val=val)
             append = opt_str == f"--{self.dest}+"
-            val = self._check_type(val, append=append, cfg=cfg)
+            val = self._check_type_(val, append=append, cfg=cfg)
             if is_subclass_spec(val):
                 prev_val = cfg.get(self.dest)
                 if is_subclass_spec(prev_val) and "init_args" in prev_val:

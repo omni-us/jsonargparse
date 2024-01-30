@@ -12,16 +12,14 @@ from functools import partial
 from importlib import import_module
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from ._common import get_generic_origin, is_dataclass_like, is_generic_class, is_subclass
+from ._common import LoggerProperty, get_generic_origin, is_dataclass_like, is_generic_class, is_subclass, parse_logger
 from ._optionals import is_pydantic_model, parse_docs
 from ._postponed_annotations import evaluate_postponed_annotations
 from ._stubs_resolver import get_stub_types
 from ._util import (
     ClassFromFunctionBase,
-    LoggerProperty,
     get_import_path,
     iter_to_set_str,
-    parse_logger,
     unique,
 )
 

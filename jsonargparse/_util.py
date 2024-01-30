@@ -1,7 +1,6 @@
 """Collection of general functions and classes."""
 
 import inspect
-import logging
 import os
 import re
 import stat
@@ -37,9 +36,7 @@ from ._optionals import (
     fsspec_support,
     get_config_read_mode,
     import_fsspec,
-    import_reconplogger,
     import_requests,
-    reconplogger_support,
     url_support,
 )
 from ._type_checking import ArgumentParser
@@ -47,17 +44,9 @@ from ._type_checking import ArgumentParser
 __all__ = [
     "capture_parser",
     "class_from_function",
-    "LoggerProperty",
-    "null_logger",
     "Path",
     "register_unresolvable_import_paths",
 ]
-
-
-logging_levels = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}
-null_logger = logging.getLogger("jsonargparse_null_logger")
-null_logger.addHandler(logging.NullHandler())
-null_logger.parent = None
 
 
 NoneType = type(None)
@@ -696,84 +685,3 @@ class Path(PathDeprecations):
             raise ValueError('Both modes "d" and "u" not possible.')
         if "s" in mode and "d" in mode:
             raise ValueError('Both modes "d" and "s" not possible.')
-
-
-def setup_default_logger(data, level, caller):
-    name = caller
-    if isinstance(data, str):
-        name = data
-    elif isinstance(data, dict) and "name" in data:
-        name = data["name"]
-    logger = logging.getLogger(name)
-    logger.parent = None
-    if len(logger.handlers) == 0:
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-        logger.addHandler(handler)
-    level = getattr(logging, level)
-    for handler in logger.handlers:
-        handler.setLevel(level)
-    return logger
-
-
-def parse_logger(logger: Union[bool, str, dict, logging.Logger], caller):
-    if not isinstance(logger, (bool, str, dict, logging.Logger)):
-        raise ValueError(f"Expected logger to be an instance of (bool, str, dict, logging.Logger), but got {logger}.")
-    if isinstance(logger, dict) and len(set(logger.keys()) - {"name", "level"}) > 0:
-        value = {k: v for k, v in logger.items() if k not in {"name", "level"}}
-        raise ValueError(f"Unexpected data to configure logger: {value}.")
-    if logger is False:
-        return null_logger
-    level = "WARNING"
-    if isinstance(logger, dict) and "level" in logger:
-        level = logger["level"]
-    if level not in logging_levels:
-        raise ValueError(f"Got logger level {level!r} but must be one of {logging_levels}.")
-    if (logger is True or (isinstance(logger, dict) and "name" not in logger)) and reconplogger_support:
-        kwargs = {"level": "DEBUG", "reload": True} if debug_mode_active() else {}
-        logger = import_reconplogger("parse_logger").logger_setup(**kwargs)
-    if not isinstance(logger, logging.Logger):
-        logger = setup_default_logger(logger, level, caller)
-    return logger
-
-
-class LoggerProperty:
-    """Class designed to be inherited by other classes to add a logger property."""
-
-    def __init__(self, *args, logger: Union[bool, str, dict, logging.Logger] = False, **kwargs):
-        """Initializer for LoggerProperty class."""
-        self.logger = logger  # type: ignore[assignment]
-        super().__init__(*args, **kwargs)
-
-    @property
-    def logger(self) -> logging.Logger:
-        """The logger property for the class.
-
-        :getter: Returns the current logger.
-        :setter: Sets the given logging.Logger as logger or sets the default logger
-                 if given True/str(logger name)/dict(name, level), or disables logging
-                 if given False.
-
-        Raises:
-            ValueError: If an invalid logger value is given.
-        """
-        return self._logger
-
-    @logger.setter
-    def logger(self, logger: Union[bool, str, dict, logging.Logger]):
-        if logger is None:
-            from ._deprecated import deprecation_warning, logger_property_none_message
-
-            deprecation_warning((LoggerProperty.logger, None), logger_property_none_message, stacklevel=2)
-            logger = False
-        if not logger and debug_mode_active():
-            logger = {"level": "DEBUG"}
-        self._logger = parse_logger(logger, type(self).__name__)
-
-
-def debug_mode_active() -> bool:
-    return os.getenv("JSONARGPARSE_DEBUG", "").lower() not in {"", "false", "no", "0"}
-
-
-if debug_mode_active():
-    os.environ["LOGGER_LEVEL"] = "DEBUG"  # pragma: no cover
