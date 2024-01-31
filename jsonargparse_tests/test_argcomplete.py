@@ -175,6 +175,13 @@ def test_optional_enum(parser):
     assert err == ""
 
 
+def test_str_with_choices(parser):
+    parser.add_argument("--str", type=str, choices=["xyz", "abc"])
+    out, err = complete_line(parser, "tool.py --str=")
+    assert out == "xyz\x0babc"
+    assert err == ""
+
+
 @skip_if_not_cpython
 @skip_if_jsonschema_unavailable
 def test_action_jsonschema(parser):
