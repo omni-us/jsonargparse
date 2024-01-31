@@ -604,6 +604,8 @@ class _ActionSubCommands(_SubParsersAction):
         """
         if parser._subparsers is not None:
             raise ValueError("Multiple levels of subcommands must be added in level order.")
+        if self.dest == name:
+            raise ValueError(f"A subcommand name can't be the same as the subcommands dest: '{name}'.")
 
         parser.prog = f"{self._prog_prefix} [options] {name}"
         parser.env_prefix = f"{self.env_prefix}{name}_"

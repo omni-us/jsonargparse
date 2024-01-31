@@ -34,6 +34,17 @@ def test_unexpected_components(components):
         CLI(components)
 
 
+class ConflictingSubcommandKey:
+    def subcommand(self, x: int = 0):
+        return x
+
+
+def test_conflicting_subcommand_key():
+    with pytest.raises(ValueError) as ctx:
+        CLI(ConflictingSubcommandKey, args=["subcommand", "--x=1"])
+    assert ctx.match("subcommand name can't be the same")
+
+
 # single function tests
 
 
