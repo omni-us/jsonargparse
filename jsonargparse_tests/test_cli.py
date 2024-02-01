@@ -192,6 +192,16 @@ def test_single_class_print_config_before_subcommand():
     assert cfg == {"i1": "0", "method1": {"m1": 2}}
 
 
+class MethodWithConfigParam:
+    def cmd(self, p1: int = 1, config: dict = {}):
+        print(f"p1: {p1}, config: {config}")
+
+
+def test_method_with_config_parameter():
+    out = get_cli_stdout(MethodWithConfigParam, args=["cmd"])
+    assert "p1: 1, config: {}" == out.strip()
+
+
 # function and class tests
 
 

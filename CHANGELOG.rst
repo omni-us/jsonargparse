@@ -22,6 +22,8 @@ Fixed
 - Confusing error message when ``CLI`` is used with a class that defines a
   ``subcommand`` method (`#430 comment
   <https://github.com/omni-us/jsonargparse/issues/430#issuecomment-1903974112>`__).
+- ``CLI`` crashes when a method has a ``config`` parameter. Due to redundancy,
+  ``--config`` argument should not be added.
 
 
 v4.27.3 (2024-01-26)

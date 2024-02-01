@@ -148,8 +148,18 @@ def _add_subcommands(
                 remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
 
 
-def _add_component_to_parser(component, parser, as_positional, fail_untyped, config_help):
-    kwargs = dict(as_positional=as_positional, fail_untyped=fail_untyped, sub_configs=True)
+def has_parameter(component, name):
+    return name in inspect.signature(component).parameters.keys()
+
+
+def _add_component_to_parser(
+    component,
+    parser: ArgumentParser,
+    as_positional: bool,
+    fail_untyped: bool,
+    config_help: str,
+):
+    kwargs: dict = dict(as_positional=as_positional, fail_untyped=fail_untyped, sub_configs=True)
     if inspect.isclass(component):
         class_methods = [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != "_"]
         if not class_methods:
@@ -163,7 +173,8 @@ def _add_component_to_parser(component, parser, as_positional, fail_untyped, con
             method_object = getattr(component, method)
             description = get_help_str(method_object, parser.logger)
             subparser = type(parser)(description=description)
-            subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
+            if not has_parameter(getattr(component, method), "config"):
+                subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
             added_subargs = subparser.add_method_arguments(component, method, as_group=False, **kwargs)
             added_args += [f"{method}.{a}" for a in added_subargs]
             if not added_subargs:
