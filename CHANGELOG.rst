@@ -19,6 +19,9 @@ Fixed
 ^^^^^
 - ``argcomplete`` not working when type and choices given (`#442
   <https://github.com/omni-us/jsonargparse/issues/442>`__).
+- Confusing error message when ``CLI`` is used with a class that defines a
+  ``subcommand`` method (`#430 comment
+  <https://github.com/omni-us/jsonargparse/issues/430#issuecomment-1903974112>`__).
 
 
 v4.27.3 (2024-01-26)

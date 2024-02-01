@@ -151,23 +151,24 @@ def _add_subcommands(
 def _add_component_to_parser(component, parser, as_positional, fail_untyped, config_help):
     kwargs = dict(as_positional=as_positional, fail_untyped=fail_untyped, sub_configs=True)
     if inspect.isclass(component):
-        subcommand_keys = [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != "_"]
-        if not subcommand_keys:
+        class_methods = [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != "_"]
+        if not class_methods:
             added_args = parser.add_class_arguments(component, as_group=False, **kwargs)
             if not parser.description:
                 parser.description = get_help_str(component, parser.logger)
             return added_args
         added_args = parser.add_class_arguments(component, **kwargs)
         subcommands = parser.add_subcommands(required=True)
-        for key in subcommand_keys:
-            description = get_help_str(getattr(component, key), parser.logger)
+        for method in class_methods:
+            method_object = getattr(component, method)
+            description = get_help_str(method_object, parser.logger)
             subparser = type(parser)(description=description)
             subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
-            added_subargs = subparser.add_method_arguments(component, key, as_group=False, **kwargs)
-            added_args += [f"{key}.{a}" for a in added_subargs]
+            added_subargs = subparser.add_method_arguments(component, method, as_group=False, **kwargs)
+            added_args += [f"{method}.{a}" for a in added_subargs]
             if not added_subargs:
                 remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
-            subcommands.add_subcommand(key, subparser, help=get_help_str(getattr(component, key), parser.logger))
+            subcommands.add_subcommand(method, subparser, help=get_help_str(method_object, parser.logger))
     else:
         added_args = parser.add_function_arguments(component, as_group=False, **kwargs)
         if not parser.description:
