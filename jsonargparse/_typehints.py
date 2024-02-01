@@ -568,7 +568,9 @@ class ActionTypeHint(Action):
 
     def completer(self, prefix, **kwargs):
         """Used by argcomplete, validates value and shows expected type."""
-        if self._typehint == bool:
+        if self.choices:
+            return [str(c) for c in self.choices]
+        elif self._typehint == bool:
             return ["true", "false"]
         elif is_optional(self._typehint, bool):
             return ["true", "false", "null"]

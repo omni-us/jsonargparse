@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.27.4 (2024-01-??)
+--------------------
+
+Fixed
+^^^^^
+- ``argcomplete`` not working when type and choices given (`#442
+  <https://github.com/omni-us/jsonargparse/issues/442>`__).
+
+
 v4.27.3 (2024-01-26)
 --------------------
 
