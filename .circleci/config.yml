@@ -164,5 +164,5 @@ workflows:
             <<: *tagfilter
           context: pypi-upload-context
           requires:
-            - build
             - codecov
+            - test-py310-installed
