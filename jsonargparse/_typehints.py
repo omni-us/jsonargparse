@@ -888,6 +888,8 @@ def adapt_typehints(
 
         try:
             val_class = import_object(resolve_class_path_by_name(typehint, val["class_path"]))
+            if isinstance(val_class, typehint):
+                return val_class
             if not is_subclass(val_class, typehint):
                 raise_unexpected_value(
                     f'Import path {val["class_path"]} does not correspond to a subclass of {typehint}'
@@ -1242,6 +1244,10 @@ def typehint_metavar(typehint):
 
 
 def serialize_class_instance(val):
+    with suppress(Exception):
+        import_path = get_import_path(val)
+        if import_path and import_object(import_path) is val:
+            return import_path
     val = f"Unable to serialize instance {val}"
     warning(val)
     return val

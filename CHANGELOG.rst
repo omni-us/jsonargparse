@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.27.5 (2024-02-??)
+--------------------
+
+Fixed
+^^^^^
+- Importable class instances fail to parse and serialize (`#446
+  <https://github.com/omni-us/jsonargparse/issues/446>`__).
+
+
 v4.27.4 (2024-02-01)
 --------------------
 

@@ -328,6 +328,24 @@ def test_subclass_in_subcommand_with_global_default_config_file(parser, subparse
     assert cfg.fit.model.foo == 123
 
 
+# importable instances
+
+
+class dtype:
+    pass
+
+
+float32 = dtype()
+
+
+def test_importable_instances(parser):
+    parser.add_argument("--dtype", type=dtype)
+    cfg = parser.parse_args([f"--dtype={__name__}.float32"])
+    assert cfg.dtype is float32
+    dump = parser.dump(cfg)
+    assert dump.strip() == f"dtype: {__name__}.float32"
+
+
 # custom instantiation tests
 
 
