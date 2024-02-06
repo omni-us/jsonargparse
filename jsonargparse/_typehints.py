@@ -1323,9 +1323,18 @@ def lazy_instance(class_type: Type[ClassType], **kwargs) -> ClassType:
         class_type: The class to instantiate.
         **kwargs: Any keyword arguments to use for instantiation.
     """
-    lazy_init_class = type(
-        "LazyInstance_" + class_type.__name__,
-        (LazyInitBaseClass, class_type),
-        {"__doc__": f"Class for lazy instances of {class_type}"},
-    )
+    caller_module = inspect.getmodule(inspect.stack()[1][0])
+    class_name = f"LazyInstance_{class_type.__name__}"
+    if hasattr(caller_module, class_name):
+        lazy_init_class = getattr(caller_module, class_name)
+        assert is_subclass(lazy_init_class, LazyInitBaseClass) and is_subclass(lazy_init_class, class_type)
+    else:
+        lazy_init_class = type(
+            class_name,
+            (LazyInitBaseClass, class_type),
+            {"__doc__": f"Class for lazy instances of {class_type}"},
+        )
+        if caller_module is not None:
+            lazy_init_class.__module__ = getattr(caller_module, "__name__", __name__)
+            setattr(caller_module, lazy_init_class.__qualname__, lazy_init_class)
     return lazy_init_class(class_type, kwargs)

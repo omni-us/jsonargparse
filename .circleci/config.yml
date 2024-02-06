@@ -93,6 +93,7 @@ jobs:
                 if [ -f coverage_py${py}${suffix}.xml ]; then
                   ./codecov \
                     --nonZero \
+                    --rootDir $PWD \
                     --token $CODECOV_TOKEN_JSONARGPARSE \
                     --flags py${py}${suffix} \
                     --file coverage_py${py}${suffix}.xml
