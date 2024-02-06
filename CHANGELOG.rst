@@ -19,6 +19,7 @@ Fixed
 ^^^^^
 - Importable class instances fail to parse and serialize (`#446
   <https://github.com/omni-us/jsonargparse/issues/446>`__).
+- Failure when trying to pickle instances created with ``lazy_instance``.
 
 
 v4.27.4 (2024-02-01)

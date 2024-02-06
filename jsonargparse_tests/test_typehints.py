@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import pickle
 import random
 import sys
 import time
 import uuid
-from calendar import Calendar
+from calendar import Calendar, TextCalendar
 from enum import Enum
 from pathlib import Path
 from typing import (
@@ -834,6 +835,16 @@ def test_lazy_instance_invalid_init_value():
     with pytest.raises(ValueError) as ctx:
         lazy_instance(IntParam, param="not an int")
     ctx.match("Expected a <class 'int'>")
+
+
+def test_lazy_instance_pickleable():
+    instance1 = lazy_instance(TextCalendar, firstweekday=2)
+    instance2 = lazy_instance(TextCalendar, firstweekday=3)
+    assert instance1.__class__.__module__ == __name__
+    assert instance1.__class__ is instance2.__class__
+    reloaded = pickle.loads(pickle.dumps(instance1))
+    assert reloaded.__class__ is instance1.__class__
+    assert reloaded.lazy_get_init_data() == instance1.lazy_get_init_data()
 
 
 # other tests
