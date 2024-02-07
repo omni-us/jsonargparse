@@ -819,8 +819,9 @@ def test_on_instantiate_within_deeper_subclass(parser, caplog):
 def test_link_failure_invalid_apply_on(parser):
     parser.add_argument("--a")
     parser.add_argument("--b")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as ctx:
         parser.link_arguments("a", "b", apply_on="bad")
+    ctx.match("apply_on must be 'parse' or 'instantiate'")
 
 
 def test_on_parse_link_failure_previous_target_as_source(parser):
@@ -845,14 +846,15 @@ def test_on_parse_link_failure_previous_source_as_target(parser):
 
 def test_on_parse_link_failure_already_linked():
     parser = parser_classes_links_on_parse()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as ctx:
         parser.link_arguments("a.v2", "b.v1")
+    ctx.match('Target "b.v1" is already a target of another link')
 
 
 def test_on_parse_link_failure_non_existing_source():
     parser = parser_classes_links_on_parse()
     with pytest.raises(ValueError) as ctx:
-        parser.link_arguments("x", "b.v2")
+        parser.link_arguments("x", "b.v3")
     ctx.match('No action for key "x"')
 
 

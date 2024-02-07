@@ -241,6 +241,8 @@ class ActionLink(Action):
             # Check source
             link_actions = self.parser._links_group._group_actions
             existing_targets = {a.target[0] for a in link_actions}
+            if target in existing_targets:
+                raise ValueError(f'Target "{target}" is already a target of another link.')
             for src in [source] if isinstance(source, str) else source:
                 if src in existing_targets:
                     raise ValueError(f'Source "{src}" not allowed since it is the target of another link.')
