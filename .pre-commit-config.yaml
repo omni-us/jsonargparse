@@ -24,12 +24,12 @@ repos:
     exclude: .bumpversion.cfg
 
 - repo: https://github.com/psf/black
-  rev: 23.12.1
+  rev: 24.2.0
   hooks:
   - id: black
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.1.13
+  rev: v0.2.1
   hooks:
   - id: ruff
     args: ["--fix"]
@@ -40,7 +40,7 @@ repos:
   - id: yesqa
 
 - repo: https://github.com/crate-ci/typos
-  rev: v1.17.1
+  rev: typos-v0.10.20
   hooks:
   - id: typos
     args: []
