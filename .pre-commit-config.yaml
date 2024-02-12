@@ -76,8 +76,8 @@ repos:
     pass_filenames: false
     verbose: true
 
-  - id: changelog-check
-    name: changelog check [on bumpversion]
+  - id: changelog-bump
+    name: changelog bump [on bumpversion]
     entry: bash -c '
       set -e;
       if [ "${BUMPVERSION_NEW_VERSION+x}" = "" ]; then
@@ -88,7 +88,7 @@ repos:
         if [ "$CHANGELOG" != "$EXPECTED" ] && [ $(echo $BUMPVERSION_NEW_VERSION | grep -cE "[0-9.]+(\.dev|rc)[0-9]+") = 0 ]; then
           if [ $(grep -c "^v$BUMPVERSION_NEW_VERSION " CHANGELOG.rst) = 1 ]; then
             echo "Updating the date for v$BUMPVERSION_NEW_VERSION in CHANGELOG.rst";
-            sed -i "s|^v$BUMPVERSION_NEW_VERSION .*|$EXPECTED|" CHANGELOG.rst;
+            sed -ir "s|^v$BUMPVERSION_NEW_VERSION .*|$EXPECTED|" CHANGELOG.rst;
             git add CHANGELOG.rst;
           else
             echo "Expected release in CHANGELOG.rst to be "$EXPECTED" or not have a definitive date.";
@@ -117,7 +117,7 @@ repos:
       trap cleanup EXIT;
       cp jsonargparse_tests/*.py "$TEST_DIR";
       cd "$TEST_DIR";
-      sed -i "/^from __future__ import annotations$/d" *.py;
+      sed -ir "/^from __future__ import annotations$/d" *.py;
       pytest $TEST_DIR;'
     stages: [pre-push]
     language: system
@@ -137,9 +137,9 @@ repos:
       cd "$TEST_DIR";
       pip install "pydantic<2";
       pytest test_dataclass_like.py;
-      sed -i "s|import pydantic|import pydantic.v1 as pydantic|" test_dataclass_like.py;
-      sed -i "s|^annotated = .*|annotated = False|" test_dataclass_like.py;
-      sed -i "s|test_pydantic_types|_test_pydantic_types|" test_dataclass_like.py;
+      sed -ir "s|import pydantic|import pydantic.v1 as pydantic|" test_dataclass_like.py;
+      sed -ir "s|^annotated = .*|annotated = False|" test_dataclass_like.py;
+      sed -ir "s|test_pydantic_types|_test_pydantic_types|" test_dataclass_like.py;
       pip install "pydantic>=2";
       pytest test_dataclass_like.py;'
     stages: [pre-push]
