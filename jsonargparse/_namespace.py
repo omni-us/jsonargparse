@@ -49,13 +49,11 @@ def is_meta_key(key: str) -> bool:
 
 
 @overload
-def strip_meta(cfg: "Namespace") -> "Namespace":
-    ...  # pragma: no cover
+def strip_meta(cfg: "Namespace") -> "Namespace": ...  # pragma: no cover
 
 
 @overload
-def strip_meta(cfg: Dict[str, Any]) -> Dict[str, Any]:
-    ...  # pragma: no cover
+def strip_meta(cfg: Dict[str, Any]) -> Dict[str, Any]: ...  # pragma: no cover
 
 
 def strip_meta(cfg):
