@@ -12,6 +12,16 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.27.6 (2024-02-??)
+--------------------
+
+Fixed
+^^^^^
+- Failure when getting parameters from a class created with
+  ``class_from_function`` from a ``classmethod`` without parameter types (`#456
+  <https://github.com/omni-us/jsonargparse/issues/456>`__).
+
+
 v4.27.5 (2024-02-12)
 --------------------
 

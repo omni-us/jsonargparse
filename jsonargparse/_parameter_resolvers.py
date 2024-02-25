@@ -10,6 +10,7 @@ from contextvars import ContextVar
 from copy import deepcopy
 from functools import partial
 from importlib import import_module
+from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from ._common import LoggerProperty, get_generic_origin, is_dataclass_like, is_generic_class, is_subclass, parse_logger
@@ -444,7 +445,11 @@ def get_component_and_parent(
 ):
     if is_subclass(function_or_class, ClassFromFunctionBase) and method_or_property in {None, "__init__"}:
         function_or_class = function_or_class.wrapped_function  # type: ignore[union-attr]
-        method_or_property = None
+        if isinstance(function_or_class, MethodType):
+            method_or_property = function_or_class.__name__
+            function_or_class = function_or_class.__self__  # type: ignore[assignment]
+        else:
+            method_or_property = None
     elif inspect.isclass(get_generic_origin(function_or_class)) and method_or_property is None:
         method_or_property = "__init__"
     elif method_or_property and not isinstance(method_or_property, str):

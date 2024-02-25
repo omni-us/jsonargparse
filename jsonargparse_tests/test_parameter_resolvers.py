@@ -661,6 +661,35 @@ def test_get_params_class_from_function():
         assert_params(params, ["pk1", "k2"])
 
 
+class ClassMethod:
+    def __init__(self, pi: int):
+        self.pi = pi
+
+    @classmethod
+    def from_str(cls, ps: str):
+        return cls(1)
+
+    @classmethod
+    def from_untyped(cls, pu):
+        return cls(2)
+
+
+ClassMethodFromStr = class_from_function(ClassMethod.from_str, ClassMethod, name="ClassMethodFromStr")
+ClassMethodFromUntyped = class_from_function(ClassMethod.from_untyped, ClassMethod, name="ClassMethodFromUntyped")
+
+
+def test_get_params_class_from_function_classmethod_typed():
+    params = get_params(ClassMethodFromStr)
+    assert [p.name for p in params] == ["ps"]
+    assert params[0].annotation is str
+
+
+def test_get_params_class_from_function_classmethod_untyped():
+    params = get_params(ClassMethodFromUntyped)
+    assert [p.name for p in params] == ["pu"]
+    assert params[0].annotation is inspect._empty
+
+
 def test_get_params_class_instance_defaults(subtests):
     params = get_params(ClassInstanceDefaults)
     assert_params(
