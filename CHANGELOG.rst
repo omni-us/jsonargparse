@@ -18,8 +18,8 @@ v4.27.6 (2024-02-??)
 Fixed
 ^^^^^
 - Failure when getting parameters from a class created with
-  ``class_from_function`` from a ``classmethod`` without parameter types (`#456
-  <https://github.com/omni-us/jsonargparse/issues/456>`__).
+  ``class_from_function`` from a ``classmethod`` without parameter types (`#454
+  <https://github.com/omni-us/jsonargparse/issues/454>`__).
 
 
 v4.27.5 (2024-02-12)
