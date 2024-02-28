@@ -159,6 +159,8 @@ disable_error_code = "annotation-unchecked"
 
 [tool.ruff]
 line-length = 120
+
+[tool.ruff.lint]
 select = [
     "E", "W",  # https://pypi.org/project/pycodestyle
     "F",  # https://pypi.org/project/pyflakes
@@ -169,7 +171,7 @@ ignore = [
     "E721",  # Allow comparing types with type()
 ]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
 
