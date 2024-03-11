@@ -508,14 +508,17 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         try:
             cfg = self._parse_defaults_and_environ(defaults, env=True, environ=env)
 
-            parsed_cfg = self._parse_common(
-                cfg=cfg,
-                env=True,
-                defaults=defaults,
-                with_meta=with_meta,
-                skip_check=skip_check,
-                skip_subcommands=skip_subcommands,
-            )
+            kwargs = {
+                "env": True,
+                "defaults": defaults,
+                "with_meta": with_meta,
+                "skip_check": skip_check,
+                "skip_subcommands": skip_subcommands,
+            }
+            if skip_check:
+                kwargs["fail_no_subcommand"] = False
+
+            parsed_cfg = self._parse_common(cfg=cfg, **kwargs)
 
         except (TypeError, KeyError) as ex:
             self.error(str(ex), ex)
