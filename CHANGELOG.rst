@@ -20,6 +20,8 @@ Fixed
 - Failure when getting parameters from a class created with
   ``class_from_function`` from a ``classmethod`` without parameter types (`#454
   <https://github.com/omni-us/jsonargparse/issues/454>`__).
+- Subsubcommand parse failing when ``default_env=True`` (`#465
+  <https://github.com/omni-us/jsonargparse/issues/465>`__).
 
 
 v4.27.5 (2024-02-12)

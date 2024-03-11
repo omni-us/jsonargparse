@@ -327,3 +327,20 @@ def test_subcommands_custom_instantiator(parser, subparser, subtests):
         init = parser.instantiate_classes(cfg)
         assert isinstance(init.cmd.cls, CustomInstantiationBase)
         assert init.cmd.cls.call == "subparser"
+
+
+def test_subsubcommand_default_env_true(parser, subparser):
+    parser.default_env = True
+    parser.env_prefix = "APP"
+    subsubparser = ArgumentParser()
+    subsubparser.add_argument("--v", type=int, default=1)
+    subcommands1 = parser.add_subcommands()
+    subcommands1.add_subcommand("s1", subparser)
+    subcommands2 = subparser.add_subcommands()
+    subcommands2.add_subcommand("s2", subsubparser)
+    cfg = parser.parse_args(["s1", "s2"])
+    assert cfg == Namespace(subcommand="s1", s1=Namespace(subcommand="s2", s2=Namespace(v=1)))
+
+    with patch.dict(os.environ, {"APP_SUBCOMMAND": "s1", "APP_S1__SUBCOMMAND": "s2"}):
+        cfg = parser.parse_args([])
+    assert cfg == Namespace(subcommand="s1", s1=Namespace(subcommand="s2", s2=Namespace(v=1)))
