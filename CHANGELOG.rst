@@ -26,6 +26,8 @@ Fixed
   produces an invalid string default.
 - dataclass single parameter change incorrectly resetting previous values (`#464
   <https://github.com/omni-us/jsonargparse/issues/464>`__).
+- Add function signature failing when conditionally calling different functions
+  (`#467 <https://github.com/omni-us/jsonargparse/issues/467>`__).
 
 
 v4.27.5 (2024-02-12)
