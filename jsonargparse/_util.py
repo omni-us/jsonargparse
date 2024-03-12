@@ -29,7 +29,13 @@ from typing import (
     get_type_hints,
 )
 
-from ._common import ClassType, get_generic_origin, is_subclass, parser_capture, parser_context
+from ._common import (
+    ClassType,
+    get_generic_origin,
+    is_subclass,
+    parser_capture,
+    parser_context,
+)
 from ._deprecated import PathDeprecations
 from ._loaders_dumpers import json_dump, load_value
 from ._optionals import (
@@ -487,6 +493,15 @@ class Path(PathDeprecations):
             abs_path = path._absolute
             path = path._relative
         elif isinstance(path, (str, os.PathLike)):
+            if path == "-":
+                self._relative = "-"
+                self._absolute = "-"
+                self._cwd = ""
+                self._mode = mode
+                self._is_url = False
+                self._is_fsspec = False
+                self._url_data = ""
+                return
             path = os.fspath(path)
             cwd = os.fspath(cwd) if cwd else None
             abs_path = os.path.expanduser(path)
@@ -635,7 +650,10 @@ class Path(PathDeprecations):
 
     def get_content(self, mode: str = "r") -> str:
         """Returns the contents of the file or the remote path."""
-        if self._is_url:
+        if self.absolute == "-":
+            for line in sys.stdin:
+                return sys.stdin.read()
+        elif self._is_url:
             assert mode == "r"
             requests = import_requests("Path.get_content")
             response = requests.get(self._absolute)
@@ -653,7 +671,12 @@ class Path(PathDeprecations):
     @contextmanager
     def open(self, mode: str = "r") -> Iterator[IO]:
         """Return an opened file object for the path."""
-        if self._is_url:
+        if self.absolute == "-":
+            if "r" in mode:
+                yield sys.stdin
+            elif "w" in mode:
+                yield sys.stdout
+        elif self._is_url:
             yield StringIO(self.get_content())
         elif self._is_fsspec:
             fsspec = import_fsspec("Path.open")
