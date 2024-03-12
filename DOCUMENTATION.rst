@@ -1060,7 +1060,10 @@ Then a parser and behavior could be:
     >>> optimizer.params, optimizer.lr
     ([1, 2, 3], 0.05)
 
-See :ref:`ast-resolver` for limitations of lambda defaults.
+See :ref:`ast-resolver` for limitations of lambda defaults in signatures.
+Providing a lambda default to :py:meth:`.ArgumentParser.add_argument` does not
+work since there is no AST resolving. In this case, a dict with ``class_path``
+and ``init_args`` can be used as default.
 
 
 .. _registering-types:

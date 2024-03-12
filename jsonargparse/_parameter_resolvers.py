@@ -334,14 +334,15 @@ ast_literals = {ast.dump(ast.parse(v, mode="eval").body): partial(ast.literal_ev
 def is_param_subclass_instance_default(param: ParamData) -> bool:
     if is_dataclass_like(type(param.default)):
         return False
-    from ._typehints import ActionTypeHint, get_subclass_types
+    from ._typehints import ActionTypeHint, get_optional_arg, get_subclass_types
 
-    class_types = get_subclass_types(param.annotation)
+    annotation = get_optional_arg(param.annotation)
+    class_types = get_subclass_types(annotation)
     return (class_types and isinstance(param.default, class_types)) or (
         is_lambda(param.default)
-        and ActionTypeHint.is_callable_typehint(param.annotation, all_subtypes=False)
-        and param.annotation.__args__
-        and ActionTypeHint.is_subclass_typehint(param.annotation.__args__[-1], all_subtypes=False)
+        and ActionTypeHint.is_callable_typehint(annotation, all_subtypes=False)
+        and annotation.__args__
+        and ActionTypeHint.is_subclass_typehint(annotation.__args__[-1], all_subtypes=False)
     )
 
 

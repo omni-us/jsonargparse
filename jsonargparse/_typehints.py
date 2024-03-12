@@ -281,6 +281,7 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def is_return_subclass_typehint(typehint):
+        typehint = get_optional_arg(typehint)
         typehint_origin = get_typehint_origin(typehint)
         if typehint_origin in callable_origin_types:
             return_type = get_callable_return_type(typehint)
@@ -578,7 +579,7 @@ class ActionTypeHint(Action):
             enum = self._typehint
             return list(enum.__members__.keys())
         elif is_optional(self._typehint, Enum):
-            enum = self._typehint.__args__[0]
+            enum = get_optional_arg(self._typehint)
             return list(enum.__members__.keys()) + ["null"]
         elif is_optional(self._typehint, Path):
             files_completer = get_files_completer()
@@ -954,6 +955,7 @@ def get_callable_return_type(typehint):
 def get_subclass_types(typehint, callable_return=True):
     subclass_types = None
     if callable_return and ActionTypeHint.is_callable_typehint(typehint, all_subtypes=False) and typehint.__args__:
+        typehint = get_optional_arg(typehint)
         typehint = typehint.__args__[-1]
     if ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False):
         if get_typehint_origin(typehint) == Union:
@@ -1180,14 +1182,20 @@ def is_ellipsis_tuple(typehint):
     return typehint.__origin__ in {Tuple, tuple} and len(typehint.__args__) > 1 and typehint.__args__[1] == Ellipsis
 
 
-def is_optional(annotation, ref_type=object):
+def is_optional(annotation, ref_type=None):
     """Checks whether a type annotation is an optional for one type class."""
     return (
         get_typehint_origin(annotation) == Union
         and len(annotation.__args__) == 2
         and any(NoneType == a for a in annotation.__args__)
-        and any(is_subclass(a, ref_type) for a in annotation.__args__)
+        and (ref_type is None or all(is_subclass(a, ref_type) for a in annotation.__args__ if a != NoneType))
     )
+
+
+def get_optional_arg(annotation, ref_type=None):
+    if is_optional(annotation, ref_type):
+        annotation = next(a for a in annotation.__args__ if a != NoneType)
+    return annotation
 
 
 def is_enum_type(annotation):
