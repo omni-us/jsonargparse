@@ -786,6 +786,43 @@ def test_callable_args_return_type_union_of_classes(parser, subtests):
             assert f"{__name__}.{name}" in help_str
 
 
+def optional_callable_args_return_type_class(
+    scheduler: Optional[Callable[[Optimizer], StepLR]] = lambda o: StepLR(o, last_epoch=1)
+):
+    return scheduler
+
+
+def test_optional_callable_args_return_type_class(parser, subtests):
+    parser.add_function_arguments(optional_callable_args_return_type_class)
+    optimizer = Optimizer([])
+
+    with subtests.test("default"):
+        cfg = parser.get_defaults()
+        init = parser.instantiate_classes(cfg)
+        scheduler = init.scheduler(optimizer)
+        assert isinstance(scheduler, StepLR)
+        assert scheduler.last_epoch == 1
+        assert scheduler.optimizer is optimizer
+
+    with subtests.test("parse"):
+        value = {
+            "class_path": "StepLR",
+            "init_args": {
+                "last_epoch": 2,
+            },
+        }
+        cfg = parser.parse_args([f"--scheduler={value}"])
+        init = parser.instantiate_classes(cfg)
+        scheduler = init.scheduler(optimizer)
+        assert isinstance(scheduler, StepLR)
+        assert scheduler.last_epoch == 2
+        assert scheduler.optimizer is optimizer
+
+    with subtests.test("parse null"):
+        cfg = parser.parse_args(["--scheduler=null"])
+        assert cfg.scheduler is None
+
+
 class CallableSubconfig:
     def __init__(self, o: Callable[[int], Optimizer]):
         self.o = o

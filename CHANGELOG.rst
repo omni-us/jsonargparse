@@ -22,6 +22,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/454>`__).
 - Subsubcommand parse failing when ``default_env=True`` (`#465
   <https://github.com/omni-us/jsonargparse/issues/465>`__).
+- Optional callable that returns a class instance with a lambda default,
+  produces an invalid string default.
 
 
 v4.27.5 (2024-02-12)
