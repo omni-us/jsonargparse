@@ -863,7 +863,8 @@ def adapt_typehints(
         elif isinstance(val, (dict, Namespace)):
             val = parser.parse_object(val, defaults=sub_defaults.get() or list_item)
         elif isinstance(val, NestedArg):
-            val = parser.parse_args([f"--{val.key}={val.val}"])
+            prev_val = prev_val if isinstance(prev_val, Namespace) else None
+            val = parser.parse_args([f"--{val.key}={val.val}"], namespace=prev_val)
         else:
             raise_unexpected_value(f"Type {typehint} expects a dict or Namespace", val)
 

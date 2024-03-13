@@ -24,6 +24,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/465>`__).
 - Optional callable that returns a class instance with a lambda default,
   produces an invalid string default.
+- dataclass single parameter change incorrectly resetting previous values (`#464
+  <https://github.com/omni-us/jsonargparse/issues/464>`__).
 
 
 v4.27.5 (2024-02-12)

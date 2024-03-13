@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from jsonargparse import (
+    ActionConfigFile,
     ArgumentError,
     ArgumentParser,
     Namespace,
@@ -357,6 +358,20 @@ def test_optional_dataclass_type_null_value():
     cfg = parser_optional_data.parse_args(["--data=null"])
     assert cfg == Namespace(data=None)
     assert cfg == parser_optional_data.instantiate_classes(cfg)
+
+
+@dataclasses.dataclass
+class SingleParamChange:
+    p1: int = 0
+    p2: int = 0
+
+
+def test_optional_dataclass_single_param_change(parser):
+    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--data", type=Optional[SingleParamChange])
+    config = {"data": {"p1": 1}}
+    cfg = parser.parse_args([f"--config={config}", "--data.p2=2"])
+    assert cfg.data == Namespace(p1=1, p2=2)
 
 
 @dataclasses.dataclass
