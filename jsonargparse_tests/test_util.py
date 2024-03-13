@@ -7,6 +7,7 @@ import stat
 import zipfile
 from calendar import Calendar
 from importlib import import_module
+from io import StringIO
 from random import Random
 from unittest.mock import patch
 
@@ -677,3 +678,16 @@ def test_capture_parser():
     with pytest.raises(CaptureParserException) as ctx:
         capture_parser(lambda: None)
     ctx.match("No parse_args call to capture the parser")
+
+
+def test_std_input_path():
+    input_text_to_test = "a text here\n"
+    with patch("sys.stdin", StringIO(input_text_to_test)):
+        path = Path("-", mode="")
+        assert path == "-"
+        assert input_text_to_test == path.get_content("r")
+
+
+def test_std_output_path():
+    path = Path("-", mode="")
+    assert path == "-"
