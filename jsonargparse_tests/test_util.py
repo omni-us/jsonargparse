@@ -686,8 +686,16 @@ def test_std_input_path():
         path = Path("-", mode="")
         assert path == "-"
         assert input_text_to_test == path.get_content("r")
+        assert path.std_io
+
+    with patch("sys.stdin", StringIO(input_text_to_test)):
+        path = Path("-", mode="")
+        with path.open("r") as std_input:
+            assert input_text_to_test == "".join([line for line in std_input])
 
 
 def test_std_output_path():
     path = Path("-", mode="")
     assert path == "-"
+    path.open("w")
+    assert path.std_io
