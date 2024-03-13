@@ -482,6 +482,7 @@ class Path(PathDeprecations):
         """
         self._deprecated_kwargs(kwargs)
         self._check_mode(mode)
+        self._std_io = False
 
         is_url = False
         is_fsspec = False
@@ -494,14 +495,7 @@ class Path(PathDeprecations):
             path = path._relative
         elif isinstance(path, (str, os.PathLike)):
             if path == "-":
-                self._relative = "-"
-                self._absolute = "-"
-                self._cwd = ""
-                self._mode = mode
-                self._is_url = False
-                self._is_fsspec = False
-                self._url_data = ""
-                return
+                self._std_io = True
             path = os.fspath(path)
             cwd = os.fspath(cwd) if cwd else None
             abs_path = os.path.expanduser(path)
@@ -598,6 +592,11 @@ class Path(PathDeprecations):
         self._url_data = url_data
 
     @property
+    def std_io(self) -> bool:
+        """Flag specifying if the Path is a standard input or output"""
+        return self._std_io
+
+    @property
     def relative(self) -> str:
         """Returns the relative representation of the path (how the path was given on instance creation)."""
         return self._relative
@@ -650,9 +649,8 @@ class Path(PathDeprecations):
 
     def get_content(self, mode: str = "r") -> str:
         """Returns the contents of the file or the remote path."""
-        if self.absolute == "-":
-            for line in sys.stdin:
-                return sys.stdin.read()
+        if self.std_io:
+            return sys.stdin.read()
         elif self._is_url:
             assert mode == "r"
             requests = import_requests("Path.get_content")
@@ -671,7 +669,7 @@ class Path(PathDeprecations):
     @contextmanager
     def open(self, mode: str = "r") -> Iterator[IO]:
         """Return an opened file object for the path."""
-        if self.absolute == "-":
+        if self.std_io:
             if "r" in mode:
                 yield sys.stdin
             elif "w" in mode:
