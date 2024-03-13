@@ -457,6 +457,11 @@ class Path(PathDeprecations):
     The creatable flag "c" can be given one or two times. If give once, the
     parent directory must exist and be writeable. If given twice, the parent
     directory does not have to exist, but should be allowed to create.
+
+    An instance of Path class can also refer to the standard input or output.
+    To do that, path must be set with the value "-"; it is a common practice.
+    Then, getting the content or opening it will automatically be done on
+    standard input or output.
     """
 
     _url_data: Optional[UrlData]
