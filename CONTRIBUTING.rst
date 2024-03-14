@@ -95,3 +95,44 @@ the package, thus can be run in a production system.
     pytest --cov                             # Run tests and generate coverage report
     python -m jsonargparse_tests             # Run tests on installed package (requires pytest and pytest-subtests)
     pre-commit run -a --hook-stage pre-push  # Run pre-push git hooks (tests, doctests, mypy, coverage)
+
+To get a nice html test coverage report, run:
+
+.. code-block:: bash
+
+    pytest --cov --cov-report=html
+
+Then open the file ``htmlcov/index.html`` in a browser.
+
+Pull requests
+-------------
+
+When creating a pull request, it is recommended that in your fork, create a
+specific branch for the changes you want to contribute, instead of using the
+``main`` branch.
+
+The required tasks to do for a pull request, are listed in
+`PULL_REQUEST_TEMPLATE.md
+<https://github.com/omni-us/jsonargparse/blob/main/.github/PULL_REQUEST_TEMPLATE.md>`__.
+
+One of the tasks is adding a changelog entry. For this, note that this project
+uses semantic versioning. Depending on whether the contribution is a bug fix or
+a new feature, the changelog entry would go in a patch or minor release. The
+changelog section for the next release does not have a definite date, for
+example:
+
+.. code-block::
+
+    v4.28.0 (2024-03-??)
+    --------------------
+
+    Added
+    ^^^^^
+    -
+
+If no such section exists, just add it. Have a look at previous releases to
+decide under which subsection the new entry should go. If you are unsure, ask in
+the pull request.
+
+Please don't open pull requests with breaking changes unless this has been
+discussed and agreed upon in an issue.
