@@ -3,7 +3,7 @@
 import dataclasses
 import inspect
 import re
-from argparse import SUPPRESS
+from argparse import SUPPRESS, ArgumentParser
 from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
@@ -255,7 +255,7 @@ class SignatureArguments(LoggerProperty):
         ## Create group if requested ##
         doc_group = get_doc_short_description(function_or_class, method_name, logger=self.logger)
         component = getattr(function_or_class, method_name) if method_name else function_or_class
-        group = self._create_group_if_requested(
+        container = self._create_group_if_requested(
             component,
             nested_key,
             as_group,
@@ -268,7 +268,7 @@ class SignatureArguments(LoggerProperty):
         added_args: List[str] = []
         for param in params:
             self._add_signature_parameter(
-                group,
+                container,
                 nested_key,
                 param,
                 added_args,
@@ -283,7 +283,7 @@ class SignatureArguments(LoggerProperty):
 
     def _add_signature_parameter(
         self,
-        group,
+        container,
         nested_key: Optional[str],
         param,
         added_args: List[str],
@@ -339,11 +339,14 @@ class SignatureArguments(LoggerProperty):
         dest = (nested_key + "." if nested_key else "") + name
         args = [dest if is_required and as_positional else "--" + dest]
         if param.origin:
+            parser = container
+            if not isinstance(container, ArgumentParser):
+                parser = getattr(container, "parser")
             group_name = "; ".join(str(o) for o in param.origin)
-            if group_name in group.parser.groups:
-                group = group.parser.groups[group_name]
+            if group_name in parser.groups:
+                container = parser.groups[group_name]
             else:
-                group = group.parser.add_argument_group(
+                container = parser.add_argument_group(
                     f"Conditional arguments [origins: {group_name}]",
                     name=group_name,
                 )
@@ -372,7 +375,7 @@ class SignatureArguments(LoggerProperty):
                     args=args,
                     kwargs=kwargs,
                     enable_path=enable_path,
-                    container=group,
+                    container=container,
                     logger=self.logger,
                     sub_add_kwargs=sub_add_kwargs,
                 )
@@ -387,7 +390,7 @@ class SignatureArguments(LoggerProperty):
             if is_dataclass_like_typehint:
                 kwargs.update(sub_add_kwargs)
             with ActionTypeHint.allow_default_instance_context():
-                action = group.add_argument(*args, **kwargs)
+                action = container.add_argument(*args, **kwargs)
             action.sub_add_kwargs = sub_add_kwargs
             if is_subclass_typehint and len(subclass_skip) > 0:
                 action.sub_add_kwargs["skip"] = subclass_skip
