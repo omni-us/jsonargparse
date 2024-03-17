@@ -697,5 +697,7 @@ def test_std_input_path():
 def test_std_output_path():
     path = Path("-", mode="")
     assert path == "-"
-    path.open("w")
+    with patch("sys.stdout", StringIO("")):
+        with path.open("w") as std_output:
+            std_output.write("test\n")
     assert path.std_io
