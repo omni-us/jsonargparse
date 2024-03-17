@@ -14,6 +14,7 @@ import yaml
 
 from jsonargparse import CLI, capture_parser, lazy_instance
 from jsonargparse._optionals import docstring_parser_support, ruyaml_support
+from jsonargparse._typehints import Literal
 from jsonargparse.typing import final
 from jsonargparse_tests.conftest import skip_if_docstring_parser_unavailable
 
@@ -118,6 +119,31 @@ def test_multiple_functions_main_help():
 def test_multiple_functions_subcommand_help():
     out = get_cli_stdout([cmd1, cmd2], args=["cmd2", "--help"])
     assert "--a2 A2" in out
+
+
+def conditionalA(foo: int = 1):
+    return foo
+
+
+def conditionalB(bar: int = 2):
+    return bar
+
+
+def conditional_function(fn: "Literal['A', 'B']", *args, **kwargs):
+    if fn == "A":
+        return conditionalA(*args, **kwargs)
+    elif fn == "B":
+        return conditionalB(*args, **kwargs)
+    raise NotImplementedError(fn)
+
+
+@pytest.mark.skipif(condition=sys.version_info < (3, 9), reason="python>=3.9 is required")
+@pytest.mark.skipif(condition=not Literal, reason="Literal is required")
+def test_literal_conditional_function():
+    out = get_cli_stdout(conditional_function, args=["--help"])
+    assert "Conditional arguments" in out
+    assert "--foo FOO             (type: int, default: Conditional<ast-resolver> {1, NOT_ACCEPTED})" in out
+    assert "--bar BAR             (type: int, default: Conditional<ast-resolver> {2, NOT_ACCEPTED})" in out
 
 
 # single class tests

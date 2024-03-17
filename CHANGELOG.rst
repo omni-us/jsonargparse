@@ -19,7 +19,7 @@ Added
 - Support for "-" as value for Path class initialization so that user
   can ask to use standard input/output instead of file.
 
-v4.27.6 (2024-02-??)
+v4.27.6 (2024-03-15)
 --------------------
 
 Fixed
@@ -31,6 +31,10 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/465>`__).
 - Optional callable that returns a class instance with a lambda default,
   produces an invalid string default.
+- dataclass single parameter change incorrectly resetting previous values (`#464
+  <https://github.com/omni-us/jsonargparse/issues/464>`__).
+- Add function signature failing when conditionally calling different functions
+  (`#467 <https://github.com/omni-us/jsonargparse/issues/467>`__).
 
 
 v4.27.5 (2024-02-12)
