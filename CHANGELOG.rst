@@ -11,6 +11,13 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
+v4.28.0 (2024-03-??)
+--------------------
+
+Added
+^^^^^
+- Support for "-" as value for Path class initialization so that user
+  can ask to use standard input/output instead of file.
 
 v4.27.6 (2024-02-??)
 --------------------
