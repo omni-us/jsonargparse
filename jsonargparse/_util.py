@@ -156,14 +156,6 @@ class CachedStdin(StringIO):
     """Used to allow reading sys.stdin multiple times."""
 
 
-def read_stdin() -> str:
-    if not isinstance(sys.stdin, CachedStdin):
-        sys.stdin = CachedStdin(sys.stdin.read())
-    value = sys.stdin.read()
-    sys.stdin.seek(0)
-    return value
-
-
 def import_object(name: str):
     """Returns an object in a module given its dot import path."""
     if not isinstance(name, str) or "." not in name:
