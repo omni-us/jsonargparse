@@ -572,23 +572,21 @@ class Path(PathDeprecations):
                 if "f" in mode and not (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
                     raise TypeError(f"Path is not a file: {abs_path!r}")
 
-            if self.std_io:
-                pass
-            elif "r" in mode and not os.access(abs_path, os.R_OK):
+            if "r" in mode and not os.access(abs_path, os.R_OK):
                 raise TypeError(f"{ptype} is not readable: {abs_path!r}")
-            elif "w" in mode and not os.access(abs_path, os.W_OK):
+            if "w" in mode and not os.access(abs_path, os.W_OK):
                 raise TypeError(f"{ptype} is not writeable: {abs_path!r}")
-            elif "x" in mode and not os.access(abs_path, os.X_OK):
+            if "x" in mode and not os.access(abs_path, os.X_OK):
                 raise TypeError(f"{ptype} is not executable: {abs_path!r}")
-            elif "D" in mode and os.path.isdir(abs_path):
+            if "D" in mode and os.path.isdir(abs_path):
                 raise TypeError(f"Path is a directory: {abs_path!r}")
-            elif "F" in mode and (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
+            if "F" in mode and (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
                 raise TypeError(f"Path is a file: {abs_path!r}")
-            elif "R" in mode and os.access(abs_path, os.R_OK):
+            if "R" in mode and os.access(abs_path, os.R_OK):
                 raise TypeError(f"{ptype} is readable: {abs_path!r}")
-            elif "W" in mode and os.access(abs_path, os.W_OK):
+            if "W" in mode and os.access(abs_path, os.W_OK):
                 raise TypeError(f"{ptype} is writeable: {abs_path!r}")
-            elif "X" in mode and os.access(abs_path, os.X_OK):
+            if "X" in mode and os.access(abs_path, os.X_OK):
                 raise TypeError(f"{ptype} is executable: {abs_path!r}")
 
         self._relative = path
