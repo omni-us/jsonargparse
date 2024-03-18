@@ -133,7 +133,7 @@ def parse_value_or_config(
         nested_arg = value
         value = nested_arg.val
     cfg_path = None
-    if enable_path and type(value) is str:
+    if enable_path and type(value) is str and value != "-":
         try:
             cfg_path = Path(value, mode=get_config_read_mode())
         except TypeError:
@@ -547,7 +547,7 @@ class Path(PathDeprecations):
                     raise TypeError(f"Path does not exist: {abs_path!r}") from ex
                 except PermissionError as ex:
                     raise TypeError(f"Path exists but no permission to access: {abs_path!r}") from ex
-        elif not self._skip_check:
+        elif not self._skip_check and not self.std_io:
             ptype = "Directory" if "d" in mode else "File"
             if "c" in mode:
                 pdir = os.path.realpath(os.path.join(abs_path, ".."))
@@ -571,21 +571,24 @@ class Path(PathDeprecations):
                     raise TypeError(f"Path is not a directory: {abs_path!r}")
                 if "f" in mode and not (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
                     raise TypeError(f"Path is not a file: {abs_path!r}")
-            if "r" in mode and not os.access(abs_path, os.R_OK):
+
+            if self.std_io:
+                pass
+            elif "r" in mode and not os.access(abs_path, os.R_OK):
                 raise TypeError(f"{ptype} is not readable: {abs_path!r}")
-            if "w" in mode and not os.access(abs_path, os.W_OK):
+            elif "w" in mode and not os.access(abs_path, os.W_OK):
                 raise TypeError(f"{ptype} is not writeable: {abs_path!r}")
-            if "x" in mode and not os.access(abs_path, os.X_OK):
+            elif "x" in mode and not os.access(abs_path, os.X_OK):
                 raise TypeError(f"{ptype} is not executable: {abs_path!r}")
-            if "D" in mode and os.path.isdir(abs_path):
+            elif "D" in mode and os.path.isdir(abs_path):
                 raise TypeError(f"Path is a directory: {abs_path!r}")
-            if "F" in mode and (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
+            elif "F" in mode and (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
                 raise TypeError(f"Path is a file: {abs_path!r}")
-            if "R" in mode and os.access(abs_path, os.R_OK):
+            elif "R" in mode and os.access(abs_path, os.R_OK):
                 raise TypeError(f"{ptype} is readable: {abs_path!r}")
-            if "W" in mode and os.access(abs_path, os.W_OK):
+            elif "W" in mode and os.access(abs_path, os.W_OK):
                 raise TypeError(f"{ptype} is writeable: {abs_path!r}")
-            if "X" in mode and os.access(abs_path, os.X_OK):
+            elif "X" in mode and os.access(abs_path, os.X_OK):
                 raise TypeError(f"{ptype} is executable: {abs_path!r}")
 
         self._relative = path
