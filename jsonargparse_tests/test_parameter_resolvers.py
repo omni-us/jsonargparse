@@ -5,7 +5,7 @@ import inspect
 import xml.dom
 from calendar import Calendar
 from random import shuffle
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 from unittest.mock import patch
 
 import pytest
@@ -541,6 +541,14 @@ def conditional_calls(**kwargs):
         cond_3(**kwargs)
 
 
+def function_optional_callable(p1: Optional[Callable] = None, **kw):
+    """
+    Args:
+        p1: help for p1
+    """
+    function_no_args_no_kwargs(**kw)
+
+
 def assert_params(params, expected, origins={}):
     assert expected == [p.name for p in params]
     docs = [f"help for {p.name}" for p in params] if docstring_parser_support else [None] * len(params)
@@ -862,6 +870,10 @@ def test_conditional_calls_kwargs():
     )
     with source_unavailable():
         assert get_params(conditional_calls) == []
+
+
+def test_get_params_optional_callable():
+    assert_params(get_params(function_optional_callable), ["p1", "pk1", "k2"])
 
 
 # unsupported cases

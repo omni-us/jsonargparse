@@ -12,6 +12,18 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.27.7 (2024-03-??)
+--------------------
+
+Fixed
+^^^^^
+- Regression from `14456c2
+  <https://github.com/omni-us/jsonargparse/commit/14456c21ff7a11ba420f010d2b21bcfdb14977a2>`__
+  that prevented ``**kwargs`` parameter resolving when an ``Optional[Callable]``
+  type is used (`#473
+  <https://github.com/omni-us/jsonargparse/issues/473>`__).
+
+
 v4.27.6 (2024-03-15)
 --------------------
 
