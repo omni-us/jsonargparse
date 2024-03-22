@@ -37,7 +37,7 @@ _docstring_parse_options = {
 
 def typing_extensions_import(name):
     if typing_extensions_support:
-        return getattr(__import__("typing_extensions"), name)
+        return getattr(__import__("typing_extensions"), name, False)
     else:
         return getattr(__import__("typing"), name, False)
 
@@ -311,6 +311,17 @@ annotated_alias = typing_extensions_import("_AnnotatedAlias")
 
 def is_annotated(typehint: type) -> bool:
     return annotated_alias and isinstance(typehint, annotated_alias)
+
+
+type_alias_type = typing_extensions_import("TypeAliasType")
+
+
+def is_alias_type(typehint: type) -> bool:
+    return type_alias_type and isinstance(typehint, type_alias_type)
+
+
+def get_alias_target(typehint: type) -> bool:
+    return typehint.__value__
 
 
 def get_pydantic_support() -> int:

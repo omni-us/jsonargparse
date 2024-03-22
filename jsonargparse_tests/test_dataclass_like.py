@@ -474,7 +474,7 @@ def test_add_class_final(parser):
 
 
 if type_alias_type:
-    IntOrString = type_alias_type('IntOrString', Union[int, str])
+    IntOrString = type_alias_type("IntOrString", Union[int, str])
 
     @dataclasses.dataclass
     class DataClassWithAliasType:
@@ -503,6 +503,7 @@ if type_alias_type:
         assert cfg.data == 3
 
     if annotated:
+
         @dataclasses.dataclass
         class DataClassWithAnnotatedAliasType:
             p1: annotated[IntOrString, 1]
@@ -541,6 +542,16 @@ if annotated and pydantic_support > 1:
         a1: annotated[InnerDataClass, 1]
 
     @pydantic.dataclasses.dataclass(frozen=True)
+    class NestedAnnotatedDataClassWithDefault:
+        """NestedAnnotatedDataClass description
+
+        Args:
+            a1: a1 help
+        """
+
+        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(default=InnerDataClass())
+
+    @pydantic.dataclasses.dataclass(frozen=True)
     class NestedAnnotatedDataClassWithDefaultFactory:
         """NestedAnnotatedDataClass description
 
@@ -548,8 +559,7 @@ if annotated and pydantic_support > 1:
             a1: a1 help
         """
 
-        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(
-            default_factory=InnerDataClass)
+        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(default_factory=InnerDataClass)
 
     def test_pydantic_nested_annotated_dataclass(parser: ArgumentParser):
         parser.add_class_arguments(NestedAnnotatedDataClass, "n")
@@ -559,10 +569,12 @@ if annotated and pydantic_support > 1:
         parser.add_class_arguments(annotated[NestedAnnotatedDataClass, 1], "n")
         parser.parse_args(["--n.a1.a1=1"])
 
-    def test_pydantic_annotated_nested_annotated_dataclass_with_default(
-            parser: ArgumentParser):
-        parser.add_class_arguments(annotated[
-            NestedAnnotatedDataClassWithDefaultFactory, 1], "n")
+    def test_pydantic_annotated_nested_annotated_dataclass_with_default(parser: ArgumentParser):
+        parser.add_class_arguments(annotated[NestedAnnotatedDataClassWithDefault, 1], "n")
+        parser.parse_args(["--n.a1.a1=1"])
+
+    def test_pydantic_annotated_nested_annotated_dataclass_with_default_factory(parser: ArgumentParser):
+        parser.add_class_arguments(annotated[NestedAnnotatedDataClassWithDefaultFactory, 1], "n")
         parser.parse_args(["--n.a1.a1=1"])
 
 
