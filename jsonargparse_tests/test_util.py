@@ -7,6 +7,7 @@ import stat
 import zipfile
 from calendar import Calendar
 from importlib import import_module
+from io import StringIO
 from random import Random
 from unittest.mock import patch
 
@@ -677,3 +678,50 @@ def test_capture_parser():
     with pytest.raises(CaptureParserException) as ctx:
         capture_parser(lambda: None)
     ctx.match("No parse_args call to capture the parser")
+
+
+def test_std_input_path():
+    input_text_to_test = "a text here\n"
+    with patch("sys.stdin", StringIO(input_text_to_test)):
+        path = Path("-", mode="")
+        assert path == "-"
+        assert input_text_to_test == path.get_content("r")
+        assert path.std_io
+
+    with patch("sys.stdin", StringIO(input_text_to_test)):
+        path = Path("-", mode="")
+        with path.open("r") as std_input:
+            assert input_text_to_test == "".join([line for line in std_input])
+
+    with patch("sys.stdin", StringIO(input_text_to_test)):
+        path = Path("-", mode="r")
+        with path.open("r") as std_input:
+            assert input_text_to_test == "".join([line for line in std_input])
+
+    with patch("sys.stdin", StringIO(input_text_to_test)):
+        path = Path("-", mode="fr")
+        with path.open("r") as std_input:
+            assert input_text_to_test == "".join([line for line in std_input])
+
+
+def test_std_output_path():
+    path = Path("-", mode="")
+    assert path == "-"
+    with patch("sys.stdout", StringIO("")):
+        with path.open("w") as std_output:
+            std_output.write("test\n")
+    assert path.std_io
+
+    path = Path("-", mode="w")
+    assert path == "-"
+    with patch("sys.stdout", StringIO("")):
+        with path.open("w") as std_output:
+            std_output.write("test\n")
+    assert path.std_io
+
+    path = Path("-", mode="fw")
+    assert path == "-"
+    with patch("sys.stdout", StringIO("")):
+        with path.open("w") as std_output:
+            std_output.write("test\n")
+    assert path.std_io
