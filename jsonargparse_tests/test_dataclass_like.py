@@ -474,14 +474,14 @@ def test_add_class_final(parser):
 
 
 if type_alias_type:
-    StringOrInt = type_alias_type('StringOrInt', Union[str, int])
+    IntOrString = type_alias_type('IntOrString', Union[int, str])
 
     @dataclasses.dataclass
     class DataClassWithAliasType:
-        p1: StringOrInt
+        p1: IntOrString
 
     def test_bare_alias_type(parser):
-        parser.add_argument("--data", type=StringOrInt)
+        parser.add_argument("--data", type=IntOrString)
         cfg = parser.parse_args(["--data=MyString"])
         assert cfg.data == "MyString"
         cfg = parser.parse_args(["--data=3"])
@@ -496,7 +496,7 @@ if type_alias_type:
 
     @pytest.mark.skipif(not annotated, reason="Annotated is required")
     def test_annotated_alias_type(parser):
-        parser.add_argument("--data", type=annotated[StringOrInt, 1])
+        parser.add_argument("--data", type=annotated[IntOrString, 1])
         cfg = parser.parse_args(["--data=MyString"])
         assert cfg.data == "MyString"
         cfg = parser.parse_args(["--data=3"])
@@ -505,7 +505,7 @@ if type_alias_type:
     if annotated:
         @dataclasses.dataclass
         class DataClassWithAnnotatedAliasType:
-            p1: annotated[StringOrInt, 1]
+            p1: annotated[IntOrString, 1]
 
     @pytest.mark.skipif(not annotated, reason="Annotated is required")
     def test_dataclass_with_annotated_alias_type(parser):
