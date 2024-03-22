@@ -28,6 +28,9 @@ from jsonargparse_tests.conftest import (
     skip_if_docstring_parser_unavailable,
 )
 
+annotated = typing_extensions_import("Annotated")
+type_alias_type = typing_extensions_import("TypeAliasType")
+
 # dataclass tests
 
 
@@ -216,6 +219,8 @@ def test_dataclass_field_init_false(parser):
     added = parser.add_dataclass_arguments(DataInitFalse, "d")
     assert added == ["d.p1"]
     assert parser.get_defaults() == Namespace(d=Namespace(p1="-"))
+    cfg = parser.parse_args(["--d.p1=-"])
+    assert cfg.d.p1 == "-"
 
 
 @dataclasses.dataclass
@@ -468,9 +473,99 @@ def test_add_class_final(parser):
     pytest.raises(ValueError, lambda: parser.add_class_arguments(FinalClass, "a", default=FinalClass()))
 
 
-# pydantic tests
+if type_alias_type:
+    StringOrInt = type_alias_type('StringOrInt', Union[str, int])
 
-annotated = typing_extensions_import("Annotated")
+    @dataclasses.dataclass
+    class DataClassWithAliasType:
+        p1: StringOrInt
+
+    def test_bare_alias_type(parser):
+        parser.add_argument("--data", type=StringOrInt)
+        cfg = parser.parse_args(["--data=MyString"])
+        assert cfg.data == "MyString"
+        cfg = parser.parse_args(["--data=3"])
+        assert cfg.data == 3
+
+    def test_dataclass_with_alias_type(parser):
+        parser.add_argument("--data", type=DataClassWithAliasType)
+        cfg = parser.parse_args(["--data.p1=MyString"])
+        assert cfg.data.p1 == "MyString"
+        cfg = parser.parse_args(["--data.p1=3"])
+        assert cfg.data.p1 == 3
+
+    @pytest.mark.skipif(not annotated, reason="Annotated is required")
+    def test_annotated_alias_type(parser):
+        parser.add_argument("--data", type=annotated[StringOrInt, 1])
+        cfg = parser.parse_args(["--data=MyString"])
+        assert cfg.data == "MyString"
+        cfg = parser.parse_args(["--data=3"])
+        assert cfg.data == 3
+
+    if annotated:
+        @dataclasses.dataclass
+        class DataClassWithAnnotatedAliasType:
+            p1: annotated[StringOrInt, 1]
+
+    @pytest.mark.skipif(not annotated, reason="Annotated is required")
+    def test_dataclass_with_annotated_alias_type(parser):
+        parser.add_argument("--data", type=DataClassWithAnnotatedAliasType)
+        cfg = parser.parse_args(["--data.p1=MyString"])
+        assert cfg.data.p1 == "MyString"
+        cfg = parser.parse_args(["--data.p1=3"])
+        assert cfg.data.p1 == 3
+
+
+# pydantic tests
+if annotated and pydantic_support > 1:
+    import pydantic.dataclasses
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class InnerDataClass:
+        """DataClass description
+
+        Args:
+            a1: a1 help
+        """
+
+        a1: int = 1
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class NestedAnnotatedDataClass:
+        """NestedAnnotatedDataClass description
+
+        Args:
+            a1: a1 help
+        """
+
+        a1: annotated[InnerDataClass, 1]
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class NestedAnnotatedDataClassWithDefaultFactory:
+        """NestedAnnotatedDataClass description
+
+        Args:
+            a1: a1 help
+        """
+
+        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(
+            default_factory=InnerDataClass)
+
+    def test_pydantic_nested_annotated_dataclass(parser: ArgumentParser):
+        parser.add_class_arguments(NestedAnnotatedDataClass, "n")
+        parser.parse_args(["--n.a1.a1=1"])
+
+    def test_pydantic_annotated_nested_annotated_dataclass(parser: ArgumentParser):
+        parser.add_class_arguments(annotated[NestedAnnotatedDataClass, 1], "n")
+        parser.parse_args(["--n.a1.a1=1"])
+
+    def test_pydantic_annotated_nested_annotated_dataclass_with_default(
+            parser: ArgumentParser):
+        parser.add_class_arguments(annotated[
+            NestedAnnotatedDataClassWithDefaultFactory, 1], "n")
+        parser.parse_args(["--n.a1.a1=1"])
+
+
 length = "length"
 if pydantic_support:
     import pydantic
@@ -479,6 +574,15 @@ if pydantic_support:
     class PydanticData:
         p1: float = 0.1
         p2: str = "-"
+
+    @pydantic.dataclasses.dataclass
+    class PydanticDataNested:
+        p3: PydanticData
+
+    @pydantic.dataclasses.dataclass
+    class PydanticDataFieldInitFalse:
+        p1: float = 0.1
+        p2: str = pydantic.dataclasses.Field("-", init=False)
 
     class PydanticModel(pydantic.BaseModel):
         p1: str
@@ -587,6 +691,27 @@ class TestPydantic:
             parser.parse_args([f"--model.param={invalid_value}"])
         ctx.match("model.param")
 
+    def test_dataclass_field_init_false(self, parser):
+        # This tests the following error:
+        #
+        # TypeError: Parser key "data.p2":
+        # Expected a <class 'str'>. Got value: annotation=str
+        # required=False default='-' init=False
+        parser.add_argument("--data", type=PydanticDataFieldInitFalse)
+        print(parser.get_defaults())
+        cfg = parser.parse_args(["--data.p1=1.0"])
+        assert cfg.data.p1 == 1.0
+
+    def test_dataclass_nested(self, parser):
+        # This tests the following error:
+        #
+        # ValueError: Expected "default" argument to be an instance of
+        # "PydanticData" or its kwargs dict, given
+        # <dataclasses._MISSING_TYPE object at 0x105624c50>
+
+        parser.add_argument("--data", type=PydanticDataNested)
+        cfg = parser.parse_args(["--data", '{"p3": {"p1": 1.0}}'])
+
 
 # attrs tests
 
@@ -605,6 +730,14 @@ if attrs_support:
     @attrs.define
     class AttrsFieldFactory:
         p1: List[str] = attrs.field(factory=lambda: ["one", "two"])
+
+    @attrs.define
+    class AttrsFieldInitFalse:
+        p1: float
+        p2: dict = attrs.field(init=False)
+
+        def __attrs_post_init__(self):
+            self.p2 = {}
 
 
 @pytest.mark.skipif(not attrs_support, reason="attrs package is required")
@@ -628,3 +761,13 @@ class TestAttrs:
         assert cfg1.data.p1 == ["one", "two"]
         assert cfg1.data.p1 == cfg2.data.p1
         assert cfg1.data.p1 is not cfg2.data.p1
+
+    def test_field_init_false(self, parser):
+        # This tests the following error:
+        #
+        # TypeError('Validation failed: Key "data.p2" is required but
+        # not included in config object or its value is None.')
+
+        parser.add_argument("--data", type=AttrsFieldInitFalse)
+        cfg = parser.parse_args(["--data.p1=1.0"])
+        assert cfg.data.p1 == 1.0
