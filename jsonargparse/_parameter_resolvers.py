@@ -926,7 +926,7 @@ def get_field_data_attrs(field, name, doc_params):
 def is_init_field_pydantic2_dataclass(field) -> Optional[bool]:
     from pydantic.dataclasses import FieldInfo
 
-    if isinstance(field.default, FieldInfo) and hasattr(field.default, 'init'):
+    if isinstance(field.default, FieldInfo) and hasattr(field.default, "init"):
         return field.default.init is not False
     return field.init is not False
 
