@@ -22,9 +22,8 @@ from ._namespace import Namespace
 from ._optionals import (
     get_alias_target,
     import_reconplogger,
-    is_annotated,
-    is_annotated_validator,
     is_alias_type,
+    is_annotated,
     reconplogger_support,
 )
 from ._type_checking import ArgumentParser

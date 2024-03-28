@@ -61,9 +61,9 @@ from ._optionals import (
     argcomplete_warn_redraw_prompt,
     get_alias_target,
     get_files_completer,
+    is_alias_type,
     is_annotated,
     is_annotated_validator,
-    is_alias_type,
     typing_extensions_import,
     validate_annotated,
 )
