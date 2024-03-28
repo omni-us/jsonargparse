@@ -115,7 +115,6 @@ def get_unaliased_type(cls):
             new_cls = get_alias_target(new_cls)
         if new_cls == cur_cls:
             break
-        cur_cls = new_cls
     return cur_cls
 
 
