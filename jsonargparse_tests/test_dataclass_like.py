@@ -710,7 +710,6 @@ class TestPydantic:
         # Expected a <class 'str'>. Got value: annotation=str
         # required=False default='-' init=False
         parser.add_argument("--data", type=PydanticDataFieldInitFalse)
-        print(parser.get_defaults())
         cfg = parser.parse_args(["--data.p1=1.0"])
         assert cfg.data.p1 == 1.0
 
