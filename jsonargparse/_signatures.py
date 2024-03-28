@@ -79,7 +79,7 @@ class SignatureArguments(LoggerProperty):
             ValueError: When not given a class.
             ValueError: When there are required parameters without at least one valid type.
         """
-        if not inspect.isclass(get_generic_origin(theclass)):
+        if not inspect.isclass(get_generic_origin(get_unaliased_type(theclass))):
             raise ValueError(f'Expected "theclass" parameter to be a class type, got: {theclass}.')
         if default and not (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass)):
             raise ValueError(f'Expected "default" parameter to be a lazy instance of the class, got: {default}.')
@@ -140,9 +140,10 @@ class SignatureArguments(LoggerProperty):
             ValueError: When not given a class or the name of a method of the class.
             ValueError: When there are required parameters without at least one valid type.
         """
-        if not inspect.isclass(get_generic_origin(theclass)):
+        unaliased_type = get_unaliased_type(theclass)
+        if not inspect.isclass(get_generic_origin(unaliased_type)):
             raise ValueError('Expected "theclass" argument to be a class object.')
-        if not hasattr(theclass, themethod) or not callable(getattr(theclass, themethod)):
+        if not hasattr(unaliased_type, themethod) or not callable(getattr(unaliased_type, themethod)):
             raise ValueError('Expected "themethod" argument to be a callable member of the class.')
 
         return self._add_signature_arguments(
