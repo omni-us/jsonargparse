@@ -949,11 +949,11 @@ def get_parameters_from_pydantic_or_attrs(
     if pydantic_support:
         pydantic_model = is_pydantic_model(function_or_class)
         if pydantic_model == 1:
-            fields_iterator = function_or_class.__fields__.items()  # type: ignore[union-attr]
+            fields_iterator = function_or_class.__fields__.items()
             get_field_data = get_field_data_pydantic1_model
             is_init_field = is_init_field_default
         elif pydantic_model > 1:
-            fields_iterator = function_or_class.model_fields.items()  # type: ignore[union-attr]
+            fields_iterator = function_or_class.model_fields.items()
             get_field_data = get_field_data_pydantic2_model
             is_init_field = is_init_field_default
         elif dataclasses.is_dataclass(function_or_class) and hasattr(function_or_class, "__pydantic_fields__"):

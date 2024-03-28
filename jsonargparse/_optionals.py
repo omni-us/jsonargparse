@@ -321,7 +321,7 @@ def is_alias_type(typehint: type) -> bool:
 
 
 def get_alias_target(typehint: type) -> bool:
-    return typehint.__value__
+    return typehint.__value__  # type: ignore[attr-defined]
 
 
 def get_pydantic_support() -> int:
@@ -350,7 +350,7 @@ def is_pydantic_model(class_type) -> int:
 
             if issubclass(cls, pydantic.BaseModel):
                 return pydantic_support
-            elif pydantic_support > 1 and issubclass(cls, pydantic.v1.BaseModel):
+            elif pydantic_support > 1 and issubclass(cls, pydantic.v1.BaseModel):  # type: ignore[attr-defined]
                 return 1
     return 0
 

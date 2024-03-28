@@ -478,7 +478,7 @@ if type_alias_type:
 
     @dataclasses.dataclass
     class DataClassWithAliasType:
-        p1: IntOrString
+        p1: IntOrString  # type: ignore[valid-type]
 
     def test_bare_alias_type(parser):
         parser.add_argument("--data", type=IntOrString)
@@ -506,7 +506,7 @@ if type_alias_type:
 
         @dataclasses.dataclass
         class DataClassWithAnnotatedAliasType:
-            p1: annotated[IntOrString, 1]
+            p1: annotated[IntOrString, 1]  # type: ignore[valid-type]
 
     @pytest.mark.skipif(not annotated, reason="Annotated is required")
     def test_dataclass_with_annotated_alias_type(parser):
@@ -539,7 +539,7 @@ if annotated and pydantic_support > 1:
             a1: a1 help
         """
 
-        a1: annotated[InnerDataClass, 1]
+        a1: annotated[InnerDataClass, 1]  # type: ignore[valid-type]
 
     @pydantic.dataclasses.dataclass(frozen=True)
     class NestedAnnotatedDataClassWithDefault:
@@ -549,7 +549,7 @@ if annotated and pydantic_support > 1:
             a1: a1 help
         """
 
-        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(default=InnerDataClass())
+        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(default=InnerDataClass())  # type: ignore[valid-type]
 
     @pydantic.dataclasses.dataclass(frozen=True)
     class NestedAnnotatedDataClassWithDefaultFactory:
@@ -559,7 +559,7 @@ if annotated and pydantic_support > 1:
             a1: a1 help
         """
 
-        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(default_factory=InnerDataClass)
+        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(default_factory=InnerDataClass)  # type: ignore[valid-type]
 
     def test_pydantic_nested_annotated_dataclass(parser: ArgumentParser):
         parser.add_class_arguments(NestedAnnotatedDataClass, "n")
