@@ -928,7 +928,7 @@ def should_init_field_pydantic2_dataclass(field) -> Optional[bool]:
 
     if isinstance(field.default, FieldInfo):
         return field.default.init
-    return True
+    return field.init
 
 
 def should_init_field_default(field) -> Optional[bool]:
