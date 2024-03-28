@@ -872,6 +872,7 @@ def get_field_data_pydantic2_dataclass(field, name, doc_params):
     from pydantic.dataclasses import FieldInfo
     from pydantic_core import PydanticUndefined
 
+    default = inspect._empty
     if isinstance(field.default, FieldInfo):
         # Pydantic 2 dataclasses stuff their FieldInfo into a
         # stdlib dataclasses.field's `default`; this is where the
@@ -884,8 +885,7 @@ def get_field_data_pydantic2_dataclass(field, name, doc_params):
         default = field.default
     elif field.default_factory is not dataclasses.MISSING:
         default = field.default_factory()
-    else:
-        default = inspect._empty
+
     return dict(
         annotation=field.type,
         default=default,
