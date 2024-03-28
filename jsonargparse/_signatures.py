@@ -8,7 +8,7 @@ from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from ._actions import _ActionConfigLoad
-from ._common import LoggerProperty, get_class_instantiator, get_generic_origin, is_dataclass_like, is_subclass
+from ._common import LoggerProperty, get_class_instantiator, get_generic_origin, get_unaliased_type, is_dataclass_like, is_subclass
 from ._optionals import get_doc_short_description, is_pydantic_model, pydantic_support
 from ._parameter_resolvers import (
     ParamData,
@@ -440,7 +440,7 @@ class SignatureArguments(LoggerProperty):
             if isinstance(default, dict):
                 with suppress(TypeError):
                     default = theclass(**default)
-            if not isinstance(default, theclass):
+            if not isinstance(default, get_unaliased_type(theclass)):
                 raise ValueError(
                     f'Expected "default" argument to be an instance of "{theclass.__name__}" '
                     f"or its kwargs dict, given {default}"
