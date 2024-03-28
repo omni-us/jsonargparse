@@ -8,7 +8,14 @@ from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from ._actions import _ActionConfigLoad
-from ._common import LoggerProperty, get_class_instantiator, get_generic_origin, is_dataclass_like, is_subclass
+from ._common import (
+    LoggerProperty,
+    get_class_instantiator,
+    get_generic_origin,
+    get_unaliased_type,
+    is_dataclass_like,
+    is_subclass,
+)
 from ._optionals import get_doc_short_description, is_pydantic_model, pydantic_support
 from ._parameter_resolvers import (
     ParamData,
@@ -72,7 +79,7 @@ class SignatureArguments(LoggerProperty):
             ValueError: When not given a class.
             ValueError: When there are required parameters without at least one valid type.
         """
-        if not inspect.isclass(get_generic_origin(theclass)):
+        if not inspect.isclass(get_generic_origin(get_unaliased_type(theclass))):
             raise ValueError(f'Expected "theclass" parameter to be a class type, got: {theclass}.')
         if default and not (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass)):
             raise ValueError(f'Expected "default" parameter to be a lazy instance of the class, got: {default}.')
@@ -133,9 +140,10 @@ class SignatureArguments(LoggerProperty):
             ValueError: When not given a class or the name of a method of the class.
             ValueError: When there are required parameters without at least one valid type.
         """
-        if not inspect.isclass(get_generic_origin(theclass)):
+        unaliased_type = get_unaliased_type(theclass)
+        if not inspect.isclass(get_generic_origin(unaliased_type)):
             raise ValueError('Expected "theclass" argument to be a class object.')
-        if not hasattr(theclass, themethod) or not callable(getattr(theclass, themethod)):
+        if not hasattr(unaliased_type, themethod) or not callable(getattr(unaliased_type, themethod)):
             raise ValueError('Expected "themethod" argument to be a callable member of the class.')
 
         return self._add_signature_arguments(
@@ -440,7 +448,7 @@ class SignatureArguments(LoggerProperty):
             if isinstance(default, dict):
                 with suppress(TypeError):
                     default = theclass(**default)
-            if not isinstance(default, theclass):
+            if not isinstance(default, get_unaliased_type(theclass)):
                 raise ValueError(
                     f'Expected "default" argument to be an instance of "{theclass.__name__}" '
                     f"or its kwargs dict, given {default}"

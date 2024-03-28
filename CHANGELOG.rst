@@ -12,6 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.27.8 (2024-0?-??)
+--------------------
+
+Fixed
+^^^^^
+-  Failure to process ``Annotated`` dataclass members, and inclusion of
+   non-init fields in `attrs` and Pydantic dataclass-like instantiation.
+
 v4.27.7 (2024-03-21)
 --------------------
 
