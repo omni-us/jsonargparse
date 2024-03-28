@@ -923,16 +923,16 @@ def get_field_data_attrs(field, name, doc_params):
     )
 
 
-def should_init_field_pydantic2_dataclass(field) -> Optional[bool]:
+def is_init_field_pydantic2_dataclass(field) -> Optional[bool]:
     from pydantic.dataclasses import FieldInfo
 
     if isinstance(field.default, FieldInfo):
-        return field.default.init
-    return field.init
+        return field.default.init is not False
+    return field.init is not False
 
 
-def should_init_field_default(field) -> Optional[bool]:
-    return field.init
+def is_init_field_default(field) -> Optional[bool]:
+    return field.init is not False
 
 
 def get_parameters_from_pydantic_or_attrs(
@@ -951,16 +951,16 @@ def get_parameters_from_pydantic_or_attrs(
         if pydantic_model == 1:
             fields_iterator = function_or_class.__fields__.items()  # type: ignore[union-attr]
             get_field_data = get_field_data_pydantic1_model
-            should_init_field = should_init_field_default
+            is_init_field = is_init_field_default
         elif pydantic_model > 1:
             fields_iterator = function_or_class.model_fields.items()  # type: ignore[union-attr]
             get_field_data = get_field_data_pydantic2_model
-            should_init_field = should_init_field_default
+            is_init_field = is_init_field_default
         elif dataclasses.is_dataclass(function_or_class) and hasattr(function_or_class, "__pydantic_fields__"):
             fields_iterator = dataclasses.fields(function_or_class)
             fields_iterator = {v.name: v for v in fields_iterator}.items()
             get_field_data = get_field_data_pydantic2_dataclass
-            should_init_field = should_init_field_pydantic2_dataclass
+            is_init_field = is_init_field_pydantic2_dataclass
 
     if not fields_iterator and attrs_support:
         import attrs
@@ -968,7 +968,7 @@ def get_parameters_from_pydantic_or_attrs(
         if attrs.has(function_or_class):
             fields_iterator = {f.name: f for f in attrs.fields(function_or_class)}.items()
             get_field_data = get_field_data_attrs
-            should_init_field = should_init_field_default
+            is_init_field = is_init_field_default
 
     if not fields_iterator or not get_field_data:
         return None
@@ -976,16 +976,15 @@ def get_parameters_from_pydantic_or_attrs(
     params = []
     doc_params = parse_docs(function_or_class, None, logger)
     for name, field in fields_iterator:
-        if should_init_field(field) is False:
-            continue
-        params.append(
-            ParamData(
-                name=name,
-                kind=kinds.KEYWORD_ONLY,
-                component=function_or_class,
-                **get_field_data(field, name, doc_params),
+        if is_init_field(field):
+            params.append(
+                ParamData(
+                    name=name,
+                    kind=kinds.KEYWORD_ONLY,
+                    component=function_or_class,
+                    **get_field_data(field, name, doc_params),
+                )
             )
-        )
     evaluate_postponed_annotations(params, function_or_class, None, logger)
     return params
 
