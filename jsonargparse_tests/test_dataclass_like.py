@@ -721,7 +721,7 @@ class TestPydantic:
         # <dataclasses._MISSING_TYPE object at 0x105624c50>
 
         parser.add_argument("--data", type=PydanticDataNested)
-        cfg = parser.parse_args(["--data", '{"p3": {"p1": 1.0}}'])
+        parser.parse_args(["--data", '{"p3": {"p1": 1.0}}'])
 
 
 # attrs tests
