@@ -929,9 +929,10 @@ def is_init_field_pydantic_model(field) -> bool:
 
 def is_init_field_pydantic2_dataclass(field) -> bool:
     from pydantic.fields import FieldInfo
+
     if isinstance(field.default, FieldInfo):
         # FieldInfo.init is new in pydantic 2.6
-        return getattr(field.default, 'init', None) is not False
+        return getattr(field.default, "init", None) is not False
     return field.init is not False
 
 
@@ -1019,7 +1020,7 @@ def get_signature_parameters(
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
         return visitor.get_parameters()
     except Exception as ex:
-        print(f'{type(ex).__name__}: {ex}')
+        print(f"{type(ex).__name__}: {ex}")
         cause = "Source not available"
         exc_info = None
         if not isinstance(ex, SourceNotAvailable):
