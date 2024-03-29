@@ -350,7 +350,7 @@ def is_pydantic_model(class_type) -> int:
 
             if issubclass(cls, pydantic.BaseModel):
                 return pydantic_support
-            elif pydantic_support > 1 and issubclass(cls, pydantic.v1.BaseModel):  # type: ignore[attr-defined]
+            elif pydantic_support > 1 and issubclass(cls, pydantic.v1.BaseModel):
                 return 1
     return 0
 
