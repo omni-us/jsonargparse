@@ -869,7 +869,7 @@ def get_field_data_pydantic1_model(field, name, doc_params):
 
 
 def get_field_data_pydantic2_dataclass(field, name, doc_params):
-    from pydantic.dataclasses import FieldInfo
+    from pydantic.fields import FieldInfo
     from pydantic_core import PydanticUndefined
 
     default = inspect._empty
@@ -923,15 +923,19 @@ def get_field_data_attrs(field, name, doc_params):
     )
 
 
-def is_init_field_pydantic2_dataclass(field) -> Optional[bool]:
-    from pydantic.dataclasses import FieldInfo
+def is_init_field_pydantic_model(field) -> bool:
+    return True
 
-    if isinstance(field.default, FieldInfo) and hasattr(field.default, "init"):
-        return field.default.init is not False
+
+def is_init_field_pydantic2_dataclass(field) -> bool:
+    from pydantic.fields import FieldInfo
+    if isinstance(field.default, FieldInfo):
+        # FieldInfo.init is new in pydantic 2.6
+        return getattr(field.default, 'init', None) is not False
     return field.init is not False
 
 
-def is_init_field_default(field) -> Optional[bool]:
+def is_init_field_default(field) -> bool:
     return field.init is not False
 
 
@@ -951,11 +955,11 @@ def get_parameters_from_pydantic_or_attrs(
         if pydantic_model == 1:
             fields_iterator = function_or_class.__fields__.items()
             get_field_data = get_field_data_pydantic1_model
-            is_init_field = is_init_field_default
+            is_init_field = is_init_field_pydantic_model
         elif pydantic_model > 1:
             fields_iterator = function_or_class.model_fields.items()
             get_field_data = get_field_data_pydantic2_model
-            is_init_field = is_init_field_default
+            is_init_field = is_init_field_pydantic_model
         elif dataclasses.is_dataclass(function_or_class) and hasattr(function_or_class, "__pydantic_fields__"):
             fields_iterator = dataclasses.fields(function_or_class)
             fields_iterator = {v.name: v for v in fields_iterator}.items()
@@ -1015,6 +1019,7 @@ def get_signature_parameters(
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
         return visitor.get_parameters()
     except Exception as ex:
+        print(f'{type(ex).__name__}: {ex}')
         cause = "Source not available"
         exc_info = None
         if not isinstance(ex, SourceNotAvailable):

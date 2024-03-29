@@ -549,7 +549,7 @@ if annotated and pydantic_support > 1:
             a1: a1 help
         """
 
-        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(default=InnerDataClass())  # type: ignore[valid-type]
+        a1: annotated[InnerDataClass, 1] = pydantic.fields.Field(default=InnerDataClass())  # type: ignore[valid-type]
 
     @pydantic.dataclasses.dataclass(frozen=True)
     class NestedAnnotatedDataClassWithDefaultFactory:
@@ -559,7 +559,7 @@ if annotated and pydantic_support > 1:
             a1: a1 help
         """
 
-        a1: annotated[InnerDataClass, 1] = pydantic.dataclasses.Field(default_factory=InnerDataClass)  # type: ignore[valid-type]
+        a1: annotated[InnerDataClass, 1] = pydantic.fields.Field(default_factory=InnerDataClass)  # type: ignore[valid-type]
 
     def test_pydantic_nested_annotated_dataclass(parser: ArgumentParser):
         parser.add_class_arguments(NestedAnnotatedDataClass, "n")
@@ -594,7 +594,7 @@ if pydantic_support:
     @pydantic.dataclasses.dataclass
     class PydanticDataFieldInitFalse:
         p1: float = 0.1
-        p2: str = pydantic.dataclasses.Field("-", init=False)
+        p2: str = pydantic.Field("-", init=False)
 
     class PydanticModel(pydantic.BaseModel):
         p1: str
