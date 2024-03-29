@@ -936,7 +936,7 @@ def is_init_field_pydantic2_dataclass(field) -> bool:
     return field.init is not False
 
 
-def is_init_field_default(field) -> bool:
+def is_init_field_attrs(field) -> bool:
     return field.init is not False
 
 
@@ -973,7 +973,7 @@ def get_parameters_from_pydantic_or_attrs(
         if attrs.has(function_or_class):
             fields_iterator = {f.name: f for f in attrs.fields(function_or_class)}.items()
             get_field_data = get_field_data_attrs
-            is_init_field = is_init_field_default
+            is_init_field = is_init_field_attrs
 
     if not fields_iterator or not get_field_data:
         return None
