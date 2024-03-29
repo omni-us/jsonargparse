@@ -1020,7 +1020,6 @@ def get_signature_parameters(
         visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
         return visitor.get_parameters()
     except Exception as ex:
-        print(f"{type(ex).__name__}: {ex}")
         cause = "Source not available"
         exc_info = None
         if not isinstance(ex, SourceNotAvailable):
