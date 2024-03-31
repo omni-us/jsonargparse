@@ -595,6 +595,7 @@ if pydantic_support:
     if pydantic_supports_field_init:
         from pydantic.dataclasses import dataclass as pydantic_v2_dataclass
         from pydantic.fields import Field as PydanticV2Field
+
         @pydantic_v2_dataclass
         class PydanticDataFieldInitFalse:
             p1: float = 0.1
@@ -707,7 +708,7 @@ class TestPydantic:
             parser.parse_args([f"--model.param={invalid_value}"])
         ctx.match("model.param")
 
-    @pytest.mark.skipif(not pydantic_supports_field_init, reason='Field.init is required')
+    @pytest.mark.skipif(not pydantic_supports_field_init, reason="Field.init is required")
     def test_dataclass_field_init_false(self, parser):
         # This tests the following error:
         #
