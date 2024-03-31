@@ -19,6 +19,7 @@ from jsonargparse._optionals import (
     attrs_support,
     docstring_parser_support,
     pydantic_support,
+    pydantic_supports_field_init,
     set_docstring_parse_options,
     typing_extensions_import,
 )
@@ -519,7 +520,7 @@ if type_alias_type:
 
 # pydantic tests
 if annotated and pydantic_support > 1:
-    import pydantic.dataclasses
+    import pydantic
 
     @pydantic.dataclasses.dataclass(frozen=True)
     class InnerDataClass:
@@ -591,10 +592,13 @@ if pydantic_support:
     class PydanticDataNested:
         p3: PydanticData
 
-    @pydantic.dataclasses.dataclass
-    class PydanticDataFieldInitFalse:
-        p1: float = 0.1
-        p2: str = pydantic.Field("-", init=False)
+    if pydantic_supports_field_init:
+        from pydantic.dataclasses import dataclass as pydantic_v2_dataclass
+        from pydantic.fields import Field as PydanticV2Field
+        @pydantic_v2_dataclass
+        class PydanticDataFieldInitFalse:
+            p1: float = 0.1
+            p2: str = PydanticV2Field("-", init=False)
 
     class PydanticModel(pydantic.BaseModel):
         p1: str
@@ -703,6 +707,7 @@ class TestPydantic:
             parser.parse_args([f"--model.param={invalid_value}"])
         ctx.match("model.param")
 
+    @pytest.mark.skipif(not pydantic_supports_field_init, reason='Field.init is required')
     def test_dataclass_field_init_false(self, parser):
         # This tests the following error:
         #

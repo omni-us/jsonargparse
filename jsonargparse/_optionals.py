@@ -342,6 +342,25 @@ def get_pydantic_support() -> int:
 pydantic_support = get_pydantic_support()
 
 
+def get_pydantic_supports_field_init() -> bool:
+    support = "0"
+    if find_spec("pydantic"):
+        try:
+            from importlib.metadata import version
+
+            support = version("pydantic")
+        except ImportError:
+            import pydantic
+
+            support = pydantic.version.VERSION
+
+    major, minor = tuple(int(x) for x in support.split(".")[:2])
+    return major > 2 or (major == 2 and minor >= 4)
+
+
+pydantic_supports_field_init = get_pydantic_supports_field_init()
+
+
 def is_pydantic_model(class_type) -> int:
     classes = inspect.getmro(class_type) if pydantic_support and inspect.isclass(class_type) else []
     for cls in classes:
