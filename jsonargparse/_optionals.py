@@ -353,9 +353,9 @@ def get_pydantic_supports_field_init() -> bool:
             import pydantic
 
             support = pydantic.version.VERSION
-
-    major, minor = tuple(int(x) for x in support.split(".")[:2])
-    return major > 2 or (major == 2 and minor >= 4)
+        major, minor = tuple(int(x) for x in support.split(".")[:2])
+        return major > 2 or (major == 2 and minor >= 4)
+    return False
 
 
 pydantic_supports_field_init = get_pydantic_supports_field_init()
