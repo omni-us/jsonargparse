@@ -601,6 +601,16 @@ if pydantic_support:
             p1: float = 0.1
             p2: str = PydanticV2Field("-", init=False)
 
+    @pydantic.dataclasses.dataclass
+    class PydanticDataStdlibFieldInitFalse:
+        p1: float = 0.1
+        p2: str = dataclasses.field(default="-", init=False)
+
+    @pydantic.dataclasses.dataclass
+    class PydanticDataStdlibFieldInitFalseWithFactory:
+        p1: float = 0.1
+        p2: str = dataclasses.field(default_factory=lambda: "-", init=False)
+
     class PydanticModel(pydantic.BaseModel):
         p1: str
         p2: int = 3
@@ -716,6 +726,16 @@ class TestPydantic:
         # Expected a <class 'str'>. Got value: annotation=str
         # required=False default='-' init=False
         parser.add_argument("--data", type=PydanticDataFieldInitFalse)
+        cfg = parser.parse_args(["--data.p1=1.0"])
+        assert cfg.data.p1 == 1.0
+
+    def test_dataclass_stdlib_field_init_false(self, parser):
+        parser.add_argument("--data", type=PydanticDataStdlibFieldInitFalse)
+        cfg = parser.parse_args(["--data.p1=1.0"])
+        assert cfg.data.p1 == 1.0
+
+    def test_dataclass_stdlib_field_init_false_with_factory(self, parser):
+        parser.add_argument("--data", type=PydanticDataStdlibFieldInitFalseWithFactory)
         cfg = parser.parse_args(["--data.p1=1.0"])
         assert cfg.data.p1 == 1.0
 
