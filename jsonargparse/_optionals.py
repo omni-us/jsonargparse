@@ -343,7 +343,6 @@ pydantic_support = get_pydantic_support()
 
 
 def get_pydantic_supports_field_init() -> bool:
-    support = "0"
     if find_spec("pydantic"):
         try:
             from importlib.metadata import version
