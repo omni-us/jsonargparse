@@ -602,14 +602,14 @@ if pydantic_support:
             p2: str = PydanticV2Field("-", init=False)
 
     @pydantic.dataclasses.dataclass
-    class PydanticDataStdlibFieldInitFalse:
+    class PydanticDataStdlibField:
         p1: float = 0.1
-        p2: str = dataclasses.field(default="-", init=False)
+        p2: str = dataclasses.field(default="-")
 
     @pydantic.dataclasses.dataclass
-    class PydanticDataStdlibFieldInitFalseWithFactory:
+    class PydanticDataStdlibFieldWithFactory:
         p1: float = 0.1
-        p2: str = dataclasses.field(default_factory=lambda: "-", init=False)
+        p2: str = dataclasses.field(default_factory=lambda: "-")
 
     class PydanticModel(pydantic.BaseModel):
         p1: str
@@ -729,13 +729,13 @@ class TestPydantic:
         cfg = parser.parse_args(["--data.p1=1.0"])
         assert cfg.data.p1 == 1.0
 
-    def test_dataclass_stdlib_field_init_false(self, parser):
-        parser.add_argument("--data", type=PydanticDataStdlibFieldInitFalse)
+    def test_dataclass_stdlib_field(self, parser):
+        parser.add_argument("--data", type=PydanticDataStdlibField)
         cfg = parser.parse_args(["--data.p1=1.0"])
         assert cfg.data.p1 == 1.0
 
-    def test_dataclass_stdlib_field_init_false_with_factory(self, parser):
-        parser.add_argument("--data", type=PydanticDataStdlibFieldInitFalseWithFactory)
+    def test_dataclass_stdlib_field_init_with_factory(self, parser):
+        parser.add_argument("--data", type=PydanticDataStdlibFieldWithFactory)
         cfg = parser.parse_args(["--data.p1=1.0"])
         assert cfg.data.p1 == 1.0
 
