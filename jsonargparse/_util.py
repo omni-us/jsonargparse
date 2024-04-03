@@ -484,6 +484,7 @@ class Path(PathDeprecations):
         is_url = False
         is_fsspec = False
         if isinstance(path, Path):
+            self.std_io = path._std_io
             is_url = path.is_url
             is_fsspec = path.is_fsspec
             url_data = path._url_data
