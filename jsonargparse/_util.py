@@ -539,7 +539,7 @@ class Path(PathDeprecations):
                     raise TypeError(f"Path does not exist: {abs_path!r}") from ex
                 except PermissionError as ex:
                     raise TypeError(f"Path exists but no permission to access: {abs_path!r}") from ex
-        elif not self._skip_check and not self.std_io:
+        elif not self._skip_check and not self._std_io:
             ptype = "Directory" if "d" in mode else "File"
             if "c" in mode:
                 pdir = os.path.realpath(os.path.join(abs_path, ".."))
@@ -588,11 +588,6 @@ class Path(PathDeprecations):
         self._is_url = is_url
         self._is_fsspec = is_fsspec
         self._url_data = url_data
-
-    @property
-    def std_io(self) -> bool:
-        """Flag specifying if the Path is a standard input or output"""
-        return self._std_io
 
     @property
     def relative(self) -> str:
@@ -647,7 +642,7 @@ class Path(PathDeprecations):
 
     def get_content(self, mode: str = "r") -> str:
         """Returns the contents of the file or the remote path."""
-        if self.std_io:
+        if self._std_io:
             return sys.stdin.read()
         elif self._is_url:
             assert mode == "r"
@@ -667,7 +662,7 @@ class Path(PathDeprecations):
     @contextmanager
     def open(self, mode: str = "r") -> Iterator[IO]:
         """Return an opened file object for the path."""
-        if self.std_io:
+        if self._std_io:
             if "r" in mode:
                 yield sys.stdin
             elif "w" in mode:
