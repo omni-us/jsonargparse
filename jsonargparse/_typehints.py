@@ -960,7 +960,11 @@ def get_callable_return_type(typehint):
 
 def get_subclass_types(typehint, callable_return=True):
     subclass_types = None
-    if callable_return and ActionTypeHint.is_callable_typehint(typehint, all_subtypes=False) and typehint.__args__:
+    if (
+        callable_return
+        and ActionTypeHint.is_callable_typehint(typehint, all_subtypes=False)
+        and getattr(typehint, "__args__", None)
+    ):
         typehint = get_optional_arg(typehint)
         typehint = typehint.__args__[-1]
     if ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False):

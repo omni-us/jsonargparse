@@ -19,6 +19,18 @@ Added
 - Support for "-" as value for Path class initialization so that user
   can ask to use standard input/output instead of file.
 
+v4.27.7 (2024-03-21)
+--------------------
+
+Fixed
+^^^^^
+- Regression from `14456c2
+  <https://github.com/omni-us/jsonargparse/commit/14456c21ff7a11ba420f010d2b21bcfdb14977a2>`__
+  that prevented ``**kwargs`` parameter resolving when an ``Optional[Callable]``
+  type is used (`#473
+  <https://github.com/omni-us/jsonargparse/issues/473>`__).
+
+
 v4.27.6 (2024-03-15)
 --------------------
 
