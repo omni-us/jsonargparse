@@ -7,6 +7,7 @@ import stat
 import zipfile
 from calendar import Calendar
 from importlib import import_module
+from io import StringIO
 from random import Random
 from unittest.mock import patch
 
@@ -214,6 +215,30 @@ def test_path_tilde_home(paths):
         assert str(path) == os.path.join("~", paths.file_rw)
         assert home() == str(paths.tmp_path)
         assert path() == os.path.join(paths.tmp_path, paths.file_rw)
+
+
+def test_std_input_path():
+    input_text_to_test = "a text here\n"
+
+    with patch("sys.stdin", StringIO(input_text_to_test)):
+        path = Path("-", mode="fr")
+        assert path == "-"
+        assert input_text_to_test == path.get_content("r")
+
+    with patch("sys.stdin", StringIO(input_text_to_test)):
+        path = Path("-", mode="fr")
+        with path.open("r") as std_input:
+            assert input_text_to_test == "".join([line for line in std_input])
+
+
+def test_std_output_path():
+    path = Path("-", mode="fw")
+    assert path == "-"
+    output = StringIO("")
+    with patch("sys.stdout", output):
+        with path.open("w") as std_output:
+            std_output.write("test\n")
+    assert output.getvalue() == "test\n"
 
 
 # url tests
