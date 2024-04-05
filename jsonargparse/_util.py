@@ -29,7 +29,13 @@ from typing import (
     get_type_hints,
 )
 
-from ._common import ClassType, get_generic_origin, is_subclass, parser_capture, parser_context
+from ._common import (
+    ClassType,
+    get_generic_origin,
+    is_subclass,
+    parser_capture,
+    parser_context,
+)
 from ._deprecated import PathDeprecations
 from ._loaders_dumpers import json_dump, load_value
 from ._optionals import (
@@ -127,7 +133,7 @@ def parse_value_or_config(
         nested_arg = value
         value = nested_arg.val
     cfg_path = None
-    if enable_path and type(value) is str:
+    if enable_path and type(value) is str and value != "-":
         try:
             cfg_path = Path(value, mode=get_config_read_mode())
         except TypeError:
@@ -148,14 +154,6 @@ def parse_value_or_config(
 
 class CachedStdin(StringIO):
     """Used to allow reading sys.stdin multiple times."""
-
-
-def read_stdin() -> str:
-    if not isinstance(sys.stdin, CachedStdin):
-        sys.stdin = CachedStdin(sys.stdin.read())
-    value = sys.stdin.read()
-    sys.stdin.seek(0)
-    return value
 
 
 def import_object(name: str):
@@ -451,6 +449,11 @@ class Path(PathDeprecations):
     The creatable flag "c" can be given one or two times. If give once, the
     parent directory must exist and be writeable. If given twice, the parent
     directory does not have to exist, but should be allowed to create.
+
+    An instance of Path class can also refer to the standard input or output.
+    To do that, path must be set with the value "-"; it is a common practice.
+    Then, getting the content or opening it will automatically be done on
+    standard input or output.
     """
 
     _url_data: Optional[UrlData]
@@ -476,10 +479,12 @@ class Path(PathDeprecations):
         """
         self._deprecated_kwargs(kwargs)
         self._check_mode(mode)
+        self._std_io = False
 
         is_url = False
         is_fsspec = False
         if isinstance(path, Path):
+            self.std_io = path._std_io
             is_url = path.is_url
             is_fsspec = path.is_fsspec
             url_data = path._url_data
@@ -487,6 +492,8 @@ class Path(PathDeprecations):
             abs_path = path._absolute
             path = path._relative
         elif isinstance(path, (str, os.PathLike)):
+            if path == "-":
+                self._std_io = True
             path = os.fspath(path)
             cwd = os.fspath(cwd) if cwd else None
             abs_path = os.path.expanduser(path)
@@ -533,7 +540,7 @@ class Path(PathDeprecations):
                     raise TypeError(f"Path does not exist: {abs_path!r}") from ex
                 except PermissionError as ex:
                     raise TypeError(f"Path exists but no permission to access: {abs_path!r}") from ex
-        elif not self._skip_check:
+        elif not self._skip_check and not self._std_io:
             ptype = "Directory" if "d" in mode else "File"
             if "c" in mode:
                 pdir = os.path.realpath(os.path.join(abs_path, ".."))
@@ -557,6 +564,7 @@ class Path(PathDeprecations):
                     raise TypeError(f"Path is not a directory: {abs_path!r}")
                 if "f" in mode and not (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
                     raise TypeError(f"Path is not a file: {abs_path!r}")
+
             if "r" in mode and not os.access(abs_path, os.R_OK):
                 raise TypeError(f"{ptype} is not readable: {abs_path!r}")
             if "w" in mode and not os.access(abs_path, os.W_OK):
@@ -635,7 +643,9 @@ class Path(PathDeprecations):
 
     def get_content(self, mode: str = "r") -> str:
         """Returns the contents of the file or the remote path."""
-        if self._is_url:
+        if self._std_io:
+            return sys.stdin.read()
+        elif self._is_url:
             assert mode == "r"
             requests = import_requests("Path.get_content")
             response = requests.get(self._absolute)
@@ -653,7 +663,12 @@ class Path(PathDeprecations):
     @contextmanager
     def open(self, mode: str = "r") -> Iterator[IO]:
         """Return an opened file object for the path."""
-        if self._is_url:
+        if self._std_io:
+            if "r" in mode:
+                yield sys.stdin
+            elif "w" in mode:
+                yield sys.stdout
+        elif self._is_url:
             yield StringIO(self.get_content())
         elif self._is_fsspec:
             fsspec = import_fsspec("Path.open")

@@ -80,7 +80,6 @@ from ._util import (
     iter_to_set_str,
     object_path_serializer,
     parse_value_or_config,
-    read_stdin,
     warning,
 )
 from .typing import get_registered_type, is_pydantic_type
@@ -514,6 +513,8 @@ class ActionTypeHint(Action):
                         val = adapt_typehints(val, self._typehint, **kwargs)
                 except ValueError as ex:
                     assert ex  # needed due to ruff bug that removes " as ex"
+                    if orig_val == "-":
+                        raise ex
                     try:
                         if isinstance(orig_val, str):
                             with change_to_path_dir(config_path):
@@ -770,14 +771,11 @@ def adapt_typehints(
             val = prev_val + (val if val_is_list else [val])
             prev_val = prev_val + [None] * (len(val) - len(prev_val) if val_is_list else 1)
         if enable_path and type(val) is str:
-            if val == "-":
-                val = read_stdin().splitlines()
-            else:
-                with suppress(TypeError):
-                    from ._optionals import get_config_read_mode
+            with suppress(TypeError):
+                from ._optionals import get_config_read_mode
 
-                    list_path = Path(val, mode=get_config_read_mode())
-                    val = list_path.get_content().splitlines()
+                list_path = Path(val, mode=get_config_read_mode())
+                val = list_path.get_content().splitlines()
         if isinstance(val, NestedArg) and subtypehints is not None:
             val = (prev_val[:-1] if isinstance(prev_val, list) else []) + [val]
         elif isinstance(val, Iterable) and not isinstance(val, (list, str)) and type(val) not in mapping_origin_types:
