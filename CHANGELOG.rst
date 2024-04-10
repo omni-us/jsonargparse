@@ -19,6 +19,12 @@ Added
 - Support for "-" as value for Path class initialization so that user
   can ask to use standard input/output instead of file.
 
+Fixed
+^^^^^
+- ``lazy_instance`` not working for callable classes (`#473 comment
+  <https://github.com/omni-us/jsonargparse/issues/481#issuecomment-2030932435>`__).
+
+
 v4.27.7 (2024-03-21)
 --------------------
 

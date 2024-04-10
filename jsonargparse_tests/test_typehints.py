@@ -884,6 +884,21 @@ def test_lazy_instance_pickleable():
     assert reloaded.lazy_get_init_data() == instance1.lazy_get_init_data()
 
 
+class OptimizerCallable:
+    def __init__(self, lr: float = 0.1):
+        self.lr = lr
+
+    def __call__(self, params) -> SGD:
+        return SGD(params, lr=self.lr)
+
+
+def test_lazy_instance_callable():
+    lazy_optimizer = lazy_instance(OptimizerCallable, lr=0.2)
+    optimizer = lazy_optimizer([1, 2])
+    assert optimizer.lr == 0.2
+    assert optimizer.params == [1, 2]
+
+
 # other tests
 
 
