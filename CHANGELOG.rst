@@ -11,6 +11,14 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
+v4.28.1 (2024-0?-??)
+--------------------
+
+Fixed
+^^^^^
+-  Failure to process ``Annotated`` dataclass members, and inclusion of
+   non-init fields in `attrs` and Pydantic dataclass-like instantiation.
+
 v4.28.0 (2024-03-??)
 --------------------
 
@@ -18,14 +26,6 @@ Added
 ^^^^^
 - Support for "-" as value for Path class initialization so that user
   can ask to use standard input/output instead of file.
-
-v4.27.8 (2024-0?-??)
---------------------
-
-Fixed
-^^^^^
--  Failure to process ``Annotated`` dataclass members, and inclusion of
-   non-init fields in `attrs` and Pydantic dataclass-like instantiation.
 
 v4.27.7 (2024-03-21)
 --------------------
