@@ -494,8 +494,7 @@ if type_alias_type:
     def test_dataclass_with_alias_type(parser):
         parser.add_argument("--data", type=DataClassWithAliasType)
         help_str = get_parser_help(parser)
-        help_str_lines = [line for line in help_str.split("\n")
-                          if "IntOrString" in line]
+        help_str_lines = [line for line in help_str.split("\n") if "IntOrString" in line]
         assert len(help_str_lines) == 1
         assert "--data.p1 P1" in help_str_lines[0]
         cfg = parser.parse_args(["--data.p1=MyString"])
@@ -507,8 +506,7 @@ if type_alias_type:
     def test_annotated_alias_type(parser):
         parser.add_argument("--data", type=annotated[IntOrString, 1])
         help_str = get_parser_help(parser)
-        help_str_lines = [line for line in help_str.split("\n")
-                          if "IntOrString" in line]
+        help_str_lines = [line for line in help_str.split("\n") if "IntOrString" in line]
         assert len(help_str_lines) == 1
         assert "--data DATA" in help_str_lines[0]
         cfg = parser.parse_args(["--data=MyString"])
@@ -526,8 +524,7 @@ if type_alias_type:
     def test_dataclass_with_annotated_alias_type(parser):
         parser.add_argument("--data", type=DataClassWithAnnotatedAliasType)
         help_str = get_parser_help(parser)
-        help_str_lines = [line for line in help_str.split("\n")
-                          if "IntOrString" in line]
+        help_str_lines = [line for line in help_str.split("\n") if "IntOrString" in line]
         print(help_str)
         assert len(help_str_lines) == 1
         assert "--data.p1 P1" in help_str_lines[0]
