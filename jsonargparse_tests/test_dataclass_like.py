@@ -800,7 +800,7 @@ class TestAttrs:
     def test_field_init_false(self, parser):
         # Prior to PR #480, this test would produce the following error:
         #
-        # TypeError('Validation failed: Key "data.p2" is required but
+        # TypeError('Validation failed: Key "data.p1" is required but
         # not included in config object or its value is None.')
 
         parser.add_argument("--data", type=AttrsFieldInitFalse)
