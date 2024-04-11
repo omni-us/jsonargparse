@@ -26,6 +26,8 @@ from jsonargparse_tests.conftest import (
 def skip_if_argcomplete_unavailable():
     if not find_spec("argcomplete"):
         pytest.skip("argcomplete package is required")
+    if sys.version_info[:2] == (3, 11):
+        pytest.skip("argcomplete is not compatible with Python 3.11, https://github.com/kislyuk/argcomplete/issues/481")
 
 
 @contextmanager
