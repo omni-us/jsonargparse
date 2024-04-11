@@ -923,10 +923,6 @@ def get_field_data_attrs(field, name, doc_params):
     )
 
 
-def is_init_field_pydantic_model(field) -> bool:
-    return True
-
-
 def is_init_field_pydantic2_dataclass(field) -> bool:
     from pydantic.fields import FieldInfo
 
@@ -956,11 +952,11 @@ def get_parameters_from_pydantic_or_attrs(
         if pydantic_model == 1:
             fields_iterator = function_or_class.__fields__.items()
             get_field_data = get_field_data_pydantic1_model
-            is_init_field = is_init_field_pydantic_model
+            is_init_field = lambda _: True
         elif pydantic_model > 1:
             fields_iterator = function_or_class.model_fields.items()
             get_field_data = get_field_data_pydantic2_model
-            is_init_field = is_init_field_pydantic_model
+            is_init_field = lambda _: True
         elif dataclasses.is_dataclass(function_or_class) and hasattr(function_or_class, "__pydantic_fields__"):
             fields_iterator = dataclasses.fields(function_or_class)
             fields_iterator = {v.name: v for v in fields_iterator}.items()
