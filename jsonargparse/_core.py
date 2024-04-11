@@ -265,12 +265,13 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         return namespace, args
 
     def _parse_optional(self, arg_string):
-        subclass_arg = ActionTypeHint.parse_argv_item(arg_string)
-        if subclass_arg:
-            return subclass_arg
         if arg_string == self._print_config:
             arg_string += "="
-        return super()._parse_optional(arg_string)
+        arg_parsed = super()._parse_optional(arg_string)
+        subclass_arg = ActionTypeHint.parse_argv_item(arg_string, arg_parsed)
+        if subclass_arg:
+            return subclass_arg
+        return arg_parsed
 
     def _parse_common(
         self,
