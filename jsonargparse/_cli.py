@@ -75,7 +75,7 @@ def CLI(
         unexpected = [c for c in components if not (inspect.isclass(c) or callable(c))]
     elif isinstance(components, dict):
         ns = dict_to_namespace(components)
-        unexpected = [c for c in ns.values() if not (inspect.isclass(c) or callable(c))]
+        unexpected = [c for k, c in ns.items() if not k.endswith("._help") and not (inspect.isclass(c) or callable(c))]
     else:
         unexpected = [c for c in [components] if not (inspect.isclass(c) or callable(c))]
     if unexpected:
@@ -120,6 +120,8 @@ def CLI(
 
 
 def get_help_str(component, logger):
+    if isinstance(component, dict):
+        return component.get("_help")
     help_str = get_doc_short_description(component, logger=logger)
     if not help_str:
         help_str = str(component)
@@ -135,14 +137,15 @@ def _add_subcommands(
 ) -> None:
     subcommands = parser.add_subcommands(required=True)
     for name, component in components.items():
+        if name == "_help":
+            continue
         description = get_help_str(component, parser.logger)
         subparser = type(parser)(description=description)
         subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
+        subcommands.add_subcommand(name, subparser, help=description)
         if isinstance(component, dict):
-            subcommands.add_subcommand(name, subparser)
             _add_subcommands(component, subparser, config_help, as_positional, fail_untyped)
         else:
-            subcommands.add_subcommand(name, subparser, help=get_help_str(component, parser.logger))
             added_args = _add_component_to_parser(component, subparser, as_positional, fail_untyped, config_help)
             if not added_args:
                 remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))

@@ -19,6 +19,10 @@ Added
 ^^^^^
 - Support for "-" as value for Path class initialization so that user
   can ask to use standard input/output instead of file.
+- Option in ``CLI`` to provide subcommands help when components given in a dict
+  (`litgpt#996 comment
+  <https://github.com/Lightning-AI/litgpt/issues/996#issuecomment-1996201548>`__).
+
 
 Fixed
 ^^^^^
