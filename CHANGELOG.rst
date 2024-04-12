@@ -11,6 +11,7 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
+
 v4.28.0 (2024-03-??)
 --------------------
 
@@ -21,6 +22,13 @@ Added
 - Option in ``CLI`` to provide subcommands help when components given in a dict
   (`litgpt#996 comment
   <https://github.com/Lightning-AI/litgpt/issues/996#issuecomment-1996201548>`__).
+
+
+Fixed
+^^^^^
+- Account for breaking change in ``argparse.ArgumentParser._parse_optional``
+  affecting python ``3.11.9`` and likely ``>3.13`` (`#484
+  <https://github.com/omni-us/jsonargparse/issues/484>`__).
 
 
 v4.27.7 (2024-03-21)
