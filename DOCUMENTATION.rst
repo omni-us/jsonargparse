@@ -147,10 +147,12 @@ Arbitrary levels of sub-commands with custom names can be defined by providing a
 
     components = {
         "weekday": {
+            "_help": "Raffles for weekdays",
             "tier1": Raffle(prize=100),
             "tier2": Raffle(prize=50),
         },
         "weekend": {
+            "_help": "Raffles for weekends",
             "tier1": Raffle(prize=300),
             "tier2": Raffle(prize=75),
         },
