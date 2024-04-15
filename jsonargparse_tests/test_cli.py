@@ -50,6 +50,7 @@ def test_conflicting_subcommand_key():
 
 
 def single_function(a1: float):
+    """Description of single_function"""
     return a1
 
 
@@ -68,13 +69,18 @@ def test_single_function_set_defaults():
 def test_single_function_help():
     out = get_cli_stdout(single_function, args=["--help"])
     assert "a1" in out
-    assert "function single_function" in out
+    if docstring_parser_support:
+        assert "Description of single_function" in out
+    else:
+        assert "function single_function" in out
 
 
 # callable class tests
 
 
 class CallableClass:
+    """Description of CallableClass"""
+
     def __call__(self, x: int):
         return x
 
@@ -398,32 +404,69 @@ def test_named_components_shallow():
     components = {"cmd1": single_function, "cmd2": callable_instance}
     assert 3.4 == CLI(components, args=["cmd1", "3.4"])
     assert 5 == CLI(components, as_positional=False, args=["cmd2", "--x=5"])
+    out = get_cli_stdout(components, args=["--help"])
+    if docstring_parser_support:
+        assert "Description of single_function" in out
+        assert "Description of CallableClass" in out
 
 
 def test_named_components_deep():
     components = {
-        "lv1_a": {"lv2_x": single_function, "lv2_y": {"lv3_p": callable_instance}},
-        "lv1_b": {"lv2_z": {"lv3_q": Class1}},
+        "lv1_a": {
+            "_help": "Description of lv1_a",
+            "lv2_x": single_function,
+            "lv2_y": {"_help": "Description of lv2_y", "lv3_p": callable_instance},
+        },
+        "lv1_b": {
+            "_help": "Description of lv1_b",
+            "lv2_z": {
+                "_help": "Description of lv2_z",
+                "lv3_q": Class1,
+            },
+        },
     }
     kw = {"as_positional": False}
     out = get_cli_stdout(components, args=["--help"], **kw)
     assert " {lv1_a,lv1_b} ..." in out
+    assert "Description of lv1_a" in out
+    assert "Description of lv1_b" in out
     out = get_cli_stdout(components, args=["lv1_a", "--help"], **kw)
     assert " {lv2_x,lv2_y} ..." in out
+    assert "Description of lv1_a" in out
+    if docstring_parser_support:
+        assert "Description of single_function" in out
+    assert "Description of lv2_y" in out
     out = get_cli_stdout(components, args=["lv1_a", "lv2_x", "--help"], **kw)
     assert " --a1 A1" in out
+    if docstring_parser_support:
+        assert "Description of single_function" in out
     out = get_cli_stdout(components, args=["lv1_a", "lv2_y", "--help"], **kw)
     assert " {lv3_p} ..." in out
+    assert "Description of lv2_y" in out
+    if docstring_parser_support:
+        assert "Description of CallableClass" in out
     out = get_cli_stdout(components, args=["lv1_a", "lv2_y", "lv3_p", "--help"], **kw)
     assert " --x X" in out
+    if docstring_parser_support:
+        assert "Description of CallableClass" in out
     out = get_cli_stdout(components, args=["lv1_b", "--help"], **kw)
     assert " {lv2_z} ..." in out
+    assert "Description of lv1_b" in out
+    assert "Description of lv2_z" in out
     out = get_cli_stdout(components, args=["lv1_b", "lv2_z", "--help"], **kw)
     assert " {lv3_q} ..." in out
+    assert "Description of lv2_z" in out
+    if docstring_parser_support:
+        assert "Description of Class1" in out
     out = get_cli_stdout(components, args=["lv1_b", "lv2_z", "lv3_q", "--help"], **kw)
     assert " {method1} ..." in out
+    if docstring_parser_support:
+        assert "Description of Class1" in out
+        assert "Description of method1" in out
     out = get_cli_stdout(components, args=["lv1_b", "lv2_z", "lv3_q", "method1", "--help"], **kw)
     assert " --m1 M1" in out
+    if docstring_parser_support:
+        assert "Description of method1" in out
 
     assert 5.6 == CLI(components, args=["lv1_a", "lv2_x", "--a1=5.6"], **kw)
     assert 7 == CLI(components, args=["lv1_a", "lv2_y", "lv3_p", "--x=7"], **kw)

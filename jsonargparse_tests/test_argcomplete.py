@@ -26,6 +26,11 @@ from jsonargparse_tests.conftest import (
 def skip_if_argcomplete_unavailable():
     if not find_spec("argcomplete"):
         pytest.skip("argcomplete package is required")
+    if sys.version_info[:2] >= (3, 11) and (sys.version_info >= (3, 11, 9) or sys.version_info >= (3, 12, 3)):
+        version = ".".join(str(p) for p in sys.version_info[:3])
+        pytest.skip(
+            f"argcomplete is not compatible with Python {version}, https://github.com/kislyuk/argcomplete/issues/481"
+        )
 
 
 @contextmanager
@@ -149,11 +154,11 @@ def test_enum(parser):
     class EnumType(Enum):
         abc = 1
         xyz = 2
-        abd = 3
+        abz = 3
 
     parser.add_argument("--enum", type=EnumType)
     out, err = complete_line(parser, "tool.py --enum=ab")
-    assert out == "abc\x0babd"
+    assert out == "abc\x0babz"
     assert err == ""
 
 

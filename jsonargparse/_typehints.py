@@ -332,18 +332,21 @@ class ActionTypeHint(Action):
         return result
 
     @staticmethod
-    def parse_argv_item(arg_string):
+    def parse_argv_item(arg_string, arg_parsed):
         parser = subclass_arg_parser.get()
         action = None
+        sep = None
         if arg_string.startswith("--"):
             arg_base, explicit_arg = (arg_string, None)
             if "=" in arg_string:
-                arg_base, explicit_arg = arg_string.split("=", 1)
+                arg_base, sep, explicit_arg = arg_string.partition("=")
             if "." in arg_base and arg_base not in parser._option_string_actions:
                 action = _find_parent_action(parser, arg_base[2:])
 
         typehint = typehint_from_action(action)
         if typehint:
+            if len(arg_parsed) == 4:
+                return action, arg_base, sep, explicit_arg
             return action, arg_base, explicit_arg
         return None
 
