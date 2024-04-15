@@ -29,10 +29,6 @@ Fixed
 - Account for breaking change in ``argparse.ArgumentParser._parse_optional``
   affecting python ``3.11.9`` and likely ``>3.13`` (`#484
   <https://github.com/omni-us/jsonargparse/issues/484>`__).
-
-
-Fixed
-^^^^^
 - ``lazy_instance`` not working for callable classes (`#473 comment
   <https://github.com/omni-us/jsonargparse/issues/481#issuecomment-2030932435>`__).
 
