@@ -594,7 +594,7 @@ if pydantic_support:
         major, minor = tuple(int(x) for x in support.split(".")[:2])
         logging.basicConfig()
         print(f'{support}, {major}, {minor}')
-        
+
         from pydantic.dataclasses import dataclass as pydantic_v2_dataclass
         from pydantic.fields import Field as PydanticV2Field
 
