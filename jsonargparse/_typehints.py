@@ -1305,6 +1305,7 @@ class LazyInitBaseClass:
     def __init__(self, class_type: Type, lazy_kwargs: dict):
         assert not issubclass(class_type, LazyInitBaseClass)
         check_lazy_kwargs(class_type, lazy_kwargs)
+        self._lazy = type(self)
         self._lazy_class_type = class_type
         self._lazy_kwargs = lazy_kwargs
         self._lazy_methods = {}
@@ -1318,17 +1319,22 @@ class LazyInitBaseClass:
             if id(member) in seen_methods:
                 self.__dict__[name] = seen_methods[id(member)]
             else:
-                self.__dict__[name] = partial(self._lazy_init_then_call_method, name)
-                seen_methods[id(member)] = self.__dict__[name]
+                lazy_method = partial(self._lazy_init_then_call_method, name)
+                self.__dict__[name] = lazy_method
+                if name == "__call__":
+                    self._lazy.__call__ = lazy_method  # type: ignore[method-assign]
+                seen_methods[id(member)] = lazy_method
 
     def _lazy_init(self):
         for name in self._lazy_methods:
+            if name == "__call__":
+                self._lazy.__call__ = self._lazy_methods[name]
             del self.__dict__[name]
         super().__init__(**self._lazy_kwargs)
 
     def _lazy_init_then_call_method(self, method_name, *args, **kwargs):
         self._lazy_init()
-        return getattr(self, method_name)(*args, **kwargs)
+        return self._lazy_methods[method_name](*args, **kwargs)
 
     def lazy_get_init_args(self) -> Namespace:
         return Namespace(self._lazy_kwargs)
