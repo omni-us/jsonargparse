@@ -69,6 +69,7 @@ from ._util import (
     NestedArg,
     NoneType,
     Path,
+    PathError,
     change_to_path_dir,
     get_import_path,
     get_typehint_origin,
@@ -510,7 +511,7 @@ class ActionTypeHint(Action):
                         val = adapt_typehints(val, self._typehint, **kwargs)
                 except ValueError as ex:
                     assert ex  # needed due to ruff bug that removes " as ex"
-                    if orig_val == "-":
+                    if orig_val == "-" and isinstance(getattr(ex, "parent", None), PathError):
                         raise ex
                     try:
                         if isinstance(orig_val, str):

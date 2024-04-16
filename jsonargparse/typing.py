@@ -280,7 +280,9 @@ class RegisteredType:
             return self.base_deserializer(value)
         except self.deserializer_exceptions as ex:
             type_class_name = getattr(self.type_class, "__name__", str(self.type_class))
-            raise ValueError(f"Not of type {type_class_name}: {ex}") from ex
+            ex2 = ValueError(f"Not of type {type_class_name}: {ex}")
+            ex2.parent = ex
+            raise ex2 from ex
 
 
 def register_type(

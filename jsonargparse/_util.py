@@ -156,6 +156,19 @@ class CachedStdin(StringIO):
     """Used to allow reading sys.stdin multiple times."""
 
 
+def get_cached_stdin() -> CachedStdin:
+    if not isinstance(sys.stdin, CachedStdin):
+        sys.stdin = CachedStdin(sys.stdin.read())
+    return sys.stdin
+
+
+def read_cached_stdin() -> str:
+    stdin = get_cached_stdin()
+    value = stdin.read()
+    stdin.seek(0)
+    return value
+
+
 def import_object(name: str):
     """Returns an object in a module given its dot import path."""
     if not isinstance(name, str) or "." not in name:
@@ -434,6 +447,10 @@ def resolve_relative_path(path: str) -> str:
     return "/".join(resolved)
 
 
+class PathError(TypeError):
+    """Exception raised for errors in the Path class."""
+
+
 class Path(PathDeprecations):
     """Stores a (possibly relative) path and the corresponding absolute path.
 
@@ -475,7 +492,7 @@ class Path(PathDeprecations):
 
         Raises:
             ValueError: If the provided mode is invalid.
-            TypeError: If the path does not exist or does not agree with the mode.
+            PathError: If the path does not exist or does not agree with the mode.
         """
         self._deprecated_kwargs(kwargs)
         self._check_mode(mode)
@@ -519,7 +536,7 @@ class Path(PathDeprecations):
                 abs_path = abs_path if is_absolute else os.path.join(cwd, abs_path)
                 url_data = None
         else:
-            raise TypeError("Expected path to be a string, os.PathLike or a Path object.")
+            raise PathError("Expected path to be a string, os.PathLike or a Path object.")
 
         if not self._skip_check and is_url:
             if "r" in mode:
@@ -527,7 +544,7 @@ class Path(PathDeprecations):
                 try:
                     requests.head(abs_path).raise_for_status()
                 except requests.HTTPError as ex:
-                    raise TypeError(f"{abs_path} HEAD not accessible :: {ex}") from ex
+                    raise PathError(f"{abs_path} HEAD not accessible :: {ex}") from ex
         elif not self._skip_check and is_fsspec:
             fsspec_mode = "".join(c for c in mode if c in {"r", "w"})
             if fsspec_mode:
@@ -537,9 +554,9 @@ class Path(PathDeprecations):
                     handle.open()
                     handle.close()
                 except (FileNotFoundError, KeyError) as ex:
-                    raise TypeError(f"Path does not exist: {abs_path!r}") from ex
+                    raise PathError(f"Path does not exist: {abs_path!r}") from ex
                 except PermissionError as ex:
-                    raise TypeError(f"Path exists but no permission to access: {abs_path!r}") from ex
+                    raise PathError(f"Path exists but no permission to access: {abs_path!r}") from ex
         elif not self._skip_check and not self._std_io:
             ptype = "Directory" if "d" in mode else "File"
             if "c" in mode:
@@ -550,37 +567,37 @@ class Path(PathDeprecations):
                         ppdir = pdir
                         pdir = os.path.realpath(os.path.join(pdir, ".."))
                 if not os.path.isdir(pdir):
-                    raise TypeError(f"{ptype} is not creatable since parent directory does not exist: {abs_path!r}")
+                    raise PathError(f"{ptype} is not creatable since parent directory does not exist: {abs_path!r}")
                 if not os.access(pdir, os.W_OK):
-                    raise TypeError(f"{ptype} is not creatable since parent directory not writeable: {abs_path!r}")
+                    raise PathError(f"{ptype} is not creatable since parent directory not writeable: {abs_path!r}")
                 if "d" in mode and os.access(abs_path, os.F_OK) and not os.path.isdir(abs_path):
-                    raise TypeError(f"{ptype} is not creatable since path already exists: {abs_path!r}")
+                    raise PathError(f"{ptype} is not creatable since path already exists: {abs_path!r}")
                 if "f" in mode and os.access(abs_path, os.F_OK) and not os.path.isfile(abs_path):
-                    raise TypeError(f"{ptype} is not creatable since path already exists: {abs_path!r}")
+                    raise PathError(f"{ptype} is not creatable since path already exists: {abs_path!r}")
             elif "d" in mode or "f" in mode:
                 if not os.access(abs_path, os.F_OK):
-                    raise TypeError(f"{ptype} does not exist: {abs_path!r}")
+                    raise PathError(f"{ptype} does not exist: {abs_path!r}")
                 if "d" in mode and not os.path.isdir(abs_path):
-                    raise TypeError(f"Path is not a directory: {abs_path!r}")
+                    raise PathError(f"Path is not a directory: {abs_path!r}")
                 if "f" in mode and not (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
-                    raise TypeError(f"Path is not a file: {abs_path!r}")
+                    raise PathError(f"Path is not a file: {abs_path!r}")
 
             if "r" in mode and not os.access(abs_path, os.R_OK):
-                raise TypeError(f"{ptype} is not readable: {abs_path!r}")
+                raise PathError(f"{ptype} is not readable: {abs_path!r}")
             if "w" in mode and not os.access(abs_path, os.W_OK):
-                raise TypeError(f"{ptype} is not writeable: {abs_path!r}")
+                raise PathError(f"{ptype} is not writeable: {abs_path!r}")
             if "x" in mode and not os.access(abs_path, os.X_OK):
-                raise TypeError(f"{ptype} is not executable: {abs_path!r}")
+                raise PathError(f"{ptype} is not executable: {abs_path!r}")
             if "D" in mode and os.path.isdir(abs_path):
-                raise TypeError(f"Path is a directory: {abs_path!r}")
+                raise PathError(f"Path is a directory: {abs_path!r}")
             if "F" in mode and (os.path.isfile(abs_path) or stat.S_ISFIFO(os.stat(abs_path).st_mode)):
-                raise TypeError(f"Path is a file: {abs_path!r}")
+                raise PathError(f"Path is a file: {abs_path!r}")
             if "R" in mode and os.access(abs_path, os.R_OK):
-                raise TypeError(f"{ptype} is readable: {abs_path!r}")
+                raise PathError(f"{ptype} is readable: {abs_path!r}")
             if "W" in mode and os.access(abs_path, os.W_OK):
-                raise TypeError(f"{ptype} is writeable: {abs_path!r}")
+                raise PathError(f"{ptype} is writeable: {abs_path!r}")
             if "X" in mode and os.access(abs_path, os.X_OK):
-                raise TypeError(f"{ptype} is executable: {abs_path!r}")
+                raise PathError(f"{ptype} is executable: {abs_path!r}")
 
         self._relative = path
         self._absolute = abs_path
@@ -644,7 +661,7 @@ class Path(PathDeprecations):
     def get_content(self, mode: str = "r") -> str:
         """Returns the contents of the file or the remote path."""
         if self._std_io:
-            return sys.stdin.read()
+            return read_cached_stdin()
         elif self._is_url:
             assert mode == "r"
             requests = import_requests("Path.get_content")
@@ -665,7 +682,7 @@ class Path(PathDeprecations):
         """Return an opened file object for the path."""
         if self._std_io:
             if "r" in mode:
-                yield sys.stdin
+                yield get_cached_stdin()
             elif "w" in mode:
                 yield sys.stdout
         elif self._is_url:

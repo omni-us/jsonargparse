@@ -7,7 +7,7 @@ from importlib.util import find_spec
 from io import StringIO
 from pathlib import Path
 from typing import Iterator, List
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -111,6 +111,18 @@ def file_r(tmp_cwd) -> Iterator[str]:
     filename = "file_r"
     Path(filename).touch()
     yield filename
+
+
+@pytest.fixture
+def mock_stdin():
+    @contextmanager
+    def _mock_stdin(data: str):
+        mock = MagicMock()
+        mock.read.side_effect = [data, ""]
+        with patch("sys.stdin", mock):
+            yield
+
+    return _mock_stdin
 
 
 @pytest.fixture
