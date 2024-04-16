@@ -844,6 +844,37 @@ def test_callable_args_return_type_class_subconfig(parser, tmp_cwd):
     assert optimizer.momentum == 0.8
 
 
+class Module:
+    pass
+
+
+class LeakyReLU(Module):
+    def __init__(self, negative_slope: float = 0.01):
+        self.negative_slope = negative_slope
+
+
+class Model(Module):
+    def __init__(
+        self,
+        activation: Callable[[], Module] = lambda: LeakyReLU(negative_slope=0.05),
+    ):
+        self.activation = activation
+
+
+def test_callable_zero_args_return_type_class(parser):  # , subtests):
+    parser.add_class_arguments(Model, "model")
+    cfg = parser.parse_args([])
+    assert cfg.model.activation == Namespace(
+        class_path=f"{__name__}.LeakyReLU", init_args=Namespace(negative_slope=0.05)
+    )
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.model, Model)
+    assert not isinstance(init.model.activation, Module)
+    activation = init.model.activation()
+    assert isinstance(activation, LeakyReLU)
+    assert activation.negative_slope == 0.05
+
+
 # lazy_instance tests
 
 

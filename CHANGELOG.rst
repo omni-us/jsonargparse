@@ -30,6 +30,9 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/484>`__).
 - ``lazy_instance`` not working for callable classes (`#473 comment
   <https://github.com/omni-us/jsonargparse/issues/481#issuecomment-2030932435>`__).
+- ``Callable`` type with class return and zero arguments not working
+  (`lightning#19574 comment
+  <https://github.com/lightning-AI/pytorch-lightning/issues/19574#issuecomment-2002932565>`__).
 
 
 v4.27.7 (2024-03-21)
