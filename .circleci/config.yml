@@ -26,6 +26,7 @@ jobs:
           command: |
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             pip3 install .[coverage]
+            pip3 uninstall -y argcomplete
             pytest --cov --cov-report=term --cov-report=xml:coverage_py$py.xml
             pip3 install .[test,all]
             pytest --cov --cov-report=term --cov-report=xml:coverage_py${py}_all.xml

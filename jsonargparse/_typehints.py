@@ -857,7 +857,14 @@ def adapt_typehints(
                             f"or a subclass of {partial_classes}."
                         )
                     val["class_path"] = get_import_path(val_class)
-                    val = adapt_class_type(val, False, instantiate_classes, sub_add_kwargs, skip_args=num_partial_args)
+                    val = adapt_class_type(
+                        val,
+                        False,
+                        instantiate_classes,
+                        sub_add_kwargs,
+                        skip_args=num_partial_args,
+                        partial_classes=partial_classes,
+                    )
             except (ImportError, AttributeError, ArgumentError) as ex:
                 raise_unexpected_value(f"Type {typehint} expects a function or a callable class: {ex}", val, ex)
 
@@ -966,8 +973,9 @@ def subclass_spec_as_namespace(val, prev_val=None):
 
 def get_callable_return_type(typehint):
     return_type = None
-    if len(getattr(typehint, "__args__", None) or []) > 1:
-        return_type = typehint.__args__[-1]
+    args = getattr(typehint, "__args__", None)
+    if isinstance(args, tuple) and len(args) > 0:
+        return_type = args[-1]
     return return_type
 
 
@@ -1098,7 +1106,9 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
             )
 
 
-def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev_val=None, skip_args=0):
+def adapt_class_type(
+    value, serialize, instantiate_classes, sub_add_kwargs, prev_val=None, skip_args=0, partial_classes=False
+):
     prev_val = subclass_spec_as_namespace(prev_val)
     value = subclass_spec_as_namespace(value)
     val_class = import_object(value.class_path)
@@ -1132,7 +1142,7 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
 
         instantiator_fn = get_class_instantiator()
 
-        if skip_args:
+        if partial_classes:
 
             def partial_instance(*args):
                 return instantiator_fn(val_class, *args, **{**init_args, **dict_kwargs})
