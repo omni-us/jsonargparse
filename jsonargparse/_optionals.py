@@ -313,6 +313,10 @@ def is_annotated(typehint: type) -> bool:
     return annotated_alias and isinstance(typehint, annotated_alias)
 
 
+def get_annotated_base_type(typehint: type) -> type:
+    return typehint.__origin__  # type: ignore[attr-defined]
+
+
 type_alias_type = typing_extensions_import("TypeAliasType")
 
 

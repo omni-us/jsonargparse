@@ -21,6 +21,7 @@ from typing import (  # type: ignore[attr-defined]
 from ._namespace import Namespace
 from ._optionals import (
     get_alias_target,
+    get_annotated_base_type,
     import_reconplogger,
     is_alias_type,
     is_annotated,
@@ -110,7 +111,7 @@ def get_unaliased_type(cls):
     while True:
         cur_cls = new_cls
         if is_annotated(new_cls):
-            new_cls = new_cls.__origin__
+            new_cls = get_annotated_base_type(new_cls)
         if is_alias_type(new_cls):
             new_cls = get_alias_target(new_cls)
         if new_cls == cur_cls:

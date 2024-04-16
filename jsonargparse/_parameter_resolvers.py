@@ -22,7 +22,7 @@ from ._common import (
     is_subclass,
     parse_logger,
 )
-from ._optionals import is_pydantic_model, parse_docs
+from ._optionals import get_annotated_base_type, is_annotated, is_pydantic_model, parse_docs
 from ._postponed_annotations import evaluate_postponed_annotations
 from ._stubs_resolver import get_stub_types
 from ._util import (
@@ -873,6 +873,7 @@ def get_field_data_pydantic2_dataclass(field, name, doc_params):
     from pydantic_core import PydanticUndefined
 
     default = inspect._empty
+    # Identify the default.
     if isinstance(field.default, FieldInfo):
         # Pydantic 2 dataclasses stuff their FieldInfo into a
         # stdlib dataclasses.field's `default`; this is where the
@@ -886,8 +887,13 @@ def get_field_data_pydantic2_dataclass(field, name, doc_params):
     elif field.default_factory is not dataclasses.MISSING:
         default = field.default_factory()
 
+    # Get the type, stripping Annotated like get_type_hints does.
+    if is_annotated(field.type):
+        field_type = get_annotated_base_type(field.type)
+    else:
+        field_type = field.type
     return dict(
-        annotation=field.type,
+        annotation=field_type,
         default=default,
         doc=doc_params.get(name),
     )
