@@ -11,6 +11,23 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
+v4.28.1 (2024-0?-??)
+--------------------
+
+Added
+^^^^^
+- `TypeAliasType` support added (`#480
+  <https://github.com/omni-us/jsonargparse/issues/480>`__).
+
+Fixed
+^^^^^
+- Attrs and Pydantic 2 dataclasses with non-init fields fail to instantiate
+  (`#480 <https://github.com/omni-us/jsonargparse/issues/480>`__).
+- Default values/factories for Pydantic 2 dataclasses with `Field` initializers
+  are not right (`#480 <https://github.com/omni-us/jsonargparse/issues/480>`__).
+- `Annotated` fields in dataclass-likes (eg FastAPI types) resolve incorrectly
+  (`#480 <https://github.com/omni-us/jsonargparse/issues/480>`__).
+
 
 v4.28.0 (2024-03-??)
 --------------------

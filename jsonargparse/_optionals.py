@@ -37,7 +37,7 @@ _docstring_parse_options = {
 
 def typing_extensions_import(name):
     if typing_extensions_support:
-        return getattr(__import__("typing_extensions"), name)
+        return getattr(__import__("typing_extensions"), name, False)
     else:
         return getattr(__import__("typing"), name, False)
 
@@ -313,6 +313,21 @@ def is_annotated(typehint: type) -> bool:
     return annotated_alias and isinstance(typehint, annotated_alias)
 
 
+def get_annotated_base_type(typehint: type) -> type:
+    return typehint.__origin__  # type: ignore[attr-defined]
+
+
+type_alias_type = typing_extensions_import("TypeAliasType")
+
+
+def is_alias_type(typehint: type) -> bool:
+    return type_alias_type and isinstance(typehint, type_alias_type)
+
+
+def get_alias_target(typehint: type) -> bool:
+    return typehint.__value__  # type: ignore[attr-defined]
+
+
 def get_pydantic_support() -> int:
     support = "0"
     if find_spec("pydantic"):
@@ -329,6 +344,24 @@ def get_pydantic_support() -> int:
 
 
 pydantic_support = get_pydantic_support()
+
+
+def get_pydantic_supports_field_init() -> bool:
+    if find_spec("pydantic"):
+        try:
+            from importlib.metadata import version
+
+            support = version("pydantic")
+        except ImportError:
+            import pydantic
+
+            support = pydantic.version.VERSION
+        major, minor = tuple(int(x) for x in support.split(".")[:2])
+        return major > 2 or (major == 2 and minor >= 6)
+    return False
+
+
+pydantic_supports_field_init = get_pydantic_supports_field_init()
 
 
 def is_pydantic_model(class_type) -> int:

@@ -13,8 +13,16 @@ from importlib import import_module
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from ._common import LoggerProperty, get_generic_origin, is_dataclass_like, is_generic_class, is_subclass, parse_logger
-from ._optionals import is_pydantic_model, parse_docs
+from ._common import (
+    LoggerProperty,
+    get_generic_origin,
+    get_unaliased_type,
+    is_dataclass_like,
+    is_generic_class,
+    is_subclass,
+    parse_logger,
+)
+from ._optionals import get_annotated_base_type, is_annotated, is_pydantic_model, parse_docs
 from ._postponed_annotations import evaluate_postponed_annotations
 from ._stubs_resolver import get_stub_types
 from ._util import (
@@ -861,9 +869,32 @@ def get_field_data_pydantic1_model(field, name, doc_params):
 
 
 def get_field_data_pydantic2_dataclass(field, name, doc_params):
+    from pydantic.fields import FieldInfo
+    from pydantic_core import PydanticUndefined
+
+    default = inspect._empty
+    # Identify the default.
+    if isinstance(field.default, FieldInfo):
+        # Pydantic 2 dataclasses stuff their FieldInfo into a
+        # stdlib dataclasses.field's `default`; this is where the
+        # actual default and default_factory live.
+        if field.default.default is not PydanticUndefined:
+            default = field.default.default
+        elif field.default.default_factory is not PydanticUndefined:
+            default = field.default.default_factory()
+    elif field.default is not dataclasses.MISSING:
+        default = field.default
+    elif field.default_factory is not dataclasses.MISSING:
+        default = field.default_factory()
+
+    # Get the type, stripping Annotated like get_type_hints does.
+    if is_annotated(field.type):
+        field_type = get_annotated_base_type(field.type)
+    else:
+        field_type = field.type
     return dict(
-        annotation=field.type,
-        default=field.default,
+        annotation=field_type,
+        default=default,
         doc=doc_params.get(name),
     )
 
@@ -898,6 +929,19 @@ def get_field_data_attrs(field, name, doc_params):
     )
 
 
+def is_init_field_pydantic2_dataclass(field) -> bool:
+    from pydantic.fields import FieldInfo
+
+    if isinstance(field.default, FieldInfo):
+        # FieldInfo.init is new in pydantic 2.6
+        return getattr(field.default, "init", None) is not False
+    return field.init is not False
+
+
+def is_init_field_attrs(field) -> bool:
+    return field.init is not False
+
+
 def get_parameters_from_pydantic_or_attrs(
     function_or_class: Union[Callable, Type],
     method_or_property: Optional[str],
@@ -907,20 +951,23 @@ def get_parameters_from_pydantic_or_attrs(
 
     if method_or_property or not (pydantic_support or attrs_support):
         return None
-
+    function_or_class = get_unaliased_type(function_or_class)
     fields_iterator = get_field_data = None
     if pydantic_support:
         pydantic_model = is_pydantic_model(function_or_class)
         if pydantic_model == 1:
-            fields_iterator = function_or_class.__fields__.items()  # type: ignore[union-attr]
+            fields_iterator = function_or_class.__fields__.items()
             get_field_data = get_field_data_pydantic1_model
+            is_init_field = lambda _: True
         elif pydantic_model > 1:
-            fields_iterator = function_or_class.model_fields.items()  # type: ignore[union-attr]
+            fields_iterator = function_or_class.model_fields.items()
             get_field_data = get_field_data_pydantic2_model
+            is_init_field = lambda _: True
         elif dataclasses.is_dataclass(function_or_class) and hasattr(function_or_class, "__pydantic_fields__"):
             fields_iterator = dataclasses.fields(function_or_class)
             fields_iterator = {v.name: v for v in fields_iterator}.items()
             get_field_data = get_field_data_pydantic2_dataclass
+            is_init_field = is_init_field_pydantic2_dataclass
 
     if not fields_iterator and attrs_support:
         import attrs
@@ -928,6 +975,7 @@ def get_parameters_from_pydantic_or_attrs(
         if attrs.has(function_or_class):
             fields_iterator = {f.name: f for f in attrs.fields(function_or_class)}.items()
             get_field_data = get_field_data_attrs
+            is_init_field = is_init_field_attrs
 
     if not fields_iterator or not get_field_data:
         return None
@@ -935,14 +983,15 @@ def get_parameters_from_pydantic_or_attrs(
     params = []
     doc_params = parse_docs(function_or_class, None, logger)
     for name, field in fields_iterator:
-        params.append(
-            ParamData(
-                name=name,
-                kind=kinds.KEYWORD_ONLY,
-                component=function_or_class,
-                **get_field_data(field, name, doc_params),
+        if is_init_field(field):
+            params.append(
+                ParamData(
+                    name=name,
+                    kind=kinds.KEYWORD_ONLY,
+                    component=function_or_class,
+                    **get_field_data(field, name, doc_params),
+                )
             )
-        )
     evaluate_postponed_annotations(params, function_or_class, None, logger)
     return params
 

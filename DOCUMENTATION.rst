@@ -447,6 +447,9 @@ Some notes about this support are:
   see :ref:`callable-type`. Currently the callable's argument and return types
   are not validated.
 
+- ``TypeAliasType`` is supported with values parsed as the aliased type and the
+  alias shown as the argument type in help.
+
 
 .. _restricted-numbers:
 

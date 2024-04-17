@@ -43,6 +43,7 @@ from ._actions import (
 )
 from ._common import (
     get_class_instantiator,
+    get_unaliased_type,
     is_dataclass_like,
     is_subclass,
     nested_links,
@@ -58,7 +59,9 @@ from ._loaders_dumpers import (
 from ._namespace import Namespace
 from ._optionals import (
     argcomplete_warn_redraw_prompt,
+    get_alias_target,
     get_files_completer,
+    is_alias_type,
     is_annotated,
     is_annotated_validator,
     typing_extensions_import,
@@ -234,8 +237,8 @@ class ActionTypeHint(Action):
     @staticmethod
     def is_supported_typehint(typehint, full=False):
         """Whether the given type hint is supported."""
-        if is_annotated(typehint):
-            typehint = get_typehint_origin(typehint)
+        typehint = get_unaliased_type(typehint)
+
         supported = (
             typehint in root_types
             or get_typehint_origin(typehint) in root_types
@@ -269,6 +272,7 @@ class ActionTypeHint(Action):
         typehint = typehint_from_action(typehint)
         if typehint is None:
             return False
+        typehint = get_unaliased_type(typehint)
         typehint_origin = get_typehint_origin(typehint)
         if typehint_origin == Union or (also_lists and typehint_origin in sequence_origin_types):
             subtypes = [a for a in typehint.__args__ if a != NoneType]
@@ -287,7 +291,7 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def is_return_subclass_typehint(typehint):
-        typehint = get_optional_arg(typehint)
+        typehint = get_unaliased_type(get_optional_arg(get_unaliased_type(typehint)))
         typehint_origin = get_typehint_origin(typehint)
         if typehint_origin in callable_origin_types:
             return_type = get_callable_return_type(typehint)
@@ -297,6 +301,7 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def is_mapping_typehint(typehint):
+        typehint = get_unaliased_type(typehint)
         typehint_origin = get_typehint_origin(typehint) or typehint
         if (
             typehint in mapping_origin_types
@@ -308,6 +313,7 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def is_callable_typehint(typehint, all_subtypes=True):
+        typehint = get_unaliased_type(typehint)
         typehint_origin = get_typehint_origin(typehint)
         if typehint_origin == Union:
             subtypes = [a for a in typehint.__args__ if a != NoneType]
@@ -917,6 +923,10 @@ def adapt_typehints(
             class_path = val if isinstance(val, str) else val["class_path"]
             error = indent_text(str(ex))
             raise_unexpected_value(f"Problem with given class_path {class_path!r}:\n{error}", exception=ex)
+
+    # TypeAliasType -- 3.12 `type x = y` or manually via typing_extensions
+    elif is_alias_type(typehint):
+        return adapt_typehints(val, get_alias_target(typehint), **adapt_kwargs)
 
     return val
 
