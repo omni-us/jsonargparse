@@ -11,25 +11,8 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
-v4.28.1 (2024-0?-??)
---------------------
 
-Added
-^^^^^
-- `TypeAliasType` support added (`#480
-  <https://github.com/omni-us/jsonargparse/issues/480>`__).
-
-Fixed
-^^^^^
-- Attrs and Pydantic 2 dataclasses with non-init fields fail to instantiate
-  (`#480 <https://github.com/omni-us/jsonargparse/issues/480>`__).
-- Default values/factories for Pydantic 2 dataclasses with `Field` initializers
-  are not right (`#480 <https://github.com/omni-us/jsonargparse/issues/480>`__).
-- `Annotated` fields in dataclass-likes (eg FastAPI types) resolve incorrectly
-  (`#480 <https://github.com/omni-us/jsonargparse/issues/480>`__).
-
-
-v4.28.0 (2024-03-??)
+v4.28.0 (2024-04-17)
 --------------------
 
 Added
@@ -40,6 +23,8 @@ Added
 - Option in ``CLI`` to provide subcommands help when components given in a dict
   (`litgpt#996 comment
   <https://github.com/Lightning-AI/litgpt/issues/996#issuecomment-1996201548>`__).
+- `TypeAliasType` support added (`#480
+  <https://github.com/omni-us/jsonargparse/issues/480>`__).
 
 Fixed
 ^^^^^
@@ -51,6 +36,12 @@ Fixed
 - ``Callable`` type with class return and zero arguments not working
   (`lightning#19574 comment
   <https://github.com/lightning-AI/pytorch-lightning/issues/19574#issuecomment-2002932565>`__).
+- Attrs and Pydantic 2 dataclasses with non-init fields fail to instantiate
+  (`#480 <https://github.com/omni-us/jsonargparse/issues/480>`__).
+- Default values/factories for Pydantic 2 dataclasses with `Field` initializers
+  are not right (`#480 <https://github.com/omni-us/jsonargparse/issues/480>`__).
+- `Annotated` fields in dataclass-likes (eg FastAPI types) resolve incorrectly
+  (`#480 <https://github.com/omni-us/jsonargparse/issues/480>`__).
 
 
 v4.27.7 (2024-03-21)
@@ -118,7 +109,7 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/433>`__).
 - Signature parameter default that doesn't match its type failing on
   instantiation and serialization (`lightning#19289 comment
-  <https://github.com/Lightning-AI/pytorch-lightning/pull/19289#issuecomment-1902618722>`__)
+  <https://github.com/Lightning-AI/pytorch-lightning/pull/19289#issuecomment-1902618722>`__).
 
 
 v4.27.2 (2024-01-18)
@@ -129,7 +120,7 @@ Fixed
 - reconplogger's logger level being unexpectedly overwritten.
 - Signature parameter default value that doesn't match its type considered
   invalid (`lightning#19289 comment
-  <https://github.com/Lightning-AI/pytorch-lightning/pull/19289#issuecomment-1894063743>`__)
+  <https://github.com/Lightning-AI/pytorch-lightning/pull/19289#issuecomment-1894063743>`__).
 
 
 v4.27.1 (2023-11-23)
