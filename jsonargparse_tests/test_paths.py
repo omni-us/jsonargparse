@@ -3,10 +3,8 @@ from __future__ import annotations
 import json
 import os
 from calendar import Calendar
-from io import StringIO
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from unittest.mock import patch
 
 import pytest
 
@@ -145,7 +143,7 @@ def test_enable_path_subclass(parser, tmp_cwd):
     assert isinstance(init["cal"], Calendar)
 
 
-def test_enable_path_list_path_fr(parser, tmp_cwd, subtests):
+def test_enable_path_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
     tmpdir = tmp_cwd / "subdir"
     tmpdir.mkdir()
     (tmpdir / "file1").touch()
@@ -180,14 +178,14 @@ def test_enable_path_list_path_fr(parser, tmp_cwd, subtests):
         assert ["file1", "file2", "file3", "file4"] == [str(x) for x in cfg.list]
 
     with subtests.test("paths list from stdin"):
-        with patch("sys.stdin", StringIO("file1\nfile2\n")):
+        with mock_stdin("file1\nfile2\n"):
             with Path_drw("subdir").relative_path_context():
                 cfg = parser.parse_args(["--list", "-"])
         assert all(isinstance(x, Path_fr) for x in cfg.list)
         assert ["file1", "file2"] == [str(x) for x in cfg.list]
 
     with subtests.test("paths list from stdin path not exist"):
-        with patch("sys.stdin", StringIO("file1\nfile2\n")):
+        with mock_stdin("file1\nfile2\n"):
             with pytest.raises(ArgumentError) as ctx:
                 parser.parse_args(["--list", "-"])
             ctx.match("File does not exist")
@@ -213,6 +211,30 @@ def test_enable_path_list_path_fr(parser, tmp_cwd, subtests):
 
     with subtests.test("paths list nargs='+' list not exist"):
         pytest.raises(ArgumentError, lambda: parser.parse_args(["--lists", "no-such-file"]))
+
+
+def test_enable_path_list_path_fr_default_stdin(parser, tmp_cwd, mock_stdin, subtests):
+    (tmp_cwd / "file1").touch()
+    (tmp_cwd / "file2").touch()
+
+    parser.add_argument(
+        "--list",
+        type=List[Path_fr],
+        enable_path=True,
+        default="-",
+    )
+
+    with subtests.test("without args"):
+        with mock_stdin("file1\nfile2\n"):
+            cfg = parser.parse_args([])
+        assert all(isinstance(x, Path_fr) for x in cfg.list)
+        assert ["file1", "file2"] == [str(x) for x in cfg.list]
+
+    with subtests.test("stdin arg"):
+        with mock_stdin("file1\nfile2\n"):
+            cfg = parser.parse_args(["--list=-"])
+        assert all(isinstance(x, Path_fr) for x in cfg.list)
+        assert ["file1", "file2"] == [str(x) for x in cfg.list]
 
 
 class Data:

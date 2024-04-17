@@ -35,7 +35,8 @@ v4.28.0 (2024-03-??)
 Added
 ^^^^^
 - Support for "-" as value for Path class initialization so that user
-  can ask to use standard input/output instead of file.
+  can ask to use standard input/output instead of file (`#463
+  <https://github.com/omni-us/jsonargparse/issues/463>`__).
 - Option in ``CLI`` to provide subcommands help when components given in a dict
   (`litgpt#996 comment
   <https://github.com/Lightning-AI/litgpt/issues/996#issuecomment-1996201548>`__).
