@@ -262,8 +262,12 @@ def object_path_serializer(value):
 
 
 def get_typehint_origin(typehint):
-    if not hasattr(typehint, "__origin__") and get_import_path(typehint.__class__) == "types.UnionType":
-        return Union
+    if not hasattr(typehint, "__origin__"):
+        typehint_class = get_import_path(typehint.__class__)
+        if typehint_class == "types.UnionType":
+            return Union
+        if typehint_class == "typing._TypedDictMeta":
+            return dict
     return getattr(typehint, "__origin__", None)
 
 
