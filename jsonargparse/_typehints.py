@@ -1,5 +1,7 @@
 """Action to support type hints."""
 
+from __future__ import annotations
+
 import inspect
 import os
 import re
@@ -820,6 +822,15 @@ def adapt_typehints(
                 else:
                     kwargs = adapt_kwargs
                 val[k] = adapt_typehints(v, subtypehints[1], **kwargs)
+        if get_import_path(typehint.__class__) == "typing._TypedDictMeta":
+            missing_keys = typehint.__required_keys__ - val.keys()
+            if missing_keys:
+                raise_unexpected_value(f"Missing required keys: {missing_keys}", val)
+            extra_keys = val.keys() - typehint.__required_keys__ - typehint.__optional_keys__
+            if extra_keys:
+                raise_unexpected_value(f"Unexpected keys: {extra_keys}", val)
+            for k, v in val.items():
+                val[k] = adapt_typehints(v, typehint.__annotations__[k], **adapt_kwargs)
 
     # Callable
     elif typehint_origin in callable_origin_types or typehint in callable_origin_types:
