@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.29.0 (2024-04-??)
+--------------------
+
+Added
+^^^^^
+- Support for ``TypedDict`` (`#457
+  <https://github.com/omni-us/jsonargparse/issues/457>`__).
+
+
 v4.28.0 (2024-04-17)
 --------------------
 
@@ -25,8 +34,6 @@ Added
   <https://github.com/Lightning-AI/litgpt/issues/996#issuecomment-1996201548>`__).
 - `TypeAliasType` support added (`#480
   <https://github.com/omni-us/jsonargparse/issues/480>`__).
-- Support for ``TypedDict`` (`#457
-  <https://github.com/omni-us/jsonargparse/issues/457>`__).
 
 Fixed
 ^^^^^
