@@ -25,6 +25,8 @@ Added
   <https://github.com/Lightning-AI/litgpt/issues/996#issuecomment-1996201548>`__).
 - `TypeAliasType` support added (`#480
   <https://github.com/omni-us/jsonargparse/issues/480>`__).
+- Support for ``TypedDict`` (`#457
+  <https://github.com/omni-us/jsonargparse/issues/457>`__).
 
 Fixed
 ^^^^^
