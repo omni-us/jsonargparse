@@ -20,6 +20,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypedDict,
     Union,
 )
 from unittest import mock
@@ -487,6 +488,36 @@ def test_mapping_nested_without_args(parser):
     parser.add_argument("--map", type=Mapping[str, Union[int, Mapping]])
     assert {"a": 1} == parser.parse_args(['--map={"a": 1}']).map
     assert {"b": {"c": 2}} == parser.parse_args(['--map={"b": {"c": 2}}']).map
+
+
+def test_typeddict_without_arg(parser):
+    parser.add_argument("--typeddict", type=TypedDict("MyDict", {}))
+    assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":1}']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--typeddict=1"]))
+
+
+def test_typeddict_with_args(parser):
+    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}))
+    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
+    # extra key
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":1, "b":2}']))
+    # missing key
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--typeddict={}"]))
+    # wrong type
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":"x"}']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--typeddict=1"]))
+
+
+def test_typeddict_with_args_ntotal(parser):
+    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}, total=False))
+    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
+    assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
+    # extra key
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":1, "b":2}']))
+    # wrong type
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":"x"}']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--typeddict=1"]))
 
 
 # union tests
