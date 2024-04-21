@@ -20,9 +20,11 @@ from typing import (
     Set,
     Tuple,
     Type,
-    TypedDict,
     Union,
 )
+
+if sys.version_info >= (3, 8):
+    from typing import TypedDict
 from unittest import mock
 from warnings import catch_warnings
 
@@ -491,6 +493,8 @@ def test_mapping_nested_without_args(parser):
 
 
 def test_typeddict_without_arg(parser):
+    if sys.version_info < (3, 8):
+        pytest.skip("TypedDict introduced in python 3.8")
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {}))
     assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":1}']))
@@ -498,6 +502,8 @@ def test_typeddict_without_arg(parser):
 
 
 def test_typeddict_with_args(parser):
+    if sys.version_info < (3, 8):
+        pytest.skip("TypedDict introduced in python 3.8")
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
     # extra key
@@ -510,6 +516,8 @@ def test_typeddict_with_args(parser):
 
 
 def test_typeddict_with_args_ntotal(parser):
+    if sys.version_info < (3, 8):
+        pytest.skip("TypedDict introduced in python 3.8")
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}, total=False))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
     assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
