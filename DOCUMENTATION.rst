@@ -400,8 +400,8 @@ Some notes about this support are:
   :ref:`restricted-strings` and paths and URLs as explained in sections
   :ref:`parsing-paths` and :ref:`parsing-urls`.
 
-- ``Dict``, ``Mapping``, and ``MutableMapping`` are supported but only with
-  ``str`` or ``int`` keys. For more details see :ref:`dict-items`.
+- ``Dict``, ``Mapping``, ``MutableMapping``, and ``TypedDict`` are supported but
+  only with ``str`` or ``int`` keys. For more details see :ref:`dict-items`.
 
 - ``Tuple``, ``Set`` and ``MutableSet`` are supported even though they can't be
   represented in json distinguishable from a list. Each ``Tuple`` element
