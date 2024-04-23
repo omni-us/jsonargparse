@@ -492,40 +492,51 @@ def test_mapping_nested_without_args(parser):
     assert {"b": {"c": 2}} == parser.parse_args(['--map={"b": {"c": 2}}']).map
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
 def test_typeddict_without_arg(parser):
-    if sys.version_info < (3, 8):
-        pytest.skip("TypedDict introduced in python 3.8")
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {}))
     assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
-    pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":1}']))
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--typeddict=1"]))
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1}'])
+    ctx.match("Unexpected keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--typeddict=1"])
+    ctx.match("Expected a <class 'dict'>")
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
 def test_typeddict_with_args(parser):
-    if sys.version_info < (3, 8):
-        pytest.skip("TypedDict introduced in python 3.8")
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
-    # extra key
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":2}'])
+    ctx.match("Unexpected keys")
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":1, "b":2}']))
-    # missing key
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--typeddict={}"]))
-    # wrong type
-    pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":"x"}']))
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--typeddict=1"]))
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--typeddict={}"])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":"x"}'])
+    ctx.match("Expected a <class 'int'>")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--typeddict=1"])
+    ctx.match("Expected a <class 'dict'>")
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
 def test_typeddict_with_args_ntotal(parser):
-    if sys.version_info < (3, 8):
-        pytest.skip("TypedDict introduced in python 3.8")
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}, total=False))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
     assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
-    # extra key
-    pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":1, "b":2}']))
-    # wrong type
-    pytest.raises(ArgumentError, lambda: parser.parse_args(['--typeddict={"a":"x"}']))
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--typeddict=1"]))
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":2}'])
+    ctx.match("Unexpected keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":"x"}'])
+    ctx.match("Expected a <class 'int'>")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--typeddict=1"])
+    ctx.match("Expected a <class 'dict'>")
 
 
 # union tests
