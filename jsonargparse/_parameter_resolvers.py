@@ -346,11 +346,14 @@ def is_param_subclass_instance_default(param: ParamData) -> bool:
 
     annotation = get_optional_arg(param.annotation)
     class_types = get_subclass_types(annotation)
-    return (class_types and isinstance(param.default, class_types)) or (
-        is_lambda(param.default)
-        and ActionTypeHint.is_callable_typehint(annotation, all_subtypes=False)
-        and annotation.__args__
-        and ActionTypeHint.is_subclass_typehint(annotation.__args__[-1], all_subtypes=False)
+    return bool(
+        (class_types and isinstance(param.default, class_types))
+        or (
+            is_lambda(param.default)
+            and ActionTypeHint.is_callable_typehint(annotation, all_subtypes=False)
+            and getattr(annotation, "__args__", None)
+            and ActionTypeHint.is_subclass_typehint(annotation.__args__[-1], all_subtypes=False)
+        )
     )
 
 

@@ -20,6 +20,11 @@ Added
 - Support for ``TypedDict`` (`#457
   <https://github.com/omni-us/jsonargparse/issues/457>`__).
 
+Fixed
+^^^^^
+- Parameter resolving falling back to assumptions resolver for optional
+  ``Union`` types.
+
 
 v4.28.0 (2024-04-17)
 --------------------
