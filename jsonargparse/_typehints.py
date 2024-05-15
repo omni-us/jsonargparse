@@ -160,6 +160,16 @@ allow_default_instance: ContextVar = ContextVar("allow_default_instance", defaul
 sub_defaults: ContextVar = ContextVar("sub_defaults", default=False)
 
 
+def get_parse_optional_num_return() -> int:
+    parser = __import__("argparse").ArgumentParser()
+    parser.add_argument("--test")
+    arg_parsed = parser._parse_optional("--test=x")
+    return len(arg_parsed)
+
+
+parse_optional_num_return = get_parse_optional_num_return()
+
+
 class ActionTypeHint(Action):
     """Action to parse a type hint."""
 
@@ -339,7 +349,7 @@ class ActionTypeHint(Action):
         return result
 
     @staticmethod
-    def parse_argv_item(arg_string, arg_parsed):
+    def parse_argv_item(arg_string):
         parser = subclass_arg_parser.get()
         action = None
         sep = None
@@ -352,7 +362,7 @@ class ActionTypeHint(Action):
 
         typehint = typehint_from_action(action)
         if typehint:
-            if len(arg_parsed) == 4:
+            if parse_optional_num_return == 4:
                 return action, arg_base, sep, explicit_arg
             return action, arg_base, explicit_arg
         return None

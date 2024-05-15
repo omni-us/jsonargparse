@@ -486,6 +486,12 @@ def test_dict_command_line_set_items(parser):
     assert cfg.dict == {"one": 1, "two": 2}
 
 
+def test_dict_command_line_set_items_with_space(parser):
+    parser.add_argument("--dict", type=dict)
+    cfg = parser.parse_args(["--dict.a=x y"])
+    assert {"a": "x y"} == cfg.dict
+
+
 def test_mapping_nested_without_args(parser):
     parser.add_argument("--map", type=Mapping[str, Union[int, Mapping]])
     assert {"a": 1} == parser.parse_args(['--map={"a": 1}']).map
