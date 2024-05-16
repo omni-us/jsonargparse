@@ -24,6 +24,8 @@ Fixed
 ^^^^^
 - Parameter resolving falling back to assumptions resolver for optional
   ``Union`` types.
+- Nested parameters failing to parse from command line when value includes
+  space.
 
 
 v4.28.0 (2024-04-17)
