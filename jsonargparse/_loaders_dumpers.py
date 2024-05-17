@@ -96,7 +96,9 @@ loader_exceptions: Dict[str, Tuple[Type[Exception], ...]] = {
 def get_load_value_mode() -> str:
     mode = load_value_mode.get()
     if mode is None:
-        mode = parent_parser.get().parser_mode
+        parser = parent_parser.get()
+        assert parser is not None
+        mode = parser.parser_mode
     return mode
 
 

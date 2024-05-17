@@ -51,7 +51,7 @@ else:
 InstantiatorsDictType = Dict[Tuple[type, bool], InstantiatorCallable]
 
 
-parent_parser: ContextVar["ArgumentParser"] = ContextVar("parent_parser")
+parent_parser: ContextVar[Optional["ArgumentParser"]] = ContextVar("parent_parser", default=None)
 parser_capture: ContextVar[bool] = ContextVar("parser_capture", default=False)
 defaults_cache: ContextVar[Optional[Namespace]] = ContextVar("defaults_cache", default=None)
 lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", default=False)

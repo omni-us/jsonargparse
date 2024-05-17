@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Tuple
+from unittest.mock import patch
 
 import pytest
 
@@ -129,3 +131,9 @@ def test_help_default_config_files_with_required(tmp_path, parser):
     help_str = get_parser_help(parser)
     assert "req description" in help_str
     assert "from yaml" in help_str
+
+
+def test_format_usage(parser):
+    parser.add_argument("--v1")
+    with patch.dict(os.environ, {"COLUMNS": "200"}):
+        assert parser.format_usage() == "usage: app [-h] [--v1 V1]\n"

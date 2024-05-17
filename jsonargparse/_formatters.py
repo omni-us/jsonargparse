@@ -88,17 +88,19 @@ class DefaultHelpFormatter(HelpFormatter):
     def _format_usage(self, *args, **kwargs) -> str:
         usage = super()._format_usage(*args, **kwargs)
         parser = parent_parser.get()
-        for key in parser.required_args:
-            try:
-                default = parser.get_default(key)
-            except KeyError:
-                default = None
-            if default is None and f"[--{key} " in usage:
-                usage = re.sub(f"\\[(--{key} [^\\]]+)]", r"\1", usage, count=1)
+        if parser:
+            for key in parser.required_args:
+                try:
+                    default = parser.get_default(key)
+                except KeyError:
+                    default = None
+                if default is None and f"[--{key} " in usage:
+                    usage = re.sub(f"\\[(--{key} [^\\]]+)]", r"\1", usage, count=1)
         return usage
 
     def _format_action_invocation(self, action: Action) -> str:
         parser = parent_parser.get()
+        assert parser is not None
         if isinstance(action, _ActionSubCommands):
             value = "Available subcommands:"
             if parser.default_env:
@@ -263,6 +265,7 @@ def get_env_var(
         parser = parent_parser.get()
     else:
         parser = parser_or_formatter
+    assert parser is not None
     env_var = ""
     if isinstance(parser.env_prefix, str):
         env_var = parser.env_prefix.replace("-", "_") + "_"

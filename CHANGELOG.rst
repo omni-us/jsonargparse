@@ -23,9 +23,11 @@ Added
 Fixed
 ^^^^^
 - Parameter resolving falling back to assumptions resolver for optional
-  ``Union`` types.
+  ``Union`` types (`#498 <https://github.com/omni-us/jsonargparse/pull/498>`__).
 - Nested parameters failing to parse from command line when value includes
-  space.
+  space (`#499 <https://github.com/omni-us/jsonargparse/pull/499>`__).
+- ``format_usage()`` not working (`#501
+  <https://github.com/omni-us/jsonargparse/issues/501>`__).
 
 
 v4.28.0 (2024-04-17)
