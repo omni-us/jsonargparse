@@ -28,6 +28,8 @@ Fixed
   space (`#499 <https://github.com/omni-us/jsonargparse/pull/499>`__).
 - ``format_usage()`` not working (`#501
   <https://github.com/omni-us/jsonargparse/issues/501>`__).
+- Not able to modify init args for callable with class return and default class
+  (`#5?? <https://github.com/omni-us/jsonargparse/pull/5??>`__).
 
 
 v4.28.0 (2024-04-17)

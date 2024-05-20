@@ -980,6 +980,8 @@ def subclass_spec_as_namespace(val, prev_val=None):
         val = Namespace({root_key: val})
         if isinstance(prev_val, str):
             prev_val = Namespace(class_path=prev_val)
+        elif inspect.isclass(prev_val):
+            prev_val = Namespace(class_path=get_import_path(prev_val))
     if isinstance(val, dict):
         val = Namespace(val)
     if "init_args" in val and isinstance(val["init_args"], dict):
