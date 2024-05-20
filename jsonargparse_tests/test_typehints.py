@@ -792,6 +792,13 @@ def test_callable_multiple_args_return_type_class(parser, subtests):
             assert f"{__name__}.{name}" in help_str
 
 
+def test_callable_return_class_default_class_override_init_arg(parser):
+    parser.add_argument("--optimizer", type=Callable[[List[float]], Optimizer], default=SGD)
+    cfg = parser.parse_args(["--optimizer.momentum=0.5", "--optimizer.lr=0.05"])
+    assert cfg.optimizer.class_path == f"{__name__}.SGD"
+    assert cfg.optimizer.init_args == Namespace(lr=0.05, momentum=0.5)
+
+
 class StepLR:
     def __init__(self, optimizer: Optimizer, last_epoch: int = -1):
         self.optimizer = optimizer
