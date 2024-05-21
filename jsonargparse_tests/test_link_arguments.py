@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from calendar import Calendar, TextCalendar
 from dataclasses import dataclass
+from importlib.util import find_spec
 from typing import Any, Callable, List, Mapping, Optional, Union
 
 import pytest
@@ -51,7 +52,7 @@ def test_on_parse_subcommand_failing_compute_fn(parser, subparser, subtests):
     subcommands.add_subcommand("sub", subparser)
 
     with subtests.test("parse_args"):
-        with pytest.raises(ValueError) as ctx:
+        with pytest.raises(ArgumentError) as ctx:
             parser.parse_args(["sub"])
         ctx.match("Call to compute_fn of link 'to_str.*failed: value is empty")
 
@@ -111,7 +112,10 @@ def test_on_parse_compute_fn_subclass_spec(parser, subtests):
         parser.set_defaults(cal1=None)
         with pytest.raises(ArgumentError) as ctx:
             parser.parse_args(["--cal1.firstweekday=-"])
-        ctx.match('Parser key "cal1"')
+        if find_spec("typeshed_client"):
+            ctx.match('Parser key "cal1"')
+        else:
+            ctx.match("Call to compute_fn of link")
 
 
 class ClassA:

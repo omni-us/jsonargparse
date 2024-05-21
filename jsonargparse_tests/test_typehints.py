@@ -754,6 +754,16 @@ def test_callable_args_return_type_class(parser, subtests):
             assert f"{__name__}.{name}" in help_str
 
 
+def test_callable_return_type_class_implicit_class_path(parser):
+    parser.add_argument("--optimizer", type=Callable[[List[float]], Optimizer])
+    cfg = parser.parse_args(['--optimizer={"lr": 0.5}'])
+    assert cfg.optimizer.class_path == f"{__name__}.Optimizer"
+    assert cfg.optimizer.init_args == Namespace(lr=0.5, momentum=0.0)
+    cfg = parser.parse_args(["--optimizer.momentum=0.2"])
+    assert cfg.optimizer.class_path == f"{__name__}.Optimizer"
+    assert cfg.optimizer.init_args == Namespace(lr=0.001, momentum=0.2)
+
+
 def test_callable_multiple_args_return_type_class(parser, subtests):
     parser.add_argument("--optimizer", type=Callable[[List[float], float], Optimizer], default=SGD)
 
@@ -924,7 +934,7 @@ class Model(Module):
         self.activation = activation
 
 
-def test_callable_zero_args_return_type_class(parser):  # , subtests):
+def test_callable_zero_args_return_type_class(parser):
     parser.add_class_arguments(Model, "model")
     cfg = parser.parse_args([])
     assert cfg.model.activation == Namespace(

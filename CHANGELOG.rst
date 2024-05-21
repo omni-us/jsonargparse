@@ -19,6 +19,9 @@ Added
 ^^^^^
 - Support for ``TypedDict`` (`#457
   <https://github.com/omni-us/jsonargparse/issues/457>`__).
+- Directly providing a dict with parameters or a single parameter to a subclass
+  or callable with class return now implicitly tries using the base class as
+  ``class_path`` if not abstract.
 
 Fixed
 ^^^^^

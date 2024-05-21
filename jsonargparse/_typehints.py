@@ -865,6 +865,11 @@ def adapt_typehints(
                     else:
                         raise ImportError(f"Unexpected import object {val_obj}")
                 if isinstance(val, (dict, Namespace, NestedArg)):
+                    if prev_val is None:
+                        return_type = get_callable_return_type(typehint)
+                        if return_type and not inspect.isabstract(return_type):
+                            with suppress(ValueError):
+                                prev_val = Namespace(class_path=get_import_path(return_type))
                     val = subclass_spec_as_namespace(val, prev_val)
                     if not is_subclass_spec(val):
                         raise ImportError(
@@ -920,6 +925,9 @@ def adapt_typehints(
             return val
 
         val_input = val
+        if prev_val is None and not inspect.isabstract(typehint):
+            with suppress(ValueError):
+                prev_val = Namespace(class_path=get_import_path(typehint))
         val = subclass_spec_as_namespace(val, prev_val)
         if not is_subclass_spec(val):
             raise_unexpected_value(

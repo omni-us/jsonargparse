@@ -2013,6 +2013,16 @@ been imported before parsing. Abstract classes and private classes (module or
 name starting with ``'_'``) are not considered. All the subclasses resolvable by
 its name can be seen in the general help ``python tool.py --help``.
 
+When the base class is not abstract, the ``class_path`` can be omitted, by
+giving directly ``init_args``, for example:
+
+.. code-block:: bash
+
+    python tool.py --calendar.firstweekday 2
+
+would implicitly use ``calendar.Calendar`` as the class path.
+
+
 Default values
 --------------
 
