@@ -313,7 +313,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         _ActionPrintConfig.print_config_if_requested(self, cfg)
 
         with parser_context(parent_parser=self):
-            ActionLink.apply_parsing_links(self, cfg)
+            try:
+                ActionLink.apply_parsing_links(self, cfg)
+            except Exception as ex:
+                self.error(str(ex), ex)
 
             if not skip_check and not lenient_check.get():
                 self.check_config(cfg, skip_required=skip_required)

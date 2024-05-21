@@ -246,13 +246,6 @@ def test_subclass_init_args_without_class_path(parser):
     assert cfg.cal3.init_args == Namespace(firstweekday=5)
 
 
-def test_subclass_init_args_without_class_path_error(parser):
-    parser.add_subclass_arguments(Calendar, "cal1")
-    with pytest.raises(ArgumentError) as ctx:
-        parser.parse_args(["--cal1.init_args.firstweekday=4"])
-    ctx.match("class path given previously")
-
-
 def test_subclass_init_args_without_class_path_dict(parser):
     parser.add_argument("--cfg", action=ActionConfigFile)
     parser.add_argument("--cal", type=Calendar)
@@ -1498,6 +1491,23 @@ def test_subclass_help_not_subclass(parser):
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--op.help=uuid.UUID"])
     ctx.match("is not a subclass of")
+
+
+class Implicit:
+    def __init__(self, a: int = 1, b: str = ""):
+        pass
+
+
+def test_subclass_implicit_class_path(parser):
+    parser.add_argument("--implicit", type=Implicit)
+    cfg = parser.parse_args(['--implicit={"a": 2, "b": "x"}'])
+    assert cfg.implicit.class_path == f"{__name__}.Implicit"
+    assert cfg.implicit.init_args == Namespace(a=2, b="x")
+    cfg = parser.parse_args(["--implicit.a=3"])
+    assert cfg.implicit.init_args == Namespace(a=3, b="")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--implicit={"c": null}'])
+    ctx.match('No action for key "c" to check its value')
 
 
 # error messages tests
