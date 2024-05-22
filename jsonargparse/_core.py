@@ -1073,8 +1073,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                             val == {} and ActionTypeHint.is_subclass_typehint(action) and key not in self.required_args
                         ):
                             raise ex
-                elif key in self.groups and hasattr(self.groups[key], "instantiate_class"):
-                    raise TypeError(f"Class group '{key}' got an unexpected value: {val}")
                 else:
                     if isinstance(parent_action, _ActionSubCommands) and "." in key:
                         subcommand, subkey = split_key_root(key)
