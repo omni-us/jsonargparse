@@ -29,7 +29,6 @@ from ._actions import (
     _ActionSubCommands,
     _find_action,
     _find_action_and_subcommand,
-    _find_parent_action,
     _find_parent_action_and_subcommand,
     _is_action_value_list,
     _is_branch_key,
@@ -67,6 +66,7 @@ from ._namespace import (
     recreate_branches,
     split_key,
     split_key_leaf,
+    split_key_root,
     strip_meta,
 )
 from ._optionals import (
@@ -1050,20 +1050,19 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 check_required(cfg.get(subcommand), subparser, subcommand + ".")
 
         def check_values(cfg):
-            for key in cfg.get_sorted_keys():
-                val = cfg[key]
-                action = _find_action(self, key)
+            sorted_keys = {k: _find_action(self, k) for k in cfg.get_sorted_keys()}
+            for key, action in sorted_keys.items():
+                parent_action = None
                 if action is None:
-                    if (
-                        _is_branch_key(self, key)
-                        or key.endswith(".class_path")
-                        or key.endswith(".dict_kwargs")
-                        or ".init_args" in key
-                    ):
+                    if _is_branch_key(self, key):
                         continue
-                    action = _find_parent_action(self, key, exclude=_ActionConfigLoad)
-                    if action and not ActionTypeHint.is_subclass_typehint(action):
-                        continue
+                    parent_action, subcommand = _find_parent_action_and_subcommand(self, key, exclude=_ActionConfigLoad)
+                    if parent_action:
+                        parent_key = subcommand + "." + parent_action.dest if subcommand else parent_action.dest
+                        if key.startswith(parent_key + ".") and sorted_keys.get(parent_key) is parent_action:
+                            # only check action once with entire value
+                            continue
+                val = cfg[key]
                 if action is not None:
                     if val is None and skip_none:
                         continue
@@ -1074,10 +1073,15 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                             val == {} and ActionTypeHint.is_subclass_typehint(action) and key not in self.required_args
                         ):
                             raise ex
-                elif key in self.groups and hasattr(self.groups[key], "instantiate_class"):
-                    raise TypeError(f"Class group {key!r} got an unexpected value: {val}.")
                 else:
-                    raise NSKeyError(f'No action for key "{key}" to check its value.')
+                    if isinstance(parent_action, _ActionSubCommands) and "." in key:
+                        subcommand, subkey = split_key_root(key)
+                        raise NSKeyError(f"Subcommand '{subcommand}' does not accept nested key '{subkey}'")
+                    group_key = next((g for g in self.groups if key.startswith(g + ".")), None)
+                    if group_key:
+                        subkey = key[len(group_key) + 1 :]
+                        raise NSKeyError(f"Group '{group_key}' does not accept nested key '{subkey}'")
+                    raise NSKeyError(f"Key '{key}' is not expected")
 
         try:
             if not skip_required and not lenient_check.get():

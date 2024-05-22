@@ -196,6 +196,16 @@ def test_add_argument_dataclass_type(parser):
     assert isinstance(init.b.b2, DataClassA)
 
 
+def test_add_argument_dataclass_unexpected_keys(parser):
+    parser.add_argument("--b", type=DataClassB)
+    invalid = {
+        "class_path": f"{__name__}.DataClassB",
+    }
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args([f"--b={invalid}"])
+    ctx.match("Group 'b' does not accept nested key 'class_path'")
+
+
 @dataclasses.dataclass
 class DataRequiredAttr:
     a1: str

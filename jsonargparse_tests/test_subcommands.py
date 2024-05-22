@@ -121,7 +121,7 @@ def test_subcommands_parse_string_implicit_subcommand(subcommands_parser):
     assert cfg["a"] == {"ap1": "ap1_cfg", "ao1": "ao1_def"}
     with pytest.raises(ArgumentError) as ctx:
         subcommands_parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}')
-    ctx.match('No action for key "unk"')
+    ctx.match("Subcommand 'a' does not accept nested key 'unk'")
 
 
 def test_subcommands_parse_string_first_implicit_subcommand(subcommands_parser):

@@ -193,7 +193,7 @@ def test_add_class_without_parameters(parser):
     config = {"no_params": {"class_path": f"{__name__}.NoParams"}}
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--cfg={config}"])
-    ctx.match("'no_params' got an unexpected value")
+    ctx.match("Group 'no_params' does not accept nested key 'class_path'")
 
 
 class NestedWithParams:
