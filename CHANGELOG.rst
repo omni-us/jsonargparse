@@ -36,6 +36,8 @@ Fixed
 - Nested values not validated when type not subclass and nested keys for
   subclass (`#503 comment
   <https://github.com/omni-us/jsonargparse/issues/503#issuecomment-2119724341>`__).
+- Dataclass with nested optional dataclass and default field factory failing to
+  parse (`#507 <https://github.com/omni-us/jsonargparse/issues/507>`__).
 
 Changed
 ^^^^^^^

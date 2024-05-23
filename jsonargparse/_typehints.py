@@ -215,6 +215,10 @@ class ActionTypeHint(Action):
         is_subclass_type = self.is_subclass_typehint(self._typehint, all_subtypes=False)
         if isinstance(default, LazyInitBaseClass):
             default = default.lazy_get_init_data()
+        elif is_dataclass_like(default.__class__):
+            from ._signatures import dataclass_to_dict
+
+            default = dataclass_to_dict(default)
         elif is_subclass_type and isinstance(default, dict) and "class_path" in default:
             default = subclass_spec_as_namespace(default)
             default.class_path = normalize_import_path(default.class_path, self._typehint)
@@ -896,11 +900,9 @@ def adapt_typehints(
 
     # Dataclass-like
     elif is_dataclass_like(typehint):
-        if is_dataclass_like(type(prev_val)) and is_subclass(type(prev_val), typehint):
-            from ._signatures import dataclass_to_dict
-
+        if isinstance(prev_val, (dict, Namespace)):
             assert isinstance(sub_add_kwargs, dict)
-            sub_add_kwargs["default"] = lazy_instance(type(prev_val), **dataclass_to_dict(prev_val))
+            sub_add_kwargs["default"] = lazy_instance(typehint, **prev_val)
         parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs=sub_add_kwargs)
         if instantiate_classes:
             init_args = parser.instantiate_classes(val)
