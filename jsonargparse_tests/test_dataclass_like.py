@@ -376,6 +376,28 @@ def test_optional_dataclass_type_null_value():
 
 
 @dataclasses.dataclass
+class DataWithOptionalB:
+    c: int = 3
+
+
+@dataclasses.dataclass
+class DataWithOptionalA:
+    b: Optional[DataWithOptionalB] = dataclasses.field(default_factory=DataWithOptionalB)
+
+
+def data_with_optional(a: DataWithOptionalA):
+    pass
+
+
+def test_dataclass_with_optional_default(parser):
+    parser.add_function_arguments(data_with_optional, "data")
+    cfg = parser.parse_args([])
+    assert cfg.data == Namespace(a=Namespace(b={"c": 3}))
+    init = parser.instantiate_classes(cfg)
+    assert init.data.a == DataWithOptionalA()
+
+
+@dataclasses.dataclass
 class SingleParamChange:
     p1: int = 0
     p2: int = 0
@@ -397,7 +419,9 @@ class ModelConfig:
 def test_dataclass_optional_dict_attribute(parser):
     parser.add_argument("--model", type=Optional[ModelConfig], default=ModelConfig(data={"A": 1, "B": 2}))
     cfg = parser.parse_args(["--model.data.A=4"])
-    assert cfg.model.data == {"A": 4, "B": 2}
+    assert cfg.model["data"] == {"A": 4, "B": 2}
+    init = parser.instantiate_classes(cfg)
+    assert init.model == ModelConfig(data={"A": 4, "B": 2})
 
 
 def test_dataclass_in_union_type(parser):
