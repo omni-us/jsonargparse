@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.29.0 (2024-04-??)
+v4.29.0 (2024-05-24)
 --------------------
 
 Added
@@ -21,7 +21,8 @@ Added
   <https://github.com/omni-us/jsonargparse/issues/457>`__).
 - Directly providing a dict with parameters or a single parameter to a subclass
   or callable with class return now implicitly tries using the base class as
-  ``class_path`` if not abstract.
+  ``class_path`` if not abstract (`#505
+  <https://github.com/omni-us/jsonargparse/pull/505>`__).
 
 Fixed
 ^^^^^
@@ -42,7 +43,8 @@ Fixed
 Changed
 ^^^^^^^
 - When parsing fails due to unexpected key, now there are specific error
-  messages for the cases of groups and subcommands.
+  messages for the cases of groups and subcommands (`#506
+  <https://github.com/omni-us/jsonargparse/pull/506>`__).
 
 
 v4.28.0 (2024-04-17)
