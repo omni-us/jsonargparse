@@ -434,7 +434,7 @@ class ActionLink(Action):
             if "." not in target_key:
                 return
             parent_key, _ = split_key_leaf(target_key)
-            if "." in target_key and parent_key in cfg and not cfg[parent_key]:
+            if parent_key in cfg and not cfg[parent_key]:
                 del cfg[parent_key]
 
         for action in [a for a in parser._actions if isinstance(a, ActionLink)]:
