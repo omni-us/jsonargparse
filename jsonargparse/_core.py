@@ -102,6 +102,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         super().__init__(*args, **kwargs)
         self.register("type", None, identity)
         self.register("action", "parsers", _ActionSubCommands)
+        self.register("action", "config", ActionConfigFile)
 
     def add_argument(self, *args, enable_path: bool = False, **kwargs):
         """Adds an argument to the parser or argument group.

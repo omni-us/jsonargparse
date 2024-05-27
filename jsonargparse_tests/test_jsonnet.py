@@ -8,7 +8,6 @@ import pytest
 import yaml
 
 from jsonargparse import (
-    ActionConfigFile,
     ActionJsonnet,
     ActionJsonSchema,
     ArgumentError,
@@ -77,7 +76,7 @@ example_schema = {
 @skip_if_jsonschema_unavailable
 def test_parser_mode_jsonnet(tmp_path):
     parser = ArgumentParser(parser_mode="jsonnet", exit_on_error=False)
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--param", type=int)
     parser.add_argument("--records", action=ActionJsonSchema(schema=records_schema))
 
@@ -95,7 +94,7 @@ def test_parser_mode_jsonnet(tmp_path):
 
 def test_parser_mode_jsonnet_import_libsonnet(parser, tmp_cwd):
     parser.parser_mode = "jsonnet"
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--name", type=str, default="Lucky")
     parser.add_argument("--prize", type=int, default=100)
 
@@ -158,7 +157,7 @@ def test_action_jsonnet(parser):
 def test_action_jsonnet_save_config_metadata(parser, tmp_path):
     parser.add_argument("--ext_vars", type=dict)
     parser.add_argument("--jsonnet", action=ActionJsonnet(ext_vars="ext_vars"))
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
 
     jsonnet_file = tmp_path / "example.jsonnet"
     jsonnet_file.write_text(example_2_jsonnet)

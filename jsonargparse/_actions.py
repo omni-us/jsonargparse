@@ -174,8 +174,10 @@ class ActionConfigFile(Action, FilesCompleterMethod):
 
     @staticmethod
     def _ensure_single_config_argument(container, action):
-        if is_subclass(action, ActionConfigFile) and any(isinstance(a, ActionConfigFile) for a in container._actions):
-            raise ValueError("A parser is only allowed to have a single ActionConfigFile argument.")
+        if (action == "config" or is_subclass(action, ActionConfigFile)) and any(
+            isinstance(a, ActionConfigFile) for a in container._actions
+        ):
+            raise ValueError("A parser is only allowed to have a single 'config' argument.")
 
     @staticmethod
     def _add_print_config_argument(container, action):

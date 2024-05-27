@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from jsonargparse import ActionConfigFile, ActionParser, ActionYesNo, ArgumentParser
+from jsonargparse import ActionParser, ActionYesNo, ArgumentParser
 from jsonargparse_tests.conftest import get_parser_help
 
 
@@ -23,7 +23,7 @@ def test_help_basics(parser):
 
 
 def test_help_action_config_file(parser):
-    parser.add_argument("-c", "--cfg", help="Config in yaml/json.", action=ActionConfigFile)
+    parser.add_argument("-c", "--cfg", help="Config in yaml/json.", action="config")
     help_str = get_parser_help(parser)
     assert "ARG:   --print_config" in help_str
     assert "ARG:   -c CFG, --cfg CFG" in help_str

@@ -9,7 +9,6 @@ import pytest
 import yaml
 
 from jsonargparse import (
-    ActionConfigFile,
     ArgumentError,
     ArgumentParser,
     Namespace,
@@ -105,7 +104,7 @@ def test_subcommands_parse_args_alias(subcommands_parser):
 
 
 def test_subcommands_parse_args_config(subcommands_parser):
-    subcommands_parser.add_argument("--cfg", action=ActionConfigFile)
+    subcommands_parser.add_argument("--cfg", action="config")
     cfg = subcommands_parser.parse_args(['--cfg={"o1": "o1_arg"}', "a", "ap1_arg"]).as_dict()
     assert cfg == {
         "a": {"ao1": "ao1_def", "ap1": "ap1_arg"},
@@ -141,7 +140,7 @@ def test_subcommands_parse_string_explicit_subcommand(subcommands_parser):
 
 
 def test_subcommands_parse_args_config_explicit_subcommand_arg(subcommands_parser):
-    subcommands_parser.add_argument("--cfg", action=ActionConfigFile)
+    subcommands_parser.add_argument("--cfg", action="config")
     cfg = subcommands_parser.parse_args(['--cfg={"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}', "a"])
     assert cfg.as_dict() == {
         "o1": "o1_def",
@@ -201,7 +200,7 @@ def test_subcommand_without_options(parser, subparser):
 
 
 def test_subcommand_print_config_default_env(subparser):
-    subparser.add_argument("--config", action=ActionConfigFile)
+    subparser.add_argument("--config", action="config")
     subparser.add_argument("--o", type=int, default=1)
 
     parser = ArgumentParser(exit_on_error=False, default_env=True)
