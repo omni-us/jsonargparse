@@ -285,7 +285,7 @@ Depending on the parse method used (see :class:`.ArgumentParser`) and how the
 parser was built, some of the options above might not apply. Parsing of
 environment variables must be explicitly enabled, except if using
 :py:meth:`.ArgumentParser.parse_env`. If the parser does not have an
-:class:`.ActionConfigFile` argument, then there is no parsing of a full config
+`action="config"` argument, then there is no parsing of a full config
 environment variable or a way to provide a config file from command line.
 
 
@@ -651,11 +651,11 @@ If you import ``from jsonargparse import set_config_read_mode`` and then run
 ``set_config_read_mode(fsspec_enabled=True)``, the following functions and
 classes will also support loading from URLs:
 :py:meth:`.ArgumentParser.parse_path`, :py:meth:`.ArgumentParser.get_defaults`
-(``default_config_files`` argument), :class:`.ActionConfigFile`,
+(``default_config_files`` argument), `action="config"`,
 :class:`.ActionJsonSchema`, :class:`.ActionJsonnet` and :class:`.ActionParser`.
 This means that a tool that can receive a configuration file via
-:class:`.ActionConfigFile` is able to get the content from a URL, thus something
-like the following would work:
+`action="config"` is able to get the content from a URL, thus something like the
+following would work:
 
 .. code-block:: bash
 
@@ -1285,11 +1285,11 @@ the following would be observed:
 
 .. doctest:: config
 
-    >>> from jsonargparse import ArgumentParser, ActionConfigFile
+    >>> from jsonargparse import ArgumentParser
     >>> parser = ArgumentParser()
     >>> parser.add_argument("--lev1.opt1", default="from default 1")  # doctest: +IGNORE_RESULT
     >>> parser.add_argument("--lev1.opt2", default="from default 2")  # doctest: +IGNORE_RESULT
-    >>> parser.add_argument("--config", action=ActionConfigFile)  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--config", action="config")  # doctest: +IGNORE_RESULT
     >>> cfg = parser.parse_args(["--lev1.opt1", "from arg 1", "--config", "example.yaml", "--lev1.opt2", "from arg 2"])
     >>> cfg.lev1.opt1
     'from yaml 1'
@@ -1318,7 +1318,7 @@ string respectively.
 Serialization
 -------------
 
-Parsers that have an :class:`.ActionConfigFile` argument also include a
+Parsers that have an `action="config"` argument also include a
 ``--print_config`` option. This is useful particularly for command line tools
 with a large set of options to create an initial config file including all
 default values. If the `ruyaml <https://ruyaml.readthedocs.io>`__ package is
@@ -2243,7 +2243,7 @@ This yaml could be parsed as follows:
     >>> parser = ArgumentParser(parser_mode="omegaconf")
     >>> parser.add_argument("--server", type=ServerOptions)  # doctest: +IGNORE_RESULT
     >>> parser.add_argument("--client", type=ClientOptions)  # doctest: +IGNORE_RESULT
-    >>> parser.add_argument("--config", action=ActionConfigFile)  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--config", action="config")  # doctest: +IGNORE_RESULT
 
     >>> cfg = parser.parse_args(["--config=example.yaml"])
     >>> cfg.client.url
@@ -2303,9 +2303,9 @@ There is also the :py:meth:`.ArgumentParser.parse_env` function to only parse
 environment variables, which might be useful for some use cases in which there
 is no command line call involved.
 
-If a parser includes an :class:`.ActionConfigFile` argument, then the
-environment variable for this config file will be parsed before all the other
-environment variables.
+If a parser includes an `action="config"` argument, then the environment
+variable for this config file will be parsed before all the other environment
+variables.
 
 
 .. _sub-commands:
@@ -2450,10 +2450,10 @@ config files to be in jsonnet format instead. Example:
 
 .. testcode:: jsonnet
 
-    from jsonargparse import ArgumentParser, ActionConfigFile
+    from jsonargparse import ArgumentParser
 
     parser = ArgumentParser(parser_mode="jsonnet")
-    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--config", action="config")
     cfg = parser.parse_args(["--config", "example.jsonnet"])
 
 Jsonnet files are commonly parametrized, thus requiring external variables for
@@ -2511,7 +2511,7 @@ following:
 When using the :class:`.ActionParser` class, the value of the node in a config
 file can be either the complex node itself, or the path to a file which will be
 loaded and parsed with the corresponding inner parser. Naturally using
-:class:`.ActionConfigFile` to parse a complete config file will parse the inner
+`action="config"` to parse a complete config file will parse the inner
 nodes correctly.
 
 Note that when adding ``inner_parser`` a title was given. In the help, the added

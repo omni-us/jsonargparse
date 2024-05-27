@@ -8,7 +8,6 @@ import pytest
 import yaml
 
 from jsonargparse import (
-    ActionConfigFile,
     ArgumentError,
     Namespace,
     lazy_instance,
@@ -179,7 +178,7 @@ class NoParams:
 
 
 def test_add_class_without_parameters(parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_class_arguments(NoParams, "no_params")
 
     help_str = get_parser_help(parser)
@@ -247,7 +246,7 @@ class RequiredParams:
 
 def test_add_class_with_required_parameters(parser):
     parser.add_class_arguments(RequiredParams, "model")
-    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--config", action="config")
 
     for args in [
         [],
@@ -616,7 +615,7 @@ def test_add_function_group_config(parser, tmp_cwd):
 
 
 def test_add_function_group_config_within_config(parser, tmp_cwd):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_function_arguments(func, "func")
 
     cfg_path = Path("subdir", "config.yaml")
@@ -635,7 +634,7 @@ def func_param_conflict(p1: int, cfg: dict):
 
 
 def test_add_function_param_conflict(parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     with pytest.raises(ValueError) as ctx:
         parser.add_function_arguments(func_param_conflict)
     ctx.match("Unable to add parameter 'cfg' from")

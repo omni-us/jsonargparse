@@ -17,7 +17,6 @@ import pytest
 import yaml
 
 from jsonargparse import (
-    ActionConfigFile,
     ArgumentError,
     ArgumentParser,
     Namespace,
@@ -214,7 +213,7 @@ class MergeInitArgs(Calendar):
 
 
 def test_subclass_merge_init_args_global_config(parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--cal", type=Calendar)
 
     config1 = {
@@ -247,7 +246,7 @@ def test_subclass_init_args_without_class_path(parser):
 
 
 def test_subclass_init_args_without_class_path_dict(parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--cal", type=Calendar)
     config = {"cal": {"class_path": "TextCalendar", "init_args": {"firstweekday": 2}}}
 
@@ -307,7 +306,7 @@ def test_subclass_in_subcommand_with_global_default_config_file(parser, subparse
     default_path.write_text("fit:\n  model:\n    foo: 123")
 
     parser.default_config_files = [default_path]
-    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--config", action="config")
     subcommands = parser.add_subcommands()
 
     subparser.add_class_arguments(DefaultConfigSubcommands, nested_key="model")
@@ -633,7 +632,7 @@ class Model:
 
 
 def test_subclass_dict_parameter_deep(parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_class_arguments(Model, "model")
 
     config = f"""model:
@@ -942,7 +941,7 @@ class OverrideSub2(OverrideBase):
 
 def test_subclass_discard_init_args_config_with_default(parser, logger):
     parser.logger = logger
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--s", type=OverrideBase, default=lazy_instance(OverrideSub1, s1="v1"))
 
     config = {"s": {"class_path": "OverrideSub2", "init_args": {"s2": "v2"}}}
@@ -1036,7 +1035,7 @@ class ConfigDiscardMain:
 @pytest.mark.parametrize("method", ["class", "subclass"])
 def test_discard_init_args_config_nested(parser, logger, tmp_cwd, method):
     parser.logger = logger
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
 
     subconfig = {
         "sub": {
@@ -1090,7 +1089,7 @@ class DictDiscardMain:
 
 def test_subclass_discard_init_args_dict_looks_like_subclass(parser, logger, tmp_cwd):
     parser.logger = logger
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_subclass_arguments(DictDiscardMain, "main")
     parser.set_defaults(main=lazy_instance(DictDiscardMain))
 
@@ -1146,7 +1145,7 @@ def test_subclass_unresolved_parameters(parser, subtests):
         dict_kwargs={"p3": 7.0, "p4": "x"},
     )
 
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--cls", type=UnresolvedParams)
 
     with subtests.test("args"):
@@ -1211,7 +1210,7 @@ def test_add_subclass_lazy_default(parser):
     assert cfg.cal.class_path == "calendar.Calendar"
     assert cfg.cal.init_args.firstweekday == 4
 
-    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--config", action="config")
     parser.set_defaults({"cal": lazy_instance(Calendar, firstweekday=5)})
     out = get_parse_args_stdout(parser, ["--print_config"])
     assert "class_path: calendar.Calendar" in out
@@ -1352,7 +1351,7 @@ class PrintConfig:
 
 
 def test_subclass_print_config(parser):
-    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--config", action="config")
     parser.add_class_arguments(PrintConfig, "g")
 
     out = get_parse_args_stdout(parser, ["--g.a1=calendar.Calendar", "--print_config"])
@@ -1379,7 +1378,7 @@ class PrintConfigRequiredSub(PrintConfigRequiredBase):
 
 
 def test_subclass_print_config_required_parameters_as_null(parser):
-    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--config", action="config")
     parser.add_class_arguments(PrintConfigRequired, "class")
     parser.add_subclass_arguments(PrintConfigRequiredBase, "subclass")
 
@@ -1453,7 +1452,7 @@ def test_subclass_invalid_init_args_in_yaml(parser):
         class_path: calendar.Calendar
         init_args:
     """
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--cal", type=Calendar)
     pytest.raises(ArgumentError, lambda: parser.parse_args([f"--cfg={value}"]))
 
@@ -1545,7 +1544,7 @@ class ErrorIndentation2:
 
 def test_subclass_error_indentation_in_union_invalid_value(parser):
     parser.add_argument("--union", type=Union[str, ErrorIndentation2])
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     config = {"union": [{"class_path": "ErrorIndentation2", "init_args": {"val": "x"}}]}
     err = get_parse_args_stderr(parser, [f"--cfg={config}"])
     expected = textwrap.dedent(

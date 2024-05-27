@@ -6,7 +6,7 @@ from importlib.util import find_spec
 
 import pytest
 
-from jsonargparse import ActionConfigFile, ActionJsonSchema, ArgumentError
+from jsonargparse import ActionJsonSchema, ArgumentError
 from jsonargparse_tests.conftest import get_parser_help
 
 
@@ -84,7 +84,7 @@ def parser_schema_object(parser):
         "additionalProperties": False,
     }
     parser.add_argument("--op2", action=ActionJsonSchema(schema=schema_object, with_meta=False))
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     return parser
 
 
@@ -136,7 +136,7 @@ def test_schema_oneof_add_defaults(parser):
         ]
     }
     parser.add_argument("--data", action=ActionJsonSchema(schema=schema))
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
 
     cfg = parser.parse_args(['--data={"kind": "x"}'])
     assert cfg.data == {"kind": "x", "pc": 1, "px": "dx"}

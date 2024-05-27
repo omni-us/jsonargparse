@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from jsonargparse import ActionConfigFile, ArgumentError, Namespace
+from jsonargparse import ArgumentError, Namespace
 from jsonargparse.typing import Path_drw, Path_fc, Path_fr, path_type
 from jsonargparse_tests.conftest import get_parser_help
 
@@ -48,7 +48,7 @@ def test_path_fr_already_registered():
 
 
 def test_paths_config_relative_absolute(parser, tmp_cwd):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--file", type=Path_fr)
     parser.add_argument("--dir", type=Path_drw)
 

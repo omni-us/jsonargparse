@@ -13,7 +13,6 @@ import pytest
 
 from jsonargparse import (
     CLI,
-    ActionConfigFile,
     ActionJsonnet,
     ArgumentError,
     ArgumentParser,
@@ -340,7 +339,7 @@ def test_ActionPath(tmp_cwd):
         output_file.write("file: " + rel_yaml_file + "\ndir: " + str(tmp_cwd) + "\n")
 
     parser = ArgumentParser(exit_on_error=False)
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     with catch_warnings(record=True) as w:
         parser.add_argument("--file", action=ActionPath(mode="fr"))
     assert_deprecation_warn(

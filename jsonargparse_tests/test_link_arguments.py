@@ -9,7 +9,6 @@ import pytest
 import yaml
 
 from jsonargparse import (
-    ActionConfigFile,
     ArgumentError,
     ArgumentParser,
     Namespace,
@@ -30,7 +29,7 @@ def test_on_parse_help_target_lacking_type_and_help(parser):
 
 
 def test_on_parse_shallow_print_config(parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--a", type=int, default=0)
     parser.add_argument("--b", type=str)
     parser.link_arguments("a", "b")
@@ -47,7 +46,7 @@ def test_on_parse_subcommand_failing_compute_fn(parser, subparser, subtests):
     subparser.add_argument("--a", type=int, default=0)
     subparser.add_argument("--b", type=str)
     subparser.link_arguments("a", "b", to_str)
-    subparser.add_argument("--config", action=ActionConfigFile)
+    subparser.add_argument("--config", action="config")
     subcommands = parser.add_subcommands()
     subcommands.add_subcommand("sub", subparser)
 
@@ -89,7 +88,7 @@ def test_on_parse_compute_fn_single_arguments(parser, subtests):
 
 
 def test_on_parse_compute_fn_subclass_spec(parser, subtests):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--cal1", type=Calendar, default=lazy_instance(TextCalendar))
     parser.add_argument("--cal2", type=Calendar, default=lazy_instance(Calendar))
     parser.link_arguments(
@@ -765,7 +764,7 @@ def test_on_instantiate_within_deep_subclass(parser, caplog):
     parser.logger = {"level": "DEBUG"}
     parser.logger.handlers = [caplog.handler]
 
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--model", type=WithinDeepModel)
     parser.link_arguments(
         "model.encoder.output_channels",
@@ -799,7 +798,7 @@ def test_on_instantiate_within_deeper_subclass(parser, caplog):
     parser.logger = {"level": "DEBUG"}
     parser.logger.handlers = [caplog.handler]
 
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_subclass_arguments(WithinDeeperSystem, "system")
     parser.link_arguments(
         "system.model.encoder.output_channels",
@@ -1006,7 +1005,7 @@ def test_on_instantiate_linking_deep_targets(parser, tmp_path):
     config_path = tmp_path / "config.yaml"
     config_path.write_text(yaml.safe_dump(config))
 
-    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--config", action="config")
     parser.add_subclass_arguments(DeepBSuper, nested_key="b", required=True)
     parser.add_class_arguments(DeepC, nested_key="c")
     parser.link_arguments("c", "b.init_args.a.init_args.d", compute_fn=DeepC.fn, apply_on="instantiate")
@@ -1038,7 +1037,7 @@ def test_on_instantiate_linking_deep_targets_mapping(parser, tmp_path):
     config_path = tmp_path / "config.yaml"
     config_path.write_text(yaml.safe_dump(config))
 
-    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--config", action="config")
     parser.add_subclass_arguments(DeepBSuper, nested_key="b", required=True)
     parser.add_class_arguments(DeepC, nested_key="c")
     parser.link_arguments(

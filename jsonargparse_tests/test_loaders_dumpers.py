@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from jsonargparse import ActionConfigFile, ArgumentParser, set_dumper, set_loader
+from jsonargparse import ArgumentParser, set_dumper, set_loader
 from jsonargparse._common import parser_context
 from jsonargparse._loaders_dumpers import load_value, loaders, yaml_dump
 from jsonargparse._optionals import omegaconf_support
@@ -49,7 +49,7 @@ def test_parser_mode_omegaconf_interpolation():
     parser.add_argument("--server.host", type=str)
     parser.add_argument("--server.port", type=int)
     parser.add_argument("--client.url", type=str)
-    parser.add_argument("--config", action=ActionConfigFile)
+    parser.add_argument("--config", action="config")
 
     config = {
         "server": {
@@ -67,7 +67,7 @@ def test_parser_mode_omegaconf_interpolation():
 
 @pytest.mark.skipif(not omegaconf_support, reason="omegaconf package is required")
 def test_parser_mode_omegaconf_interpolation_in_subcommands(parser, subparser):
-    subparser.add_argument("--config", action=ActionConfigFile)
+    subparser.add_argument("--config", action="config")
     subparser.add_argument("--source", type=str)
     subparser.add_argument("--target", type=str)
 

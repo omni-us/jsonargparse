@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.30.0 (2024-06-??)
+--------------------
+
+Added
+^^^^^
+- Allow adding config argument with ``action="config"`` avoiding need to import
+  action class.
+
+
 v4.29.0 (2024-05-24)
 --------------------
 

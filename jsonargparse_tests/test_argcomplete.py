@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from jsonargparse import ActionConfigFile, ActionJsonSchema, ActionYesNo
+from jsonargparse import ActionJsonSchema, ActionYesNo
 from jsonargparse._common import parser_context
 from jsonargparse.typing import Email, Path_fr, PositiveFloat, PositiveInt
 from jsonargparse_tests.conftest import (
@@ -102,7 +102,7 @@ def test_stderr_instruction_simple_types(parser, value, expected):
 
 @skip_if_not_posix
 def test_action_config_file(parser, tmp_cwd):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     Path("file1").touch()
     Path("config.yaml").touch()
 

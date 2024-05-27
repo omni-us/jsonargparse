@@ -31,7 +31,7 @@ from warnings import catch_warnings
 import pytest
 import yaml
 
-from jsonargparse import ActionConfigFile, ArgumentError, Namespace, lazy_instance
+from jsonargparse import ArgumentError, Namespace, lazy_instance
 from jsonargparse._typehints import (
     ActionTypeHint,
     Literal,
@@ -64,7 +64,7 @@ def test_add_argument_failure_given_type_and_action(parser):
 
 def test_str_no_strip(parser):
     parser.add_argument("--op", type=Optional[str])
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     assert "  " == parser.parse_args(["--op", "  "]).op
     assert "" == parser.parse_args(["--op", ""]).op
     assert " abc " == parser.parse_args(["--op= abc "]).op
@@ -373,7 +373,7 @@ def test_list_append_default_empty(parser):
 
 
 def test_list_append_config(parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--val", type=List[int], default=[1, 2])
     assert [3, 4] == parser.parse_args(["--cfg", "val: [3, 4]"]).val
     assert [1, 2, 3] == parser.parse_args(["--cfg", "val+: 3"]).val
@@ -455,7 +455,7 @@ def test_dict_without_arg(parser):
 
 def test_dict_int_keys(parser):
     parser.add_argument("--d", type=Dict[int, str])
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     cfg = {"d": {1: "val1", 2: "val2"}}
     assert cfg["d"] == parser.parse_args(["--cfg", str(cfg)]).d
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--cfg={"d": {"a": "b"}}']))

@@ -132,7 +132,7 @@ def test_parse_args_positional_nargs_plus(parser):
 def test_parse_args_positional_config(parser):
     parser.add_argument("pos1")
     parser.add_argument("pos2", nargs="+")
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     cfg = parser.parse_args(["--cfg", '{"pos2": ["v2", "v3"]}', "v1"])
     assert cfg == Namespace(cfg=[None], pos1="v1", pos2=["v2", "v3"])
 
@@ -147,7 +147,7 @@ def test_parse_args_choices(parser):
 
 
 def test_parse_args_choices_config(parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--ch1", choices="ABC")
     parser.add_argument("--ch2", type=str, choices=["v1", "v2"])
     assert parser.parse_args(["--cfg=ch1: B"]).ch1 == "B"
@@ -158,7 +158,7 @@ def test_parse_args_choices_config(parser):
 
 def test_parse_args_non_hashable_choice(parser):
     choices = {"A": 1, "B": 2}
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--ch1", choices=choices.keys())
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--cfg=ch1: [1,2]"])
@@ -209,7 +209,7 @@ def test_parse_env_nested():
 
 def test_parse_env_config(parser):
     parser.env_prefix = "app"
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--l1.num", type=int)
     cfg = parser.parse_env({"APP_CFG": '{"l1": {"num": 1}}'})
     assert cfg.cfg == [None]
@@ -344,7 +344,7 @@ def test_precedence_of_sources(tmp_cwd, subtests):
     parser = ArgumentParser(prog="app", default_env=True, default_config_files=[default_config_file])
     parser.add_argument("--op1", default="from parser default")
     parser.add_argument("--op2")
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
 
     input1_config_file.write_text("op1: from input config file")
     input2_config_file.write_text("op2: unused")
@@ -435,7 +435,7 @@ def test_non_positional_required(parser, subtests):
         pytest.raises(ArgumentError, lambda: parser.parse_args(["--req1", "val1"]))
 
     with subtests.test("parse_args config"):
-        parser.add_argument("--cfg", action=ActionConfigFile)
+        parser.add_argument("--cfg", action="config")
         cfg = parser.parse_args(["--cfg", '{"req1":"val1","lev1":{"req2":"val2"}}'])
         assert cfg == Namespace(cfg=[None], lev1=Namespace(req2="val2"), req1="val1")
 
@@ -507,7 +507,7 @@ def test_dump_order(parser, subtests):
 
 @pytest.fixture
 def parser_schema_jsonnet(parser, example_parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--subparser", action=ActionParser(parser=example_parser))
     if jsonschema_support:
         schema = {
@@ -696,7 +696,7 @@ def test_save_fsspec(example_parser):
 @pytest.fixture
 def print_parser(parser, subparser):
     parser.description = "cli tool"
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--v0", help=SUPPRESS, default="0")
     parser.add_argument("--v1", help="Option v1.", default=1)
     parser.add_argument("--g1.v2", help="Option v2.", default="2")
@@ -885,10 +885,17 @@ def test_set_get_defaults_multiple(parser, subparser, subtests):
         pytest.raises(KeyError, lambda: parser.get_default("v4"))
 
 
-def test_add_multiple_config_arguments_error(parser):
-    parser.add_argument("--cfg1", action=ActionConfigFile)
+def test_add_config_action_class(parser):
+    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--op", type=int)
+    assert parser.parse_args(['--cfg={"op": 2}']).op == 2
+
+
+@pytest.mark.parametrize("action", [ActionConfigFile, "config"])
+def test_add_multiple_config_arguments_error(parser, action):
+    parser.add_argument("--cfg1", action=action)
     with pytest.raises(ValueError) as ctx:
-        parser.add_argument("--cfg2", action=ActionConfigFile)
+        parser.add_argument("--cfg2", action=action)
     ctx.match("only allowed to have a single")
 
 

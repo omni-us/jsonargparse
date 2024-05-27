@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from jsonargparse import (
-    ActionConfigFile,
     ActionParser,
     ActionYesNo,
     ArgumentError,
@@ -24,7 +23,7 @@ def test_action_config_file(parser, tmp_cwd):
     abs_yaml_file.parent.mkdir()
     abs_yaml_file.write_text("val: yaml\n")
 
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     parser.add_argument("--val")
 
     cfg = parser.parse_args([f"--cfg={abs_yaml_file}", f"--cfg={rel_yaml_file}", "--cfg", "val: arg"])
@@ -36,7 +35,7 @@ def test_action_config_file(parser, tmp_cwd):
 
 
 def test_action_config_file_set_defaults_error(parser):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     with pytest.raises(ValueError) as ctx:
         parser.set_defaults(cfg="config.yaml")
     ctx.match("does not accept a default, use default_config_files")
@@ -44,18 +43,18 @@ def test_action_config_file_set_defaults_error(parser):
 
 def test_action_config_file_add_argument_default_error(parser):
     with pytest.raises(ValueError) as ctx:
-        parser.add_argument("--cfg", default="config.yaml", action=ActionConfigFile)
+        parser.add_argument("--cfg", default="config.yaml", action="config")
     ctx.match("does not accept a default, use default_config_files")
 
 
 def test_action_config_file_nested_error(parser):
     with pytest.raises(ValueError) as ctx:
-        parser.add_argument("--nested.cfg", action=ActionConfigFile)
+        parser.add_argument("--nested.cfg", action="config")
     ctx.match("ActionConfigFile must be a top level option")
 
 
 def test_action_config_file_argument_errors(parser, tmp_cwd):
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", '"""']))
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg=not-exist"]))
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", '{"k":"v"}']))
@@ -251,7 +250,7 @@ def test_action_parser_parse_args_subconfig_string(composed_parsers):
 
 def test_action_parser_parse_args_global_config(composed_parsers):
     parser, yaml_main = composed_parsers[:2]
-    parser.add_argument("--cfg", action=ActionConfigFile)
+    parser.add_argument("--cfg", action="config")
 
     expected = {"opt1": "opt1_yaml", "inner2": {"opt2": "opt2_yaml", "inner3": {"opt3": "opt3_yaml"}}}
     cfg = parser.parse_args([f"--cfg={yaml_main}"], with_meta=False)
