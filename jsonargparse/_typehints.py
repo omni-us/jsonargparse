@@ -461,12 +461,22 @@ class ActionTypeHint(Action):
             if _is_action_value_list(self):
                 return [
                     adapt_typehints(
-                        v, self._typehint, default=self.default, serialize=True, sub_add_kwargs=sub_add_kwargs
+                        v,
+                        self._typehint,
+                        default=self.default,
+                        serialize=True,
+                        sub_add_kwargs=sub_add_kwargs,
+                        logger=self.logger,
                     )
                     for v in value
                 ]
             return adapt_typehints(
-                value, self._typehint, default=self.default, serialize=True, sub_add_kwargs=sub_add_kwargs
+                value,
+                self._typehint,
+                default=self.default,
+                serialize=True,
+                sub_add_kwargs=sub_add_kwargs,
+                logger=self.logger,
             )
 
     def __call__(self, *args, **kwargs):
@@ -525,6 +535,7 @@ class ActionTypeHint(Action):
                     "prev_val": prev_val,
                     "append": append,
                     "enable_path": enable_path,
+                    "logger": self.logger,
                 }
                 try:
                     with change_to_path_dir(config_path):
@@ -563,7 +574,12 @@ class ActionTypeHint(Action):
         sub_add_kwargs = getattr(self, "sub_add_kwargs", {})
         for num, val in enumerate(value):
             value[num] = adapt_typehints(
-                val, self._typehint, default=self.default, instantiate_classes=True, sub_add_kwargs=sub_add_kwargs
+                val,
+                self._typehint,
+                default=self.default,
+                instantiate_classes=True,
+                sub_add_kwargs=sub_add_kwargs,
+                logger=self.logger,
             )
         return value if islist else value[0]
 
@@ -577,7 +593,10 @@ class ActionTypeHint(Action):
         parser = parent_parser.get()
         parser = type(parser)(exit_on_error=False, logger=parser.logger)
         remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
-        parser.add_class_arguments(val_class, **kwargs)
+        if inspect.isclass(val_class):
+            parser.add_class_arguments(val_class, **kwargs)
+        else:
+            parser.add_function_arguments(val_class, **kwargs)
 
         if "linked_targets" in kwargs and parser.required_args:
             for key in kwargs["linked_targets"]:
@@ -656,6 +675,7 @@ def adapt_typehints(
     enable_path=False,
     sub_add_kwargs=None,
     default=None,
+    logger=None,
 ):
     if type(val) in {str, bool, int, float} and val == default:
         return val
@@ -667,6 +687,7 @@ def adapt_typehints(
         "append": append,
         "enable_path": enable_path,
         "sub_add_kwargs": sub_add_kwargs or {},
+        "logger": logger,
     }
     subtypehints = getattr(typehint, "__args__", None)
     typehint_origin = get_typehint_origin(typehint) or typehint
@@ -944,7 +965,16 @@ def adapt_typehints(
             val_class = import_object(resolve_class_path_by_name(typehint, val["class_path"]))
             if isinstance(val_class, typehint):
                 return val_class
+            not_subclass = False
             if not is_subclass(val_class, typehint):
+                not_subclass = True
+                if not inspect.isclass(val_class) and callable(val_class):
+                    from ._postponed_annotations import get_return_type
+
+                    return_type = get_return_type(val_class, logger)
+                    if is_subclass(return_type, typehint):
+                        not_subclass = False
+            if not_subclass:
                 raise_unexpected_value(
                     f'Import path {val["class_path"]} does not correspond to a subclass of {typehint}'
                 )

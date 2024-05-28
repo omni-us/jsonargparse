@@ -320,6 +320,62 @@ def test_subclass_in_subcommand_with_global_default_config_file(parser, subparse
     assert cfg.fit.model.foo == 123
 
 
+# function instantiators
+
+
+class ClassMethodInstantiator:
+    def __init__(self, p1: int = 1, p2: bool = False):
+        self.p1 = p1
+        self.p2 = p2
+
+    @classmethod
+    def from_p1(cls, p1: int) -> "ClassMethodInstantiator":
+        return ClassMethodInstantiator(p1)
+
+
+def test_class_method_instantiator(parser):
+    parser.add_argument("--cls", type=ClassMethodInstantiator)
+    cfg = parser.parse_args([f"--cls={__name__}.ClassMethodInstantiator.from_p1", "--cls.p1=2"])
+    assert cfg.cls.class_path == f"{__name__}.ClassMethodInstantiator.from_p1"
+    assert cfg.cls.init_args == Namespace(p1=2)
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.cls, ClassMethodInstantiator)
+    assert init.cls.p1 == 2
+    assert init.cls.p2 is False
+
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args([f"--cls={__name__}.ClassMethodInstantiator.from_p1"])
+    ctx.match('Key "p1" is required')
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args([f"--cls={__name__}.ClassMethodInstantiator.from_p1", "--cls.p1=2", "--cls.p3=-"])
+    ctx.match("Key 'p3' is not expected")
+
+
+class FunctionInstantiator:
+    def __init__(self, p1: float = 0.0, p2: str = "-"):
+        self.p1 = p1
+        self.p2 = p2
+
+
+def function_instantiator(p2: str) -> FunctionInstantiator:
+    return FunctionInstantiator(1.0, p2)
+
+
+def test_function_instantiator(parser):
+    parser.add_argument("--cls", type=FunctionInstantiator)
+    cfg = parser.parse_args([f"--cls={__name__}.function_instantiator", "--cls.p2=y"])
+    assert cfg.cls.class_path == f"{__name__}.function_instantiator"
+    assert cfg.cls.init_args == Namespace(p2="y")
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.cls, FunctionInstantiator)
+    assert init.cls.p1 == 1.0
+    assert init.cls.p2 == "y"
+
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args([f"--cls={__name__}.function_instantiator", "--cls.p2=y", "--cls.p3=x"])
+    ctx.match("Key 'p3' is not expected")
+
+
 # importable instances
 
 

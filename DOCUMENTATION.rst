@@ -1968,6 +1968,12 @@ config file by specifying a path to it; and 3) by default sets a useful
     ``class_path`` and ``init_args`` if the corresponding parameter has type
     ``Any``, or when ``fail_untyped=False`` which defaults to type ``Any``.
 
+.. note::
+
+    It is also possible to provide to ``class_path`` a function that has as return
+    type a class. The accepted ``init_args`` would be the parameters of that
+    function.
+
 .. _sub-classes-command-line:
 
 Command line

@@ -19,6 +19,9 @@ Added
 ^^^^^
 - Allow adding config argument with ``action="config"`` avoiding need to import
   action class.
+- Allow providing a function with return type a class in ``class_path``
+  (`lightning#13613
+  <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__)
 
 
 v4.29.0 (2024-05-24)
