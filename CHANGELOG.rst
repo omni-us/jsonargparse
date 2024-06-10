@@ -23,6 +23,12 @@ Added
   (`lightning#13613
   <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__)
 
+Fixed
+^^^^^
+- Parsing incorrectly provides file content when type is a union with a
+  subclass, PathLike and string (`#516
+  <https://github.com/omni-us/jsonargparse/issues/516>`__).
+
 
 v4.29.0 (2024-05-24)
 --------------------

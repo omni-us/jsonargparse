@@ -198,7 +198,7 @@ class ActionTypeHint(Action):
                     subtypes = tuple(t for t, s in zip(typehint.__args__, subtype_supported) if s)
                     typehint = Union[subtypes]  # type: ignore[assignment]
             self._typehint = typehint
-            self._enable_path = False if is_optional(typehint, Path) else enable_path
+            self._enable_path = False if is_pathlike(typehint) else enable_path
         elif "_typehint" not in kwargs:
             raise ValueError("Expected typehint keyword argument.")
         else:
@@ -645,6 +645,12 @@ class ActionTypeHint(Action):
                 msg = "value not yet valid, "
             msg += "expected type " + type_to_str(self._typehint)
             return argcomplete_warn_redraw_prompt(prefix, msg)
+
+
+def is_pathlike(typehint) -> bool:
+    if get_typehint_origin(typehint) == Union:
+        return any(is_pathlike(t) for t in typehint.__args__)
+    return is_subclass(typehint, os.PathLike)
 
 
 def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: Optional[Exception] = None) -> NoReturn:
