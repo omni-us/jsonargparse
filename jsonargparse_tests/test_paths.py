@@ -4,7 +4,7 @@ import json
 import os
 from calendar import Calendar
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import pytest
 
@@ -237,17 +237,44 @@ def test_enable_path_list_path_fr_default_stdin(parser, tmp_cwd, mock_stdin, sub
         assert ["file1", "file2"] == [str(x) for x in cfg.list]
 
 
-class Data:
+class DataOptionalPath:
     def __init__(self, path: Optional[os.PathLike] = None):
         pass
 
 
-def test_enable_path_os_pathlike_subclass_parameter(parser, tmp_cwd):
+def test_enable_path_optional_pathlike_subclass_parameter(parser, tmp_cwd):
     data_path = Path("data.json")
     data_path.write_text('{"a": 1}')
 
-    parser.add_argument("--data", type=Data, enable_path=True)
+    parser.add_argument("--data", type=DataOptionalPath, enable_path=True)
 
-    cfg = parser.parse_args([f"--data={__name__}.Data", f"--data.path={data_path}"])
-    assert cfg.data.class_path == f"{__name__}.Data"
+    cfg = parser.parse_args([f"--data={__name__}.DataOptionalPath", f"--data.path={data_path}"])
+    assert cfg.data.class_path == f"{__name__}.DataOptionalPath"
     assert cfg.data.init_args == Namespace(path=str(data_path))
+
+
+class Base:
+    pass
+
+
+class DataUnionPath:
+    def __init__(self, path: Union[Base, os.PathLike, str] = ""):
+        pass
+
+
+def test_sub_configs_union_subclass_and_pathlike(parser, tmp_cwd):
+    data_path = Path("data.csv")
+    data_path.write_text("x\ny\n")
+    config = {
+        "data": {
+            "path": "data.csv",
+        }
+    }
+    config_path = Path("config.json")
+    config_path.write_text(json.dumps(config))
+
+    parser.add_class_arguments(DataUnionPath, "data", sub_configs=True)
+    parser.add_argument("--cfg", action="config")
+
+    cfg = parser.parse_args([f"--cfg={config_path}"])
+    assert cfg.data.path == str(data_path)
