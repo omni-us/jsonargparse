@@ -108,7 +108,7 @@ def is_classmethod(parent, component) -> bool:
 
 
 def is_lambda(value: Any) -> bool:
-    return callable(value) and value.__name__ == "<lambda>"
+    return callable(value) and getattr(value, "__name__", "") == "<lambda>"
 
 
 def ast_str(node):

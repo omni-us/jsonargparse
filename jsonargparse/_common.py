@@ -122,7 +122,7 @@ def get_unaliased_type(cls):
 def is_dataclass_like(cls) -> bool:
     if is_generic_class(cls):
         return is_dataclass_like(cls.__origin__)
-    if not inspect.isclass(cls):
+    if not inspect.isclass(cls) or cls is object:
         return False
     if is_final_class(cls):
         return True
