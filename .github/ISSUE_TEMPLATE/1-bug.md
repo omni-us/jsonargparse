@@ -21,28 +21,28 @@ running it gives. The following snippet templates might help:
 1. Using the CLI function
 
 ```python
-import jsonargparse
+from jsonargparse import CLI
 
 # Here define one or more functions or classes
 def func1(param1: int, ...):
     ...
 
 # Run the CLI providing the components
-jsonargparse.CLI([func1, ...], error_handler=None)
+CLI([func1, ...], exit_on_error=False)
 ```
 
 2. Manually constructing a parser
 
 ```python
-import jsonargparse
+from jsonargparse import ArgumentParser
 
-parser = jsonargparse.ArgumentParser(error_handler=None)
+parser = ArgumentParser(exit_on_error=False)
 # Here add to the parser only argument(s) relevant to the problem
 
 # If a yaml config is required, it can be included in the same snippet as follows:
 import yaml
 
-parser.add_argument("--config", action=jsonargparse.ActionConfigFile)
+parser.add_argument("--config", action="config")
 config = yaml.safe_dump(
     {
         "key1": "val1",
@@ -68,7 +68,7 @@ parser.instantiate_classes(result)
 
 <!-- Fill in the list below. -->
 
-- jsonargparse version (e.g., 4.8.0):
-- Python version (e.g., 3.9):
-- How jsonargparse was installed (e.g. `pip install jsonargparse[all]`):
-- OS (e.g., Linux):
+- jsonargparse version:
+- Python version:
+- How jsonargparse was installed:
+- OS:
