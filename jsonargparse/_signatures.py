@@ -26,9 +26,10 @@ from ._typehints import (
     ActionTypeHint,
     LazyInitBaseClass,
     callable_instances,
+    get_subclasses_from_type,
     is_optional,
 )
-from ._util import get_import_path, get_private_kwargs, iter_to_set_str
+from ._util import get_private_kwargs, iter_to_set_str
 from .typing import register_pydantic_type
 
 __all__ = [
@@ -510,8 +511,8 @@ class SignatureArguments(LoggerProperty):
             raise ValueError("Not allowed for dataclass-like classes.")
         if type(baseclass) is not tuple:
             baseclass = (baseclass,)  # type: ignore[assignment]
-        if not baseclass or not all(inspect.isclass(c) for c in baseclass):
-            raise ValueError(f"Expected 'baseclass' argument to be a class or a tuple of classes: {baseclass}")
+        if not baseclass or not all(ActionTypeHint.is_subclass_typehint(c, also_lists=True) for c in baseclass):
+            raise ValueError(f"Expected 'baseclass' to be a subclass type or a tuple of subclass types: {baseclass}")
 
         doc_group = None
         if len(baseclass) == 1:  # type: ignore[arg-type]
@@ -530,7 +531,7 @@ class SignatureArguments(LoggerProperty):
         if skip is not None:
             skip = {f"{nested_key}.init_args." + s for s in skip}
         param = ParamData(name=nested_key, annotation=Union[baseclass], component=baseclass)
-        str_baseclass = iter_to_set_str(get_import_path(x) for x in baseclass)
+        str_baseclass = iter_to_set_str(get_subclasses_from_type(param.annotation))
         kwargs.update(
             {
                 "metavar": metavar,
