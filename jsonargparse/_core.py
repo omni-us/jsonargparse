@@ -1326,12 +1326,14 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Returns:
             A new object with the merged configuration.
         """
-        cfg = cfg_to.clone()
+        cfg_from = cfg_from.clone()
+        cfg_to = cfg_to.clone()
         with parser_context(parent_parser=self):
-            ActionTypeHint.discard_init_args_on_class_path_change(self, cfg, cfg_from)
-        cfg.update(cfg_from)
-        ActionTypeHint.apply_appends(self, cfg)
-        return cfg
+            ActionTypeHint.discard_init_args_on_class_path_change(self, cfg_to, cfg_from)
+        ActionTypeHint.delete_init_args_required_none(cfg_from, cfg_to)
+        cfg_to.update(cfg_from)
+        ActionTypeHint.apply_appends(self, cfg_to)
+        return cfg_to
 
     def _check_value_key(self, action: argparse.Action, value: Any, key: str, cfg: Optional[Namespace]) -> Any:
         """Checks the value for a given action.

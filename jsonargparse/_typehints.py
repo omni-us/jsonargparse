@@ -397,6 +397,21 @@ class ActionTypeHint(Action):
             num += 1
 
     @staticmethod
+    def delete_init_args_required_none(cfg_from, cfg_to):
+        for key, val in cfg_from.items(branches=True):
+            if isinstance(val, Namespace) and val.get("class_path") and val.get("init_args"):
+                skip_keys = [
+                    k
+                    for k, v in val.init_args.__dict__.items()
+                    if v is None and cfg_to.get(f"{key}.init_args.{k}") is not None
+                ]
+                if skip_keys:
+                    parser = ActionTypeHint.get_class_parser(val.class_path)
+                    for skip_key in skip_keys:
+                        if skip_key in parser.required_args:
+                            del val.init_args[skip_key]
+
+    @staticmethod
     @contextmanager
     def subclass_arg_context(parser):
         subclass_arg_parser.set(parser)
