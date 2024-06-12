@@ -30,7 +30,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/516>`__).
 - ``--print_config`` failing in some cases (`#517
   <https://github.com/omni-us/jsonargparse/issues/517>`__).
-- Callable that returns class not using required parameter default from lambda.
+- Callable that returns class not using required parameter default from lambda
+  (`#523 <https://github.com/omni-us/jsonargparse/pull/523>`__).
 
 
 v4.29.0 (2024-05-24)
