@@ -397,7 +397,7 @@ class ActionTypeHint(Action):
             num += 1
 
     @staticmethod
-    def delete_init_args_required_none(parser, cfg_from, cfg_to):
+    def delete_init_args_required_none(cfg_from, cfg_to):
         for key, val in cfg_from.items(branches=True):
             if isinstance(val, Namespace) and val.get("class_path") and val.get("init_args"):
                 skip_keys = [

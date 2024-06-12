@@ -1330,7 +1330,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         cfg_to = cfg_to.clone()
         with parser_context(parent_parser=self):
             ActionTypeHint.discard_init_args_on_class_path_change(self, cfg_to, cfg_from)
-        ActionTypeHint.delete_init_args_required_none(self, cfg_from, cfg_to)
+        ActionTypeHint.delete_init_args_required_none(cfg_from, cfg_to)
         cfg_to.update(cfg_from)
         ActionTypeHint.apply_appends(self, cfg_to)
         return cfg_to
