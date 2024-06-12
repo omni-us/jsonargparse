@@ -816,9 +816,10 @@ class StepLR:
 
 
 class ReduceLROnPlateau:
-    def __init__(self, optimizer: Optimizer, monitor: str):
+    def __init__(self, optimizer: Optimizer, monitor: str, factor: float = 0.1):
         self.optimizer = optimizer
         self.monitor = monitor
+        self.factor = factor
 
 
 def test_callable_args_return_type_union_of_classes(parser, subtests):
@@ -846,7 +847,7 @@ def test_callable_args_return_type_union_of_classes(parser, subtests):
         }
         cfg = parser.parse_args([f"--scheduler={value}"])
         assert f"{__name__}.ReduceLROnPlateau" == cfg.scheduler.class_path
-        assert Namespace(monitor="loss") == cfg.scheduler.init_args
+        assert Namespace(monitor="loss", factor=0.1) == cfg.scheduler.init_args
         init = parser.instantiate_classes(cfg)
         scheduler = init.scheduler(optimizer)
         assert isinstance(scheduler, ReduceLROnPlateau)
@@ -946,6 +947,40 @@ def test_callable_zero_args_return_type_class(parser):
     activation = init.model.activation()
     assert isinstance(activation, LeakyReLU)
     assert activation.negative_slope == 0.05
+
+
+class ModelRequiredCallableArg:
+    def __init__(
+        self,
+        scheduler: Callable[[Optimizer], ReduceLROnPlateau] = lambda o: ReduceLROnPlateau(o, monitor="acc"),
+    ):
+        self.scheduler = scheduler
+
+
+def test_callable_return_class_required_arg_from_default(parser):
+    parser.add_argument("--cfg", action="config")
+    parser.add_argument("--model", type=ModelRequiredCallableArg)
+
+    cfg = parser.parse_args(["--model=ModelRequiredCallableArg"])
+    assert cfg.model.init_args.scheduler.class_path == f"{__name__}.ReduceLROnPlateau"
+    assert cfg.model.init_args.scheduler.init_args == Namespace(monitor="acc", factor=0.1)
+
+    config = {
+        "model": {
+            "class_path": f"{__name__}.ModelRequiredCallableArg",
+            "init_args": {
+                "scheduler": {
+                    "class_path": f"{__name__}.ReduceLROnPlateau",
+                    "init_args": {
+                        "factor": 0.5,
+                    },
+                },
+            },
+        }
+    }
+    cfg = parser.parse_args([f"--cfg={config}"])
+    assert cfg.model.init_args.scheduler.class_path == f"{__name__}.ReduceLROnPlateau"
+    assert cfg.model.init_args.scheduler.init_args == Namespace(monitor="acc", factor=0.5)
 
 
 # lazy_instance tests
