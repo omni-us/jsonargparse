@@ -22,6 +22,9 @@ Added
 - Allow providing a function with return type a class in ``class_path``
   (`lightning#13613
   <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__)
+- Support for ``Protocol`` types only accepting exact matching signature of
+  public methods (`#520
+  <https://github.com/omni-us/jsonargparse/issues/520>`__).
 
 Fixed
 ^^^^^

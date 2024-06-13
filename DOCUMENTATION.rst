@@ -421,6 +421,10 @@ Some notes about this support are:
   :py:meth:`.ArgumentParser.instantiate_classes` can be used to instantiate all
   classes in a config object. For more details see :ref:`sub-classes`.
 
+- ``Protocol`` types are also supported the same as sub-classes. The protocols
+  are not required to be ``runtime_checkable``. But the accepted classes must
+  match exactly the signature of the protocol's public methods.
+
 - ``dataclasses`` are supported even when nested. Final classes, attrs'
   ``define`` decorator, and pydantic's ``dataclass`` decorator and ``BaseModel``
   classes are supported and behave like standard dataclasses. For more details
