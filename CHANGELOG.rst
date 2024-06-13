@@ -23,8 +23,8 @@ Added
   (`lightning#13613
   <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__)
 - Support for ``Protocol`` types only accepting exact matching signature of
-  public methods (`#520
-  <https://github.com/omni-us/jsonargparse/issues/520>`__).
+  public methods (`#526
+  <https://github.com/omni-us/jsonargparse/pull/526>`__).
 
 Fixed
 ^^^^^

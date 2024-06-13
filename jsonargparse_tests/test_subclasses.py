@@ -23,7 +23,8 @@ from jsonargparse import (
     Namespace,
     lazy_instance,
 )
-from jsonargparse._typehints import Protocol, implements_protocol, is_instance_or_supports_protocol
+from jsonargparse._optionals import typing_extensions_import
+from jsonargparse._typehints import implements_protocol, is_instance_or_supports_protocol
 from jsonargparse.typing import final
 from jsonargparse_tests.conftest import (
     capture_logs,
@@ -32,6 +33,8 @@ from jsonargparse_tests.conftest import (
     get_parser_help,
     source_unavailable,
 )
+
+Protocol = typing_extensions_import("Protocol")
 
 
 @pytest.mark.parametrize("type", [Calendar, Optional[Calendar]])
@@ -1375,9 +1378,8 @@ def test_subclass_signature_instance_default(parser):
 # protocol tests
 
 
-class Interface(Protocol):
-    def predict(self, items: List[float]) -> List[float]:  # type: ignore[empty-body]
-        ...
+class Interface(Protocol):  # type: ignore[valid-type,misc]
+    def predict(self, items: List[float]) -> List[float]: ...  # type: ignore[empty-body]
 
 
 class ImplementsInterface:

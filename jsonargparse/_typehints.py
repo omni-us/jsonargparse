@@ -89,7 +89,6 @@ __all__ = ["lazy_instance"]
 
 
 Literal = typing_extensions_import("Literal")
-Protocol = typing_extensions_import("Protocol")
 
 
 root_types = {
