@@ -32,6 +32,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/517>`__).
 - Callable that returns class not using required parameter default from lambda
   (`#523 <https://github.com/omni-us/jsonargparse/pull/523>`__).
+- Failing to parse list of dataclasses with nested optional dataclass (`#527
+  <https://github.com/omni-us/jsonargparse/pull/527>`__).
 
 
 v4.29.0 (2024-05-24)

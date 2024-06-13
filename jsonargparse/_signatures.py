@@ -103,7 +103,7 @@ class SignatureArguments(LoggerProperty):
             prefix = nested_key + "." if nested_key else ""
             defaults = default.lazy_get_init_args()
             if defaults:
-                defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
+                defaults = {prefix + k: v for k, v in defaults.__dict__.items() if k not in skip}
                 self.set_defaults(**defaults)  # type: ignore[attr-defined]
 
         return added_args

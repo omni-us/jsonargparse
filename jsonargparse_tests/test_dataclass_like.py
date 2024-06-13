@@ -186,6 +186,22 @@ def test_add_class_optional_without_default(parser):
     assert parser.parse_args(["--param=null"]) == Namespace(param=None)
 
 
+@dataclasses.dataclass
+class ListOptionalA:
+    x: int
+
+
+@dataclasses.dataclass
+class ListOptionalB:
+    a: Optional[ListOptionalA] = None
+
+
+def test_list_nested_optional_dataclass(parser):
+    parser.add_argument("--b", type=List[ListOptionalB])
+    cfg = parser.parse_args(['--b=[{"a":{"x":1}}]'])
+    assert cfg.b == [Namespace(a=Namespace(x=1))]
+
+
 def test_add_argument_dataclass_type(parser):
     parser.add_argument("--b", type=DataClassB, default=DataClassB(b1=7.0))
     cfg = parser.get_defaults()
