@@ -263,8 +263,8 @@ def test_tuple_without_arg(parser):
     parser.add_argument("--tuple", type=tuple)
     cfg = parser.parse_args(['--tuple=[1, "a", True]'])
     assert (1, "a", True) == cfg.tuple
-    help_str = get_parser_help(parser)
-    assert "--tuple [ITEM,...]  (type: tuple, default: null)" in help_str
+    help_str = get_parser_help(parser, strip=True)
+    assert "--tuple [ITEM,...] (type: tuple, default: null)" in help_str
 
 
 def test_tuples_nested(parser):
@@ -296,8 +296,8 @@ def test_tuple_union(parser, tmp_cwd):
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a", "b", 5]']))
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple={"a":1, "b":"2"}']))
-    help_str = get_parser_help(parser)
-    assert "--tuple [ITEM,...]  (type: Tuple[Union[int, EnumABC], Path_fc, NotEmptyStr], default: null)" in help_str
+    help_str = get_parser_help(parser, strip=True)
+    assert "--tuple [ITEM,...] (type: Tuple[Union[int, EnumABC], Path_fc, NotEmptyStr], default: null)" in help_str
 
 
 # list tests

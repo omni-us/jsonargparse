@@ -58,9 +58,7 @@ from ._loaders_dumpers import (
 )
 from ._namespace import Namespace
 from ._optionals import (
-    argcomplete_warn_redraw_prompt,
     get_alias_target,
-    get_files_completer,
     is_alias_type,
     is_annotated,
     is_annotated_validator,
@@ -635,6 +633,8 @@ class ActionTypeHint(Action):
 
     def completer(self, prefix, **kwargs):
         """Used by argcomplete, validates value and shows expected type."""
+        from ._completions import argcomplete_warn_redraw_prompt, get_files_completer
+
         if self.choices:
             return [str(c) for c in self.choices]
         elif self._typehint == bool:
