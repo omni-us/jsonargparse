@@ -33,14 +33,6 @@ def skip_if_wsl_message():
 
 
 @pytest.fixture(autouse=True)
-def experimental_warning():
-    with catch_warnings(record=True) as w:
-        yield
-    if find_spec("shtab"):
-        assert "support is experimental" in str(w[0].message)
-
-
-@pytest.fixture(autouse=True)
 def term_env_var():
     with patch.dict("os.environ", {"TERM": "xterm-256color", "COLUMNS": "200"}):
         yield
@@ -51,9 +43,16 @@ def parser() -> ArgumentParser:
     return ArgumentParser(exit_on_error=False, prog="tool")
 
 
+def get_shtab_script(parser, shell):
+    with catch_warnings(record=True) as w:
+        shtab_script = get_parse_args_stdout(parser, [f"--print_shtab={shell}"])
+    assert "support is experimental" in str(w[0].message)
+    return shtab_script
+
+
 def assert_bash_typehint_completions(subtests, shtab_script, completions):
     if isinstance(shtab_script, ArgumentParser):
-        shtab_script = get_parse_args_stdout(shtab_script, ["--print_shtab=bash"])
+        shtab_script = get_shtab_script(shtab_script, "bash")
     with tempfile.TemporaryDirectory() as tmpdir:
         shtab_script_path = Path(tmpdir) / "comp.sh"
         shtab_script_path.write_text(shtab_script)
@@ -165,27 +164,27 @@ def test_bash_union(parser, subtests):
 
 def test_bash_config(parser):
     parser.add_argument("--cfg", action="config")
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     assert "_cfg_COMPGEN=_shtab_compgen_files" in shtab_script
 
 
 def test_bash_dir(parser):
     parser.add_argument("--path", type=Path_drw)
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     assert "_path_COMPGEN=_shtab_compgen_dirs" in shtab_script
 
 
 @pytest.mark.parametrize("path_type", [Path_fr, PathLike, Path, Union[PathLike, str]])
 def test_bash_file(parser, path_type):
     parser.add_argument("--path", type=path_type)
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     assert "_path_COMPGEN=_shtab_compgen_files" in shtab_script
 
 
 @pytest.mark.parametrize("path_type", [Path_fr, PathLike, Path, Union[Union[PathLike, str], dict]])
 def test_bash_optional_file(parser, path_type):
     parser.add_argument("--path", type=Optional[path_type])
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     assert "_path_COMPGEN=_shtab_compgen_files" in shtab_script
 
 
@@ -206,7 +205,7 @@ class SubB(Base):
 
 def test_bash_subclasses_help(parser):
     parser.add_argument("--cls", type=Base)
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     assert "'--cls.help' '--cls' '--cls.p1' '--cls.p2' '--cls.p3'" in shtab_script
     classes = f"'{__name__}.Base' '{__name__}.SubA' '{__name__}.SubB'"
     assert f"_cls_help_choices=({classes})" in shtab_script
@@ -214,7 +213,7 @@ def test_bash_subclasses_help(parser):
 
 def test_bash_subclasses(parser, subtests):
     parser.add_argument("--cls", type=Base)
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     classes = f"{__name__}.Base {__name__}.SubA {__name__}.SubB".split()
     assert_bash_typehint_completions(
         subtests,
@@ -235,7 +234,7 @@ class Other:
 
 def test_bash_union_subclasses(parser, subtests):
     parser.add_argument("--cls", type=Union[Base, Other])
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     assert "'--cls.help' '--cls' '--cls.p1' '--cls.p2' '--cls.p3' '--cls.o1'" in shtab_script
     classes = f"'{__name__}.Base' '{__name__}.SubA' '{__name__}.SubB' '{__name__}.Other'"
     assert f"_cls_help_choices=({classes})" in shtab_script
@@ -260,7 +259,7 @@ class SupA(SupBase):
 
 def test_bash_nested_subclasses(parser, subtests):
     parser.add_argument("--cls", type=SupBase)
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     assert "'--cls.help' '--cls' '--cls.s1' '--cls.s1.p1' '--cls.s1.p2' '--cls.s1.p3'" in shtab_script
     assert_bash_typehint_completions(
         subtests,
@@ -273,7 +272,7 @@ def test_bash_nested_subclasses(parser, subtests):
 
 def test_bash_callable_return_class(parser, subtests):
     parser.add_argument("--cls", type=Callable[[int], Base])
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     assert "_option_strings=('-h' '--help' '--cls' '--cls.p2' '--cls.p3')" in shtab_script
     assert "--cls.p1" not in shtab_script
     classes = f"{__name__}.Base {__name__}.SubA {__name__}.SubB".split()
@@ -300,7 +299,7 @@ def test_bash_subcommands(parser, subparser, subtests):
     help_str = get_parse_args_stdout(parser, ["s1", "--help"])
     assert "--print_shtab" not in help_str
 
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=bash"])
+    shtab_script = get_shtab_script(parser, "bash")
     assert "_subparsers=('s1' 's2')" in shtab_script
 
     assert "_s1_option_strings=('-h' '--help' '--enum')" in shtab_script
@@ -322,7 +321,7 @@ def test_zsh_script(parser):
     parser.add_argument("--enum", type=Optional[AXEnum])
     parser.add_argument("--path", type=PathLike)
     parser.add_argument("--cls", type=Base)
-    shtab_script = get_parse_args_stdout(parser, ["--print_shtab=zsh"])
+    shtab_script = get_shtab_script(parser, "zsh")
     assert ":enum:(ABC XY XZ null)" in shtab_script
     assert ":path:_files" in shtab_script
     classes = f"{__name__}.Base {__name__}.SubA {__name__}.SubB"
