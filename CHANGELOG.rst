@@ -23,7 +23,8 @@ Added
   (`lightning#13613
   <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__)
 - Automatic ``--print_shtab`` option when ``shtab`` is installed, providing
-  completions for many type hints without the need to modify code.
+  completions for many type hints without the need to modify code (`#528
+  <https://github.com/omni-us/jsonargparse/pull/528>`__).
 
 Fixed
 ^^^^^
