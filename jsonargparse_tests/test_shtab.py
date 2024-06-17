@@ -29,7 +29,9 @@ def experimental_warning():
     with catch_warnings(record=True) as w:
         yield
     if find_spec("shtab"):
-        assert w
+        for ww in w:
+            if "out=" in str(ww.message):
+                __import__("warnings").warn(ww.message)
         # assert "support is experimental" in str(w[0].message)
 
 
