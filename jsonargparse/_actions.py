@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from ._common import Action, get_class_instantiator, is_subclass, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
-from ._optionals import FilesCompleterMethod, get_config_read_mode
+from ._optionals import get_config_read_mode
 from ._type_checking import ArgumentParser
 from ._util import (
     NoneType,
@@ -145,7 +145,7 @@ def filter_default_actions(actions):
     return {k: a for k, a in actions.items() if not isinstance(a, default)}
 
 
-class ActionConfigFile(Action, FilesCompleterMethod):
+class ActionConfigFile(Action):
     """Action to indicate that an argument is a configuration file or a configuration string."""
 
     def __init__(self, **kwargs):
@@ -207,6 +207,12 @@ class ActionConfigFile(Action, FilesCompleterMethod):
             if cfg.get(dest) is None:
                 cfg[dest] = []
             cfg[dest].append(cfg_path)
+
+    def completer(self, prefix, **kwargs):
+        from ._completions import get_files_completer
+
+        files_completer = get_files_completer()
+        return sorted(files_completer(prefix, **kwargs))
 
 
 previous_config: ContextVar = ContextVar("previous_config", default=None)

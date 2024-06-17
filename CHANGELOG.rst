@@ -22,6 +22,9 @@ Added
 - Allow providing a function with return type a class in ``class_path``
   (`lightning#13613
   <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__)
+- Automatic ``--print_shtab`` option when ``shtab`` is installed, providing
+  completions for many type hints without the need to modify code (`#528
+  <https://github.com/omni-us/jsonargparse/pull/528>`__).
 
 Fixed
 ^^^^^

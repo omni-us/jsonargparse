@@ -1,6 +1,7 @@
 import logging
 import os
 import platform
+import re
 from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
 from functools import wraps
 from importlib.util import find_spec
@@ -150,10 +151,12 @@ def source_unavailable():
         yield
 
 
-def get_parser_help(parser: ArgumentParser) -> str:
+def get_parser_help(parser: ArgumentParser, strip=False) -> str:
     out = StringIO()
     with patch.dict(os.environ, {"COLUMNS": "200"}):
         parser.print_help(out)
+    if strip:
+        return re.sub("  *", " ", out.getvalue())
     return out.getvalue()
 
 

@@ -2544,17 +2544,41 @@ function to provide an instance of the parser to :class:`.ActionParser`.
 Tab completion
 ==============
 
-Tab completion is available for jsonargparse parsers by using the `argcomplete
-<https://pypi.org/project/argcomplete/>`__ package. There is no need to
-implement completer functions or to call :func:`argcomplete.autocomplete` since
-this is done automatically by :py:meth:`.ArgumentParser.parse_args`. The only
-requirement to enable tab completion is to install argcomplete either directly
-or by installing jsonargparse with the ``argcomplete`` extras require as
-explained in section :ref:`installation`. Then the tab completion can be enabled
-`globally <https://kislyuk.github.io/argcomplete/#global-completion>`__ for all
-argcomplete compatible tools or for each `individual
-<https://kislyuk.github.io/argcomplete/#synopsis>`__ tool. A simple
-``example.py`` tool would be:
+Tab completion is available for jsonargparse parsers by using either the `shtab
+<https://pypi.org/project/shtab/>`__ package or the `argcomplete
+<https://pypi.org/project/argcomplete/>`__ package.
+
+shtab
+-----
+
+For ``shtab`` to work, there is no need to set ``complete``/``choices`` to the
+parser actions, and no need to call :func:`shtab.add_argument_to`. This is done
+automatically by :py:meth:`.ArgumentParser.parse_args`. The only requirement is
+to install shtab either directly or by installing jsonargparse with the
+``shtab`` extras require as explained in section :ref:`installation`.
+
+.. note::
+
+    Automatic shtab support is currently experimental and subject to change.
+
+Once ``shtab`` is installed, parsers will automatically have the
+``--print_shtab`` option that can be used to print the completion script for the
+supported shells. For example in linux to enable bash completions for all users,
+as root it would be used as:
+
+.. code-block:: bash
+
+    # example.py --print_shtab=bash > /etc/bash_completion.d/example
+
+Without installing, completion scripts can be tested by sourcing or evaluating
+them, for instance:
+
+.. code-block:: bash
+
+    $ eval "$(example.py --print_shtab=bash)"
+
+The scripts work both to complete when there are choices, but also gives
+instructions to the user for guidance. Take for example the parser:
 
 .. testsetup:: tab_completion
 
@@ -2572,18 +2596,60 @@ argcomplete compatible tools or for each `individual
 
     parser.parse_args()
 
-Then in a bash shell you can add the executable bit to the script, activate tab
-completion and use it as follows:
+The completions print the type of the argument, how many options are matched,
+and afterward the list of choices matched up to that point. If only one option
+matches, then the value is completed without printing guidance. For example:
 
 .. code-block:: bash
 
-    $ chmod +x example.py
+    $ example.py --bool <TAB><TAB>
+    Expected type: Optional[bool]; 3/3 matched choices
+    true  false  null
+    $ example.py --bool f<TAB>
+    $ example.py --bool false
+
+For the case of subclass types, the import class paths for known subclasses are
+completed, both for the switch to select the class and for the corresponding
+``--*.help`` switch. The ``init_args`` for known subclasses are also completed,
+giving as guidance which of the subclasses accepts it. An example would be:
+
+.. code-block:: bash
+
+    $ example.py --cls <TAB><TAB>
+    Expected type: BaseClass; 3/3 matched choices
+    some.module.BaseClass     other.module.SubclassA
+    other.module.SubclassB
+    $ example.py --cls other.module.SubclassA --cls.<TAB><TAB>
+    --cls.param1    --cls.param2
+    $ example.py --cls other.module.SubclassA --cls.param2 <TAB><TAB>
+    Expected type: int; Accepted by subclasses: SubclassA
+
+argcomplete
+-----------
+
+For ``argcompete`` to work, there is no need to implement completer functions or
+to call :func:`argcomplete.autocomplete` since this is done automatically by
+:py:meth:`.ArgumentParser.parse_args`. The only requirement to enable tab
+completion is to install argcomplete either directly or by installing
+jsonargparse with the ``argcomplete`` extras require as explained in section
+:ref:`installation`.
+
+The tab completion can be enabled `globally
+<https://kislyuk.github.io/argcomplete/#global-completion>`__ for all
+argcomplete compatible tools or for each `individual
+<https://kislyuk.github.io/argcomplete/#synopsis>`__ tool.
+
+Using the same ``bool`` example as shown above, activate tab completion and use
+it as follows:
+
+.. code-block:: bash
+
     $ eval "$(register-python-argcomplete example.py)"
 
-    $ ./example.py --bool <TAB><TAB>
+    $ example.py --bool <TAB><TAB>
     false  null   true
-    $ ./example.py --bool f<TAB>
-    $ ./example.py --bool false
+    $ example.py --bool f<TAB>
+    $ example.py --bool false
 
 
 .. _logging:

@@ -13,7 +13,6 @@ from typing import Any, Callable, Dict, Optional, Set
 
 from ._common import Action
 from ._namespace import Namespace
-from ._optionals import FilesCompleterMethod
 from ._type_checking import ArgumentParser
 
 __all__ = [
@@ -271,7 +270,7 @@ class ActionPath:
     use as type ``List[<path_type>]`` with ``enable_path=True``.
 """
 )
-class ActionPathList(Action, FilesCompleterMethod):
+class ActionPathList(Action):
     """Action to check and store a list of file paths read from a plain text file or stream."""
 
     def __init__(self, mode: Optional[str] = None, rel: str = "cwd", **kwargs):

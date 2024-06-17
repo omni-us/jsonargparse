@@ -8,7 +8,6 @@ from ._common import Action, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import strip_meta
 from ._optionals import (
-    argcomplete_warn_redraw_prompt,
     get_jsonschema_exceptions,
     import_jsonschema,
 )
@@ -117,6 +116,8 @@ class ActionJsonSchema(Action):
     def completer(self, prefix, **kwargs):
         """Used by argcomplete, validates value and shows expected type."""
         if chr(int(os.environ["COMP_TYPE"])) == "?":
+            from ._completions import argcomplete_warn_redraw_prompt
+
             try:
                 if prefix.strip() == "":
                     raise ValueError()

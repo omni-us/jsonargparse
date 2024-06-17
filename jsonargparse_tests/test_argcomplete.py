@@ -58,6 +58,19 @@ def complete_line(parser, value):
     return out.getvalue(), err.getvalue()
 
 
+def test_handle_completions(parser):
+    parser.add_argument("--option")
+    with patch("argcomplete.autocomplete") as mock, patch.dict(
+        os.environ,
+        {
+            "_ARGCOMPLETE": "1",
+        },
+    ):
+        parser.parse_args([])
+    assert mock.called
+    assert mock.call_args[0][0] is parser
+
+
 def test_complete_nested_one_option(parser):
     parser.add_argument("--group1.op")
     out, err = complete_line(parser, "tool.py --group1")
