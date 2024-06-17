@@ -6,6 +6,7 @@ from importlib.util import find_spec
 from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
+from unittest.mock import patch
 from warnings import catch_warnings
 
 import pytest
@@ -29,6 +30,12 @@ def experimental_warning():
         yield
     if find_spec("shtab"):
         assert "support is experimental" in str(w[0].message)
+
+
+@pytest.fixture(autouse=True)
+def term_env_var():
+    with patch.dict("os.environ", {"TERM": "xterm-256color"}):
+        yield
 
 
 @pytest.fixture

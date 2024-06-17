@@ -345,12 +345,6 @@ class ActionPathList(Action):
                 value += path_list
         return value
 
-    def completer(self, prefix, **kwargs):
-        from ._completions import get_files_completer
-
-        files_completer = get_files_completer()
-        return sorted(files_completer(prefix, **kwargs))
-
 
 @deprecated(
     """
