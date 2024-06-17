@@ -178,9 +178,9 @@ def shtab_prepare_action(action, parser) -> None:
 bash_compgen_typehint_name = "_jsonargparse_%s_compgen_typehint"
 bash_compgen_typehint = """
 _jsonargparse_%%s_matched_choices() {
-  local TOTAL=$(echo "$1" | wc -w)
+  local TOTAL=$(echo "$1" | wc -w | tr -d " ")
   if [ "$TOTAL" != 0 ]; then
-    local MATCH=$(echo "$2" | wc -w | tr -d ' ')
+    local MATCH=$(echo "$2" | wc -w | tr -d " ")
     printf "; $MATCH/$TOTAL matched choices"
   fi
 }
