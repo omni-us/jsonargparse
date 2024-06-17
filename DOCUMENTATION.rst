@@ -2557,6 +2557,10 @@ automatically by :py:meth:`.ArgumentParser.parse_args`. The only requirement is
 to install shtab either directly or by installing jsonargparse with the
 ``shtab`` extras require as explained in section :ref:`installation`.
 
+.. note::
+
+    Automatic shtab support is currently experimental and subject to change.
+
 Once ``shtab`` is installed, parsers will automatically have the
 ``--print_shtab`` option that can be used to print the completion script for the
 supported shells. For example in linux to enable bash completions for all users,

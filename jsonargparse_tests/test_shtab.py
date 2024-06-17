@@ -29,7 +29,7 @@ def skip_if_wsl_message():
     popen = subprocess.Popen(["bash", "-c", "echo"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, _ = popen.communicate()
     if "Windows Subsystem for Linux has no installed distributions" in out.decode().replace("\x00", ""):
-        pytest.skip("WSL message in stdout")
+        pytest.skip(out.decode().replace("\x00", ""))
 
 
 @pytest.fixture(autouse=True)
@@ -37,10 +37,7 @@ def experimental_warning():
     with catch_warnings(record=True) as w:
         yield
     if find_spec("shtab"):
-        for ww in w:
-            if "err=" in str(ww.message):
-                __import__("warnings").warn(ww.message)
-        # assert "support is experimental" in str(w[0].message)
+        assert "support is experimental" in str(w[0].message)
 
 
 @pytest.fixture(autouse=True)
@@ -67,7 +64,6 @@ def assert_bash_typehint_completions(subtests, shtab_script, completions):
                 sh = f'source {shtab_script_path}; COMP_TYPE=63 _jsonargparse_tool_{norm_name(dest)}_typehint "{word}"'
                 popen = subprocess.Popen(["bash", "-c", sh], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 out, err = popen.communicate()
-                __import__("warnings").warn(f"err={err.decode()}")
                 assert list(out.decode().split()) == choices
                 if extra is None:
                     assert f"Expected type: {typehint}" in err.decode()
