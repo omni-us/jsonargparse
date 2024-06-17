@@ -28,6 +28,7 @@ from ._stubs_resolver import get_stub_types
 from ._util import (
     ClassFromFunctionBase,
     get_import_path,
+    get_typehint_origin,
     iter_to_set_str,
     unique,
 )
@@ -74,6 +75,10 @@ class ConditionalDefault(UnknownDefault):
 
 
 def get_parameter_origins(component, parent) -> Optional[str]:
+    from ._typehints import get_subclasses_from_type, sequence_origin_types
+
+    if get_typehint_origin(component) in sequence_origin_types:
+        component = get_subclasses_from_type(component, names=False)
     if isinstance(component, tuple):
         assert parent is None or len(component) == len(parent)
         return iter_to_set_str(get_parameter_origins(c, parent[n] if parent else None) for n, c in enumerate(component))

@@ -1267,13 +1267,13 @@ def test_subclass_unresolved_parameters_name_clash(parser):
 def test_add_subclass_failure_not_a_class(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_subclass_arguments(NAMESPACE_OID, "oid")
-    ctx.match("Expected 'baseclass' argument to be a class or a tuple of classes")
+    ctx.match("Expected 'baseclass' to be a subclass type or a tuple of subclass types")
 
 
 def test_add_subclass_failure_empty_tuple(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_subclass_arguments((), "cls")
-    ctx.match("Expected 'baseclass' argument to be a class or a tuple of classes")
+    ctx.match("Expected 'baseclass' to be a subclass type or a tuple of subclass types")
 
 
 def test_add_subclass_lazy_default(parser):
@@ -1335,6 +1335,40 @@ def test_add_subclass_not_required_group(parser):
     assert cfg == Namespace()
     init = parser.instantiate_classes(cfg)
     assert init == Namespace()
+
+
+class ListUnionA:
+    def __init__(self, pa1: int):
+        self.pa1 = pa1
+
+
+class ListUnionB:
+    def __init__(self, pb1: str, pb2: float):
+        self.pb1 = pb1
+        self.pb2 = pb2
+
+
+def test_add_subclass_list_of_union(parser):
+    parser.add_argument("--config", action="config")
+    parser.add_subclass_arguments(
+        baseclass=(ListUnionA, ListUnionB, List[Union[ListUnionA, ListUnionB]]),
+        nested_key="subclass",
+    )
+    config = {
+        "subclass": [
+            {
+                "class_path": f"{__name__}.ListUnionB",
+                "init_args": {
+                    "pb1": "x",
+                    "pb2": 0.5,
+                },
+            }
+        ]
+    }
+    cfg = parser.parse_args([f"--config={config}"])
+    assert cfg.as_dict()["subclass"] == config["subclass"]
+    help_str = get_parser_help(parser)
+    assert "Show the help for the given subclass of {ListUnionA,ListUnionB}" in help_str
 
 
 # instance defaults tests

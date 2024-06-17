@@ -349,14 +349,9 @@ class _ActionHelpClassPath(Action):
             super().__init__(**kwargs)
 
     def update_init_kwargs(self, kwargs):
-        if get_typehint_origin(self._baseclass) == Union:
-            from ._typehints import ActionTypeHint
+        from ._typehints import get_subclasses_from_type
 
-            self._basename = iter_to_set_str(
-                c.__name__ for c in self._baseclass.__args__ if ActionTypeHint.is_subclass_typehint(c)
-            )
-        else:
-            self._basename = self._baseclass.__name__
+        self._basename = iter_to_set_str(get_subclasses_from_type(self._baseclass))
         kwargs.update(
             {
                 "metavar": "CLASS_PATH_OR_NAME",

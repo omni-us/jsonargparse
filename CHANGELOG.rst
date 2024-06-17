@@ -34,6 +34,9 @@ Fixed
   (`#523 <https://github.com/omni-us/jsonargparse/pull/523>`__).
 - Failing to parse list of dataclasses with nested optional dataclass (`#527
   <https://github.com/omni-us/jsonargparse/pull/527>`__).
+- List of union of classes not accepted by ``add_subclass_arguments`` in
+  ``python>=3.11`` (`#522
+  <https://github.com/omni-us/jsonargparse/pull/522>`__).
 
 
 v4.29.0 (2024-05-24)
