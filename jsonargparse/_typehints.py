@@ -668,17 +668,20 @@ def is_pathlike(typehint) -> bool:
     return is_subclass(typehint, os.PathLike)
 
 
-def get_subclasses_from_type(typehint, subclasses=None) -> list:
+def get_subclasses_from_type(typehint, names=True, subclasses=None) -> tuple:
     if subclasses is None:
         subclasses = []
     origin = get_typehint_origin(typehint)
     if origin == Union or origin in sequence_origin_types:
         for subtype in typehint.__args__:
-            get_subclasses_from_type(subtype, subclasses)
+            get_subclasses_from_type(subtype, names, subclasses)
     elif ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False):
-        if typehint.__name__ not in subclasses:
-            subclasses.append(typehint.__name__)
-    return subclasses
+        if names:
+            if typehint.__name__ not in subclasses:
+                subclasses.append(typehint.__name__)
+        elif typehint not in subclasses:
+            subclasses.append(typehint)
+    return tuple(subclasses)
 
 
 def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: Optional[Exception] = None) -> NoReturn:
