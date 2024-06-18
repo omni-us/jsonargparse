@@ -960,7 +960,7 @@ def adapt_typehints(
     elif is_dataclass_like(typehint):
         if isinstance(prev_val, (dict, Namespace)):
             assert isinstance(sub_add_kwargs, dict)
-            sub_add_kwargs["default"] = lazy_instance(typehint, **prev_val)
+            sub_add_kwargs["default"] = prev_val
         parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs=sub_add_kwargs)
         if instantiate_classes:
             init_args = parser.instantiate_classes(val)

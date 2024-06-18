@@ -80,7 +80,7 @@ class Class3(Class2):
 def test_add_class_failure_not_a_class(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_class_arguments("Not a class")
-    ctx.match('Expected "theclass" parameter to be a class')
+    ctx.match("Expected 'theclass' parameter to be a class")
 
 
 def test_add_class_failure_positional_without_type(parser):
