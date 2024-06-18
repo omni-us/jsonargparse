@@ -12,16 +12,17 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.30.0 (2024-06-??)
+v4.30.0 (2024-06-18)
 --------------------
 
 Added
 ^^^^^
 - Allow adding config argument with ``action="config"`` avoiding need to import
-  action class.
+  action class (`#512
+  <https://github.com/omni-us/jsonargparse/pull/512>`__).
 - Allow providing a function with return type a class in ``class_path``
   (`lightning#13613
-  <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__)
+  <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__).
 - Automatic ``--print_shtab`` option when ``shtab`` is installed, providing
   completions for many type hints without the need to modify code (`#528
   <https://github.com/omni-us/jsonargparse/pull/528>`__).
