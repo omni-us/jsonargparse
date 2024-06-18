@@ -16,6 +16,7 @@ from ._common import (
     is_dataclass_like,
     is_subclass,
 )
+from ._namespace import Namespace
 from ._optionals import get_doc_short_description, is_pydantic_model, pydantic_support
 from ._parameter_resolvers import (
     ParamData,
@@ -29,7 +30,7 @@ from ._typehints import (
     get_subclasses_from_type,
     is_optional,
 )
-from ._util import get_private_kwargs, iter_to_set_str
+from ._util import NoneType, get_private_kwargs, iter_to_set_str
 from .typing import register_pydantic_type
 
 __all__ = [
@@ -51,7 +52,7 @@ class SignatureArguments(LoggerProperty):
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        default: Optional[LazyInitBaseClass] = None,
+        default: Optional[Union[dict, Namespace, LazyInitBaseClass]] = None,
         skip: Optional[Set[Union[str, int]]] = None,
         instantiate: bool = True,
         fail_untyped: bool = True,
@@ -67,7 +68,7 @@ class SignatureArguments(LoggerProperty):
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            default: Default value used to override parameter defaults. Must be lazy_instance.
+            default: Default value used to override parameter defaults.
             skip: Names of parameters or number of positionals that should be skipped.
             instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
@@ -81,9 +82,14 @@ class SignatureArguments(LoggerProperty):
             ValueError: When there are required parameters without at least one valid type.
         """
         if not inspect.isclass(get_generic_origin(get_unaliased_type(theclass))):
-            raise ValueError(f'Expected "theclass" parameter to be a class type, got: {theclass}.')
-        if default and not (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass)):
-            raise ValueError(f'Expected "default" parameter to be a lazy instance of the class, got: {default}.')
+            raise ValueError(f"Expected 'theclass' parameter to be a class type, got: {theclass}")
+        if not (
+            isinstance(default, (NoneType, dict, Namespace))
+            or (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass))
+        ):
+            raise ValueError(
+                f"Expected 'default' parameter to be a dict, Namespace or lazy instance of the class, got: {default}"
+            )
         linked_targets = get_private_kwargs(kwargs, linked_targets=None)
 
         added_args = self._add_signature_arguments(
@@ -102,9 +108,13 @@ class SignatureArguments(LoggerProperty):
         if default:
             skip = skip or set()
             prefix = nested_key + "." if nested_key else ""
-            defaults = default.lazy_get_init_args()
+            defaults = default
+            if isinstance(default, LazyInitBaseClass):
+                defaults = default.lazy_get_init_args().as_dict()
+            elif isinstance(default, Namespace):
+                defaults = default.as_dict()
             if defaults:
-                defaults = {prefix + k: v for k, v in defaults.__dict__.items() if k not in skip}
+                defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
                 self.set_defaults(**defaults)  # type: ignore[attr-defined]
 
         return added_args

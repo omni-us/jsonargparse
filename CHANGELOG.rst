@@ -40,6 +40,8 @@ Fixed
 - List of union of classes not accepted by ``add_subclass_arguments`` in
   ``python>=3.11`` (`#522
   <https://github.com/omni-us/jsonargparse/pull/522>`__).
+- Optional pydantic model failing to parse with `__pydantic_private__` error
+  (`#521 <https://github.com/omni-us/jsonargparse/issues/521>`__).
 
 
 v4.29.0 (2024-05-24)
