@@ -299,7 +299,7 @@ class SignatureArguments(LoggerProperty):
                 as_positional=as_positional,
             )
 
-        if hasattr(function_or_class, '__scriptconfig__'):
+        if hasattr(function_or_class, "__scriptconfig__"):
             # Integrate with scriptconfig style classes.
             # When a function/class has a __scriptconfig__ object that means it
             # should accept any of the options defined in the config as keyword
@@ -317,7 +317,8 @@ class SignatureArguments(LoggerProperty):
                 as_positional=as_positional,
                 sub_configs=sub_configs,
                 skip=skip,
-                linked_targets=linked_targets)
+                linked_targets=linked_targets,
+            )
 
         return added_args
 
@@ -338,10 +339,11 @@ class SignatureArguments(LoggerProperty):
 
         for key, value in config_cls.__default__.items():
             from scriptconfig import value as value_mod
+
             if not isinstance(value, value_mod.Value):
                 # hack
                 value = value_mod.Value(value)
-            type_ = value.parsekw['type']
+            type_ = value.parsekw["type"]
             if type_ is None or not isinstance(type_, type):
                 annotation = inspect._empty
             else:
@@ -351,7 +353,7 @@ class SignatureArguments(LoggerProperty):
                 annotation=annotation,
                 kind=inspect.Parameter.KEYWORD_ONLY,
                 default=value.value,
-                doc=value.parsekw['help'],
+                doc=value.parsekw["help"],
                 component=component,
                 parent=function_or_class,
                 short_aliases=value.short_alias,
