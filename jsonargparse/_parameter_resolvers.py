@@ -44,6 +44,22 @@ class ParamData:
     component: Optional[Union[Callable, Type, Tuple]] = None
     parent: Optional[Union[Type, Tuple]] = None
     origin: Optional[Union[str, Tuple]] = None
+    short_aliases: Optional[List[str]] = None
+    long_aliases: Optional[List[str]] = None
+
+    def _resolve_args_and_dest(self, is_required=False, as_positional=False, nested_key: Optional[str] = None):
+        name = self.name
+        dest = (nested_key + "." if nested_key else "") + name
+        if is_required and as_positional:
+            args = [dest]
+        else:
+            long_names = [name] + list((self.long_aliases or []))
+            short_names = list(self.short_aliases or [])
+            nest_prefix = nested_key + "." if nested_key else ""
+            short_option_strings = ["-" + nest_prefix + n for n in short_names]
+            long_option_strings = ["--" + nest_prefix + n for n in long_names]
+            args = short_option_strings + long_option_strings
+        return args, dest
 
 
 ParamList = List[ParamData]
