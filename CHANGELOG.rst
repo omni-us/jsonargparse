@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.31.0 (2024-06-??)
+--------------------
+
+Added
+^^^^^
+- Support async functions and methods in ``CLI`` (`#517
+  <https://github.com/omni-us/jsonargparse/issues/517>`__).
+
+
 v4.30.0 (2024-06-18)
 --------------------
 
