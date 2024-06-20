@@ -17,8 +17,8 @@ v4.31.0 (2024-06-??)
 
 Changed
 ^^^^^^^
-- Now ``--*.help`` output shows options without ``init_args`` (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+- Now ``--*.help`` output shows options without ``init_args`` (`#533
+  <https://github.com/omni-us/jsonargparse/pull/533>`__).
 
 
 v4.30.0 (2024-06-18)
