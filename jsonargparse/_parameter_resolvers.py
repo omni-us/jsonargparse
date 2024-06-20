@@ -50,20 +50,15 @@ class ParamData:
     def _resolve_args_and_dest(self, is_required=False, as_positional=False, nested_key: Optional[str] = None):
         name = self.name
         dest = (nested_key + "." if nested_key else "") + name
-        args = [dest if is_required and as_positional else "--" + dest]
-        long_names = [name] + list((self.long_aliases or []))
-        short_names = list(self.short_aliases or [])
-        # if fuzzy_hyphens:
-        #     # Do we want to allow for people to use hyphens on the CLI?
-        #     # Maybe, we can make it optional.
-        #     unique_long_names = set(long_names)
-        #     modified_long_names = {n.replace('_', '-') for n in unique_long_names}
-        #     extra_long_names = modified_long_names - unique_long_names
-        #     long_names += sorted(extra_long_names)
-        nest_prefix = nested_key + "." if nested_key else ""
-        short_option_strings = ["-" + nest_prefix + n for n in short_names]
-        long_option_strings = ["--" + nest_prefix + n for n in long_names]
-        args = short_option_strings + long_option_strings
+        if is_required and as_positional:
+            args = [dest]
+        else:
+            long_names = [name] + list((self.long_aliases or []))
+            short_names = list(self.short_aliases or [])
+            nest_prefix = nested_key + "." if nested_key else ""
+            short_option_strings = ["-" + nest_prefix + n for n in short_names]
+            long_option_strings = ["--" + nest_prefix + n for n in long_names]
+            args = short_option_strings + long_option_strings
         return args, dest
 
 
