@@ -590,7 +590,7 @@ def test_union_new_syntax_simple_types(parser):
 def test_union_new_syntax_subclass_type(parser):
     parser.add_argument("--op", type=eval("Calendar | bool"))
     help_str = get_parse_args_stdout(parser, ["--op.help=calendar.TextCalendar"])
-    assert "--op.init_args.firstweekday" in help_str
+    assert "--op.firstweekday" in help_str
 
 
 # callable tests
