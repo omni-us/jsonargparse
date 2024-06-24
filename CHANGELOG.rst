@@ -17,8 +17,8 @@ v4.31.0 (2024-06-??)
 
 Fixed
 ^^^^^
-- Resolving of import paths for some ``torch`` functions not working (`#534
-  <https://github.com/omni-us/jsonargparse/issues/534>`__).
+- Resolving of import paths for some ``torch`` functions not working (`#535
+  <https://github.com/omni-us/jsonargparse/pull/535>`__).
 
 Changed
 ^^^^^^^
