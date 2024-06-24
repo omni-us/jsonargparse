@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.31.0 (2024-06-??)
 --------------------
 
+Fixed
+^^^^^
+- Resolving of import paths for some ``torch`` functions not working (`#534
+  <https://github.com/omni-us/jsonargparse/issues/534>`__).
+
 Changed
 ^^^^^^^
 - Now ``--*.help`` output shows options without ``init_args`` (`#533
