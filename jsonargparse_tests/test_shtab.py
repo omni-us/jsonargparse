@@ -13,9 +13,10 @@ import pytest
 
 from jsonargparse import ArgumentParser
 from jsonargparse._completions import norm_name
+from jsonargparse._parameter_resolvers import get_signature_parameters
 from jsonargparse._typehints import type_to_str
 from jsonargparse.typing import Path_drw, Path_fr
-from jsonargparse_tests.conftest import get_parse_args_stdout
+from jsonargparse_tests.conftest import capture_logs, get_parse_args_stdout
 
 
 @pytest.fixture(autouse=True)
@@ -201,6 +202,22 @@ class SubA(Base):
 class SubB(Base):
     def __init__(self, p1: int, p3: float):
         pass
+
+
+def test_bash_subclasses_fail_get_perams(parser, logger):
+    def get_params_patch(cls, method, logger):
+        if cls == SubB:
+            raise Exception("test get params failure")
+        return get_signature_parameters(cls, method, logger)
+
+    parser.logger = logger
+    parser.add_argument("--cls", type=Base)
+    with capture_logs(logger) as logs, patch("jsonargparse._completions.get_signature_parameters", get_params_patch):
+        shtab_script = get_shtab_script(parser, "bash")
+    assert "'--cls' '--cls.p1' '--cls.p2'" in shtab_script
+    assert f"'{__name__}.SubB'" in shtab_script
+    assert "'--cls.p3'" not in shtab_script
+    assert "test_shtab.SubB': test get params failure" in logs.getvalue()
 
 
 def test_bash_subclasses_help(parser):
