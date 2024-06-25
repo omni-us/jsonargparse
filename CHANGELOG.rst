@@ -15,6 +15,12 @@ paths are considered internals and can change in minor and patch releases.
 v4.31.0 (2024-06-??)
 --------------------
 
+Added
+^^^^^
+- Support for ``Protocol`` types only accepting exact matching signature of
+  public methods (`#526
+  <https://github.com/omni-us/jsonargparse/pull/526>`__).
+
 Fixed
 ^^^^^
 - Resolving of import paths for some ``torch`` functions not working (`#535

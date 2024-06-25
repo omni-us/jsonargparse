@@ -977,7 +977,7 @@ def adapt_typehints(
 
     # Subclass
     elif not hasattr(typehint, "__origin__") and inspect.isclass(typehint):
-        if isinstance(val, typehint):
+        if is_instance_or_supports_protocol(val, typehint):
             if serialize:
                 val = serialize_class_instance(val)
             return val
@@ -985,9 +985,9 @@ def adapt_typehints(
             return val
 
         val_input = val
-        if prev_val is None and not inspect.isabstract(typehint):
+        if prev_val is None and not inspect.isabstract(typehint) and not is_protocol(typehint):
             with suppress(ValueError):
-                prev_val = Namespace(class_path=get_import_path(typehint))
+                prev_val = Namespace(class_path=get_import_path(typehint))  # implicit class_path
         val = subclass_spec_as_namespace(val, prev_val)
         if not is_subclass_spec(val):
             raise_unexpected_value(
@@ -1000,20 +1000,20 @@ def adapt_typehints(
 
         try:
             val_class = import_object(resolve_class_path_by_name(typehint, val["class_path"]))
-            if isinstance(val_class, typehint):
-                return val_class
+            if is_instance_or_supports_protocol(val_class, typehint):
+                return val_class  # importable instance
             not_subclass = False
-            if not is_subclass(val_class, typehint):
+            if not is_subclass_or_implements_protocol(val_class, typehint):
                 not_subclass = True
                 if not inspect.isclass(val_class) and callable(val_class):
                     from ._postponed_annotations import get_return_type
 
                     return_type = get_return_type(val_class, logger)
-                    if is_subclass(return_type, typehint):
+                    if is_subclass_or_implements_protocol(return_type, typehint):
                         not_subclass = False
             if not_subclass:
                 raise_unexpected_value(
-                    f'Import path {val["class_path"]} does not correspond to a subclass of {typehint}'
+                    f"Import path {val['class_path']} does not correspond to a subclass of {typehint.__name__}"
                 )
             val["class_path"] = get_import_path(val_class)
             val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
@@ -1027,6 +1027,46 @@ def adapt_typehints(
         return adapt_typehints(val, get_alias_target(typehint), **adapt_kwargs)
 
     return val
+
+
+def implements_protocol(value, protocol) -> bool:
+    from jsonargparse._parameter_resolvers import get_signature_parameters
+    from jsonargparse._postponed_annotations import get_return_type
+
+    if not inspect.isclass(value):
+        return False
+    members = 0
+    for name, _ in inspect.getmembers(protocol, predicate=inspect.isfunction):
+        if name.startswith("_"):
+            continue
+        if not hasattr(value, name):
+            return False
+        members += 1
+        proto_params = get_signature_parameters(protocol, name)
+        value_params = get_signature_parameters(value, name)
+        if [(p.name, p.annotation) for p in proto_params] != [(p.name, p.annotation) for p in value_params]:
+            return False
+        proto_return = get_return_type(inspect.getattr_static(protocol, name))
+        value_return = get_return_type(inspect.getattr_static(value, name))
+        if proto_return != value_return:
+            return False
+    return True if members else False
+
+
+def is_protocol(class_type) -> bool:
+    return getattr(class_type, "_is_protocol", False)
+
+
+def is_subclass_or_implements_protocol(value, class_type) -> bool:
+    if is_protocol(class_type):
+        return implements_protocol(value, class_type)
+    return is_subclass(value, class_type)
+
+
+def is_instance_or_supports_protocol(value, class_type):
+    if is_protocol(class_type):
+        return is_subclass_or_implements_protocol(value.__class__, class_type)
+    return isinstance(value, class_type)
 
 
 def is_subclass_spec(val):
