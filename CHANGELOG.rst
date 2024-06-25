@@ -25,6 +25,9 @@ Fixed
 ^^^^^
 - Resolving of import paths for some ``torch`` functions not working (`#535
   <https://github.com/omni-us/jsonargparse/pull/535>`__).
+- ``--print_shtab`` crashing on failure to get signature parameters from one
+  class (`lightning#10858 comment
+  <https://github.com/Lightning-AI/pytorch-lightning/discussions/10858#discussioncomment-9846252>`__).
 
 Changed
 ^^^^^^^

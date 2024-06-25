@@ -25,10 +25,6 @@ from ._typehints import (
 )
 from ._util import NoneType, Path, import_object, unique
 
-shtab_shell: ContextVar = ContextVar("shtab_shell")
-shtab_prog: ContextVar = ContextVar("shtab_prog")
-shtab_preambles: ContextVar = ContextVar("shtab_preambles")
-
 
 def handle_completions(parser):
     if find_spec("argcomplete") and "_ARGCOMPLETE" in os.environ:
@@ -75,6 +71,10 @@ def argcomplete_warn_redraw_prompt(prefix, message):
 
 
 # shtab
+
+shtab_shell: ContextVar = ContextVar("shtab_shell")
+shtab_prog: ContextVar = ContextVar("shtab_prog")
+shtab_preambles: ContextVar = ContextVar("shtab_preambles")
 
 
 class ShtabAction(argparse.Action):
@@ -236,7 +236,7 @@ def get_typehint_choices(typehint, prefix, parser, skip, choices=None, added_sub
         origin = get_typehint_origin(typehint)
         if origin == Union:
             for subtype in typehint.__args__:
-                if subtype in added_subclasses:
+                if subtype in added_subclasses or subtype is object:
                     continue
                 get_typehint_choices(subtype, prefix, parser, skip, choices, added_subclasses)
         elif ActionTypeHint.is_subclass_typehint(typehint):
@@ -261,8 +261,12 @@ def add_subactions_and_get_subclass_choices(typehint, prefix, parser, skip, adde
     subclasses = defaultdict(list)
     for path in paths:
         choices.append(path)
-        cls = import_object(path)
-        params = get_signature_parameters(cls)
+        try:
+            cls = import_object(path)
+            params = get_signature_parameters(cls, None, parser._logger)
+        except Exception as ex:
+            parser._logger.debug(f"Unable to get signature parameters for '{path}': {ex}")
+            continue
         num_skip = next((s for s in skip if isinstance(s, int)), 0)
         if num_skip > 0:
             params = params[num_skip:]
