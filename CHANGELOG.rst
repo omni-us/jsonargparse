@@ -20,6 +20,16 @@ Added
 - Support async functions and methods in ``CLI`` (`#517
   <https://github.com/omni-us/jsonargparse/issues/517>`__).
 
+Fixed
+^^^^^
+- Resolving of import paths for some ``torch`` functions not working (`#535
+  <https://github.com/omni-us/jsonargparse/pull/535>`__).
+
+Changed
+^^^^^^^
+- Now ``--*.help`` output shows options without ``init_args`` (`#533
+  <https://github.com/omni-us/jsonargparse/pull/533>`__).
+
 
 v4.30.0 (2024-06-18)
 --------------------

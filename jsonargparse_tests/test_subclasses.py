@@ -156,7 +156,7 @@ def test_subclass_union_help(parser):
     help_str = get_parser_help(parser)
     assert "Show the help for the given subclass of Calendar" in help_str
     help_str = get_parse_args_stdout(parser, ["--op.help", "TextCalendar"])
-    assert "--op.init_args.firstweekday" in help_str
+    assert "--op.firstweekday" in help_str
 
 
 class DefaultsDisabled:
@@ -204,8 +204,8 @@ def func_subclass_untyped(c1: Union[int, UntypedParams]):
 def test_subclass_allow_untyped_parameters_help(parser):
     parser.add_function_arguments(func_subclass_untyped, fail_untyped=False)
     help_str = get_parse_args_stdout(parser, [f"--c1.help={__name__}.UntypedParams"])
-    assert "--c1.init_args.a1 A1" in help_str
-    assert "--c1.init_args.a2 A2" in help_str
+    assert "--c1.a1 A1" in help_str
+    assert "--c1.a2 A2" in help_str
 
 
 class MergeInitArgs(Calendar):
@@ -529,11 +529,12 @@ def test_subclass_nested_parse(parser, prefix):
 
 def test_subclass_nested_help(parser):
     parser.add_argument("--op", type=Nested)
-    help_str = get_parse_args_stdout(parser, [f"--op.help={__name__}.Nested", "--op.init_args.cal.help=TextCalendar"])
-    assert "--op.init_args.cal.init_args.firstweekday" in help_str
+    help_str = get_parse_args_stdout(parser, [f"--op.help={__name__}.Nested", "--op.cal.help=TextCalendar"])
+    assert "Help for --op.cal.help=calendar.TextCalendar" in help_str
+    assert "--op.cal.firstweekday" in help_str
 
     with pytest.raises(ArgumentError) as ctx:
-        parser.parse_args([f"--op.help={__name__}.Nested", "--op.init_args.p1=1"])
+        parser.parse_args([f"--op.help={__name__}.Nested", "--op.p1=1"])
     ctx.match("Expected a nested --\\*.help option")
 
 
@@ -580,7 +581,8 @@ def test_subclass_class_name_parse(parser):
 def test_subclass_class_name_help(parser):
     parser.add_argument("--op", type=Union[Calendar, GzipFile, None])
     help_str = get_parse_args_stdout(parser, ["--op.help=GzipFile"])
-    assert "--op.init_args.compresslevel" in help_str
+    assert "Help for --op.help=gzip.GzipFile" in help_str
+    assert "--op.compresslevel" in help_str
 
 
 class LocaleTextCalendar(Calendar):
@@ -1318,7 +1320,7 @@ def test_add_subclass_tuple(parser):
     assert isinstance(init.c, TupleBaseB)
 
     help_str = get_parse_args_stdout(parser, [f"--c.help={__name__}.TupleBaseB"])
-    assert "--c.init_args.b1" in help_str
+    assert "--c.b1 B1" in help_str
 
 
 def test_add_subclass_required_group(parser):

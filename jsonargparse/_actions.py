@@ -20,6 +20,7 @@ from ._util import (
     argument_error,
     change_to_path_dir,
     default_config_option_help,
+    get_import_path,
     get_typehint_origin,
     import_object,
     indent_text,
@@ -387,8 +388,7 @@ class _ActionHelpClassPath(Action):
             baseclasses = [baseclass]
         if not any(is_subclass(val_class, b) for b in baseclasses):
             raise TypeError(f'{option_string}: Class "{value}" is not a subclass of {self._basename}')
-        dest += ".init_args"
-        subparser = type(parser)()
+        subparser = type(parser)(description=f"Help for {option_string}={get_import_path(val_class)}")
         subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
         remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
         args = self.get_args_after_opt(parser.args)
