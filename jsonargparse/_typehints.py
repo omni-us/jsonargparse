@@ -58,9 +58,7 @@ from ._loaders_dumpers import (
 )
 from ._namespace import Namespace
 from ._optionals import (
-    argcomplete_warn_redraw_prompt,
     get_alias_target,
-    get_files_completer,
     is_alias_type,
     is_annotated,
     is_annotated_validator,
@@ -635,6 +633,8 @@ class ActionTypeHint(Action):
 
     def completer(self, prefix, **kwargs):
         """Used by argcomplete, validates value and shows expected type."""
+        from ._completions import argcomplete_warn_redraw_prompt, get_files_completer
+
         if self.choices:
             return [str(c) for c in self.choices]
         elif self._typehint == bool:
@@ -666,6 +666,22 @@ def is_pathlike(typehint) -> bool:
     if get_typehint_origin(typehint) == Union:
         return any(is_pathlike(t) for t in typehint.__args__)
     return is_subclass(typehint, os.PathLike)
+
+
+def get_subclasses_from_type(typehint, names=True, subclasses=None) -> tuple:
+    if subclasses is None:
+        subclasses = []
+    origin = get_typehint_origin(typehint)
+    if origin == Union or origin in sequence_origin_types:
+        for subtype in typehint.__args__:
+            get_subclasses_from_type(subtype, names, subclasses)
+    elif ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False):
+        if names:
+            if typehint.__name__ not in subclasses:
+                subclasses.append(typehint.__name__)
+        elif typehint not in subclasses:
+            subclasses.append(typehint)
+    return tuple(subclasses)
 
 
 def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: Optional[Exception] = None) -> NoReturn:
@@ -944,7 +960,7 @@ def adapt_typehints(
     elif is_dataclass_like(typehint):
         if isinstance(prev_val, (dict, Namespace)):
             assert isinstance(sub_add_kwargs, dict)
-            sub_add_kwargs["default"] = lazy_instance(typehint, **prev_val)
+            sub_add_kwargs["default"] = prev_val
         parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs=sub_add_kwargs)
         if instantiate_classes:
             init_args = parser.instantiate_classes(val)
@@ -1145,14 +1161,20 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
         return "._" in class_path
 
     def add_subclasses(cl):
+        if hasattr(cl, "__args__") and get_typehint_origin(cl) in {List, list, Union}:
+            for arg in cl.__args__:
+                add_subclasses(arg)
+            return
         try:
             class_path = get_import_path(cl)
         except (ImportError, AttributeError) as err:  # Attribute is added in case of dot notation imports
             warning(f"Hit failing import with following error: {err}")
             return
-        if is_local(cl) or issubclass(cl, LazyInitBaseClass):
+        if is_local(cl) or is_subclass(cl, LazyInitBaseClass):
             return
         if not (inspect.isabstract(cl) or is_private(class_path)):
+            if class_path in subclass_list:
+                return
             subclass_list.append(class_path)
         for subclass in cl.__subclasses__() if hasattr(cl, "__subclasses__") else []:
             add_subclasses(subclass)
@@ -1164,7 +1186,7 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
 
     if get_typehint_origin(cls) in {Union, Type, type}:
         for arg in cls.__args__:
-            if ActionTypeHint.is_subclass_typehint(arg) and arg not in {object, type}:
+            if ActionTypeHint.is_subclass_typehint(arg, also_lists=True) and arg not in {object, type}:
                 add_subclasses(arg)
     else:
         add_subclasses(cls)

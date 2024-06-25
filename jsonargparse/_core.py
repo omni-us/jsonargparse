@@ -44,6 +44,10 @@ from ._common import (
     lenient_check,
     parser_context,
 )
+from ._completions import (
+    argcomplete_namespace,
+    handle_completions,
+)
 from ._deprecated import ParserDeprecations
 from ._formatters import DefaultHelpFormatter, empty_help, get_env_var
 from ._jsonnet import ActionJsonnet
@@ -70,8 +74,6 @@ from ._namespace import (
     strip_meta,
 )
 from ._optionals import (
-    argcomplete_autocomplete,
-    argcomplete_namespace,
     fsspec_support,
     get_config_read_mode,
     import_fsspec,
@@ -375,7 +377,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         """
         skip_check = get_private_kwargs(kwargs, _skip_check=False)
         return_parser_if_captured(self)
-        argcomplete_autocomplete(self)
+        handle_completions(self)
 
         if args is None:
             args = sys.argv[1:]

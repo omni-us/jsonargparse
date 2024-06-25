@@ -186,6 +186,22 @@ def test_add_class_optional_without_default(parser):
     assert parser.parse_args(["--param=null"]) == Namespace(param=None)
 
 
+@dataclasses.dataclass
+class ListOptionalA:
+    x: int
+
+
+@dataclasses.dataclass
+class ListOptionalB:
+    a: Optional[ListOptionalA] = None
+
+
+def test_list_nested_optional_dataclass(parser):
+    parser.add_argument("--b", type=List[ListOptionalB])
+    cfg = parser.parse_args(['--b=[{"a":{"x":1}}]'])
+    assert cfg.b == [Namespace(a=Namespace(x=1))]
+
+
 def test_add_argument_dataclass_type(parser):
     parser.add_argument("--b", type=DataClassB, default=DataClassB(b1=7.0))
     cfg = parser.get_defaults()
@@ -664,6 +680,10 @@ if pydantic_support:
         class PydanticAnnotatedField(pydantic.BaseModel):
             p1: annotated[int, pydantic.Field(default=2, ge=1, le=8)]  # type: ignore[valid-type]
 
+    class OptionalPydantic:
+        def __init__(self, a: Optional[PydanticModel] = None):
+            self.a = a
+
 
 def none(x):
     return x
@@ -780,6 +800,22 @@ class TestPydantic:
         parser.add_argument("--data", type=PydanticDataNested)
         cfg = parser.parse_args(["--data", '{"p3": {"p1": 1.0}}'])
         assert cfg.data == Namespace(p3=Namespace(p1=1.0, p2="-"))
+
+    def test_optional_pydantic_model(self, parser):
+        parser.add_argument("--b", type=OptionalPydantic)
+        parser.add_argument("--cfg", action="config")
+        cfg = parser.parse_args([f"--b={__name__}.OptionalPydantic"])
+        assert cfg.b.class_path == f"{__name__}.OptionalPydantic"
+        assert cfg.b.init_args == Namespace(a=None)
+        config = {
+            "b": {
+                "class_path": f"{__name__}.OptionalPydantic",
+                "init_args": {"a": {"p1": "x"}},
+            }
+        }
+        cfg = parser.parse_args([f"--cfg={config}"])
+        assert cfg.b.class_path == f"{__name__}.OptionalPydantic"
+        assert cfg.b.init_args == Namespace(a=Namespace(p1="x", p2=3))
 
 
 # attrs tests

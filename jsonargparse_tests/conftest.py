@@ -1,6 +1,7 @@
 import logging
 import os
 import platform
+import re
 from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
 from functools import wraps
 from importlib.util import find_spec
@@ -25,6 +26,8 @@ if docstring_parser_support:
 
     set_docstring_parse_options(style=DocstringStyle.GOOGLE)
 
+
+columns_env = {"COLUMNS": "200"}
 
 is_cpython = platform.python_implementation() == "CPython"
 is_posix = os.name == "posix"
@@ -150,16 +153,18 @@ def source_unavailable():
         yield
 
 
-def get_parser_help(parser: ArgumentParser) -> str:
+def get_parser_help(parser: ArgumentParser, strip=False) -> str:
     out = StringIO()
-    with patch.dict(os.environ, {"COLUMNS": "200"}):
+    with patch.dict(os.environ, columns_env):
         parser.print_help(out)
+    if strip:
+        return re.sub("  *", " ", out.getvalue())
     return out.getvalue()
 
 
 def get_parse_args_stdout(parser: ArgumentParser, args: List[str]) -> str:
     out = StringIO()
-    with redirect_stdout(out), pytest.raises(SystemExit):
+    with patch.dict(os.environ, columns_env), redirect_stdout(out), pytest.raises(SystemExit):
         parser.parse_args(args)
     return out.getvalue()
 

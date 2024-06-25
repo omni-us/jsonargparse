@@ -41,7 +41,6 @@ all = [
     "jsonargparse[jsonnet]",
     "jsonargparse[urls]",
     "jsonargparse[fsspec]",
-    "jsonargparse[argcomplete]",
     "jsonargparse[ruyaml]",
     "jsonargparse[omegaconf]",
     "jsonargparse[typing-extensions]",
@@ -65,6 +64,9 @@ urls = [
 fsspec = [
     "fsspec>=0.8.4",
 ]
+shtab = [
+    "shtab>=1.7.1",
+]
 argcomplete = [
     "argcomplete>=2.0.0; python_version < '3.8'",
     "argcomplete>=3.3.0; python_version >= '3.8'",
@@ -83,6 +85,8 @@ reconplogger = [
 ]
 test = [
     "jsonargparse[test-no-urls]",
+    "jsonargparse[shtab]",
+    "jsonargparse[argcomplete]",
     "types-PyYAML>=6.0.11",
     "types-requests>=2.28.9",
     "responses>=0.12.0",

@@ -12,19 +12,40 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.30.0 (2024-06-??)
+v4.31.0 (2024-06-??)
+--------------------
+
+Added
+^^^^^
+- Support for ``Protocol`` types only accepting exact matching signature of
+  public methods (`#526
+  <https://github.com/omni-us/jsonargparse/pull/526>`__).
+
+Fixed
+^^^^^
+- Resolving of import paths for some ``torch`` functions not working (`#535
+  <https://github.com/omni-us/jsonargparse/pull/535>`__).
+
+Changed
+^^^^^^^
+- Now ``--*.help`` output shows options without ``init_args`` (`#533
+  <https://github.com/omni-us/jsonargparse/pull/533>`__).
+
+
+v4.30.0 (2024-06-18)
 --------------------
 
 Added
 ^^^^^
 - Allow adding config argument with ``action="config"`` avoiding need to import
-  action class.
+  action class (`#512
+  <https://github.com/omni-us/jsonargparse/pull/512>`__).
 - Allow providing a function with return type a class in ``class_path``
   (`lightning#13613
-  <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__)
-- Support for ``Protocol`` types only accepting exact matching signature of
-  public methods (`#526
-  <https://github.com/omni-us/jsonargparse/pull/526>`__).
+  <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__).
+- Automatic ``--print_shtab`` option when ``shtab`` is installed, providing
+  completions for many type hints without the need to modify code (`#528
+  <https://github.com/omni-us/jsonargparse/pull/528>`__).
 
 Fixed
 ^^^^^
@@ -35,6 +56,13 @@ Fixed
   <https://github.com/omni-us/jsonargparse/issues/517>`__).
 - Callable that returns class not using required parameter default from lambda
   (`#523 <https://github.com/omni-us/jsonargparse/pull/523>`__).
+- Failing to parse list of dataclasses with nested optional dataclass (`#527
+  <https://github.com/omni-us/jsonargparse/pull/527>`__).
+- List of union of classes not accepted by ``add_subclass_arguments`` in
+  ``python>=3.11`` (`#522
+  <https://github.com/omni-us/jsonargparse/pull/522>`__).
+- Optional pydantic model failing to parse with `__pydantic_private__` error
+  (`#521 <https://github.com/omni-us/jsonargparse/issues/521>`__).
 
 
 v4.29.0 (2024-05-24)

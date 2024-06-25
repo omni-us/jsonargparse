@@ -16,6 +16,7 @@ from ._common import (
     is_dataclass_like,
     is_subclass,
 )
+from ._namespace import Namespace
 from ._optionals import get_doc_short_description, is_pydantic_model, pydantic_support
 from ._parameter_resolvers import (
     ParamData,
@@ -26,9 +27,10 @@ from ._typehints import (
     ActionTypeHint,
     LazyInitBaseClass,
     callable_instances,
+    get_subclasses_from_type,
     is_optional,
 )
-from ._util import get_import_path, get_private_kwargs, iter_to_set_str
+from ._util import NoneType, get_private_kwargs, iter_to_set_str
 from .typing import register_pydantic_type
 
 __all__ = [
@@ -50,7 +52,7 @@ class SignatureArguments(LoggerProperty):
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        default: Optional[LazyInitBaseClass] = None,
+        default: Optional[Union[dict, Namespace, LazyInitBaseClass]] = None,
         skip: Optional[Set[Union[str, int]]] = None,
         instantiate: bool = True,
         fail_untyped: bool = True,
@@ -66,7 +68,7 @@ class SignatureArguments(LoggerProperty):
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
-            default: Default value used to override parameter defaults. Must be lazy_instance.
+            default: Default value used to override parameter defaults.
             skip: Names of parameters or number of positionals that should be skipped.
             instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
@@ -80,9 +82,14 @@ class SignatureArguments(LoggerProperty):
             ValueError: When there are required parameters without at least one valid type.
         """
         if not inspect.isclass(get_generic_origin(get_unaliased_type(theclass))):
-            raise ValueError(f'Expected "theclass" parameter to be a class type, got: {theclass}.')
-        if default and not (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass)):
-            raise ValueError(f'Expected "default" parameter to be a lazy instance of the class, got: {default}.')
+            raise ValueError(f"Expected 'theclass' parameter to be a class type, got: {theclass}")
+        if not (
+            isinstance(default, (NoneType, dict, Namespace))
+            or (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass))
+        ):
+            raise ValueError(
+                f"Expected 'default' parameter to be a dict, Namespace or lazy instance of the class, got: {default}"
+            )
         linked_targets = get_private_kwargs(kwargs, linked_targets=None)
 
         added_args = self._add_signature_arguments(
@@ -101,7 +108,11 @@ class SignatureArguments(LoggerProperty):
         if default:
             skip = skip or set()
             prefix = nested_key + "." if nested_key else ""
-            defaults = default.lazy_get_init_args()
+            defaults = default
+            if isinstance(default, LazyInitBaseClass):
+                defaults = default.lazy_get_init_args().as_dict()
+            elif isinstance(default, Namespace):
+                defaults = default.as_dict()
             if defaults:
                 defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
                 self.set_defaults(**defaults)  # type: ignore[attr-defined]
@@ -510,8 +521,8 @@ class SignatureArguments(LoggerProperty):
             raise ValueError("Not allowed for dataclass-like classes.")
         if type(baseclass) is not tuple:
             baseclass = (baseclass,)  # type: ignore[assignment]
-        if not baseclass or not all(inspect.isclass(c) for c in baseclass):
-            raise ValueError(f"Expected 'baseclass' argument to be a class or a tuple of classes: {baseclass}")
+        if not baseclass or not all(ActionTypeHint.is_subclass_typehint(c, also_lists=True) for c in baseclass):
+            raise ValueError(f"Expected 'baseclass' to be a subclass type or a tuple of subclass types: {baseclass}")
 
         doc_group = None
         if len(baseclass) == 1:  # type: ignore[arg-type]
@@ -530,7 +541,7 @@ class SignatureArguments(LoggerProperty):
         if skip is not None:
             skip = {f"{nested_key}.init_args." + s for s in skip}
         param = ParamData(name=nested_key, annotation=Union[baseclass], component=baseclass)
-        str_baseclass = iter_to_set_str(get_import_path(x) for x in baseclass)
+        str_baseclass = iter_to_set_str(get_subclasses_from_type(param.annotation))
         kwargs.update(
             {
                 "metavar": metavar,

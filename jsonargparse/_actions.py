@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from ._common import Action, get_class_instantiator, is_subclass, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
-from ._optionals import FilesCompleterMethod, get_config_read_mode
+from ._optionals import get_config_read_mode
 from ._type_checking import ArgumentParser
 from ._util import (
     NoneType,
@@ -20,6 +20,7 @@ from ._util import (
     argument_error,
     change_to_path_dir,
     default_config_option_help,
+    get_import_path,
     get_typehint_origin,
     import_object,
     indent_text,
@@ -145,7 +146,7 @@ def filter_default_actions(actions):
     return {k: a for k, a in actions.items() if not isinstance(a, default)}
 
 
-class ActionConfigFile(Action, FilesCompleterMethod):
+class ActionConfigFile(Action):
     """Action to indicate that an argument is a configuration file or a configuration string."""
 
     def __init__(self, **kwargs):
@@ -207,6 +208,12 @@ class ActionConfigFile(Action, FilesCompleterMethod):
             if cfg.get(dest) is None:
                 cfg[dest] = []
             cfg[dest].append(cfg_path)
+
+    def completer(self, prefix, **kwargs):
+        from ._completions import get_files_completer
+
+        files_completer = get_files_completer()
+        return sorted(files_completer(prefix, **kwargs))
 
 
 previous_config: ContextVar = ContextVar("previous_config", default=None)
@@ -349,14 +356,9 @@ class _ActionHelpClassPath(Action):
             super().__init__(**kwargs)
 
     def update_init_kwargs(self, kwargs):
-        if get_typehint_origin(self._baseclass) == Union:
-            from ._typehints import ActionTypeHint
+        from ._typehints import get_subclasses_from_type
 
-            self._basename = iter_to_set_str(
-                c.__name__ for c in self._baseclass.__args__ if ActionTypeHint.is_subclass_typehint(c)
-            )
-        else:
-            self._basename = self._baseclass.__name__
+        self._basename = iter_to_set_str(get_subclasses_from_type(self._baseclass))
         kwargs.update(
             {
                 "metavar": "CLASS_PATH_OR_NAME",
@@ -386,8 +388,7 @@ class _ActionHelpClassPath(Action):
             baseclasses = [baseclass]
         if not any(is_subclass(val_class, b) for b in baseclasses):
             raise TypeError(f'{option_string}: Class "{value}" is not a subclass of {self._basename}')
-        dest += ".init_args"
-        subparser = type(parser)()
+        subparser = type(parser)(description=f"Help for {option_string}={get_import_path(val_class)}")
         subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
         remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
         args = self.get_args_after_opt(parser.args)

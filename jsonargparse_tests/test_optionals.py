@@ -4,11 +4,9 @@ import pytest
 
 from jsonargparse import get_config_read_mode, set_config_read_mode
 from jsonargparse._optionals import (
-    argcomplete_support,
     docstring_parser_support,
     fsspec_support,
     get_docstring_parse_options,
-    import_argcomplete,
     import_docstring_parser,
     import_fsspec,
     import_jsonnet,
@@ -107,21 +105,6 @@ def test_docstring_parse_options():
         assert options["attribute_docstrings"] is attribute_docstrings
     with pytest.raises(ValueError):
         set_docstring_parse_options(attribute_docstrings="invalid")
-
-
-# argcomplete support
-
-
-@pytest.mark.skipif(not argcomplete_support, reason="argcomplete package is required")
-def test_argcomplete_support_true():
-    import_argcomplete("test_argcomplete_support_true")
-
-
-@pytest.mark.skipif(argcomplete_support, reason="argcomplete package should not be installed")
-def test_argcomplete_support_false():
-    with pytest.raises(ImportError) as ctx:
-        import_argcomplete("test_argcomplete_support_false")
-    ctx.match("test_argcomplete_support_false")
 
 
 # fsspec support

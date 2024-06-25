@@ -1,11 +1,9 @@
 """Code related to optional dependencies."""
 
 import inspect
-import locale
 import os
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from importlib.util import find_spec
-from subprocess import PIPE, Popen
 from typing import Optional
 
 __all__ = [
@@ -21,7 +19,6 @@ jsonschema_support = find_spec("jsonschema") is not None
 jsonnet_support = find_spec("_jsonnet") is not None
 url_support = find_spec("requests") is not None
 docstring_parser_support = find_spec("docstring_parser") is not None
-argcomplete_support = find_spec("argcomplete") is not None
 fsspec_support = find_spec("fsspec") is not None
 ruyaml_support = find_spec("ruyaml") is not None
 omegaconf_support = find_spec("omegaconf") is not None
@@ -115,12 +112,6 @@ def import_docstring_parser(importer):
     with missing_package_raise("docstring-parser", importer):
         import docstring_parser
     return docstring_parser
-
-
-def import_argcomplete(importer):
-    with missing_package_raise("argcomplete", importer):
-        import argcomplete
-    return argcomplete
 
 
 def import_fsspec(importer):
@@ -241,49 +232,6 @@ def get_doc_short_description(function_or_class, method_name=None, logger=None):
         if docstring:
             return docstring.short_description
     return None
-
-
-def get_files_completer():
-    from argcomplete.completers import FilesCompleter
-
-    return FilesCompleter()
-
-
-class FilesCompleterMethod:
-    """Completer method for Action classes that should complete files."""
-
-    def completer(self, prefix, **kwargs):
-        files_completer = get_files_completer()
-        return sorted(files_completer(prefix, **kwargs))
-
-
-def argcomplete_autocomplete(parser):
-    if argcomplete_support:
-        argcomplete = import_argcomplete("argcomplete_autocomplete")
-        from ._common import parser_context
-
-        with parser_context(load_value_mode=parser.parser_mode):
-            argcomplete.autocomplete(parser)
-
-
-def argcomplete_namespace(caller, parser, namespace):
-    if caller == "argcomplete":
-        namespace.__class__ = __import__("jsonargparse").Namespace
-        namespace = parser.merge_config(parser.get_defaults(skip_check=True), namespace).as_flat()
-    return namespace
-
-
-def argcomplete_warn_redraw_prompt(prefix, message):
-    argcomplete = import_argcomplete("argcomplete_warn_redraw_prompt")
-    if prefix != "":
-        argcomplete.warn(message)
-        with suppress(Exception):
-            proc = Popen(f"ps -p {os.getppid()} -oppid=".split(), stdout=PIPE, stderr=PIPE)
-            stdout, _ = proc.communicate()
-            shell_pid = int(stdout.decode().strip())
-            os.kill(shell_pid, 28)
-    _ = "_" if locale.getlocale()[1] != "UTF-8" else "\xa0"
-    return [_ + message.replace(" ", _), ""]
 
 
 def get_omegaconf_loader():
