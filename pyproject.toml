@@ -105,7 +105,6 @@ dev = [
     "jsonargparse[test]",
     "jsonargparse[coverage]",
     "jsonargparse[doc]",
-    "jsonargparse[mypy]",
     "pre-commit>=2.19.0",
     "tox>=3.25.0",
     "build>=0.10.0",

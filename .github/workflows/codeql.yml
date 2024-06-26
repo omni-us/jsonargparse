@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: "57 5 * * 3"
+    - cron: "57 5 * * 3"  # M H d m w (Every Wednesday at 5:57 AM)
 
 jobs:
   analyze:
