@@ -17,6 +17,8 @@ v4.31.0 (2024-06-??)
 
 Added
 ^^^^^
+- Support async functions and methods in ``CLI`` (`#531
+  <https://github.com/omni-us/jsonargparse/pull/531>`__).
 - Support for ``Protocol`` types only accepting exact matching signature of
   public methods (`#526
   <https://github.com/omni-us/jsonargparse/pull/526>`__).
