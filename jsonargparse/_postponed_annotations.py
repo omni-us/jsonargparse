@@ -334,7 +334,7 @@ def evaluate_postponed_annotations(params, component, parent, logger):
             param.annotation = param_type
 
 
-def get_return_type(component, logger):
+def get_return_type(component, logger=None):
     return_type = inspect.signature(component).return_annotation
     if type_requires_eval(return_type):
         global_vars = vars(import_module(component.__module__))
@@ -343,6 +343,7 @@ def get_return_type(component, logger):
             if isinstance(return_type, ForwardRef):
                 return_type = resolve_forward_refs(return_type.__forward_arg__, global_vars, logger)
         except Exception as ex:
-            logger.debug(f"Unable to evaluate types for {component}", exc_info=ex)
+            if logger:
+                logger.debug(f"Unable to evaluate types for {component}", exc_info=ex)
             return None
     return return_type
