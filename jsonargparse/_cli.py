@@ -92,8 +92,8 @@ def CLI(
             deprecation_warning_cli_return_parser()
             return parser
         cfg = parser.parse_args(args)
-        cfg_init = parser.instantiate_classes(cfg)
-        return _run_component(components, cfg_init)
+        init = parser.instantiate_classes(cfg)
+        return _run_component(components, init)
 
     elif isinstance(components, list):
         components = {c.__name__: c for c in components}
@@ -192,12 +192,13 @@ def _add_component_to_parser(
 
 def _run_component(component, cfg):
     cfg.pop("config", None)
-    if not inspect.isclass(component):
-        return component(**cfg)
     subcommand = cfg.pop("subcommand")
-    if not subcommand:
-        return component(**cfg)
-    subcommand_cfg = cfg.pop(subcommand, {})
-    subcommand_cfg.pop("config", None)
-    component_obj = component(**cfg)
-    return getattr(component_obj, subcommand)(**subcommand_cfg)
+    if inspect.isclass(component) and subcommand:
+        subcommand_cfg = cfg.pop(subcommand, {})
+        subcommand_cfg.pop("config", None)
+        component_obj = component(**cfg)
+        component = getattr(component_obj, subcommand)
+        cfg = subcommand_cfg
+    if inspect.iscoroutinefunction(component):
+        return __import__("asyncio").run(component(**cfg))
+    return component(**cfg)

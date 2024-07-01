@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
 from contextlib import redirect_stderr, redirect_stdout, suppress
 from dataclasses import asdict, dataclass
 from io import StringIO
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 from unittest.mock import patch
 
 import pytest
@@ -535,3 +536,44 @@ def test_final_and_subclass_type_config_file(tmp_cwd):
 
     out = CLI(run_bf, args=["--config=config.yaml"])
     assert "a yaml" == out
+
+
+# async tests
+
+
+async def run_async(time: float = 0.1):
+    await asyncio.sleep(time)
+    return "done"
+
+
+def test_async_function():
+    assert "done" == CLI(run_async, args=["--time=0.0"])
+
+
+class AsyncMethod:
+    def __init__(self, time: float = 0.1, require_async: bool = False):
+        self.time = time
+        if require_async:
+            self.loop = asyncio.get_event_loop()
+
+    async def run(self):
+        await asyncio.sleep(self.time)
+        return "done"
+
+
+def test_async_method():
+    assert "done" == CLI(AsyncMethod, args=["--time=0.0", "run"])
+
+
+async def run_async_instance(cls: Callable[[], AsyncMethod]):
+    return await cls().run()
+
+
+def test_async_instance():
+    config = {
+        "cls": {
+            "class_path": f"{__name__}.AsyncMethod",
+            "init_args": {"time": 0.0, "require_async": True},
+        }
+    }
+    assert "done" == CLI(run_async_instance, args=[f"--config={config}"])

@@ -12,6 +12,40 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.32.0 (2024-07-??)
+--------------------
+
+Added
+^^^^^
+- Support for ``MappingProxyType`` as a type and as default for mapping types
+  (`#540 <https://github.com/omni-us/jsonargparse/pull/540>`__).
+
+
+v4.31.0 (2024-06-27)
+--------------------
+
+Added
+^^^^^
+- Support async functions and methods in ``CLI`` (`#531
+  <https://github.com/omni-us/jsonargparse/pull/531>`__).
+- Support for ``Protocol`` types only accepting exact matching signature of
+  public methods (`#526
+  <https://github.com/omni-us/jsonargparse/pull/526>`__).
+
+Fixed
+^^^^^
+- Resolving of import paths for some ``torch`` functions not working (`#535
+  <https://github.com/omni-us/jsonargparse/pull/535>`__).
+- ``--print_shtab`` crashing on failure to get signature parameters from one
+  class (`lightning#10858 comment
+  <https://github.com/Lightning-AI/pytorch-lightning/discussions/10858#discussioncomment-9846252>`__).
+
+Changed
+^^^^^^^
+- Now ``--*.help`` output shows options without ``init_args`` (`#533
+  <https://github.com/omni-us/jsonargparse/pull/533>`__).
+
+
 v4.30.0 (2024-06-18)
 --------------------
 

@@ -233,7 +233,7 @@ def get_import_path(value: Any) -> Optional[str]:
     if not path:
         raise ValueError(f"Not possible to determine the import path for object {value}.")
 
-    if qualname and module_path and "." in module_path:
+    if qualname and module_path and ("." in qualname or "." in module_path):
         module_parts = module_path.split(".")
         for num in range(len(module_parts)):
             module_path = ".".join(module_parts[: num + 1])
@@ -241,7 +241,10 @@ def get_import_path(value: Any) -> Optional[str]:
             if "." in qualname:
                 obj_name, attr = qualname.rsplit(".", 1)
                 obj = getattr(module, obj_name, None)
-                if getattr(obj, attr, None) is value:
+                if getattr(module, attr, None) is value:
+                    path = module_path + "." + attr
+                    break
+                elif getattr(obj, attr, None) is value:
                     path = module_path + "." + qualname
                     break
             elif getattr(module, qualname, None) is value:

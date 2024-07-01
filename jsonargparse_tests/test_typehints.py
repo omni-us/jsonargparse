@@ -8,6 +8,7 @@ import uuid
 from calendar import Calendar, TextCalendar
 from enum import Enum
 from pathlib import Path
+from types import MappingProxyType
 from typing import (
     Any,
     Callable,
@@ -545,6 +546,23 @@ def test_typeddict_with_args_ntotal(parser):
     ctx.match("Expected a <class 'dict'>")
 
 
+def test_mapping_proxy_type(parser):
+    parser.add_argument("--mapping", type=MappingProxyType)
+    cfg = parser.parse_args(['--mapping={"x":1}'])
+    assert isinstance(cfg.mapping, MappingProxyType)
+    assert cfg.mapping == {"x": 1}
+    assert parser.dump(cfg, format="json") == '{"mapping":{"x":1}}'
+
+
+def test_mapping_default_mapping_proxy_type(parser):
+    mapping_proxy = MappingProxyType({"x": 1})
+    parser.add_argument("--mapping", type=Mapping[str, int], default=mapping_proxy)
+    cfg = parser.parse_args([])
+    assert isinstance(cfg.mapping, Mapping)
+    assert mapping_proxy == cfg.mapping
+    assert parser.dump(cfg, format="json") == '{"mapping":{"x":1}}'
+
+
 # union tests
 
 
@@ -590,7 +608,7 @@ def test_union_new_syntax_simple_types(parser):
 def test_union_new_syntax_subclass_type(parser):
     parser.add_argument("--op", type=eval("Calendar | bool"))
     help_str = get_parse_args_stdout(parser, ["--op.help=calendar.TextCalendar"])
-    assert "--op.init_args.firstweekday" in help_str
+    assert "--op.firstweekday" in help_str
 
 
 # callable tests

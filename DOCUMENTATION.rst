@@ -400,8 +400,9 @@ Some notes about this support are:
   :ref:`restricted-strings` and paths and URLs as explained in sections
   :ref:`parsing-paths` and :ref:`parsing-urls`.
 
-- ``Dict``, ``Mapping``, ``MutableMapping``, and ``TypedDict`` are supported but
-  only with ``str`` or ``int`` keys. For more details see :ref:`dict-items`.
+- ``Dict``, ``Mapping``, ``MutableMapping``, ``MappingProxyType``, and
+  ``TypedDict`` are supported but only with ``str`` or ``int`` keys. For more
+  details see :ref:`dict-items`.
 
 - ``Tuple``, ``Set`` and ``MutableSet`` are supported even though they can't be
   represented in json distinguishable from a list. Each ``Tuple`` element
@@ -420,6 +421,10 @@ Some notes about this support are:
   containing ``class_path`` and optionally ``init_args``.
   :py:meth:`.ArgumentParser.instantiate_classes` can be used to instantiate all
   classes in a config object. For more details see :ref:`sub-classes`.
+
+- ``Protocol`` types are also supported the same as sub-classes. The protocols
+  are not required to be ``runtime_checkable``. But the accepted classes must
+  match exactly the signature of the protocol's public methods.
 
 - ``dataclasses`` are supported even when nested. Final classes, attrs'
   ``define`` decorator, and pydantic's ``dataclass`` decorator and ``BaseModel``

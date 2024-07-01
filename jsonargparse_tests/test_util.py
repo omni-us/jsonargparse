@@ -533,8 +533,12 @@ def test_logger_jsonargparse_debug():
 
 
 def test_import_object_invalid():
-    pytest.raises(ValueError, lambda: import_object(True))
-    pytest.raises(ValueError, lambda: import_object("jsonargparse-tests.os"))
+    with pytest.raises(ValueError) as ctx:
+        import_object(True)
+    ctx.match("Expected a dot import path string")
+    with pytest.raises(ValueError) as ctx:
+        import_object("jsonargparse-tests.os")
+    ctx.match("Unexpected import path format")
 
 
 def test_get_import_path():
@@ -546,6 +550,19 @@ def test_get_import_path():
     from dataclasses import MISSING
 
     assert get_import_path(MISSING) == "dataclasses.MISSING"
+
+
+class _StaticMethods:
+    @staticmethod
+    def static_method():
+        pass
+
+
+static_method = _StaticMethods.static_method
+
+
+def test_get_import_path_static_method_shorthand():
+    assert get_import_path(static_method) == f"{__name__}.static_method"
 
 
 def unresolvable_import():
