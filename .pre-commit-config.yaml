@@ -12,7 +12,7 @@ ci:
 repos:
 
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.5.0
+  rev: v4.6.0
   hooks:
   - id: check-added-large-files
   - id: check-ast
@@ -24,12 +24,12 @@ repos:
     exclude: .bumpversion.cfg
 
 - repo: https://github.com/psf/black
-  rev: 24.3.0
+  rev: 24.4.2
   hooks:
   - id: black
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.3.7
+  rev: v0.5.0
   hooks:
   - id: ruff
     args: ["--fix"]
@@ -40,14 +40,14 @@ repos:
   - id: yesqa
 
 - repo: https://github.com/crate-ci/typos
-  rev: v1.20.7
+  rev: v1.22.9
   hooks:
   - id: typos
     args: []
     verbose: true
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.9.0
+  rev: v1.10.1
   hooks:
   - id: mypy
     files: jsonargparse.*/.*.py
