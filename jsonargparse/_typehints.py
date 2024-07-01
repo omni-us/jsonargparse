@@ -904,11 +904,8 @@ def adapt_typehints(
                 raise_unexpected_value(f"Unexpected keys: {extra_keys}", val)
             for k, v in val.items():
                 val[k] = adapt_typehints(v, typehint.__annotations__[k], **adapt_kwargs)
-        if typehint_origin == MappingProxyType:
-            if serialize:
-                val = dict(val)
-            elif not isinstance(val, MappingProxyType):
-                val = MappingProxyType(val)
+        if typehint_origin == MappingProxyType and not serialize:
+            val = MappingProxyType(val)
 
     # Callable
     elif typehint_origin in callable_origin_types or typehint in callable_origin_types:

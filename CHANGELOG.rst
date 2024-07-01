@@ -18,7 +18,7 @@ v4.32.0 (2024-07-??)
 Added
 ^^^^^
 - Support for ``MappingProxyType`` as a type and as default for mapping types
-  (`#539 <https://github.com/omni-us/jsonargparse/issues/539>`__).
+  (`#540 <https://github.com/omni-us/jsonargparse/pull/540>`__).
 
 
 v4.31.0 (2024-06-27)
