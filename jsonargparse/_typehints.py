@@ -10,7 +10,7 @@ from contextvars import ContextVar
 from copy import deepcopy
 from enum import Enum
 from functools import partial
-from types import FunctionType
+from types import FunctionType, MappingProxyType
 from typing import (
     Any,
     Callable,
@@ -145,7 +145,7 @@ sequence_origin_types = {
     abc.Sequence,
     abc.MutableSequence,
 }
-mapping_origin_types = {Dict, dict, Mapping, MutableMapping, abc.Mapping, abc.MutableMapping}
+mapping_origin_types = {Dict, dict, Mapping, MappingProxyType, MutableMapping, abc.Mapping, abc.MutableMapping}
 callable_origin_types = {Callable, abc.Callable}
 
 literal_types = {Literal}
@@ -872,6 +872,8 @@ def adapt_typehints(
                 val = {**prev_val, val.key: val.val}
             else:
                 val = {val.key: val.val}
+        elif isinstance(val, MappingProxyType):
+            val = dict(val)
         elif not isinstance(val, dict):
             raise_unexpected_value(f"Expected a {typehint_origin}", val)
         if subtypehints is not None:
@@ -902,6 +904,11 @@ def adapt_typehints(
                 raise_unexpected_value(f"Unexpected keys: {extra_keys}", val)
             for k, v in val.items():
                 val[k] = adapt_typehints(v, typehint.__annotations__[k], **adapt_kwargs)
+        if typehint_origin == MappingProxyType:
+            if serialize:
+                val = dict(val)
+            elif not isinstance(val, MappingProxyType):
+                val = MappingProxyType(val)
 
     # Callable
     elif typehint_origin in callable_origin_types or typehint in callable_origin_types:
