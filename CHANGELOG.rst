@@ -20,6 +20,12 @@ Added
 - Support for ``MappingProxyType`` as a type and as default for mapping types
   (`#540 <https://github.com/omni-us/jsonargparse/pull/540>`__).
 
+Fixed
+^^^^^
+- ``dump`` failing when a link target requires serialization and
+  ``skip_link_targets=False`` (`#542
+  <https://github.com/omni-us/jsonargparse/pull/542>`__).
+
 
 v4.31.0 (2024-06-27)
 --------------------
