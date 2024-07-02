@@ -285,6 +285,7 @@ class SignatureArguments(LoggerProperty):
 
         ## Add parameter arguments ##
         added_args: List[str] = []
+
         for param in params:
             self._add_signature_parameter(
                 container,
@@ -298,7 +299,77 @@ class SignatureArguments(LoggerProperty):
                 as_positional=as_positional,
             )
 
+        if hasattr(function_or_class, "__scriptconfig__"):
+            # Integrate with scriptconfig style classes.
+            # When a function/class has a __scriptconfig__ object that means it
+            # should accept any of the options defined in the config as keyword
+            # arguments. We can utilize additional metadata stored in the
+            # scriptconfig object to enrich our CLI.
+            config_cls = function_or_class.__scriptconfig__
+            self._add_scriptconfig_arguments(
+                config_cls=config_cls,
+                added_args=added_args,
+                function_or_class=function_or_class,
+                component=component,
+                container=container,
+                nested_key=nested_key,
+                fail_untyped=fail_untyped,
+                as_positional=as_positional,
+                sub_configs=sub_configs,
+                skip=skip,
+                linked_targets=linked_targets,
+            )
+
         return added_args
+
+    def _add_scriptconfig_arguments(
+        self,
+        config_cls,
+        added_args,
+        function_or_class,
+        component,
+        container,
+        nested_key,
+        fail_untyped: bool = True,
+        as_positional: bool = False,
+        sub_configs: bool = False,
+        skip: Optional[Set[Union[str, int]]] = None,
+        linked_targets: Optional[Set[str]] = None,
+    ):
+
+        for key, value in config_cls.__default__.items():
+            from scriptconfig import value as value_mod
+
+            if not isinstance(value, value_mod.Value):
+                # hack
+                value = value_mod.Value(value)
+            type_ = value.parsekw["type"]
+            if type_ is None or not isinstance(type_, type):
+                annotation = inspect._empty
+            else:
+                annotation = type_
+            param = ParamData(
+                name=key,
+                annotation=annotation,
+                kind=inspect.Parameter.KEYWORD_ONLY,
+                default=value.value,
+                doc=value.parsekw["help"],
+                component=component,
+                parent=function_or_class,
+                short_aliases=value.short_alias,
+                long_aliases=value.alias,
+            )
+            self._add_signature_parameter(
+                container,
+                nested_key,
+                param,
+                added_args,
+                skip={s for s in (skip or []) if isinstance(s, str)},
+                fail_untyped=fail_untyped,
+                sub_configs=sub_configs,
+                linked_targets=linked_targets,
+                as_positional=as_positional,
+            )
 
     def _add_signature_parameter(
         self,
@@ -355,8 +426,9 @@ class SignatureArguments(LoggerProperty):
             kwargs["required"] = True
         is_subclass_typehint = False
         is_dataclass_like_typehint = is_dataclass_like(annotation)
-        dest = (nested_key + "." if nested_key else "") + name
-        args = [dest if is_required and as_positional else "--" + dest]
+        # dest = (nested_key + "." if nested_key else "") + name
+        # args = [dest if is_required and as_positional else "--" + dest]
+        args, dest = param._resolve_args_and_dest(is_required, as_positional, nested_key)
         if param.origin:
             parser = container
             if not isinstance(container, ArgumentParser):
