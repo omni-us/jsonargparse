@@ -754,7 +754,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 cfg.pop(action_dest, None)
                 for key, subparser in action.choices.items():
                     self._dump_cleanup_actions(cfg, subparser._actions, dump_kwargs, prefix=prefix + key + ".")
-            elif isinstance(action, ActionTypeHint):
+            elif isinstance(action, ActionLink):
+                action = action.target[1]
+            if isinstance(action, ActionTypeHint):
                 value = cfg.get(action_dest)
                 if value is not None:
                     with parser_context(parent_parser=self):

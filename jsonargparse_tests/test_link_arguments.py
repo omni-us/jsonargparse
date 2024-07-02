@@ -467,6 +467,16 @@ def test_on_parse_nested_callable(parser):
     assert cfg.model.init_args.optimizer.init_args == Namespace(lr=0.01)
 
 
+def test_on_parse_type_skip_link_targets_dump(parser):
+    parser.add_argument("--t1", type=type)
+    parser.add_argument("--t2", type=type)
+    parser.link_arguments("t1", "t2")
+
+    cfg = parser.parse_args([f"--t1={__name__}.Model"])
+    dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+    assert dump["t2"] == f"{__name__}.Model"
+
+
 # tests for links applied on instantiate
 
 
