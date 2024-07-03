@@ -19,6 +19,11 @@ Added
 ^^^^^
 - Support for ``MappingProxyType`` as a type and as default for mapping types
   (`#540 <https://github.com/omni-us/jsonargparse/pull/540>`__).
+- New function ``get_loader`` to get the current loader for a given parser mode
+  (`#479 comment
+  <https://github.com/omni-us/jsonargparse/issues/479#issuecomment-2022596544>`__,
+  `#536 comment
+  <https://github.com/omni-us/jsonargparse/issues/536#issuecomment-2186961644>`__).
 
 Fixed
 ^^^^^

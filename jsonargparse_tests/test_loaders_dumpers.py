@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from jsonargparse import ArgumentParser, set_dumper, set_loader
+from jsonargparse import ArgumentParser, get_loader, set_dumper, set_loader
 from jsonargparse._common import parser_context
 from jsonargparse._loaders_dumpers import load_value, loaders, yaml_dump
 from jsonargparse._optionals import omegaconf_support
@@ -85,6 +85,12 @@ def test_parser_mode_omegaconf_interpolation_in_subcommands(parser, subparser):
 
 def test_invalid_parser_mode():
     pytest.raises(ValueError, lambda: ArgumentParser(parser_mode="invalid"))
+
+
+def test_get_loader():
+    from jsonargparse._loaders_dumpers import jsonnet_load
+
+    assert jsonnet_load is get_loader("jsonnet")
 
 
 def test_set_loader_parser_mode_subparsers(parser, subparser):
