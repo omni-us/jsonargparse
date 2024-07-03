@@ -11,6 +11,7 @@ from ._optionals import import_jsonnet, omegaconf_support
 from ._type_checking import ArgumentParser
 
 __all__ = [
+    "get_loader",
     "set_loader",
     "set_dumper",
 ]
@@ -200,6 +201,11 @@ def set_loader(mode: str, loader_fn: Callable[[str], Any], exceptions: Tuple[Typ
     """
     loaders[mode] = loader_fn
     loader_exceptions[mode] = exceptions
+
+
+def get_loader(mode: str):
+    """Returns the current loader function for a given mode."""
+    return loaders[mode]
 
 
 def set_dumper(format_name: str, dumper_fn: Callable[[Any], str]):
