@@ -1,6 +1,7 @@
 """Classes and functions related to namespace objects."""
 
 import argparse
+from collections import OrderedDict
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -72,7 +73,7 @@ def strip_meta(cfg):
 
 def recreate_branches(data, skip_keys=None):
     new_data = data
-    if isinstance(data, (Namespace, dict)):
+    if isinstance(data, (Namespace, dict)) and not isinstance(data, OrderedDict):
         new_data = type(data)()
         for key, val in getattr(data, "__dict__", data).items():
             if skip_keys is None or key not in skip_keys:
