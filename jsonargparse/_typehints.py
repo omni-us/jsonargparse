@@ -4,7 +4,7 @@ import inspect
 import os
 import re
 from argparse import ArgumentError
-from collections import abc, defaultdict
+from collections import OrderedDict, abc, defaultdict
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from copy import deepcopy
@@ -120,6 +120,7 @@ root_types = {
     MutableMapping,
     abc.Mapping,
     abc.MutableMapping,
+    OrderedDict,
     Callable,
     abc.Callable,
 }
@@ -145,7 +146,16 @@ sequence_origin_types = {
     abc.Sequence,
     abc.MutableSequence,
 }
-mapping_origin_types = {Dict, dict, Mapping, MappingProxyType, MutableMapping, abc.Mapping, abc.MutableMapping}
+mapping_origin_types = {
+    Dict,
+    dict,
+    Mapping,
+    MappingProxyType,
+    MutableMapping,
+    abc.Mapping,
+    abc.MutableMapping,
+    OrderedDict,
+}
 callable_origin_types = {Callable, abc.Callable}
 
 literal_types = {Literal}
@@ -904,8 +914,10 @@ def adapt_typehints(
                 raise_unexpected_value(f"Unexpected keys: {extra_keys}", val)
             for k, v in val.items():
                 val[k] = adapt_typehints(v, typehint.__annotations__[k], **adapt_kwargs)
-        if typehint_origin == MappingProxyType and not serialize:
+        if typehint_origin is MappingProxyType and not serialize:
             val = MappingProxyType(val)
+        elif typehint_origin is OrderedDict:
+            val = dict(val) if serialize else OrderedDict(val)
 
     # Callable
     elif typehint_origin in callable_origin_types or typehint in callable_origin_types:

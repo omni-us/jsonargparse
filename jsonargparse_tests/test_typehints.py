@@ -6,6 +6,7 @@ import sys
 import time
 import uuid
 from calendar import Calendar, TextCalendar
+from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
 from types import MappingProxyType
@@ -561,6 +562,26 @@ def test_mapping_default_mapping_proxy_type(parser):
     assert isinstance(cfg.mapping, Mapping)
     assert mapping_proxy == cfg.mapping
     assert parser.dump(cfg, format="json") == '{"mapping":{"x":1}}'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="OrderedDict subscriptable since python 3.9")
+def test_ordered_dict(parser):
+    parser.add_argument("--odict", type=eval("OrderedDict[str, int]"))
+    cfg = parser.parse_args(['--odict={"a":1, "b":2}'])
+    assert isinstance(cfg.odict, OrderedDict)
+    assert OrderedDict([("a", 1), ("b", 2)]) == cfg.odict
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--odict={"x":"-"}'])
+    ctx.match("Expected a <class 'int'>")
+    assert parser.dump(cfg, format="json") == '{"odict":{"a":1,"b":2}}'
+    assert parser.dump(cfg, format="yaml") == "odict:\n  a: 1\n  b: 2\n"
+
+
+def test_dict_default_ordered_dict(parser):
+    parser.add_argument("--dict", type=dict, default=OrderedDict({"a": 1}))
+    defaults = parser.get_defaults()
+    assert isinstance(defaults.dict, OrderedDict)
+    assert defaults.dict == {"a": 1}
 
 
 # union tests
