@@ -31,6 +31,9 @@ Fixed
 - ``dump`` failing when a link target requires serialization and
   ``skip_link_targets=False`` (`#542
   <https://github.com/omni-us/jsonargparse/pull/542>`__).
+- Import path of inherited classmethod not resolving correctly (`lightning#19863
+  comment
+  <https://github.com/Lightning-AI/pytorch-lightning/discussions/19863#discussioncomment-10010226>`__).
 
 
 v4.31.0 (2024-06-27)

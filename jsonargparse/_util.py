@@ -216,8 +216,12 @@ def get_import_path(value: Any) -> Optional[str]:
     """Returns the shortest dot import path for the given object."""
     path = None
     value = get_generic_origin(value)
-    module_path = getattr(value, "__module__", None)
-    qualname = getattr(value, "__qualname__", "")
+    if hasattr(value, "__self__") and inspect.isclass(value.__self__) and inspect.ismethod(value):
+        module_path = getattr(value.__self__, "__module__", None)
+        qualname = f"{value.__self__.__name__}.{value.__name__}"
+    else:
+        module_path = getattr(value, "__module__", None)
+        qualname = getattr(value, "__qualname__", "")
 
     if module_path is None:
         path = unresolvable_import_paths.get(value)
@@ -244,7 +248,7 @@ def get_import_path(value: Any) -> Optional[str]:
                 if getattr(module, attr, None) is value:
                     path = module_path + "." + attr
                     break
-                elif getattr(obj, attr, None) is value:
+                elif getattr(obj, attr, None) == value:
                     path = module_path + "." + qualname
                     break
             elif getattr(module, qualname, None) is value:
