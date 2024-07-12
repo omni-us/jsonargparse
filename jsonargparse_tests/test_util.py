@@ -565,6 +565,23 @@ def test_get_import_path_static_method_shorthand():
     assert get_import_path(static_method) == f"{__name__}.static_method"
 
 
+class ParentClassmethod:
+    __module__ = "jsonargparse_tests"
+
+    @classmethod
+    def class_method(cls):
+        pass
+
+
+class ChildClassmethod(ParentClassmethod):
+    pass
+
+
+def test_get_import_path_classpath_inheritance():
+    assert get_import_path(ParentClassmethod.class_method) == "jsonargparse_tests.ParentClassmethod.class_method"
+    assert get_import_path(ChildClassmethod.class_method) == f"{__name__}.ChildClassmethod.class_method"
+
+
 def unresolvable_import():
     pass
 
