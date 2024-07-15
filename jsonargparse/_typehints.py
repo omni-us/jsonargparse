@@ -39,6 +39,7 @@ from ._actions import (
     _find_action,
     _find_parent_action,
     _is_action_value_list,
+    parent_parsers_context,
     remove_actions,
 )
 from ._common import (
@@ -453,7 +454,7 @@ class ActionTypeHint(Action):
                 or (isinstance(v, dict) and any(is_subclass_spec(e) for e in v.values()))
             )
 
-        with ActionTypeHint.sub_defaults_context():
+        with ActionTypeHint.sub_defaults_context(), parent_parsers_context(None, None):
             parser._apply_actions(cfg, skip_fn=skip_sub_defaults_apply)
 
     @staticmethod

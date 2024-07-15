@@ -31,6 +31,9 @@ Fixed
 - ``dump`` failing when a link target requires serialization and
   ``skip_link_targets=False`` (`#542
   <https://github.com/omni-us/jsonargparse/pull/542>`__).
+- ``default_config_files`` making parse fail for subcommands and nested subclass
+  types (`lightning-forums#5963
+  <https://lightning.ai/forums/t/problem-lightningcli-with-default-config-files/5963>`__).
 - Import path of inherited classmethod not resolving correctly (`lightning#19863
   comment
   <https://github.com/Lightning-AI/pytorch-lightning/discussions/19863#discussioncomment-10010226>`__).
