@@ -580,12 +580,12 @@ parse_kwargs: ContextVar = ContextVar("parse_kwargs", default={})
 @contextmanager
 def parent_parsers_context(key, parser):
     prev = parent_parsers.get()
-    curr = prev + [(key, parser)]
-    t = parent_parsers.set(curr)
+    curr = [] if parser is None else prev + [(key, parser)]
+    token = parent_parsers.set(curr)
     try:
         yield
     finally:
-        parent_parsers.reset(t)
+        parent_parsers.reset(token)
 
 
 class _ActionSubCommands(_SubParsersAction):

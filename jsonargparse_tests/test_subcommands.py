@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import warnings
 from pathlib import Path
@@ -253,6 +254,46 @@ def test_subcommand_required_arg_in_default_config(parser, subparser, tmp_cwd):
     cfg = parser.parse_args([])
     assert str(cfg.__default_config__) == "config.yaml"
     assert strip_meta(cfg) == Namespace(output="test", prepare=Namespace(media="test"), subcommand="prepare")
+
+
+class SubModel:
+    def __init__(self, p1: int, p2: str = "-"):
+        pass
+
+
+class Model:
+    def __init__(self, submodel: SubModel):
+        self.submodel = submodel
+
+
+def test_subcommand_default_config_add_subdefaults(parser, subparser, tmp_cwd):
+    config = {
+        "fit": {
+            "model": {
+                "class_path": f"{__name__}.Model",
+                "init_args": {
+                    "submodel": {
+                        "class_path": f"{__name__}.SubModel",
+                        "init_args": {"p1": 1},
+                    }
+                },
+            }
+        }
+    }
+    Path("config.json").write_text(json.dumps(config))
+    parser.default_config_files = ["config.json"]
+    subcommands = parser.add_subcommands()
+    subparser = ArgumentParser()
+    subparser.add_argument("--model", type=Model, required=True)
+    subcommands.add_subcommand("fit", subparser)
+    cfg = parser.parse_args([])
+    assert cfg.fit.model.class_path == f"{__name__}.Model"
+    assert list(cfg.fit.model.init_args.__dict__.keys()) == ["submodel"]
+    assert cfg.fit.model.init_args.submodel.class_path == f"{__name__}.SubModel"
+    assert cfg.fit.model.init_args.submodel.init_args == Namespace(p1=1, p2="-")
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.fit.model, Model)
+    assert isinstance(init.fit.model.submodel, SubModel)
 
 
 def test_subsubcommands_parse_args(subtests):
