@@ -549,10 +549,11 @@ def function_optional_callable(p1: Optional[Callable] = None, **kw):
     function_no_args_no_kwargs(**kw)
 
 
-def assert_params(params, expected, origins={}):
+def assert_params(params, expected, origins={}, help=True):
     assert expected == [p.name for p in params]
-    docs = [f"help for {p.name}" for p in params] if docstring_parser_support else [None] * len(params)
-    assert docs == [p.doc for p in params]
+    if help:
+        docs = [f"help for {p.name}" for p in params] if docstring_parser_support else [None] * len(params)
+        assert docs == [p.doc for p in params]
     assert all(isinstance(params[n].default, ConditionalDefault) for n in origins.keys())
     param_origins = {
         n: [o.split(f"{__name__}.", 1)[1] for o in p.origin] for n, p in enumerate(params) if p.origin is not None
@@ -874,6 +875,28 @@ def test_conditional_calls_kwargs():
 
 def test_get_params_optional_callable():
     assert_params(get_params(function_optional_callable), ["p1", "pk1", "k2"])
+
+
+def func_several_params(p1: int = 1, p2: int = 2, p3: int = 3, p4: int = 4):
+    pass
+
+
+def func_given_kwargs(p: int, **kwargs):
+    func_several_params(p2=0, **kwargs)
+    func_several_params(p4=0, **kwargs)
+
+
+def test_get_params_given_kwargs():
+    assert_params(get_params(func_given_kwargs), ["p", "p1", "p3"], help=False)
+
+
+def test_get_params_some_ignored():
+    with patch.dict(
+        "jsonargparse._parameter_resolvers.ignore_params", {f"{__name__}.func_several_params": {"p2", "p3"}}
+    ):
+        assert_params(get_params(func_several_params), ["p1", "p4"], help=False)
+    with patch.dict("jsonargparse._parameter_resolvers.ignore_params", {f"{__name__}.func_given_kwargs": {"p3"}}):
+        assert_params(get_params(func_given_kwargs), ["p", "p1"], help=False)
 
 
 # unsupported cases
