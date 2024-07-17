@@ -620,6 +620,7 @@ class ActionTypeHint(Action):
         if inspect.isclass(val_class):
             parser.add_class_arguments(val_class, **kwargs)
         else:
+            kwargs = {k: v for k, v in kwargs.items() if k != "instantiate"}
             parser.add_function_arguments(val_class, **kwargs)
 
         if "linked_targets" in kwargs and parser.required_args:

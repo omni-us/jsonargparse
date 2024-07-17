@@ -11,7 +11,7 @@ from copy import deepcopy
 from functools import partial
 from importlib import import_module
 from types import MethodType
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
 from ._common import (
     LoggerProperty,
@@ -51,6 +51,10 @@ parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]  # type: ign
 kinds = inspect._ParameterKind
 ast_assign_type: Tuple[Type[ast.AST], ...] = (ast.AnnAssign, ast.Assign)
 param_kwargs_pop_or_get = "**.pop|get():"
+
+ignore_params = {
+    "transformers.BertModel.from_pretrained": {"config_file_name"},
+}
 
 
 class SourceNotAvailable(Exception):
@@ -268,11 +272,14 @@ def ast_get_call_keyword_names(node):
     return [kw_node.arg for kw_node in node.keywords if kw_node.arg]
 
 
-def remove_given_parameters(node, params):
+def remove_given_parameters(node, params, removed_params: Optional[set] = None):
     given_args = set(ast_get_call_positional_indexes(node))
     given_kwargs = set(ast_get_call_keyword_names(node))
+    input_params = params
     params = [p for n, p in enumerate(params) if n not in given_args]
     params = [p for p in params if p.name not in given_kwargs]
+    if removed_params is not None and len(params) < len(input_params):
+        removed_params.update(p.name for p in input_params if p.name in given_kwargs)
     return params
 
 
@@ -745,6 +752,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             return [], []
 
         params_list = []
+        removed_params: Set[str] = set()
         kwargs_value = kwargs_name and values_to_find[kwargs_name]
         kwargs_value_dump = kwargs_value and ast.dump(kwargs_value)
         for node, source in [(v, s) for k, v, s in values_found if k == kwargs_name]:
@@ -768,7 +776,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     get_param_args = self.get_node_component(node, source)
                     if get_param_args:
                         params = get_signature_parameters(*get_param_args, logger=self.logger)
-                params = remove_given_parameters(node, params)
+                params = remove_given_parameters(node, params, removed_params)
                 if params:
                     self.add_node_origins(params, node)
                     params_list.append(params)
@@ -783,6 +791,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     self.log_debug(f"unsupported type of assign: {ast_str(node)}")
 
         params = group_parameters(params_list)
+        params = [p for p in params if p.name not in removed_params]
         return split_args_and_kwargs(params)
 
     def get_parameters_attr_use_in_members(self, attr_name) -> ParamList:
@@ -826,6 +835,12 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             matched = group_parameters(matched)
         return matched or None
 
+    def remove_ignore_parameters(self, params: ParamList) -> ParamList:
+        import_path = get_import_path(self.component)
+        if import_path in ignore_params:
+            params = [p for p in params if p.name not in ignore_params[import_path]]
+        return params
+
     def get_parameters(self) -> ParamList:
         if self.component is None:
             return []
@@ -839,6 +854,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 args, kwargs = self.get_parameters_args_and_kwargs()
             params = replace_args_and_kwargs(params, args, kwargs)
         add_stub_types(stubs, params, self.component)
+        params = self.remove_ignore_parameters(params)
         return params
 
 
