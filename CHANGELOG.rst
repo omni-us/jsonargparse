@@ -39,14 +39,14 @@ Fixed
   <https://github.com/Lightning-AI/pytorch-lightning/discussions/19863#discussioncomment-9821765>`__).
   - Import path of inherited classmethod not resolving correctly (`#548
     <https://github.com/omni-us/jsonargparse/pull/548>`__).
-  - Resolved parameters leading to multiple values for keyword argument (`#???
-    <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  - Resolved parameters leading to multiple values for keyword argument (`#551
+    <https://github.com/omni-us/jsonargparse/pull/551>`__).
   - Function with return type a class in ``class_path`` in some cases fails with
-    unexpected ``instantiate`` parameter error (`#???
-    <https://github.com/omni-us/jsonargparse/pull/???>`__).
+    unexpected ``instantiate`` parameter error (`#551
+    <https://github.com/omni-us/jsonargparse/pull/551>`__).
   - Ignore incorrectly resolved ``config_file_name`` parameter for transformers
-    model ``from_pretrained``(`#???
-    <https://github.com/omni-us/jsonargparse/pull/???>`__).
+    model ``from_pretrained``(`#551
+    <https://github.com/omni-us/jsonargparse/pull/551>`__).
 
 
 v4.31.0 (2024-06-27)
