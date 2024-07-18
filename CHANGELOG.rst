@@ -19,7 +19,8 @@ Added
 ^^^^^
 - Support for ``MappingProxyType`` as a type and as default for mapping types
   (`#540 <https://github.com/omni-us/jsonargparse/pull/540>`__).
-- Support for ``OrderedDict`` as a type.
+- Support for ``OrderedDict`` as a type (`#545
+  <https://github.com/omni-us/jsonargparse/pull/545>`__).
 - New function ``get_loader`` to get the current loader for a given parser mode
   (`#479 comment
   <https://github.com/omni-us/jsonargparse/issues/479#issuecomment-2022596544>`__,
@@ -34,9 +35,7 @@ Fixed
 - ``default_config_files`` making parse fail for subcommands and nested subclass
   types (`lightning-forums#5963
   <https://lightning.ai/forums/t/problem-lightningcli-with-default-config-files/5963>`__).
-- Fixes related to transformers ``PreTrainedModel.from_pretrained``
-  (`lightning#19863 comment
-  <https://github.com/Lightning-AI/pytorch-lightning/discussions/19863#discussioncomment-9821765>`__).
+- Fixes related to transformers ``PreTrainedModel.from_pretrained``:
   - Import path of inherited classmethod not resolving correctly (`#548
     <https://github.com/omni-us/jsonargparse/pull/548>`__).
   - Resolved parameters leading to multiple values for keyword argument (`#551
