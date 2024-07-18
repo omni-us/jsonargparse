@@ -35,17 +35,19 @@ Fixed
 - ``default_config_files`` making parse fail for subcommands and nested subclass
   types (`lightning-forums#5963
   <https://lightning.ai/forums/t/problem-lightningcli-with-default-config-files/5963>`__).
-- Fixes related to transformers ``PreTrainedModel.from_pretrained``:
-  - Import path of inherited classmethod not resolving correctly (`#548
-    <https://github.com/omni-us/jsonargparse/pull/548>`__).
-  - Resolved parameters leading to multiple values for keyword argument (`#551
-    <https://github.com/omni-us/jsonargparse/pull/551>`__).
-  - Function with return type a class in ``class_path`` in some cases fails with
-    unexpected ``instantiate`` parameter error (`#551
-    <https://github.com/omni-us/jsonargparse/pull/551>`__).
-  - Ignore incorrectly resolved ``config_file_name`` parameter for transformers
-    model ``from_pretrained``(`#551
-    <https://github.com/omni-us/jsonargparse/pull/551>`__).
+- Fixes related to transformers ``PreTrainedModel.from_pretrained``
+  (`lightning#19863 comment
+  <https://github.com/Lightning-AI/pytorch-lightning/discussions/19863#discussioncomment-9821765>`__):
+    - Import path of inherited classmethod not resolving correctly (`#548
+      <https://github.com/omni-us/jsonargparse/pull/548>`__).
+    - Resolved parameters leading to multiple values for keyword argument (`#551
+      <https://github.com/omni-us/jsonargparse/pull/551>`__).
+    - Function with return type a class in ``class_path`` in some cases fails
+      with unexpected ``instantiate`` parameter error (`#551
+      <https://github.com/omni-us/jsonargparse/pull/551>`__).
+    - Ignore incorrectly resolved ``config_file_name`` parameter for
+      transformers model ``from_pretrained``(`#551
+      <https://github.com/omni-us/jsonargparse/pull/551>`__).
 
 
 v4.31.0 (2024-06-27)
