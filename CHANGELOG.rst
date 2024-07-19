@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.32.0 (2024-07-??)
+v4.32.0 (2024-07-19)
 --------------------
 
 Added
@@ -38,6 +38,7 @@ Fixed
 - Fixes related to transformers ``PreTrainedModel.from_pretrained``
   (`lightning#19863 comment
   <https://github.com/Lightning-AI/pytorch-lightning/discussions/19863#discussioncomment-9821765>`__):
+
     - Import path of inherited classmethod not resolving correctly (`#548
       <https://github.com/omni-us/jsonargparse/pull/548>`__).
     - Resolved parameters leading to multiple values for keyword argument (`#551
