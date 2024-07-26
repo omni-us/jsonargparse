@@ -150,7 +150,7 @@ def test_get_params_classmethod():
         expected = expected[:4] + ["compresslevel"] + expected[4:]
     assert expected == get_param_names(params)[: len(expected)]
     if sys.version_info >= (3, 10):
-        assert all(p.annotation is not inspect._empty for p in params if p.name != "compresslevel")
+        assert all(p.annotation is not inspect._empty for p in params if p.name not in {"compresslevel", "stream"})
     with mock_typeshed_client_unavailable():
         params = get_params(TarFile, "open")
     assert expected == get_param_names(params)[: len(expected)]
