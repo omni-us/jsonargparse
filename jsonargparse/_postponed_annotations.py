@@ -51,7 +51,7 @@ class BackportTypeHints(ast.NodeTransformer):
             self.append_union_elts(node.right, elts)
             out_node = ast.Subscript(
                 value=self.new_name_load(union_map),
-                slice=ast.Index(
+                slice=ast.Index(  # type: ignore[arg-type,call-arg]
                     value=ast.Tuple(elts=elts, ctx=ast.Load()),
                     ctx=ast.Load(),
                 ),
