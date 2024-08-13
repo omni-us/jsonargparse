@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 from unittest.mock import patch
 
@@ -684,6 +685,13 @@ if pydantic_support:
         def __init__(self, a: Optional[PydanticModel] = None):
             self.a = a
 
+    class NestedModel(pydantic.BaseModel):
+        inputs: List[str]
+        outputs: List[str]
+
+    class PydanticNestedDict(pydantic.BaseModel):
+        nested: Optional[Dict[str, NestedModel]] = None
+
 
 def none(x):
     return x
@@ -816,6 +824,23 @@ class TestPydantic:
         cfg = parser.parse_args([f"--cfg={config}"])
         assert cfg.b.class_path == f"{__name__}.OptionalPydantic"
         assert cfg.b.init_args == Namespace(a=Namespace(p1="x", p2=3))
+
+    def test_nested_dict(self, parser):
+        parser.add_argument("--config", action="config")
+        parser.add_argument("--model", type=PydanticNestedDict)
+        model = {
+            "nested": {
+                "key": {
+                    "inputs": ["a", "b"],
+                    "outputs": ["x", "y"],
+                }
+            }
+        }
+        cfg = parser.parse_args(["--model", json.dumps(model)])
+        assert cfg.model.nested["key"] == Namespace(inputs=["a", "b"], outputs=["x", "y"])
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.model, PydanticNestedDict)
+        assert isinstance(init.model.nested["key"], NestedModel)
 
 
 # attrs tests
