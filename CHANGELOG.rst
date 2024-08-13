@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.32.1 (2024-08-??)
+--------------------
+
+Fixed
+^^^^^
+- ``dict`` types not correctly forwarding previous nested values when parsing
+  (`#559 <https://github.com/omni-us/jsonargparse/pull/559>`__).
+
+
 v4.32.0 (2024-07-19)
 --------------------
 

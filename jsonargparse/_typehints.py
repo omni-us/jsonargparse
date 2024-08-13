@@ -904,7 +904,12 @@ def adapt_typehints(
                         for t in sub_add_kwargs["linked_targets"]
                     }
                 else:
-                    kwargs = adapt_kwargs
+                    kwargs = adapt_kwargs.copy()
+                if kwargs.get("prev_val"):
+                    if isinstance(kwargs["prev_val"], dict):
+                        kwargs["prev_val"] = kwargs["prev_val"].get(k)
+                    else:
+                        kwargs["prev_val"] = None
                 val[k] = adapt_typehints(v, subtypehints[1], **kwargs)
         if get_import_path(typehint.__class__) == "typing._TypedDictMeta":
             if typehint.__total__:
