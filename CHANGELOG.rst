@@ -19,6 +19,8 @@ Fixed
 ^^^^^
 - ``dict`` types not correctly forwarding previous nested values when parsing
   (`#559 <https://github.com/omni-us/jsonargparse/pull/559>`__).
+- ``List`` type incorrectly using defaults from previous item (`#560
+  <https://github.com/omni-us/jsonargparse/pull/560>`__).
 
 
 v4.32.0 (2024-07-19)
