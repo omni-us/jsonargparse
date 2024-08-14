@@ -203,6 +203,18 @@ def test_list_nested_optional_dataclass(parser):
     assert cfg.b == [Namespace(a=Namespace(x=1))]
 
 
+@dataclasses.dataclass
+class ItemData:
+    x: int = 1
+    y: str = "one"
+
+
+def test_list_append_defaults(parser):
+    parser.add_argument("--list", type=List[ItemData])
+    cfg = parser.parse_args(["--list+={}", '--list+={"x":2,"y":"two"}', '--list+={"x":3}'])
+    assert cfg.list == [Namespace(x=1, y="one"), Namespace(x=2, y="two"), Namespace(x=3, y="one")]
+
+
 def test_add_argument_dataclass_type(parser):
     parser.add_argument("--b", type=DataClassB, default=DataClassB(b1=7.0))
     cfg = parser.get_defaults()

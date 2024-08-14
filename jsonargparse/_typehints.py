@@ -871,10 +871,11 @@ def adapt_typehints(
         elif not isinstance(val, list):
             raise_unexpected_value(f"Expected a {typehint_origin}", val)
         if subtypehints is not None:
-            adapt_kwargs_n = adapt_kwargs
             for n, v in enumerate(val):
                 if isinstance(prev_val, list) and len(prev_val) == len(val):
-                    adapt_kwargs_n = {**adapt_kwargs, "prev_val": prev_val[n]}
+                    adapt_kwargs_n = {**deepcopy(adapt_kwargs), "prev_val": prev_val[n]}
+                else:
+                    adapt_kwargs_n = deepcopy(adapt_kwargs)
                 val[n] = adapt_typehints(v, subtypehints[0], list_item=True, **adapt_kwargs_n)
 
     # Dict, Mapping
