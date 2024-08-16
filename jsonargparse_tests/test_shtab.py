@@ -194,6 +194,12 @@ class Base:
         pass
 
 
+def test_bash_class_config(parser):
+    parser.add_class_arguments(Base, "class")
+    shtab_script = get_shtab_script(parser, "bash")
+    assert "_class_COMPGEN=_shtab_compgen_files" in shtab_script
+
+
 class SubA(Base):
     def __init__(self, p1: int, p2: AXEnum):
         pass

@@ -12,7 +12,7 @@ from importlib.util import find_spec
 from subprocess import PIPE, Popen
 from typing import List, Union
 
-from ._actions import ActionConfigFile, _ActionHelpClassPath, remove_actions
+from ._actions import ActionConfigFile, _ActionConfigLoad, _ActionHelpClassPath, remove_actions
 from ._parameter_resolvers import get_signature_parameters
 from ._typehints import (
     ActionTypeHint,
@@ -142,7 +142,7 @@ def shtab_prepare_action(action, parser) -> None:
         return
 
     complete = None
-    if isinstance(action, ActionConfigFile):
+    if isinstance(action, (ActionConfigFile, _ActionConfigLoad)):
         complete = shtab.FILE
     elif isinstance(action, ActionTypeHint):
         typehint = action._typehint
