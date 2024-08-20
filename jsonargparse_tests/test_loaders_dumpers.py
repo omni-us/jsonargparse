@@ -159,6 +159,7 @@ def test_nested_parser_mode(parser):
     parser.parser_mode = "custom"
     parser.add_argument("--custom", type=CustomContainer)
     cfg = parser.parse_args(['--custom.data={"fn": {"key": "value"}}'])
+    assert cfg.custom.init_args.data["fn"]["key"] is custom_loader
     dump = yaml.safe_load(parser.dump(cfg))
     assert dump["custom"]["init_args"]["data"] == {"fn": {"key": "dumped"}}
 
