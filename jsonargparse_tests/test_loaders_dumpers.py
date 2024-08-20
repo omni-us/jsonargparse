@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from typing import List
 from unittest.mock import patch
 
@@ -127,6 +128,39 @@ def test_load_value_dash():
     with parser_context(load_value_mode="yaml"):
         assert "-" == load_value("-")
         assert " -  " == load_value(" -  ")
+
+
+@dataclass
+class CustomData:
+    fn: dict
+
+
+class CustomContainer:
+    def __init__(self, data: CustomData):
+        self.data = data
+
+
+def custom_loader(data):
+    data = yaml.safe_load(data)
+    if isinstance(data, dict) and "fn" in data:
+        data["fn"] = {k: custom_loader for k in data["fn"]}
+    return data
+
+
+def custom_dumper(data):
+    if "data" in data and "fn" in data["data"]:
+        data["data"]["fn"] = {k: "dumped" for k in data["data"]["fn"]}
+    return yaml_dump(data)
+
+
+def test_nested_parser_mode(parser):
+    set_loader("custom", custom_loader)
+    set_dumper("custom", custom_dumper)
+    parser.parser_mode = "custom"
+    parser.add_argument("--custom", type=CustomContainer)
+    cfg = parser.parse_args(['--custom.data={"fn": {"key": "value"}}'])
+    dump = yaml.safe_load(parser.dump(cfg))
+    assert dump["custom"]["init_args"]["data"] == {"fn": {"key": "dumped"}}
 
 
 @pytest.mark.skipif(

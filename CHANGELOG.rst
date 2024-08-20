@@ -23,6 +23,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/560>`__).
 - ``--print_shtab`` not adding file completer for ``_ActionConfigLoad`` (`#562
   <https://github.com/omni-us/jsonargparse/pull/562>`__).
+- ``parser_mode`` not inherited by nested parsers (`#564
+  <https://github.com/omni-us/jsonargparse/pull/564>`__).
 
 
 v4.32.0 (2024-07-19)

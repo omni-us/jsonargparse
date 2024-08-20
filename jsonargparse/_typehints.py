@@ -615,7 +615,7 @@ class ActionTypeHint(Action):
         if skip_args:
             kwargs.setdefault("skip", set()).add(skip_args)
         parser = parent_parser.get()
-        parser = type(parser)(exit_on_error=False, logger=parser.logger)
+        parser = type(parser)(exit_on_error=False, logger=parser.logger, parser_mode=parser.parser_mode)
         remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
         if inspect.isclass(val_class):
             parser.add_class_arguments(val_class, **kwargs)
