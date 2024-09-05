@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.32.2 (2024-09-??)
+--------------------
+
+Fixed
+^^^^^
+- Callable type with subclass return not showing the ``--*.help`` option (`#566
+  <https://github.com/omni-us/jsonargparse/issues/566>`__).
+
+
 v4.32.1 (2024-08-23)
 --------------------
 

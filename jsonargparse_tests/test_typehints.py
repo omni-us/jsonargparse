@@ -38,6 +38,7 @@ from jsonargparse._typehints import (
     ActionTypeHint,
     Literal,
     get_all_subclass_paths,
+    get_subclass_types,
     is_optional,
 )
 from jsonargparse._util import get_import_path
@@ -753,6 +754,23 @@ class Adam(Optimizer):
         super().__init__(*args, **kwargs)
 
 
+@pytest.mark.parametrize(
+    ["typehint", "expected"],
+    [
+        (None, None),
+        (Optimizer, (Optimizer,)),
+        (Union[SGD, Adam, str], (SGD, Adam)),
+        (Optional[Union[SGD, Adam]], (SGD, Adam)),
+        (Callable[[int], Optimizer], (Optimizer,)),
+        (Callable[[int], Union[Adam, SGD]], (Adam, SGD)),
+        (Optional[Callable[[int], Union[Adam, SGD]]], (Adam, SGD)),
+        (Union[Optimizer, Callable[[int], Union[Adam, SGD]]], (Optimizer, Adam, SGD)),
+    ],
+)
+def test_get_subclass_types(typehint, expected):
+    assert expected == get_subclass_types(typehint, callable_return=True)
+
+
 def test_callable_args_return_type_class(parser, subtests):
     parser.add_argument("--optimizer", type=Callable[[List[float]], Optimizer], default=SGD)
 
@@ -789,6 +807,8 @@ def test_callable_args_return_type_class(parser, subtests):
 
     with subtests.test("help"):
         help_str = get_parser_help(parser)
+        assert "--optimizer.help" in help_str
+        assert "Show the help for the given subclass of Optimizer" in help_str
         for name in ["Optimizer", "SGD", "Adam"]:
             assert f"{__name__}.{name}" in help_str
 

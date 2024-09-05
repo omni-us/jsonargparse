@@ -356,9 +356,9 @@ class _ActionHelpClassPath(Action):
             super().__init__(**kwargs)
 
     def update_init_kwargs(self, kwargs):
-        from ._typehints import get_subclasses_from_type
+        from ._typehints import get_subclass_names
 
-        self._basename = iter_to_set_str(get_subclasses_from_type(self._baseclass))
+        self._basename = iter_to_set_str(get_subclass_names(self._baseclass, callable_return=True))
         kwargs.update(
             {
                 "metavar": "CLASS_PATH_OR_NAME",
@@ -371,23 +371,28 @@ class _ActionHelpClassPath(Action):
         if len(args) == 0:
             kwargs["_baseclass"] = self._baseclass
             return type(self)(**kwargs)
-        dest = re.sub("\\.help$", "", self.dest)
-        return self.print_help(args, self._baseclass, dest)
+        return self.print_help(args)
 
-    def print_help(self, call_args, baseclass, dest):
-        from ._typehints import resolve_class_path_by_name
+    def print_help(self, call_args):
+        from ._typehints import callable_origin_types, resolve_class_path_by_name
 
         parser, _, value, option_string = call_args
         try:
-            val_class = import_object(resolve_class_path_by_name(baseclass, value))
+            val_class = import_object(resolve_class_path_by_name(self._baseclass, value))
         except Exception as ex:
             raise TypeError(f"{option_string}: {ex}") from ex
-        if get_typehint_origin(self._baseclass) == Union:
-            baseclasses = self._baseclass.__args__
+        baseclasses = self._baseclass
+        origin = get_typehint_origin(self._baseclass)
+        if origin in callable_origin_types:
+            baseclasses = self._baseclass.__args__[-1]
+            origin = get_typehint_origin(baseclasses)
+        if origin == Union:
+            baseclasses = baseclasses.__args__
         else:
-            baseclasses = [baseclass]
+            baseclasses = [baseclasses]
         if not any(is_subclass(val_class, b) for b in baseclasses):
             raise TypeError(f'{option_string}: Class "{value}" is not a subclass of {self._basename}')
+        dest = re.sub("\\.help$", "", self.dest)
         subparser = type(parser)(description=f"Help for {option_string}={get_import_path(val_class)}")
         subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
         remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
