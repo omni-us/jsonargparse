@@ -17,8 +17,8 @@ v4.32.2 (2024-09-??)
 
 Fixed
 ^^^^^
-- Callable type with subclass return not showing the ``--*.help`` option (`#566
-  <https://github.com/omni-us/jsonargparse/issues/566>`__).
+- Callable type with subclass return not showing the ``--*.help`` option (`#567
+  <https://github.com/omni-us/jsonargparse/pull/567>`__).
 
 
 v4.32.1 (2024-08-23)
