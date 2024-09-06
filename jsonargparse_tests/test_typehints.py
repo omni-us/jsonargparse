@@ -758,6 +758,7 @@ class Adam(Optimizer):
     ["typehint", "expected"],
     [
         (None, None),
+        (Union[int, float], None),
         (Optimizer, (Optimizer,)),
         (Union[SGD, Adam, str], (SGD, Adam)),
         (Optional[Union[SGD, Adam]], (SGD, Adam)),
@@ -811,6 +812,20 @@ def test_callable_args_return_type_class(parser, subtests):
         assert "Show the help for the given subclass of Optimizer" in help_str
         for name in ["Optimizer", "SGD", "Adam"]:
             assert f"{__name__}.{name}" in help_str
+        help_str = get_parse_args_stdout(parser, ["--optimizer.help=Adam"])
+        assert f"Help for --optimizer.help={__name__}.Adam" in help_str
+        assert "--optimizer.lr" in help_str
+        assert "--optimizer.params" not in help_str
+
+
+def test_optional_callable_return_type_help(parser):
+    parser.add_argument("--optimizer", type=Optional[Callable[[List[float]], Optimizer]])
+    help_str = get_parser_help(parser)
+    assert "--optimizer.help" in help_str
+    assert f"known subclasses: {__name__}.Optimizer," in help_str
+    help_str = get_parse_args_stdout(parser, ["--optimizer.help=Adam"])
+    assert f"Help for --optimizer.help={__name__}.Adam" in help_str
+    assert "--optimizer.lr" in help_str
 
 
 def test_callable_return_type_class_implicit_class_path(parser):
@@ -857,6 +872,7 @@ def test_callable_multiple_args_return_type_class(parser, subtests):
 
     with subtests.test("help"):
         help_str = get_parser_help(parser)
+        assert "Show the help for the given subclass of Optimizer" in help_str
         for name in ["Optimizer", "SGD", "Adam"]:
             assert f"{__name__}.{name}" in help_str
 
@@ -915,6 +931,7 @@ def test_callable_args_return_type_union_of_classes(parser, subtests):
 
     with subtests.test("help"):
         help_str = get_parser_help(parser)
+        assert "Show the help for the given subclass of {StepLR,ReduceLROnPlateau}" in help_str
         for name in ["StepLR", "ReduceLROnPlateau"]:
             assert f"{__name__}.{name}" in help_str
 
@@ -954,6 +971,10 @@ def test_optional_callable_args_return_type_class(parser, subtests):
     with subtests.test("parse null"):
         cfg = parser.parse_args(["--scheduler=null"])
         assert cfg.scheduler is None
+
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        assert "Show the help for the given subclass of StepLR" in help_str
 
 
 class CallableSubconfig:
