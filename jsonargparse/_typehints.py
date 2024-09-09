@@ -250,9 +250,11 @@ class ActionTypeHint(Action):
         typehint = kwargs.pop("type")
         if args[0].startswith("--") and ActionTypeHint.supports_append(typehint):
             args = tuple(list(args) + [args[0] + "+"])
-        if ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False):
+        if ActionTypeHint.is_subclass_typehint(
+            typehint, all_subtypes=False
+        ) or ActionTypeHint.is_return_subclass_typehint(typehint):
             help_option = f"--{args[0]}.help" if args[0][0] != "-" else f"{args[0]}.help"
-            help_action = container.add_argument(help_option, action=_ActionHelpClassPath(baseclass=typehint))
+            help_action = container.add_argument(help_option, action=_ActionHelpClassPath(typehint=typehint))
             if sub_add_kwargs:
                 help_action.sub_add_kwargs = sub_add_kwargs
         kwargs["action"] = ActionTypeHint(typehint=typehint, enable_path=enable_path, logger=logger)
@@ -303,15 +305,7 @@ class ActionTypeHint(Action):
             test = all if all_subtypes else any
             k = {"also_lists": also_lists}
             return test(ActionTypeHint.is_subclass_typehint(s, **k) for s in subtypes)
-        return (
-            inspect.isclass(typehint)
-            and typehint not in leaf_or_root_types
-            and not get_registered_type(typehint)
-            and not is_pydantic_type(typehint)
-            and not is_dataclass_like(typehint)
-            and typehint_origin is None
-            and not is_subclass(typehint, (Path, Enum))
-        )
+        return is_single_subclass_typehint(typehint, typehint_origin)
 
     @staticmethod
     def is_return_subclass_typehint(typehint):
@@ -336,14 +330,10 @@ class ActionTypeHint(Action):
         return False
 
     @staticmethod
-    def is_callable_typehint(typehint, all_subtypes=True):
-        typehint = get_unaliased_type(typehint)
-        typehint_origin = get_typehint_origin(typehint)
-        if typehint_origin == Union:
-            subtypes = [a for a in typehint.__args__ if a != NoneType]
-            test = all if all_subtypes else any
-            return test(ActionTypeHint.is_callable_typehint(s) for s in subtypes)
-        return typehint_origin in callable_origin_types or typehint in callable_origin_types
+    def is_callable_typehint(typehint):
+        typehint = typehint_from_action(typehint)
+        typehint_origin = get_typehint_origin(get_optional_arg(get_unaliased_type(typehint)))
+        return typehint_origin in callable_origin_types
 
     def is_init_arg_mapping_typehint(self, key, cfg):
         result = False
@@ -635,10 +625,13 @@ class ActionTypeHint(Action):
 
     def extra_help(self):
         extra = ""
-        if self.is_subclass_typehint(self, all_subtypes=False) or get_typehint_origin(
-            self._typehint
+        typehint = get_optional_arg(self._typehint)
+        if self.is_subclass_typehint(typehint, all_subtypes=False) or get_typehint_origin(
+            typehint
         ) in callable_origin_types.union({Type, type}):
-            class_paths = get_all_subclass_paths(self._typehint)
+            if self.is_callable_typehint(typehint) and getattr(typehint, "__args__", None):
+                typehint = get_callable_return_type(get_optional_arg(typehint))
+            class_paths = get_all_subclass_paths(typehint)
             if class_paths:
                 extra = ", known subclasses: " + ", ".join(class_paths)
         return extra
@@ -678,22 +671,6 @@ def is_pathlike(typehint) -> bool:
     if get_typehint_origin(typehint) == Union:
         return any(is_pathlike(t) for t in typehint.__args__)
     return is_subclass(typehint, os.PathLike)
-
-
-def get_subclasses_from_type(typehint, names=True, subclasses=None) -> tuple:
-    if subclasses is None:
-        subclasses = []
-    origin = get_typehint_origin(typehint)
-    if origin == Union or origin in sequence_origin_types:
-        for subtype in typehint.__args__:
-            get_subclasses_from_type(subtype, names, subclasses)
-    elif ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False):
-        if names:
-            if typehint.__name__ not in subclasses:
-                subclasses.append(typehint.__name__)
-        elif typehint not in subclasses:
-            subclasses.append(typehint)
-    return tuple(subclasses)
 
 
 def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: Optional[Exception] = None) -> NoReturn:
@@ -1143,21 +1120,44 @@ def get_callable_return_type(typehint):
     return return_type
 
 
-def get_subclass_types(typehint, callable_return=True):
-    subclass_types = None
-    if (
-        callable_return
-        and ActionTypeHint.is_callable_typehint(typehint, all_subtypes=False)
-        and getattr(typehint, "__args__", None)
-    ):
-        typehint = get_optional_arg(typehint)
-        typehint = typehint.__args__[-1]
-    if ActionTypeHint.is_subclass_typehint(typehint, all_subtypes=False):
-        if get_typehint_origin(typehint) == Union:
-            subclass_types = tuple(t for t in typehint.__args__ if ActionTypeHint.is_subclass_typehint(t))
-        else:
-            subclass_types = (typehint,)
-    return subclass_types
+def is_single_subclass_typehint(typehint, typehint_origin):
+    return (
+        inspect.isclass(typehint)
+        and typehint not in leaf_or_root_types
+        and not get_registered_type(typehint)
+        and not is_pydantic_type(typehint)
+        and not is_dataclass_like(typehint)
+        and typehint_origin is None
+        and not is_subclass(typehint, (Path, Enum))
+    )
+
+
+def yield_subclass_types(typehint, also_lists=False, callable_return=False):
+    typehint = typehint_from_action(typehint)
+    if typehint is None:
+        return
+    typehint = get_unaliased_type(get_optional_arg(get_unaliased_type(typehint)))
+    typehint_origin = get_typehint_origin(typehint)
+    if callable_return and typehint_origin in callable_origin_types:
+        return_type = get_callable_return_type(typehint)
+        if return_type:
+            k = {"also_lists": also_lists, "callable_return": callable_return}
+            yield from yield_subclass_types(return_type, **k)
+    elif typehint_origin == Union or (also_lists and typehint_origin in sequence_origin_types):
+        k = {"also_lists": also_lists, "callable_return": callable_return}
+        for subtype in typehint.__args__:
+            yield from yield_subclass_types(subtype, **k)
+    if is_single_subclass_typehint(typehint, typehint_origin):
+        yield typehint
+
+
+def get_subclass_types(typehint, also_lists=False, callable_return=False):
+    types = tuple(yield_subclass_types(typehint, also_lists=also_lists, callable_return=callable_return))
+    return types or None
+
+
+def get_subclass_names(typehint, callable_return=False):
+    return tuple(t.__name__ for t in yield_subclass_types(typehint, callable_return=callable_return))
 
 
 def adapt_partial_callable_class(callable_type, subclass_spec):
@@ -1165,7 +1165,7 @@ def adapt_partial_callable_class(callable_type, subclass_spec):
     num_partial_args = 0
     return_type = get_callable_return_type(callable_type)
     if return_type:
-        subclass_types = get_subclass_types(return_type, callable_return=False)
+        subclass_types = get_subclass_types(return_type)
         class_type = import_object(resolve_class_path_by_name(return_type, subclass_spec.class_path))
         if subclass_types and is_subclass(class_type, subclass_types):
             subclass_spec = subclass_spec.clone()

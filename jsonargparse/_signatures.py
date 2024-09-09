@@ -27,7 +27,7 @@ from ._typehints import (
     ActionTypeHint,
     LazyInitBaseClass,
     callable_instances,
-    get_subclasses_from_type,
+    get_subclass_names,
     is_optional,
 )
 from ._util import NoneType, get_private_kwargs, iter_to_set_str
@@ -541,7 +541,7 @@ class SignatureArguments(LoggerProperty):
         if skip is not None:
             skip = {f"{nested_key}.init_args." + s for s in skip}
         param = ParamData(name=nested_key, annotation=Union[baseclass], component=baseclass)
-        str_baseclass = iter_to_set_str(get_subclasses_from_type(param.annotation))
+        str_baseclass = iter_to_set_str(get_subclass_names(param.annotation))
         kwargs.update(
             {
                 "metavar": metavar,

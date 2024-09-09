@@ -170,7 +170,7 @@ def shtab_prepare_action(action, parser) -> None:
             add_bash_typehint_completion(parser, action, message, choices)
             choices = None
     elif isinstance(action, _ActionHelpClassPath):
-        choices = get_help_class_choices(action._baseclass)
+        choices = get_help_class_choices(action._typehint)
     if choices:
         action.choices = choices
 

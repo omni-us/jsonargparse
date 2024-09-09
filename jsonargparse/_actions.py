@@ -15,13 +15,11 @@ from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._optionals import get_config_read_mode
 from ._type_checking import ArgumentParser
 from ._util import (
-    NoneType,
     Path,
     argument_error,
     change_to_path_dir,
     default_config_option_help,
     get_import_path,
-    get_typehint_origin,
     import_object,
     indent_text,
     iter_to_set_str,
@@ -343,22 +341,18 @@ class _ActionConfigLoad(Action):
 class _ActionHelpClassPath(Action):
     sub_add_kwargs: Dict[str, Any] = {}
 
-    def __init__(self, baseclass=None, **kwargs):
-        if baseclass is not None:
-            if get_typehint_origin(baseclass) == Union:
-                baseclasses = [c for c in baseclass.__args__ if c is not NoneType]
-                if len(baseclasses) == 1:
-                    baseclass = baseclasses[0]
-            self._baseclass = baseclass
+    def __init__(self, typehint=None, **kwargs):
+        if typehint is not None:
+            self._typehint = typehint
         else:
-            self._baseclass = kwargs.pop("_baseclass")
+            self._typehint = kwargs.pop("_typehint")
             self.update_init_kwargs(kwargs)
             super().__init__(**kwargs)
 
     def update_init_kwargs(self, kwargs):
-        from ._typehints import get_subclasses_from_type
+        from ._typehints import get_subclass_names
 
-        self._basename = iter_to_set_str(get_subclasses_from_type(self._baseclass))
+        self._basename = iter_to_set_str(get_subclass_names(self._typehint, callable_return=True))
         kwargs.update(
             {
                 "metavar": "CLASS_PATH_OR_NAME",
@@ -369,26 +363,32 @@ class _ActionHelpClassPath(Action):
 
     def __call__(self, *args, **kwargs):
         if len(args) == 0:
-            kwargs["_baseclass"] = self._baseclass
+            kwargs["_typehint"] = self._typehint
             return type(self)(**kwargs)
-        dest = re.sub("\\.help$", "", self.dest)
-        return self.print_help(args, self._baseclass, dest)
+        return self.print_help(args)
 
-    def print_help(self, call_args, baseclass, dest):
-        from ._typehints import resolve_class_path_by_name
+    def print_help(self, call_args):
+        from ._typehints import (
+            ActionTypeHint,
+            get_optional_arg,
+            get_subclass_types,
+            get_unaliased_type,
+            resolve_class_path_by_name,
+        )
 
         parser, _, value, option_string = call_args
         try:
-            val_class = import_object(resolve_class_path_by_name(baseclass, value))
+            typehint = get_unaliased_type(get_optional_arg(self._typehint))
+            baseclasses = get_subclass_types(typehint, callable_return=True)
+            val_class = import_object(resolve_class_path_by_name(typehint, value))
         except Exception as ex:
             raise TypeError(f"{option_string}: {ex}") from ex
-        if get_typehint_origin(self._baseclass) == Union:
-            baseclasses = self._baseclass.__args__
-        else:
-            baseclasses = [baseclass]
         if not any(is_subclass(val_class, b) for b in baseclasses):
             raise TypeError(f'{option_string}: Class "{value}" is not a subclass of {self._basename}')
+        dest = re.sub("\\.help$", "", self.dest)
         subparser = type(parser)(description=f"Help for {option_string}={get_import_path(val_class)}")
+        if ActionTypeHint.is_callable_typehint(typehint) and hasattr(typehint, "__args__"):
+            self.sub_add_kwargs["skip"] = {max(0, len(typehint.__args__) - 1)}
         subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
         remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
         args = self.get_args_after_opt(parser.args)

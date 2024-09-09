@@ -296,7 +296,7 @@ def test_bash_nested_subclasses(parser, subtests):
 def test_bash_callable_return_class(parser, subtests):
     parser.add_argument("--cls", type=Callable[[int], Base])
     shtab_script = get_shtab_script(parser, "bash")
-    assert "_option_strings=('-h' '--help' '--cls' '--cls.p2' '--cls.p3')" in shtab_script
+    assert "_option_strings=('-h' '--help' '--cls.help' '--cls' '--cls.p2' '--cls.p3')" in shtab_script
     assert "--cls.p1" not in shtab_script
     classes = f"{__name__}.Base {__name__}.SubA {__name__}.SubB".split()
     assert_bash_typehint_completions(

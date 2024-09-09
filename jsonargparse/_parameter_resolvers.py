@@ -79,10 +79,10 @@ class ConditionalDefault(UnknownDefault):
 
 
 def get_parameter_origins(component, parent) -> Optional[str]:
-    from ._typehints import get_subclasses_from_type, sequence_origin_types
+    from ._typehints import get_subclass_types, sequence_origin_types
 
     if get_typehint_origin(component) in sequence_origin_types:
-        component = get_subclasses_from_type(component, names=False)
+        component = get_subclass_types(component, also_lists=True)
     if isinstance(component, tuple):
         assert parent is None or len(component) == len(parent)
         return iter_to_set_str(get_parameter_origins(c, parent[n] if parent else None) for n, c in enumerate(component))
@@ -357,12 +357,12 @@ def is_param_subclass_instance_default(param: ParamData) -> bool:
     from ._typehints import ActionTypeHint, get_optional_arg, get_subclass_types
 
     annotation = get_optional_arg(param.annotation)
-    class_types = get_subclass_types(annotation)
+    class_types = get_subclass_types(annotation, callable_return=True)
     return bool(
         (class_types and isinstance(param.default, class_types))
         or (
             is_lambda(param.default)
-            and ActionTypeHint.is_callable_typehint(annotation, all_subtypes=False)
+            and ActionTypeHint.is_callable_typehint(annotation)
             and getattr(annotation, "__args__", None)
             and ActionTypeHint.is_subclass_typehint(annotation.__args__[-1], all_subtypes=False)
         )
@@ -684,7 +684,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                     node = default_node.body
                     num_positionals = len(param.annotation.__args__) - 1
                 class_type = self.get_call_class_type(node)
-                subclass_types = get_subclass_types(param.annotation)
+                subclass_types = get_subclass_types(param.annotation, callable_return=True)
                 if not (class_type and subclass_types and is_subclass(class_type, subclass_types)):
                     continue
                 subclass_spec: dict = dict(class_path=get_import_path(class_type), init_args=dict())
