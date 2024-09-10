@@ -1338,9 +1338,9 @@ def test_add_subclass_required_group(parser):
 def test_add_subclass_not_required_group(parser):
     parser.add_subclass_arguments(Calendar, "cal", required=False)
     cfg = parser.parse_args([])
-    assert cfg == Namespace()
+    assert cfg == Namespace(cal=None)
     init = parser.instantiate_classes(cfg)
-    assert init == Namespace()
+    assert init == Namespace(cal=None)
 
 
 class ListUnionA:
@@ -1723,7 +1723,7 @@ def test_subclass_error_indentation_invalid_init_arg(parser):
       Given value: abc
     """
     ).strip()
-    expected = textwrap.indent(expected, "    ")
+    expected = textwrap.indent(expected, "        ")
     assert expected in err
 
 

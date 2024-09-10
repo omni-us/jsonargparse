@@ -12,6 +12,16 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.33.0 (2024-09-??)
+--------------------
+
+Changed
+^^^^^^^
+- For consistency ``add_subclass_arguments`` now sets default ``None`` instead
+  of ``SUPPRESS`` (`lightning#20103
+  <https://github.com/Lightning-AI/pytorch-lightning/issue/20103>`__).
+
+
 v4.32.2 (2024-09-??)
 --------------------
 

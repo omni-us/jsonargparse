@@ -3,7 +3,7 @@
 import dataclasses
 import inspect
 import re
-from argparse import SUPPRESS, ArgumentParser
+from argparse import ArgumentParser
 from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
@@ -549,7 +549,7 @@ class SignatureArguments(LoggerProperty):
             }
         )
         if "default" not in kwargs:
-            kwargs["default"] = SUPPRESS
+            kwargs["default"] = None
         self._add_signature_parameter(
             group, None, param, added_args, skip, sub_configs=True, instantiate=instantiate, **kwargs
         )

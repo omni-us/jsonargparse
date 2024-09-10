@@ -760,9 +760,7 @@ def test_default_config_files(parser, subtests, tmp_cwd):
     with subtests.test("get_default"):
         assert parser.get_default("op1") == "from default config file"
         parser.add_subclass_arguments(Calendar, "cal")
-        with pytest.raises(KeyError) as ctx:
-            parser.get_default("cal")
-        ctx.match("does not specify a default")
+        assert parser.get_default("cal") is None
 
     with subtests.test("set invalid"):
         with pytest.raises(ValueError) as ctx:
