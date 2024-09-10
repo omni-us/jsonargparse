@@ -57,7 +57,7 @@ jsonschema = [
 ]
 jsonnet = [
     "jsonnet>=0.20.0; os_name == 'posix'",
-    "jsonnet-binary>=0.17.0; os_name != 'posix'",
+    "jsonnet @ https://github.com/google/jsonnet/zipball/master; os_name != 'posix'",
 ]
 urls = [
     "requests>=2.18.4",
