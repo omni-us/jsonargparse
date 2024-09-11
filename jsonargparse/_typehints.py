@@ -88,6 +88,8 @@ __all__ = ["lazy_instance"]
 
 
 Literal = typing_extensions_import("Literal")
+NotRequired = typing_extensions_import("NotRequired")
+Required = typing_extensions_import("Required")
 
 
 root_types = {
@@ -124,6 +126,8 @@ root_types = {
     OrderedDict,
     Callable,
     abc.Callable,
+    NotRequired,
+    Required,
 }
 
 leaf_types = {
@@ -163,6 +167,16 @@ literal_types = {Literal}
 if getattr(Literal, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), "Literal"):
     root_types.add(__import__("typing").Literal)
     literal_types.add(__import__("typing").Literal)
+
+not_required_types = {NotRequired}
+if getattr(NotRequired, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), "NotRequired"):
+    root_types.add(__import__("typing").NotRequired)
+    not_required_types.add(__import__("typing").NotRequired)
+
+required_types = {Required}
+if getattr(Required, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), "Required"):
+    root_types.add(__import__("typing").Required)
+    required_types.add(__import__("typing").Required)
 
 subclass_arg_parser: ContextVar = ContextVar("subclass_arg_parser")
 allow_default_instance: ContextVar = ContextVar("allow_default_instance", default=False)
@@ -891,9 +905,16 @@ def adapt_typehints(
                 val[k] = adapt_typehints(v, subtypehints[1], **kwargs)
         if get_import_path(typehint.__class__) == "typing._TypedDictMeta":
             if typehint.__total__:
-                missing_keys = typehint.__annotations__.keys() - val.keys()
-                if missing_keys:
-                    raise_unexpected_value(f"Missing required keys: {missing_keys}", val)
+                required_keys = {
+                    k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) not in not_required_types
+                }
+            else:
+                required_keys = {
+                    k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) in required_types
+                }
+            missing_keys = required_keys - val.keys()
+            if missing_keys:
+                raise_unexpected_value(f"Missing required keys: {missing_keys}", val)
             extra_keys = val.keys() - typehint.__annotations__.keys()
             if extra_keys:
                 raise_unexpected_value(f"Unexpected keys: {extra_keys}", val)
