@@ -518,7 +518,7 @@ def test_typeddict_without_arg(parser):
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
 def test_typeddict_with_args(parser):
-    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int, "b": NotRequired[int]}))
+    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--typeddict={"a":1, "b":2}'])
@@ -551,7 +551,7 @@ def test_typeddict_with_args_ntotal(parser):
     ctx.match("Expected a <class 'dict'>")
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason="TypedDict introduced in python 3.11")
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="NotRequired introduced in python 3.11")
 def test_typeddict_with_not_required_arg(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int, "b": NotRequired[int]}))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
@@ -573,7 +573,7 @@ def test_typeddict_with_not_required_arg(parser):
     ctx.match("Expected a <class 'int'>")
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason="TypedDict introduced in python 3.11")
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="Required introduced in python 3.11")
 def test_typeddict_with_required_arg(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": Required[int], "b": int}, total=False))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]

@@ -18,6 +18,8 @@ v4.33.0 (2024-09-??)
 Added
 ^^^^^
 - Support for Python 3.13.
+- Support for `NotRequired` and `Required` annotations for `TypedDict` keys (`#571
+  <https://github.com/omni-us/jsonargparse/pull/571>`__)
 
 Fixed
 ^^^^^

@@ -925,6 +925,16 @@ def adapt_typehints(
         elif typehint_origin is OrderedDict:
             val = dict(val) if serialize else OrderedDict(val)
 
+    # NotRequired
+    elif typehint_origin in not_required_types:
+        assert len(subtypehints) == 1, "NotRequired requires a single type argument"
+        val = adapt_typehints(val, subtypehints[0], **adapt_kwargs)
+
+    # Required
+    elif typehint_origin in required_types:
+        assert len(subtypehints) == 1, "Required requires a single type argument"
+        val = adapt_typehints(val, subtypehints[0], **adapt_kwargs)
+
     # Callable
     elif typehint_origin in callable_origin_types or typehint in callable_origin_types:
         if serialize:
