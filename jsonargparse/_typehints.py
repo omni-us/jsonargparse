@@ -3,6 +3,7 @@
 import inspect
 import os
 import re
+import sys
 from argparse import ArgumentError
 from collections import OrderedDict, abc, defaultdict
 from contextlib import contextmanager, suppress
@@ -90,6 +91,19 @@ __all__ = ["lazy_instance"]
 Literal = typing_extensions_import("Literal")
 NotRequired = typing_extensions_import("NotRequired")
 Required = typing_extensions_import("Required")
+TypedDict = typing_extensions_import("TypedDict")
+_TypedDictMeta = typing_extensions_import("_TypedDictMeta")
+
+
+def _capture_typing_extension_shadows(name: str, *collections) -> None:
+    """
+    Ensure different origins for types in typing_extensions are captured.
+    """
+    current_module = sys.modules[__name__]
+    typehint = getattr(current_module, name)
+    if getattr(typehint, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), name):
+        for collection in collections:
+            collection.add(getattr(__import__("typing"), name))
 
 
 root_types = {
@@ -164,19 +178,19 @@ mapping_origin_types = {
 callable_origin_types = {Callable, abc.Callable}
 
 literal_types = {Literal}
-if getattr(Literal, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), "Literal"):
-    root_types.add(__import__("typing").Literal)
-    literal_types.add(__import__("typing").Literal)
+_capture_typing_extension_shadows("Literal", root_types, literal_types)
 
 not_required_types = {NotRequired}
-if getattr(NotRequired, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), "NotRequired"):
-    root_types.add(__import__("typing").NotRequired)
-    not_required_types.add(__import__("typing").NotRequired)
+_capture_typing_extension_shadows("NotRequired", root_types, not_required_types)
 
 required_types = {Required}
-if getattr(Required, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), "Required"):
-    root_types.add(__import__("typing").Required)
-    required_types.add(__import__("typing").Required)
+_capture_typing_extension_shadows("Required", root_types, required_types)
+
+typed_dict_types = {TypedDict}
+_capture_typing_extension_shadows("TypedDict", typed_dict_types)
+
+typed_dict_meta_types = {_TypedDictMeta}
+_capture_typing_extension_shadows("_TypedDictMeta", typed_dict_meta_types)
 
 subclass_arg_parser: ContextVar = ContextVar("subclass_arg_parser")
 allow_default_instance: ContextVar = ContextVar("allow_default_instance", default=False)
@@ -903,7 +917,7 @@ def adapt_typehints(
                     else:
                         kwargs["prev_val"] = None
                 val[k] = adapt_typehints(v, subtypehints[1], **kwargs)
-        if get_import_path(typehint.__class__) == "typing._TypedDictMeta":
+        if type(typehint) in typed_dict_meta_types:
             if typehint.__total__:
                 required_keys = {
                     k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) not in not_required_types

@@ -24,10 +24,6 @@ from typing import (
     Type,
     Union,
 )
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-
 from unittest import mock
 from warnings import catch_warnings
 
@@ -40,6 +36,7 @@ from jsonargparse._typehints import (
     Literal,
     NotRequired,
     Required,
+    TypedDict,
     get_all_subclass_paths,
     get_subclass_types,
     is_optional,
@@ -504,7 +501,7 @@ def test_mapping_nested_without_args(parser):
     assert {"b": {"c": 2}} == parser.parse_args(['--map={"b": {"c": 2}}']).map
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
+@pytest.mark.skipif(not TypedDict, reason="TypedDict introduced in python 3.8 or backported in typing_extensions")
 def test_typeddict_without_arg(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {}))
     assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
@@ -516,7 +513,7 @@ def test_typeddict_without_arg(parser):
     ctx.match("Expected a <class 'dict'>")
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
+@pytest.mark.skipif(not TypedDict, reason="TypedDict introduced in python 3.8 or backported in typing_extensions")
 def test_typeddict_with_args(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
@@ -535,7 +532,7 @@ def test_typeddict_with_args(parser):
     ctx.match("Expected a <class 'dict'>")
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
+@pytest.mark.skipif(not TypedDict, reason="TypedDict introduced in python 3.8 or backported in typing_extensions")
 def test_typeddict_with_args_ntotal(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}, total=False))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]

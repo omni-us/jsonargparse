@@ -275,6 +275,8 @@ def get_typehint_origin(typehint):
             return Union
         if typehint_class == "typing._TypedDictMeta":
             return dict
+        if typehint_class == "typing_extensions._TypedDictMeta":
+            return dict
     return getattr(typehint, "__origin__", None)
 
 
