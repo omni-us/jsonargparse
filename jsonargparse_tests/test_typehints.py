@@ -27,6 +27,9 @@ from typing import (
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict
+if sys.version_info >= (3, 11):
+    from typing import NotRequired, Required
+
 from unittest import mock
 from warnings import catch_warnings
 
@@ -515,7 +518,7 @@ def test_typeddict_without_arg(parser):
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
 def test_typeddict_with_args(parser):
-    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}))
+    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int, "b": NotRequired[int]}))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--typeddict={"a":1, "b":2}'])
@@ -546,6 +549,50 @@ def test_typeddict_with_args_ntotal(parser):
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--typeddict=1"])
     ctx.match("Expected a <class 'dict'>")
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="TypedDict introduced in python 3.11")
+def test_typeddict_with_not_required_arg(parser):
+    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int, "b": NotRequired[int]}))
+    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
+    assert {"a": 1, "b": 2} == parser.parse_args(["--typeddict={'a': 1, 'b': 2}"])["typeddict"]
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":2, "c": 3}'])
+    ctx.match("Unexpected keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"b":2}'])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--typeddict={}"])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":"x"}'])
+    ctx.match("Expected a <class 'int'>")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":"x"}'])
+    ctx.match("Expected a <class 'int'>")
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="TypedDict introduced in python 3.11")
+def test_typeddict_with_required_arg(parser):
+    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": Required[int], "b": int}, total=False))
+    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
+    assert {"a": 1, "b": 2} == parser.parse_args(["--typeddict={'a': 1, 'b': 2}"])["typeddict"]
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":2, "c": 3}'])
+    ctx.match("Unexpected keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"b":2}'])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--typeddict={}"])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":"x"}'])
+    ctx.match("Expected a <class 'int'>")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":"x"}'])
+    ctx.match("Expected a <class 'int'>")
 
 
 def test_mapping_proxy_type(parser):
