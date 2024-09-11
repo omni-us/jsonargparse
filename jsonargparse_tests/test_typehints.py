@@ -552,6 +552,11 @@ def test_typeddict_with_args_ntotal(parser):
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="NotRequired introduced in python 3.11")
+def test_not_required_support(parser):
+    assert ActionTypeHint.is_supported_typehint(NotRequired[Any])
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="NotRequired introduced in python 3.11")
 def test_typeddict_with_not_required_arg(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int, "b": NotRequired[int]}))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
@@ -571,6 +576,11 @@ def test_typeddict_with_not_required_arg(parser):
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--typeddict={"a":1, "b":"x"}'])
     ctx.match("Expected a <class 'int'>")
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="Required introduced in python 3.11")
+def test_required_support(parser):
+    assert ActionTypeHint.is_supported_typehint(Required[Any])
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="Required introduced in python 3.11")
