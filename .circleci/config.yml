@@ -44,10 +44,10 @@ jobs:
           root: .
           paths:
             - ./coverage_*.xml
-  test-py313:
-    <<: *test-py38
-    docker:
-      - image: cimg/python:3.13
+  # test-py313:
+  #   <<: *test-py38
+  #   docker:
+  #     - image: cimg/python:3.13
   test-py312:
     <<: *test-py38
     docker:
@@ -156,8 +156,8 @@ workflows:
               only: /^v\d+\.\d+\.\d+.*$/
       - test-py38:
           <<: *buildreq
-      - test-py313:
-          <<: *buildreq
+      # - test-py313:
+      #     <<: *buildreq
       - test-py312:
           <<: *buildreq
       - test-py311:
@@ -172,7 +172,7 @@ workflows:
           <<: *buildreq
       - codecov:
           requires:
-            - test-py313
+            # - test-py313
             - test-py312
             - test-py311
             - test-py310

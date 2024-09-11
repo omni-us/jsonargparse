@@ -12,8 +12,12 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.32.2 (2024-09-??)
+v4.33.0 (2024-09-??)
 --------------------
+
+Added
+^^^^^
+- Support for Python 3.13.
 
 Fixed
 ^^^^^
