@@ -273,9 +273,7 @@ def get_typehint_origin(typehint):
         typehint_class = get_import_path(typehint.__class__)
         if typehint_class == "types.UnionType":
             return Union
-        if typehint_class == "typing._TypedDictMeta":
-            return dict
-        if typehint_class == "typing_extensions._TypedDictMeta":
+        if typehint_class in {"typing._TypedDictMeta", "typing_extensions._TypedDictMeta"}:
             return dict
     return getattr(typehint, "__origin__", None)
 
