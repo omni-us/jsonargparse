@@ -185,6 +185,7 @@ _capture_typing_extension_shadows("NotRequired", root_types, not_required_types)
 
 required_types = {Required}
 _capture_typing_extension_shadows("Required", root_types, required_types)
+not_required_required_types = not_required_types.union(required_types)
 
 typed_dict_types = {TypedDict}
 _capture_typing_extension_shadows("TypedDict", typed_dict_types)
@@ -939,14 +940,9 @@ def adapt_typehints(
         elif typehint_origin is OrderedDict:
             val = dict(val) if serialize else OrderedDict(val)
 
-    # NotRequired
-    elif typehint_origin in not_required_types:
-        assert len(subtypehints) == 1, "NotRequired requires a single type argument"
-        val = adapt_typehints(val, subtypehints[0], **adapt_kwargs)
-
-    # Required
-    elif typehint_origin in required_types:
-        assert len(subtypehints) == 1, "Required requires a single type argument"
+    # TypedDict NotRequired and Required
+    elif typehint_origin in not_required_required_types:
+        assert len(subtypehints) == 1, "(Not)Required requires a single type argument"
         val = adapt_typehints(val, subtypehints[0], **adapt_kwargs)
 
     # Callable
