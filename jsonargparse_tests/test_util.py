@@ -47,6 +47,7 @@ from jsonargparse_tests.conftest import (
     skip_if_fsspec_unavailable,
     skip_if_requests_unavailable,
     skip_if_responses_unavailable,
+    skip_if_running_as_root,
 )
 
 if responses_available:
@@ -136,6 +137,7 @@ def test_path_equality_operator(paths):
     assert Path("123", "fc") != 123
 
 
+@skip_if_running_as_root
 def test_path_file_access_mode(paths):
     Path(paths.file_rw, "frw")
     Path(paths.file_r, "fr")
@@ -150,6 +152,7 @@ def test_path_file_access_mode(paths):
     pytest.raises(TypeError, lambda: Path("file_ne", "fr"))
 
 
+@skip_if_running_as_root
 def test_path_dir_access_mode(paths):
     Path(paths.dir_rwx, "drwx")
     Path(paths.dir_rx, "drx")
@@ -166,6 +169,7 @@ def test_path_get_content(paths):
     assert "file contents" == Path(f"file://{paths.tmp_path}/{paths.file_r}", "ur").get_content()
 
 
+@skip_if_running_as_root
 def test_path_create_mode(paths):
     Path(paths.file_rw, "fcrw")
     Path(paths.tmp_path / "file_c", "fc")

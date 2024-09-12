@@ -39,6 +39,7 @@ from jsonargparse_tests.conftest import (
     skip_if_fsspec_unavailable,
     skip_if_not_posix,
     skip_if_responses_unavailable,
+    skip_if_running_as_root,
 )
 
 
@@ -329,6 +330,7 @@ def test_parse_path_defaults(parser, tmp_cwd):
 
 
 @skip_if_not_posix
+@skip_if_running_as_root
 def test_parse_path_file_not_readable(parser, tmp_cwd):
     config_path = Path("config.json")
     config_path.touch()
@@ -792,6 +794,7 @@ def test_default_config_file_invalid_value(parser, tmp_cwd):
 
 
 @skip_if_not_posix
+@skip_if_running_as_root
 def test_default_config_file_unreadable(parser, tmp_cwd):
     default_config_file = Path("defaults.yaml")
     default_config_file.write_text("op1: from yaml\n")
