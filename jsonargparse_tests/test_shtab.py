@@ -7,7 +7,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 from unittest.mock import patch
-from warnings import catch_warnings
 
 import pytest
 
@@ -45,10 +44,7 @@ def parser() -> ArgumentParser:
 
 
 def get_shtab_script(parser, shell):
-    with catch_warnings(record=True) as w:
-        shtab_script = get_parse_args_stdout(parser, [f"--print_shtab={shell}"])
-    assert "support is experimental" in str(w[0].message)
-    return shtab_script
+    return get_parse_args_stdout(parser, [f"--print_shtab={shell}"])
 
 
 def assert_bash_typehint_completions(subtests, shtab_script, completions):
