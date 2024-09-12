@@ -25,8 +25,6 @@ Fixed
 ^^^^^
 - Callable type with subclass return not showing the ``--*.help`` option (`#567
   <https://github.com/omni-us/jsonargparse/pull/567>`__).
-- Inference of required and missing `TypedDict` keys (`#571
-  <https://github.com/omni-us/jsonargparse/pull/571>`__)
 
 
 v4.32.1 (2024-08-23)
