@@ -24,9 +24,6 @@ from typing import (
     Type,
     Union,
 )
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
 from unittest import mock
 from warnings import catch_warnings
 
@@ -37,6 +34,9 @@ from jsonargparse import ArgumentError, Namespace, lazy_instance
 from jsonargparse._typehints import (
     ActionTypeHint,
     Literal,
+    NotRequired,
+    Required,
+    TypedDict,
     get_all_subclass_paths,
     get_subclass_types,
     is_optional,
@@ -501,7 +501,7 @@ def test_mapping_nested_without_args(parser):
     assert {"b": {"c": 2}} == parser.parse_args(['--map={"b": {"c": 2}}']).map
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
+@pytest.mark.skipif(not TypedDict, reason="TypedDict introduced in python 3.8 or backported in typing_extensions")
 def test_typeddict_without_arg(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {}))
     assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
@@ -513,7 +513,7 @@ def test_typeddict_without_arg(parser):
     ctx.match("Expected a <class 'dict'>")
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
+@pytest.mark.skipif(not TypedDict, reason="TypedDict introduced in python 3.8 or backported in typing_extensions")
 def test_typeddict_with_args(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
@@ -532,7 +532,7 @@ def test_typeddict_with_args(parser):
     ctx.match("Expected a <class 'dict'>")
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="TypedDict introduced in python 3.8")
+@pytest.mark.skipif(not TypedDict, reason="TypedDict introduced in python 3.8 or backported in typing_extensions")
 def test_typeddict_with_args_ntotal(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}, total=False))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
@@ -546,6 +546,60 @@ def test_typeddict_with_args_ntotal(parser):
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--typeddict=1"])
     ctx.match("Expected a <class 'dict'>")
+
+
+@pytest.mark.skipif(not NotRequired, reason="NotRequired introduced in python 3.11 or backported in typing_extensions")
+def test_not_required_support(parser):
+    assert ActionTypeHint.is_supported_typehint(NotRequired[Any])
+
+
+@pytest.mark.skipif(not NotRequired, reason="NotRequired introduced in python 3.11 or backported in typing_extensions")
+def test_typeddict_with_not_required_arg(parser):
+    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int, "b": NotRequired[int]}))
+    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
+    assert {"a": 1, "b": 2} == parser.parse_args(["--typeddict={'a': 1, 'b': 2}"])["typeddict"]
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":2, "c": 3}'])
+    ctx.match("Unexpected keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"b":2}'])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--typeddict={}"])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":"x"}'])
+    ctx.match("Expected a <class 'int'>")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":"x"}'])
+    ctx.match("Expected a <class 'int'>")
+
+
+@pytest.mark.skipif(not Required, reason="Required introduced in python 3.11 or backported in typing_extensions")
+def test_required_support(parser):
+    assert ActionTypeHint.is_supported_typehint(Required[Any])
+
+
+@pytest.mark.skipif(not Required, reason="Required introduced in python 3.11 or backported in typing_extensions")
+def test_typeddict_with_required_arg(parser):
+    parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": Required[int], "b": int}, total=False))
+    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
+    assert {"a": 1, "b": 2} == parser.parse_args(["--typeddict={'a': 1, 'b': 2}"])["typeddict"]
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":2, "c": 3}'])
+    ctx.match("Unexpected keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"b":2}'])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--typeddict={}"])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":"x"}'])
+    ctx.match("Expected a <class 'int'>")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--typeddict={"a":1, "b":"x"}'])
+    ctx.match("Expected a <class 'int'>")
 
 
 def test_mapping_proxy_type(parser):

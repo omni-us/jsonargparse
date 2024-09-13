@@ -3,6 +3,7 @@
 import inspect
 import os
 import re
+import sys
 from argparse import ArgumentError
 from collections import OrderedDict, abc, defaultdict
 from contextlib import contextmanager, suppress
@@ -88,6 +89,21 @@ __all__ = ["lazy_instance"]
 
 
 Literal = typing_extensions_import("Literal")
+NotRequired = typing_extensions_import("NotRequired")
+Required = typing_extensions_import("Required")
+TypedDict = typing_extensions_import("TypedDict")
+_TypedDictMeta = typing_extensions_import("_TypedDictMeta")
+
+
+def _capture_typing_extension_shadows(name: str, *collections) -> None:
+    """
+    Ensure different origins for types in typing_extensions are captured.
+    """
+    current_module = sys.modules[__name__]
+    typehint = getattr(current_module, name)
+    if getattr(typehint, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), name):
+        for collection in collections:
+            collection.add(getattr(__import__("typing"), name))
 
 
 root_types = {
@@ -124,6 +140,8 @@ root_types = {
     OrderedDict,
     Callable,
     abc.Callable,
+    NotRequired,
+    Required,
 }
 
 leaf_types = {
@@ -160,9 +178,20 @@ mapping_origin_types = {
 callable_origin_types = {Callable, abc.Callable}
 
 literal_types = {Literal}
-if getattr(Literal, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), "Literal"):
-    root_types.add(__import__("typing").Literal)
-    literal_types.add(__import__("typing").Literal)
+_capture_typing_extension_shadows("Literal", root_types, literal_types)
+
+not_required_types = {NotRequired}
+_capture_typing_extension_shadows("NotRequired", root_types, not_required_types)
+
+required_types = {Required}
+_capture_typing_extension_shadows("Required", root_types, required_types)
+not_required_required_types = not_required_types.union(required_types)
+
+typed_dict_types = {TypedDict}
+_capture_typing_extension_shadows("TypedDict", typed_dict_types)
+
+typed_dict_meta_types = {_TypedDictMeta}
+_capture_typing_extension_shadows("_TypedDictMeta", typed_dict_meta_types)
 
 subclass_arg_parser: ContextVar = ContextVar("subclass_arg_parser")
 allow_default_instance: ContextVar = ContextVar("allow_default_instance", default=False)
@@ -889,11 +918,18 @@ def adapt_typehints(
                     else:
                         kwargs["prev_val"] = None
                 val[k] = adapt_typehints(v, subtypehints[1], **kwargs)
-        if get_import_path(typehint.__class__) == "typing._TypedDictMeta":
+        if type(typehint) in typed_dict_meta_types:
             if typehint.__total__:
-                missing_keys = typehint.__annotations__.keys() - val.keys()
-                if missing_keys:
-                    raise_unexpected_value(f"Missing required keys: {missing_keys}", val)
+                required_keys = {
+                    k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) not in not_required_types
+                }
+            else:
+                required_keys = {
+                    k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) in required_types
+                }
+            missing_keys = required_keys - val.keys()
+            if missing_keys:
+                raise_unexpected_value(f"Missing required keys: {missing_keys}", val)
             extra_keys = val.keys() - typehint.__annotations__.keys()
             if extra_keys:
                 raise_unexpected_value(f"Unexpected keys: {extra_keys}", val)
@@ -903,6 +939,11 @@ def adapt_typehints(
             val = MappingProxyType(val)
         elif typehint_origin is OrderedDict:
             val = dict(val) if serialize else OrderedDict(val)
+
+    # TypedDict NotRequired and Required
+    elif typehint_origin in not_required_required_types:
+        assert len(subtypehints) == 1, "(Not)Required requires a single type argument"
+        val = adapt_typehints(val, subtypehints[0], **adapt_kwargs)
 
     # Callable
     elif typehint_origin in callable_origin_types or typehint in callable_origin_types:
