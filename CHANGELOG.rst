@@ -17,9 +17,10 @@ v4.33.0 (2024-09-??)
 
 Added
 ^^^^^
-- Support for Python 3.13.
-- Support for `NotRequired` and `Required` annotations for `TypedDict` keys (`#571
-  <https://github.com/omni-us/jsonargparse/pull/571>`__)
+- Support for Python 3.13 (`#554
+  <https://github.com/omni-us/jsonargparse/pull/554>`__).
+- Support for `NotRequired` and `Required` annotations for `TypedDict` keys
+  (`#571 <https://github.com/omni-us/jsonargparse/pull/571>`__).
 
 Fixed
 ^^^^^
@@ -28,7 +29,8 @@ Fixed
 
 Changed
 ^^^^^^^
-- Removed shtab experimental warning.
+- Removed shtab experimental warning (`#561
+  <https://github.com/omni-us/jsonargparse/pull/561>`__).
 
 
 v4.32.1 (2024-08-23)
