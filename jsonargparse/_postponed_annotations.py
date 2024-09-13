@@ -242,9 +242,8 @@ def resolve_forward_refs(arg_type, aliases, logger):
 
 def has_subtypes(typehint):
     typehint_origin = get_typehint_origin(typehint)
-    if typehint_origin is type:
-        if hasattr(typehint, "__args__"):
-            return True
+    if typehint_origin is type and hasattr(typehint, "__args__"):
+        return True
 
     return (
         typehint_origin == Union
