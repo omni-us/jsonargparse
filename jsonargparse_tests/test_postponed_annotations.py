@@ -278,8 +278,7 @@ def function_type_checking_type(p1: Type["TypeCheckingClass2"]):
 def test_get_types_type_checking_type():
     types = get_types(function_type_checking_type)
     assert list(types.keys()) == ["p1"]
-    tpls = "typing.Type" if sys.version_info < (3, 10) else "type"
-    assert str(types["p1"]) == f"{tpls}[{__name__}.TypeCheckingClass2]"
+    assert str(types["p1"]) == f"type[{__name__}.TypeCheckingClass2]"
 
 
 def function_type_checking_dict(p1: Dict[str, Union[TypeCheckingClass1, "TypeCheckingClass2"]]):
