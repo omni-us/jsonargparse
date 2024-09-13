@@ -27,6 +27,9 @@ Fixed
 - Callable type with subclass return not showing the ``--*.help`` option (`#567
   <https://github.com/omni-us/jsonargparse/pull/567>`__).
 
+- Forward referenced types not compatible with `Type` typehint (`#576
+  <https://github.com/omni-us/jsonargparse/pull/576/>`__)
+
 Changed
 ^^^^^^^
 - Removed shtab experimental warning (`#561
