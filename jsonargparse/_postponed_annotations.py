@@ -229,6 +229,8 @@ def resolve_forward_refs(arg_type, aliases, logger):
                             typehint_origin = Tuple
                         elif typehint_origin in mapping_origin_types:
                             typehint_origin = Dict
+                        elif typehint_origin == type:
+                            typehint_origin = Type
                     typehint = typehint_origin[tuple(subtypes)]
             except Exception as ex:
                 if logger:
