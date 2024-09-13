@@ -240,6 +240,10 @@ def resolve_forward_refs(arg_type, aliases, logger):
 
 def has_subtypes(typehint):
     typehint_origin = get_typehint_origin(typehint)
+    if typehint_origin is type:
+        if hasattr(typehint, "__args__"):
+            return True
+
     return (
         typehint_origin == Union
         or typehint_origin in sequence_origin_types
@@ -260,7 +264,6 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
         types = get_type_hints(obj, global_vars)
     except Exception as ex1:
         types = ex1  # type: ignore[assignment]
-
     if isinstance(types, dict) and all(not type_requires_eval(t) for t in types.values()):
         return types
 
