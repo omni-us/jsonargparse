@@ -1724,7 +1724,7 @@ def test_subclass_error_indentation_invalid_init_arg(parser):
     """
     ).strip()
     expected = textwrap.indent(expected, "        ")
-    assert expected in err
+    assert "\n".join(expected.splitlines()) in "\n".join(err.splitlines())
 
 
 class ErrorIndentation2:
