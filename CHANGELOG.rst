@@ -15,20 +15,28 @@ paths are considered internals and can change in minor and patch releases.
 v4.33.0 (2024-09-??)
 --------------------
 
-Changed
-^^^^^^^
-- For consistency ``add_subclass_arguments`` now sets default ``None`` instead
-  of ``SUPPRESS`` (`lightning#20103
-  <https://github.com/Lightning-AI/pytorch-lightning/issue/20103>`__).
-
-
-v4.32.2 (2024-09-??)
---------------------
+Added
+^^^^^
+- Support for Python 3.13 (`#554
+  <https://github.com/omni-us/jsonargparse/pull/554>`__).
+- Support for `NotRequired` and `Required` annotations for `TypedDict` keys
+  (`#571 <https://github.com/omni-us/jsonargparse/pull/571>`__).
 
 Fixed
 ^^^^^
 - Callable type with subclass return not showing the ``--*.help`` option (`#567
   <https://github.com/omni-us/jsonargparse/pull/567>`__).
+
+- Forward referenced types not compatible with `Type` typehint (`#576
+  <https://github.com/omni-us/jsonargparse/pull/576/>`__)
+
+Changed
+^^^^^^^
+- Removed shtab experimental warning (`#561
+  <https://github.com/omni-us/jsonargparse/pull/561>`__).
+- For consistency ``add_subclass_arguments`` now sets default ``None`` instead
+  of ``SUPPRESS`` (`lightning#20103
+  <https://github.com/Lightning-AI/pytorch-lightning/issue/20103>`__).
 
 
 v4.32.1 (2024-08-23)

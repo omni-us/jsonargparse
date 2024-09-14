@@ -10,7 +10,11 @@ import pytest
 
 from jsonargparse import Namespace
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
-from jsonargparse._postponed_annotations import TypeCheckingVisitor, evaluate_postponed_annotations, get_types
+from jsonargparse._postponed_annotations import (
+    TypeCheckingVisitor,
+    evaluate_postponed_annotations,
+    get_types,
+)
 from jsonargparse.typing import Path_drw
 from jsonargparse_tests.conftest import capture_logs, source_unavailable
 
@@ -265,6 +269,17 @@ def test_get_types_type_checking_tuple():
     assert list(types.keys()) == ["p1"]
     tpl = "typing.Tuple" if sys.version_info < (3, 10) else "tuple"
     assert str(types["p1"]) == f"{tpl}[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]"
+
+
+def function_type_checking_type(p1: Type["TypeCheckingClass2"]):
+    return p1
+
+
+def test_get_types_type_checking_type():
+    types = get_types(function_type_checking_type)
+    assert list(types.keys()) == ["p1"]
+    tpl = "typing.Type" if sys.version_info < (3, 10) else "type"
+    assert str(types["p1"]) == f"{tpl}[{__name__}.TypeCheckingClass2]"
 
 
 def function_type_checking_dict(p1: Dict[str, Union[TypeCheckingClass1, "TypeCheckingClass2"]]):

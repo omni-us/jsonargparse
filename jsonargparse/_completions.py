@@ -3,7 +3,6 @@ import inspect
 import locale
 import os
 import re
-import warnings
 from collections import defaultdict
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
@@ -97,7 +96,6 @@ class ShtabAction(argparse.Action):
     def __call__(self, parser, namespace, shell, option_string=None):
         import shtab
 
-        warnings.warn("Automatic shtab support is experimental and subject to change.", UserWarning)
         prog = norm_name(parser.prog)
         assert prog
         preambles = []

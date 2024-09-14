@@ -401,8 +401,10 @@ Some notes about this support are:
   :ref:`parsing-paths` and :ref:`parsing-urls`.
 
 - ``Dict``, ``Mapping``, ``MutableMapping``, ``MappingProxyType``,
-  ``OrderedDict`` and ``TypedDict`` are supported but only with ``str`` or
-  ``int`` keys. For more details see :ref:`dict-items`.
+  ``OrderedDict``, and ``TypedDict`` are supported but only with ``str`` or
+  ``int`` keys. ``Required`` and ``NotRequired`` are also supported for
+  fine-grained specification of required/optional ``TypedDict`` keys.
+  For more details see :ref:`dict-items`.
 
 - ``Tuple``, ``Set`` and ``MutableSet`` are supported even though they can't be
   represented in json distinguishable from a list. Each ``Tuple`` element
