@@ -70,6 +70,11 @@ skip_if_responses_unavailable = pytest.mark.skipif(
     reason="responses package is required",
 )
 
+skip_if_running_as_root = pytest.mark.skipif(
+    is_posix and os.geteuid() == 0,
+    reason="User is root, permission tests will not work",
+)
+
 if responses_available:
     import responses
 
