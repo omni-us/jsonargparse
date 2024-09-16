@@ -25,7 +25,7 @@ from ._actions import (
 )
 from ._common import defaults_cache, parent_parser
 from ._link_arguments import ActionLink
-from ._namespace import Namespace
+from ._namespace import Namespace, NSKeyError
 from ._optionals import import_ruyaml
 from ._type_checking import ArgumentParser, ruyamlCommentedMap
 from ._typehints import ActionTypeHint, type_to_str
@@ -92,7 +92,7 @@ class DefaultHelpFormatter(HelpFormatter):
             for key in parser.required_args:
                 try:
                     default = parser.get_default(key)
-                except KeyError:
+                except NSKeyError:
                     default = None
                 if default is None and f"[--{key} " in usage:
                     usage = re.sub(f"\\[(--{key} [^\\]]+)]", r"\1", usage, count=1)

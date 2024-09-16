@@ -26,6 +26,7 @@ from jsonargparse import (
     strip_meta,
 )
 from jsonargparse._formatters import get_env_var
+from jsonargparse._namespace import NSKeyError
 from jsonargparse._optionals import jsonnet_support, jsonschema_support, ruyaml_support
 from jsonargparse.typing import Path_fc, Path_fr, path_type
 from jsonargparse_tests.conftest import (
@@ -881,6 +882,37 @@ def test_set_get_defaults_multiple(parser, subparser, subtests):
 
     with subtests.test("get_default undefined key"):
         pytest.raises(KeyError, lambda: parser.get_default("v4"))
+
+
+def test_set_get_default_suppress_optional(parser):
+    parser.add_argument("--p1", type=int, default=SUPPRESS)
+    with pytest.raises(NSKeyError, match="does not specify a default"):
+        parser.get_default("p1")
+    assert parser.get_defaults() == Namespace()
+    help_str = get_parser_help(parser)
+    assert "--p1 P1     (type: int)" in help_str
+
+
+def test_set_get_default_suppress_required(parser):
+    parser.add_argument("--p2", type=int, default=SUPPRESS, required=True)
+    with pytest.raises(NSKeyError, match="does not specify a default"):
+        parser.get_default("p2")
+    assert parser.get_defaults() == Namespace()
+    help_str = get_parser_help(parser)
+    assert "--p2 P2     (required, type: int)" in help_str
+
+
+def test_set_get_default_suppress_default_config_file(parser, tmp_cwd):
+    default_config_file = tmp_cwd / "defaults.yaml"
+    default_config_file.write_text("p3: 1.2\n")
+
+    parser.default_config_files = [default_config_file]
+    parser.add_argument("--p3", type=float, default=SUPPRESS)
+    parser.add_argument("--p4", type=int, default=SUPPRESS)
+
+    assert parser.get_default("p3") == 1.2
+    with pytest.raises(NSKeyError, match="does not specify a default"):
+        parser.get_default("p4")
 
 
 def test_add_config_action_class(parser):
