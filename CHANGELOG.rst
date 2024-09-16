@@ -34,6 +34,9 @@ Changed
 ^^^^^^^
 - Removed shtab experimental warning (`#561
   <https://github.com/omni-us/jsonargparse/pull/561>`__).
+- For consistency ``add_subclass_arguments`` now sets default ``None`` instead
+  of ``SUPPRESS`` (`lightning#20103
+  <https://github.com/Lightning-AI/pytorch-lightning/issue/20103>`__).
 
 
 v4.32.1 (2024-08-23)
