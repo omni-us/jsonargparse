@@ -246,14 +246,18 @@ def test_get_params_complex_function_requests_get(parser):
 
 
 if torch_available:
-    import torch.optim  # pylint: disable=import-error
-    import torch.optim.lr_scheduler  # pylint: disable=import-error
+    import pkg_resources
 
-    if tuple(int(v) for v in torch.__version__.split(".", 2)[:2]) < (2, 1):
+    torch_version = tuple(int(v) for v in pkg_resources.get_distribution("torch").version.split(".", 2)[:2])
+
+    if torch_version < (2, 1) or torch_version >= (2, 4):
         torch_available = False
+    else:
+        import torch.optim  # pylint: disable=import-error
+        import torch.optim.lr_scheduler  # pylint: disable=import-error
 
 
-@pytest.mark.skipif(not torch_available, reason="torch>=2.1 package is required")
+@pytest.mark.skipif(not torch_available, reason="only for torch>=2.1,<2.4")
 @pytest.mark.parametrize(
     "class_name",
     [
@@ -279,7 +283,7 @@ def test_get_params_torch_optimizer(class_name):
     assert any(p.annotation is inspect._empty for p in params)
 
 
-@pytest.mark.skipif(not torch_available, reason="torch>=2.1 package is required")
+@pytest.mark.skipif(not torch_available, reason="only for torch>=2.1,<2.4")
 @pytest.mark.parametrize(
     "class_name",
     [
