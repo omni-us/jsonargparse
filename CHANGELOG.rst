@@ -29,6 +29,8 @@ Fixed
 
 - Forward referenced types not compatible with `Type` typehint (`#576
   <https://github.com/omni-us/jsonargparse/pull/576/>`__)
+- Subclass nested in ``Iterable`` makes help fail (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
 
 Changed
 ^^^^^^^
