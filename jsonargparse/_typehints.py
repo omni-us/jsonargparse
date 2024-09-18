@@ -1226,7 +1226,7 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
         return "._" in class_path
 
     def add_subclasses(cl):
-        if hasattr(cl, "__args__") and get_typehint_origin(cl) in {List, list, Union}:
+        if hasattr(cl, "__args__") and get_typehint_origin(cl) in sequence_origin_types.union({Union}):
             for arg in cl.__args__:
                 add_subclasses(arg)
             return

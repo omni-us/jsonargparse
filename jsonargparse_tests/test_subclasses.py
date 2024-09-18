@@ -742,12 +742,14 @@ class ListAppend:
         pass
 
 
-def test_subclass_list_append_single(parser):
-    parser.add_argument("--val", type=Union[ListAppend, List[ListAppend]])
+@pytest.mark.parametrize("list_type", [List, Iterable])
+def test_subclass_list_append_single(parser, list_type):
+    parser.add_argument("--val", type=Union[ListAppend, list_type[ListAppend]])
     cfg = parser.parse_args([f"--val+={__name__}.ListAppend", "--val.p1=1", "--val.p2=2", "--val.p1=3"])
     assert cfg.val == [Namespace(class_path=f"{__name__}.ListAppend", init_args=Namespace(p1=3, p2=2))]
     cfg = parser.parse_args(["--val+=ListAppend", "--val.p2=2", "--val.p1=1"])
     assert cfg.val == [Namespace(class_path=f"{__name__}.ListAppend", init_args=Namespace(p1=1, p2=2))]
+    assert " --val+ " in get_parser_help(parser)
 
 
 @final
