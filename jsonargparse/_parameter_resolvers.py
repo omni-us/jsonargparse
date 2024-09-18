@@ -20,6 +20,7 @@ from ._common import (
     is_dataclass_like,
     is_generic_class,
     is_subclass,
+    is_unpack_typehint,
     parse_logger,
 )
 from ._optionals import get_annotated_base_type, is_annotated, is_pydantic_model, parse_docs
@@ -28,6 +29,7 @@ from ._stubs_resolver import get_stub_types
 from ._util import (
     ClassFromFunctionBase,
     get_import_path,
+    get_typehint_args,
     get_typehint_origin,
     iter_to_set_str,
     unique,
@@ -316,6 +318,39 @@ def replace_generic_type_vars(params: ParamList, parent) -> None:
 
         for param in params:
             param.annotation = replace_type_vars(param.annotation)
+
+
+def unpack_typed_dict_kwargs(params: ParamList) -> bool:
+    kwargs_idx = get_arg_kind_index(params, kinds.VAR_KEYWORD)
+    if kwargs_idx >= 0:
+        kwargs = params.pop(kwargs_idx)
+        annotation = kwargs.annotation
+        if is_unpack_typehint(annotation):
+            annotation_args = get_typehint_args(annotation)
+            assert len(annotation_args) == 1, "Unpack requires a single type argument"
+            dict_annotations = annotation_args[0].__annotations__
+            new_params = []
+            for nm, annot in dict_annotations.items():
+                new_params.append(
+                    ParamData(
+                        name=nm,
+                        annotation=annot,
+                        default=inspect._empty,
+                        kind=inspect._ParameterKind.KEYWORD_ONLY,
+                        doc=None,
+                        component=kwargs.component,
+                        parent=kwargs.parent,
+                        origin=kwargs.origin,
+                    )
+                )
+            # insert in-place
+            trailing_params = []  # expected to be empty
+            for _ in range(kwargs_idx, len(params)):
+                trailing_params.append(params.pop(kwargs_idx))
+            params.extend(new_params)
+            params.extend(trailing_params)
+            return True
+    return False
 
 
 def add_stub_types(stubs: Optional[Dict[str, Any]], params: ParamList, component) -> None:
@@ -838,12 +873,16 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             self.component, self.parent, self.logger
         )
         self.replace_param_default_subclass_specs(params)
+        if unpack_typed_dict_kwargs(params):
+            kwargs_idx = -1
         if args_idx >= 0 or kwargs_idx >= 0:
             self.doc_params = doc_params
             with mro_context(self.parent):
                 args, kwargs = self.get_parameters_args_and_kwargs()
             params = replace_args_and_kwargs(params, args, kwargs)
         add_stub_types(stubs, params, self.component)
+        # in case a typed-dict kwarg typehint is inherited
+        unpack_typed_dict_kwargs(params)
         params = self.remove_ignore_parameters(params)
         return params
 
@@ -855,6 +894,8 @@ def get_parameters_by_assumptions(
 ) -> ParamList:
     component, parent, method_name = get_component_and_parent(function_or_class, method_name)
     params, args_idx, kwargs_idx, _, stubs = get_signature_parameters_and_indexes(component, parent, logger)
+    if unpack_typed_dict_kwargs(params):
+        kwargs_idx = -1
 
     if parent and (args_idx >= 0 or kwargs_idx >= 0):
         with mro_context(parent):
@@ -865,6 +906,8 @@ def get_parameters_by_assumptions(
 
     params = replace_args_and_kwargs(params, [], [])
     add_stub_types(stubs, params, component)
+    # in case a typed-dict kwarg typehint is inherited
+    unpack_typed_dict_kwargs(params)
     return params
 
 

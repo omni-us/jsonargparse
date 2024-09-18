@@ -1319,7 +1319,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 keys.append(action_dest)
             elif getattr(action, "jsonnet_ext_vars", False):
                 prev_cfg[action_dest] = value
-            cfg[action_dest] = value
+            if value == inspect._empty:
+                cfg.pop(action_dest, None)
+            else:
+                cfg[action_dest] = value
         return cfg[parent_key] if parent_key else cfg
 
     def merge_config(self, cfg_from: Namespace, cfg_to: Namespace) -> Namespace:
@@ -1337,6 +1340,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         with parser_context(parent_parser=self):
             ActionTypeHint.discard_init_args_on_class_path_change(self, cfg_to, cfg_from)
         ActionTypeHint.delete_init_args_required_none(cfg_from, cfg_to)
+        ActionTypeHint.delete_not_required_args(cfg_from, cfg_to)
         cfg_to.update(cfg_from)
         ActionTypeHint.apply_appends(self, cfg_to)
         return cfg_to

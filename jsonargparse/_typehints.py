@@ -440,6 +440,12 @@ class ActionTypeHint(Action):
                             del val.init_args[skip_key]
 
     @staticmethod
+    def delete_not_required_args(cfg_from, cfg_to):
+        for key, val in list(cfg_to.items(branches=True)):
+            if val == inspect._empty and key not in cfg_from:
+                del cfg_to[key]
+
+    @staticmethod
     @contextmanager
     def subclass_arg_context(parser):
         subclass_arg_parser.set(parser)
@@ -587,6 +593,8 @@ class ActionTypeHint(Action):
                     assert ex  # needed due to ruff bug that removes " as ex"
                     if orig_val == "-" and isinstance(getattr(ex, "parent", None), PathError):
                         raise ex
+                    if get_typehint_origin(self._typehint) in not_required_types and val == inspect._empty:
+                        ex = None
                     try:
                         if isinstance(orig_val, str):
                             with change_to_path_dir(config_path):
@@ -945,6 +953,7 @@ def adapt_typehints(
     # TypedDict NotRequired and Required
     elif typehint_origin in not_required_required_types:
         assert len(subtypehints) == 1, "(Not)Required requires a single type argument"
+        # if not (typehint_origin in not_required_types and val == inspect._empty):
         val = adapt_typehints(val, subtypehints[0], **adapt_kwargs)
 
     # Callable

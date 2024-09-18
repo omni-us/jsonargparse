@@ -29,8 +29,9 @@ from ._typehints import (
     callable_instances,
     get_subclass_names,
     is_optional,
+    not_required_types,
 )
-from ._util import NoneType, get_private_kwargs, iter_to_set_str
+from ._util import NoneType, get_private_kwargs, get_typehint_origin, iter_to_set_str
 from .typing import register_pydantic_type
 
 __all__ = [
@@ -322,7 +323,7 @@ class SignatureArguments(LoggerProperty):
             default = param.default
             if default == inspect_empty and is_optional(annotation):
                 default = None
-        is_required = default == inspect_empty
+        is_required = default == inspect_empty and get_typehint_origin(annotation) not in not_required_types
         src = get_parameter_origins(param.component, param.parent)
         skip_message = f'Skipping parameter "{name}" from "{src}" because of: '
         if not fail_untyped and annotation == inspect_empty:

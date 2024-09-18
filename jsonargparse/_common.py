@@ -16,6 +16,7 @@ from typing import (  # type: ignore[attr-defined]
     TypeVar,
     Union,
     _GenericAlias,
+    _UnpackGenericAlias,
 )
 
 from ._namespace import Namespace
@@ -94,6 +95,10 @@ def is_final_class(cls) -> bool:
 
 def is_generic_class(cls) -> bool:
     return isinstance(cls, _GenericAlias) and getattr(cls, "__module__", "") != "typing"
+
+
+def is_unpack_typehint(cls) -> bool:
+    return isinstance(cls, _UnpackGenericAlias)
 
 
 def get_generic_origin(cls):
