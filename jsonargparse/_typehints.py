@@ -760,7 +760,7 @@ def adapt_typehints(
     # Literal
     elif typehint_origin in literal_types:
         if val not in subtypehints and isinstance(val, str):
-            subtypes = Union[tuple({type(v) for v in subtypehints})]
+            subtypes = Union[tuple({type(v) for v in subtypehints if type(v) is not str})]
             val = adapt_typehints(val, subtypes, **adapt_kwargs)
         if val not in subtypehints:
             raise_unexpected_value(f"Expected a {typehint}", val)

@@ -248,6 +248,16 @@ def test_enum_str_optional(parser):
     assert None is parser.parse_args(["--enum=null"]).enum
 
 
+@pytest.mark.skipif(not Literal, reason="Literal introduced in python 3.8 or backported in typing_extensions")
+def test_literal_enum_values(parser):
+    parser.add_argument("--enum", type=Literal[EnumABC.A, EnumABC.C, "X"])
+    assert EnumABC.A == parser.parse_args(["--enum=A"]).enum
+    assert EnumABC.C == parser.parse_args(["--enum=C"]).enum
+    assert "X" == parser.parse_args(["--enum=X"]).enum
+    with pytest.raises(ArgumentError, match="Expected a typing.*.Literal"):
+        parser.parse_args(["--enum=B"])
+
+
 # set tests
 
 

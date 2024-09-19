@@ -30,6 +30,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/576/>`__).
 - Subclass nested in ``Iterable`` makes help fail (`#578
   <https://github.com/omni-us/jsonargparse/pull/578>`__).
+- ``Literal`` mixing enum values and strings failing to parse (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???/>`__).
 
 Changed
 ^^^^^^^
