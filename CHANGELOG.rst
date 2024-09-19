@@ -19,17 +19,19 @@ Added
 ^^^^^
 - Support for Python 3.13 (`#554
   <https://github.com/omni-us/jsonargparse/pull/554>`__).
-- Support for `NotRequired` and `Required` annotations for `TypedDict` keys
-  (`#571 <https://github.com/omni-us/jsonargparse/pull/571>`__).
+- Support for ``NotRequired`` and ``Required`` annotations for ``TypedDict``
+  keys (`#571 <https://github.com/omni-us/jsonargparse/pull/571>`__).
 
 Fixed
 ^^^^^
 - Callable type with subclass return not showing the ``--*.help`` option (`#567
   <https://github.com/omni-us/jsonargparse/pull/567>`__).
-- Forward referenced types not compatible with `Type` typehint (`#576
+- Forward referenced types not compatible with ``Type`` typehint (`#576
   <https://github.com/omni-us/jsonargparse/pull/576/>`__).
 - Subclass nested in ``Iterable`` makes help fail (`#578
   <https://github.com/omni-us/jsonargparse/pull/578>`__).
+- ``Literal`` mixing enum values and strings failing to parse (`#580
+  <https://github.com/omni-us/jsonargparse/pull/580/>`__).
 
 Changed
 ^^^^^^^
