@@ -321,7 +321,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             except Exception as ex:
                 self.error(str(ex), ex)
 
-            if not skip_check and not lenient_check.get():
+            if not skip_check:
                 self.check_config(cfg, skip_required=skip_required)
 
         if not (with_meta or (with_meta is None and self._default_meta)):
@@ -675,8 +675,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         """
         if "description" not in kwargs:
             kwargs["description"] = "For more details of each subcommand, add it as an argument followed by --help."
-        with parser_context(parent_parser=self, lenient_check=True):
-            subcommands: _ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore[assignment]
+        default_config_files = self.default_config_files
+        self.default_config_files = []
+        subcommands: _ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore[assignment]
+        self.default_config_files = default_config_files
         if required:
             self.required_args.add(dest)
         subcommands._required = required  # type: ignore[attr-defined]
@@ -1069,7 +1071,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                             continue
                 val = cfg[key]
                 if action is not None:
-                    if val is None and skip_none:
+                    if (val is None and skip_none) or lenient_check.get():
                         continue
                     try:
                         self._check_value_key(action, val, key, ccfg)
@@ -1397,7 +1399,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         return self._default_config_files
 
     @default_config_files.setter
-    def default_config_files(self, default_config_files: Optional[List[Union[str, os.PathLike]]]):
+    def default_config_files(self, default_config_files: Optional[Sequence[Union[str, os.PathLike]]]):
         if default_config_files is None:
             self._default_config_files = []
         elif isinstance(default_config_files, list) and all(

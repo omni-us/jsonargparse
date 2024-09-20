@@ -502,6 +502,46 @@ def test_nested_generic_dataclass(parser):
     assert "--x.y.g4 g4          (required, type: dict[str, union[float, bool]])" in help_str
 
 
+# union mixture tests
+
+
+@dataclasses.dataclass
+class UnionData:
+    data_a: int = 1
+    data_b: Optional[str] = None
+
+
+class UnionClass:
+    def __init__(self, prm_1: float, prm_2: bool):
+        self.prm_1 = prm_1
+        self.prm_2 = prm_2
+
+
+@pytest.mark.parametrize(
+    "union_type",
+    [
+        Union[UnionData, UnionClass],
+        Union[UnionClass, UnionData],
+    ],
+)
+def test_class_path_union_mixture_dataclass_and_class(parser, union_type):
+    parser.add_argument("--union", type=union_type, enable_path=True)
+
+    value = {"class_path": f"{__name__}.UnionData", "init_args": {"data_a": 2, "data_b": "x"}}
+    cfg = parser.parse_args([f"--union={json.dumps(value)}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.union, UnionData)
+    assert dataclasses.asdict(init.union) == {"data_a": 2, "data_b": "x"}
+    assert yaml.safe_load(parser.dump(cfg))["union"] == value["init_args"]
+
+    value = {"class_path": f"{__name__}.UnionClass", "init_args": {"prm_1": 1.2, "prm_2": False}}
+    cfg = parser.parse_args([f"--union={json.dumps(value)}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.union, UnionClass)
+    assert init.union.prm_1 == 1.2
+    assert yaml.safe_load(parser.dump(cfg))["union"] == value
+
+
 # final classes tests
 
 
