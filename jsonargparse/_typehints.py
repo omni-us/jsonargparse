@@ -633,6 +633,8 @@ class ActionTypeHint(Action):
         kwargs = dict(sub_add_kwargs) if sub_add_kwargs else {}
         if skip_args:
             kwargs.setdefault("skip", set()).add(skip_args)
+        if is_subclass_spec(kwargs.get("default")):
+            kwargs["default"] = kwargs["default"].get("init_args")
         parser = parent_parser.get()
         parser = type(parser)(exit_on_error=False, logger=parser.logger, parser_mode=parser.parser_mode)
         remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
@@ -1010,6 +1012,8 @@ def adapt_typehints(
         if serialize:
             val = load_value(parser.dump(val, **dump_kwargs.get()))
         elif isinstance(val, (dict, Namespace)):
+            if is_subclass_spec(val) and get_import_path(typehint) == val.get("class_path"):
+                val = val.get("init_args")
             val = parser.parse_object(val, defaults=sub_defaults.get() or list_item)
         elif isinstance(val, NestedArg):
             prev_val = prev_val if isinstance(prev_val, Namespace) else None

@@ -21,6 +21,8 @@ Added
   <https://github.com/omni-us/jsonargparse/pull/554>`__).
 - Support for ``NotRequired`` and ``Required`` annotations for ``TypedDict``
   keys (`#571 <https://github.com/omni-us/jsonargparse/pull/571>`__).
+- ``dataclass`` types now accept ``class_path`` and ``init_args`` as value
+  (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
 
 Fixed
 ^^^^^
