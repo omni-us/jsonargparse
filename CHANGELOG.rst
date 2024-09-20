@@ -22,7 +22,7 @@ Added
 - Support for ``NotRequired`` and ``Required`` annotations for ``TypedDict``
   keys (`#571 <https://github.com/omni-us/jsonargparse/pull/571>`__).
 - ``dataclass`` types now accept ``class_path`` and ``init_args`` as value
-  (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  (`#581 <https://github.com/omni-us/jsonargparse/pull/581>`__).
 
 Fixed
 ^^^^^
@@ -40,8 +40,7 @@ Changed
 - Removed shtab experimental warning (`#561
   <https://github.com/omni-us/jsonargparse/pull/561>`__).
 - For consistency ``add_subclass_arguments`` now sets default ``None`` instead
-  of ``SUPPRESS`` (`lightning#20103
-  <https://github.com/Lightning-AI/pytorch-lightning/issue/20103>`__).
+  of ``SUPPRESS`` (`#568 <https://github.com/omni-us/jsonargparse/pull/568>`__).
 
 
 v4.32.1 (2024-08-23)
