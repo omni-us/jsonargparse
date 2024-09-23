@@ -56,7 +56,6 @@ repos:
       [
         types-PyYAML,
         types-requests,
-        types-setuptools,
       ]
     verbose: true
 
