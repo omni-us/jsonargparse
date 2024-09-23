@@ -245,10 +245,10 @@ def test_get_params_complex_function_requests_get(parser):
 # pytorch tests
 
 
-if torch_available:
-    import pkg_resources
+if torch_available and sys.version_info >= (3, 8):
+    import importlib.metadata
 
-    torch_version = tuple(int(v) for v in pkg_resources.get_distribution("torch").version.split(".", 2)[:2])
+    torch_version = tuple(int(v) for v in importlib.metadata.version("torch").split(".", 2)[:2])
 
     if torch_version < (2, 1) or torch_version >= (2, 4):
         torch_available = False
