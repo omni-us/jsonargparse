@@ -209,12 +209,12 @@ def add_bash_typehint_completion(parser, action, message, choices) -> None:
     fn_typehint = norm_name(bash_compgen_typehint_name % shtab_prog.get())
     fn_name = parser.prog.replace(" [options] ", "_")
     fn_name = norm_name(f"_jsonargparse_{fn_name}_{action.dest}_typehint")
-    fn = '%(fn_name)s(){ %(fn_typehint)s "%(choices)s" "$1" "%(message)s"; }' % {
-        "fn_name": fn_name,
-        "fn_typehint": fn_typehint,
-        "choices": " ".join(choices),
-        "message": message,
-    }
+    fn = '{fn_name}(){{ {fn_typehint} "{choices}" "$1" "{message}"; }}'.format(
+        fn_name=fn_name,
+        fn_typehint=fn_typehint,
+        choices=" ".join(choices),
+        message=message,
+    )
     shtab_preambles.get().append(fn)
     action.complete = {"bash": fn_name}
 

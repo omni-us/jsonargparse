@@ -16,12 +16,14 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
     Type,
+    TypedDict,
     Union,
 )
 from unittest import mock
@@ -33,10 +35,8 @@ import yaml
 from jsonargparse import ArgumentError, Namespace, lazy_instance
 from jsonargparse._typehints import (
     ActionTypeHint,
-    Literal,
     NotRequired,
     Required,
-    TypedDict,
     get_all_subclass_paths,
     get_subclass_types,
     is_optional,
@@ -123,7 +123,6 @@ def test_complex_number(parser):
     assert parser.dump(cfg) == "complex: (2+3j)\n"
 
 
-@pytest.mark.skipif(not Literal, reason="Literal introduced in python 3.8 or backported in typing_extensions")
 def test_literal(parser):
     parser.add_argument("--str", type=Literal["a", "b", None])
     parser.add_argument("--int", type=Literal[3, 4])
@@ -144,10 +143,8 @@ def test_literal(parser):
         assert value in help_str
 
 
-@pytest.mark.skipif(not Literal, reason="Literal introduced in python 3.8 or backported in typing_extensions")
 def test_union_of_literals(parser):
-    literal_type = __import__("typing").Literal if sys.version_info[:2] == (3, 9) else Literal
-    parser.add_argument("--literal", type=Union[literal_type[1, 2], literal_type["a", "b"]])  # noqa: F821
+    parser.add_argument("--literal", type=Union[Literal[1, 2], Literal["a", "b"]])
     assert "a" == parser.parse_args(["--literal=a"]).literal
     assert 2 == parser.parse_args(["--literal=2"]).literal
 
@@ -248,7 +245,6 @@ def test_enum_str_optional(parser):
     assert None is parser.parse_args(["--enum=null"]).enum
 
 
-@pytest.mark.skipif(not Literal, reason="Literal introduced in python 3.8 or backported in typing_extensions")
 def test_literal_enum_values(parser):
     parser.add_argument("--enum", type=Literal[EnumABC.A, EnumABC.C, "X"])
     assert EnumABC.A == parser.parse_args(["--enum=A"]).enum
@@ -511,7 +507,6 @@ def test_mapping_nested_without_args(parser):
     assert {"b": {"c": 2}} == parser.parse_args(['--map={"b": {"c": 2}}']).map
 
 
-@pytest.mark.skipif(not TypedDict, reason="TypedDict introduced in python 3.8 or backported in typing_extensions")
 def test_typeddict_without_arg(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {}))
     assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
@@ -523,7 +518,6 @@ def test_typeddict_without_arg(parser):
     ctx.match("Expected a <class 'dict'>")
 
 
-@pytest.mark.skipif(not TypedDict, reason="TypedDict introduced in python 3.8 or backported in typing_extensions")
 def test_typeddict_with_args(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
@@ -542,7 +536,6 @@ def test_typeddict_with_args(parser):
     ctx.match("Expected a <class 'dict'>")
 
 
-@pytest.mark.skipif(not TypedDict, reason="TypedDict introduced in python 3.8 or backported in typing_extensions")
 def test_typeddict_with_args_ntotal(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}, total=False))
     assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]

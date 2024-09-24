@@ -10,7 +10,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from gzip import GzipFile
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Protocol, Union
 from unittest.mock import patch
 from uuid import NAMESPACE_OID
 
@@ -23,7 +23,6 @@ from jsonargparse import (
     Namespace,
     lazy_instance,
 )
-from jsonargparse._optionals import typing_extensions_import
 from jsonargparse._typehints import implements_protocol, is_instance_or_supports_protocol
 from jsonargparse.typing import final
 from jsonargparse_tests.conftest import (
@@ -33,8 +32,6 @@ from jsonargparse_tests.conftest import (
     get_parser_help,
     source_unavailable,
 )
-
-Protocol = typing_extensions_import("Protocol")
 
 
 @pytest.mark.parametrize("type", [Calendar, Optional[Calendar]])
@@ -1416,8 +1413,8 @@ def test_subclass_signature_instance_default(parser):
 # protocol tests
 
 
-class Interface(Protocol):  # type: ignore[valid-type,misc]
-    def predict(self, items: List[float]) -> List[float]: ...  # type: ignore[empty-body]
+class Interface(Protocol):
+    def predict(self, items: List[float]) -> List[float]: ...
 
 
 class ImplementsInterface:
@@ -1454,7 +1451,6 @@ class NotImplementsInterface3:
         (False, object),
     ],
 )
-@pytest.mark.skipif(not Protocol, reason="Requires Python 3.8+ or typing_extensions")
 def test_implements_protocol(expected, value):
     assert implements_protocol(value, Interface) is expected
 
@@ -1468,12 +1464,10 @@ def test_implements_protocol(expected, value):
         (False, object),
     ],
 )
-@pytest.mark.skipif(not Protocol, reason="Requires Python 3.8+ or typing_extensions")
 def test_is_instance_or_supports_protocol(expected, value):
     assert is_instance_or_supports_protocol(value, Interface) is expected
 
 
-@pytest.mark.skipif(not Protocol, reason="Requires Python 3.8+ or typing_extensions")
 def test_parse_implements_protocol(parser):
     parser.add_argument("--cls", type=Interface)
     cfg = parser.parse_args([f"--cls={__name__}.ImplementsInterface", "--cls.batch_size=5"])

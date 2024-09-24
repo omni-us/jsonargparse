@@ -41,6 +41,8 @@ Changed
   <https://github.com/omni-us/jsonargparse/pull/561>`__).
 - For consistency ``add_subclass_arguments`` now sets default ``None`` instead
   of ``SUPPRESS`` (`#568 <https://github.com/omni-us/jsonargparse/pull/568>`__).
+- Removed support for python 3.7 (`#583
+  <https://github.com/omni-us/jsonargparse/pull/583>`__).
 
 
 v4.32.1 (2024-08-23)

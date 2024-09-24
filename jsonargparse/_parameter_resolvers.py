@@ -171,16 +171,6 @@ def ast_is_call_with_value(node, value_dump) -> bool:
 
 
 ast_constant_attr = {ast.Constant: "value"}
-
-if sys.version_info[:2] == (3, 7):
-    ast_constant_attr.update(
-        {
-            ast.NameConstant: "value",
-            ast.Num: "n",
-            ast.Str: "s",
-        }
-    )
-
 ast_constant_types = tuple(ast_constant_attr.keys())
 
 
@@ -397,7 +387,7 @@ def group_parameters(params_list: List[ParamList]) -> ParamList:
         return params_list[0]
     grouped = []
     non_get_pop_count = 0
-    params_dict = defaultdict(lambda: [])
+    params_dict = defaultdict(list)
     for params in params_list:
         if not (params[0].origin or "").startswith(param_kwargs_pop_or_get):  # type: ignore[union-attr]
             non_get_pop_count += 1

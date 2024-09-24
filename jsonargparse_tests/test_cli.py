@@ -7,7 +7,7 @@ from contextlib import redirect_stderr, redirect_stdout, suppress
 from dataclasses import asdict, dataclass
 from io import StringIO
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 from unittest.mock import patch
 
 import pytest
@@ -15,7 +15,6 @@ import yaml
 
 from jsonargparse import CLI, capture_parser, lazy_instance
 from jsonargparse._optionals import docstring_parser_support, ruyaml_support
-from jsonargparse._typehints import Literal
 from jsonargparse.typing import final
 from jsonargparse_tests.conftest import skip_if_docstring_parser_unavailable
 
@@ -145,7 +144,6 @@ def conditional_function(fn: "Literal['A', 'B']", *args, **kwargs):
 
 
 @pytest.mark.skipif(condition=sys.version_info < (3, 9), reason="python>=3.9 is required")
-@pytest.mark.skipif(condition=not Literal, reason="Literal is required")
 def test_literal_conditional_function():
     out = get_cli_stdout(conditional_function, args=["--help"])
     assert "Conditional arguments" in out

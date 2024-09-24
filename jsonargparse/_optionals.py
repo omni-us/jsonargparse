@@ -3,6 +3,7 @@
 import inspect
 import os
 from contextlib import contextmanager
+from importlib.metadata import version
 from importlib.util import find_spec
 from typing import Optional
 
@@ -55,7 +56,7 @@ def is_compatible_final(final) -> bool:
     class FinalClass:
         pass
 
-    return getattr(FinalClass, "__final__", False)
+    return getattr(FinalClass, "__final__", False)  # __final__ available in stdlib from python 3.11
 
 
 stdlib_final = typing_extensions_import("final")
@@ -279,15 +280,7 @@ def get_alias_target(typehint: type) -> bool:
 def get_pydantic_support() -> int:
     support = "0"
     if find_spec("pydantic"):
-        try:
-            from importlib.metadata import version
-
-            support = version("pydantic")
-        except ImportError:
-            import pydantic
-
-            support = pydantic.version.VERSION
-
+        support = version("pydantic")
     return int(support.split(".", 1)[0])
 
 
@@ -296,14 +289,7 @@ pydantic_support = get_pydantic_support()
 
 def get_pydantic_supports_field_init() -> bool:
     if find_spec("pydantic"):
-        try:
-            from importlib.metadata import version
-
-            support = version("pydantic")
-        except ImportError:
-            import pydantic
-
-            support = pydantic.version.VERSION
+        support = version("pydantic")
         major, minor = tuple(int(x) for x in support.split(".")[:2])
         return major > 2 or (major == 2 and minor >= 6)
     return False
