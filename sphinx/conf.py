@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # jsonargparse documentation build configuration file, created by
 # sphinx-quickstart on Tue Jul 31 18:01:01 2018.

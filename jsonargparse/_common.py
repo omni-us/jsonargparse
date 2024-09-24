@@ -3,7 +3,6 @@ import dataclasses
 import inspect
 import logging
 import os
-import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (  # type: ignore[attr-defined]
@@ -11,6 +10,7 @@ from typing import (  # type: ignore[attr-defined]
     Generic,
     List,
     Optional,
+    Protocol,
     Tuple,
     Type,
     TypeVar,
@@ -36,16 +36,10 @@ __all__ = [
 
 ClassType = TypeVar("ClassType")
 
-if sys.version_info < (3, 8):
-    from typing import Callable
 
-    InstantiatorCallable = Callable[..., ClassType]
-else:
-    from typing import Protocol
-
-    class InstantiatorCallable(Protocol):
-        def __call__(self, class_type: Type[ClassType], *args, **kwargs) -> ClassType:
-            pass  # pragma: no cover
+class InstantiatorCallable(Protocol):
+    def __call__(self, class_type: Type[ClassType], *args, **kwargs) -> ClassType:
+        pass  # pragma: no cover
 
 
 InstantiatorsDictType = Dict[Tuple[type, bool], InstantiatorCallable]

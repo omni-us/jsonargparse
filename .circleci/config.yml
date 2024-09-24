@@ -64,10 +64,6 @@ jobs:
     <<: *test-py38
     docker:
       - image: cimg/python:3.9
-  test-py37:
-    <<: *test-py38
-    docker:
-      - image: cimg/python:3.7
   test-py310-pydantic-v1:
     docker:
       - image: cimg/python:3.10
@@ -105,7 +101,7 @@ jobs:
           command: |
             curl -Os https://uploader.codecov.io/latest/linux/codecov
             chmod +x codecov
-            for py in 3.7 3.8 3.9 3.10 3.11 3.12 3.13; do
+            for py in 3.8 3.9 3.10 3.11 3.12 3.13; do
               for suffix in "" _all _types _pydantic1 _pydantic2; do
                 if [ -f coverage_py${py}${suffix}.xml ]; then
                   ./codecov \
@@ -166,8 +162,6 @@ workflows:
           <<: *buildreq
       - test-py39:
           <<: *buildreq
-      - test-py37:
-          <<: *buildreq
       - test-py310-pydantic-v1:
           <<: *buildreq
       - codecov:
@@ -178,7 +172,6 @@ workflows:
             - test-py310
             - test-py39
             - test-py38
-            - test-py37
             - test-py310-pydantic-v1
       - test-py310-installed:
           <<: *buildreq

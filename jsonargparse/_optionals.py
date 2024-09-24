@@ -55,7 +55,7 @@ def is_compatible_final(final) -> bool:
     class FinalClass:
         pass
 
-    return getattr(FinalClass, "__final__", False)
+    return getattr(FinalClass, "__final__", False)  # __final__ available in stdlib from python 3.11
 
 
 stdlib_final = typing_extensions_import("final")

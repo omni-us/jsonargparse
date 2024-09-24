@@ -18,6 +18,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     MutableMapping,
     MutableSequence,
@@ -28,6 +29,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
 )
@@ -88,10 +90,8 @@ from .typing import get_registered_type, is_pydantic_type
 __all__ = ["lazy_instance"]
 
 
-Literal = typing_extensions_import("Literal")
 NotRequired = typing_extensions_import("NotRequired")
 Required = typing_extensions_import("Required")
-TypedDict = typing_extensions_import("TypedDict")
 _TypedDictMeta = typing_extensions_import("_TypedDictMeta")
 
 

@@ -179,10 +179,7 @@ def test_get_params_function():
 def test_get_params_relative_import_from_init():
     params = get_params(yaml.safe_load)
     assert ["stream"] == get_param_names(params)
-    if sys.version_info >= (3, 8):
-        assert params[0].annotation is not inspect._empty
-    else:
-        assert params[0].annotation is inspect._empty
+    assert params[0].annotation is not inspect._empty
     with mock_typeshed_client_unavailable():
         params = get_params(yaml.safe_load)
     assert ["stream"] == get_param_names(params)
@@ -245,7 +242,7 @@ def test_get_params_complex_function_requests_get(parser):
 # pytorch tests
 
 
-if torch_available and sys.version_info >= (3, 8):
+if torch_available:
     import importlib.metadata
 
     torch_version = tuple(int(v) for v in importlib.metadata.version("torch").split(".", 2)[:2])
