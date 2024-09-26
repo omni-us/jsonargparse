@@ -12,13 +12,13 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.33.1 (2024-09-??)
+v4.33.1 (2024-09-26)
 --------------------
 
 Fixed
 ^^^^^
 - Use ``jsonnet-sdist`` for python 3.13 to be allowed to push package to pypi
-  (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  (`#584 <https://github.com/omni-us/jsonargparse/pull/584>`__).
 
 
 v4.33.0 (2024-09-25)
