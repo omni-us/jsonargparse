@@ -62,6 +62,7 @@ from ._loaders_dumpers import (
 )
 from ._namespace import Namespace
 from ._optionals import (
+    capture_typing_extension_shadows,
     get_alias_target,
     is_alias_type,
     is_annotated,
@@ -101,9 +102,7 @@ def _capture_typing_extension_shadows(name: str, *collections) -> None:
     """
     current_module = sys.modules[__name__]
     typehint = getattr(current_module, name)
-    if getattr(typehint, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), name):
-        for collection in collections:
-            collection.add(getattr(__import__("typing"), name))
+    return capture_typing_extension_shadows(typehint, name, *collections)
 
 
 root_types = {
