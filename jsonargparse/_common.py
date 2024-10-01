@@ -38,10 +38,12 @@ __all__ = [
 
 ClassType = TypeVar("ClassType")
 
-_UnpackGenericAlias = typing_extensions_import("_UnpackGenericAlias")
+_UnpackGenericAlias = typing_extensions_import("_UnpackSpecialForm")
 
-unpack_types = {_UnpackGenericAlias}
-capture_typing_extension_shadows(_UnpackGenericAlias, "_UnpackGenericAlias", unpack_types)
+unpack_types = set()
+if _UnpackGenericAlias:
+    unpack_types.add(_UnpackGenericAlias)
+    capture_typing_extension_shadows(_UnpackGenericAlias, "_UnpackGenericAlias", unpack_types)
 
 
 class InstantiatorCallable(Protocol):

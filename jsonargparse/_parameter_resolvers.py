@@ -323,9 +323,10 @@ def replace_generic_type_vars(params: ParamList, parent) -> None:
 def unpack_typed_dict_kwargs(params: ParamList) -> bool:
     kwargs_idx = get_arg_kind_index(params, kinds.VAR_KEYWORD)
     if kwargs_idx >= 0:
-        kwargs = params.pop(kwargs_idx)
+        kwargs = params[kwargs_idx]
         annotation = kwargs.annotation
         if is_unpack_typehint(annotation):
+            params.pop(kwargs_idx)
             annotation_args = get_typehint_args(annotation)
             assert len(annotation_args) == 1, "Unpack requires a single type argument"
             dict_annotations = annotation_args[0].__annotations__
