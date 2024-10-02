@@ -615,23 +615,23 @@ def test_unpack_support(parser):
 
 
 if Unpack:  # and Required and NotRequired
-    TestDict = TypedDict("TestDict", {"a": Required[int], "b": NotRequired[int]}, total=True)
+    MyTestUnpackDict = TypedDict("MyTestUnpackDict", {"a": Required[int], "b": NotRequired[int]}, total=True)
 
     class InnerTestClass:
 
-        def __init__(self, **kwargs: Unpack[TestDict]) -> None:
+        def __init__(self, **kwargs: Unpack[MyTestUnpackDict]) -> None:
             self.a = kwargs["a"]
             self.b = kwargs.get("b")
 
     @dataclass
-    class TestClass:
+    class MyTestUnpackClass:
 
         test: InnerTestClass
 
 
 @pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")
 def test_unpack_typeddict(parser):
-    parser.add_argument("--testclass", type=TestClass)
+    parser.add_argument("--testclass", type=MyTestUnpackClass)
     test_config = {"test": {"class_path": f"{__name__}.InnerTestClass", "init_args": {}}}
     for init_args in [{"a": 1}, {"a": 2, "b": None}, {"a": 3, "b": 1}]:
         test_config["test"]["init_args"] = init_args

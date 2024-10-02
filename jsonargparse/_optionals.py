@@ -44,7 +44,9 @@ def capture_typing_extension_shadows(typehint, name: str, *collections) -> None:
     """
     Ensure different origins for types in typing_extensions are captured.
     """
-    if getattr(typehint, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), name):
+    if (typehint is False or getattr(typehint, "__module__", None) == "typing_extensions") and hasattr(
+        __import__("typing"), name
+    ):
         for collection in collections:
             collection.add(getattr(__import__("typing"), name))
 

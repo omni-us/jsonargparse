@@ -43,7 +43,7 @@ _UnpackGenericAlias = typing_extensions_import("_UnpackAlias")
 unpack_meta_types = set()
 if _UnpackGenericAlias:
     unpack_meta_types.add(_UnpackGenericAlias)
-    capture_typing_extension_shadows(_UnpackGenericAlias, "_UnpackGenericAlias", unpack_meta_types)
+capture_typing_extension_shadows(_UnpackGenericAlias, "_UnpackGenericAlias", unpack_meta_types)
 
 
 class InstantiatorCallable(Protocol):
