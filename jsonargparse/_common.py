@@ -38,12 +38,12 @@ __all__ = [
 
 ClassType = TypeVar("ClassType")
 
-_UnpackGenericAlias = typing_extensions_import("_UnpackSpecialForm")
+_UnpackGenericAlias = typing_extensions_import("_UnpackAlias")
 
-unpack_types = set()
+unpack_meta_types = set()
 if _UnpackGenericAlias:
-    unpack_types.add(_UnpackGenericAlias)
-    capture_typing_extension_shadows(_UnpackGenericAlias, "_UnpackGenericAlias", unpack_types)
+    unpack_meta_types.add(_UnpackGenericAlias)
+    capture_typing_extension_shadows(_UnpackGenericAlias, "_UnpackGenericAlias", unpack_meta_types)
 
 
 class InstantiatorCallable(Protocol):
@@ -106,7 +106,7 @@ def is_generic_class(cls) -> bool:
 
 
 def is_unpack_typehint(cls) -> bool:
-    return any(isinstance(cls, unpack_type) for unpack_type in unpack_types)
+    return any(isinstance(cls, unpack_type) for unpack_type in unpack_meta_types)
 
 
 def get_generic_origin(cls):

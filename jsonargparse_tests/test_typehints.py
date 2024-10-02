@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import pickle
 import random
 import sys
@@ -7,6 +8,7 @@ import time
 import uuid
 from calendar import Calendar, TextCalendar
 from collections import OrderedDict
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from types import MappingProxyType
@@ -33,10 +35,12 @@ import pytest
 import yaml
 
 from jsonargparse import ArgumentError, Namespace, lazy_instance
+from jsonargparse._namespace import namespace_to_dict
 from jsonargparse._typehints import (
     ActionTypeHint,
     NotRequired,
     Required,
+    Unpack,
     get_all_subclass_paths,
     get_subclass_types,
     is_optional,
@@ -603,6 +607,45 @@ def test_typeddict_with_required_arg(parser):
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--typeddict={"a":1, "b":"x"}'])
     ctx.match("Expected a <class 'int'>")
+
+
+@pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")
+def test_unpack_support(parser):
+    assert ActionTypeHint.is_supported_typehint(Unpack[Any])
+
+
+if Unpack:  # and Required and NotRequired
+    TestDict = TypedDict("TestDict", {"a": Required[int], "b": NotRequired[int]}, total=True)
+
+    class InnerTestClass:
+
+        def __init__(self, **kwargs: Unpack[TestDict]) -> None:
+            self.a = kwargs["a"]
+            self.b = kwargs.get("b")
+
+    @dataclass
+    class TestClass:
+
+        test: InnerTestClass
+
+
+@pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")
+def test_unpack_typeddict(parser):
+    parser.add_argument("--testclass", type=TestClass)
+    test_config = {"test": {"class_path": f"{__name__}.InnerTestClass", "init_args": {}}}
+    for init_args in [{"a": 1}, {"a": 2, "b": None}, {"a": 3, "b": 1}]:
+        test_config["test"]["init_args"] = init_args
+        cfg = parser.parse_args([f"--testclass={json.dumps(test_config)}"])
+        assert test_config == namespace_to_dict(cfg["testclass"])
+        # also assert no issues with dumping
+        if test_config["test"]["init_args"].get("b") is None:
+            # parser.dump does not dump null b
+            test_config["test"]["init_args"].pop("b", None)
+        assert json.dumps({"testclass": test_config}).replace(" ", "") == parser.dump(cfg, format="json")
+    for init_args in [{}, {"b": None}, {"b": 1}]:
+        with pytest.raises(ArgumentError):
+            test_config["test"]["init_args"] = init_args
+            parser.parse_args([f"--testclass={json.dumps(test_config)}"])
 
 
 def test_mapping_proxy_type(parser):

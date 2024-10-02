@@ -94,6 +94,7 @@ __all__ = ["lazy_instance"]
 NotRequired = typing_extensions_import("NotRequired")
 Required = typing_extensions_import("Required")
 _TypedDictMeta = typing_extensions_import("_TypedDictMeta")
+Unpack = typing_extensions_import("Unpack")
 
 
 def _capture_typing_extension_shadows(name: str, *collections) -> None:
@@ -141,6 +142,7 @@ root_types = {
     abc.Callable,
     NotRequired,
     Required,
+    Unpack,
 }
 
 leaf_types = {
@@ -191,6 +193,9 @@ _capture_typing_extension_shadows("TypedDict", typed_dict_types)
 
 typed_dict_meta_types = {_TypedDictMeta}
 _capture_typing_extension_shadows("_TypedDictMeta", typed_dict_meta_types)
+
+unpack_types = {Unpack}
+_capture_typing_extension_shadows("Unpack", unpack_types)
 
 subclass_arg_parser: ContextVar = ContextVar("subclass_arg_parser")
 allow_default_instance: ContextVar = ContextVar("allow_default_instance", default=False)
@@ -952,7 +957,6 @@ def adapt_typehints(
     # TypedDict NotRequired and Required
     elif typehint_origin in not_required_required_types:
         assert len(subtypehints) == 1, "(Not)Required requires a single type argument"
-        # if not (typehint_origin in not_required_types and val == inspect._empty):
         val = adapt_typehints(val, subtypehints[0], **adapt_kwargs)
 
     # Callable
