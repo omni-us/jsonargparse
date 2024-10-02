@@ -597,8 +597,6 @@ class ActionTypeHint(Action):
                     assert ex  # needed due to ruff bug that removes " as ex"
                     if orig_val == "-" and isinstance(getattr(ex, "parent", None), PathError):
                         raise ex
-                    if get_typehint_origin(self._typehint) in not_required_types and val == inspect._empty:
-                        ex = None
                     try:
                         if isinstance(orig_val, str):
                             with change_to_path_dir(config_path):

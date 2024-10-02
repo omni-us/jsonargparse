@@ -617,22 +617,53 @@ def test_unpack_support(parser):
 if Unpack:  # and Required and NotRequired
     MyTestUnpackDict = TypedDict("MyTestUnpackDict", {"a": Required[int], "b": NotRequired[int]}, total=True)
 
-    class InnerTestClass:
+    class UnpackClass:
 
         def __init__(self, **kwargs: Unpack[MyTestUnpackDict]) -> None:
             self.a = kwargs["a"]
             self.b = kwargs.get("b")
 
+    # force fallback on AST resolver
+    UnpackByAssumptionsClass = type(
+        "UnpackByAssumptionsClass",
+        (UnpackClass,),
+        {"__module__": __name__, "__init__": lambda self, **kwargs: UnpackClass.__init__(self, **kwargs)},
+    )
+
     @dataclass
     class MyTestUnpackClass:
 
-        test: InnerTestClass
+        test: UnpackClass
+
+    @dataclass
+    class MyTestInheritedUnpackClass:
+
+        test: UnpackByAssumptionsClass  # type: ignore[valid-type]
 
 
 @pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")
 def test_unpack_typeddict(parser):
     parser.add_argument("--testclass", type=MyTestUnpackClass)
-    test_config = {"test": {"class_path": f"{__name__}.InnerTestClass", "init_args": {}}}
+    test_config = {"test": {"class_path": f"{__name__}.UnpackClass", "init_args": {}}}
+    for init_args in [{"a": 1}, {"a": 2, "b": None}, {"a": 3, "b": 1}]:
+        test_config["test"]["init_args"] = init_args
+        cfg = parser.parse_args([f"--testclass={json.dumps(test_config)}"])
+        assert test_config == namespace_to_dict(cfg["testclass"])
+        # also assert no issues with dumping
+        if test_config["test"]["init_args"].get("b") is None:
+            # parser.dump does not dump null b
+            test_config["test"]["init_args"].pop("b", None)
+        assert json.dumps({"testclass": test_config}).replace(" ", "") == parser.dump(cfg, format="json")
+    for init_args in [{}, {"b": None}, {"b": 1}]:
+        with pytest.raises(ArgumentError):
+            test_config["test"]["init_args"] = init_args
+            parser.parse_args([f"--testclass={json.dumps(test_config)}"])
+
+
+@pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")
+def test_unpack_typeddict_by_assumptions(parser):
+    parser.add_argument("--testclass", type=MyTestInheritedUnpackClass)
+    test_config = {"test": {"class_path": f"{__name__}.UnpackByAssumptionsClass", "init_args": {}}}
     for init_args in [{"a": 1}, {"a": 2, "b": None}, {"a": 3, "b": 1}]:
         test_config["test"]["init_args"] = init_args
         cfg = parser.parse_args([f"--testclass={json.dumps(test_config)}"])

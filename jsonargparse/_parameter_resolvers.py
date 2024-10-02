@@ -345,11 +345,8 @@ def unpack_typed_dict_kwargs(params: ParamList) -> bool:
                     )
                 )
             # insert in-place
-            trailing_params = []  # expected to be empty
-            for _ in range(kwargs_idx, len(params)):
-                trailing_params.append(params.pop(kwargs_idx))
+            assert kwargs_idx == len(params), "trailing params should yield a syntax error"
             params.extend(new_params)
-            params.extend(trailing_params)
             return True
     return False
 
