@@ -96,13 +96,25 @@ the package, thus can be run in a production system.
     python -m jsonargparse_tests             # Run tests on installed package (requires pytest and pytest-subtests)
     pre-commit run -a --hook-stage pre-push  # Run pre-push git hooks (tests, doctests, mypy, coverage)
 
-To get a nice html test coverage report, run:
+For a nice html test coverage report, run:
 
 .. code-block:: bash
 
     pytest --cov --cov-report=html
 
 Then open the file ``htmlcov/index.html`` in a browser.
+
+To get a full coverage report, you need to install all supported python
+versions, and then:
+
+.. code-block:: bash
+
+    rm -fr jsonargparse_tests/.coverage jsonargparse_tests/htmlcov
+    tox -- --cov=../jsonargparse --cov-append
+    cd jsonargparse_tests
+    coverage html
+
+Then open the file ``jsonargparse_tests/htmlcov/index.html`` in a browser.
 
 Pull requests
 -------------

@@ -190,19 +190,34 @@ Villegas = "Villegas"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{38,39,310,311,312,313}-{all,no}-extras,omegaconf
+envlist = py{38,39,310,311,312,313}-{all,no}-extras,omegaconf,pydantic-v1
 skip_missing_interpreters = true
 
 [testenv]
 extras =
-    all-extras: test,all
-    no-extras: test-no-urls
+    all-extras: test,coverage,all
+    no-extras: coverage
 changedir = jsonargparse_tests
-commands = python -m pytest
+commands = python -m pytest {posargs}
 usedevelop = true
 
 [testenv:omegaconf]
-extras = test,all
+extras = test,coverage,all
 setenv =
     JSONARGPARSE_OMEGACONF_FULL_TEST = true
+
+[testenv:pydantic-v1]
+extras = coverage
+allowlist_externals =
+    cp
+    sed
+commands =
+    cp conftest.py test_dataclass_like.py {envtmpdir}
+    pip install "pydantic<2"
+    python -m pytest {posargs} {envtmpdir}/test_dataclass_like.py
+    sed -i "s|import pydantic|import pydantic.v1 as pydantic|" {envtmpdir}/test_dataclass_like.py
+    sed -i "s|^annotated = .*|annotated = False|" {envtmpdir}/test_dataclass_like.py
+    sed -i "s|test_pydantic_types|_test_pydantic_types|" {envtmpdir}/test_dataclass_like.py
+    pip install "pydantic>=2"
+    python -m pytest {posargs} {envtmpdir}/test_dataclass_like.py
 """
