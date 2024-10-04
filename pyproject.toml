@@ -208,16 +208,24 @@ setenv =
 
 [testenv:pydantic-v1]
 extras = coverage
-allowlist_externals =
-    cp
-    sed
 commands =
-    cp conftest.py test_dataclass_like.py {envtmpdir}
+    python -c "\
+        from shutil import copy;\
+        copy('conftest.py', '{envtmpdir}/conftest.py');\
+        copy('test_dataclass_like.py', '{envtmpdir}/test_dataclass_like.py')\
+    "
     pip install "pydantic<2"
     python -m pytest {posargs} {envtmpdir}/test_dataclass_like.py
-    sed -i "" -e "s|import pydantic|import pydantic.v1 as pydantic|" {envtmpdir}/test_dataclass_like.py
-    sed -i "" -e "s|^annotated = .*|annotated = False|" {envtmpdir}/test_dataclass_like.py
-    sed -i "" -e "s|test_pydantic_types|_test_pydantic_types|" {envtmpdir}/test_dataclass_like.py
+
+    python -c "\
+        import re, pathlib;\
+        path = pathlib.Path('{envtmpdir}/test_dataclass_like.py');\
+        content = path.read_text();\
+        content = re.sub(r'import pydantic', 'import pydantic.v1 as pydantic', content);\
+        content = re.sub(r'test_pydantic_types', '_test_pydantic_types', content);\
+        content = re.sub(r'^annotated = [^\\n]*', 'annotated = False', content, flags=re.MULTILINE);\
+        path.write_text(content)\
+    "
     pip install "pydantic>=2"
     python -m pytest {posargs} {envtmpdir}/test_dataclass_like.py
 """
