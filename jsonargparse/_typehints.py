@@ -396,6 +396,8 @@ class ActionTypeHint(Action):
         if typehint:
             if parse_optional_num_return == 4:
                 return action, arg_base, sep, explicit_arg
+            elif parse_optional_num_return == 1:
+                return [(action, arg_base, sep, explicit_arg)]
             return action, arg_base, explicit_arg
         return None
 
