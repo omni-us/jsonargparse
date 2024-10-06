@@ -286,7 +286,7 @@ def test_tuple_ellipsis(parser):
     parser.add_argument("--tuple", type=Tuple[float, ...])
     assert (1.2,) == parser.parse_args(["--tuple=[1.2]"]).tuple
     assert (1.2, 3.4) == parser.parse_args(["--tuple=[1.2, 3.4]"]).tuple
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--tuple=[]"]))
+    assert () == parser.parse_args(["--tuple=[]"]).tuple
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
 
 
