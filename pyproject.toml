@@ -69,8 +69,7 @@ shtab = [
     "shtab>=1.7.1",
 ]
 argcomplete = [
-    "argcomplete>=2.0.0; python_version < '3.8'",
-    "argcomplete>=3.3.0; python_version >= '3.8'",
+    "argcomplete>=3.5.1",
 ]
 ruyaml = [
     "ruyaml>=0.20.0",
