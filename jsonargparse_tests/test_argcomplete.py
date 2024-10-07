@@ -28,6 +28,12 @@ def skip_if_argcomplete_unavailable():
         pytest.skip("argcomplete package is required")
 
 
+@pytest.fixture(autouse=True)
+def temporal_skip_if_ge_py3127():
+    if sys.version_info[:3] >= (3, 12, 7):
+        pytest.skip("currently failing on python>=3.12.7 due to argparse breaking change")
+
+
 @contextmanager
 def mock_fdopen():
     err = StringIO()
