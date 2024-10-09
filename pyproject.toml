@@ -209,6 +209,7 @@ setenv =
 [testenv:pydantic-v1]
 extras = coverage
 commands =
+    # Test with pydantic<2
     python -c "\
         from shutil import copy;\
         copy('conftest.py', '{envtmpdir}/conftest.py');\
@@ -217,6 +218,7 @@ commands =
     pip install "pydantic<2"
     python -m pytest {posargs} {envtmpdir}/test_dataclass_like.py
 
+    # Test with pydantic>=2 importing from pydantic.v1
     python -c "\
         import re, pathlib;\
         path = pathlib.Path('{envtmpdir}/test_dataclass_like.py');\
