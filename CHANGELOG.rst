@@ -12,6 +12,16 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.33.2 (2024-10-09)
+--------------------
+
+Fixed
+^^^^^
+- Empty tuples are now parsed correctly instead of raising an error.
+  (`#592 <https://github.com/omni-us/jsonargparse/pull/592`__).
+
+
+
 v4.33.1 (2024-09-26)
 --------------------
 
