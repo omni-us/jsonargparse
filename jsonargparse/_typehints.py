@@ -849,8 +849,6 @@ def adapt_typehints(
             for n, v in enumerate(val):
                 subtypehint = subtypehints[0 if is_ellipsis or not is_tuple else n]
                 val[n] = adapt_typehints(v, subtypehint, **adapt_kwargs)
-            if is_tuple and len(val) == 0:
-                raise_unexpected_value("Expected a non-empty tuple", val)
         if not serialize:
             val = tuple(val) if typehint_origin in {Tuple, tuple} else set(val)
 
