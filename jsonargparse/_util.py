@@ -268,6 +268,10 @@ def object_path_serializer(value):
         raise ValueError(f"Only possible to serialize an importable object, given {value}: {ex}") from ex
 
 
+def get_typehint_args(typehint):
+    return getattr(typehint, "__args__", tuple())
+
+
 def get_typehint_origin(typehint):
     if not hasattr(typehint, "__origin__"):
         typehint_class = get_import_path(typehint.__class__)

@@ -404,6 +404,8 @@ Some notes about this support are:
   ``OrderedDict``, and ``TypedDict`` are supported but only with ``str`` or
   ``int`` keys. ``Required`` and ``NotRequired`` are also supported for
   fine-grained specification of required/optional ``TypedDict`` keys.
+  ``Unpack`` is supported with ``TypedDict`` for more precise ``**kwargs``
+  typing as described in PEP `692 <https://peps.python.org/pep-0692/>`__.
   For more details see :ref:`dict-items`.
 
 - ``Tuple``, ``Set`` and ``MutableSet`` are supported even though they can't be
