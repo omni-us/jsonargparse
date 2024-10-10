@@ -35,7 +35,6 @@ import pytest
 import yaml
 
 from jsonargparse import ArgumentError, Namespace, lazy_instance
-from jsonargparse._namespace import namespace_to_dict
 from jsonargparse._typehints import (
     ActionTypeHint,
     NotRequired,
@@ -663,7 +662,7 @@ def test_valid_unpack_typeddict_by_assumptions(parser, init_args):
     parser.add_argument("--testclass", type=MyTestInheritedUnpackClass)
     test_config = {"class_path": f"{__name__}.MyTestInheritedUnpackClass", "init_args": init_args}
     cfg = parser.parse_args([f"--testclass={json.dumps(test_config)}"])
-    assert test_config == namespace_to_dict(cfg["testclass"])
+    assert test_config == cfg["testclass"].as_dict()
     # also assert no issues with dumping
     if test_config["init_args"].get("b") is None:
         # parser.dump does not dump null b
