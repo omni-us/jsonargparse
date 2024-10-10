@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.33.3 (2024-10-??)
 --------------------
 
+Added
+^^^^^
+- Support for PEP 692 (i.e., ``Unpack[TypedDict]`` annotations for ``**kwargs``)
+  (`#586 <https://github.com/omni-us/jsonargparse/pull/586>`)
+
 Fixed
 ^^^^^
 - Empty tuples are now parsed correctly instead of raising an error.
@@ -50,8 +55,6 @@ Added
   keys (`#571 <https://github.com/omni-us/jsonargparse/pull/571>`__).
 - ``dataclass`` types now accept ``class_path`` and ``init_args`` as value
   (`#581 <https://github.com/omni-us/jsonargparse/pull/581>`__).
-- Support for PEP 692 (i.e., ``Unpack[TypedDict]`` annotations for ``**kwargs``)
-  (`#586 <https://github.com/omni-us/jsonargparse/pull/586>`)
 
 Fixed
 ^^^^^
