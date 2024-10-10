@@ -658,7 +658,7 @@ def test_invalid_unpack_typeddict(parser, init_args):
 
 @pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")
 @pytest.mark.parametrize(["init_args"], [({"a": 1},), ({"a": 2, "b": None},), ({"a": 3, "b": 1},)])
-def test_valid_unpack_typeddict_by_assumptions(parser, init_args):
+def test_valid_inherited_unpack_typeddict(parser, init_args):
     parser.add_argument("--testclass", type=MyTestInheritedUnpackClass)
     test_config = {"class_path": f"{__name__}.MyTestInheritedUnpackClass", "init_args": init_args}
     cfg = parser.parse_args([f"--testclass={json.dumps(test_config)}"])
@@ -672,7 +672,7 @@ def test_valid_unpack_typeddict_by_assumptions(parser, init_args):
 
 @pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")
 @pytest.mark.parametrize(["init_args"], [({},), ({"b": None},), ({"b": 1},)])
-def test_invalid_unpack_typeddict_by_assumptions(parser, init_args):
+def test_invalid_inherited_unpack_typeddict(parser, init_args):
     parser.add_argument("--testclass", type=MyTestInheritedUnpackClass)
     test_config = {"class_path": f"{__name__}.MyTestInheritedUnpackClass", "init_args": init_args}
     with pytest.raises(ArgumentError):
