@@ -40,6 +40,17 @@ def typing_extensions_import(name):
         return getattr(__import__("typing"), name, False)
 
 
+def capture_typing_extension_shadows(typehint, name: str, *collections) -> None:
+    """
+    Ensure different origins for types in typing_extensions are captured.
+    """
+    if (typehint is False or getattr(typehint, "__module__", None) == "typing_extensions") and hasattr(
+        __import__("typing"), name
+    ):
+        for collection in collections:
+            collection.add(getattr(__import__("typing"), name))
+
+
 def final(cls):
     """Decorator to make a class ``final``, i.e., it shouldn't be subclassed.
 

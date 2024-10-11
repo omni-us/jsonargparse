@@ -20,6 +20,7 @@ from ._common import (
     is_dataclass_like,
     is_generic_class,
     is_subclass,
+    is_unpack_typehint,
     parse_logger,
 )
 from ._optionals import get_annotated_base_type, is_annotated, is_pydantic_model, parse_docs
@@ -28,6 +29,7 @@ from ._stubs_resolver import get_stub_types
 from ._util import (
     ClassFromFunctionBase,
     get_import_path,
+    get_typehint_args,
     get_typehint_origin,
     iter_to_set_str,
     unique,
@@ -316,6 +318,35 @@ def replace_generic_type_vars(params: ParamList, parent) -> None:
 
         for param in params:
             param.annotation = replace_type_vars(param.annotation)
+
+
+def unpack_typed_dict_kwargs(params: ParamList, kwargs_idx: int) -> int:
+    kwargs = params[kwargs_idx]
+    annotation = kwargs.annotation
+    if is_unpack_typehint(annotation):
+        params.pop(kwargs_idx)
+        annotation_args = get_typehint_args(annotation)
+        assert len(annotation_args) == 1, "Unpack requires a single type argument"
+        dict_annotations = annotation_args[0].__annotations__
+        new_params = []
+        for nm, annot in dict_annotations.items():
+            new_params.append(
+                ParamData(
+                    name=nm,
+                    annotation=annot,
+                    default=inspect._empty,
+                    kind=inspect._ParameterKind.KEYWORD_ONLY,
+                    doc=None,
+                    component=kwargs.component,
+                    parent=kwargs.parent,
+                    origin=kwargs.origin,
+                )
+            )
+        # insert in-place
+        assert kwargs_idx == len(params), "trailing params should yield a syntax error"
+        params.extend(new_params)
+        return -1
+    return kwargs_idx
 
 
 def add_stub_types(stubs: Optional[Dict[str, Any]], params: ParamList, component) -> None:
@@ -838,6 +869,8 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             self.component, self.parent, self.logger
         )
         self.replace_param_default_subclass_specs(params)
+        if kwargs_idx >= 0:
+            kwargs_idx = unpack_typed_dict_kwargs(params, kwargs_idx)
         if args_idx >= 0 or kwargs_idx >= 0:
             self.doc_params = doc_params
             with mro_context(self.parent):

@@ -62,6 +62,7 @@ from ._loaders_dumpers import (
 )
 from ._namespace import Namespace
 from ._optionals import (
+    capture_typing_extension_shadows,
     get_alias_target,
     is_alias_type,
     is_annotated,
@@ -93,6 +94,7 @@ __all__ = ["lazy_instance"]
 NotRequired = typing_extensions_import("NotRequired")
 Required = typing_extensions_import("Required")
 _TypedDictMeta = typing_extensions_import("_TypedDictMeta")
+Unpack = typing_extensions_import("Unpack")
 
 
 def _capture_typing_extension_shadows(name: str, *collections) -> None:
@@ -101,9 +103,7 @@ def _capture_typing_extension_shadows(name: str, *collections) -> None:
     """
     current_module = sys.modules[__name__]
     typehint = getattr(current_module, name)
-    if getattr(typehint, "__module__", None) == "typing_extensions" and hasattr(__import__("typing"), name):
-        for collection in collections:
-            collection.add(getattr(__import__("typing"), name))
+    return capture_typing_extension_shadows(typehint, name, *collections)
 
 
 root_types = {
@@ -142,6 +142,7 @@ root_types = {
     abc.Callable,
     NotRequired,
     Required,
+    Unpack,
 }
 
 leaf_types = {
@@ -192,6 +193,9 @@ _capture_typing_extension_shadows("TypedDict", typed_dict_types)
 
 typed_dict_meta_types = {_TypedDictMeta}
 _capture_typing_extension_shadows("_TypedDictMeta", typed_dict_meta_types)
+
+unpack_types = {Unpack}
+_capture_typing_extension_shadows("Unpack", unpack_types)
 
 subclass_arg_parser: ContextVar = ContextVar("subclass_arg_parser")
 allow_default_instance: ContextVar = ContextVar("allow_default_instance", default=False)
@@ -440,6 +444,12 @@ class ActionTypeHint(Action):
                     for skip_key in skip_keys:
                         if skip_key in parser.required_args:
                             del val.init_args[skip_key]
+
+    @staticmethod
+    def delete_not_required_args(cfg_from, cfg_to):
+        for key, val in list(cfg_to.items(branches=True)):
+            if val == inspect._empty and key not in cfg_from:
+                del cfg_to[key]
 
     @staticmethod
     @contextmanager

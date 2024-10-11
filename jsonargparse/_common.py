@@ -20,12 +20,14 @@ from typing import (  # type: ignore[attr-defined]
 
 from ._namespace import Namespace
 from ._optionals import (
+    capture_typing_extension_shadows,
     get_alias_target,
     get_annotated_base_type,
     import_reconplogger,
     is_alias_type,
     is_annotated,
     reconplogger_support,
+    typing_extensions_import,
 )
 from ._type_checking import ArgumentParser
 
@@ -35,6 +37,13 @@ __all__ = [
 ]
 
 ClassType = TypeVar("ClassType")
+
+_UnpackGenericAlias = typing_extensions_import("_UnpackAlias")
+
+unpack_meta_types = set()
+if _UnpackGenericAlias:
+    unpack_meta_types.add(_UnpackGenericAlias)
+capture_typing_extension_shadows(_UnpackGenericAlias, "_UnpackGenericAlias", unpack_meta_types)
 
 
 class InstantiatorCallable(Protocol):
@@ -94,6 +103,10 @@ def is_final_class(cls) -> bool:
 
 def is_generic_class(cls) -> bool:
     return isinstance(cls, _GenericAlias) and getattr(cls, "__module__", "") != "typing"
+
+
+def is_unpack_typehint(cls) -> bool:
+    return any(isinstance(cls, unpack_type) for unpack_type in unpack_meta_types)
 
 
 def get_generic_origin(cls):
