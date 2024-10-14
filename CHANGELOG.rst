@@ -24,6 +24,8 @@ Fixed
 ^^^^^
 - Empty tuples are now parsed correctly instead of raising an error.
   (`#592 <https://github.com/omni-us/jsonargparse/pull/592`__).
+- Required and optional `TypedDict` keys are now correctly inferred when one
+  inherits one `TypedDict` from another with different totality
 
 
 v4.33.2 (2024-10-07)
