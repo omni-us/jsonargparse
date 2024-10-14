@@ -939,6 +939,10 @@ def adapt_typehints(
                 required_keys.update(
                     {k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) in required_types}
                 )
+                # And remove explicitly NotRequired keys
+                required_keys.difference_update(
+                    {k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) in not_required_types}
+                )
             # The standard library TypedDict in Python 3.8 does not store runtime information
             # about which (if any) keys are optional. See https://bugs.python.org/issue38834.
             # Thus, fall back to totality and explicitly Required keys
