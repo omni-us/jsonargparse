@@ -123,29 +123,6 @@ repos:
     language: system
     pass_filenames: false
 
-  - id: test-pydantic-v1
-    name: test-pydantic-v1
-    entry: bash -c '
-      set -e;
-      TEST_DIR=$(mktemp -d -t _jsonargparse_tests_XXXXXX);
-      cleanup () { rm -rf "$TEST_DIR"; };
-      trap cleanup EXIT;
-      python -m venv "$TEST_DIR/venv";
-      . "$TEST_DIR/venv/bin/activate";
-      pip install -e ".[test]";
-      cp jsonargparse_tests/*.py "$TEST_DIR";
-      cd "$TEST_DIR";
-      pip install "pydantic<2";
-      pytest test_dataclass_like.py;
-      sed -i "s|import pydantic|import pydantic.v1 as pydantic|" test_dataclass_like.py;
-      sed -i "s|^annotated = .*|annotated = False|" test_dataclass_like.py;
-      sed -i "s|test_pydantic_types|_test_pydantic_types|" test_dataclass_like.py;
-      pip install "pydantic>=2";
-      pytest test_dataclass_like.py;'
-    stages: [pre-push]
-    language: system
-    pass_filenames: false
-
   - id: doctest
     name: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
     entry: bash -c '
