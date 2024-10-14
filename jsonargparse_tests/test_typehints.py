@@ -679,6 +679,38 @@ def test_invalid_inherited_unpack_typeddict(parser, init_args):
         parser.parse_args([f"--testclass={json.dumps(test_config)}"])
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Python 3.8 lacked runtime inspection of TypedDict required keys")
+def test_typeddict_totality_inheritance(parser):
+
+    class BottomDict(TypedDict, total=True):
+        a: int
+
+    class MiddleDict(BottomDict, total=False):
+        b: int
+
+    class TopDict(MiddleDict, total=True):
+        c: int
+
+    parser.add_argument("--middledict", type=MiddleDict, required=False)
+    parser.add_argument("--topdict", type=TopDict, required=False)
+    assert {"a": 1} == parser.parse_args(["--middledict={'a': 1}"])["middledict"]
+    assert {"a": 1, "b": 2} == parser.parse_args(["--middledict={'a': 1, 'b': 2}"])["middledict"]
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(["--middledict={}"])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--middledict={"b": 2}'])
+    ctx.match("Missing required keys")
+    assert {"a": 1, "c": 2} == parser.parse_args(["--topdict={'a': 1, 'c': 2}"])["topdict"]
+    assert {"a": 1, "b": 2, "c": 3} == parser.parse_args(["--topdict={'a': 1, 'b': 2, 'c': 3}"])["topdict"]
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--topdict={"a": 1, "b": 2}'])
+    ctx.match("Missing required keys")
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--topdict={"b":2, "c": 3}'])
+    ctx.match("Missing required keys")
+
+
 def test_mapping_proxy_type(parser):
     parser.add_argument("--mapping", type=MappingProxyType)
     cfg = parser.parse_args(['--mapping={"x":1}'])
