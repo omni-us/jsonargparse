@@ -26,7 +26,10 @@ jobs:
             3.12
       - run: pip install -e ".[dev]"
       - run: tox -- --cov=../jsonargparse --cov-append
+      - run: ls -lha
+      - run: find . -name ".coverage"
       - uses: actions/upload-artifact@v4
         with:
           name: coverage
-          path: jsonargparse_tests/.coverage
+          path: jsonargparse/jsonargparse_tests/.coverage
+          if-no-files-found: error
