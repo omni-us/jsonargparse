@@ -931,7 +931,22 @@ def adapt_typehints(
                         kwargs["prev_val"] = None
                 val[k] = adapt_typehints(v, subtypehints[1], **kwargs)
         if type(typehint) in typed_dict_meta_types:
-            if typehint.__total__:
+            if hasattr(typehint, "__required_keys__"):
+                required_keys = set(typehint.__required_keys__)
+                # The standard library TypedDict below Python 3.11 does not store runtime
+                # information about optional and required keys when using Required or NotRequired.
+                # Thus, capture explicitly Required keys
+                required_keys.update(
+                    {k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) in required_types}
+                )
+                # And remove explicitly NotRequired keys
+                required_keys.difference_update(
+                    {k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) in not_required_types}
+                )
+            # The standard library TypedDict in Python 3.8 does not store runtime information
+            # about which (if any) keys are optional. See https://bugs.python.org/issue38834.
+            # Thus, fall back to totality and explicitly Required keys
+            elif typehint.__total__:
                 required_keys = {
                     k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) not in not_required_types
                 }
