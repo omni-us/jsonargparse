@@ -11,6 +11,13 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
+v4.34.1 (2024-10-??)
+--------------------
+
+Fixed
+^^^^^
+- Fix callable protocol inheritance.
+
 
 v4.34.0 (2024-10-??)
 --------------------
