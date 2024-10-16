@@ -211,9 +211,9 @@ extras = coverage
 commands =
     # Test with pydantic<2
     python -c "\
-        from pathlib import Path;\
-        from shutil import copy;\
-        copy('conftest.py', Path('{envtmpdir}', 'conftest.py'));\
+        from pathlib import Path; \
+        from shutil import copy; \
+        copy('conftest.py', Path('{envtmpdir}', 'conftest.py')); \
         copy('test_dataclass_like.py', Path('{envtmpdir}', 'test_dataclass_like.py'))\
     "
     pip install "pydantic<2"
@@ -221,12 +221,12 @@ commands =
 
     # Test with pydantic>=2 importing from pydantic.v1
     python -c "\
-        import re, pathlib;\
-        path = pathlib.Path('{envtmpdir}', 'test_dataclass_like.py');\
-        content = path.read_text();\
-        content = re.sub(r'import pydantic', 'import pydantic.v1 as pydantic', content);\
-        content = re.sub(r'test_pydantic_types', '_test_pydantic_types', content);\
-        content = re.sub(r'^annotated = [^\\n]*', 'annotated = False', content, flags=re.MULTILINE);\
+        import re, pathlib; \
+        path = pathlib.Path('{envtmpdir}', 'test_dataclass_like.py'); \
+        content = path.read_text(); \
+        content = re.sub(r'import pydantic', 'import pydantic.v1 as pydantic', content); \
+        content = re.sub(r'test_pydantic_types', '_test_pydantic_types', content); \
+        content = re.sub(r'^annotated = [^\\n]*', 'annotated = False', content, flags=re.MULTILINE); \
         path.write_text(content)\
     "
     pip install "pydantic>=2"

@@ -10,6 +10,7 @@ on:
         options:
         - windows-2019
         - macOS-12
+        - ubuntu-22.04
 
 jobs:
   tox-coverage:
@@ -21,9 +22,9 @@ jobs:
           python-version: |
             3.8
             3.9
-            3.10
             3.11
             3.12
+            3.10
       - run: pip install -e ".[dev]"
       - run: tox -- --cov=../jsonargparse --cov-append
       - uses: actions/upload-artifact@v4
