@@ -213,8 +213,8 @@ commands =
     python -c "\
         from pathlib import Path; \
         from shutil import copy; \
-        copy('conftest.py', Path('{envtmpdir}', 'conftest.py')); \
-        copy('test_dataclass_like.py', Path('{envtmpdir}', 'test_dataclass_like.py'))\
+        copy('conftest.py', Path(r'{envtmpdir}', 'conftest.py')); \
+        copy('test_dataclass_like.py', Path(r'{envtmpdir}', 'test_dataclass_like.py'))\
     "
     pip install "pydantic<2"
     python -m pytest {posargs} {envtmpdir}/test_dataclass_like.py
@@ -222,7 +222,7 @@ commands =
     # Test with pydantic>=2 importing from pydantic.v1
     python -c "\
         import re, pathlib; \
-        path = pathlib.Path('{envtmpdir}', 'test_dataclass_like.py'); \
+        path = pathlib.Path(r'{envtmpdir}', 'test_dataclass_like.py'); \
         content = path.read_text(); \
         content = re.sub(r'import pydantic', 'import pydantic.v1 as pydantic', content); \
         content = re.sub(r'test_pydantic_types', '_test_pydantic_types', content); \
