@@ -1484,7 +1484,9 @@ def test_parse_implements_protocol(parser):
         parser.parse_args(['--cls={"batch_size": 5}'])
     ctx.match("Not a valid subclass of Interface")
 
+
 # callable protocol tests
+
 
 class CallableInterface(Protocol):
     def __call__(self, items: List[float]) -> List[float]: ...
@@ -1497,8 +1499,10 @@ class ImplementsCallableInterface1:
     def __call__(self, items: List[float]) -> List[float]:
         return items
 
+
 def implements_callable_interface2(items: List[float]) -> List[float]:
     return items
+
 
 class NotImplementsCallableInterface1:
     def __call__(self, items: str) -> List[float]:
@@ -1518,6 +1522,7 @@ class NotImplementsCallableInterface3:
 def not_implements_callable_interface4(items: str) -> List[float]:
     return []
 
+
 @pytest.mark.parametrize(
     "expected, value",
     [
@@ -1533,6 +1538,7 @@ def not_implements_callable_interface4(items: str) -> List[float]:
 )
 def test_implements_callable_protocol(expected, value):
     assert implements_protocol(value, CallableInterface) is expected
+
 
 # parameter skip tests
 
