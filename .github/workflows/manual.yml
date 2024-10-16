@@ -2,11 +2,19 @@ name: manual
 
 on:
   workflow_dispatch:
+    inputs:
+      OS:
+        description: Operating System
+        required: true
+        type: choice
+        options:
+        - windows-2019
+        - macOS-12
+        - ubuntu-22.04
 
 jobs:
-
-  tox-coverage-windows:
-    runs-on: windows-2019
+  tox-coverage:
+    runs-on: ${{ inputs.OS }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,9 +25,11 @@ jobs:
             3.10
             3.11
             3.12
-      - run: pip install -e ".[dev,all]"
+      - run: pip install -e ".[dev]"
       - run: tox -- --cov=../jsonargparse --cov-append
       - uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: jsonargparse_tests/.coverage
+          include-hidden-files: true
+          if-no-files-found: error
