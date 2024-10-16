@@ -1101,14 +1101,15 @@ def adapt_typehints(
 
 
 def implements_protocol(value, protocol) -> bool:
+    allowed_dunder_methods = {"__call__"}
     from jsonargparse._parameter_resolvers import get_signature_parameters
     from jsonargparse._postponed_annotations import get_return_type
 
-    if not inspect.isclass(value):
+    if not inspect.isclass(value):  # Should we check if callables implement protocols?
         return False
     members = 0
     for name, _ in inspect.getmembers(protocol, predicate=inspect.isfunction):
-        if name.startswith("_"):
+        if name.startswith("_") and name not in allowed_dunder_methods:
             continue
         if not hasattr(value, name):
             return False
