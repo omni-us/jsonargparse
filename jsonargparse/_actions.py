@@ -13,7 +13,7 @@ from ._common import Action, get_class_instantiator, is_subclass, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._optionals import get_config_read_mode
-from ._type_checking import ArgumentParser
+from ._type_checking import ActionsContainer, ArgumentParser
 from ._util import (
     Path,
     argument_error,
@@ -45,7 +45,7 @@ def _is_branch_key(parser, key: str) -> bool:
 
 
 def _find_action_and_subcommand(
-    parser: "ArgumentParser",
+    parser: Union["ArgumentParser", "ActionsContainer"],
     dest: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
 ) -> Tuple[Optional[ArgparseAction], Optional[str]]:
@@ -82,7 +82,7 @@ def _find_action_and_subcommand(
 
 
 def _find_action(
-    parser: "ArgumentParser",
+    parser: Union["ArgumentParser", "ActionsContainer"],
     dest: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
 ) -> Optional[ArgparseAction]:
