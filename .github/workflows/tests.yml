@@ -24,7 +24,7 @@ jobs:
       - run: tox -e py-all-extras
 
   unittest-macos:
-    runs-on: macOS-12
+    runs-on: macOS-15
     strategy:
       fail-fast: false
       matrix:
