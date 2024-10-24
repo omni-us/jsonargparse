@@ -940,6 +940,7 @@ def test_callable_args_return_type_class(parser, subtests):
 
     with subtests.test("default"):
         cfg = parser.get_defaults()
+        assert cfg.optimizer.class_path == f"{__name__}.SGD"
         init = parser.instantiate_classes(cfg)
         optimizer = init.optimizer([0.1, 2, 3])
         assert isinstance(optimizer, SGD)

@@ -274,6 +274,8 @@ class ActionTypeHint(Action):
             default_type = type(default)
             if not is_subclass(default_type, UnknownDefault) and self.is_subclass_typehint(default_type):
                 raise ValueError("Subclass types require as default either a dict with class_path or a lazy instance.")
+        elif ActionTypeHint.is_return_subclass_typehint(self._typehint) and inspect.isclass(default):
+            default = {"class_path": get_import_path(default)}
         return default
 
     @staticmethod
@@ -407,7 +409,7 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def discard_init_args_on_class_path_change(parser_or_action, prev_cfg, cfg):
-        if isinstance(prev_cfg, dict):
+        if isinstance(prev_cfg, dict) or cfg is None:
             return
         keys = list(prev_cfg.keys(branches=True))
         num = 0
@@ -1021,6 +1023,7 @@ def adapt_typehints(
                         sub_add_kwargs,
                         skip_args=num_partial_args,
                         partial_classes=partial_classes,
+                        prev_val=prev_val,
                     )
             except (ImportError, AttributeError, ArgumentError) as ex:
                 raise_unexpected_value(f"Type {typehint} expects a function or a callable class: {ex}", val, ex)
