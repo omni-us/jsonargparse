@@ -433,21 +433,6 @@ class ActionTypeHint(Action):
             num += 1
 
     @staticmethod
-    def delete_init_args_required_none(cfg_from, cfg_to):
-        for key, val in cfg_from.items(branches=True):
-            if isinstance(val, Namespace) and val.get("class_path") and val.get("init_args"):
-                skip_keys = [
-                    k
-                    for k, v in val.init_args.__dict__.items()
-                    if v is None and cfg_to.get(f"{key}.init_args.{k}") is not None
-                ]
-                if skip_keys:
-                    parser = ActionTypeHint.get_class_parser(val.class_path)
-                    for skip_key in skip_keys:
-                        if skip_key in parser.required_args:
-                            del val.init_args[skip_key]
-
-    @staticmethod
     def delete_not_required_args(cfg_from, cfg_to):
         for key, val in list(cfg_to.items(branches=True)):
             if val == inspect._empty and key not in cfg_from:
@@ -1171,8 +1156,6 @@ def subclass_spec_as_namespace(val, prev_val=None):
         val = Namespace({root_key: val})
         if isinstance(prev_val, str):
             prev_val = Namespace(class_path=prev_val)
-        elif inspect.isclass(prev_val):
-            prev_val = Namespace(class_path=get_import_path(prev_val))
     if isinstance(val, dict):
         val = Namespace(val)
     if "init_args" in val and isinstance(val["init_args"], dict):

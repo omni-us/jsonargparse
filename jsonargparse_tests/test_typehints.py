@@ -1227,6 +1227,42 @@ def test_callable_return_class_required_arg_from_default(parser):
     assert cfg.model.init_args.scheduler.init_args == Namespace(monitor="acc", factor=0.5)
 
 
+class ModelListCallableReturnClass:
+    def __init__(
+        self,
+        schedulers: List[Callable[[Optimizer], Union[StepLR, ReduceLROnPlateau]]] = [],
+    ):
+        self.schedulers = schedulers
+
+
+def test_list_callable_return_class(parser):
+    parser.add_argument("--cfg", action="config")
+    parser.add_argument("--model", type=ModelListCallableReturnClass)
+
+    config = {
+        "model": {
+            "class_path": f"{__name__}.ModelListCallableReturnClass",
+            "init_args": {
+                "schedulers": [
+                    {
+                        "class_path": f"{__name__}.StepLR",
+                    },
+                    {
+                        "class_path": f"{__name__}.ReduceLROnPlateau",
+                        "init_args": {
+                            "factor": 0.5,
+                        },
+                    },
+                ],
+            },
+        },
+    }
+
+    cfg = parser.parse_args([f"--cfg={config}", "--model.schedulers.monitor=val/mAP50"])
+    assert cfg.model.init_args.schedulers[1].class_path == f"{__name__}.ReduceLROnPlateau"
+    assert cfg.model.init_args.schedulers[1].init_args == Namespace(monitor="val/mAP50", factor=0.5)
+
+
 # lazy_instance tests
 
 
