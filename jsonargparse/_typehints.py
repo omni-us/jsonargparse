@@ -409,7 +409,7 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def discard_init_args_on_class_path_change(parser_or_action, prev_cfg, cfg):
-        if isinstance(prev_cfg, dict) or cfg is None:
+        if isinstance(prev_cfg, dict):
             return
         keys = list(prev_cfg.keys(branches=True))
         num = 0
