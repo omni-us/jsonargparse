@@ -107,7 +107,7 @@ jobs:
             pip3 install -U coverage codecov-cli
             coverage combine coverage_py*
             coverage xml
-            codecovcli \
+            codecovcli upload-process \
               --fail-on-error \
               --token $CODECOV_TOKEN_JSONARGPARSE \
               --file coverage.xml
