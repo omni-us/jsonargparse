@@ -106,7 +106,6 @@ jobs:
           command: |
             pip3 install -U coverage codecov-cli
             coverage combine coverage_py*
-            rm coverage_py*
             coverage xml
             codecovcli \
               --fail-on-error \
