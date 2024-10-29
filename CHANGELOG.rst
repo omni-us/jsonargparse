@@ -29,6 +29,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/597>`__).
 - Callables that return class not considering previous values (`#603
   <https://github.com/omni-us/jsonargparse/pull/603>`__).
+- Custom instantiators not working for nested dependency injection (`#608
+  <https://github.com/omni-us/jsonargparse/pull/608>`__).
 
 Changed
 ^^^^^^^

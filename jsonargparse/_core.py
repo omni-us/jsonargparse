@@ -39,6 +39,7 @@ from ._actions import (
 from ._common import (
     InstantiatorCallable,
     InstantiatorsDictType,
+    class_instantiators,
     debug_mode_active,
     is_dataclass_like,
     lenient_check,
@@ -1139,6 +1140,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             parent_instantiators = self.parent_parser._get_instantiators()
             instantiators = instantiators.copy()
             instantiators.update({k: v for k, v in parent_instantiators.items() if k not in instantiators})
+        context_instantiators = class_instantiators.get()
+        if context_instantiators:
+            instantiators = instantiators.copy()
+            instantiators.update({k: v for k, v in context_instantiators.items() if k not in instantiators})
         return instantiators
 
     def instantiate_classes(
