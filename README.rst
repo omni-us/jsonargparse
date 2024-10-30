@@ -134,9 +134,10 @@ You can install using `pip <https://pypi.org/project/jsonargparse/>`__ as:
 By default the only dependency that jsonargparse installs is `PyYAML
 <https://pypi.org/project/PyYAML/>`__. However, several optional features can be
 enabled by specifying any of the following extras requires: ``signatures``,
-``jsonschema``, ``jsonnet``, ``urls``, ``fsspec``, ``ruyaml``, ``omegaconf`` and
-``argcomplete``. There is also the ``all`` extras require to enable all optional
-features. Installing jsonargparse with extras require is as follows:
+``jsonschema``, ``jsonnet``, ``urls``, ``fsspec``, ``ruyaml``, ``omegaconf``,
+``shtab`` and ``argcomplete``. There is also the ``all`` extras require to
+enable all optional features (excluding tab completion ones). Installing
+jsonargparse with extras require is as follows:
 
 .. code-block:: bash
 

@@ -227,7 +227,6 @@ class ActionTypeHint(Action):
         """
         if typehint is not None:
             if not self.is_supported_typehint(typehint, full=True):
-                self.is_supported_typehint(typehint, full=True)
                 raise ValueError(f"Unsupported type hint {typehint}.")
             if get_typehint_origin(typehint) == Union:
                 subtype_supported = [
