@@ -157,6 +157,7 @@ source = ["jsonargparse"]
 
 [tool.mypy]
 allow_redefinition = true
+warn_unused_ignores = true
 disable_error_code = "annotation-unchecked"
 
 
