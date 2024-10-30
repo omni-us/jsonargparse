@@ -1800,10 +1800,10 @@ unrelated to these variables.
 
 .. testcode:: ast_resolver
 
-    # Class instance: only keyword arguments with ``ast.Constant` value
+    # Class instance: only keyword arguments with ``ast.Constant`` value
     class_instance: SomeClass = SomeClass(param=1)
 
-    # Lambda returning class instance: only keyword arguments with ``ast.Constant` value
+    # Lambda returning class instance: only keyword arguments with ``ast.Constant`` value
     class_instance: Callable[[type], BaseClass] = lambda a: ChildClass(a, param=2.3)
 
 There can be other parameters apart from ``*args`` and ``**kwargs``, thus in the
