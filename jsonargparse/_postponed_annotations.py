@@ -4,6 +4,7 @@ import logging
 import sys
 import textwrap
 from collections import namedtuple
+from contextlib import suppress
 from copy import deepcopy
 from dataclasses import is_dataclass
 from importlib import import_module
@@ -259,8 +260,17 @@ def type_requires_eval(typehint):
     return isinstance(typehint, (str, ForwardRef))
 
 
-def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
+def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
     global_vars = vars(import_module(obj.__module__))
+    with suppress(Exception):
+        module_source = inspect.getsource(sys.modules[obj.__module__]) if obj.__module__ in sys.modules else ""
+        if "TYPE_CHECKING" in module_source:
+            TypeCheckingVisitor().update_aliases(module_source, obj.__module__, global_vars, logger)
+    return global_vars
+
+
+def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
+    global_vars = get_global_vars(obj, logger)
     try:
         types = get_type_hints(obj, global_vars)
     except Exception as ex1:
@@ -287,10 +297,6 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
     if isinstance(types, Exception):
         ex = types
         types = {}
-
-    module_source = inspect.getsource(sys.modules[obj.__module__]) if obj.__module__ in sys.modules else ""
-    if "TYPE_CHECKING" in module_source:
-        TypeCheckingVisitor().update_aliases(module_source, obj.__module__, aliases, logger)
 
     if isinstance(node, ast.FunctionDef):
         arg_asts = [(a.arg, a.annotation) for a in node.args.args + node.args.kwonlyargs]
