@@ -4,7 +4,6 @@ import logging
 import sys
 import textwrap
 from collections import namedtuple
-from contextlib import suppress
 from copy import deepcopy
 from dataclasses import is_dataclass
 from importlib import import_module
@@ -262,10 +261,13 @@ def type_requires_eval(typehint):
 
 def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
     global_vars = vars(import_module(obj.__module__))
-    with suppress(Exception):
+    try:
         module_source = inspect.getsource(sys.modules[obj.__module__]) if obj.__module__ in sys.modules else ""
         if "TYPE_CHECKING" in module_source:
             TypeCheckingVisitor().update_aliases(module_source, obj.__module__, global_vars, logger)
+    except Exception as ex:
+        if logger:
+            logger.debug(f"Failed to update aliases for TYPE_CHECKING blocks in {obj.__module__}", exc_info=ex)
     return global_vars
 
 

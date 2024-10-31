@@ -32,7 +32,7 @@ Fixed
 - Custom instantiators not working for nested dependency injection (`#608
   <https://github.com/omni-us/jsonargparse/pull/608>`__).
 - Failure when resolving forward references from dataclass parameter types
-  (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  (`#611 <https://github.com/omni-us/jsonargparse/pull/611>`__).
 
 Changed
 ^^^^^^^
