@@ -1823,7 +1823,3 @@ def test_subclass_error_indentation_in_union_invalid_value(parser):
     ).strip()
     expected = textwrap.indent(expected, "  ")
     assert "\n".join(expected.splitlines()) in "\n".join(err.splitlines())
-
-
-# if __name__ == "__main__":
-#     test_implements_protocol(True, ImplementsInterface)
