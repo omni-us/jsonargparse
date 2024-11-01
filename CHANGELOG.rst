@@ -11,13 +11,6 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
-v4.34.1 (2024-10-??)
---------------------
-
-Fixed
-^^^^^
-- Fix callable protocol inheritance.
-
 
 v4.34.0 (2024-10-??)
 --------------------
@@ -40,6 +33,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/608>`__).
 - Failure when resolving forward references from dataclass parameter types
   (`#611 <https://github.com/omni-us/jsonargparse/pull/611>`__).
+- Fix callable protocol inheritance.
+  (`#599 <https://github.com/omni-us/jsonargparse/pull/599>`__).
 
 Changed
 ^^^^^^^
