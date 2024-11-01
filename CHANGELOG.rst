@@ -34,6 +34,18 @@ Fixed
 - Required and optional ``TypedDict`` keys are now correctly inferred when one
   inherits one ``TypedDict`` from another with different totality (`#597
   <https://github.com/omni-us/jsonargparse/pull/597>`__).
+- Callables that return class not considering previous values (`#603
+  <https://github.com/omni-us/jsonargparse/pull/603>`__).
+- Custom instantiators not working for nested dependency injection (`#608
+  <https://github.com/omni-us/jsonargparse/pull/608>`__).
+- Failure when resolving forward references from dataclass parameter types
+  (`#611 <https://github.com/omni-us/jsonargparse/pull/611>`__).
+
+Changed
+^^^^^^^
+- Callables that return class with class default now normalizes the default to
+  a subclass spec with ``class_path`` (`#603
+  <https://github.com/omni-us/jsonargparse/pull/603>`__).
 
 
 v4.33.2 (2024-10-07)

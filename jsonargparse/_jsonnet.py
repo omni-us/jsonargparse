@@ -13,7 +13,7 @@ from ._optionals import (
     import_jsonschema,
 )
 from ._typehints import ActionTypeHint
-from ._util import Path, argument_error
+from ._util import NoneType, Path, argument_error
 
 __all__ = ["ActionJsonnet"]
 
@@ -39,7 +39,7 @@ class ActionJsonnet(Action):
         """
         if "_validator" not in kwargs:
             import_jsonnet("ActionJsonnet")
-            if not isinstance(ext_vars, (str, type(None))):
+            if not isinstance(ext_vars, (str, NoneType)):
                 raise ValueError("ext_vars has to be either None or a string.")
             self._ext_vars = ext_vars
             if schema is not None:

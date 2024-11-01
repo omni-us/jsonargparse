@@ -256,7 +256,7 @@ def function_type_checking_list(p1: List[Union["TypeCheckingClass1", TypeCheckin
 def test_get_types_type_checking_list():
     types = get_types(function_type_checking_list)
     assert list(types.keys()) == ["p1"]
-    lst = "typing.List" if sys.version_info < (3, 10) else "list"
+    lst = "typing.List"
     assert str(types["p1"]) == f"{lst}[typing.Union[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]]"
 
 
@@ -267,7 +267,7 @@ def function_type_checking_tuple(p1: Tuple[TypeCheckingClass1, "TypeCheckingClas
 def test_get_types_type_checking_tuple():
     types = get_types(function_type_checking_tuple)
     assert list(types.keys()) == ["p1"]
-    tpl = "typing.Tuple" if sys.version_info < (3, 10) else "tuple"
+    tpl = "typing.Tuple"
     assert str(types["p1"]) == f"{tpl}[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]"
 
 
@@ -278,7 +278,7 @@ def function_type_checking_type(p1: Type["TypeCheckingClass2"]):
 def test_get_types_type_checking_type():
     types = get_types(function_type_checking_type)
     assert list(types.keys()) == ["p1"]
-    tpl = "typing.Type" if sys.version_info < (3, 10) else "type"
+    tpl = "typing.Type"
     assert str(types["p1"]) == f"{tpl}[{__name__}.TypeCheckingClass2]"
 
 
@@ -289,7 +289,7 @@ def function_type_checking_dict(p1: Dict[str, Union[TypeCheckingClass1, "TypeChe
 def test_get_types_type_checking_dict():
     types = get_types(function_type_checking_dict)
     assert list(types.keys()) == ["p1"]
-    dct = "typing.Dict" if sys.version_info < (3, 10) else "dict"
+    dct = "typing.Dict"
     assert str(types["p1"]) == f"{dct}[str, typing.Union[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]]"
 
 
@@ -303,6 +303,18 @@ def test_get_types_type_checking_undefined_forward_ref(logger):
     assert types == {"p1": List["Undefined"], "p2": bool}  # noqa: F821
     assert "Failed to resolve forward refs in " in logs.getvalue()
     assert "NameError: Name 'Undefined' is not defined" in logs.getvalue()
+
+
+@dataclasses.dataclass
+class DataclassForwardRef:
+    p1: "int"
+    p2: Optional["xml.dom.Node"] = None
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="not working in python 3.8")
+def test_get_types_type_checking_dataclass_init_forward_ref():
+    types = get_types(DataclassForwardRef.__init__)
+    assert types == {"p1": int, "p2": Optional[xml.dom.Node], "return": type(None)}
 
 
 def function_source_unavailable(p1: List["TypeCheckingClass1"]):

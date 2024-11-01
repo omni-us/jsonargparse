@@ -59,7 +59,7 @@ parser_capture: ContextVar[bool] = ContextVar("parser_capture", default=False)
 defaults_cache: ContextVar[Optional[Namespace]] = ContextVar("defaults_cache", default=None)
 lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", default=False)
 load_value_mode: ContextVar[Optional[str]] = ContextVar("load_value_mode", default=None)
-class_instantiators: ContextVar[Optional[InstantiatorsDictType]] = ContextVar("class_instantiators")
+class_instantiators: ContextVar[Optional[InstantiatorsDictType]] = ContextVar("class_instantiators", default=None)
 nested_links: ContextVar[List[dict]] = ContextVar("nested_links", default=[])
 
 

@@ -479,6 +479,21 @@ def test_custom_instantiation_replace(parser):
     assert list(parser._instantiators.values())[0] is second_instantiator
 
 
+class CustomInstantiationNested:
+    def __init__(self, sub: CustomInstantiationBase):
+        self.sub = sub
+
+
+def test_custom_instantiation_nested(parser):
+    parser.add_argument("--cls", type=CustomInstantiationNested)
+    parser.add_instantiator(instantiator("nested"), CustomInstantiationBase, subclasses=True)
+    cfg = parser.parse_args(["--cls=CustomInstantiationNested", "--cls.sub=CustomInstantiationSub"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.cls, CustomInstantiationNested)
+    assert isinstance(init.cls.sub, CustomInstantiationSub)
+    assert init.cls.sub.call == "nested"
+
+
 # environment tests
 
 

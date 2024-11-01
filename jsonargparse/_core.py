@@ -39,6 +39,7 @@ from ._actions import (
 from ._common import (
     InstantiatorCallable,
     InstantiatorsDictType,
+    class_instantiators,
     debug_mode_active,
     is_dataclass_like,
     lenient_check,
@@ -145,7 +146,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         if action.help is None:
             action.help = empty_help
         if action.required:
-            parser.required_args.add(action.dest)
+            parser.required_args.add(action.dest)  # type: ignore[union-attr]
             action._required = True  # type: ignore[attr-defined]
             action.required = False
         return action
@@ -167,13 +168,13 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             ValueError: If group with the same name already exists.
         """
         parser = self.parser if hasattr(self, "parser") else self
-        if name is not None and name in parser.groups:
+        if name is not None and name in parser.groups:  # type: ignore[union-attr]
             raise ValueError(f"Group with name {name} already exists.")
         group = _ArgumentGroup(parser, *args, logger=parser._logger, **kwargs)
         group.parser = parser
-        parser._action_groups.append(group)
+        parser._action_groups.append(group)  # type: ignore[union-attr]
         if name is not None:
-            parser.groups[name] = group
+            parser.groups[name] = group  # type: ignore[union-attr]
         return group
 
 
@@ -181,7 +182,7 @@ class _ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     """Extension of argparse._ArgumentGroup to support additional functionalities."""
 
     dest: Optional[str] = None
-    parser: Optional["ArgumentParser"] = None
+    parser: Optional[Union["ArgumentParser", "ActionsContainer"]] = None
 
 
 class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argparse.ArgumentParser):
@@ -1139,6 +1140,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             parent_instantiators = self.parent_parser._get_instantiators()
             instantiators = instantiators.copy()
             instantiators.update({k: v for k, v in parent_instantiators.items() if k not in instantiators})
+        context_instantiators = class_instantiators.get()
+        if context_instantiators:
+            instantiators = instantiators.copy()
+            instantiators.update({k: v for k, v in context_instantiators.items() if k not in instantiators})
         return instantiators
 
     def instantiate_classes(
@@ -1336,7 +1341,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         cfg_to = cfg_to.clone()
         with parser_context(parent_parser=self):
             ActionTypeHint.discard_init_args_on_class_path_change(self, cfg_to, cfg_from)
-        ActionTypeHint.delete_init_args_required_none(cfg_from, cfg_to)
         ActionTypeHint.delete_not_required_args(cfg_from, cfg_to)
         cfg_to.update(cfg_from)
         ActionTypeHint.apply_appends(self, cfg_to)
@@ -1371,10 +1375,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         elif action.type is not None:
             try:
                 if action.nargs in {None, "?"} or action.nargs == 0:
-                    value = action.type(value)
+                    value = action.type(value)  # type: ignore[operator]
                 elif value is not None:
                     for k, v in enumerate(value):
-                        value[k] = action.type(v)
+                        value[k] = action.type(v)  # type: ignore[operator]
             except (TypeError, ValueError) as ex:
                 raise TypeError(f'Parser key "{key}": {ex}') from ex
         if not is_subcommand and action.choices:

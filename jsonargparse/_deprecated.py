@@ -512,7 +512,7 @@ class ParserDeprecations:
         if error_handler is not False:
             stacklevel = 2
             stack = inspect.stack()[1]
-            if stack.filename.endswith("jsonargparse/_deprecated.py"):
+            if stack.filename.endswith(os.fspath(Path("jsonargparse", "_deprecated.py"))):
                 stacklevel = 5
             deprecation_warning_error_handler(stacklevel)
         if callable(error_handler) or error_handler in {None, False}:

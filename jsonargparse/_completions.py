@@ -226,7 +226,7 @@ def get_typehint_choices(typehint, prefix, parser, skip, choices=None, added_sub
         added_subclasses = set()
     if typehint is bool:
         choices.extend(["true", "false"])
-    elif typehint is type(None):
+    elif typehint is NoneType:
         choices.append("null")
     elif is_subclass(typehint, Enum):
         choices.extend(list(typehint.__members__))

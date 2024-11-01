@@ -27,27 +27,30 @@ jobs:
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             pip3 install .[coverage]
             pip3 uninstall -y argcomplete
-            pytest --cov --cov-report=term --cov-report=xml:coverage_py$py.xml
+            pytest --cov --cov-report=term
+            mv .coverage coverage_py$py
       - run:
           name: Test with all optional dependencies
           command: |
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             pip3 install .[test,all]
-            pytest --cov --cov-report=term --cov-report=xml:coverage_py${py}_all.xml
+            pytest --cov --cov-report=term
+            mv .coverage coverage_py${py}_all
       - run:
           name: Test without future annotations and all optional dependencies
           command: |
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             sed -i '/^from __future__ import annotations$/d' jsonargparse_tests/test_*.py
-            pytest --cov --cov-report=term --cov-report=xml:coverage_py${py}_types.xml
+            pytest --cov --cov-report=term
+            mv .coverage coverage_py${py}_types
       - persist_to_workspace:
           root: .
           paths:
-            - ./coverage_*.xml
-  # test-py313:
-  #   <<: *test-py38
-  #   docker:
-  #     - image: cimg/python:3.13
+            - ./coverage_py*
+  test-py313:
+    <<: *test-py38
+    docker:
+      - image: cimg/python:3.13
   test-py312:
     <<: *test-py38
     docker:
@@ -75,7 +78,8 @@ jobs:
             py=$(python3 --version | sed -r 's|.* 3\.([0-9]+)\..*|3.\1|')
             pip3 install .[coverage]
             pip3 install "pydantic<2"
-            pytest --cov --cov-report=term --cov-report=xml:coverage_py${py}_pydantic1.xml jsonargparse_tests/test_dataclass_like.py
+            pytest --cov --cov-report=term jsonargparse_tests/test_dataclass_like.py
+            mv .coverage coverage_py${py}_pydantic1
       - run:
           name: Test with pydantic>=2 importing from pydantic.v1
           command: |
@@ -84,35 +88,29 @@ jobs:
             sed -i "s|^annotated = .*|annotated = False|" jsonargparse_tests/test_dataclass_like.py
             sed -i "s|test_pydantic_types|_test_pydantic_types|" jsonargparse_tests/test_dataclass_like.py
             pip3 install "pydantic>=2"
-            pytest --cov --cov-report=term --cov-report=xml:coverage_py${py}_pydantic2.xml jsonargparse_tests/test_dataclass_like.py
+            pytest --cov --cov-report=term jsonargparse_tests/test_dataclass_like.py
+            mv .coverage coverage_py${py}_pydantic2
       - persist_to_workspace:
           root: .
           paths:
-            - ./coverage_*.xml
+            - ./coverage_py*
   codecov:
     docker:
-      - image: curlimages/curl:latest
+      - image: cimg/python:3.10
     steps:
       - checkout
       - attach_workspace:
           at: .
       - run:
-          name: Code coverage
+          name: Upload code coverage
           command: |
-            curl -Os https://uploader.codecov.io/latest/linux/codecov
-            chmod +x codecov
-            for py in 3.8 3.9 3.10 3.11 3.12 3.13; do
-              for suffix in "" _all _types _pydantic1 _pydantic2; do
-                if [ -f coverage_py${py}${suffix}.xml ]; then
-                  ./codecov \
-                    --nonZero \
-                    --rootDir $PWD \
-                    --token $CODECOV_TOKEN_JSONARGPARSE \
-                    --flags py${py}${suffix} \
-                    --file coverage_py${py}${suffix}.xml
-                fi
-              done
-            done
+            pip3 install -U coverage codecov-cli
+            coverage combine coverage_py*
+            coverage xml
+            codecovcli upload-process \
+              --fail-on-error \
+              --token $CODECOV_TOKEN_JSONARGPARSE \
+              --file coverage.xml
   test-py310-installed:
     docker:
       - image: cimg/python:3.10
@@ -152,8 +150,8 @@ workflows:
               only: /^v\d+\.\d+\.\d+.*$/
       - test-py38:
           <<: *buildreq
-      # - test-py313:
-      #     <<: *buildreq
+      - test-py313:
+          <<: *buildreq
       - test-py312:
           <<: *buildreq
       - test-py311:
@@ -166,7 +164,7 @@ workflows:
           <<: *buildreq
       - codecov:
           requires:
-            # - test-py313
+            - test-py313
             - test-py312
             - test-py311
             - test-py310

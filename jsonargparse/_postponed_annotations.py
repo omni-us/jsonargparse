@@ -259,8 +259,20 @@ def type_requires_eval(typehint):
     return isinstance(typehint, (str, ForwardRef))
 
 
-def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
+def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
     global_vars = vars(import_module(obj.__module__))
+    try:
+        module_source = inspect.getsource(sys.modules[obj.__module__]) if obj.__module__ in sys.modules else ""
+        if "TYPE_CHECKING" in module_source:
+            TypeCheckingVisitor().update_aliases(module_source, obj.__module__, global_vars, logger)
+    except Exception as ex:
+        if logger:
+            logger.debug(f"Failed to update aliases for TYPE_CHECKING blocks in {obj.__module__}", exc_info=ex)
+    return global_vars
+
+
+def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
+    global_vars = get_global_vars(obj, logger)
     try:
         types = get_type_hints(obj, global_vars)
     except Exception as ex1:
@@ -287,10 +299,6 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
     if isinstance(types, Exception):
         ex = types
         types = {}
-
-    module_source = inspect.getsource(sys.modules[obj.__module__]) if obj.__module__ in sys.modules else ""
-    if "TYPE_CHECKING" in module_source:
-        TypeCheckingVisitor().update_aliases(module_source, obj.__module__, aliases, logger)
 
     if isinstance(node, ast.FunctionDef):
         arg_asts = [(a.arg, a.annotation) for a in node.args.args + node.args.kwonlyargs]
