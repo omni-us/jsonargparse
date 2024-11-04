@@ -123,14 +123,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: coverage_xml
-      - run: |
-          ls -lha
-          ls -lha ..
-          pwd
-          echo ${{ github.workspace }}/jsonargparse
       - uses: SonarSource/sonarcloud-github-action@master
         with:
-          projectBaseDir: ${{ github.workspace }}/jsonargparse
+          projectBaseDir: ${{ github.workspace }}
           args: >
             -Dsonar.organization=omni-us
             -Dsonar.projectKey=omni-us_jsonargparse
