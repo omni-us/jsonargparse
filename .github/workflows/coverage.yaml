@@ -123,6 +123,12 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: coverage_xml
+      - run: |
+          ls -lha
+          ls -lha ..
+          pwd
+          echo ${{ github.workspace }}
+          ls -lhd /home/runner/work/jsonargparse/jsonargparse/jsonargparse
       - uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: ${{ github.workspace }}
