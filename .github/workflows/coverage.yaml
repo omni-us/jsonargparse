@@ -69,7 +69,7 @@ jobs:
           name: coverage_pydantic
           path: ./coverage_py*
 
-  coverage-combine:
+  combine:
     runs-on: ubuntu-latest
     needs: [ubuntu, ubuntu-pydantic-v1]
     steps:
@@ -92,7 +92,7 @@ jobs:
 
   codecov:
     runs-on: ubuntu-latest
-    needs: [coverage-combine]
+    needs: [combine]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -111,7 +111,7 @@ jobs:
 
   sonarcloud:
     runs-on: ubuntu-latest
-    needs: [coverage-combine]
+    needs: [combine]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -125,14 +125,14 @@ jobs:
           name: coverage_xml
       - uses: SonarSource/sonarcloud-github-action@master
         with:
-          projectBaseDir: my-custom-directory
           args: >
             -Dsonar.organization=omni-us
             -Dsonar.projectKey=omni-us_jsonargparse
-            -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.sources=jsonargparse
             -Dsonar.exclusions=sphinx/**
             -Dsonar.tests=jsonargparse_tests
+            -Dsonar.python.version=3.8,3.9,3.10,3.11,3.12,3.13
+            -Dsonar.python.coverage.reportPaths=coverage.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
