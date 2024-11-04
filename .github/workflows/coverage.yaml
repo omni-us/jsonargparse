@@ -128,7 +128,7 @@ jobs:
           ls -lha ..
           pwd
           echo ${{ github.workspace }}
-          ls -lhd /home/runner/work/jsonargparse/jsonargparse/jsonargparse
+          ls -lh /home/runner/work/jsonargparse/jsonargparse/jsonargparse
       - uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: ${{ github.workspace }}
