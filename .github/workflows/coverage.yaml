@@ -122,7 +122,7 @@ jobs:
             -Dsonar.tests=jsonargparse_tests
             -Dsonar.python.coverage.reportPaths=coverage_*.xml
             -Dsonar.python.version=3.8,3.9,3.10,3.11,3.12,3.13
-            -Dsonar.junit.reportPaths=junit_*.xml
+            -Dsonar.python.xunit.reportPath=junit_*.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
