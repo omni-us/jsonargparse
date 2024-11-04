@@ -129,6 +129,7 @@ jobs:
           pwd
           echo ${{ github.workspace }}
           ls -lh /home/runner/work/jsonargparse/jsonargparse/jsonargparse
+      - run: sed -i 's|/home/runner/work/jsonargparse/jsonargparse/|./|g' coverage.xml
       - uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: ${{ github.workspace }}
@@ -138,8 +139,8 @@ jobs:
             -Dsonar.sources=jsonargparse
             -Dsonar.exclusions=sphinx/**
             -Dsonar.tests=jsonargparse_tests
-            -Dsonar.python.version=3.8,3.9,3.10,3.11,3.12,3.13
             -Dsonar.python.coverage.reportPaths=coverage.xml
+        #    -Dsonar.python.version=3.8,3.9,3.10,3.11,3.12,3.13
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
