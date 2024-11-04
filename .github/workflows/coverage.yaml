@@ -96,6 +96,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
       - uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
@@ -112,7 +114,7 @@ jobs:
           fetch-depth: 0  # Shallow clone disabled for a better relevancy of analysis
       - uses: actions/download-artifact@v4
         with:
-          name: coverage_xml
+          merge-multiple: true
       - run: sed -i "s|${{ github.workspace }}/|./|g" coverage_*.xml
       - uses: SonarSource/sonarcloud-github-action@master
         with:
