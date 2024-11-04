@@ -80,6 +80,7 @@ jobs:
           cache: pip
       - uses: actions/download-artifact@v4
       - run: |
+          ls -lha
           pip install -U coverage[toml]
           coverage combine coverage_py*
           coverage xml
@@ -104,7 +105,7 @@ jobs:
       - run: |
           codecovcli upload-process \
             --fail-on-error \
-            --token $CODECOV_TOKEN \
+            --token ${{ secrets.CODECOV_TOKEN }} \
             --file coverage.xml
 
   sonarcloud:
