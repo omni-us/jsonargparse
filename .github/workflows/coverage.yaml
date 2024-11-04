@@ -80,7 +80,7 @@ jobs:
           cache: pip
       - uses: actions/download-artifact@v4
       - run: |
-          pip install -U coverage
+          pip install -U coverage[toml]
           coverage combine coverage_py*
           coverage xml
       - uses: actions/upload-artifact@v4
