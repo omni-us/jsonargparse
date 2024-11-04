@@ -96,8 +96,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-        with:
-          name: coverage_xml
       - uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
@@ -118,7 +116,6 @@ jobs:
       - run: sed -i "s|${{ github.workspace }}/|./|g" coverage_*.xml
       - uses: SonarSource/sonarcloud-github-action@master
         with:
-          projectBaseDir: ${{ github.workspace }}
           args: >
             -Dsonar.organization=omni-us
             -Dsonar.projectKey=omni-us_jsonargparse
