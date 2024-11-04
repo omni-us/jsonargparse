@@ -124,6 +124,15 @@ jobs:
         with:
           name: coverage_xml
       - uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: my-custom-directory
+          args: >
+            -Dsonar.organization=omni-us
+            -Dsonar.projectKey=omni-us_jsonargparse
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.sources=jsonargparse
+            -Dsonar.exclusions=sphinx/**
+            -Dsonar.tests=jsonargparse_tests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
