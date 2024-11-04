@@ -10,7 +10,7 @@ on:
 
 jobs:
 
-  ubuntu:
+  linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -25,24 +25,24 @@ jobs:
         run: |
           pip install .[coverage]
           pip uninstall -y argcomplete
-          pytest --cov --cov-report=term
-          mv .coverage coverage_py${{ matrix.python }}
+          pytest --cov --cov-report=term --cov-report=xml
+          mv coverage.xml coverage_py${{ matrix.python }}_bare.xml
       - name: with all optional dependencies
         run: |
           pip install .[test,all]
-          pytest --cov --cov-report=term
-          mv .coverage coverage_py${{ matrix.python }}_all
+          pytest --cov --cov-report=term --cov-report=xml
+          mv coverage.xml coverage_py${{ matrix.python }}_all.xml
       - name: without future annotations
         run: |
           sed -i '/^from __future__ import annotations$/d' jsonargparse_tests/test_*.py
-          pytest --cov --cov-report=term
-          mv .coverage coverage_py${{ matrix.python }}_types
+          pytest --cov --cov-report=term --cov-report=xml
+          mv coverage.xml coverage_py${{ matrix.python }}_types.xml
       - uses: actions/upload-artifact@v4
         with:
           name: coverage_py${{ matrix.python }}
           path: ./coverage_py*
 
-  ubuntu-pydantic-v1:
+  linux-pydantic-v1:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,82 +54,68 @@ jobs:
         run: |
           pip install .[coverage]
           pip install "pydantic<2"
-          pytest --cov --cov-report=term jsonargparse_tests/test_dataclass_like.py
-          mv .coverage coverage_pydantic1
+          pytest --cov --cov-report=term --cov-report=xml jsonargparse_tests/test_dataclass_like.py
+          mv coverage.xml coverage_pydantic1.xml
       - name: with pydantic>=2
         run: |
           sed -i "s|import pydantic|import pydantic.v1 as pydantic|" jsonargparse_tests/test_dataclass_like.py
           sed -i "s|^annotated = .*|annotated = False|" jsonargparse_tests/test_dataclass_like.py
           sed -i "s|test_pydantic_types|_test_pydantic_types|" jsonargparse_tests/test_dataclass_like.py
           pip install "pydantic>=2"
-          pytest --cov --cov-report=term jsonargparse_tests/test_dataclass_like.py
-          mv .coverage coverage_pydantic2
+          pytest --cov --cov-report=term --cov-report=xml jsonargparse_tests/test_dataclass_like.py
+          mv coverage.xml coverage_pydantic2.xml
       - uses: actions/upload-artifact@v4
         with:
           name: coverage_pydantic
           path: ./coverage_py*
 
-  combine:
-    runs-on: ubuntu-latest
-    needs: [ubuntu, ubuntu-pydantic-v1]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - uses: actions/download-artifact@v4
-        with:
-          merge-multiple: true
-      - run: |
-          pip install -U coverage[toml]
-          coverage combine coverage_py*
-          coverage xml
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage_xml
-          path: ./coverage.xml
+  #combine:
+  #  runs-on: ubuntu-latest
+  #  needs: [ubuntu, ubuntu-pydantic-v1]
+  #  steps:
+  #    - uses: actions/checkout@v4
+  #    - uses: actions/setup-python@v5
+  #      with:
+  #        python-version: "3.10"
+  #        cache: pip
+  #    - uses: actions/download-artifact@v4
+  #      with:
+  #        merge-multiple: true
+  #    - run: |
+  #        pip install -U coverage[toml]
+  #        coverage combine coverage_py*
+  #        coverage xml
+  #    - uses: actions/upload-artifact@v4
+  #      with:
+  #        name: coverage_xml
+  #        path: ./coverage.xml
 
   codecov:
     runs-on: ubuntu-latest
-    needs: [combine]
+    needs: [linux, linux-pydantic-v1]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
       - uses: actions/download-artifact@v4
         with:
           name: coverage_xml
-      - run: pip install -U codecov-cli
-      - run: |
-          codecovcli upload-process \
-            --fail-on-error \
-            --token ${{ secrets.CODECOV_TOKEN }} \
-            --file coverage.xml
+      - uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          files: ./coverage_*.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   sonarcloud:
     runs-on: ubuntu-latest
-    needs: [combine]
+    needs: [linux, linux-pydantic-v1]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clone disabled for a better relevancy of analysis
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
       - uses: actions/download-artifact@v4
         with:
           name: coverage_xml
-      - run: |
-          ls -lha
-          ls -lha ..
-          pwd
-          echo ${{ github.workspace }}
-          ls -lh /home/runner/work/jsonargparse/jsonargparse/jsonargparse
-      - run: sed -i 's|/home/runner/work/jsonargparse/jsonargparse/|./|g' coverage.xml
+      - run: sed -i "s|${{ github.workspace }}/|./|g" coverage_*.xml
       - uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: ${{ github.workspace }}
@@ -139,8 +125,8 @@ jobs:
             -Dsonar.sources=jsonargparse
             -Dsonar.exclusions=sphinx/**
             -Dsonar.tests=jsonargparse_tests
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-        #    -Dsonar.python.version=3.8,3.9,3.10,3.11,3.12,3.13
+            -Dsonar.python.coverage.reportPaths=coverage_*.xml
+            -Dsonar.python.version=3.8,3.9,3.10,3.11,3.12,3.13
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -148,7 +134,7 @@ jobs:
   publish-pypi:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    needs: [ubuntu, ubuntu-pydantic-v1]
+    needs: [linux, linux-pydantic-v1]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
