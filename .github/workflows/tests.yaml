@@ -1,4 +1,5 @@
 name: tests
+
 on:
   push:
     branches: [ "main" ]
@@ -7,7 +8,7 @@ on:
 
 jobs:
 
-  unittest-windows:
+  tests-windows:
     runs-on: windows-2019
     strategy:
       fail-fast: false
@@ -19,11 +20,10 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-          allow-prereleases: true
       - run: pip install tox
       - run: tox -e py-all-extras
 
-  unittest-macos:
+  tests-macos:
     runs-on: macOS-15
     strategy:
       fail-fast: false
@@ -38,7 +38,7 @@ jobs:
       - run: pip install tox
       - run: tox -e py-all-extras
 
-  unittest-omegaconf:
+  tests-omegaconf:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +48,28 @@ jobs:
           cache: pip
       - run: pip install tox
       - run: tox -e omegaconf
+
+  tests-installed-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: Build package
+        run: |
+          pip install -U build
+          python -m build
+          cd dist
+      - name: Test without optional dependencies
+        run: |
+          pip install $(ls *.whl)[test-no-urls]
+          pytest jsonargparse_tests
+      - name: Test with all optional dependencies
+        run: |
+          pip install $(ls *.whl)[test,all]
+          pytest jsonargparse_tests
 
   doctest:
     runs-on: ubuntu-latest

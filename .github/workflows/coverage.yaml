@@ -1,0 +1,149 @@
+name: coverage
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  coverage:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: [3.8, 3.9, "3.10", 3.11, 3.12, 3.13]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: without optional dependencies
+        run: |
+          pip install .[coverage]
+          pip uninstall -y argcomplete
+          pytest --cov --cov-report=term
+          mv .coverage coverage_py${{ matrix.python }}
+      - name: with all optional dependencies
+        run: |
+          pip install .[test,all]
+          pytest --cov --cov-report=term
+          mv .coverage coverage_py${{ matrix.python }}_all
+      - name: without future annotations
+        run: |
+          sed -i '/^from __future__ import annotations$/d' jsonargparse_tests/test_*.py
+          pytest --cov --cov-report=term
+          mv .coverage coverage_py${{ matrix.python }}_types
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage_py${{ matrix.python }}
+          path: ./coverage_py*
+
+  coverage-pydantic-v1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: With pydantic<2
+        run: |
+          pip install .[coverage]
+          pip install "pydantic<2"
+          pytest --cov --cov-report=term jsonargparse_tests/test_dataclass_like.py
+          mv .coverage coverage_pydantic1
+      - name: with pydantic>=2
+        run: |
+          sed -i "s|import pydantic|import pydantic.v1 as pydantic|" jsonargparse_tests/test_dataclass_like.py
+          sed -i "s|^annotated = .*|annotated = False|" jsonargparse_tests/test_dataclass_like.py
+          sed -i "s|test_pydantic_types|_test_pydantic_types|" jsonargparse_tests/test_dataclass_like.py
+          pip install "pydantic>=2"
+          pytest --cov --cov-report=term jsonargparse_tests/test_dataclass_like.py
+          mv .coverage coverage_pydantic2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage_pydantic
+          path: ./coverage_py*
+
+  coverage-combine:
+    runs-on: ubuntu-latest
+    needs: [coverage, coverage-pydantic-v1]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - uses: actions/download-artifact@v4
+      - run: |
+          pip install -U coverage
+          coverage combine coverage_py*
+          coverage xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: ./coverage.xml
+
+  codecov:
+    runs-on: ubuntu-latest
+    needs: [coverage-combine]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage
+      - run: pip install -U codecov-cli
+      - run: |
+          codecovcli upload-process \
+            --fail-on-error \
+            --token $CODECOV_TOKEN \
+            --file coverage.xml
+
+  sonarcloud:
+    runs-on: ubuntu-latest
+    needs: [coverage-combine]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clone disabled for a better relevancy of analysis
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage
+      - uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  publish-pypi:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs: [codecov, test-installed]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Build package
+        run: |
+          pip install -U build
+          python -m build
+          cd dist
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          pip install -U twine
+          twine upload ./dist/*.whl ./dist/*.tar.gz
