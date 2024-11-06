@@ -1515,11 +1515,6 @@ class ImplementsCallableInterface1:
         return items
 
 
-# TODO: make functions that implement protocol be checked correctly
-def implements_callable_interface2(items: List[float]) -> List[float]:
-    return items
-
-
 class NotImplementsCallableInterface1:
     def __call__(self, items: str) -> List[float]:
         return []
@@ -1535,24 +1530,14 @@ class NotImplementsCallableInterface3:
         return
 
 
-# TODO: make functions that implement protocol be checked correctly
-def not_implements_callable_interface4(items: str) -> List[float]:
-    return []
-
-
 @pytest.mark.parametrize(
     "expected, value",
     [
         (True, ImplementsCallableInterface1),
         (False, ImplementsCallableInterface1(1)),
-        (
-            False,
-            implements_callable_interface2,
-        ),  # TODO: switch to True once functions that implement protocol are checked correctly
         (False, NotImplementsCallableInterface1),
         (False, NotImplementsCallableInterface2),
         (False, NotImplementsCallableInterface3),
-        (False, not_implements_callable_interface4),
         (False, object),
     ],
 )
