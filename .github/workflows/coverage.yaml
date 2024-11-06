@@ -111,7 +111,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-      - run: sed -i "s|${{ github.workspace }}/|./|g" coverage_*.xml
       - uses: SonarSource/sonarcloud-github-action@master
         with:
           args: >
@@ -122,7 +121,6 @@ jobs:
             -Dsonar.tests=jsonargparse_tests
             -Dsonar.python.coverage.reportPaths=coverage_*.xml
             -Dsonar.python.version=3.8,3.9,3.10,3.11,3.12,3.13
-            -Dsonar.python.xunit.reportPath=junit_*.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
