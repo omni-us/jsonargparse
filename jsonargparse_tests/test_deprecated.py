@@ -328,7 +328,7 @@ def test_parse_as_dict(tmp_cwd):
     assert "{}\n" == parser.dump({})
     parser.save({}, "config.yaml")
     with open("config.yaml") as f:
-        assert "{}\n", f.read()
+        assert "{}\n" == f.read()
 
 
 def test_ActionPath(tmp_cwd):
