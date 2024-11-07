@@ -1087,15 +1087,32 @@ def adapt_typehints(
     return val
 
 
+protocol_irrelevant_dunder_methods = {
+    "__init__",
+    "__new__",
+    "__del__",
+    "__getattr__",
+    "__getattribute__",
+    "__setattr__",
+    "__delattr__",
+    "__reduce__",
+    "__reduce_ex__",
+    "__getstate__",
+    "__setstate__",
+    "__subclasshook__",
+}
+
+
 def implements_protocol(value, protocol) -> bool:
     from jsonargparse._parameter_resolvers import get_signature_parameters
     from jsonargparse._postponed_annotations import get_return_type
 
-    if not inspect.isclass(value):
+    if not inspect.isclass(value) or value is object:
         return False
     members = 0
     for name, _ in inspect.getmembers(protocol, predicate=inspect.isfunction):
-        if name.startswith("_"):
+        is_dunder = name.startswith("__") and name.endswith("__")
+        if (not is_dunder and name.startswith("_")) or (is_dunder and name in protocol_irrelevant_dunder_methods):
             continue
         if not hasattr(value, name):
             return False

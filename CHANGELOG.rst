@@ -33,6 +33,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/608>`__).
 - Failure when resolving forward references from dataclass parameter types
   (`#611 <https://github.com/omni-us/jsonargparse/pull/611>`__).
+- Fix callable protocol inheritance.
+  (`#599 <https://github.com/omni-us/jsonargparse/pull/599>`__).
 
 Changed
 ^^^^^^^
