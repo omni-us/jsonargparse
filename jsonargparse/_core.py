@@ -1182,7 +1182,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if isinstance(component, (ActionTypeHint, _ActionConfigLoad)):
                 try:
                     value, parent, key = cfg.get_value_and_parent(component.dest)
-                except KeyError:
+                except (KeyError, AttributeError):
                     pass
                 else:
                     if value is not None:
