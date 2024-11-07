@@ -516,13 +516,13 @@ class Path(PathDeprecations):
         is_url = False
         is_fsspec = False
         if isinstance(path, Path):
-            self.std_io = path._std_io
+            self._std_io = path._std_io
             is_url = path.is_url
             is_fsspec = path.is_fsspec
             url_data = path._url_data
             cwd = path.cwd
-            abs_path = path._absolute
-            path = path._relative
+            abs_path = path.absolute
+            path = path.relative
         elif isinstance(path, (str, os.PathLike)):
             if path == "-":
                 self._std_io = True
