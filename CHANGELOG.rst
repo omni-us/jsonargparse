@@ -144,7 +144,7 @@ Fixed
       with unexpected ``instantiate`` parameter error (`#551
       <https://github.com/omni-us/jsonargparse/pull/551>`__).
     - Ignore incorrectly resolved ``config_file_name`` parameter for
-      transformers model ``from_pretrained``(`#551
+      transformers model ``from_pretrained`` (`#551
       <https://github.com/omni-us/jsonargparse/pull/551>`__).
 
 
@@ -723,8 +723,8 @@ Deprecated
 - Path ``skip_check`` parameter is deprecated and will be removed in v5.0.0.
   Instead use as type ``str`` or ``os.PathLike``.
 - Modifying Path attributes is deprecated. In v5.0.0 they will be properties
-  without a setter and two renamed: ``rel_path -> relative`` and ``abs_path ->
-  absolute``.
+  without a setter and two renamed: ``rel_path -> relative`` and
+  ``abs_path -> absolute``.
 - ``ActionPathList`` is deprecated and will be removed in v5.0.0. Instead use as
   type ``List[<path_type>]`` with ``enable_path=True``.
 - ``ArgumentParser.error_handler`` is deprecated and will be removed in v5.0.0.
