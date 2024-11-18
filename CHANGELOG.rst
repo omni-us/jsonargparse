@@ -17,10 +17,10 @@ v4.34.1 (2024-11-??)
 
 Fixed
 ^^^^^
-- List of dataclass with nested dataclass attribute fails to parse (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
-- ``NotRequired`` incorrectly having ``inspect._empty`` as default (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+- List of dataclass with nested dataclass attribute fails to parse (`#625
+  <https://github.com/omni-us/jsonargparse/pull/625>`__).
+- ``NotRequired`` incorrectly having ``inspect._empty`` as default (`#625
+  <https://github.com/omni-us/jsonargparse/pull/625>`__).
 
 
 v4.34.0 (2024-11-08)
