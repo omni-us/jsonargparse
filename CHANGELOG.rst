@@ -12,6 +12,17 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.34.1 (2024-11-??)
+--------------------
+
+Fixed
+^^^^^
+- List of dataclass with nested dataclass attribute fails to parse (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+- ``NotRequired`` incorrectly having ``inspect._empty`` as default (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+
+
 v4.34.0 (2024-11-08)
 --------------------
 

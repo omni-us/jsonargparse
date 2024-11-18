@@ -442,6 +442,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if cfg_base:
                 cfg = self.merge_config(cfg_base, cfg)
 
+            cfg = self._apply_actions(cfg)
             cfg_apply = self._apply_actions(cfg_obj, prev_cfg=cfg)
             cfg = self.merge_config(cfg_apply, cfg)
 
