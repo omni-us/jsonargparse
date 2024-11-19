@@ -71,7 +71,7 @@ class SignatureArguments(LoggerProperty):
             as_positional: Whether to add required parameters as positional arguments.
             default: Default value used to override parameter defaults.
             skip: Names of parameters or number of positionals that should be skipped.
-            instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
+            instantiate: Whether the class group should be instantiated by ``instantiate_classes``.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
             sub_configs: Whether subclass type hints should be loadable from inner config file.
 
@@ -242,7 +242,7 @@ class SignatureArguments(LoggerProperty):
             skip: Names of parameters or number of positionals that should be skipped.
             fail_untyped: Whether to raise exception if a required parameter does not have a type.
             sub_configs: Whether subclass type hints should be loadable from inner config file.
-            instantiate: Whether the class group should be instantiated by :code:`instantiate_classes`.
+            instantiate: Whether the class group should be instantiated by ``instantiate_classes``.
 
         Returns:
             The list of arguments added.
