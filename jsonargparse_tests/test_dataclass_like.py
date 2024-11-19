@@ -337,6 +337,25 @@ def test_instantiate_dataclass_within_classes(parser):
 
 
 @dataclasses.dataclass
+class RequiredAttr:
+    an_int: int
+
+
+@dataclasses.dataclass
+class NestedRequiredAttr:
+    b: RequiredAttr
+
+
+def test_list_nested_dataclass_required_attr(parser):
+    parser.add_argument("--a", type=List[NestedRequiredAttr])
+    cfg = parser.parse_args(['--a=[{"b": {"an_int": 3}}]'])
+    assert cfg == Namespace(a=[Namespace(b=Namespace(an_int=3))])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.a[0].b, RequiredAttr)
+    assert isinstance(init.a[0], NestedRequiredAttr)
+
+
+@dataclasses.dataclass
 class WithAttrDocs:
     attr_str: str = "a"
     "attr_str description"

@@ -432,12 +432,6 @@ class ActionTypeHint(Action):
             num += 1
 
     @staticmethod
-    def delete_not_required_args(cfg_from, cfg_to):
-        for key, val in list(cfg_to.items(branches=True)):
-            if val == inspect._empty and key not in cfg_from:
-                del cfg_to[key]
-
-    @staticmethod
     @contextmanager
     def subclass_arg_context(parser):
         subclass_arg_parser.set(parser)

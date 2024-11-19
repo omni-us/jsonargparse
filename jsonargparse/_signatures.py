@@ -3,7 +3,7 @@
 import dataclasses
 import inspect
 import re
-from argparse import ArgumentParser
+from argparse import SUPPRESS, ArgumentParser
 from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
@@ -321,9 +321,12 @@ class SignatureArguments(LoggerProperty):
         annotation = param.annotation
         if default == inspect_empty:
             default = param.default
-            if default == inspect_empty and is_optional(annotation):
-                default = None
-        is_required = default == inspect_empty and get_typehint_origin(annotation) not in not_required_types
+            if default == inspect_empty:
+                if is_optional(annotation):
+                    default = None
+                elif get_typehint_origin(annotation) in not_required_types:
+                    default = SUPPRESS
+        is_required = default == inspect_empty
         src = get_parameter_origins(param.component, param.parent)
         skip_message = f'Skipping parameter "{name}" from "{src}" because of: '
         if not fail_untyped and annotation == inspect_empty:

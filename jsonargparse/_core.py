@@ -441,6 +441,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if cfg_base:
                 cfg = self.merge_config(cfg_base, cfg)
 
+            cfg = self._apply_actions(cfg)
             cfg_apply = self._apply_actions(cfg_obj, prev_cfg=cfg)
             cfg = self.merge_config(cfg_apply, cfg)
 
@@ -1340,7 +1341,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         cfg_to = cfg_to.clone()
         with parser_context(parent_parser=self):
             ActionTypeHint.discard_init_args_on_class_path_change(self, cfg_to, cfg_from)
-        ActionTypeHint.delete_not_required_args(cfg_from, cfg_to)
         cfg_to.update(cfg_from)
         ActionTypeHint.apply_appends(self, cfg_to)
         return cfg_to
