@@ -61,7 +61,6 @@ from ._loaders_dumpers import (
     load_value,
     loaders,
     set_omegaconf_loader,
-    yaml_load,
 )
 from ._namespace import (
     Namespace,
@@ -223,7 +222,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             print_config: Add this as argument to print config, set None to disable.
             parser_mode: Mode for parsing config files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
             dump_header: Header to include as comment when dumping a config object.
-            default_config_files: Default config file locations, e.g. :code:`['~/.config/myapp/*.yaml']`.
+            default_config_files: Default config file locations, e.g. ``['~/.config/myapp/*.yaml']``.
             default_env: Set the default value on whether to parse environment variables.
             default_meta: Set the default value on whether to include metadata in config objects.
         """
@@ -1396,7 +1395,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         """Default config file locations.
 
         :getter: Returns the current default config file locations.
-        :setter: Sets new default config file locations, e.g. :code:`['~/.config/myapp/*.yaml']`.
+        :setter: Sets new default config file locations, e.g. ``['~/.config/myapp/*.yaml']``.
 
         Raises:
             ValueError: If an invalid value is given.
@@ -1441,8 +1440,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
     @default_env.setter
     def default_env(self, default_env: bool):
-        if os.environ.get("JSONARGPARSE_DEFAULT_ENV", "").lower() in {"true", "false"}:
-            self._default_env = yaml_load(os.environ.get("JSONARGPARSE_DEFAULT_ENV"))
+        os_default_env = os.getenv("JSONARGPARSE_DEFAULT_ENV", "").lower()
+        if os_default_env in {"true", "false"}:
+            self._default_env = os_default_env == "true"
         elif isinstance(default_env, bool):
             self._default_env = default_env
         else:
