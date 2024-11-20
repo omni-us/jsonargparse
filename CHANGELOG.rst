@@ -20,6 +20,9 @@ Changed
 - Argument groups created from dataclass-like that have zero configurable
   arguments no longer adds a config loader (`#634
   <https://github.com/omni-us/jsonargparse/pull/634>`__).
+- The ``CLASS_PATH_OR_NAME`` for subclass help is now optional and if not given
+  the help of the base class is printed (`#628
+  <https://github.com/omni-us/jsonargparse/pull/628>`__).
 
 Deprecated
 ^^^^^^^^^^
@@ -29,6 +32,7 @@ Deprecated
 
 
 v4.34.1 (2024-12-02)
+--------------------
 
 Fixed
 ^^^^^

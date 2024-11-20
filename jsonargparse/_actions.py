@@ -20,6 +20,7 @@ from ._util import (
     change_to_path_dir,
     default_config_option_help,
     get_import_path,
+    get_typehint_origin,
     import_object,
     indent_text,
     iter_to_set_str,
@@ -346,8 +347,12 @@ class _ActionHelpClassPath(Action):
             super().__init__(**kwargs)
 
     def update_init_kwargs(self, kwargs):
-        from ._typehints import get_subclass_names
+        from ._typehints import get_optional_arg, get_subclass_names, get_unaliased_type
 
+        typehint = get_unaliased_type(get_optional_arg(self._typehint))
+        if get_typehint_origin(typehint) is not Union:
+            assert "nargs" not in kwargs
+            kwargs["nargs"] = "?"
         self._basename = iter_to_set_str(get_subclass_names(self._typehint, callable_return=True))
         kwargs.update(
             {
@@ -376,7 +381,10 @@ class _ActionHelpClassPath(Action):
         try:
             typehint = get_unaliased_type(get_optional_arg(self._typehint))
             baseclasses = get_subclass_types(typehint, callable_return=True)
-            val_class = import_object(resolve_class_path_by_name(typehint, value))
+            if self.nargs == "?" and value is None:
+                val_class = typehint
+            else:
+                val_class = import_object(resolve_class_path_by_name(typehint, value))
         except Exception as ex:
             raise TypeError(f"{option_string}: {ex}") from ex
         if not any(is_subclass(val_class, b) for b in baseclasses):

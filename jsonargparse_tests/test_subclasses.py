@@ -548,6 +548,9 @@ def test_subclass_nested_help(parser):
     help_str = get_parse_args_stdout(parser, [f"--op.help={__name__}.Nested", "--op.cal.help=TextCalendar"])
     assert "Help for --op.cal.help=calendar.TextCalendar" in help_str
     assert "--op.cal.firstweekday" in help_str
+    help_str = get_parse_args_stdout(parser, [f"--op.help={__name__}.Nested", "--op.cal.help"])
+    assert "Help for --op.cal.help=calendar.Calendar" in help_str
+    assert "--op.cal.firstweekday" in help_str
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--op.help={__name__}.Nested", "--op.p1=1"])
@@ -1346,7 +1349,7 @@ def test_add_subclass_required_group(parser):
     parser.add_subclass_arguments(Calendar, "cal", required=True)
     pytest.raises(ArgumentError, lambda: parser.parse_args([]))
     help_str = get_parser_help(parser)
-    assert "[-h] [--cal.help CLASS_PATH_OR_NAME] --cal " in help_str
+    assert "[-h] [--cal.help [CLASS_PATH_OR_NAME]] --cal " in help_str
 
 
 def test_add_subclass_not_required_group(parser):
