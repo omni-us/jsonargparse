@@ -499,8 +499,6 @@ def pydantic_deserializer(type_class):
 
 
 def pydantic_serializer(type_class):
-    if type_class.__name__ == "Url":
-        return str
     serializer = str
     for base in [int, float, bool, list, dict, (set, list)]:
         if not isinstance(base, tuple):
