@@ -12,6 +12,20 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.35.0 (2024-12-??)
+--------------------
+
+Added
+^^^^^
+- Support for ``print config`` argument to reuse the name of the config argument
+  by using ``%s`` (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
+
+Deprecated
+^^^^^^^^^^
+- From v5.0.0 the print config argument will by default reuse the name of the
+  config argument as ``--print_%s`` instead of being always ``--print_config``.
+
+
 v4.34.1 (2024-11-??)
 --------------------
 

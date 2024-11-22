@@ -219,7 +219,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             formatter_class: Class for printing help messages.
             logger: Configures the logger, see :class:`.LoggerProperty`.
             version: Program version which will be printed by the --version argument.
-            print_config: Add this as argument to print config, set None to disable.
+            print_config: Name for print config argument, ``%s`` is replaced by config dest, set None to disable.
             parser_mode: Mode for parsing config files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
             dump_header: Header to include as comment when dumping a config object.
             default_config_files: Default config file locations, e.g. ``['~/.config/myapp/*.yaml']``.

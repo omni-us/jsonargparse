@@ -181,6 +181,9 @@ class ActionConfigFile(Action):
     @staticmethod
     def _add_print_config_argument(container, action):
         if isinstance(action, ActionConfigFile) and getattr(container, "_print_config", None) is not None:
+            if "%s" in container._print_config:
+                container._print_config = container._print_config % action.dest
+            assert container._print_config.startswith("--")
             container.add_argument(container._print_config, action=_ActionPrintConfig)
 
     @staticmethod
