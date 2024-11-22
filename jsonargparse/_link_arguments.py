@@ -204,7 +204,7 @@ class ActionLink(Action):
         help_str: Optional[str]
         if is_target_subclass and not valid_target_leaf:
             type_attr = None
-            help_str = f"Use --{self.target[1].dest}.help CLASS_PATH for details."
+            help_str = f"Use --{self.target[1].dest}.help for details."
         else:
             type_attr = getattr(self.target[1], "_typehint", self.target[1].type)
             help_str = self.target[1].help
