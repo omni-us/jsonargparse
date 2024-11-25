@@ -151,6 +151,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: package
+          path: dist
       - name: Test without optional dependencies
         run: |
           cd dist
@@ -255,5 +256,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: package
+          path: dist
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
