@@ -18,14 +18,14 @@ v4.35.0 (2024-12-??)
 Changed
 ^^^^^^^
 - Argument groups created from dataclass-like that have zero configurable
-  arguments no longer adds a config loader (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  arguments no longer adds a config loader (`#634
+  <https://github.com/omni-us/jsonargparse/pull/634>`__).
 
 Deprecated
 ^^^^^^^^^^
 - ``add_dataclass_arguments`` is deprecated and will be removed in v5.0.0.
-  Instead use ``add_class_arguments`` (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  Instead use ``add_class_arguments`` (`#634
+  <https://github.com/omni-us/jsonargparse/pull/634>`__).
 
 
 v4.34.1 (2024-11-??)

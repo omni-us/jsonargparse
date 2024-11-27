@@ -1183,7 +1183,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         cfg = strip_meta(cfg)
         for component in components:
             ActionLink.apply_instantiation_links(self, cfg, target=component.dest)
-            if isinstance(component, (ActionTypeHint, _ActionConfigLoad)):
+            if isinstance(component, ActionTypeHint):
                 try:
                     value, parent, key = cfg.get_value_and_parent(component.dest)
                 except (KeyError, AttributeError):

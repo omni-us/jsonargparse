@@ -97,7 +97,7 @@ class SignatureArguments(LoggerProperty):
             raise ValueError(
                 f"Expected 'default' to be dict, Namespace, lazy instance or dataclass-like, got: {default}"
             )
-        linked_targets, help, required = get_private_kwargs(
+        linked_targets, help, _ = get_private_kwargs(
             kwargs,
             linked_targets=None,
             help=None,
@@ -124,10 +124,10 @@ class SignatureArguments(LoggerProperty):
             defaults = default
             if isinstance(default, LazyInitBaseClass):
                 defaults = default.lazy_get_init_args().as_dict()
-            elif isinstance(default, Namespace):
-                defaults = default.as_dict()
             elif is_dataclass_like(default.__class__):
                 defaults = dataclass_to_dict(default)
+            elif isinstance(default, Namespace):
+                defaults = default.as_dict()
             if defaults:
                 defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
                 self.set_defaults(**defaults)  # type: ignore[attr-defined]
@@ -288,7 +288,10 @@ class SignatureArguments(LoggerProperty):
                 )
 
         ## Create group if requested ##
-        doc_group = help or get_doc_short_description(function_or_class, method_name, logger=self.logger)
+        if help is not None:
+            doc_group = help
+        else:
+            doc_group = get_doc_short_description(function_or_class, method_name, logger=self.logger)
         component = getattr(function_or_class, method_name) if method_name else function_or_class
         container = self._create_group_if_requested(
             component,
@@ -572,8 +575,6 @@ def dataclass_to_dict(value) -> dict:
         pydantic_model = is_pydantic_model(type(value))
         if pydantic_model:
             return value.dict() if pydantic_model == 1 else value.model_dump()
-    if isinstance(value, LazyInitBaseClass):
-        return value.lazy_get_init_data().as_dict()
     return dataclasses.asdict(value)
 
 
