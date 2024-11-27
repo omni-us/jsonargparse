@@ -124,7 +124,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         if "type" in kwargs:
             if is_dataclass_like(kwargs["type"]):
                 nested_key = args[0].lstrip("-")
-                self.add_dataclass_arguments(kwargs.pop("type"), nested_key, **kwargs)
+                self.add_class_arguments(kwargs.pop("type"), nested_key, **kwargs)
                 return _find_action(parser, nested_key)
             if ActionTypeHint.is_supported_typehint(kwargs["type"]):
                 args = ActionTypeHint.prepare_add_argument(
@@ -175,6 +175,33 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         if name is not None:
             parser.groups[name] = group  # type: ignore[union-attr]
         return group
+
+    def set_defaults(self, *args: Dict[str, Any], **kwargs: Any) -> None:
+        """Sets default values from dictionary or keyword arguments.
+
+        Args:
+            *args: Dictionary defining the default values to set.
+            **kwargs: Sets default values based on keyword arguments.
+
+        Raises:
+            KeyError: If key not defined in the parser.
+        """
+        for arg in args:
+            for dest, default in arg.items():
+                action = _find_action(self, dest)
+                if action is None:
+                    raise NSKeyError(f'No action for key "{dest}" to set its default.')
+                elif isinstance(action, ActionConfigFile):
+                    ActionConfigFile.set_default_error()
+                elif isinstance(action, _ActionConfigLoad):
+                    default = {f"{dest}.{k}": v for k, v in default.items()}
+                    self.set_defaults(default)
+                    continue
+                if isinstance(action, ActionTypeHint):
+                    default = action.normalize_default(default)
+                self._defaults[dest] = action.default = default
+        if kwargs:
+            self.set_defaults(kwargs)
 
 
 class _ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
@@ -883,29 +910,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 f.write(self.dump(cfg, **dump_kwargs))  # type: ignore[arg-type]
 
     ## Methods related to defaults ##
-
-    def set_defaults(self, *args: Dict[str, Any], **kwargs: Any) -> None:
-        """Sets default values from dictionary or keyword arguments.
-
-        Args:
-            *args: Dictionary defining the default values to set.
-            **kwargs: Sets default values based on keyword arguments.
-
-        Raises:
-            KeyError: If key not defined in the parser.
-        """
-        for arg in args:
-            for dest, default in arg.items():
-                action = _find_action(self, dest)
-                if action is None:
-                    raise NSKeyError(f'No action for key "{dest}" to set its default.')
-                elif isinstance(action, ActionConfigFile):
-                    ActionConfigFile.set_default_error()
-                if isinstance(action, ActionTypeHint):
-                    default = action.normalize_default(default)
-                self._defaults[dest] = action.default = default
-        if kwargs:
-            self.set_defaults(kwargs)
 
     def _get_default_config_files(self) -> List[Tuple[Optional[str], Path]]:
         default_config_files = []

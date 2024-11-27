@@ -4,7 +4,6 @@ import dataclasses
 import inspect
 import re
 from argparse import SUPPRESS, ArgumentParser
-from contextlib import suppress
 from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
 
 from ._actions import _ActionConfigLoad
@@ -14,6 +13,7 @@ from ._common import (
     get_generic_origin,
     get_unaliased_type,
     is_dataclass_like,
+    is_final_class,
     is_subclass,
 )
 from ._namespace import Namespace
@@ -53,7 +53,7 @@ class SignatureArguments(LoggerProperty):
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        default: Optional[Union[dict, Namespace, LazyInitBaseClass]] = None,
+        default: Optional[Union[dict, Namespace, LazyInitBaseClass, Type]] = None,
         skip: Optional[Set[Union[str, int]]] = None,
         instantiate: bool = True,
         fail_untyped: bool = True,
@@ -82,16 +82,27 @@ class SignatureArguments(LoggerProperty):
             ValueError: When not given a class.
             ValueError: When there are required parameters without at least one valid type.
         """
-        if not inspect.isclass(get_generic_origin(get_unaliased_type(theclass))):
+        unaliased_class_type = get_unaliased_type(theclass)
+        if not inspect.isclass(get_generic_origin(unaliased_class_type)):
             raise ValueError(f"Expected 'theclass' parameter to be a class type, got: {theclass}")
         if not (
             isinstance(default, (NoneType, dict, Namespace))
-            or (isinstance(default, LazyInitBaseClass) and isinstance(default, theclass))
+            or (isinstance(default, LazyInitBaseClass) and isinstance(default, unaliased_class_type))
+            or (
+                not is_final_class(default.__class__)
+                and is_dataclass_like(default.__class__)
+                and isinstance(default, unaliased_class_type)
+            )
         ):
             raise ValueError(
-                f"Expected 'default' parameter to be a dict, Namespace or lazy instance of the class, got: {default}"
+                f"Expected 'default' to be dict, Namespace, lazy instance or dataclass-like, got: {default}"
             )
-        linked_targets = get_private_kwargs(kwargs, linked_targets=None)
+        linked_targets, help, required = get_private_kwargs(
+            kwargs,
+            linked_targets=None,
+            help=None,
+            required=None,  # Ignored because provided when adding signatures, remove with dataclass inheritance support
+        )
 
         added_args = self._add_signature_arguments(
             theclass,
@@ -104,6 +115,7 @@ class SignatureArguments(LoggerProperty):
             sub_configs=sub_configs,
             instantiate=instantiate,
             linked_targets=linked_targets,
+            help=help,
         )
 
         if default:
@@ -114,6 +126,8 @@ class SignatureArguments(LoggerProperty):
                 defaults = default.lazy_get_init_args().as_dict()
             elif isinstance(default, Namespace):
                 defaults = default.as_dict()
+            elif is_dataclass_like(default.__class__):
+                defaults = dataclass_to_dict(default)
             if defaults:
                 defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
                 self.set_defaults(**defaults)  # type: ignore[attr-defined]
@@ -230,6 +244,7 @@ class SignatureArguments(LoggerProperty):
         sub_configs: bool = False,
         instantiate: bool = True,
         linked_targets: Optional[Set[str]] = None,
+        help: Optional[str] = None,
     ) -> List[str]:
         """Adds arguments from parameters of objects based on signatures and docstrings.
 
@@ -273,7 +288,7 @@ class SignatureArguments(LoggerProperty):
                 )
 
         ## Create group if requested ##
-        doc_group = get_doc_short_description(function_or_class, method_name, logger=self.logger)
+        doc_group = help or get_doc_short_description(function_or_class, method_name, logger=self.logger)
         component = getattr(function_or_class, method_name) if method_name else function_or_class
         container = self._create_group_if_requested(
             component,
@@ -423,67 +438,6 @@ class SignatureArguments(LoggerProperty):
                 "With fail_untyped=True, all mandatory parameters must have a supported"
                 f" type. Parameter '{name}' from '{src}' does not specify a type."
             )
-
-    def add_dataclass_arguments(
-        self,
-        theclass: Type,
-        nested_key: str,
-        default: Optional[Union[Type, dict]] = None,
-        as_group: bool = True,
-        fail_untyped: bool = True,
-        **kwargs,
-    ) -> List[str]:
-        """Adds arguments from a dataclass based on its field types and docstrings.
-
-        Args:
-            theclass: Class from which to add arguments.
-            nested_key: Key for nested namespace.
-            default: Value for defaults. Must be instance of or kwargs for theclass.
-            as_group: Whether arguments should be added to a new argument group.
-            fail_untyped: Whether to raise exception if a required parameter does not have a type.
-
-        Returns:
-            The list of arguments added.
-
-        Raises:
-            ValueError: When not given a dataclass.
-            ValueError: When default is not instance of or kwargs for theclass.
-        """
-        if not is_dataclass_like(theclass):
-            raise ValueError(f'Expected "theclass" argument to be a dataclass-like, given {theclass}')
-
-        doc_group = get_doc_short_description(theclass, logger=self.logger)
-        for key in ["help", "title"]:
-            if key in kwargs and kwargs[key] is not None:
-                doc_group = kwargs.pop(key)
-        group = self._create_group_if_requested(theclass, nested_key, as_group, doc_group, config_load_type=theclass)
-
-        defaults = {}
-        if default is not None:
-            if isinstance(default, dict):
-                with suppress(TypeError):
-                    default = theclass(**default)
-            if not isinstance(default, get_unaliased_type(theclass)):
-                raise ValueError(
-                    f'Expected "default" argument to be an instance of "{theclass.__name__}" '
-                    f"or its kwargs dict, given {default}"
-                )
-            defaults = dataclass_to_dict(default)
-
-        added_args: List[str] = []
-        param_kwargs = {k: v for k, v in kwargs.items() if k == "sub_configs"}
-        for param in get_signature_parameters(theclass, None, logger=self.logger):
-            self._add_signature_parameter(
-                group,
-                nested_key,
-                param,
-                added_args,
-                fail_untyped=fail_untyped,
-                default=defaults.get(param.name, inspect_empty),
-                **param_kwargs,
-            )
-
-        return added_args
 
     def add_subclass_arguments(
         self,

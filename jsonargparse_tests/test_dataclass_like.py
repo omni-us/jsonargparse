@@ -15,6 +15,7 @@ from jsonargparse import (
     compose_dataclasses,
     lazy_instance,
 )
+from jsonargparse._namespace import NSKeyError
 from jsonargparse._optionals import (
     attrs_support,
     docstring_parser_support,
@@ -58,16 +59,16 @@ class DataClassB:
     """
 
     b1: PositiveFloat = PositiveFloat(3.0)  # type: ignore[valid-type]
-    b2: DataClassA = DataClassA()
+    b2: DataClassA = DataClassA(a2="x")
 
 
 class MixedClass(int, DataClassA):
     """MixedClass description"""
 
 
-def test_add_dataclass_arguments(parser, subtests):
-    parser.add_dataclass_arguments(DataClassA, "a", default=DataClassA(), title="CustomA title")
-    parser.add_dataclass_arguments(DataClassB, "b", default=DataClassB())
+def test_add_class_arguments(parser, subtests):
+    parser.add_class_arguments(DataClassA, "a", default=DataClassA(), help="CustomA title")
+    parser.add_class_arguments(DataClassB, "b", default=DataClassB())
 
     with subtests.test("get_defaults"):
         cfg = parser.get_defaults()
@@ -96,11 +97,11 @@ def test_add_dataclass_arguments(parser, subtests):
 
     with subtests.test("add failures"):
         with pytest.raises(ValueError):
-            parser.add_dataclass_arguments(1, "c")
+            parser.add_class_arguments(1, "c")
+        with pytest.raises(NSKeyError):
+            parser.add_class_arguments(DataClassB, "c", default=DataClassB(b2=DataClassB()))
         with pytest.raises(ValueError):
-            parser.add_dataclass_arguments(DataClassB, "c", default=DataClassB(b2=DataClassB()))
-        with pytest.raises(ValueError):
-            parser.add_dataclass_arguments(MixedClass, "c")
+            parser.add_class_arguments(MixedClass, "c")
 
 
 @dataclasses.dataclass
@@ -115,7 +116,7 @@ class NestedDefaultsB:
 
 
 def test_add_dataclass_nested_defaults(parser):
-    parser.add_dataclass_arguments(NestedDefaultsB, "data")
+    parser.add_class_arguments(NestedDefaultsB, "data")
     cfg = parser.parse_args(["--data.a=[{}]"])
     assert cfg.data == Namespace(a=[Namespace(x=[], v=1)])
 
@@ -218,7 +219,7 @@ def test_list_append_defaults(parser):
 def test_add_argument_dataclass_type(parser):
     parser.add_argument("--b", type=DataClassB, default=DataClassB(b1=7.0))
     cfg = parser.get_defaults()
-    assert {"b1": 7.0, "b2": {"a1": 1, "a2": "2"}} == cfg.b.as_dict()
+    assert {"b1": 7.0, "b2": {"a1": 1, "a2": "x"}} == cfg.b.as_dict()
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.b, DataClassB)
     assert isinstance(init.b.b2, DataClassA)
@@ -254,11 +255,13 @@ class DataInitFalse:
 
 
 def test_dataclass_field_init_false(parser):
-    added = parser.add_dataclass_arguments(DataInitFalse, "d")
+    added = parser.add_class_arguments(DataInitFalse, "data")
     assert added == []
     assert parser.get_defaults() == Namespace()
-    cfg = parser.parse_args(["--d", "{}"])
-    assert cfg.d == Namespace()
+    cfg = parser.parse_args([])
+    assert cfg == Namespace()
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.data, DataInitFalse)
 
 
 @dataclasses.dataclass
@@ -513,7 +516,7 @@ class SpecificData:
 
 
 def test_nested_generic_dataclass(parser):
-    parser.add_dataclass_arguments(SpecificData, "x")
+    parser.add_class_arguments(SpecificData, "x")
     help_str = get_parser_help(parser).lower()
     assert "--x.y.g1 g1          (required, type: float)" in help_str
     assert "--x.y.g2 [item,...]  (required, type: tuple[float, float])" in help_str
@@ -853,11 +856,11 @@ class TestPydantic:
         parser.add_argument("--data", type=PydanticDataFieldInitFalse)
         help_str = get_parser_help(parser)
         assert "--data.p1" not in help_str
-        cfg = parser.parse_args(["--data", "{}"])
-        assert cfg.data == Namespace()
+        cfg = parser.parse_args([])
+        assert cfg == Namespace()
 
-        cfg = parser.instantiate_classes(cfg)
-        assert cfg.data.p1 == "-"
+        init = parser.instantiate_classes(cfg)
+        assert init.data.p1 == "-"
 
     def test_dataclass_stdlib_field(self, parser):
         parser.add_argument("--data", type=PydanticDataStdlibField)
@@ -969,9 +972,9 @@ class TestAttrs:
         # not included in config object or its value is None.')
 
         parser.add_argument("--data", type=AttrsFieldInitFalse)
-        cfg = parser.parse_args(["--data", "{}"])
+        cfg = parser.parse_args([])
         help_str = get_parser_help(parser)
         assert "--data.p1" not in help_str
-        assert cfg.data == Namespace()
-        cfg = parser.instantiate_classes(cfg)
-        assert cfg.data.p1 == {}
+        assert cfg == Namespace()
+        init = parser.instantiate_classes(cfg)
+        assert init.data.p1 == {}

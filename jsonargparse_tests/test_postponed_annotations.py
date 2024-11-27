@@ -338,7 +338,7 @@ def test_get_types_dataclass_pep585(parser):
     types = get_types(Data585)
     list_int = List[int] if sys.version_info < (3, 9) else list[int]
     assert types == {"a": list_int, "b": str}
-    parser.add_dataclass_arguments(Data585, "data")
+    parser.add_class_arguments(Data585, "data")
     cfg = parser.parse_args(["--data.a=[1, 2]"])
     assert cfg.data == Namespace(a=[1, 2], b="x")
 
@@ -350,6 +350,6 @@ class DataWithInit585(Data585):
 
 
 def test_add_dataclass_with_init_pep585(parser, tmp_cwd):
-    parser.add_dataclass_arguments(DataWithInit585, "data")
+    parser.add_class_arguments(DataWithInit585, "data")
     cfg = parser.parse_args(["--data.a=[1, 2]", "--data.b=."])
     assert cfg.data == Namespace(a=[1, 2], b=Path_drw("."))
