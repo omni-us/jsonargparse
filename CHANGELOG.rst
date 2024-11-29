@@ -21,6 +21,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/625>`__).
 - ``NotRequired`` incorrectly having ``inspect._empty`` as default (`#625
   <https://github.com/omni-us/jsonargparse/pull/625>`__).
+- Callable protocols failing to parse (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
 
 
 v4.34.0 (2024-11-08)

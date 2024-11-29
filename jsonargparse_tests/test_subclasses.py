@@ -1492,12 +1492,12 @@ def test_parse_implements_protocol(parser):
     assert isinstance(init.cls, ImplementsInterface)
     assert init.cls.batch_size == 5
     assert init.cls.predict([1.0, 2.0]) == [1.0, 2.0]
-    with pytest.raises(ArgumentError) as ctx:
+    with pytest.raises(ArgumentError, match="is a protocol"):
+        parser.parse_args([f"--cls={__name__}.Interface"])
+    with pytest.raises(ArgumentError, match="does not implement protocol"):
         parser.parse_args([f"--cls={__name__}.NotImplementsInterface1"])
-    ctx.match("does not correspond to a subclass of")
-    with pytest.raises(ArgumentError) as ctx:
+    with pytest.raises(ArgumentError, match="Does not implement protocol Interface"):
         parser.parse_args(['--cls={"batch_size": 5}'])
-    ctx.match("Not a valid subclass of Interface")
 
 
 # callable protocol tests
@@ -1507,7 +1507,7 @@ class CallableInterface(Protocol):
     def __call__(self, items: List[float]) -> List[float]: ...
 
 
-class ImplementsCallableInterface1:
+class ImplementsCallableInterface:
     def __init__(self, batch_size: int):
         self.batch_size = batch_size
 
@@ -1533,8 +1533,8 @@ class NotImplementsCallableInterface3:
 @pytest.mark.parametrize(
     "expected, value",
     [
-        (True, ImplementsCallableInterface1),
-        (False, ImplementsCallableInterface1(1)),
+        (True, ImplementsCallableInterface),
+        (False, ImplementsCallableInterface(1)),
         (False, NotImplementsCallableInterface1),
         (False, NotImplementsCallableInterface2),
         (False, NotImplementsCallableInterface3),
@@ -1543,6 +1543,22 @@ class NotImplementsCallableInterface3:
 )
 def test_implements_callable_protocol(expected, value):
     assert implements_protocol(value, CallableInterface) is expected
+
+
+def test_parse_implements_callable_protocol(parser):
+    parser.add_argument("--cls", type=CallableInterface)
+    cfg = parser.parse_args([f"--cls={__name__}.ImplementsCallableInterface", "--cls.batch_size=7"])
+    assert cfg.cls.class_path == f"{__name__}.ImplementsCallableInterface"
+    assert cfg.cls.init_args == Namespace(batch_size=7)
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.cls, ImplementsCallableInterface)
+    assert init.cls([1.0, 2.0]) == [1.0, 2.0]
+    with pytest.raises(ArgumentError, match="is a protocol"):
+        parser.parse_args([f"--cls={__name__}.CallableInterface"])
+    with pytest.raises(ArgumentError, match="does not implement protocol"):
+        parser.parse_args([f"--cls={__name__}.NotImplementsCallableInterface1"])
+    with pytest.raises(ArgumentError, match="Does not implement protocol CallableInterface"):
+        parser.parse_args(['--cls={"batch_size": 7}'])
 
 
 # parameter skip tests
