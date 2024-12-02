@@ -23,6 +23,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/625>`__).
 - Callable protocols failing to parse (`#637
   <https://github.com/omni-us/jsonargparse/pull/637>`__).
+- Help incorrectly showing protocols in known subclasses (`#638
+  <https://github.com/omni-us/jsonargparse/pull/638>`__).
 
 
 v4.34.0 (2024-11-08)

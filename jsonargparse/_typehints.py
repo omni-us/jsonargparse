@@ -1267,7 +1267,7 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
             return
         if is_local(cl) or is_subclass(cl, LazyInitBaseClass):
             return
-        if not (inspect.isabstract(cl) or is_private(class_path)):
+        if not (inspect.isabstract(cl) or is_private(class_path) or is_protocol(cl)):
             if class_path in subclass_list:
                 return
             subclass_list.append(class_path)

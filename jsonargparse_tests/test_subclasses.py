@@ -1485,6 +1485,7 @@ def test_is_instance_or_supports_protocol(expected, value):
 
 def test_parse_implements_protocol(parser):
     parser.add_argument("--cls", type=Interface)
+    assert "known subclasses:" not in get_parser_help(parser)
     cfg = parser.parse_args([f"--cls={__name__}.ImplementsInterface", "--cls.batch_size=5"])
     assert cfg.cls.class_path == f"{__name__}.ImplementsInterface"
     assert cfg.cls.init_args == Namespace(batch_size=5)
@@ -1547,6 +1548,7 @@ def test_implements_callable_protocol(expected, value):
 
 def test_parse_implements_callable_protocol(parser):
     parser.add_argument("--cls", type=CallableInterface)
+    assert "known subclasses:" not in get_parser_help(parser)
     cfg = parser.parse_args([f"--cls={__name__}.ImplementsCallableInterface", "--cls.batch_size=7"])
     assert cfg.cls.class_path == f"{__name__}.ImplementsCallableInterface"
     assert cfg.cls.init_args == Namespace(batch_size=7)
