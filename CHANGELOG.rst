@@ -28,8 +28,7 @@ Deprecated
   <https://github.com/omni-us/jsonargparse/pull/634>`__).
 
 
-v4.34.1 (2024-11-??)
---------------------
+v4.34.1 (2024-12-02)
 
 Fixed
 ^^^^^
@@ -37,6 +36,10 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/625>`__).
 - ``NotRequired`` incorrectly having ``inspect._empty`` as default (`#625
   <https://github.com/omni-us/jsonargparse/pull/625>`__).
+- Callable protocols failing to parse (`#637
+  <https://github.com/omni-us/jsonargparse/pull/637>`__).
+- Help incorrectly showing protocols in known subclasses (`#638
+  <https://github.com/omni-us/jsonargparse/pull/638>`__).
 
 
 v4.34.0 (2024-11-08)

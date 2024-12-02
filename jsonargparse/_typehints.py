@@ -1042,8 +1042,9 @@ def adapt_typehints(
                 prev_val = Namespace(class_path=get_import_path(typehint))  # implicit class_path
         val = subclass_spec_as_namespace(val, prev_val)
         if not is_subclass_spec(val):
+            msg = "Does not implement protocol" if is_protocol(typehint) else "Not a valid subclass of"
             raise_unexpected_value(
-                f"Not a valid subclass of {typehint.__name__}. Got value: {val_input}\n"
+                f"{msg} {typehint.__name__}. Got value: {val_input}\n"
                 "Subclass types expect one of:\n"
                 "- a class path (str)\n"
                 "- a dict with class_path entry\n"
@@ -1054,6 +1055,8 @@ def adapt_typehints(
             val_class = import_object(resolve_class_path_by_name(typehint, val["class_path"]))
             if is_instance_or_supports_protocol(val_class, typehint):
                 return val_class  # importable instance
+            if is_protocol(val_class):
+                raise_unexpected_value(f"Expected an instantiatable class, but {val['class_path']} is a protocol")
             not_subclass = False
             if not is_subclass_or_implements_protocol(val_class, typehint):
                 not_subclass = True
@@ -1064,9 +1067,8 @@ def adapt_typehints(
                     if is_subclass_or_implements_protocol(return_type, typehint):
                         not_subclass = False
             if not_subclass:
-                raise_unexpected_value(
-                    f"Import path {val['class_path']} does not correspond to a subclass of {typehint.__name__}"
-                )
+                msg = "implement protocol" if is_protocol(typehint) else "correspond to a subclass of"
+                raise_unexpected_value(f"Import path {val['class_path']} does not {msg} {typehint.__name__}")
             val["class_path"] = get_import_path(val_class)
             val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
         except (ImportError, AttributeError, AssertionError, ArgumentError) as ex:
@@ -1111,8 +1113,11 @@ def implements_protocol(value, protocol) -> bool:
         if not hasattr(value, name):
             return False
         members += 1
+        try:
+            value_params = get_signature_parameters(value, name)
+        except ValueError:
+            return False
         proto_params = get_signature_parameters(protocol, name)
-        value_params = get_signature_parameters(value, name)
         if [(p.name, p.annotation) for p in proto_params] != [(p.name, p.annotation) for p in value_params]:
             return False
         proto_return = get_return_type(inspect.getattr_static(protocol, name))
@@ -1262,7 +1267,7 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
             return
         if is_local(cl) or is_subclass(cl, LazyInitBaseClass):
             return
-        if not (inspect.isabstract(cl) or is_private(class_path)):
+        if not (inspect.isabstract(cl) or is_private(class_path) or is_protocol(cl)):
             if class_path in subclass_list:
                 return
             subclass_list.append(class_path)
