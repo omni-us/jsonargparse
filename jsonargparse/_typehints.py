@@ -1592,8 +1592,6 @@ class LazyInitBaseClass:
 
     def lazy_get_init_data(self):
         init_args = self.lazy_get_init_args()
-        if is_dataclass_like(self._lazy_class_type):
-            return init_args
         init = Namespace(class_path=get_import_path(self._lazy_class_type))
         if len(self._lazy_kwargs) > 0:
             init["init_args"] = init_args

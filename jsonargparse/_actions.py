@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-from ._common import Action, get_class_instantiator, is_subclass, parser_context
+from ._common import Action, is_subclass, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._optionals import get_config_read_mode
@@ -332,10 +332,6 @@ class _ActionConfigLoad(Action):
 
     def check_type(self, value, parser):
         return self._load_config(value, parser)
-
-    def instantiate_classes(self, value):
-        instantiator_fn = get_class_instantiator()
-        return instantiator_fn(self.basetype, **value)
 
 
 class _ActionHelpClassPath(Action):

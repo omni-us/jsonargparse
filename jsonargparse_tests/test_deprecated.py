@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import os
 import pathlib
 from calendar import Calendar
@@ -10,6 +11,7 @@ from io import StringIO
 from warnings import catch_warnings
 
 import pytest
+import yaml
 
 from jsonargparse import (
     CLI,
@@ -32,7 +34,7 @@ from jsonargparse._deprecated import (
     shown_deprecation_warnings,
     usage_and_exit_error_handler,
 )
-from jsonargparse._optionals import jsonnet_support, url_support
+from jsonargparse._optionals import docstring_parser_support, jsonnet_support, url_support
 from jsonargparse._util import argument_error
 from jsonargparse_tests.conftest import (
     get_parser_help,
@@ -40,6 +42,7 @@ from jsonargparse_tests.conftest import (
     skip_if_docstring_parser_unavailable,
     skip_if_requests_unavailable,
 )
+from jsonargparse_tests.test_dataclass_like import DataClassA
 from jsonargparse_tests.test_jsonnet import example_2_jsonnet
 
 
@@ -575,3 +578,28 @@ def test_action_jsonnet_ext_vars(parser):
     assert 9 == len(cfg.jsonnet["records"])
     assert "#8" == cfg.jsonnet["records"][-2]["ref"]
     assert 15.5 == cfg.jsonnet["records"][-2]["val"]
+
+
+def test_add_dataclass_arguments(parser, subtests):
+    with catch_warnings(record=True) as w:
+        parser.add_dataclass_arguments(DataClassA, "a", default=DataClassA(), title="CustomA title")
+    assert_deprecation_warn(
+        w,
+        message="add_dataclass_arguments was deprecated",
+        code='parser.add_dataclass_arguments(DataClassA, "a", default=DataClassA(), title="CustomA title")',
+    )
+
+    with subtests.test("get_defaults"):
+        cfg = parser.get_defaults()
+        assert dataclasses.asdict(DataClassA()) == cfg["a"].as_dict()
+        dump = yaml.safe_load(parser.dump(cfg))
+        assert dataclasses.asdict(DataClassA()) == dump["a"]
+
+    with subtests.test("instantiate_classes"):
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init["a"], DataClassA)
+
+    with subtests.test("docstrings in help"):
+        help_str = get_parser_help(parser)
+        if docstring_parser_support:
+            assert "CustomA title:" in help_str
