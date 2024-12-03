@@ -12,6 +12,26 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.36.0 (2024-12-??)
+--------------------
+
+Changed
+^^^^^^^
+
+- ``ArgumentParser.check_config`` renamed to ``validate`` and ``skip_check``
+  parameter of ``ArgumentParser.{dump, save, get_defaults}`` renamed to
+  ``skip_validation`` (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+
+Deprecated
+^^^^^^^^^^
+
+- ``ArgumentParser.check_config`` and ``skip_check`` parameter of
+  ``ArgumentParser.{dump, save, get_defaults}`` are deprecated and will be
+  removed in v5.0.0, instead use ``validate`` and ``skip_validation`` (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+
+
 v4.35.1 (2024-12-??)
 --------------------
 
@@ -54,6 +74,7 @@ Deprecated
 - From v5.0.0 the print config argument will by default reuse the name of the
   config argument as ``--print_%s`` instead of being always ``--print_config``
   (`#630 <https://github.com/omni-us/jsonargparse/pull/630>`__).
+
 
 v4.34.1 (2024-12-02)
 --------------------
