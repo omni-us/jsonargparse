@@ -741,6 +741,14 @@ def test_print_config_empty_default_config_file(print_parser, tmp_cwd):
     assert yaml.safe_load(out) == {"g1": {"v2": "2"}, "g2": {"v3": None}, "v1": 1}
 
 
+def test_print_config_reuse_name():
+    parser = ArgumentParser(exit_on_error=False, print_config="--print_%s")
+    parser.add_argument("--conf", action="config")
+    parser.add_argument("--x", default=1)
+    out = get_parse_args_stdout(parser, ["--print_conf"])
+    assert yaml.safe_load(out) == {"x": 1}
+
+
 def test_default_config_files(parser, subtests, tmp_cwd):
     default_config_file = tmp_cwd / "defaults.yaml"
     default_config_file.write_text("op1: from default config file\n")
