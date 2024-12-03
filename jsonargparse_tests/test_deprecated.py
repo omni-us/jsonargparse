@@ -18,6 +18,7 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     LoggerProperty,
+    Namespace,
     Path,
     get_config_read_mode,
     set_url_support,
@@ -337,6 +338,33 @@ def test_parse_as_dict(tmp_cwd):
     parser.save({}, "config.yaml")
     with open("config.yaml") as f:
         assert "{}\n" == f.read()
+
+
+def test_deprecated_skip_check_method(parser):
+    parser.add_argument("--key", type=int)
+    cfg = Namespace(key=1)
+    with catch_warnings(record=True) as w:
+        parser.check_config(cfg)
+    assert_deprecation_warn(
+        w,
+        message="ArgumentParser.check_config was deprecated",
+        code="parser.check_config(cfg)",
+    )
+
+
+def test_deprecated_skip_check_parameter(parser):
+    parser.add_argument("--key", type=int)
+    cfg = Namespace(key="-")
+    with catch_warnings(record=True) as w:
+        dump = parser.dump(cfg, skip_check=True)
+    assert "-" in dump
+    assert_deprecation_warn(
+        w,
+        message="skip_check parameter was deprecated",
+        code="parser.dump(cfg, skip_check=True)",
+    )
+    with pytest.raises(ValueError, match="Unexpected keyword parameters"):
+        parser.dump(cfg, unexpected=True)
 
 
 def test_ActionPath(tmp_cwd):

@@ -23,11 +23,14 @@ Added
 
 Changed
 ^^^^^^^
-
 - ``jsonargparse.CLI`` renamed to ``jsonargparse.auto_cli`` to follow `PEP 8
   <https://peps.python.org/pep-0008/#function-and-variable-names>`__ functions
   naming convention (`#640
   <https://github.com/omni-us/jsonargparse/pull/640>`__).
+- ``ArgumentParser.check_config`` renamed to ``validate`` and ``skip_check``
+  parameter of ``ArgumentParser.{dump, save, get_defaults}`` renamed to
+  ``skip_validation`` (`#639
+  <https://github.com/omni-us/jsonargparse/pull/639>`__).
 
 Fixed
 ^^^^^
@@ -39,6 +42,12 @@ Fixed
 - Nested dataclass with ``init=False`` not working correctly (`#650
   <https://github.com/omni-us/jsonargparse/pull/650>`__).
 
+Deprecated
+^^^^^^^^^^
+- ``ArgumentParser.check_config`` and ``skip_check`` parameter of
+  ``ArgumentParser.{dump, save, get_defaults}`` are deprecated and will be
+  removed in v5.0.0, instead use ``validate`` and ``skip_validation`` (`#639
+  <https://github.com/omni-us/jsonargparse/pull/639>`__).
 
 v4.35.0 (2024-12-16)
 --------------------
@@ -70,6 +79,7 @@ Deprecated
 - From v5.0.0 the print config argument will by default reuse the name of the
   config argument as ``--print_%s`` instead of being always ``--print_config``
   (`#630 <https://github.com/omni-us/jsonargparse/pull/630>`__).
+
 
 v4.34.1 (2024-12-02)
 --------------------

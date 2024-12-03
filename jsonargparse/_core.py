@@ -49,7 +49,7 @@ from ._completions import (
     argcomplete_namespace,
     handle_completions,
 )
-from ._deprecated import ParserDeprecations
+from ._deprecated import ParserDeprecations, deprecated_skip_check
 from ._formatters import DefaultHelpFormatter, empty_help, get_env_var
 from ._jsonnet import ActionJsonnet
 from ._jsonschema import ActionJsonSchema
@@ -315,7 +315,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         env: Optional[bool],
         defaults: bool,
         with_meta: Optional[bool],
-        skip_check: bool,
+        skip_validation: bool,
         skip_required: bool = False,
         skip_subcommands: bool = False,
         fail_no_subcommand: bool = True,
@@ -327,7 +327,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             env: Whether to merge with the parsed environment, None to use parser's default.
             defaults: Whether to merge with the parser's defaults.
             with_meta: Whether to include metadata in config object, None to use parser's default.
-            skip_check: Whether to skip check if configuration is valid.
+            skip_validation: Whether to skip validation of configuration.
             skip_required: Whether to skip check of required arguments.
             skip_subcommands: Whether to skip subcommand processing.
             fail_no_subcommand: Whether to fail if no subcommand given.
@@ -355,8 +355,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             except Exception as ex:
                 self.error(str(ex), ex)
 
-            if not skip_check:
-                self.check_config(cfg, skip_required=skip_required)
+            if not skip_validation:
+                self.validate(cfg, skip_required=skip_required)
 
         if not (with_meta or (with_meta is None and self._default_meta)):
             cfg = strip_meta(cfg)
@@ -371,7 +371,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
     ):
         cfg = Namespace()
         if defaults:
-            cfg = self.get_defaults(skip_check=True)
+            cfg = self.get_defaults(skip_validation=True)
 
         if env or (env is None and self._default_env):
             if environ is None:
@@ -409,7 +409,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Raises:
             ArgumentError: If the parsing fails error and exit_on_error=True.
         """
-        skip_check = get_private_kwargs(kwargs, _skip_check=False)
+        skip_validation = get_private_kwargs(kwargs, _skip_validation=False)
         return_parser_if_captured(self)
         handle_completions(self)
 
@@ -436,7 +436,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 env=env,
                 defaults=defaults,
                 with_meta=with_meta,
-                skip_check=skip_check,
+                skip_validation=skip_validation,
             )
 
         except (TypeError, KeyError) as ex:
@@ -468,7 +468,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Raises:
             ArgumentError: If the parsing fails error and exit_on_error=True.
         """
-        skip_check, skip_required = get_private_kwargs(kwargs, _skip_check=False, _skip_required=False)
+        skip_validation, skip_required = get_private_kwargs(kwargs, _skip_validation=False, _skip_required=False)
 
         try:
             cfg = self._parse_defaults_and_environ(defaults, env)
@@ -484,7 +484,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 env=env,
                 defaults=defaults,
                 with_meta=with_meta,
-                skip_check=skip_check,
+                skip_validation=skip_validation,
                 skip_required=skip_required,
             )
 
@@ -507,7 +507,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 env_val = env[env_var]
                 if env_val in action.choices:
                     cfg[action.dest] = subcommand = self._check_value_key(action, env_val, action.dest, cfg)
-                    pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, _skip_check=True)
+                    pcfg = action._name_parser_map[env_val].parse_env(env=env, defaults=defaults, _skip_validation=True)
                     for k, v in vars(pcfg).items():
                         cfg[subcommand + "." + k] = v
         for action in actions:
@@ -544,7 +544,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Raises:
             ArgumentError: If the parsing fails error and exit_on_error=True.
         """
-        skip_check, skip_subcommands = get_private_kwargs(kwargs, _skip_check=False, _skip_subcommands=False)
+        skip_validation, skip_subcommands = get_private_kwargs(kwargs, _skip_validation=False, _skip_subcommands=False)
 
         try:
             cfg = self._parse_defaults_and_environ(defaults, env=True, environ=env)
@@ -553,10 +553,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 "env": True,
                 "defaults": defaults,
                 "with_meta": with_meta,
-                "skip_check": skip_check,
+                "skip_validation": skip_validation,
                 "skip_subcommands": skip_subcommands,
             }
-            if skip_check:
+            if skip_validation:
                 kwargs["fail_no_subcommand"] = False
 
             parsed_cfg = self._parse_common(cfg=cfg, **kwargs)
@@ -633,7 +633,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Raises:
             ArgumentError: If the parsing fails error and exit_on_error=True.
         """
-        skip_check, fail_no_subcommand = get_private_kwargs(kwargs, _skip_check=False, _fail_no_subcommand=True)
+        skip_validation, fail_no_subcommand = get_private_kwargs(
+            kwargs, _skip_validation=False, _fail_no_subcommand=True
+        )
 
         try:
             with parser_context(load_value_mode=self.parser_mode):
@@ -648,7 +650,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 env=env,
                 defaults=defaults,
                 with_meta=with_meta,
-                skip_check=skip_check,
+                skip_validation=skip_validation,
                 fail_no_subcommand=fail_no_subcommand,
             )
 
@@ -731,9 +733,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         format: str = "parser_mode",
         skip_none: bool = True,
         skip_default: bool = False,
-        skip_check: bool = False,
+        skip_validation: bool = False,
         yaml_comments: bool = False,
         skip_link_targets: bool = True,
+        **kwargs,
     ) -> str:
         """Generates a yaml or json string for the given configuration object.
 
@@ -743,7 +746,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 :func:`.set_dumper`.
             skip_none: Whether to exclude entries whose value is None.
             skip_default: Whether to exclude entries whose value is the same as the default.
-            skip_check: Whether to skip parser checking.
+            skip_validation: Whether to skip parser checking.
             yaml_comments: Whether to add help content as comments. ``yaml_comments=True`` implies ``format='yaml'``.
             skip_link_targets: Whether to exclude link targets.
 
@@ -753,6 +756,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
+        skip_validation = deprecated_skip_check(ArgumentParser.dump, kwargs, skip_validation)
         check_valid_dump_format(format)
 
         cfg = strip_meta(cfg)
@@ -760,18 +764,18 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             ActionLink.strip_link_target_keys(self, cfg)
 
         with parser_context(load_value_mode=self.parser_mode):
-            if not skip_check:
-                self.check_config(cfg)
+            if not skip_validation:
+                self.validate(cfg)
 
-            dump_kwargs = {"skip_check": skip_check, "skip_none": skip_none}
+            dump_kwargs = {"skip_validation": skip_validation, "skip_none": skip_none}
             self._dump_cleanup_actions(cfg, self._actions, dump_kwargs)
 
             cfg_dict = cfg.as_dict()
 
             if skip_default:
-                defaults = self.get_defaults(skip_check=True)
+                defaults = self.get_defaults(skip_validation=True)
                 ActionLink.strip_link_target_keys(self, defaults)
-                self._dump_cleanup_actions(defaults, self._actions, {"skip_check": True, "skip_none": skip_none})
+                self._dump_cleanup_actions(defaults, self._actions, {"skip_validation": True, "skip_none": skip_none})
                 self._dump_delete_default_entries(cfg_dict, defaults.as_dict())
 
         with parser_context(parent_parser=self):
@@ -797,7 +801,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 value = cfg.get(action_dest)
                 if value is not None:
                     with parser_context(parent_parser=self):
-                        value = action.serialize(value, dump_kwargs=dump_kwargs)
+                        try:
+                            value = action.serialize(value, dump_kwargs=dump_kwargs)
+                        except Exception:
+                            if not dump_kwargs.get("skip_validation"):
+                                raise
                     cfg.update(value, action_dest)
 
     def _dump_delete_default_entries(self, subcfg, subdefaults):
@@ -827,10 +835,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         path: Union[str, os.PathLike],
         format: str = "parser_mode",
         skip_none: bool = True,
-        skip_check: bool = False,
+        skip_validation: bool = False,
         overwrite: bool = False,
         multifile: bool = True,
         branch: Optional[str] = None,
+        **kwargs,
     ) -> None:
         """Writes to file(s) the yaml or json for the given configuration object.
 
@@ -840,20 +849,21 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via
                 :func:`.set_dumper`.
             skip_none: Whether to exclude entries whose value is None.
-            skip_check: Whether to skip parser checking.
+            skip_validation: Whether to skip parser checking.
             overwrite: Whether to overwrite existing files.
             multifile: Whether to save multiple config files by using the __path__ metas.
 
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
+        skip_validation = deprecated_skip_check(ArgumentParser.save, kwargs, skip_validation)
         check_valid_dump_format(format)
 
         def check_overwrite(path):
             if not overwrite and os.path.isfile(path.absolute):
                 raise ValueError(f"Refusing to overwrite existing file: {path.absolute}")
 
-        dump_kwargs = {"format": format, "skip_none": skip_none, "skip_check": skip_check}
+        dump_kwargs = {"format": format, "skip_none": skip_none, "skip_validation": skip_validation}
 
         if fsspec_support:
             try:
@@ -880,9 +890,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             cfg = cfg.clone()
             ActionLink.strip_link_target_keys(self, cfg)
 
-            if not skip_check:
+            if not skip_validation:
                 with parser_context(load_value_mode=self.parser_mode):
-                    self.check_config(strip_meta(cfg), branch=branch)
+                    self.validate(strip_meta(cfg), branch=branch)
 
             def save_paths(cfg):
                 for key in cfg.get_sorted_keys():
@@ -912,7 +922,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
             with change_to_path_dir(path_fc), parser_context(parent_parser=self):
                 save_paths(cfg)
-            dump_kwargs["skip_check"] = True
+            dump_kwargs["skip_validation"] = True
             with open(path_fc.absolute, "w") as f:
                 f.write(self.dump(cfg, **dump_kwargs))  # type: ignore[arg-type]
 
@@ -961,15 +971,16 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             check_suppressed_default()
         return defaults.get(action.dest)
 
-    def get_defaults(self, skip_check: bool = False) -> Namespace:
+    def get_defaults(self, skip_validation: bool = False, **kwargs) -> Namespace:
         """Returns a namespace with all default values.
 
         Args:
-            skip_check: Whether to skip check if configuration is valid.
+            skip_validation: Whether to skip validation of defaults.
 
         Returns:
             An object with all default values as attributes.
         """
+        skip_validation = deprecated_skip_check(ArgumentParser.get_defaults, kwargs, skip_validation)
         cfg = Namespace()
         for action in filter_default_actions(self._actions):
             if (
@@ -993,7 +1004,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                             env=False,
                             defaults=False,
                             with_meta=None,
-                            skip_check=skip_check,
+                            skip_validation=skip_validation,
                             skip_required=True,
                         )
                 except (TypeError, KeyError, argparse.ArgumentError) as ex:
@@ -1029,7 +1040,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         sys.stderr.write(f"error: {message}\n")
         self.exit(2)
 
-    def check_config(
+    def validate(
         self,
         cfg: Namespace,
         skip_none: bool = True,
@@ -1375,7 +1386,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if leaf_key == action.dest:
                 return value
             subparser = action._name_parser_map[leaf_key]  # type: ignore[attr-defined]
-            subparser.check_config(value)
+            subparser.validate(value)
         elif isinstance(action, _ActionConfigLoad):
             if isinstance(value, str):
                 value = action.check_type(value, self)

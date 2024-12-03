@@ -956,22 +956,22 @@ def test_add_multiple_config_arguments_error(parser, action):
     ctx.match("only allowed to have a single")
 
 
-def test_check_config_skip_none(parser):
+def test_validate_skip_none(parser):
     parser.add_argument("--op1", type=int)
     parser.add_argument("--op2", type=float)
     cfg = parser.parse_args(["--op2=2.2"])
-    parser.check_config(cfg, skip_none=True)
+    parser.validate(cfg, skip_none=True)
     with pytest.raises(TypeError) as ctx:
-        parser.check_config(cfg, skip_none=False)
+        parser.validate(cfg, skip_none=False)
     ctx.match("Expected a <class 'int'>")
 
 
-def test_check_config_branch(example_parser):
+def test_validate_branch(example_parser):
     cfg = example_parser.get_defaults()
-    example_parser.check_config(cfg.nums, branch="nums")
+    example_parser.validate(cfg.nums, branch="nums")
     cfg.nums.val1 = "invalid"
     with pytest.raises(TypeError) as ctx:
-        example_parser.check_config(cfg.nums, branch="nums")
+        example_parser.validate(cfg.nums, branch="nums")
     ctx.match("Expected a <class 'int'>")
 
 

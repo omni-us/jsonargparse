@@ -192,7 +192,7 @@ class ActionConfigFile(Action):
         from ._link_arguments import skip_apply_links
 
         with _ActionSubCommands.not_single_subcommand(), previous_config_context(cfg), skip_apply_links():
-            kwargs = {"env": False, "defaults": False, "_skip_check": True, "_fail_no_subcommand": False}
+            kwargs = {"env": False, "defaults": False, "_skip_validation": True, "_fail_no_subcommand": False}
             try:
                 cfg_path: Optional[Path] = Path(value, mode=get_config_read_mode())
             except TypeError as ex_path:
@@ -254,7 +254,7 @@ class _ActionPrintConfig(Action):
         )
 
     def __call__(self, parser, namespace, value, option_string=None):
-        kwargs = {"subparser": parser, "key": None, "skip_none": False, "skip_check": False}
+        kwargs = {"subparser": parser, "key": None, "skip_none": False, "skip_validation": False}
         valid_flags = {"": None, "comments": "yaml_comments", "skip_default": "skip_default", "skip_null": "skip_none"}
         if value is not None:
             flags = value[0].split(",")
@@ -666,7 +666,7 @@ class _ActionSubCommands(_SubParsersAction):
         if subcommand in self._name_parser_map:
             subparser = self._name_parser_map[subcommand]
             subnamespace = namespace.get(subcommand).clone() if subcommand in namespace else None
-            kwargs = dict(_skip_check=True, **parse_kwargs.get())
+            kwargs = dict(_skip_validation=True, **parse_kwargs.get())
             namespace[subcommand] = subparser.parse_args(arg_strings, namespace=subnamespace, **kwargs)
 
     @staticmethod
@@ -779,9 +779,9 @@ class _ActionSubCommands(_SubParsersAction):
             key = prefix + subcommand
             with parent_parsers_context(key, parser):
                 if env:
-                    subnamespace = subparser.parse_env(defaults=defaults, _skip_check=True)
+                    subnamespace = subparser.parse_env(defaults=defaults, _skip_validation=True)
                 elif defaults:
-                    subnamespace = subparser.get_defaults(skip_check=True)
+                    subnamespace = subparser.get_defaults(skip_validation=True)
 
             # Update all subcommand settings
             if subnamespace is not None:
