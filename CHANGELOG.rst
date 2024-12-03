@@ -12,6 +12,18 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.36.0 (2024-12-??)
+--------------------
+
+Changed
+^^^^^^^
+
+- ``jsonargparse.CLI`` renamed to ``jsonargparse.auto_cli`` to follow `PEP 8
+  <https://peps.python.org/pep-0008/#function-and-variable-names>`__ functions
+  naming convention (`#640
+  <https://github.com/omni-us/jsonargparse/pull/640>`__).
+
+
 v4.35.1 (2024-12-??)
 --------------------
 
@@ -40,10 +52,6 @@ Changed
 - The ``CLASS_PATH_OR_NAME`` for subclass help is now optional and if not given
   the help of the base class is printed (`#628
   <https://github.com/omni-us/jsonargparse/pull/628>`__).
-- ``jsonargparse.CLI`` renamed to ``jsonargparse.auto_cli`` to follow `PEP 8
-  <https://peps.python.org/pep-0008/#function-and-variable-names>`__ functions
-  naming convention (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
 
 Fixed
 ^^^^^
