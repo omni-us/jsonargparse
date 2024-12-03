@@ -49,6 +49,7 @@ Deprecated
   removed in v5.0.0, instead use ``validate`` and ``skip_validation`` (`#639
   <https://github.com/omni-us/jsonargparse/pull/639>`__).
 
+
 v4.35.0 (2024-12-16)
 --------------------
 
