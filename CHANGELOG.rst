@@ -20,14 +20,26 @@ Added
 - Support for ``print config`` argument to reuse the name of the config argument
   by using ``%s`` (`#630 <https://github.com/omni-us/jsonargparse/pull/630>`__).
 
+Changed
+^^^^^^^
+- Argument groups created from dataclass-like that have zero configurable
+  arguments no longer adds a config loader (`#634
+  <https://github.com/omni-us/jsonargparse/pull/634>`__).
+- The ``CLASS_PATH_OR_NAME`` for subclass help is now optional and if not given
+  the help of the base class is printed (`#628
+  <https://github.com/omni-us/jsonargparse/pull/628>`__).
+
 Deprecated
 ^^^^^^^^^^
+- ``add_dataclass_arguments`` is deprecated and will be removed in v5.0.0.
+  Instead use ``add_class_arguments`` (`#634
+  <https://github.com/omni-us/jsonargparse/pull/634>`__).
 - From v5.0.0 the print config argument will by default reuse the name of the
   config argument as ``--print_%s`` instead of being always ``--print_config``
   (`#630 <https://github.com/omni-us/jsonargparse/pull/630>`__).
 
 
-v4.34.1 (2024-11-??)
+v4.34.1 (2024-12-02)
 --------------------
 
 Fixed
@@ -36,6 +48,10 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/625>`__).
 - ``NotRequired`` incorrectly having ``inspect._empty`` as default (`#625
   <https://github.com/omni-us/jsonargparse/pull/625>`__).
+- Callable protocols failing to parse (`#637
+  <https://github.com/omni-us/jsonargparse/pull/637>`__).
+- Help incorrectly showing protocols in known subclasses (`#638
+  <https://github.com/omni-us/jsonargparse/pull/638>`__).
 
 
 v4.34.0 (2024-11-08)

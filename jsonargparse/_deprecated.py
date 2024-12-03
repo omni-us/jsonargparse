@@ -520,6 +520,17 @@ class ParserDeprecations:
         else:
             raise ValueError("error_handler can be either a Callable or None.")
 
+    @deprecated(
+        """
+        add_dataclass_arguments was deprecated in v4.35.0 and will be removed in
+        v5.0.0. Instead use add_class_arguments.
+    """
+    )
+    def add_dataclass_arguments(self, *args, **kwargs):
+        if "title" in kwargs:
+            kwargs["help"] = kwargs.pop("title")
+        return self.add_class_arguments(*args, **kwargs)
+
 
 ParserError = ArgumentError
 
