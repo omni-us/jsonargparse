@@ -369,8 +369,8 @@ cli_return_parser_message = """
 """
 
 
-def deprecation_warning_cli_return_parser():
-    deprecation_warning("CLI.__init__.return_parser", cli_return_parser_message, stacklevel=2)
+def deprecation_warning_cli_return_parser(stacklevel):
+    deprecation_warning("CLI.__init__.return_parser", cli_return_parser_message, stacklevel=stacklevel)
 
 
 logger_property_none_message = """

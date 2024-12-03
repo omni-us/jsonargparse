@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-from jsonargparse import CLI, capture_parser, lazy_instance
+from jsonargparse import CLI, auto_cli, capture_parser, lazy_instance
 from jsonargparse._optionals import docstring_parser_support, ruyaml_support
 from jsonargparse.typing import final
 from jsonargparse_tests.conftest import json_or_yaml_dump, json_or_yaml_load, skip_if_docstring_parser_unavailable
@@ -22,7 +22,7 @@ from jsonargparse_tests.conftest import json_or_yaml_dump, json_or_yaml_load, sk
 def get_cli_stdout(*args, **kwargs) -> str:
     out = StringIO()
     with redirect_stdout(out), suppress(SystemExit), patch.dict(os.environ, {"COLUMNS": "150"}):
-        CLI(*args, **kwargs)
+        auto_cli(*args, **kwargs)
     return out.getvalue()
 
 
@@ -32,7 +32,7 @@ def get_cli_stdout(*args, **kwargs) -> str:
 @pytest.mark.parametrize("components", [0, [], {"x": 0}])
 def test_unexpected_components(components):
     with pytest.raises(ValueError):
-        CLI(components)
+        auto_cli(components)
 
 
 class ConflictingSubcommandKey:
@@ -42,7 +42,7 @@ class ConflictingSubcommandKey:
 
 def test_conflicting_subcommand_key():
     with pytest.raises(ValueError) as ctx:
-        CLI(ConflictingSubcommandKey, args=["subcommand", "--x=1"])
+        auto_cli(ConflictingSubcommandKey, args=["subcommand", "--x=1"])
     assert ctx.match("subcommand name can't be the same")
 
 
@@ -54,13 +54,14 @@ def single_function(a1: float):
     return a1
 
 
-def test_single_function_return():
-    assert 1.2 == CLI(single_function, args=["1.2"])
+@pytest.mark.parametrize("cli_fn", [CLI, auto_cli])
+def test_single_function_return(cli_fn):
+    assert 1.2 == cli_fn(single_function, args=["1.2"])
 
 
 def test_single_function_set_defaults():
     def run_cli():
-        CLI(single_function, set_defaults={"a1": 3.4})
+        auto_cli(single_function, set_defaults={"a1": 3.4})
 
     parser = capture_parser(run_cli)
     assert 3.4 == parser.get_defaults().a1
@@ -89,7 +90,7 @@ callable_instance = CallableClass()
 
 
 def test_callable_instance():
-    assert 3 == CLI(callable_instance, as_positional=False, args=["--x=3"])
+    assert 3 == auto_cli(callable_instance, as_positional=False, args=["--x=3"])
 
 
 # multiple functions tests
@@ -105,13 +106,13 @@ def cmd2(a2: str = "X"):
 
 
 def test_multiple_functions_return():
-    assert 5 == CLI([cmd1, cmd2], args=["cmd1", "5"])
-    assert "Y" == CLI([cmd1, cmd2], args=["cmd2", "--a2=Y"])
+    assert 5 == auto_cli([cmd1, cmd2], args=["cmd1", "5"])
+    assert "Y" == auto_cli([cmd1, cmd2], args=["cmd2", "--a2=Y"])
 
 
 def test_multiple_functions_set_defaults():
     def run_cli():
-        CLI([cmd1, cmd2], set_defaults={"cmd2.a2": "Z"})
+        auto_cli([cmd1, cmd2], set_defaults={"cmd2.a2": "Z"})
 
     parser = capture_parser(run_cli)
     assert "Z" == parser.parse_args(["cmd2"]).cmd2.a2
@@ -166,22 +167,22 @@ class Class1:
 
 
 def test_single_class_return():
-    assert ("0", 2) == CLI(Class1, args=["0", "method1", "2"])
-    assert ("3", 4) == CLI(Class1, args=['--config={"i1": "3", "method1": {"m1": 4}}'])
-    assert ("5", 6) == CLI(Class1, args=["5", "method1", '--config={"m1": 6}'])
+    assert ("0", 2) == auto_cli(Class1, args=["0", "method1", "2"])
+    assert ("3", 4) == auto_cli(Class1, args=['--config={"i1": "3", "method1": {"m1": 4}}'])
+    assert ("5", 6) == auto_cli(Class1, args=["5", "method1", '--config={"m1": 6}'])
 
 
 def test_single_class_missing_required_init():
     err = StringIO()
     with redirect_stderr(err), pytest.raises(SystemExit):
-        CLI(Class1, args=['--config={"method1": {"m1": 2}}'])
+        auto_cli(Class1, args=['--config={"method1": {"m1": 2}}'])
     assert '"i1" is required' in err.getvalue()
 
 
 def test_single_class_invalid_method_parameter():
     err = StringIO()
     with redirect_stderr(err), pytest.raises(SystemExit):
-        CLI(Class1, args=['--config={"i1": "0", "method1": {"m1": "A"}}'])
+        auto_cli(Class1, args=['--config={"i1": "0", "method1": {"m1": "A"}}'])
     assert 'key "m1"' in err.getvalue()
 
 
@@ -271,7 +272,7 @@ def cmd3():
     ],
 )
 def test_function_and_class_return(expected, args):
-    assert expected == CLI([cmd1, Cmd2, cmd3], args=args)
+    assert expected == auto_cli([cmd1, Cmd2, cmd3], args=args)
 
 
 def test_function_and_class_main_help():
@@ -341,7 +342,7 @@ def test_function_and_class_function_without_parameters():
 
 def test_automatic_components_empty_context():
     def empty_context():
-        CLI()
+        auto_cli()
 
     with patch("inspect.getmodule") as mock_getmodule:
         mock_getmodule.return_value = sys.modules["jsonargparse._core"]
@@ -353,7 +354,7 @@ def test_automatic_components_context_function():
         def function(a1: float):
             return a1
 
-        return CLI(args=["6.7"])
+        return auto_cli(args=["6.7"])
 
     with patch("inspect.getmodule") as mock_getmodule:
         mock_getmodule.return_value = sys.modules["jsonargparse._core"]
@@ -369,7 +370,7 @@ def test_automatic_components_context_class():
             def method(self, m1: int):
                 return self.i1, m1
 
-        return CLI(args=["a", "method", "2"])
+        return auto_cli(args=["a", "method", "2"])
 
     with patch("inspect.getmodule") as mock_getmodule:
         mock_getmodule.return_value = sys.modules["jsonargparse._core"]
@@ -386,13 +387,13 @@ class SettingsClass:
 
 
 def test_dataclass_without_methods_response():
-    settings = CLI(SettingsClass, args=["--p1=x", "--p2=0"], as_positional=False)
+    settings = auto_cli(SettingsClass, args=["--p1=x", "--p2=0"], as_positional=False)
     assert isinstance(settings, SettingsClass)
     assert asdict(settings) == {"p1": "x", "p2": 0}
 
 
 def test_dataclass_without_methods_parser_groups():
-    parser = capture_parser(lambda: CLI(SettingsClass, args=[], as_positional=False))
+    parser = capture_parser(lambda: auto_cli(SettingsClass, args=[], as_positional=False))
     assert parser.groups == {}
 
 
@@ -401,8 +402,8 @@ def test_dataclass_without_methods_parser_groups():
 
 def test_named_components_shallow():
     components = {"cmd1": single_function, "cmd2": callable_instance}
-    assert 3.4 == CLI(components, args=["cmd1", "3.4"])
-    assert 5 == CLI(components, as_positional=False, args=["cmd2", "--x=5"])
+    assert 3.4 == auto_cli(components, args=["cmd1", "3.4"])
+    assert 5 == auto_cli(components, as_positional=False, args=["cmd2", "--x=5"])
     out = get_cli_stdout(components, args=["--help"])
     if docstring_parser_support:
         assert "Description of single_function" in out
@@ -467,9 +468,9 @@ def test_named_components_deep():
     if docstring_parser_support:
         assert "Description of method1" in out
 
-    assert 5.6 == CLI(components, args=["lv1_a", "lv2_x", "--a1=5.6"], **kw)
-    assert 7 == CLI(components, args=["lv1_a", "lv2_y", "lv3_p", "--x=7"], **kw)
-    assert ("w", 9) == CLI(components, args=["lv1_b", "lv2_z", "lv3_q", "--i1=w", "method1", "--m1=9"], **kw)
+    assert 5.6 == auto_cli(components, args=["lv1_a", "lv2_x", "--a1=5.6"], **kw)
+    assert 7 == auto_cli(components, args=["lv1_a", "lv2_y", "lv3_p", "--x=7"], **kw)
+    assert ("w", 9) == auto_cli(components, args=["lv1_b", "lv2_z", "lv3_q", "--i1=w", "method1", "--m1=9"], **kw)
 
 
 # config file tests
@@ -533,7 +534,7 @@ def test_final_and_subclass_type_config_file(tmp_cwd):
     Path("b.yaml").write_text(json_or_yaml_dump({"a": "a.yaml"}))
     Path("a.yaml").write_text(json_or_yaml_dump(a_conf))
 
-    out = CLI(run_bf, args=["--config=config.yaml"])
+    out = auto_cli(run_bf, args=["--config=config.yaml"])
     assert "a yaml" == out
 
 
@@ -546,7 +547,7 @@ async def run_async(time: float = 0.1):
 
 
 def test_async_function():
-    assert "done" == CLI(run_async, args=["--time=0.0"])
+    assert "done" == auto_cli(run_async, args=["--time=0.0"])
 
 
 class AsyncMethod:
@@ -561,7 +562,7 @@ class AsyncMethod:
 
 
 def test_async_method():
-    assert "done" == CLI(AsyncMethod, args=["--time=0.0", "run"])
+    assert "done" == auto_cli(AsyncMethod, args=["--time=0.0", "run"])
 
 
 async def run_async_instance(cls: Callable[[], AsyncMethod]):
@@ -575,4 +576,4 @@ def test_async_instance():
             "init_args": {"time": 0.0, "require_async": True},
         }
     }
-    assert "done" == CLI(run_async_instance, args=[f"--config={json.dumps(config)}"])
+    assert "done" == auto_cli(run_async_instance, args=[f"--config={json.dumps(config)}"])
