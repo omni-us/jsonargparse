@@ -29,6 +29,10 @@ Deprecated
 - ``add_dataclass_arguments`` is deprecated and will be removed in v5.0.0.
   Instead use ``add_class_arguments`` (`#634
   <https://github.com/omni-us/jsonargparse/pull/634>`__).
+- ``ArgumentParser.check_config`` renamed to ``validate`` and ``skip_check``
+  parameter of ``ArgumentParser.{dump, save, get_defaults}`` renamed to
+  ``skip_validation``. The old names are deprecated and will be removed in
+  v5.0.0. (`#639 <https://github.com/omni-us/jsonargparse/pull/639>`__).
 
 
 v4.34.1 (2024-12-02)
