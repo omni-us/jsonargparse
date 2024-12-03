@@ -20,16 +20,16 @@ Changed
 
 - ``ArgumentParser.check_config`` renamed to ``validate`` and ``skip_check``
   parameter of ``ArgumentParser.{dump, save, get_defaults}`` renamed to
-  ``skip_validation`` (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  ``skip_validation`` (`#639
+  <https://github.com/omni-us/jsonargparse/pull/639>`__).
 
 Deprecated
 ^^^^^^^^^^
 
 - ``ArgumentParser.check_config`` and ``skip_check`` parameter of
   ``ArgumentParser.{dump, save, get_defaults}`` are deprecated and will be
-  removed in v5.0.0, instead use ``validate`` and ``skip_validation`` (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  removed in v5.0.0, instead use ``validate`` and ``skip_validation`` (`#639
+  <https://github.com/omni-us/jsonargparse/pull/639>`__).
 
 
 v4.35.1 (2024-12-??)
