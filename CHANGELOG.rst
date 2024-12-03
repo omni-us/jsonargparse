@@ -32,7 +32,7 @@ Deprecated
 - ``ArgumentParser.check_config`` renamed to ``validate`` and ``skip_check``
   parameter of ``ArgumentParser.{dump, save, get_defaults}`` renamed to
   ``skip_validation``. The old names are deprecated and will be removed in
-  v5.0.0. (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  v5.0.0. (`#639 <https://github.com/omni-us/jsonargparse/pull/639>`__).
 
 
 v4.34.1 (2024-12-02)
