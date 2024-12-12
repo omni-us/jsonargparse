@@ -17,12 +17,8 @@ from ._common import (
     is_subclass,
 )
 from ._namespace import Namespace
-from ._optionals import get_doc_short_description, is_pydantic_model, pydantic_support
-from ._parameter_resolvers import (
-    ParamData,
-    get_parameter_origins,
-    get_signature_parameters,
-)
+from ._optionals import attrs_support, get_doc_short_description, is_pydantic_model, pydantic_support
+from ._parameter_resolvers import ParamData, get_parameter_origins, get_signature_parameters
 from ._typehints import (
     ActionTypeHint,
     LazyInitBaseClass,
@@ -575,6 +571,13 @@ def dataclass_to_dict(value) -> dict:
         pydantic_model = is_pydantic_model(type(value))
         if pydantic_model:
             return value.dict() if pydantic_model == 1 else value.model_dump()
+
+    if attrs_support:
+        import attrs
+
+        is_attrs_dataclass = attrs.has(type(value))
+        if is_attrs_dataclass:
+            return attrs.asdict(value)
     return dataclasses.asdict(value)
 
 
