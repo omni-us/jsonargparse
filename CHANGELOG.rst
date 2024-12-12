@@ -30,6 +30,13 @@ Deprecated
   Instead use ``add_class_arguments`` (`#634
   <https://github.com/omni-us/jsonargparse/pull/634>`__).
 
+v4.34.2 (2024-12-??)
+--------------------
+
+Fixed
+^^^^^
+- Adding ``attrs.define`` dataclasses with nested dataclasses that are marked with ``attrs.field`` (such as for a default factory) are not parsed correctly (`#641
+  <https://github.com/omni-us/jsonargparse/pull/641>`__)
 
 v4.34.1 (2024-12-02)
 --------------------
