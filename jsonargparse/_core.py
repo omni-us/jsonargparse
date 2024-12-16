@@ -95,6 +95,9 @@ from ._util import (
 __all__ = ["ActionsContainer", "ArgumentParser"]
 
 
+_parse_known_has_intermixed = "intermixed" in inspect.signature(argparse.ArgumentParser._parse_known_args).parameters
+
+
 class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
@@ -288,7 +291,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             with patch_namespace(), parser_context(
                 parent_parser=self, lenient_check=True
             ), ActionTypeHint.subclass_arg_context(self):
-                namespace, args = self._parse_known_args(args, namespace)
+                kwargs = {}
+                if _parse_known_has_intermixed:
+                    kwargs["intermixed"] = False
+                namespace, args = self._parse_known_args(args, namespace, **kwargs)
         except argparse.ArgumentError as ex:
             self.error(str(ex), ex)
 

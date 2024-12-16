@@ -24,6 +24,11 @@ Changed
   the help of the base class is printed (`#628
   <https://github.com/omni-us/jsonargparse/pull/628>`__).
 
+Fixed
+^^^^^
+- Account for change in ``ArgumentParser._parse_known_args`` since Python 3.12.8
+  and 3.13.1 (`#644 <https://github.com/omni-us/jsonargparse/pull/644>`__).
+
 Deprecated
 ^^^^^^^^^^
 - ``add_dataclass_arguments`` is deprecated and will be removed in v5.0.0.
