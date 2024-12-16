@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.35.0 (2024-12-??)
 --------------------
 
+Added
+^^^^^
+- Support for ``print config`` argument to reuse the name of the config argument
+  by using ``%s`` (`#630 <https://github.com/omni-us/jsonargparse/pull/630>`__).
+
 Changed
 ^^^^^^^
 - Argument groups created from dataclass-like that have zero configurable
@@ -34,6 +39,9 @@ Deprecated
 - ``add_dataclass_arguments`` is deprecated and will be removed in v5.0.0.
   Instead use ``add_class_arguments`` (`#634
   <https://github.com/omni-us/jsonargparse/pull/634>`__).
+- From v5.0.0 the print config argument will by default reuse the name of the
+  config argument as ``--print_%s`` instead of being always ``--print_config``
+  (`#630 <https://github.com/omni-us/jsonargparse/pull/630>`__).
 
 
 v4.34.1 (2024-12-02)
