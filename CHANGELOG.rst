@@ -27,7 +27,7 @@ Changed
 Fixed
 ^^^^^
 - Account for change in ``ArgumentParser._parse_known_args`` since Python 3.12.8
-  and 3.13.1 (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  and 3.13.1 (`#644 <https://github.com/omni-us/jsonargparse/pull/644>`__).
 
 Deprecated
 ^^^^^^^^^^
