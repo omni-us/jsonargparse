@@ -985,16 +985,12 @@ class TestAttrs:
         init = parser.instantiate_classes(cfg)
         assert init.data.p1 == {}
 
-    def test_nested_dataclass_with_default(self, parser):
-        # prior to changes in `jsonargparse._signatures.dataclass_to_dict` adding the nested
-        # attrs dataclass would lead to a TypeError with trying to use `dataclasses.asdict`
-        # on an attrs dataclass
+    def test_nested_with_default(self, parser):
         parser.add_argument("--data", type=AttrsWithNestedDefaultDataclass)
         cfg = parser.parse_args(["--data.p1=1.23"])
         assert cfg.data == Namespace(p1=1.23, subfield=Namespace(p1="-", p2=0))
 
-    def test_nested_dataclass_without_default(self, parser):
-        # this should have worked prior to the changes in `jsonargparse._signatures.dataclass_to_dict`
-        parser.add_argument("--data", type=AttrsWithNestedDefaultDataclass)
+    def test_nested_without_default(self, parser):
+        parser.add_argument("--data", type=AttrsWithNestedDataclassNoDefault)
         cfg = parser.parse_args(["--data.p1=1.23"])
         assert cfg.data == Namespace(p1=1.23, subfield=Namespace(p1="-", p2=0))
