@@ -17,8 +17,8 @@ v4.35.1 (2024-12-??)
 
 Fixed
 ^^^^^
-- Help for ``Protocol`` types not working correctly (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+- Help for ``Protocol`` types not working correctly (`#645
+  <https://github.com/omni-us/jsonargparse/pull/645>`__).
 
 
 v4.35.0 (2024-12-16)
