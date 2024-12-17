@@ -19,6 +19,9 @@ Fixed
 ^^^^^
 - Help for ``Protocol`` types not working correctly (`#645
   <https://github.com/omni-us/jsonargparse/pull/645>`__).
+- Adding ``attrs.define`` dataclasses with nested dataclasses that are marked with
+  ``attrs.field`` (such as for a default factory) are not parsed correctly (`#643
+  <https://github.com/omni-us/jsonargparse/pull/643>`__)
 
 
 v4.35.0 (2024-12-16)
@@ -51,14 +54,6 @@ Deprecated
 - From v5.0.0 the print config argument will by default reuse the name of the
   config argument as ``--print_%s`` instead of being always ``--print_config``
   (`#630 <https://github.com/omni-us/jsonargparse/pull/630>`__).
-
-v4.34.2 (2024-12-??)
---------------------
-
-Fixed
-^^^^^
-- Adding ``attrs.define`` dataclasses with nested dataclasses that are marked with ``attrs.field`` (such as for a default factory) are not parsed correctly (`#643
-  <https://github.com/omni-us/jsonargparse/pull/643>`__)
 
 v4.34.1 (2024-12-02)
 --------------------
