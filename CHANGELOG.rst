@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.35.1 (2024-12-??)
+--------------------
+
+Fixed
+^^^^^
+- Help for ``Protocol`` types not working correctly (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+
+
 v4.35.0 (2024-12-16)
 --------------------
 

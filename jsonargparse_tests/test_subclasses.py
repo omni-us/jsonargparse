@@ -1443,6 +1443,14 @@ class ImplementsInterface:
         return items
 
 
+class SubclassImplementsInterface(Interface):
+    def __init__(self, max_items: int):
+        self.max_items = max_items
+
+    def predict(self, items: List[float]) -> List[float]:
+        return items
+
+
 class NotImplementsInterface1:
     def predict(self, items: str) -> List[float]:
         return []
@@ -1462,6 +1470,7 @@ class NotImplementsInterface3:
     "expected, value",
     [
         (True, ImplementsInterface),
+        (True, SubclassImplementsInterface),
         (False, ImplementsInterface(1)),
         (False, NotImplementsInterface1),
         (False, NotImplementsInterface2),
@@ -1488,7 +1497,6 @@ def test_is_instance_or_supports_protocol(expected, value):
 
 def test_parse_implements_protocol(parser):
     parser.add_argument("--cls", type=Interface)
-    assert "known subclasses:" not in get_parser_help(parser)
     cfg = parser.parse_args([f"--cls={__name__}.ImplementsInterface", "--cls.batch_size=5"])
     assert cfg.cls.class_path == f"{__name__}.ImplementsInterface"
     assert cfg.cls.init_args == Namespace(batch_size=5)
@@ -1496,6 +1504,15 @@ def test_parse_implements_protocol(parser):
     assert isinstance(init.cls, ImplementsInterface)
     assert init.cls.batch_size == 5
     assert init.cls.predict([1.0, 2.0]) == [1.0, 2.0]
+
+    help_str = get_parser_help(parser)
+    assert "known subclasses:" in help_str
+    assert f"{__name__}.SubclassImplementsInterface" in help_str
+    help_str = get_parse_args_stdout(parser, [f"--cls.help={__name__}.SubclassImplementsInterface"])
+    assert "--cls.max_items" in help_str
+    with pytest.raises(ArgumentError, match="not a subclass or implementer of protocol"):
+        parser.parse_args([f"--cls.help={__name__}.NotImplementsInterface1"])
+
     with pytest.raises(ArgumentError, match="is a protocol"):
         parser.parse_args([f"--cls={__name__}.Interface"])
     with pytest.raises(ArgumentError, match="does not implement protocol"):
@@ -1551,13 +1568,17 @@ def test_implements_callable_protocol(expected, value):
 
 def test_parse_implements_callable_protocol(parser):
     parser.add_argument("--cls", type=CallableInterface)
-    assert "known subclasses:" not in get_parser_help(parser)
     cfg = parser.parse_args([f"--cls={__name__}.ImplementsCallableInterface", "--cls.batch_size=7"])
     assert cfg.cls.class_path == f"{__name__}.ImplementsCallableInterface"
     assert cfg.cls.init_args == Namespace(batch_size=7)
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.cls, ImplementsCallableInterface)
     assert init.cls([1.0, 2.0]) == [1.0, 2.0]
+
+    assert "known subclasses:" not in get_parser_help(parser)
+    help_str = get_parse_args_stdout(parser, [f"--cls.help={__name__}.ImplementsCallableInterface"])
+    assert "--cls.batch_size" in help_str
+
     with pytest.raises(ArgumentError, match="is a protocol"):
         parser.parse_args([f"--cls={__name__}.CallableInterface"])
     with pytest.raises(ArgumentError, match="does not implement protocol"):
