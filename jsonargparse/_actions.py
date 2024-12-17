@@ -350,18 +350,31 @@ class _ActionHelpClassPath(Action):
             super().__init__(**kwargs)
 
     def update_init_kwargs(self, kwargs):
-        from ._typehints import get_optional_arg, get_subclass_names, get_unaliased_type
+        from ._typehints import (
+            get_optional_arg,
+            get_subclass_names,
+            get_subclass_types,
+            get_unaliased_type,
+            is_protocol,
+        )
 
         typehint = get_unaliased_type(get_optional_arg(self._typehint))
         if get_typehint_origin(typehint) is not Union:
             assert "nargs" not in kwargs
             kwargs["nargs"] = "?"
         self._basename = iter_to_set_str(get_subclass_names(self._typehint, callable_return=True))
+        self._baseclasses = get_subclass_types(typehint, callable_return=True)
+        assert self._baseclasses
+
+        self._kind = "subclass of"
+        if any(is_protocol(b) for b in self._baseclasses):
+            self._kind = "subclass or implementer of protocol"
+
         kwargs.update(
             {
                 "metavar": "CLASS_PATH_OR_NAME",
                 "default": SUPPRESS,
-                "help": f"Show the help for the given subclass of {self._basename} and exit.",
+                "help": f"Show the help for the given {self._kind} {self._basename} and exit.",
             }
         )
 
@@ -375,23 +388,22 @@ class _ActionHelpClassPath(Action):
         from ._typehints import (
             ActionTypeHint,
             get_optional_arg,
-            get_subclass_types,
             get_unaliased_type,
+            implements_protocol,
             resolve_class_path_by_name,
         )
 
         parser, _, value, option_string = call_args
         try:
             typehint = get_unaliased_type(get_optional_arg(self._typehint))
-            baseclasses = get_subclass_types(typehint, callable_return=True)
             if self.nargs == "?" and value is None:
                 val_class = typehint
             else:
                 val_class = import_object(resolve_class_path_by_name(typehint, value))
         except Exception as ex:
             raise TypeError(f"{option_string}: {ex}") from ex
-        if not any(is_subclass(val_class, b) for b in baseclasses):
-            raise TypeError(f'{option_string}: Class "{value}" is not a subclass of {self._basename}')
+        if not any(is_subclass(val_class, b) or implements_protocol(val_class, b) for b in self._baseclasses):
+            raise TypeError(f'{option_string}: Class "{value}" is not a {self._kind} {self._basename}')
         dest = re.sub("\\.help$", "", self.dest)
         subparser = type(parser)(description=f"Help for {option_string}={get_import_path(val_class)}")
         if ActionTypeHint.is_callable_typehint(typehint) and hasattr(typehint, "__args__"):
