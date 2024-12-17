@@ -1508,7 +1508,7 @@ def test_parse_implements_protocol(parser):
     help_str = get_parser_help(parser)
     assert "known subclasses:" in help_str
     assert f"{__name__}.SubclassImplementsInterface" in help_str
-    help_str = get_parse_args_stdout(parser, [f"--cls.help={__name__}.SubclassImplementsInterface"])
+    help_str = get_parse_args_stdout(parser, ["--cls.help=SubclassImplementsInterface"])
     assert "--cls.max_items" in help_str
     with pytest.raises(ArgumentError, match="not a subclass or implementer of protocol"):
         parser.parse_args([f"--cls.help={__name__}.NotImplementsInterface1"])
