@@ -1103,7 +1103,7 @@ def implements_protocol(value, protocol) -> bool:
     from jsonargparse._parameter_resolvers import get_signature_parameters
     from jsonargparse._postponed_annotations import get_return_type
 
-    if not inspect.isclass(value) or value is object:
+    if not inspect.isclass(value) or value is object or not is_protocol(protocol):
         return False
     members = 0
     for name, _ in inspect.getmembers(protocol, predicate=inspect.isfunction):
