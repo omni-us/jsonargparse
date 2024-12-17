@@ -12,8 +12,13 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.35.0 (2024-12-??)
+v4.35.0 (2024-12-16)
 --------------------
+
+Added
+^^^^^
+- Support for ``print config`` argument to reuse the name of the config argument
+  by using ``%s`` (`#630 <https://github.com/omni-us/jsonargparse/pull/630>`__).
 
 Changed
 ^^^^^^^
@@ -24,11 +29,19 @@ Changed
   the help of the base class is printed (`#628
   <https://github.com/omni-us/jsonargparse/pull/628>`__).
 
+Fixed
+^^^^^
+- Account for change in ``ArgumentParser._parse_known_args`` since Python 3.12.8
+  and 3.13.1 (`#644 <https://github.com/omni-us/jsonargparse/pull/644>`__).
+
 Deprecated
 ^^^^^^^^^^
 - ``add_dataclass_arguments`` is deprecated and will be removed in v5.0.0.
   Instead use ``add_class_arguments`` (`#634
   <https://github.com/omni-us/jsonargparse/pull/634>`__).
+- From v5.0.0 the print config argument will by default reuse the name of the
+  config argument as ``--print_%s`` instead of being always ``--print_config``
+  (`#630 <https://github.com/omni-us/jsonargparse/pull/630>`__).
 
 v4.34.2 (2024-12-??)
 --------------------

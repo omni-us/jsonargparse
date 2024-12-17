@@ -95,6 +95,9 @@ from ._util import (
 __all__ = ["ActionsContainer", "ArgumentParser"]
 
 
+_parse_known_has_intermixed = "intermixed" in inspect.signature(argparse.ArgumentParser._parse_known_args).parameters
+
+
 class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
@@ -246,7 +249,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             formatter_class: Class for printing help messages.
             logger: Configures the logger, see :class:`.LoggerProperty`.
             version: Program version which will be printed by the --version argument.
-            print_config: Add this as argument to print config, set None to disable.
+            print_config: Name for print config argument, ``%s`` is replaced by config dest, set None to disable.
             parser_mode: Mode for parsing config files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
             dump_header: Header to include as comment when dumping a config object.
             default_config_files: Default config file locations, e.g. ``['~/.config/myapp/*.yaml']``.
@@ -288,7 +291,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             with patch_namespace(), parser_context(
                 parent_parser=self, lenient_check=True
             ), ActionTypeHint.subclass_arg_context(self):
-                namespace, args = self._parse_known_args(args, namespace)
+                kwargs = {}
+                if _parse_known_has_intermixed:
+                    kwargs["intermixed"] = False
+                namespace, args = self._parse_known_args(args, namespace, **kwargs)
         except argparse.ArgumentError as ex:
             self.error(str(ex), ex)
 
