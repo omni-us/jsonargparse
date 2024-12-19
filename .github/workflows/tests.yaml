@@ -2,11 +2,11 @@ name: tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
     tags:
       - 'v*'
-  pull_request:
-    branches: [ "main" ]
+  pull_request_target:
+    branches: [main]
 
 jobs:
 
@@ -228,7 +228,7 @@ jobs:
             VERSION="$(git describe --tags --abbrev=0 | sed 's/^v//')+$(git rev-parse --short HEAD)"
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-      - uses: SonarSource/sonarqube-scan-action@v4.2.1
+      - uses: SonarSource/sonarqube-scan-action@v4
         with:
           args: >
             -Dsonar.organization=omni-us
