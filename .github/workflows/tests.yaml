@@ -214,8 +214,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: [linux, pydantic-v1]
     steps:
+      - name: Check access
+        if: ${{ github.event.pull_request.author_association != 'COLLABORATOR' && github.event.pull_request.author_association != 'OWNER' }}
+        run: |
+          echo "Event not triggered by a user without required permission."
+          echo "Wait for a maintainer to review the changes and trigger it."
+          exit 1
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}  # This is dangerous without the first access check
           fetch-depth: 0  # Shallow clone disabled for a better relevancy of analysis
       - uses: actions/download-artifact@v4
         with:
