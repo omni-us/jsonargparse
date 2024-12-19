@@ -2,9 +2,9 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [main]
+  pull_request_target:
+    branches: [main]
   schedule:
     - cron: "57 5 * * 3"  # M H d m w (Every Wednesday at 5:57 AM)
 
@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ python ]
+        language: [python]
 
     steps:
       - name: Checkout
