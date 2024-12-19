@@ -204,6 +204,7 @@ jobs:
           files: ./coverage_*.xml
           token: ${{ secrets.CODECOV_TOKEN }}
       - uses: codecov/test-results-action@v1
+        if: github.event.pull_request.head.repo.fork == false
         with:
           fail_ci_if_error: true
           files: ./junit_*.xml
