@@ -10,7 +10,7 @@ from ._namespace import Namespace, dict_to_namespace
 from ._optionals import get_doc_short_description
 from ._util import default_config_option_help
 
-__all__ = ["CLI"]
+__all__ = ["CLI", "auto_cli"]
 
 
 ComponentType = Union[Callable, Type]
@@ -18,7 +18,12 @@ DictComponentsType = Dict[str, Union[ComponentType, "DictComponentsType"]]
 ComponentsType = Optional[Union[ComponentType, List[ComponentType], DictComponentsType]]
 
 
-def CLI(
+def CLI(*args, **kwargs):
+    """Alias of :func:`auto_cli`."""
+    return auto_cli(*args, _stacklevel=3, **kwargs)
+
+
+def auto_cli(
     components: ComponentsType = None,
     args: Optional[List[str]] = None,
     config_help: str = default_config_option_help,
@@ -29,6 +34,8 @@ def CLI(
     **kwargs,
 ):
     """Simple creation of command line interfaces.
+
+    Previously CLI, renamed to follow the standard of functions in lowercase.
 
     Creates an argument parser from one or more functions/classes, parses
     arguments and runs one of the functions or class methods depending on what
@@ -50,6 +57,7 @@ def CLI(
         The value returned by the executed function or class method.
     """
     return_parser = kwargs.pop("return_parser", False)
+    stacklevel = kwargs.pop("_stacklevel", 2)
     caller = inspect.stack()[1][0]
 
     if components is None:
@@ -89,7 +97,7 @@ def CLI(
         if set_defaults is not None:
             parser.set_defaults(set_defaults)
         if return_parser:
-            deprecation_warning_cli_return_parser()
+            deprecation_warning_cli_return_parser(stacklevel)
             return parser
         cfg = parser.parse_args(args)
         init = parser.instantiate_classes(cfg)
@@ -103,7 +111,7 @@ def CLI(
     if set_defaults is not None:
         parser.set_defaults(set_defaults)
     if return_parser:
-        deprecation_warning_cli_return_parser()
+        deprecation_warning_cli_return_parser(stacklevel)
         return parser
     cfg = parser.parse_args(args)
     init = parser.instantiate_classes(cfg)
