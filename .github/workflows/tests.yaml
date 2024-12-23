@@ -75,7 +75,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install --disable-pip-version-check tox
+      - run: pip install tox
       - run: tox -e py-all-extras
 
   omegaconf:

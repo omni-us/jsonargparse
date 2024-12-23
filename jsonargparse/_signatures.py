@@ -93,7 +93,7 @@ class SignatureArguments(LoggerProperty):
             raise ValueError(
                 f"Expected 'default' to be dict, Namespace, lazy instance or dataclass-like, got: {default}"
             )
-        linked_targets, help, _ = get_private_kwargs(
+        linked_targets, help_, _ = get_private_kwargs(
             kwargs,
             linked_targets=None,
             help=None,
@@ -111,7 +111,7 @@ class SignatureArguments(LoggerProperty):
             sub_configs=sub_configs,
             instantiate=instantiate,
             linked_targets=linked_targets,
-            help=help,
+            help=help_,
         )
 
         if default:
