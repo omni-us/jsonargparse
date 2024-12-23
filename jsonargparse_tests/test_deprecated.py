@@ -352,7 +352,7 @@ def test_deprecated_skip_check_method(parser):
     )
 
 
-def test_deprecated_skip_check_parameter(parser):
+def test_deprecated_dump_skip_check_parameter(parser):
     parser.add_argument("--key", type=int)
     cfg = Namespace(key="-")
     with catch_warnings(record=True) as w:
@@ -363,8 +363,6 @@ def test_deprecated_skip_check_parameter(parser):
         message="skip_check parameter was deprecated",
         code="parser.dump(cfg, skip_check=True)",
     )
-    with pytest.raises(ValueError, match="Unexpected keyword parameters"):
-        parser.dump(cfg, unexpected=True)
 
 
 def test_ActionPath(tmp_cwd):

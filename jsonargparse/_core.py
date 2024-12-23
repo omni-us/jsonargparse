@@ -801,11 +801,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 value = cfg.get(action_dest)
                 if value is not None:
                     with parser_context(parent_parser=self):
-                        try:
+                        if dump_kwargs.get("skip_validation"):
+                            with suppress(ValueError):
+                                value = action.serialize(value, dump_kwargs=dump_kwargs)
+                        else:
                             value = action.serialize(value, dump_kwargs=dump_kwargs)
-                        except Exception:
-                            if not dump_kwargs.get("skip_validation"):
-                                raise
                     cfg.update(value, action_dest)
 
     def _dump_delete_default_entries(self, subcfg, subdefaults):

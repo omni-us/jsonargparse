@@ -499,6 +499,22 @@ def test_dump_skip_default_nested(parser):
     assert dump == expected
 
 
+def test_dump_skip_validation(parser):
+    parser.add_argument("--key", type=int)
+    cfg = Namespace(key="-")
+    with pytest.raises(TypeError):
+        parser.dump(cfg)
+    dump = parser.dump(cfg, skip_validation=True)
+    assert "-" in dump
+
+
+def test_dump_unexpected_kwarg(parser):
+    parser.add_argument("--key", type=int)
+    cfg = Namespace(key="-")
+    with pytest.raises(ValueError, match="Unexpected keyword parameter"):
+        parser.dump(cfg, unexpected=True)
+
+
 @skip_if_no_pyyaml
 def test_dump_order(parser, subtests):
     args = {}
