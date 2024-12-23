@@ -391,7 +391,7 @@ def is_param_subclass_instance_default(param: ParamData) -> bool:
 
 
 def split_args_and_kwargs(params: ParamList) -> Tuple[ParamList, ParamList]:
-    args = [p for p in params if p.kind is kinds.POSITIONAL_ONLY]
+    args = [p for p in params if p.kind == kinds.POSITIONAL_ONLY]
     kwargs = [p for p in params if p.kind in {kinds.KEYWORD_ONLY, kinds.POSITIONAL_OR_KEYWORD}]
     return args, kwargs
 
