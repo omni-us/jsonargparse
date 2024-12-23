@@ -486,6 +486,22 @@ def test_dump_skip_default_nested(parser):
     assert parser.dump(parser.parse_args(["--g2.op2=pqr"]), skip_default=True) == "g2:\n  op2: pqr\n"
 
 
+def test_dump_skip_validation(parser):
+    parser.add_argument("--key", type=int)
+    cfg = Namespace(key="-")
+    with pytest.raises(TypeError):
+        parser.dump(cfg)
+    dump = parser.dump(cfg, skip_validation=True)
+    assert "-" in dump
+
+
+def test_dump_unexpected_kwarg(parser):
+    parser.add_argument("--key", type=int)
+    cfg = Namespace(key="-")
+    with pytest.raises(ValueError, match="Unexpected keyword parameter"):
+        parser.dump(cfg, unexpected=True)
+
+
 def test_dump_order(parser, subtests):
     args = {}
     for num in range(50):
