@@ -122,6 +122,10 @@ class SignatureArguments(LoggerProperty):
                 defaults = default.lazy_get_init_args().as_dict()
             elif is_dataclass_like(default.__class__):
                 defaults = dataclass_to_dict(default)
+                args = set(k[len(prefix) :] for k in added_args)
+                skip_not_added = [k for k in defaults if k not in args]
+                if skip_not_added:
+                    skip.update(skip_not_added)  # skip init=False
             elif isinstance(default, Namespace):
                 defaults = default.as_dict()
             if defaults:
@@ -428,9 +432,10 @@ class SignatureArguments(LoggerProperty):
                 kwargs.update(sub_add_kwargs)
             with ActionTypeHint.allow_default_instance_context():
                 action = container.add_argument(*args, **kwargs)
-            action.sub_add_kwargs = sub_add_kwargs
-            if is_subclass_typehint and len(subclass_skip) > 0:
-                action.sub_add_kwargs["skip"] = subclass_skip
+            if action is not None:  # None when class without any parameters
+                action.sub_add_kwargs = sub_add_kwargs
+                if is_subclass_typehint and len(subclass_skip) > 0:
+                    action.sub_add_kwargs["skip"] = subclass_skip
             added_args.append(dest)
         elif is_required and fail_untyped:
             raise ValueError(

@@ -22,6 +22,8 @@ Fixed
 - Adding ``attrs.define`` dataclasses with nested dataclasses that are marked with
   ``attrs.field`` (such as for a default factory) are not parsed correctly (`#643
   <https://github.com/omni-us/jsonargparse/pull/643>`__)
+- Nested dataclass with ``init=False`` not working correctly (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
 
 
 v4.35.0 (2024-12-16)
