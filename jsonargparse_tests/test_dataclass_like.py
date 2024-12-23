@@ -256,6 +256,27 @@ def test_dataclass_field_init_false(parser):
 
 
 @dataclasses.dataclass
+class NestedDataInitFalse:
+    x: bool = dataclasses.field(default=False, init=False)
+
+
+@dataclasses.dataclass
+class ParentDataInitFalse:
+    y: NestedDataInitFalse = dataclasses.field(default_factory=NestedDataInitFalse)
+
+
+def test_nested_dataclass_field_init_false(parser):
+    parser.add_class_arguments(ParentDataInitFalse, "data")
+    assert parser.get_defaults() == Namespace()
+    cfg = parser.parse_args([])
+    assert cfg == Namespace()
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.data, ParentDataInitFalse)
+    assert isinstance(init.data.y, NestedDataInitFalse)
+    assert init.data.y.x is False
+
+
+@dataclasses.dataclass
 class DataFieldFactory:
     a1: List[int] = dataclasses.field(default_factory=lambda: [1, 2, 3])
     a2: Dict[str, float] = dataclasses.field(default_factory=lambda: {"a": 1.2, "b": 3.4})
