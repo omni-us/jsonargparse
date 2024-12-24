@@ -2,12 +2,10 @@
 
 import inspect
 import re
-from typing import Any, Callable, Dict, Tuple, Type
-
-import yaml
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from ._common import load_value_mode, parent_parser
-from ._optionals import import_jsonnet, omegaconf_support
+from ._optionals import import_jsonnet, omegaconf_support, pyyaml_available
 from ._type_checking import ArgumentParser
 
 __all__ = [
@@ -17,44 +15,55 @@ __all__ = [
 ]
 
 
-class DefaultLoader(getattr(yaml, "CSafeLoader", yaml.SafeLoader)):  # type: ignore[misc]
-    pass
+yaml_default_loader = None
 
 
-# https://stackoverflow.com/a/37958106/2732151
-def remove_implicit_resolver(cls, tag_to_remove):
-    if "yaml_implicit_resolvers" not in cls.__dict__:
-        cls.yaml_implicit_resolvers = cls.yaml_implicit_resolvers.copy()
+def get_yaml_default_loader():
+    global yaml_default_loader
+    if yaml_default_loader:
+        return yaml_default_loader
 
-    for first_letter, mappings in cls.yaml_implicit_resolvers.items():
-        cls.yaml_implicit_resolvers[first_letter] = [(tag, regexp) for tag, regexp in mappings if tag != tag_to_remove]
+    import yaml
 
+    class DefaultLoader(getattr(yaml, "CSafeLoader", yaml.SafeLoader)):
+        pass
 
-remove_implicit_resolver(DefaultLoader, "tag:yaml.org,2002:timestamp")
-remove_implicit_resolver(DefaultLoader, "tag:yaml.org,2002:float")
+    # https://stackoverflow.com/a/37958106/2732151
+    def remove_implicit_resolver(cls, tag_to_remove):
+        if "yaml_implicit_resolvers" not in cls.__dict__:
+            cls.yaml_implicit_resolvers = cls.yaml_implicit_resolvers.copy()
 
+        for first_letter, mappings in cls.yaml_implicit_resolvers.items():
+            cls.yaml_implicit_resolvers[first_letter] = [
+                (tag, regexp) for tag, regexp in mappings if tag != tag_to_remove
+            ]
 
-DefaultLoader.add_implicit_resolver(
-    "tag:yaml.org,2002:float",
-    re.compile(
-        """^(?:
-     [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
-    |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
-    |\\.[0-9_]+(?:[eE][-+][0-9]+)?
-    |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
-    |[-+]?\\.(?:inf|Inf|INF)
-    |\\.(?:nan|NaN|NAN))$""",
-        re.X,
-    ),
-    list("-+0123456789."),
-)
+    remove_implicit_resolver(DefaultLoader, "tag:yaml.org,2002:timestamp")
+    remove_implicit_resolver(DefaultLoader, "tag:yaml.org,2002:float")
+
+    DefaultLoader.add_implicit_resolver(
+        "tag:yaml.org,2002:float",
+        re.compile(
+            """^(?:
+        [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+        |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+        |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+        |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+        |[-+]?\\.(?:inf|Inf|INF)
+        |\\.(?:nan|NaN|NAN))$""",
+            re.X,
+        ),
+        list("-+0123456789."),
+    )
+
+    yaml_default_loader = DefaultLoader
+    return DefaultLoader
 
 
 def yaml_load(stream):
-    if stream.strip() == "-":
-        value = stream
-    else:
-        value = yaml.load(stream, Loader=DefaultLoader)
+    import yaml
+
+    value = yaml.load(stream, Loader=get_yaml_default_loader())
     if isinstance(value, dict) and value and all(v is None for v in value.values()):
         if len(value) == 1 and stream.strip() == next(iter(value.keys())) + ":":
             value = stream
@@ -65,6 +74,15 @@ def yaml_load(stream):
     return value
 
 
+def json_load(stream):
+    import json
+
+    try:
+        return json.loads(stream)
+    except json.JSONDecodeError:
+        return stream
+
+
 def jsonnet_load(stream, path="", ext_vars=None):
     from ._jsonnet import ActionJsonnet
 
@@ -72,26 +90,21 @@ def jsonnet_load(stream, path="", ext_vars=None):
     _jsonnet = import_jsonnet("jsonnet_load")
     try:
         val = _jsonnet.evaluate_snippet(path, stream, ext_vars=ext_vars, ext_codes=ext_codes)
-    except RuntimeError as ex:
+    except RuntimeError:
         try:
-            return yaml_load(stream)
-        except pyyaml_exceptions:
+            return json_or_yaml_load(stream)
+        except json_or_yaml_loader_exceptions as ex:
             raise ValueError(str(ex)) from ex
-    return yaml_load(val)
+    return json_or_yaml_load(val)
 
 
 loaders: Dict[str, Callable] = {
     "yaml": yaml_load,
+    "json": json_load,
     "jsonnet": jsonnet_load,
 }
 
-pyyaml_exceptions = (yaml.YAMLError,)
-jsonnet_exceptions = pyyaml_exceptions + (ValueError,)
-
-loader_exceptions: Dict[str, Tuple[Type[Exception], ...]] = {
-    "yaml": pyyaml_exceptions,
-    "jsonnet": jsonnet_exceptions,
-}
+loader_exceptions: Dict[str, Tuple[Type[Exception], ...]] = {}
 
 
 def get_load_value_mode() -> str:
@@ -103,11 +116,28 @@ def get_load_value_mode() -> str:
     return mode
 
 
-def get_loader_exceptions():
-    return loader_exceptions[get_load_value_mode()]
+def get_loader_exceptions(mode: Optional[str] = None) -> Tuple[Type[Exception], ...]:
+    if mode is None:
+        mode = get_load_value_mode()
+    if mode not in loader_exceptions:
+        if mode == "yaml":
+            loader_exceptions[mode] = (__import__("yaml").YAMLError,)
+        elif mode == "json":
+            loader_exceptions[mode] = tuple()
+        elif mode == "jsonnet":
+            return get_loader_exceptions("yaml" if pyyaml_available else "json")
+    return loader_exceptions[mode]
+
+
+json_or_yaml_load = yaml_load if pyyaml_available else json_load
+json_or_yaml_loader_exceptions = get_loader_exceptions("yaml" if pyyaml_available else "json")
 
 
 def load_value(value: str, simple_types: bool = False, **kwargs):
+    if not value:
+        return None
+    elif value.strip() == "-":
+        return value
     loader = loaders[get_load_value_mode()]
     if kwargs:
         params = set(list(inspect.signature(loader).parameters)[1:])
@@ -131,6 +161,8 @@ dump_json_kwargs = {
 
 
 def yaml_dump(data):
+    import yaml
+
     return yaml.safe_dump(data, **dump_yaml_kwargs)
 
 
@@ -184,7 +216,11 @@ def dump_using_format(parser: "ArgumentParser", data: dict, dump_format: str) ->
     return dump
 
 
-def set_loader(mode: str, loader_fn: Callable[[str], Any], exceptions: Tuple[Type[Exception], ...] = pyyaml_exceptions):
+def set_loader(
+    mode: str,
+    loader_fn: Callable[[str], Any],
+    exceptions: Tuple[Type[Exception], ...] = tuple(),
+):
     """Sets the value loader function to be used when parsing with a certain mode.
 
     The ``loader_fn`` function must accept as input a single str type parameter
@@ -197,7 +233,7 @@ def set_loader(mode: str, loader_fn: Callable[[str], Any], exceptions: Tuple[Typ
         mode: The parser mode for which to set its loader function. Example: "yaml".
         loader_fn: The loader function to set. Example: ``yaml.safe_load``.
         exceptions: Exceptions that the loader can raise when load fails.
-            Example: (yaml.parser.ParserError, yaml.scanner.ScannerError).
+            Example: (yaml.YAMLError,).
     """
     loaders[mode] = loader_fn
     loader_exceptions[mode] = exceptions

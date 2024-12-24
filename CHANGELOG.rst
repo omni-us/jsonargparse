@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.36.0 (2024-12-??)
+--------------------
+
+Changed
+^^^^^^^
+- Refactor to eventually remove ``pyyaml`` as a required dependency (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+
+
 v4.35.1 (2024-12-??)
 --------------------
 

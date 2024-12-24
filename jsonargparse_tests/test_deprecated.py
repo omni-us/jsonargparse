@@ -11,7 +11,6 @@ from io import StringIO
 from warnings import catch_warnings
 
 import pytest
-import yaml
 
 from jsonargparse import (
     CLI,
@@ -34,7 +33,7 @@ from jsonargparse._deprecated import (
     shown_deprecation_warnings,
     usage_and_exit_error_handler,
 )
-from jsonargparse._optionals import docstring_parser_support, jsonnet_support, url_support
+from jsonargparse._optionals import docstring_parser_support, jsonnet_support, pyyaml_available, url_support
 from jsonargparse._util import argument_error
 from jsonargparse_tests.conftest import (
     get_parser_help,
@@ -44,6 +43,12 @@ from jsonargparse_tests.conftest import (
 )
 from jsonargparse_tests.test_dataclass_like import DataClassA
 from jsonargparse_tests.test_jsonnet import example_2_jsonnet
+
+
+@pytest.fixture(autouse=True)
+def no_pyyaml_skip():
+    if not pyyaml_available:
+        pytest.skip("pyyaml package is required")
 
 
 @pytest.fixture(autouse=True)
@@ -592,7 +597,7 @@ def test_add_dataclass_arguments(parser, subtests):
     with subtests.test("get_defaults"):
         cfg = parser.get_defaults()
         assert dataclasses.asdict(DataClassA()) == cfg["a"].as_dict()
-        dump = yaml.safe_load(parser.dump(cfg))
+        dump = __import__("yaml").safe_load(parser.dump(cfg))
         assert dataclasses.asdict(DataClassA()) == dump["a"]
 
     with subtests.test("instantiate_classes"):

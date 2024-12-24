@@ -5,7 +5,6 @@ import re
 from pathlib import Path
 
 import pytest
-import yaml
 
 from jsonargparse import (
     ActionJsonnet,
@@ -14,8 +13,12 @@ from jsonargparse import (
     ArgumentParser,
     strip_meta,
 )
-from jsonargparse._optionals import jsonnet_support
-from jsonargparse_tests.conftest import get_parser_help, skip_if_jsonschema_unavailable
+from jsonargparse._optionals import jsonnet_support, pyyaml_available
+from jsonargparse_tests.conftest import (
+    get_parser_help,
+    json_or_yaml_load,
+    skip_if_jsonschema_unavailable,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -161,36 +164,41 @@ def test_action_jsonnet_save_config_metadata(parser, tmp_path):
 
     jsonnet_file = tmp_path / "example.jsonnet"
     jsonnet_file.write_text(example_2_jsonnet)
-    output_yaml = tmp_path / "output" / "main.yaml"
+    output_config = tmp_path / "output" / "main.yaml"
     output_jsonnet = tmp_path / "output" / "example.jsonnet"
     (tmp_path / "output").mkdir()
 
     # save the config with metadata and verify it is saved as two files
     cfg = parser.parse_args(["--ext_vars", '{"param": 123}', f"--jsonnet={jsonnet_file}"])
     assert str(cfg.jsonnet["__path__"]) == str(jsonnet_file)
-    parser.save(cfg, output_yaml)
-    assert output_yaml.is_file()
+    parser.save(cfg, output_config)
+    assert output_config.is_file()
     assert output_jsonnet.is_file()
 
     # rewrite the config to make sure that ext_vars is after jsonnet
-    main_cfg = yaml.safe_load(output_yaml.read_text())
+    main_cfg = json_or_yaml_load(output_config.read_text())
     main_cfg = {k: main_cfg[k] for k in ["jsonnet", "ext_vars"]}
-    output_yaml.write_text(yaml.safe_dump(main_cfg, sort_keys=False))
+    if pyyaml_available:
+        import yaml
+
+        output_config.write_text(yaml.safe_dump(main_cfg, sort_keys=False))
+    else:
+        output_config.write_text(json.dumps(main_cfg))
 
     # parse using saved config and verify result is the same
-    cfg2 = parser.parse_args([f"--cfg={output_yaml}"])
+    cfg2 = parser.parse_args([f"--cfg={output_config}"])
     cfg2.cfg = None
     assert strip_meta(cfg) == strip_meta(cfg2)
 
     # save the config without metadata and verify it is saved as a single file
-    output_yaml.unlink()
+    output_config.unlink()
     output_jsonnet.unlink()
-    parser.save(strip_meta(cfg), output_yaml)
-    assert output_yaml.is_file()
+    parser.save(strip_meta(cfg), output_config)
+    assert output_config.is_file()
     assert not output_jsonnet.is_file()
 
     # parse using saved config and verify result is the same
-    cfg3 = parser.parse_args([f"--cfg={output_yaml}"])
+    cfg3 = parser.parse_args([f"--cfg={output_config}"])
     cfg3.cfg = None
     assert strip_meta(cfg) == strip_meta(cfg3)
 
@@ -259,7 +267,7 @@ def test_action_jsonnet_schema_dict_or_str():
 @skip_if_jsonschema_unavailable
 def test_action_jsonnet_init_failures():
     pytest.raises(ValueError, lambda: ActionJsonnet(ext_vars=2))
-    pytest.raises(ValueError, lambda: ActionJsonnet(schema="." + json.dumps(example_schema)))
     from jsonschema.exceptions import SchemaError
 
+    pytest.raises((ValueError, SchemaError), lambda: ActionJsonnet(schema="." + json.dumps(example_schema)))
     pytest.raises(SchemaError, lambda: ActionJsonnet(schema="."))

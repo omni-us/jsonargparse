@@ -11,7 +11,6 @@ from random import randint, shuffle
 from unittest.mock import patch
 
 import pytest
-import yaml
 
 from jsonargparse import (
     SUPPRESS,
@@ -35,9 +34,12 @@ from jsonargparse_tests.conftest import (
     get_parse_args_stdout,
     get_parser_help,
     is_cpython,
+    json_or_yaml_dump,
+    json_or_yaml_load,
     responses_activate,
     skip_if_docstring_parser_unavailable,
     skip_if_fsspec_unavailable,
+    skip_if_no_pyyaml,
     skip_if_not_posix,
     skip_if_responses_unavailable,
     skip_if_running_as_root,
@@ -152,10 +154,10 @@ def test_parse_args_choices_config(parser):
     parser.add_argument("--cfg", action="config")
     parser.add_argument("--ch1", choices="ABC")
     parser.add_argument("--ch2", type=str, choices=["v1", "v2"])
-    assert parser.parse_args(["--cfg=ch1: B"]).ch1 == "B"
-    assert parser.parse_args(["--cfg=ch2: v2"]).ch2 == "v2"
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg=ch1: D"]))
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg=ch2: v0"]))
+    assert parser.parse_args(['--cfg={"ch1": "B"}']).ch1 == "B"
+    assert parser.parse_args(['--cfg={"ch2": "v2"}']).ch2 == "v2"
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--cfg={"ch1": "D"}']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(['--cfg={"ch2": "v0"}']))
 
 
 def test_parse_args_non_hashable_choice(parser):
@@ -163,7 +165,7 @@ def test_parse_args_non_hashable_choice(parser):
     parser.add_argument("--cfg", action="config")
     parser.add_argument("--ch1", choices=choices.keys())
     with pytest.raises(ArgumentError) as ctx:
-        parser.parse_args(["--cfg=ch1: [1,2]"])
+        parser.parse_args(['--cfg={"ch1": [1,2]}'])
     ctx.match("not among choices")
 
 
@@ -339,6 +341,7 @@ def test_parse_path_file_not_readable(parser, tmp_cwd):
     pytest.raises(TypeError, lambda: parser.parse_path(config_path))
 
 
+@skip_if_no_pyyaml
 def test_precedence_of_sources(tmp_cwd, subtests):
     input1_config_file = tmp_cwd / "input1.yaml"
     input2_config_file = tmp_cwd / "input2.yaml"
@@ -456,12 +459,14 @@ def test_dump_complete(dump_parser):
     assert cfg1 == cfg2
 
 
+@skip_if_no_pyyaml
 def test_dump_incomplete(dump_parser):
     dump = dump_parser.dump(Namespace(op1=456))
     assert "op1: 456" == dump.strip()
 
 
 @pytest.mark.skipif(not is_cpython, reason="requires __setattr__ insertion order")
+@skip_if_no_pyyaml
 def test_dump_formats(dump_parser):
     cfg = dump_parser.get_defaults()
     assert dump_parser.dump(cfg) == "op1: 123\nop2: abc\n"
@@ -471,11 +476,13 @@ def test_dump_formats(dump_parser):
     pytest.raises(ValueError, lambda: dump_parser.dump(cfg, format="invalid"))
 
 
+@skip_if_no_pyyaml
 def test_dump_skip_default_simple(dump_parser):
     assert "{}\n" == dump_parser.dump(dump_parser.get_defaults(), skip_default=True)
     assert "op2: xyz\n" == dump_parser.dump(Namespace(op1=123, op2="xyz"), skip_default=True)
 
 
+@skip_if_no_pyyaml
 def test_dump_skip_default_nested(parser):
     parser.add_argument("--g1.op1", type=int, default=123)
     parser.add_argument("--g1.op2", type=str, default="abc")
@@ -486,6 +493,7 @@ def test_dump_skip_default_nested(parser):
     assert parser.dump(parser.parse_args(["--g2.op2=pqr"]), skip_default=True) == "g2:\n  op2: pqr\n"
 
 
+@skip_if_no_pyyaml
 def test_dump_order(parser, subtests):
     args = {}
     for num in range(50):
@@ -532,13 +540,14 @@ def parser_schema_jsonnet(parser, example_parser):
             action=ActionJsonnet(ext_vars=None),
         )
     expected = parser.parse_args(["--subparser.bool=false", "--subparser.nums.val1=3"])
-    subparser_body = yaml.safe_dump(expected.subparser.as_dict())
+    subparser_body = json_or_yaml_dump(expected.subparser.as_dict())
     schema_body = json.dumps(expected.schema) if jsonschema_support else ""
     jsonnet_body = json.dumps(expected.jsonnet) if jsonnet_support else ""
     return parser, expected, subparser_body, schema_body, jsonnet_body
 
 
 @skip_if_responses_unavailable
+@skip_if_no_pyyaml
 @responses_activate
 def test_parse_args_url_config(parser_schema_jsonnet):
     import responses
@@ -572,6 +581,7 @@ def test_parse_args_url_config(parser_schema_jsonnet):
     set_config_read_mode(urls_enabled=False)
 
 
+@skip_if_no_pyyaml
 def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):
     parser, expected, subparser_body, schema_body, jsonnet_body = parser_schema_jsonnet
 
@@ -666,6 +676,7 @@ def test_save_invalid_format(example_parser, tmp_cwd):
     ctx.match("Unknown output format")
 
 
+@skip_if_no_pyyaml
 def test_save_path_content(parser, tmp_cwd):
     parser.add_argument("--the.path", type=Path_fr)
 
@@ -710,12 +721,12 @@ def print_parser(parser, subparser):
 
 def test_print_config_normal(print_parser):
     out = get_parse_args_stdout(print_parser, ["--print_config"])
-    assert yaml.safe_load(out) == {"g1": {"v2": "2"}, "g2": {"v3": None}, "v1": 1}
+    assert json_or_yaml_load(out) == {"g1": {"v2": "2"}, "g2": {"v3": None}, "v1": 1}
 
 
 def test_print_config_skip_null(print_parser):
     out = get_parse_args_stdout(print_parser, ["--print_config=skip_null"])
-    assert yaml.safe_load(out) == {"g1": {"v2": "2"}, "g2": {}, "v1": 1}
+    assert json_or_yaml_load(out) == {"g1": {"v2": "2"}, "g2": {}, "v1": 1}
 
 
 @pytest.mark.skipif(not ruyaml_support, reason="ruyaml package is required")
@@ -738,7 +749,7 @@ def test_print_config_empty_default_config_file(print_parser, tmp_cwd):
     default_config_file.touch()
     print_parser.default_config_files = [default_config_file]
     out = get_parse_args_stdout(print_parser, ["--print_config"])
-    assert yaml.safe_load(out) == {"g1": {"v2": "2"}, "g2": {"v3": None}, "v1": 1}
+    assert json_or_yaml_load(out) == {"g1": {"v2": "2"}, "g2": {"v3": None}, "v1": 1}
 
 
 def test_print_config_reuse_name():
@@ -746,9 +757,10 @@ def test_print_config_reuse_name():
     parser.add_argument("--conf", action="config")
     parser.add_argument("--x", default=1)
     out = get_parse_args_stdout(parser, ["--print_conf"])
-    assert yaml.safe_load(out) == {"x": 1}
+    assert json_or_yaml_load(out) == {"x": 1}
 
 
+@skip_if_no_pyyaml
 def test_default_config_files(parser, subtests, tmp_cwd):
     default_config_file = tmp_cwd / "defaults.yaml"
     default_config_file.write_text("op1: from default config file\n")
@@ -785,6 +797,7 @@ def test_default_config_file_help_message_no_existing(parser, tmp_cwd):
     assert "no existing default config file" in help_str
 
 
+@skip_if_no_pyyaml
 def test_default_config_file_invalid_value(parser, tmp_cwd):
     default_config_file = Path("defaults.yaml")
     default_config_file.write_text("op2: v2\n")
@@ -802,6 +815,7 @@ def test_default_config_file_invalid_value(parser, tmp_cwd):
 
 @skip_if_not_posix
 @skip_if_running_as_root
+@skip_if_no_pyyaml
 def test_default_config_file_unreadable(parser, tmp_cwd):
     default_config_file = Path("defaults.yaml")
     default_config_file.write_text("op1: from yaml\n")
@@ -814,6 +828,7 @@ def test_default_config_file_unreadable(parser, tmp_cwd):
     assert parser.get_default("op1") == "from default"
 
 
+@skip_if_no_pyyaml
 def test_default_config_files_pattern(parser, subtests, tmp_cwd):
     default_configs_pattern = tmp_cwd / "defaults_*.yaml"
     parser.default_config_files = [default_configs_pattern]
@@ -913,6 +928,7 @@ def test_set_get_default_suppress_required(parser):
     assert "--p2 P2     (required, type: int)" in help_str
 
 
+@skip_if_no_pyyaml
 def test_set_get_default_suppress_default_config_file(parser, tmp_cwd):
     default_config_file = tmp_cwd / "defaults.yaml"
     default_config_file.write_text("p3: 1.2\n")

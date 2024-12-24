@@ -7,7 +7,7 @@ from importlib.util import find_spec
 import pytest
 
 from jsonargparse import ActionJsonSchema, ArgumentError
-from jsonargparse_tests.conftest import get_parser_help
+from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_dump
 
 
 @pytest.fixture(autouse=True)
@@ -54,7 +54,7 @@ def test_schema_array_parse_args(parser):
 
 @pytest.mark.usefixtures("parser_schema_array")
 def test_schema_array_parse_string(parser):
-    cfg = parser.parse_string("op1: [3, 7]")
+    cfg = parser.parse_string(json_or_yaml_dump({"op1": [3, 7]}))
     assert [3, 7] == cfg["op1"]
 
 
@@ -91,7 +91,7 @@ def parser_schema_object(parser):
 @pytest.mark.usefixtures("parser_schema_object")
 def test_schema_object_parse_args(parser):
     op2_val = {"k1": "one", "k2": 2, "k3": 3.3}
-    assert op2_val == parser.parse_args(["--op2", str(op2_val)]).op2
+    assert op2_val == parser.parse_args(["--op2", json_or_yaml_dump(op2_val)]).op2
     assert 17 == parser.parse_args(["--op2", '{"k2": 2}']).op2["k3"]
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--op2", '{"k1": 1}']))
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--op2", '{"k2": "2"}']))
@@ -101,7 +101,7 @@ def test_schema_object_parse_args(parser):
 @pytest.mark.usefixtures("parser_schema_object")
 def test_schema_object_parse_string(parser):
     op2_val = {"k1": "two", "k2": 7, "k3": 2.4}
-    cfg = parser.parse_string(f"op2:\n  {op2_val}\n")
+    cfg = parser.parse_string(json_or_yaml_dump({"op2": op2_val}))
     assert op2_val == cfg["op2"]
 
 
@@ -109,7 +109,7 @@ def test_schema_object_parse_string(parser):
 def test_schema_object_parse_config(parser, tmp_path):
     op2_val = {"k1": "three", "k2": -3, "k3": 0.4}
     path = tmp_path / "op2.json"
-    path.write_text(f"op2:\n  {op2_val}\n")
+    path.write_text(json_or_yaml_dump({"op2": op2_val}))
     cfg = parser.parse_args([f"--cfg={path}"])
     assert op2_val == cfg["op2"]
 
@@ -156,7 +156,7 @@ def test_action_jsonschema_schema_dict_or_str():
 
 def test_action_jsonschema_init_failures():
     pytest.raises(ValueError, ActionJsonSchema)
-    pytest.raises(ValueError, lambda: ActionJsonSchema(schema=":"))
     from jsonschema.exceptions import SchemaError
 
+    pytest.raises((ValueError, SchemaError), lambda: ActionJsonSchema(schema=":"))
     pytest.raises(SchemaError, lambda: ActionJsonSchema(schema="."))

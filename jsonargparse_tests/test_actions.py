@@ -12,7 +12,7 @@ from jsonargparse import (
     Namespace,
     strip_meta,
 )
-from jsonargparse_tests.conftest import get_parser_help
+from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_dump
 
 # ActionConfigFile tests
 
@@ -21,12 +21,12 @@ def test_action_config_file(parser, tmp_cwd):
     rel_yaml_file = Path("subdir", "config.yaml")
     abs_yaml_file = (tmp_cwd / rel_yaml_file).resolve()
     abs_yaml_file.parent.mkdir()
-    abs_yaml_file.write_text("val: yaml\n")
+    abs_yaml_file.write_text(json_or_yaml_dump({"val": "yaml"}))
 
     parser.add_argument("--cfg", action="config")
     parser.add_argument("--val")
 
-    cfg = parser.parse_args([f"--cfg={abs_yaml_file}", f"--cfg={rel_yaml_file}", "--cfg", "val: arg"])
+    cfg = parser.parse_args([f"--cfg={abs_yaml_file}", f"--cfg={rel_yaml_file}", "--cfg", '{"val": "arg"}'])
     assert 3 == len(cfg.cfg)
     assert "arg" == cfg.val
     assert str(abs_yaml_file) == cfg.cfg[0].absolute
@@ -176,9 +176,9 @@ def composed_parsers(tmp_path_factory):
     yaml_inner2 = tmp_path / "inner2.yaml"
     yaml_inner3 = tmp_path / "inner3.yaml"
 
-    yaml_main.write_text("opt1: opt1_yaml\ninner2: inner2.yaml\n")
-    yaml_inner2.write_text("opt2: opt2_yaml\ninner3: inner3.yaml\n")
-    yaml_inner3.write_text("opt3: opt3_yaml\n")
+    yaml_main.write_text(json_or_yaml_dump({"opt1": "opt1_yaml", "inner2": "inner2.yaml"}))
+    yaml_inner2.write_text(json_or_yaml_dump({"opt2": "opt2_yaml", "inner3": "inner3.yaml"}))
+    yaml_inner3.write_text(json_or_yaml_dump({"opt3": "opt3_yaml"}))
 
     return parser, yaml_main, yaml_inner2, yaml_inner3
 
@@ -240,11 +240,11 @@ def test_action_parser_parse_args_subconfig_string(composed_parsers):
     parser = composed_parsers[0]
 
     expected = {"opt2": "opt2_str", "inner3": {"opt3": "opt3_str"}}
-    cfg = parser.parse_args([f"--inner2={expected}"], with_meta=False)
+    cfg = parser.parse_args([f"--inner2={json_or_yaml_dump(expected)}"], with_meta=False)
     assert expected == cfg.inner2.as_dict()
 
     expected = {"opt3": "opt3_str"}
-    cfg = parser.parse_args([f"--inner2.inner3={expected}"], with_meta=False)
+    cfg = parser.parse_args([f"--inner2.inner3={json_or_yaml_dump(expected)}"], with_meta=False)
     assert expected == cfg.inner2.inner3.as_dict()
 
 

@@ -32,9 +32,9 @@ from unittest import mock
 from warnings import catch_warnings
 
 import pytest
-import yaml
 
 from jsonargparse import ArgumentError, Namespace, lazy_instance
+from jsonargparse._optionals import pyyaml_available
 from jsonargparse._typehints import (
     ActionTypeHint,
     NotRequired,
@@ -56,6 +56,8 @@ from jsonargparse_tests.conftest import (
     capture_logs,
     get_parse_args_stdout,
     get_parser_help,
+    json_or_yaml_dump,
+    json_or_yaml_load,
 )
 
 
@@ -100,9 +102,11 @@ def test_bool_parse(parser):
     parser.add_argument("--val", type=bool)
     assert None is parser.get_defaults().val
     assert True is parser.parse_args(["--val", "true"]).val
-    assert True is parser.parse_args(["--val", "TRUE"]).val
+    if pyyaml_available:
+        assert True is parser.parse_args(["--val", "TRUE"]).val
     assert False is parser.parse_args(["--val", "false"]).val
-    assert False is parser.parse_args(["--val", "FALSE"]).val
+    if pyyaml_available:
+        assert False is parser.parse_args(["--val", "FALSE"]).val
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--val", "1"]))
 
 
@@ -123,7 +127,7 @@ def test_complex_number(parser):
     parser.add_argument("--complex", type=complex)
     cfg = parser.parse_args(["--complex=(2+3j)"])
     assert cfg.complex == 2 + 3j
-    assert parser.dump(cfg) == "complex: (2+3j)\n"
+    assert json_or_yaml_load(parser.dump(cfg)) == {"complex": "(2+3j)"}
 
 
 def test_literal(parser):
@@ -159,8 +163,8 @@ def test_type_any(parser):
     assert 5.6 == parser.parse_args(["--any=5.6"]).any
     assert [7, 8] == parser.parse_args(["--any=[7, 8]"]).any
     assert {"a": 0, "b": 1} == parser.parse_args(['--any={"a":0, "b":1}']).any
-    assert True is parser.parse_args(["--any=True"]).any
-    assert False is parser.parse_args(["--any=False"]).any
+    assert True is parser.parse_args(["--any=true"]).any
+    assert False is parser.parse_args(["--any=false"]).any
     assert None is parser.parse_args(["--any=null"]).any
     assert " " == parser.parse_args(["--any= "]).any
     assert " xyz " == parser.parse_args(["--any= xyz "]).any
@@ -170,7 +174,7 @@ def test_type_any(parser):
 def test_type_any_dump(parser):
     parser.add_argument("--any", type=Any, default=EnumABC.B)
     cfg = parser.parse_args([])
-    assert "any: B\n" == parser.dump(cfg)
+    assert {"any": "B"} == json_or_yaml_load(parser.dump(cfg))
 
 
 def test_type_typehint_without_arg(parser):
@@ -178,7 +182,7 @@ def test_type_typehint_without_arg(parser):
     parser.add_argument("--type", type=type_class)
     cfg = parser.parse_args(["--type=uuid.UUID"])
     assert cfg.type is uuid.UUID
-    assert parser.dump(cfg) == "type: uuid.UUID\n"
+    assert json_or_yaml_load(parser.dump(cfg)) == {"type": "uuid.UUID"}
 
 
 def test_type_typehint_with_arg(parser):
@@ -186,7 +190,7 @@ def test_type_typehint_with_arg(parser):
     parser.add_argument("--cal", type=type_class[Calendar])
     cfg = parser.parse_args(["--cal=calendar.Calendar"])
     assert cfg.cal is Calendar
-    assert parser.dump(cfg) == "cal: calendar.Calendar\n"
+    assert json_or_yaml_load(parser.dump(cfg)) == {"cal": "calendar.Calendar"}
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--cal=uuid.UUID"]))
 
 
@@ -216,7 +220,7 @@ def test_enum_parse(parser):
 def test_enum_dump(parser):
     parser.add_argument("--enum", type=EnumABC)
     cfg = parser.parse_args(["--enum=C"])
-    assert "enum: C\n" == parser.dump(cfg)
+    assert {"enum": "C"} == json_or_yaml_load(parser.dump(cfg))
     with pytest.raises(TypeError):
         parser.dump(Namespace(enum="x"))
 
@@ -273,7 +277,7 @@ def test_set(parser):
 
 def test_tuple_without_arg(parser):
     parser.add_argument("--tuple", type=tuple)
-    cfg = parser.parse_args(['--tuple=[1, "a", True]'])
+    cfg = parser.parse_args(['--tuple=[1, "a", true]'])
     assert (1, "a", True) == cfg.tuple
     help_str = get_parser_help(parser, strip=True)
     assert "--tuple [ITEM,...] (type: tuple, default: null)" in help_str
@@ -324,7 +328,7 @@ def test_list_variants(parser, list_type):
 
 def test_list_dump(parser):
     parser.add_argument("--list", type=Union[PositiveInt, List[PositiveInt]])
-    dump = yaml.safe_load(parser.dump(Namespace(list=[1, 2])))
+    dump = json_or_yaml_load(parser.dump(Namespace(list=[1, 2])))
     assert [1, 2] == dump["list"]
     with pytest.raises(TypeError):
         parser.dump(Namespace(list=[1, -2]))
@@ -378,20 +382,20 @@ def test_list_append(parser):
 def test_list_append_default_empty(parser):
     parser.add_argument("--list", type=List[str], default=[])
     assert [] == parser.get_defaults().list
-    assert ["a"] == parser.parse_args(["--list=[a]"]).list
+    assert ["a"] == parser.parse_args(['--list=["a"]']).list
     assert [] == parser.get_defaults().list
-    assert ["b", "c"] == parser.parse_args(["--list+=[b, c]"]).list
+    assert ["b", "c"] == parser.parse_args(['--list+=["b", "c"]']).list
     assert [] == parser.get_defaults().list
 
 
 def test_list_append_config(parser):
     parser.add_argument("--cfg", action="config")
     parser.add_argument("--val", type=List[int], default=[1, 2])
-    assert [3, 4] == parser.parse_args(["--cfg", "val: [3, 4]"]).val
-    assert [1, 2, 3] == parser.parse_args(["--cfg", "val+: 3"]).val
-    assert [1, 2, 3, 4] == parser.parse_args(["--cfg", "val+: [3, 4]"]).val
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", "val+: a"]))
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--val=2", "--cfg", "val+: 3"]))
+    assert [3, 4] == parser.parse_args(["--cfg", '{"val": [3, 4]}']).val
+    assert [1, 2, 3] == parser.parse_args(["--cfg", '{"val+": 3}']).val
+    assert [1, 2, 3, 4] == parser.parse_args(["--cfg", '{"val+": [3, 4]}']).val
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", '{"val+": "a"}']))
+    pytest.raises(ArgumentError, lambda: parser.parse_args(["--val=2", "--cfg", '{"val+": 3}']))
 
 
 def test_list_append_default_config_files(parser, tmp_cwd, subtests):
@@ -400,14 +404,14 @@ def test_list_append_default_config_files(parser, tmp_cwd, subtests):
     parser.add_argument("--nums", type=List[int], default=[0])
 
     with subtests.test("replace"):
-        config_path.write_text("nums: [1]\n")
+        config_path.write_text(json_or_yaml_dump({"nums": [1]}))
         cfg = parser.parse_args(["--nums+=2"])
         assert cfg.nums == [1, 2]
         cfg = parser.parse_args(["--nums+=[2, 3]"])
         assert cfg.nums == [1, 2, 3]
 
     with subtests.test("append"):
-        config_path.write_text("nums+: [1]\n")
+        config_path.write_text(json_or_yaml_dump({"nums+": [1]}))
         cfg = parser.get_defaults()
         assert cfg.nums == [0, 1]
         cfg = parser.parse_args(["--nums+=2"])
@@ -418,7 +422,7 @@ def test_list_append_default_config_files(parser, tmp_cwd, subtests):
 
     with subtests.test("append in second default config"):
         config_path2 = tmp_cwd / "config2.yaml"
-        config_path2.write_text("nums+: [2]\n")
+        config_path2.write_text(json_or_yaml_dump({"nums+": [2]}))
         parser.default_config_files += [str(config_path2)]
         cfg = parser.get_defaults()
         assert cfg.nums == [0, 1, 2]
@@ -431,7 +435,7 @@ def test_list_append_subcommand_global_default_config_files(parser, subparser, t
     subcommands = parser.add_subcommands()
     subparser.add_argument("--nums", type=List[int], default=[0])
     subcommands.add_subcommand("sub", subparser)
-    config_path.write_text("sub:\n  nums: [1]\n")
+    config_path.write_text(json_or_yaml_dump({"sub": {"nums": [1]}}))
 
     cfg = parser.parse_args(["sub", "--nums+=2"])
     assert cfg.sub.nums == [1, 2]
@@ -446,7 +450,7 @@ def test_list_append_subcommand_subparser_default_config_files(parser, subparser
     subparser.default_config_files = [config_path]
     subparser.add_argument("--nums", type=List[int], default=[0])
     subcommands.add_subcommand("sub", subparser)
-    config_path.write_text("nums: [1]\n")
+    config_path.write_text(json_or_yaml_dump({"nums": [1]}))
 
     cfg = parser.parse_args(["sub", "--nums+=2"])
     assert cfg.sub.nums == [1, 2]
@@ -469,7 +473,7 @@ def test_dict_int_keys(parser):
     parser.add_argument("--d", type=Dict[int, str])
     parser.add_argument("--cfg", action="config")
     cfg = {"d": {1: "val1", 2: "val2"}}
-    assert cfg["d"] == parser.parse_args(["--cfg", str(cfg)]).d
+    assert cfg["d"] == parser.parse_args(["--cfg", json.dumps(cfg)]).d
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--cfg={"d": {"a": "b"}}']))
 
 
@@ -482,7 +486,7 @@ def test_dict_union(parser, tmp_cwd):
     assert isinstance(cfg.dict2["b"], Path_fc)
     assert {5: None} == parser.parse_args(['--dict1={"5":null}']).dict1
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--dict1=["a", "b"]']))
-    cfg = yaml.safe_load(parser.dump(cfg))
+    cfg = json_or_yaml_load(parser.dump(cfg))
     assert {"dict1": {"2": 4.5, "6": "C"}, "dict2": {"a": True, "b": "f"}} == cfg
 
 
@@ -523,7 +527,7 @@ def test_typeddict_without_arg(parser):
 
 def test_typeddict_with_args(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}))
-    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
+    assert {"a": 1} == parser.parse_args(['--typeddict={"a": 1}'])["typeddict"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--typeddict={"a":1, "b":2}'])
     ctx.match("Unexpected keys")
@@ -541,7 +545,7 @@ def test_typeddict_with_args(parser):
 
 def test_typeddict_with_args_ntotal(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int}, total=False))
-    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
+    assert {"a": 1} == parser.parse_args(['--typeddict={"a": 1}'])["typeddict"]
     assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--typeddict={"a":1, "b":2}'])
@@ -562,8 +566,8 @@ def test_not_required_support(parser):
 @pytest.mark.skipif(not NotRequired, reason="NotRequired introduced in python 3.11 or backported in typing_extensions")
 def test_typeddict_with_not_required_arg(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": int, "b": NotRequired[int]}))
-    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
-    assert {"a": 1, "b": 2} == parser.parse_args(["--typeddict={'a': 1, 'b': 2}"])["typeddict"]
+    assert {"a": 1} == parser.parse_args(['--typeddict={"a": 1}'])["typeddict"]
+    assert {"a": 1, "b": 2} == parser.parse_args(['--typeddict={"a": 1, "b": 2}'])["typeddict"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--typeddict={"a":1, "b":2, "c": 3}'])
     ctx.match("Unexpected keys")
@@ -589,8 +593,8 @@ def test_required_support(parser):
 @pytest.mark.skipif(not Required, reason="Required introduced in python 3.11 or backported in typing_extensions")
 def test_typeddict_with_required_arg(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {"a": Required[int], "b": int}, total=False))
-    assert {"a": 1} == parser.parse_args(["--typeddict={'a': 1}"])["typeddict"]
-    assert {"a": 1, "b": 2} == parser.parse_args(["--typeddict={'a': 1, 'b': 2}"])["typeddict"]
+    assert {"a": 1} == parser.parse_args(['--typeddict={"a": 1}'])["typeddict"]
+    assert {"a": 1, "b": 2} == parser.parse_args(['--typeddict={"a": 1, "b": 2}'])["typeddict"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--typeddict={"a":1, "b":2, "c": 3}'])
     ctx.match("Unexpected keys")
@@ -693,16 +697,16 @@ def test_typeddict_totality_inheritance(parser):
 
     parser.add_argument("--middledict", type=MiddleDict, required=False)
     parser.add_argument("--topdict", type=TopDict, required=False)
-    assert {"a": 1} == parser.parse_args(["--middledict={'a': 1}"])["middledict"]
-    assert {"a": 1, "b": 2} == parser.parse_args(["--middledict={'a': 1, 'b': 2}"])["middledict"]
+    assert {"a": 1} == parser.parse_args(['--middledict={"a": 1}'])["middledict"]
+    assert {"a": 1, "b": 2} == parser.parse_args(['--middledict={"a": 1, "b": 2}'])["middledict"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--middledict={}"])
     ctx.match("Missing required keys")
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--middledict={"b": 2}'])
     ctx.match("Missing required keys")
-    assert {"a": 1, "c": 2} == parser.parse_args(["--topdict={'a': 1, 'c': 2}"])["topdict"]
-    assert {"a": 1, "b": 2, "c": 3} == parser.parse_args(["--topdict={'a': 1, 'b': 2, 'c': 3}"])["topdict"]
+    assert {"a": 1, "c": 2} == parser.parse_args(['--topdict={"a": 1, "c": 2}'])["topdict"]
+    assert {"a": 1, "b": 2, "c": 3} == parser.parse_args(['--topdict={"a": 1, "b": 2, "c": 3}'])["topdict"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--topdict={"a": 1, "b": 2}'])
     ctx.match("Missing required keys")
@@ -738,7 +742,8 @@ def test_ordered_dict(parser):
         parser.parse_args(['--odict={"x":"-"}'])
     ctx.match("Expected a <class 'int'>")
     assert parser.dump(cfg, format="json") == '{"odict":{"a":1,"b":2}}'
-    assert parser.dump(cfg, format="yaml") == "odict:\n  a: 1\n  b: 2\n"
+    if pyyaml_available:
+        assert parser.dump(cfg, format="yaml") == "odict:\n  a: 1\n  b: 2\n"
 
 
 def test_dict_default_ordered_dict(parser):
@@ -804,11 +809,11 @@ def test_callable_function_path(parser):
 
     cfg = parser.get_defaults()
     assert cfg.callable is time.time
-    assert parser.dump(cfg) == "callable: time.time\n"
+    assert json_or_yaml_load(parser.dump(cfg)) == {"callable": "time.time"}
 
     cfg = parser.parse_args(["--callable=random.randint"])
     assert cfg.callable is random.randint
-    assert parser.dump(cfg) == "callable: random.randint\n"
+    assert json_or_yaml_load(parser.dump(cfg)) == {"callable": "random.randint"}
 
     help_str = get_parser_help(parser)
     assert "(type: Callable, default: time.time)" in help_str
@@ -821,11 +826,11 @@ def test_callable_function_path(parser):
 def test_callable_list_of_function_paths(parser):
     parser.add_argument("--callables", type=List[Callable])
 
-    cfg = parser.parse_args(["--callables=[random.randint, time.time]"])
+    cfg = parser.parse_args(['--callables=["random.randint", "time.time"]'])
     assert [random.randint, time.time] == cfg.callables
 
     with pytest.raises(ArgumentError) as ctx:
-        parser.parse_args(["--callables=[jsonargparse.not_exist]"])
+        parser.parse_args(['--callables=["jsonargparse.not_exist"]'])
     ctx.match("Callable expects a function or a callable class")
 
 
@@ -841,9 +846,9 @@ def test_callable_class_path_simple(parser):
     parser.add_argument("--callable", type=Callable)
 
     value = {"class_path": f"{__name__}.CallableClassPath", "init_args": {"p1": 2}}
-    cfg = parser.parse_args([f"--callable={value}"])
+    cfg = parser.parse_args([f"--callable={json.dumps(value)}"])
     assert value == cfg.callable.as_dict()
-    assert value == yaml.safe_load(parser.dump(cfg))["callable"]
+    assert value == json_or_yaml_load(parser.dump(cfg))["callable"]
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.callable, CallableClassPath)
     assert 2 == init.callable()
@@ -852,7 +857,7 @@ def test_callable_class_path_simple(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--callable=jsonargparse.SUPPRESS"]))
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--callable=calendar.Calendar"]))
     value = {"class_path": f"{__name__}.CallableClassPath", "key": "val"}
-    pytest.raises(ArgumentError, lambda: parser.parse_args([f"--callable={value}"]))
+    pytest.raises(ArgumentError, lambda: parser.parse_args([f"--callable={json.dumps(value)}"]))
 
 
 class CallableParent(CallableClassPath):
@@ -955,7 +960,7 @@ def test_callable_args_return_type_class(parser, subtests):
                 "lr": 0.01,
             },
         }
-        cfg = parser.parse_args([f"--optimizer={value}"])
+        cfg = parser.parse_args([f"--optimizer={json.dumps(value)}"])
         assert f"{__name__}.Adam" == cfg.optimizer.class_path
         assert Namespace(lr=0.01, momentum=0.0) == cfg.optimizer.init_args
         init = parser.instantiate_classes(cfg)
@@ -965,7 +970,7 @@ def test_callable_args_return_type_class(parser, subtests):
         assert 0.01 == optimizer.lr
         assert 0.0 == optimizer.momentum
         dump = parser.dump(cfg)
-        assert yaml.safe_load(dump) == cfg.as_dict()
+        assert json_or_yaml_load(dump) == cfg.as_dict()
 
     with subtests.test("short notation"):
         assert cfg == parser.parse_args(["--optimizer=Adam", "--optimizer.lr=0.01"])
@@ -1019,7 +1024,7 @@ def test_callable_multiple_args_return_type_class(parser, subtests):
             "class_path": "Adam",
             "init_args": {"momentum": 0.9},
         }
-        cfg = parser.parse_args([f"--optimizer={value}"])
+        cfg = parser.parse_args([f"--optimizer={json.dumps(value)}"])
         assert f"{__name__}.Adam" == cfg.optimizer.class_path
         assert Namespace(momentum=0.9) == cfg.optimizer.init_args
         init = parser.instantiate_classes(cfg)
@@ -1029,7 +1034,7 @@ def test_callable_multiple_args_return_type_class(parser, subtests):
         assert 0.01 == optimizer.lr
         assert 0.9 == optimizer.momentum
         dump = parser.dump(cfg)
-        assert yaml.safe_load(dump) == cfg.as_dict()
+        assert json_or_yaml_load(dump) == cfg.as_dict()
 
     with subtests.test("short notation"):
         assert cfg == parser.parse_args(["--optimizer=Adam", "--optimizer.momentum=0.9"])
@@ -1084,7 +1089,7 @@ def test_callable_args_return_type_union_of_classes(parser, subtests):
                 "monitor": "loss",
             },
         }
-        cfg = parser.parse_args([f"--scheduler={value}"])
+        cfg = parser.parse_args([f"--scheduler={json.dumps(value)}"])
         assert f"{__name__}.ReduceLROnPlateau" == cfg.scheduler.class_path
         assert Namespace(monitor="loss", factor=0.1) == cfg.scheduler.init_args
         init = parser.instantiate_classes(cfg)
@@ -1125,7 +1130,7 @@ def test_optional_callable_args_return_type_class(parser, subtests):
                 "last_epoch": 2,
             },
         }
-        cfg = parser.parse_args([f"--scheduler={value}"])
+        cfg = parser.parse_args([f"--scheduler={json.dumps(value)}"])
         init = parser.instantiate_classes(cfg)
         scheduler = init.scheduler(optimizer)
         assert isinstance(scheduler, StepLR)
@@ -1151,7 +1156,7 @@ def test_callable_args_return_type_class_subconfig(parser, tmp_cwd):
         "class_path": "Adam",
         "init_args": {"momentum": 0.8},
     }
-    Path("optimizer.yaml").write_text(yaml.safe_dump(config))
+    Path("optimizer.yaml").write_text(json_or_yaml_dump(config))
 
     parser.add_class_arguments(CallableSubconfig, "m", sub_configs=True)
     cfg = parser.parse_args(["--m.o=optimizer.yaml"])
@@ -1222,7 +1227,7 @@ def test_callable_return_class_required_arg_from_default(parser):
             },
         }
     }
-    cfg = parser.parse_args([f"--cfg={config}"])
+    cfg = parser.parse_args([f"--cfg={json.dumps(config)}"])
     assert cfg.model.init_args.scheduler.class_path == f"{__name__}.ReduceLROnPlateau"
     assert cfg.model.init_args.scheduler.init_args == Namespace(monitor="acc", factor=0.5)
 
@@ -1258,7 +1263,7 @@ def test_list_callable_return_class(parser):
         },
     }
 
-    cfg = parser.parse_args([f"--cfg={config}", "--model.schedulers.monitor=val/mAP50"])
+    cfg = parser.parse_args([f"--cfg={json.dumps(config)}", "--model.schedulers.monitor=val/mAP50"])
     assert cfg.model.init_args.schedulers[1].class_path == f"{__name__}.ReduceLROnPlateau"
     assert cfg.model.init_args.schedulers[1].init_args == Namespace(monitor="val/mAP50", factor=0.5)
 
@@ -1376,21 +1381,21 @@ def test_dump_skip_default(parser):
 
     cfg = parser.get_defaults()
     dump = parser.dump(cfg, skip_default=True)
-    assert dump == "{}\n"
+    assert dump.strip() == "{}"
 
     cfg.g2.op2.class_path = f"{__name__}.SkipDefault"
-    dump = parser.dump(cfg, skip_default=True)
-    assert dump == f"g2:\n  op2:\n    class_path: {__name__}.SkipDefault\n    init_args:\n      firstweekday: 2\n"
+    dump = json_or_yaml_load(parser.dump(cfg, skip_default=True))
+    assert dump == {"g2": {"op2": {"class_path": f"{__name__}.SkipDefault", "init_args": {"firstweekday": 2}}}}
 
     cfg.g2.op2.init_args.firstweekday = 0
-    dump = parser.dump(cfg, skip_default=True)
-    assert dump == f"g2:\n  op2:\n    class_path: {__name__}.SkipDefault\n"
+    dump = json_or_yaml_load(parser.dump(cfg, skip_default=True))
+    assert dump == {"g2": {"op2": {"class_path": f"{__name__}.SkipDefault"}}}
 
     parser.link_arguments("g1.op1", "g2.op2.init_args.firstweekday")
     parser.link_arguments("g1.op2", "g2.op2.init_args.param")
     del cfg["g2.op2.init_args"]
-    dump = parser.dump(cfg, skip_default=True)
-    assert dump == f"g2:\n  op2:\n    class_path: {__name__}.SkipDefault\n"
+    dump = json_or_yaml_load(parser.dump(cfg, skip_default=True))
+    assert dump == {"g2": {"op2": {"class_path": f"{__name__}.SkipDefault"}}}
 
 
 class ImportClass:

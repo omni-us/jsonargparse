@@ -6,14 +6,18 @@ from typing import List
 from unittest.mock import patch
 
 import pytest
-import yaml
 
 from jsonargparse import ArgumentParser, get_loader, set_dumper, set_loader
 from jsonargparse._common import parser_context
 from jsonargparse._loaders_dumpers import load_value, loaders, yaml_dump
-from jsonargparse._optionals import omegaconf_support
+from jsonargparse._optionals import omegaconf_support, pyyaml_available
+from jsonargparse_tests.conftest import skip_if_no_pyyaml
+
+if pyyaml_available:
+    import yaml
 
 
+@skip_if_no_pyyaml
 def test_set_dumper_custom_yaml(parser):
     parser.add_argument("--list", type=List[int])
 
@@ -94,6 +98,7 @@ def test_get_loader():
     assert jsonnet_load is get_loader("jsonnet")
 
 
+@skip_if_no_pyyaml
 def test_set_loader_parser_mode_subparsers(parser, subparser):
     subcommands = parser.add_subcommands()
     subcommands.add_subcommand("sub", subparser)
@@ -105,6 +110,7 @@ def test_set_loader_parser_mode_subparsers(parser, subparser):
         assert "custom" == subparser.parser_mode
 
 
+@skip_if_no_pyyaml
 def test_dump_header_yaml(parser):
     parser.add_argument("--int", type=int, default=1)
     parser.dump_header = ["line 1", "line 2"]
@@ -153,6 +159,7 @@ def custom_dumper(data):
     return yaml_dump(data)
 
 
+@skip_if_no_pyyaml
 def test_nested_parser_mode(parser):
     set_loader("custom", custom_loader)
     set_dumper("custom", custom_dumper)

@@ -13,10 +13,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from jsonargparse import ArgumentParser
+from jsonargparse._loaders_dumpers import json_dump, json_load, yaml_dump, yaml_load
 from jsonargparse._optionals import (
     docstring_parser_support,
     fsspec_support,
     jsonschema_support,
+    pyyaml_available,
     set_docstring_parse_options,
     url_support,
 )
@@ -31,6 +33,14 @@ columns_env = {"COLUMNS": "200"}
 
 is_cpython = platform.python_implementation() == "CPython"
 is_posix = os.name == "posix"
+
+json_or_yaml_dump = yaml_dump if pyyaml_available else json_dump
+json_or_yaml_load = yaml_load if pyyaml_available else json_load
+
+skip_if_no_pyyaml = pytest.mark.skipif(
+    not pyyaml_available,
+    reason="PyYAML package is required",
+)
 
 skip_if_not_cpython = pytest.mark.skipif(
     not is_cpython,
