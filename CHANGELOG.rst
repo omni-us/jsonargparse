@@ -15,14 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.36.0 (2024-12-??)
 --------------------
 
-Changed
-^^^^^^^
-- Refactor to eventually remove ``pyyaml`` as a required dependency (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
-
-
-v4.35.1 (2024-12-??)
---------------------
+Added
+^^^^^
+- Support without ``pyyaml``, though only an internal refactor prior to eventual
+  removal of ``pyyaml`` as a required dependency in v5.0.0 (`#652
+  <https://github.com/omni-us/jsonargparse/pull/652>`__).
 
 Fixed
 ^^^^^

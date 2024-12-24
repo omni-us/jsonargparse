@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from typing import List
@@ -11,7 +12,7 @@ from jsonargparse import ArgumentParser, get_loader, set_dumper, set_loader
 from jsonargparse._common import parser_context
 from jsonargparse._loaders_dumpers import load_value, loaders, yaml_dump
 from jsonargparse._optionals import omegaconf_support, pyyaml_available
-from jsonargparse_tests.conftest import skip_if_no_pyyaml
+from jsonargparse_tests.conftest import json_or_yaml_dump, json_or_yaml_load, skip_if_no_pyyaml
 
 if pyyaml_available:
     import yaml
@@ -98,13 +99,12 @@ def test_get_loader():
     assert jsonnet_load is get_loader("jsonnet")
 
 
-@skip_if_no_pyyaml
 def test_set_loader_parser_mode_subparsers(parser, subparser):
     subcommands = parser.add_subcommands()
     subcommands.add_subcommand("sub", subparser)
 
     with patch.dict("jsonargparse._loaders_dumpers.loaders"):
-        set_loader("custom", yaml.safe_load)
+        set_loader("custom", yaml.safe_load if pyyaml_available else json.loads)
         parser.parser_mode = "custom"
         assert "custom" == parser.parser_mode
         assert "custom" == subparser.parser_mode
@@ -147,7 +147,10 @@ class CustomContainer:
 
 
 def custom_loader(data):
-    data = yaml.safe_load(data)
+    if pyyaml_available:
+        data = yaml.safe_load(data)
+    else:
+        data = json.loads(data)
     if isinstance(data, dict) and "fn" in data:
         data["fn"] = {k: custom_loader for k in data["fn"]}
     return data
@@ -156,10 +159,9 @@ def custom_loader(data):
 def custom_dumper(data):
     if "data" in data and "fn" in data["data"]:
         data["data"]["fn"] = {k: "dumped" for k in data["data"]["fn"]}
-    return yaml_dump(data)
+    return json_or_yaml_dump(data)
 
 
-@skip_if_no_pyyaml
 def test_nested_parser_mode(parser):
     set_loader("custom", custom_loader)
     set_dumper("custom", custom_dumper)
@@ -167,7 +169,7 @@ def test_nested_parser_mode(parser):
     parser.add_argument("--custom", type=CustomContainer)
     cfg = parser.parse_args(['--custom.data={"fn": {"key": "value"}}'])
     assert cfg.custom.init_args.data["fn"]["key"] is custom_loader
-    dump = yaml.safe_load(parser.dump(cfg))
+    dump = json_or_yaml_load(parser.dump(cfg))
     assert dump["custom"]["init_args"]["data"] == {"fn": {"key": "dumped"}}
 
 
