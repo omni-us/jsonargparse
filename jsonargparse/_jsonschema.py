@@ -10,6 +10,7 @@ from ._namespace import strip_meta
 from ._optionals import (
     get_jsonschema_exceptions,
     import_jsonschema,
+    pyyaml_available,
 )
 from ._util import parse_value_or_config
 
@@ -35,11 +36,12 @@ class ActionJsonSchema(Action):
         """
         if schema is not None:
             if isinstance(schema, str):
-                with parser_context(load_value_mode="yaml"):
+                mode = "yaml" if pyyaml_available else "json"
+                with parser_context(load_value_mode=mode):
                     try:
                         schema = load_value(schema)
-                    except get_loader_exceptions() as ex:
-                        raise ValueError(f"Problems parsing schema :: {ex}") from ex
+                    except get_loader_exceptions(mode) as ex:
+                        raise ValueError(f"Problems parsing schema: {ex}") from ex
             jsonvalidator = import_jsonschema("ActionJsonSchema")[1]
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)

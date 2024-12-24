@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 from contextlib import redirect_stderr, redirect_stdout, suppress
@@ -11,12 +12,11 @@ from typing import Callable, Literal, Optional
 from unittest.mock import patch
 
 import pytest
-import yaml
 
 from jsonargparse import CLI, capture_parser, lazy_instance
 from jsonargparse._optionals import docstring_parser_support, ruyaml_support
 from jsonargparse.typing import final
-from jsonargparse_tests.conftest import skip_if_docstring_parser_unavailable
+from jsonargparse_tests.conftest import json_or_yaml_dump, json_or_yaml_load, skip_if_docstring_parser_unavailable
 
 
 def get_cli_stdout(*args, **kwargs) -> str:
@@ -214,12 +214,12 @@ def test_single_class_help_docstring_parse_error():
 
 def test_single_class_print_config_after_subcommand():
     out = get_cli_stdout(Class1, args=["0", "method1", "2", "--print_config"])
-    assert "m1: 2" == out.strip()
+    assert {"m1": 2} == json_or_yaml_load(out)
 
 
 def test_single_class_print_config_before_subcommand():
     out = get_cli_stdout(Class1, args=["--print_config", "0", "method1", "2"])
-    cfg = yaml.safe_load(out)
+    cfg = json_or_yaml_load(out)
     assert cfg == {"i1": "0", "method1": {"m1": 2}}
 
 
@@ -305,17 +305,17 @@ def test_function_and_class_subsubcommand_help():
 
 def test_function_and_class_print_config_after_subsubcommand():
     out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "method2", "--print_config"])
-    assert "m2: 0\n" == out
+    assert {"m2": 0} == json_or_yaml_load(out)
 
 
 def test_function_and_class_print_config_in_between_subcommands():
     out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "--print_config", "method2"])
-    assert "i1: d\nmethod2:\n  m2: 0\n" == out
+    assert {"i1": "d", "method2": {"m2": 0}} == json_or_yaml_load(out)
 
 
 def test_function_and_class_print_config_before_subcommands():
     out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["--print_config", "Cmd2", "method2"])
-    assert "Cmd2:\n  i1: d\n  method2:\n    m2: 0\n" == out
+    assert {"Cmd2": {"i1": "d", "method2": {"m2": 0}}} == json_or_yaml_load(out)
 
 
 @skip_if_docstring_parser_unavailable
@@ -499,9 +499,9 @@ class C:
 
 
 def test_subclass_type_config_file(tmp_cwd):
-    a_yaml = {"class_path": f"{__name__}.A", "init_args": {"p1": "a yaml"}}
-    Path("config.yaml").write_text("a: a.yaml\n")
-    Path("a.yaml").write_text(yaml.safe_dump(a_yaml))
+    a_conf = {"class_path": f"{__name__}.A", "init_args": {"p1": "a yaml"}}
+    Path("config.yaml").write_text(json_or_yaml_dump({"a": "a.yaml"}))
+    Path("a.yaml").write_text(json_or_yaml_dump(a_conf))
 
     out = get_cli_stdout(C, args=["--config=config.yaml", "cmd_a"])
     assert "a yaml\n" == out
@@ -509,8 +509,9 @@ def test_subclass_type_config_file(tmp_cwd):
     out = get_cli_stdout(C, args=["cmd_a", "--help"])
     assert "--config" not in out
 
-    Path("config.yaml").write_text("a: a.yaml\nb: b.yaml\n")
-    Path("b.yaml").write_text(f"class_path: {__name__}.B\ninit_args:\n  a: a.yaml\n")
+    b_conf = {"class_path": f"{__name__}.B", "init_args": {"a": "a.yaml"}}
+    Path("config.yaml").write_text(json_or_yaml_dump({"a": "a.yaml", "b": "b.yaml"}))
+    Path("b.yaml").write_text(json_or_yaml_dump(b_conf))
 
     out = get_cli_stdout(C, args=["--config=config.yaml", "cmd_b"])
     assert "a yaml\n" == out
@@ -527,10 +528,10 @@ def run_bf(b: BF):
 
 
 def test_final_and_subclass_type_config_file(tmp_cwd):
-    a_yaml = {"class_path": f"{__name__}.A", "init_args": {"p1": "a yaml"}}
-    Path("config.yaml").write_text("b: b.yaml\n")
-    Path("b.yaml").write_text("a: a.yaml\n")
-    Path("a.yaml").write_text(yaml.safe_dump(a_yaml))
+    a_conf = {"class_path": f"{__name__}.A", "init_args": {"p1": "a yaml"}}
+    Path("config.yaml").write_text(json_or_yaml_dump({"b": "b.yaml"}))
+    Path("b.yaml").write_text(json_or_yaml_dump({"a": "a.yaml"}))
+    Path("a.yaml").write_text(json_or_yaml_dump(a_conf))
 
     out = CLI(run_bf, args=["--config=config.yaml"])
     assert "a yaml" == out
@@ -574,4 +575,4 @@ def test_async_instance():
             "init_args": {"time": 0.0, "require_async": True},
         }
     }
-    assert "done" == CLI(run_async_instance, args=[f"--config={config}"])
+    assert "done" == CLI(run_async_instance, args=[f"--config={json.dumps(config)}"])

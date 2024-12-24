@@ -191,7 +191,7 @@ Villegas = "Villegas"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{38,39,310,311,312,313}-{all,no}-extras,omegaconf,pydantic-v1
+envlist = py{38,39,310,311,312,313}-{all,no}-extras,omegaconf,pydantic-v1,without-pyyaml
 skip_missing_interpreters = true
 
 [testenv]
@@ -232,4 +232,10 @@ commands =
     "
     pip install "pydantic>=2"
     python -m pytest {posargs} {envtmpdir}/test_dataclass_like.py
+
+[testenv:without-pyyaml]
+extras = test,coverage,all
+commands =
+    pip uninstall -y argcomplete omegaconf pyyaml reconplogger responses ruyaml types-PyYAML
+    python -m pytest {posargs}
 """

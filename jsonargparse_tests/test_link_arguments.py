@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import json
 from calendar import Calendar, TextCalendar
 from dataclasses import dataclass
 from importlib.util import find_spec
 from typing import Any, Callable, List, Mapping, Optional, Union
 
 import pytest
-import yaml
 
 from jsonargparse import (
     ArgumentError,
@@ -15,7 +15,7 @@ from jsonargparse import (
     lazy_instance,
 )
 from jsonargparse._optionals import docstring_parser_support
-from jsonargparse_tests.conftest import get_parse_args_stdout, get_parser_help
+from jsonargparse_tests.conftest import get_parse_args_stdout, get_parser_help, json_or_yaml_dump, json_or_yaml_load
 
 # tests for links applied on parse
 
@@ -34,7 +34,7 @@ def test_on_parse_shallow_print_config(parser):
     parser.add_argument("--b", type=str)
     parser.link_arguments("a", "b")
     out = get_parse_args_stdout(parser, ["--print_config"])
-    assert yaml.safe_load(out) == {"a": 0}
+    assert json_or_yaml_load(out) == {"a": 0}
 
 
 def test_on_parse_subcommand_failing_compute_fn(parser, subparser, subtests):
@@ -57,7 +57,7 @@ def test_on_parse_subcommand_failing_compute_fn(parser, subparser, subtests):
 
     with subtests.test("print_config"):
         out = get_parse_args_stdout(parser, ["sub", "--print_config"])
-        assert yaml.safe_load(out) == {"a": 0}
+        assert json_or_yaml_load(out) == {"a": 0}
 
 
 def test_on_parse_compute_fn_single_arguments(parser, subtests):
@@ -74,11 +74,11 @@ def test_on_parse_compute_fn_single_arguments(parser, subtests):
         assert cfg.b.v2 == cfg.a.v1 * cfg.a.v2
 
     with subtests.test("dump removal of target"):
-        dump = yaml.safe_load(parser.dump(cfg))
+        dump = json_or_yaml_load(parser.dump(cfg))
         assert dump == {"a": {"v1": 2, "v2": -5}}
 
     with subtests.test("dump keep target"):
-        dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+        dump = json_or_yaml_load(parser.dump(cfg, skip_link_targets=False))
         assert dump == {"a": {"v1": 2, "v2": -5}, "b": {"v2": -10}}
 
     with subtests.test("invalid compute_fn result type"):
@@ -156,12 +156,12 @@ def test_on_parse_add_class_arguments(subtests):
         cfg = parser.parse_args(["--a.v1=11", "--a.v2=7"])
         assert 7 == cfg.b.v1
         assert 11 + 7 == cfg.b.v2
-        dump = yaml.safe_load(parser.dump(cfg))
+        dump = json_or_yaml_load(parser.dump(cfg))
         assert dump == {"a": {"v1": 11, "v2": 7}, "b": {"v3": 2}}
 
     with subtests.test("dump keep targets"):
         cfg = parser.parse_args(["--a.v1=11", "--a.v2=7"])
-        dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+        dump = json_or_yaml_load(parser.dump(cfg, skip_link_targets=False))
         assert dump == {"a": {"v1": 11, "v2": 7}, "b": {"v3": 2, "v1": 7, "v2": 18}}
 
     with subtests.test("argument error"):
@@ -196,17 +196,17 @@ def test_on_parse_add_subclass_arguments(parser, subtests):
     }
 
     with subtests.test("compute_fn result"):
-        cfg = parser.parse_args([f"--s1={s1_value}", f"--s2={__name__}.ClassS2"])
+        cfg = parser.parse_args([f"--s1={json.dumps(s1_value)}", f"--s2={__name__}.ClassS2"])
         assert cfg.s2.init_args.v3 == 4
         assert cfg.s2.init_args.v3 == cfg.s1.init_args.v1 + cfg.s1.init_args.v2
 
     with subtests.test("dump removal of target"):
-        cfg = parser.parse_args([f"--s1={s1_value}", f"--s2={__name__}.ClassS2"])
-        dump = yaml.safe_load(parser.dump(cfg))
+        cfg = parser.parse_args([f"--s1={json.dumps(s1_value)}", f"--s2={__name__}.ClassS2"])
+        dump = json_or_yaml_load(parser.dump(cfg))
         assert dump["s2"] == {"class_path": f"{__name__}.ClassS2"}
 
     with subtests.test("dump keep target"):
-        dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+        dump = json_or_yaml_load(parser.dump(cfg, skip_link_targets=False))
         assert dump["s2"] == {"class_path": f"{__name__}.ClassS2", "init_args": {"v3": 4}}
 
     with subtests.test("compute_fn invalid result type"):
@@ -253,11 +253,11 @@ def test_on_parse_subclass_target_in_list(parser):
     parser.link_arguments("trainer.save_dir", "trainer.logger.init_args.save_dir")
     cfg = parser.parse_args([])
     assert cfg.trainer == Namespace(logger=[], save_dir=None)
-    cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=[Logger]"])
+    cfg = parser.parse_args(["--trainer.save_dir=logs", '--trainer.logger=["Logger"]'])
     assert cfg.trainer.save_dir == "logs"
     assert len(cfg.trainer.logger) == 1
     assert cfg.trainer.logger[0].init_args == Namespace(save_dir="logs")
-    cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=[Logger, Logger]"])
+    cfg = parser.parse_args(["--trainer.save_dir=logs", '--trainer.logger=["Logger", "Logger"]'])
     assert len(cfg.trainer.logger) == 2
     assert all(x.init_args == Namespace(save_dir="logs") for x in cfg.trainer.logger)
 
@@ -279,7 +279,7 @@ def test_on_parse_subclass_target_in_union_list(parser):
     cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=Logger"])
     assert cfg.trainer.save_dir == "logs"
     assert cfg.trainer.logger.init_args == Namespace(save_dir="logs")
-    cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=[Logger, Logger]"])
+    cfg = parser.parse_args(["--trainer.save_dir=logs", '--trainer.logger=["Logger", "Logger"]'])
     assert len(cfg.trainer.logger) == 2
     assert all(x.init_args == Namespace(save_dir="logs") for x in cfg.trainer.logger)
 
@@ -301,7 +301,7 @@ def test_on_parse_subclass_target_in_optional_list(parser):
     cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger+=Logger"])
     assert cfg.trainer.save_dir == "logs"
     assert cfg.trainer.logger[0].init_args == Namespace(save_dir="logs")
-    cfg = parser.parse_args(["--trainer.save_dir=logs", "--trainer.logger=[Logger, Logger]"])
+    cfg = parser.parse_args(["--trainer.save_dir=logs", '--trainer.logger=["Logger", "Logger"]'])
     assert len(cfg.trainer.logger) == 2
     assert all(x.init_args == Namespace(save_dir="logs") for x in cfg.trainer.logger)
 
@@ -329,7 +329,7 @@ def test_on_parse_add_subclass_arguments_with_instantiate_false(parser, subtests
     }
 
     with subtests.test("parse_args"):
-        cfg = parser.parse_args([f"--f={f_value}", f"--c={c_value}"])
+        cfg = parser.parse_args([f"--f={json.dumps(f_value)}", f"--c={json.dumps(c_value)}"])
         assert cfg.c.as_dict() == {
             "class_path": "calendar.Calendar",
             "init_args": {"firstweekday": 3},
@@ -344,11 +344,11 @@ def test_on_parse_add_subclass_arguments_with_instantiate_false(parser, subtests
         assert init.f.c.firstweekday == 3
 
     with subtests.test("dump removal of target"):
-        dump = yaml.safe_load(parser.dump(cfg))
+        dump = json_or_yaml_load(parser.dump(cfg))
         assert "c" not in dump["f"]["init_args"]
 
     with subtests.test("dump keep target"):
-        dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+        dump = json_or_yaml_load(parser.dump(cfg, skip_link_targets=False))
         assert dump["f"]["init_args"]["c"] == {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}
 
 
@@ -380,7 +380,7 @@ def test_on_parse_add_subclass_arguments_compute_fn_return_dict(parser):
         },
     }
 
-    cfg = parser.parse_args([f"--d={d_value}", f"--c={c_value}"])
+    cfg = parser.parse_args([f"--d={json.dumps(d_value)}", f"--c={json.dumps(c_value)}"])
     assert cfg.d.init_args.a1 == c_value
     assert cfg.d.init_args.a2 == c_value
 
@@ -438,7 +438,7 @@ def test_on_parse_save_required_target_subclass_param(parser, tmp_cwd):
     parser.link_arguments("a.a", "c.init_args.b.a")
     cfg = parser.parse_args(["--a.a=1", f"--c={__name__}.RequiredTargetC"])
     parser.save(cfg, "config.yaml")
-    saved = yaml.safe_load((tmp_cwd / "config.yaml").read_text())
+    saved = json_or_yaml_load((tmp_cwd / "config.yaml").read_text())
     assert saved == {"a": {"a": 1}, "c": {"class_path": f"{__name__}.RequiredTargetC", "init_args": {}}}
 
 
@@ -473,7 +473,7 @@ def test_on_parse_type_skip_link_targets_dump(parser):
     parser.link_arguments("t1", "t2")
 
     cfg = parser.parse_args([f"--t1={__name__}.Model"])
-    dump = yaml.safe_load(parser.dump(cfg, skip_link_targets=False))
+    dump = json_or_yaml_load(parser.dump(cfg, skip_link_targets=False))
     assert dump["t2"] == f"{__name__}.Model"
 
 
@@ -653,7 +653,7 @@ def test_on_parse_link_entire_subclass(parser):
     parser.link_arguments("n.calendar", "q.calendar", apply_on="parse")
 
     cal = {"class_path": "Calendar", "init_args": {"firstweekday": 4}}
-    cfg = parser.parse_args([f"--n.calendar={cal}", "--q.q2=7"])
+    cfg = parser.parse_args([f"--n.calendar={json.dumps(cal)}", "--q.q2=7"])
     assert cfg.n.calendar == cfg.q.calendar
     assert cfg.q.q2 == 7
 
@@ -782,7 +782,7 @@ def test_on_instantiate_within_deep_subclass(parser, caplog):
         apply_on="instantiate",
     )
 
-    cfg = parser.parse_args([f"--cfg={within_deep_config}"])
+    cfg = parser.parse_args([f"--cfg={json.dumps(within_deep_config)}"])
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.model, WithinDeepModel)
     assert isinstance(init.model.encoder, WithinDeepSource)
@@ -816,7 +816,7 @@ def test_on_instantiate_within_deeper_subclass(parser, caplog):
         apply_on="instantiate",
     )
 
-    cfg = parser.parse_args([f"--cfg={within_deeper_config}"])
+    cfg = parser.parse_args([f"--cfg={json.dumps(within_deeper_config)}"])
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.system, WithinDeeperSystem)
     assert isinstance(init.system.model, WithinDeepModel)
@@ -1013,7 +1013,7 @@ def test_on_instantiate_linking_deep_targets(parser, tmp_path):
         "c": {},
     }
     config_path = tmp_path / "config.yaml"
-    config_path.write_text(yaml.safe_dump(config))
+    config_path.write_text(json_or_yaml_dump(config))
 
     parser.add_argument("--config", action="config")
     parser.add_subclass_arguments(DeepBSuper, nested_key="b", required=True)
@@ -1045,7 +1045,7 @@ def test_on_instantiate_linking_deep_targets_mapping(parser, tmp_path):
         "c": {},
     }
     config_path = tmp_path / "config.yaml"
-    config_path.write_text(yaml.safe_dump(config))
+    config_path.write_text(json_or_yaml_dump(config))
 
     parser.add_argument("--config", action="config")
     parser.add_subclass_arguments(DeepBSuper, nested_key="b", required=True)

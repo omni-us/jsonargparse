@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from jsonargparse import ActionParser, ActionYesNo, ArgumentParser
-from jsonargparse_tests.conftest import get_parser_help
+from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_dump
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ def test_help_action_yes_no(parser):
 def default_config_files(tmp_cwd) -> Tuple[ArgumentParser, str, Path]:
     not_exist = "does_not_exist.yaml"
     exists = Path("config.yaml")
-    exists.write_text("v1: from yaml v1\nn1.v2: from yaml v2\n")
+    exists.write_text(json_or_yaml_dump({"v1": "from yaml v1", "n1.v2": "from yaml v2"}))
 
     parser = ArgumentParser(default_config_files=[not_exist, exists])
     parser.add_argument("--v1", default="from default v1")
@@ -122,7 +122,7 @@ def test_help_default_config_files_none(default_config_files):
 
 def test_help_default_config_files_with_required(tmp_path, parser):
     config_path = tmp_path / "config.yaml"
-    config_path.write_text("v1: from yaml\n")
+    config_path.write_text(json_or_yaml_dump({"v1": "from config"}))
 
     parser.default_config_files = [config_path]
     parser.add_argument("req", help="req description")
@@ -130,7 +130,7 @@ def test_help_default_config_files_with_required(tmp_path, parser):
 
     help_str = get_parser_help(parser)
     assert "req description" in help_str
-    assert "from yaml" in help_str
+    assert "from config" in help_str
 
 
 def test_format_usage(parser):

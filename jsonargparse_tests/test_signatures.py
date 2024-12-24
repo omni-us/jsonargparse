@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 from unittest.mock import patch
 
 import pytest
-import yaml
 
 from jsonargparse import (
     ArgumentError,
@@ -19,6 +19,8 @@ from jsonargparse_tests.conftest import (
     capture_logs,
     get_parse_args_stdout,
     get_parser_help,
+    json_or_yaml_dump,
+    json_or_yaml_load,
     skip_if_docstring_parser_unavailable,
 )
 
@@ -191,7 +193,7 @@ def test_add_class_without_parameters(parser):
 
     config = {"no_params": {"class_path": f"{__name__}.NoParams"}}
     with pytest.raises(ArgumentError) as ctx:
-        parser.parse_args([f"--cfg={config}"])
+        parser.parse_args([f"--cfg={json.dumps(config)}"])
     ctx.match("Group 'no_params' does not accept nested key 'class_path'")
 
 
@@ -257,7 +259,7 @@ def test_add_class_with_required_parameters(parser):
         pytest.raises(ArgumentError, lambda: parser.parse_args(args))
 
     out = get_parse_args_stdout(parser, ["--model.m=0.1", "--print_config"])
-    assert "  n: null" in out
+    assert json_or_yaml_load(out) == {"model": {"n": None, "m": 0.1}}
 
     cfg = parser.parse_args([f"--config={out}", "--model.n=3"])
     assert cfg.model == Namespace(m=0.1, n=3)
@@ -340,7 +342,7 @@ def test_add_class_in_subcommand(parser, subparser):
 def test_add_class_group_config(parser, tmp_cwd):
     parser.add_class_arguments(Class0, "a")
     path = Path("a.yaml")
-    path.write_text("c0_a0: x")
+    path.write_text(json_or_yaml_dump({"c0_a0": "x"}))
     cfg = parser.parse_args(["--a=a.yaml"])
     assert str(cfg.a.pop("__path__")) == str(path)
     assert cfg.a == Namespace(c0_a0="x")
@@ -418,7 +420,7 @@ def test_add_class_unmatched_default_type(parser):
     init = parser.instantiate_classes(cfg)
     assert init.cls.p2 == "deprecated"
     dump = parser.dump(cfg)
-    assert dump == "cls:\n  p1: x\n  p2: deprecated\n"
+    assert json_or_yaml_load(dump) == {"cls": {"p1": "x", "p2": "deprecated"}}
 
 
 # add_method_arguments tests
@@ -601,7 +603,7 @@ def test_add_function_group_config(parser, tmp_cwd):
     parser.add_function_arguments(func, "func")
 
     cfg_path = Path("config.yaml")
-    cfg_path.write_text(yaml.dump({"a1": "one", "a3": True}))
+    cfg_path.write_text(json_or_yaml_dump({"a1": "one", "a3": True}))
 
     cfg = parser.parse_args([f"--func={cfg_path}"])
     assert cfg.func == Namespace(a1="one", a2=2.0, a3=True)
@@ -621,8 +623,8 @@ def test_add_function_group_config_within_config(parser, tmp_cwd):
     cfg_path = Path("subdir", "config.yaml")
     subcfg_path = Path("subsubdir", "func_config.yaml")
     Path("subdir", "subsubdir").mkdir(parents=True)
-    cfg_path.write_text(f"func: {subcfg_path}\n")
-    (cfg_path.parent / subcfg_path).write_text(yaml.dump({"a1": "one", "a3": True}))
+    cfg_path.write_text(json_or_yaml_dump({"func": str(subcfg_path)}))
+    (cfg_path.parent / subcfg_path).write_text(json_or_yaml_dump({"a1": "one", "a3": True}))
 
     cfg = parser.parse_args([f"--cfg={cfg_path}"])
     assert str(cfg.func.__path__) == str(subcfg_path)

@@ -354,6 +354,9 @@ def dict_to_namespace(cfg_dict: Union[Dict[str, Any], Namespace]) -> Namespace:
 
 
 # Temporal to provide backward compatibility in pytorch-lightning
-import yaml  # noqa: E402
+from importlib.util import find_spec  # noqa: E402
 
-yaml.SafeDumper.add_representer(Namespace, lambda d, x: d.represent_mapping("tag:yaml.org,2002:map", x.as_dict()))
+if find_spec("yaml"):
+    import yaml
+
+    yaml.SafeDumper.add_representer(Namespace, lambda d, x: d.represent_mapping("tag:yaml.org,2002:map", x.as_dict()))

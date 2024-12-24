@@ -11,6 +11,7 @@ from ._optionals import (
     get_jsonschema_exceptions,
     import_jsonnet,
     import_jsonschema,
+    pyyaml_available,
 )
 from ._typehints import ActionTypeHint
 from ._util import NoneType, Path, argument_error
@@ -45,10 +46,11 @@ class ActionJsonnet(Action):
             if schema is not None:
                 jsonvalidator = import_jsonschema("ActionJsonnet")[1]
                 if isinstance(schema, str):
-                    with parser_context(load_value_mode="yaml"):
+                    mode = "yaml" if pyyaml_available else "json"
+                    with parser_context(load_value_mode=mode):
                         try:
                             schema = load_value(schema)
-                        except get_loader_exceptions() as ex:
+                        except get_loader_exceptions(mode) as ex:
                             raise ValueError(f"Problems parsing schema: {ex}") from ex
                 jsonvalidator.check_schema(schema)
                 self._validator = ActionJsonSchema._extend_jsonvalidator_with_default(jsonvalidator)(schema)
@@ -162,7 +164,7 @@ class ActionJsonnet(Action):
             fname = jsonnet(absolute=False) if isinstance(jsonnet, Path) else jsonnet
             snippet = fpath.get_content()
         try:
-            with parser_context(load_value_mode="yaml"):
+            with parser_context(load_value_mode="yaml" if pyyaml_available else "json"):
                 values = load_value(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
         except RuntimeError as ex:
             raise argument_error(f'Problems evaluating jsonnet "{fname}": {ex}') from ex

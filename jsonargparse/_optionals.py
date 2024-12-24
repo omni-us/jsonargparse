@@ -14,6 +14,7 @@ __all__ = [
 ]
 
 
+pyyaml_available = bool(find_spec("yaml"))
 typing_extensions_support = find_spec("typing_extensions") is not None
 typeshed_client_support = find_spec("typeshed_client") is not None
 jsonschema_support = find_spec("jsonschema") is not None

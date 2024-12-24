@@ -6,7 +6,6 @@ from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 from unittest.mock import patch
 
 import pytest
-import yaml
 
 from jsonargparse import ArgumentError, ArgumentParser, Namespace, compose_dataclasses, lazy_instance
 from jsonargparse._namespace import NSKeyError
@@ -19,7 +18,11 @@ from jsonargparse._optionals import (
     typing_extensions_import,
 )
 from jsonargparse.typing import PositiveFloat, PositiveInt, final
-from jsonargparse_tests.conftest import get_parser_help, skip_if_docstring_parser_unavailable
+from jsonargparse_tests.conftest import (
+    get_parser_help,
+    json_or_yaml_load,
+    skip_if_docstring_parser_unavailable,
+)
 
 annotated = typing_extensions_import("Annotated")
 type_alias_type = typing_extensions_import("TypeAliasType")
@@ -65,7 +68,7 @@ def test_add_class_arguments(parser, subtests):
         cfg = parser.get_defaults()
         assert dataclasses.asdict(DataClassA()) == cfg["a"].as_dict()
         assert dataclasses.asdict(DataClassB()) == cfg["b"].as_dict()
-        dump = yaml.safe_load(parser.dump(cfg))
+        dump = json_or_yaml_load(parser.dump(cfg))
         assert dataclasses.asdict(DataClassA()) == dump["a"]
         assert dataclasses.asdict(DataClassB()) == dump["b"]
 
@@ -128,7 +131,7 @@ def test_add_class_with_dataclass_attributes(parser):
     cfg = parser.get_defaults()
     assert dataclasses.asdict(DataClassA()) == cfg.g.a1.as_dict()
     assert dataclasses.asdict(DataClassB()) == cfg.g.a2.as_dict()
-    dump = yaml.safe_load(parser.dump(cfg))
+    dump = json_or_yaml_load(parser.dump(cfg))
     assert dataclasses.asdict(DataClassA()) == dump["g"]["a1"]
     assert dataclasses.asdict(DataClassB()) == dump["g"]["a2"]
 
@@ -222,7 +225,7 @@ def test_add_argument_dataclass_unexpected_keys(parser):
         "class_path": f"{__name__}.DataClassB",
     }
     with pytest.raises(ArgumentError) as ctx:
-        parser.parse_args([f"--b={invalid}"])
+        parser.parse_args([f"--b={json.dumps(invalid)}"])
     ctx.match("Group 'b' does not accept nested key 'class_path'")
 
 
@@ -423,7 +426,7 @@ def test_optional_dataclass_type_instantiate():
 
 def test_optional_dataclass_type_dump():
     cfg = parser_optional_data.parse_args(['--data={"p1": "z"}'])
-    assert parser_optional_data.dump(cfg) == "data:\n  p1: z\n  p2: 0\n"
+    assert json_or_yaml_load(parser_optional_data.dump(cfg)) == {"data": {"p1": "z", "p2": 0}}
 
 
 def test_optional_dataclass_type_missing_required_field():
@@ -469,7 +472,7 @@ def test_optional_dataclass_single_param_change(parser):
     parser.add_argument("--config", action="config")
     parser.add_argument("--data", type=Optional[SingleParamChange])
     config = {"data": {"p1": 1}}
-    cfg = parser.parse_args([f"--config={config}", "--data.p2=2"])
+    cfg = parser.parse_args([f"--config={json.dumps(config)}", "--data.p2=2"])
     assert cfg.data == Namespace(p1=1, p2=2)
 
 
@@ -566,14 +569,14 @@ def test_class_path_union_mixture_dataclass_and_class(parser, union_type):
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.union, UnionData)
     assert dataclasses.asdict(init.union) == {"data_a": 2, "data_b": "x"}
-    assert yaml.safe_load(parser.dump(cfg))["union"] == value["init_args"]
+    assert json_or_yaml_load(parser.dump(cfg))["union"] == value["init_args"]
 
     value = {"class_path": f"{__name__}.UnionClass", "init_args": {"prm_1": 1.2, "prm_2": False}}
     cfg = parser.parse_args([f"--union={json.dumps(value)}"])
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.union, UnionClass)
     assert init.union.prm_1 == 1.2
-    assert yaml.safe_load(parser.dump(cfg))["union"] == value
+    assert json_or_yaml_load(parser.dump(cfg))["union"] == value
 
 
 # final classes tests
@@ -852,7 +855,7 @@ class TestPydantic:
         parser.add_argument("--model", type=Model)
         cfg = parser.parse_args([f"--model.param={valid_value}"])
         assert cast(cfg.model.param) == valid_value
-        dump = yaml.safe_load(parser.dump(cfg))
+        dump = json_or_yaml_load(parser.dump(cfg))
         assert dump == {"model": {"param": valid_value}}
         with pytest.raises(ArgumentError) as ctx:
             parser.parse_args([f"--model.param={invalid_value}"])
@@ -907,7 +910,7 @@ class TestPydantic:
                 "init_args": {"a": {"p1": "x"}},
             }
         }
-        cfg = parser.parse_args([f"--cfg={config}"])
+        cfg = parser.parse_args([f"--cfg={json.dumps(config)}"])
         assert cfg.b.class_path == f"{__name__}.OptionalPydantic"
         assert cfg.b.init_args == Namespace(a=Namespace(p1="x", p2=3))
 

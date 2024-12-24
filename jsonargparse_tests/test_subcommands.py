@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-import yaml
 
 from jsonargparse import (
     ArgumentError,
@@ -15,7 +14,13 @@ from jsonargparse import (
     Namespace,
     strip_meta,
 )
-from jsonargparse_tests.conftest import get_parse_args_stderr, get_parse_args_stdout, get_parser_help
+from jsonargparse_tests.conftest import (
+    get_parse_args_stderr,
+    get_parse_args_stdout,
+    get_parser_help,
+    json_or_yaml_dump,
+    json_or_yaml_load,
+)
 from jsonargparse_tests.test_subclasses import CustomInstantiationBase, instantiator
 
 
@@ -209,7 +214,7 @@ def test_subcommand_print_config_default_env(subparser):
     subcommands.add_subcommand("a", subparser)
 
     out = get_parse_args_stdout(parser, ["a", "--print_config"])
-    assert yaml.safe_load(out) == {"o": 1}
+    assert json_or_yaml_load(out) == {"o": 1}
 
 
 def test_subcommand_default_config_repeated_keys(parser, subparser, tmp_cwd):
@@ -244,7 +249,8 @@ def test_subsubcommand_default_config_repeated_keys(parser, subparser, tmp_cwd):
 
 
 def test_subcommand_required_arg_in_default_config(parser, subparser, tmp_cwd):
-    Path("config.yaml").write_text("output: test\nprepare:\n  media: test\n")
+    config = {"output": "test", "prepare": {"media": "test"}}
+    Path("config.yaml").write_text(json_or_yaml_dump(config))
     parser.default_config_files = ["config.yaml"]
     parser.add_argument("--output", required=True)
     subcommands = parser.add_subcommands()

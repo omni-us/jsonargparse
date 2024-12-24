@@ -15,7 +15,6 @@ from unittest.mock import patch
 from uuid import NAMESPACE_OID
 
 import pytest
-import yaml
 
 from jsonargparse import (
     ArgumentError,
@@ -30,6 +29,8 @@ from jsonargparse_tests.conftest import (
     get_parse_args_stderr,
     get_parse_args_stdout,
     get_parser_help,
+    json_or_yaml_dump,
+    json_or_yaml_load,
     source_unavailable,
 )
 
@@ -41,7 +42,7 @@ def test_subclass_basics(parser, type):
         "init_args": {"firstweekday": 3},
     }
     parser.add_argument("--op", type=type)
-    cfg = parser.parse_args([f"--op={value}"])
+    cfg = parser.parse_args([f"--op={json.dumps(value)}"])
     init = parser.instantiate_classes(cfg)
     assert isinstance(init["op"], Calendar)
     assert 3 == init["op"].firstweekday
@@ -235,7 +236,7 @@ def test_subclass_merge_init_args_global_config(parser):
     expected = deepcopy(config1["cal"])
     expected["init_args"].update(config2["cal"]["init_args"])
 
-    cfg = parser.parse_args([f"--cfg={config1}", f"--cfg={config2}"])
+    cfg = parser.parse_args([f"--cfg={json.dumps(config1)}", f"--cfg={json.dumps(config2)}"])
     assert cfg.cal.as_dict() == expected
 
 
@@ -252,10 +253,10 @@ def test_subclass_init_args_without_class_path_dict(parser):
     parser.add_argument("--cal", type=Calendar)
     config = {"cal": {"class_path": "TextCalendar", "init_args": {"firstweekday": 2}}}
 
-    cfg = parser.parse_args([f"--cfg={config}", "--cal={'init_args': {'firstweekday': 3}}"])
+    cfg = parser.parse_args([f"--cfg={json.dumps(config)}", '--cal={"init_args": {"firstweekday": 3}}'])
     assert cfg.cal.init_args == Namespace(firstweekday=3)
 
-    cfg = parser.parse_args([f"--cfg={config}", "--cal={'firstweekday': 4}"])
+    cfg = parser.parse_args([f"--cfg={json.dumps(config)}", '--cal={"firstweekday": 4}'])
     assert cfg.cal.init_args == Namespace(firstweekday=4)
 
 
@@ -282,9 +283,8 @@ def test_subclass_with_default_config_files(parser, tmp_cwd, logger, subtests):
         assert cfg.data.cal.as_dict() == config
 
     with subtests.test("dump"):
-        dump = parser.dump(cfg)
-        assert "class_path: calendar.Calendar\n" in dump
-        assert "firstweekday: 3\n" in dump
+        dump = json_or_yaml_load(parser.dump(cfg))
+        assert dump["data"]["cal"] == {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}
 
     with subtests.test("disable defaults"):
         cfg = parser.parse_args(["--data.cal.class_path=calendar.Calendar"], defaults=False)
@@ -305,7 +305,7 @@ class DefaultConfigSubcommands:
 
 def test_subclass_in_subcommand_with_global_default_config_file(parser, subparser, tmp_cwd):
     default_path = Path("default.yaml")
-    default_path.write_text("fit:\n  model:\n    foo: 123")
+    default_path.write_text(json_or_yaml_dump({"fit": {"model": {"foo": 123}}}))
 
     parser.default_config_files = [default_path]
     parser.add_argument("--config", action="config")
@@ -407,8 +407,8 @@ def test_importable_instances(parser):
     parser.add_argument("--dtype", type=dtype)
     cfg = parser.parse_args([f"--dtype={__name__}.float32"])
     assert cfg.dtype is float32
-    dump = parser.dump(cfg)
-    assert dump.strip() == f"dtype: {__name__}.float32"
+    dump = json_or_yaml_load(parser.dump(cfg))
+    assert dump == {"dtype": f"{__name__}.float32"}
 
 
 # custom instantiation tests
@@ -512,7 +512,7 @@ def test_subclass_env_config(parser):
     parser.env_prefix = "APP"
     parser.default_env = True
     parser.add_argument("--cal", type=Calendar)
-    env = {"APP_CAL": "{'class_path': 'TextCalendar', 'init_args': {'firstweekday': 4}}"}
+    env = {"APP_CAL": '{"class_path": "TextCalendar", "init_args": {"firstweekday": 4}}'}
     with patch.dict(os.environ, env):
         cfg = parser.parse_env()
     assert cfg.cal == Namespace(class_path="calendar.TextCalendar", init_args=Namespace(firstweekday=4))
@@ -568,22 +568,27 @@ class RequiredParamModel:
 
 
 def test_subclass_required_parameter_with_default_config_files(parser, tmp_cwd):
-    defaults = f"""model:
-      sub_module:
-        class_path: {__name__}.RequiredParamSubModule
-        init_args:
-          p1: 4
-          p2: 5
-    """
+    defaults = {
+        "model": {
+            "sub_module": {
+                "class_path": f"{__name__}.RequiredParamSubModule",
+                "init_args": {
+                    "p1": 4,
+                    "p2": 5,
+                },
+            },
+        },
+    }
     defaults_path = Path("defaults.yaml")
-    defaults_path.write_text(defaults)
+    defaults_path.write_text(json_or_yaml_dump(defaults))
 
     parser.default_config_files = [defaults_path]
     parser.add_class_arguments(RequiredParamModel, "model")
 
     cfg = parser.parse_args(["--model.sub_module.init_args.p2=7"])
 
-    expected = yaml.safe_load(defaults.replace("p2: 5", "p2: 7"))["model"]
+    expected = defaults["model"]
+    expected["sub_module"]["init_args"]["p2"] = 7
     expected["sub_module"]["init_args"]["p3"] = 3
     assert cfg.model.as_dict() == expected
 
@@ -728,25 +733,28 @@ def test_subclass_dict_parameter_deep(parser):
     parser.add_argument("--cfg", action="config")
     parser.add_class_arguments(Model, "model")
 
-    config = f"""model:
-      encoder:
-        class_path: {__name__}.Network
-        init_args:
-          some_dict:
-            a: 1
-          sub_network:
-            class_path: {__name__}.Network
-            init_args:
-              some_dict:
-                b: 2
-              sub_network:
-                class_path: {__name__}.Module
-    """
+    config = {
+        "model": {
+            "encoder": {
+                "class_path": f"{__name__}.Network",
+                "init_args": {
+                    "some_dict": {"a": 1},
+                    "sub_network": {
+                        "class_path": f"{__name__}.Network",
+                        "init_args": {
+                            "some_dict": {"b": 2},
+                            "sub_network": {"class_path": f"{__name__}.Module"},
+                        },
+                    },
+                },
+            },
+        },
+    }
 
-    cfg = parser.parse_args([f"--cfg={config}"])
+    cfg = parser.parse_args([f"--cfg={json_or_yaml_dump(config)}"])
     assert cfg.model.encoder.init_args.some_dict == {"a": 1}
     assert cfg.model.encoder.init_args.sub_network.init_args.some_dict == {"b": 2}
-    assert cfg.model.as_dict() == yaml.safe_load(config)["model"]
+    assert cfg.model.as_dict() == config["model"]
 
 
 # list append tests
@@ -803,7 +811,7 @@ def test_subclass_list_append_multiple(parser):
     )
     assert ["calendar.Calendar", "calendar.TextCalendar"] == [x.class_path for x in cfg.a.cals]
     assert [3, 1] == [x.init_args.firstweekday for x in cfg.a.cals]
-    cfg = parser.parse_args([f"--a={cfg.a.as_dict()}", "--a.cals.firstweekday=4"])
+    cfg = parser.parse_args([f"--a={json.dumps(cfg.a.as_dict())}", "--a.cals.firstweekday=4"])
     assert Namespace(firstweekday=4) == cfg.a.cals[-1].init_args
     args = ["--a.cals+=Invalid", "--a.cals+=TextCalendar"]
     pytest.raises(ArgumentError, lambda: parser.parse_args(args))
@@ -825,7 +833,7 @@ def test_subcommand_subclass_list_append_multiple(parser, subparser):
     )
     assert ["calendar.Calendar", "calendar.TextCalendar"] == [x.class_path for x in cfg.cmd.a.cals]
     assert [3, 1] == [x.init_args.firstweekday for x in cfg.cmd.a.cals]
-    cfg = parser.parse_args(["cmd", f"--a={cfg.cmd.a.as_dict()}", "--a.cals.firstweekday=4"])
+    cfg = parser.parse_args(["cmd", f"--a={json.dumps(cfg.cmd.a.as_dict())}", "--a.cals.firstweekday=4"])
     assert Namespace(firstweekday=4) == cfg.cmd.a.cals[-1].init_args
     args = ["cmd", "--a.cals+=Invalid", "--a.cals+=TextCalendar"]
     pytest.raises(ArgumentError, lambda: parser.parse_args(args))
@@ -857,7 +865,7 @@ def test_type_any_subclasses(parser):
         },
     }
 
-    cfg = parser.parse_args([f"--any={value}"])
+    cfg = parser.parse_args([f"--any={json.dumps(value)}"])
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.any, AnySubclasses)
     assert isinstance(init.any.cal1, TextCalendar)
@@ -866,7 +874,7 @@ def test_type_any_subclasses(parser):
     assert 2 == init.any.cal2.firstweekday
 
     value["init_args"]["cal2"]["class_path"] = "does.not.exist"
-    cfg = parser.parse_args([f"--any={value}"])
+    cfg = parser.parse_args([f"--any={json.dumps(value)}"])
     assert isinstance(cfg.any.init_args.cal1, Namespace)
     assert isinstance(cfg.any.init_args.cal2, dict)
     init = parser.instantiate_classes(cfg)
@@ -877,7 +885,7 @@ def test_type_any_subclasses(parser):
     assert 2 == init.any.cal2["init_args"]["firstweekday"]
 
     value["init_args"]["cal1"]["class_path"] = "does.not.exist"
-    cfg = parser.parse_args([f"--any={value}"])
+    cfg = parser.parse_args([f"--any={json.dumps(value)}"])
     assert isinstance(cfg.any, dict)
 
 
@@ -894,7 +902,7 @@ def test_type_any_list_of_subclasses(parser):
         },
     ]
 
-    cfg = parser.parse_args([f"--any={value}"])
+    cfg = parser.parse_args([f"--any={json.dumps(value)}"])
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.any, list)
     assert 2 == len(init.any)
@@ -917,7 +925,7 @@ def test_type_any_dict_of_subclasses(parser):
         },
     }
 
-    cfg = parser.parse_args([f"--any={value}"])
+    cfg = parser.parse_args([f"--any={json.dumps(value)}"])
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.any, dict)
     assert 2 == len(init.any)
@@ -1041,7 +1049,7 @@ def test_subclass_discard_init_args_config_with_default(parser, logger):
 
     config = {"s": {"class_path": "OverrideSub2", "init_args": {"s2": "v2"}}}
     with capture_logs(logger) as logs:
-        cfg = parser.parse_args([f"--cfg={config}"])
+        cfg = parser.parse_args([f"--cfg={json.dumps(config)}"])
 
     assert "discarding init_args: {'s1': 'v1'}" in logs.getvalue()
     assert cfg.s.class_path == f"{__name__}.OverrideSub2"
@@ -1102,7 +1110,7 @@ def test_subclass_subcommand_set_defaults_discard_init_args(parser, subparser, l
     subcommands.add_subcommand("fit", subparser)
 
     with capture_logs(logger) as logs:
-        cfg = parser.parse_args(["fit", f"--arch={value}"])
+        cfg = parser.parse_args(["fit", f"--arch={json.dumps(value)}"])
     assert "discarding init_args: {'b': 3}" in logs.getvalue()
     assert cfg.fit.arch.as_dict() == value
 
@@ -1152,7 +1160,7 @@ def test_discard_init_args_config_nested(parser, logger, tmp_cwd, method):
         parser.set_defaults(main=lazy_instance(ConfigDiscardMain))
 
     config_path = Path("config.yaml")
-    config_path.write_text(yaml.safe_dump(config))
+    config_path.write_text(json_or_yaml_dump(config))
 
     with capture_logs(logger) as logs:
         cfg = parser.parse_args([f"--cfg={config_path}"])
@@ -1203,7 +1211,7 @@ def test_subclass_discard_init_args_dict_looks_like_subclass(parser, logger, tmp
             }
         }
         config_paths[c] = Path(f"config{c}.yaml")
-        config_paths[c].write_text(yaml.safe_dump(configs[c]))
+        config_paths[c].write_text(json_or_yaml_dump(configs[c]))
 
     with capture_logs(logger) as logs:
         cfg = parser.parse_args([f"--cfg={config_paths[1]}", f"--cfg={config_paths[2]}"])
@@ -1250,15 +1258,15 @@ def test_subclass_unresolved_parameters(parser, subtests):
         assert cfg.cls.dict_kwargs == expected.dict_kwargs
 
     with subtests.test("config"):
-        cfg = parser.parse_args([f"--cfg={config}"])
+        cfg = parser.parse_args([f"--cfg={json.dumps(config)}"])
         assert cfg.cls == expected
         init = parser.instantiate_classes(cfg)
         assert isinstance(init.cls, UnresolvedParams)
         assert init.cls.kwargs == expected.dict_kwargs
 
     with subtests.test("print_config"):
-        out = get_parse_args_stdout(parser, [f"--cfg={config}", "--print_config"])
-        data = yaml.safe_load(out)["cls"]
+        out = get_parse_args_stdout(parser, [f"--cfg={json.dumps(config)}", "--print_config"])
+        data = json_or_yaml_load(out)["cls"]
         assert data == expected.as_dict()
 
     with subtests.test("invalid dict_kwargs"):
@@ -1308,8 +1316,7 @@ def test_add_subclass_lazy_default(parser):
     parser.add_argument("--config", action="config")
     parser.set_defaults({"cal": lazy_instance(Calendar, firstweekday=5)})
     out = get_parse_args_stdout(parser, ["--print_config"])
-    assert "class_path: calendar.Calendar" in out
-    assert "firstweekday: 5" in out
+    assert json_or_yaml_load(out)["cal"] == {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 5}}
 
     help_str = get_parser_help(parser)
     assert "'init_args': {'firstweekday': 5}" in help_str
@@ -1388,7 +1395,7 @@ def test_add_subclass_list_of_union(parser):
             }
         ]
     }
-    cfg = parser.parse_args([f"--config={config}"])
+    cfg = parser.parse_args([f"--config={json.dumps(config)}"])
     assert cfg.as_dict()["subclass"] == config["subclass"]
     help_str = get_parser_help(parser)
     assert "Show the help for the given subclass of {ListUnionA,ListUnionB}" in help_str
@@ -1425,7 +1432,7 @@ def test_subclass_signature_instance_default(parser):
     with warnings.catch_warnings(record=True) as w:
         dump = parser.dump(cfg)
     assert "Unable to serialize instance" in str(w[0].message)
-    assert "cal: Unable to serialize instance <calendar.Calendar " in dump
+    assert "Unable to serialize instance <calendar.Calendar " in dump
 
 
 # protocol tests
@@ -1643,7 +1650,7 @@ def test_subclass_print_config(parser):
     parser.add_class_arguments(PrintConfig, "g")
 
     out = get_parse_args_stdout(parser, ["--g.a1=calendar.Calendar", "--print_config"])
-    obtained = yaml.safe_load(out)["g"]
+    obtained = json_or_yaml_load(out)["g"]
     assert obtained == {"a1": {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 0}}, "a2": 7}
 
     err = get_parse_args_stderr(parser, ["--g.a1=calendar.Calendar", "--g.a1.invalid=1", "--print_config"])
@@ -1676,22 +1683,22 @@ def test_subclass_print_config_required_parameters_as_null(parser):
         "subclass": {"class_path": f"{__name__}.PrintConfigRequiredSub", "init_args": {"arg1": None, "arg2": 1}},
     }
 
-    assert yaml.safe_load(out) == expected
+    assert json_or_yaml_load(out) == expected
 
 
 def test_subclass_multifile_save(parser, tmp_cwd):
     parser.add_subclass_arguments(Calendar, "cal")
 
     cal_cfg_path = Path("cal.yaml")
-    cal_cfg_path.write_text(yaml.dump({"class_path": "calendar.Calendar"}))
+    cal_cfg_path.write_text(json_or_yaml_dump({"class_path": "calendar.Calendar"}))
     out_main_cfg = Path("out", "config.yaml")
     out_main_cfg.parent.mkdir()
 
     cfg = parser.parse_args([f"--cal={cal_cfg_path}"])
     parser.save(cfg, out_main_cfg, multifile=True)
 
-    assert "cal: cal.yaml" == out_main_cfg.read_text().strip()
-    cal = yaml.safe_load(Path("out", "cal.yaml").read_text())
+    assert {"cal": "cal.yaml"} == json_or_yaml_load(out_main_cfg.read_text())
+    cal = json_or_yaml_load(Path("out", "cal.yaml").read_text())
     assert cal == {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 0}}
 
 
@@ -1722,7 +1729,7 @@ def test_subclass_error_undefined_module(parser):
 def test_subclass_error_unexpected_init_arg(parser):
     parser.add_argument("--op", type=Calendar)
     class_path = '"class_path": "calendar.Calendar"'
-    init_args = '"init_args": {"unexpected_arg": True}'
+    init_args = '"init_args": {"unexpected_arg": true}'
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--op={" + class_path + ", " + init_args + "}"])
     ctx.match("Key 'unexpected_arg' is not expected")
@@ -1834,7 +1841,7 @@ def test_subclass_error_indentation_in_union_invalid_value(parser):
     parser.add_argument("--union", type=Union[str, ErrorIndentation2])
     parser.add_argument("--cfg", action="config")
     config = {"union": [{"class_path": "ErrorIndentation2", "init_args": {"val": "x"}}]}
-    err = get_parse_args_stderr(parser, [f"--cfg={config}"])
+    err = get_parse_args_stderr(parser, [f"--cfg={json.dumps(config)}"])
     expected = textwrap.dedent(
         """
     Errors:

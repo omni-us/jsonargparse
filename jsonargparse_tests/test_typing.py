@@ -31,7 +31,7 @@ from jsonargparse.typing import (
     restricted_number_type,
     restricted_string_type,
 )
-from jsonargparse_tests.conftest import get_parser_help
+from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_load
 
 
 def test_public_api():
@@ -177,7 +177,7 @@ def test_restricted_number_optional_union(parser):
 
 def test_restricted_number_dump(parser):
     parser.add_argument("--float", type=PositiveFloat)
-    assert "float: 1.1\n" == parser.dump(parser.parse_args(["--float", "1.1"]))
+    assert {"float": 1.1} == json_or_yaml_load(parser.dump(parser.parse_args(["--float", "1.1"])))
 
 
 def test_type_function_parse(parser):
@@ -252,7 +252,7 @@ def test_restricted_string_parse(parser):
 def test_restricted_string_dump(parser):
     ThreeChars = restricted_string_type("ThreeChars", "^[A-Z]{3}$")
     parser.add_argument("--op", type=ThreeChars)
-    assert "op: ABC\n" == parser.dump(parser.parse_args(["--op", "ABC"]))
+    assert {"op": "ABC"} == json_or_yaml_load(parser.dump(parser.parse_args(["--op", "ABC"])))
 
 
 # other types
@@ -371,7 +371,7 @@ def test_register_type_datetime(parser):
     parser.add_argument("--datetime", type=datetime)
     cfg = parser.parse_args(["--datetime=2008-09-03T20:56:35"])
     assert cfg.datetime == datetime(2008, 9, 3, 20, 56, 35)
-    assert parser.dump(cfg) == "datetime: '2008-09-03T20:56:35'\n"
+    assert json_or_yaml_load(parser.dump(cfg)) == {"datetime": "2008-09-03T20:56:35"}
 
     register_type(datetime, serializer, deserializer)  # identical re-registering is okay
     pytest.raises(ValueError, lambda: register_type(datetime))  # different registration not okay
@@ -394,7 +394,7 @@ def test_decimal(parser):
     cfg = parser.parse_args(["--decimal=0.1"])
     assert isinstance(cfg.decimal, Decimal)
     assert cfg.decimal == Decimal("0.1")
-    assert parser.dump(cfg) == "decimal: 0.1\n"
+    assert json_or_yaml_load(parser.dump(cfg)) == {"decimal": 0.1}
 
 
 def test_uuid(parser):
@@ -405,7 +405,7 @@ def test_uuid(parser):
     cfg = parser.parse_args([f"--uuid={id1}", f'--uuids=["{id1}", "{id2}"]'])
     assert cfg.uuid == id1
     assert cfg.uuids == [id1, id2]
-    assert f"uuid: {id1}\nuuids:\n- {id1}\n- {id2}\n" == parser.dump(cfg)
+    assert {"uuid": str(id1), "uuids": [str(id1), str(id2)]} == json_or_yaml_load(parser.dump(cfg))
 
 
 def test_secret_str_methods():

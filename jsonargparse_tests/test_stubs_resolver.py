@@ -14,13 +14,13 @@ from unittest.mock import patch
 from uuid import UUID, uuid5
 
 import pytest
-import yaml
 
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._stubs_resolver import get_mro_method_parent, get_stubs_resolver
 from jsonargparse_tests.conftest import (
     capture_logs,
     get_parser_help,
+    skip_if_no_pyyaml,
     skip_if_requests_unavailable,
 )
 
@@ -176,7 +176,10 @@ def test_get_params_function():
     assert [("address", inspect._empty), ("strict", inspect._empty)] == get_param_types(params)
 
 
+@skip_if_no_pyyaml
 def test_get_params_relative_import_from_init():
+    import yaml
+
     params = get_params(yaml.safe_load)
     assert ["stream"] == get_param_names(params)
     assert params[0].annotation is not inspect._empty

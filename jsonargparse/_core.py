@@ -78,6 +78,7 @@ from ._optionals import (
     get_config_read_mode,
     import_fsspec,
     import_jsonnet,
+    pyyaml_available,
 )
 from ._parameter_resolvers import UnknownDefault
 from ._signatures import SignatureArguments
@@ -231,7 +232,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         logger: Union[bool, str, dict, logging.Logger] = False,
         version: Optional[str] = None,
         print_config: Optional[str] = "--print_config",
-        parser_mode: str = "yaml",
+        parser_mode: str = "yaml" if pyyaml_available else "json",
         dump_header: Optional[List[str]] = None,
         default_config_files: Optional[List[Union[str, os.PathLike]]] = None,
         default_env: bool = False,
@@ -250,7 +251,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             logger: Configures the logger, see :class:`.LoggerProperty`.
             version: Program version which will be printed by the --version argument.
             print_config: Name for print config argument, ``%s`` is replaced by config dest, set None to disable.
-            parser_mode: Mode for parsing config files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
+            parser_mode: Mode for parsing values: ``yaml``, ``json``, ``jsonnet`` or added via :func:`.set_loader`.
             dump_header: Header to include as comment when dumping a config object.
             default_config_files: Default config file locations, e.g. ``['~/.config/myapp/*.yaml']``.
             default_env: Set the default value on whether to parse environment variables.

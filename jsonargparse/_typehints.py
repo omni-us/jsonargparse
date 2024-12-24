@@ -56,9 +56,9 @@ from ._common import (
 )
 from ._loaders_dumpers import (
     get_loader_exceptions,
+    json_or_yaml_load,
+    json_or_yaml_loader_exceptions,
     load_value,
-    pyyaml_exceptions,
-    yaml_load,
 )
 from ._namespace import Namespace
 from ._optionals import (
@@ -762,8 +762,8 @@ def adapt_typehints(
     # Basic types
     elif typehint in leaf_types:
         if isinstance(val, str) and typehint is not str:
-            with suppress(*pyyaml_exceptions):
-                val = yaml_load(val)
+            with suppress(*json_or_yaml_loader_exceptions):
+                val = json_or_yaml_load(val)
         if typehint is float and isinstance(val, int) and not isinstance(val, bool):
             val = float(val)
         if not isinstance(val, typehint) or (typehint in (int, float) and isinstance(val, bool)):
