@@ -10,7 +10,7 @@ import pytest
 
 from jsonargparse import ArgumentError, Namespace
 from jsonargparse.typing import Path_drw, Path_fc, Path_fr, path_type
-from jsonargparse_tests.conftest import get_parser_help
+from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_dump, json_or_yaml_load
 
 # stdlib path types tests
 
@@ -20,7 +20,7 @@ def test_pathlib_path(parser, file_r):
     cfg = parser.parse_args([f"--path={file_r}"])
     assert isinstance(cfg.path, Path)
     assert str(cfg.path) == file_r
-    assert parser.dump(cfg) == "path: file_r\n"
+    assert json_or_yaml_load(parser.dump(cfg)) == {"path": "file_r"}
 
 
 def test_os_pathlike(parser, file_r):
@@ -55,7 +55,7 @@ def test_paths_config_relative_absolute(parser, tmp_cwd):
     (tmp_cwd / "example").mkdir()
     rel_yaml_file = Path("..", "example", "example.yaml")
     abs_yaml_file = (tmp_cwd / "example" / rel_yaml_file).resolve()
-    abs_yaml_file.write_text(f"file: {rel_yaml_file}\ndir: {tmp_cwd}\n")
+    abs_yaml_file.write_text(json_or_yaml_dump({"file": str(rel_yaml_file), "dir": str(tmp_cwd)}))
 
     cfg = parser.parse_args([f"--cfg={abs_yaml_file}"])
     assert os.path.realpath(tmp_cwd) == os.path.realpath(cfg.dir)
@@ -100,21 +100,21 @@ def test_register_path_dcc_default_path(parser, tmp_cwd):
     path_dcc = path_type("dcc")
     parser.add_argument("--path", type=path_dcc, default=path_dcc("test"))
     cfg = parser.parse_args([])
-    assert "path: test\n" == parser.dump(cfg)
+    assert {"path": "test"} == json_or_yaml_load(parser.dump(cfg))
     help_str = get_parser_help(parser)
     assert "(type: Path_dcc, default: test)" in help_str
 
 
 def test_path_dump(parser, tmp_cwd):
     parser.add_argument("--path", type=Path_fc)
-    cfg = parser.parse_string("path: path")
-    assert parser.dump(cfg) == "path: path\n"
+    cfg = parser.parse_string(json_or_yaml_dump({"path": "path"}))
+    assert json_or_yaml_load(parser.dump(cfg)) == {"path": "path"}
 
 
 def test_paths_dump(parser, tmp_cwd):
     parser.add_argument("--paths", nargs="+", type=Path_fc)
     cfg = parser.parse_args(["--paths", "path1", "path2"])
-    assert parser.dump(cfg) == "paths:\n- path1\n- path2\n"
+    assert json_or_yaml_load(parser.dump(cfg)) == {"paths": ["path1", "path2"]}
 
 
 # enable_path tests
