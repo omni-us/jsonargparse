@@ -6,13 +6,13 @@ Basic usage
 There are multiple ways of using jsonargparse. One is to construct low level
 parsers (see :ref:`parsers`) being almost a drop in replacement of argparse.
 However, argparse is too verbose and leads to unnecessary duplication. The
-simplest and recommended way of using jsonargparse is by using the :func:`.CLI`
-function, which has the benefit of minimizing boilerplate code. A simple example
-is:
+simplest and recommended way of using jsonargparse is by using the
+:func:`.auto_cli` function, which has the benefit of minimizing boilerplate
+code. A simple example is:
 
 .. testcode::
 
-    from jsonargparse import CLI
+    from jsonargparse import auto_cli
 
 
     def command(name: str, prize: int = 100):
@@ -26,7 +26,7 @@ is:
 
 
     if __name__ == "__main__":
-        CLI(command)
+        auto_cli(command)
 
 Note that the ``name`` and ``prize`` parameters have type hints and are
 described in the docstring. These are shown in the help of the command line
@@ -49,7 +49,7 @@ tool. In a shell you could see the help and run a command as follows:
     shown, jsonargparse needs to be installed with the ``signatures`` extras
     require as explained in section :ref:`installation`.
 
-When :func:`.CLI` receives a single class, the first arguments are for
+When :func:`.auto_cli` receives a single class, the first arguments are for
 parameters to instantiate the class, then a method name is expected (i.e.
 methods become :ref:`sub-commands`) and the remaining arguments are for
 parameters of this method. An example would be:
@@ -57,7 +57,7 @@ parameters of this method. An example would be:
 .. testcode::
 
     from random import randint
-    from jsonargparse import CLI
+    from jsonargparse import auto_cli
 
 
     class Main:
@@ -77,7 +77,7 @@ parameters of this method. An example would be:
 
 
     if __name__ == "__main__":
-        print(CLI(Main))
+        print(auto_cli(Main))
 
 Then in a shell you could run:
 
@@ -88,16 +88,16 @@ Then in a shell you could run:
 
 .. doctest:: :hide:
 
-    >>> CLI(Main, args=["--max_prize=1000", "person", "Lucky"])  # doctest: +ELLIPSIS
+    >>> auto_cli(Main, args=["--max_prize=1000", "person", "Lucky"])  # doctest: +ELLIPSIS
     'Lucky won ...€!'
 
 If the class given does not have any methods, there will be no sub-commands and
-:func:`.CLI` will return an instance of the class. For example:
+:func:`.auto_cli` will return an instance of the class. For example:
 
 .. testcode::
 
     from dataclasses import dataclass
-    from jsonargparse import CLI
+    from jsonargparse import auto_cli
 
 
     @dataclass
@@ -107,7 +107,7 @@ If the class given does not have any methods, there will be no sub-commands and
 
 
     if __name__ == "__main__":
-        print(CLI(Settings, as_positional=False))
+        print(auto_cli(Settings, as_positional=False))
 
 Then in a shell you could run:
 
@@ -118,17 +118,17 @@ Then in a shell you could run:
 
 .. doctest:: :hide:
 
-    >>> CLI(Settings, as_positional=False, args=["--name=Lucky"])  # doctest: +ELLIPSIS
+    >>> auto_cli(Settings, as_positional=False, args=["--name=Lucky"])  # doctest: +ELLIPSIS
     Settings(name='Lucky', prize=100)
 
 Note the use of ``as_positional=False`` to make required arguments as
 non-positional.
 
-If more than one function is given to :func:`.CLI`, then any of them can be run
-via :ref:`sub-commands` similar to the single class example above, i.e.
+If more than one function is given to :func:`.auto_cli`, then any of them can be
+run via :ref:`sub-commands` similar to the single class example above, i.e.
 ``example.py function [arguments]`` where ``function`` is the name of the
 function to execute. If multiple classes or a mixture of functions and classes
-is given to :func:`.CLI`, to execute a method of a class, two levels of
+is given to :func:`.auto_cli`, to execute a method of a class, two levels of
 :ref:`sub-commands` are required. The first sub-command would be the name of the
 class and the second the name of the method, i.e. ``example.py class
 [init_arguments] method [arguments]``.
@@ -159,7 +159,7 @@ Arbitrary levels of sub-commands with custom names can be defined by providing a
     }
 
     if __name__ == "__main__":
-        print(CLI(components))
+        print(auto_cli(components))
 
 Then in a shell:
 
@@ -170,7 +170,7 @@ Then in a shell:
 
 .. doctest:: :hide:
 
-    >>> CLI(components, args=["weekend", "tier1", "Lucky"])
+    >>> auto_cli(components, args=["weekend", "tier1", "Lucky"])
     'Lucky won 300€!'
 
 .. note::
@@ -186,7 +186,7 @@ Then in a shell:
 Writing configuration files
 ---------------------------
 
-All tools implemented with the :func:`.CLI` function have the ``--config``
+All tools implemented with the :func:`.auto_cli` function have the ``--config``
 option to provide settings in a config file (more details in
 :ref:`configuration-files`). This becomes very useful when the number of
 configurable parameters is large. To ease the writing of config files, there is
@@ -206,14 +206,14 @@ can be advised to follow the following steps:
 Comparison to Fire
 ------------------
 
-The :func:`.CLI` feature is similar to and inspired by `Fire
+The :func:`.auto_cli` feature is similar to and inspired by `Fire
 <https://pypi.org/project/fire/>`__. However, there are fundamental differences.
 First, the purpose is not allowing to call any python object from the command
 line. It is only intended for running functions and classes specifically written
 for this purpose. Second, the arguments are expected to have type hints, and the
 given values will be validated according to these. Third, the return values of
-the functions are not automatically printed. :func:`.CLI` returns the value and
-it is up to the developer to decide what to do with it.
+the functions are not automatically printed. :func:`.auto_cli` returns the value
+and it is up to the developer to decide what to do with it.
 
 
 .. _tutorials:
@@ -316,8 +316,7 @@ without doing any parsing. For instance `sphinx-argparse
 <https://sphinx-argparse.readthedocs.io/en/stable/>`__ can be used to include
 the help of CLIs in automatically generated documentation of a package. To use
 sphinx-argparse it is necessary to have a function that returns the parser.
-Having a CLI function this could be easily implemented with
-:func:`.capture_parser` as follows:
+This can be easily implemented with :func:`.capture_parser` as follows:
 
 .. testcode::
 
@@ -330,7 +329,7 @@ Having a CLI function this could be easily implemented with
 .. note::
 
     The official way to obtain the parser for command line tools based on
-    :func:`.CLI` is by using :func:`.capture_parser`.
+    :func:`.auto_cli` is by using :func:`.capture_parser`.
 
 
 Functions as type

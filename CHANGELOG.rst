@@ -21,6 +21,14 @@ Added
   removal of ``pyyaml`` as a required dependency in v5.0.0 (`#652
   <https://github.com/omni-us/jsonargparse/pull/652>`__).
 
+Changed
+^^^^^^^
+
+- ``jsonargparse.CLI`` renamed to ``jsonargparse.auto_cli`` to follow `PEP 8
+  <https://peps.python.org/pep-0008/#function-and-variable-names>`__ functions
+  naming convention (`#640
+  <https://github.com/omni-us/jsonargparse/pull/640>`__).
+
 Fixed
 ^^^^^
 - Help for ``Protocol`` types not working correctly (`#645
