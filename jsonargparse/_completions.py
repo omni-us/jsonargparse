@@ -51,7 +51,7 @@ def get_files_completer():
 def argcomplete_namespace(caller, parser, namespace):
     if caller == "argcomplete":
         namespace.__class__ = __import__("jsonargparse").Namespace
-        namespace = parser.merge_config(parser.get_defaults(skip_check=True), namespace).as_flat()
+        namespace = parser.merge_config(parser.get_defaults(skip_validation=True), namespace).as_flat()
     return namespace
 
 

@@ -118,10 +118,10 @@ def parse_as_dict_patch():
     def patch_parse_method(method_name):
         unpatched_method_name = "_unpatched_" + method_name
 
-        def patched_parse(self, *args, _skip_check: bool = False, **kwargs) -> Union[Namespace, Dict[str, Any]]:
+        def patched_parse(self, *args, _skip_validation: bool = False, **kwargs) -> Union[Namespace, Dict[str, Any]]:
             parse_method = getattr(self, unpatched_method_name)
-            cfg = parse_method(*args, _skip_check=_skip_check, **kwargs)
-            return cfg.as_dict() if self._parse_as_dict and not _skip_check else cfg
+            cfg = parse_method(*args, _skip_validation=_skip_validation, **kwargs)
+            return cfg.as_dict() if self._parse_as_dict and not _skip_validation else cfg
 
         setattr(ArgumentParser, unpatched_method_name, getattr(ArgumentParser, method_name))
         setattr(ArgumentParser, method_name, patched_parse)
@@ -146,7 +146,7 @@ def parse_as_dict_patch():
     # Patch dump
     def patched_dump(self, cfg: Union[Namespace, Dict[str, Any]], *args, **kwargs) -> str:
         if isinstance(cfg, dict):
-            cfg = self.parse_object(cfg, _skip_check=True)
+            cfg = self.parse_object(cfg, _skip_validation=True)
         return self._unpatched_dump(cfg, *args, **kwargs)
 
     ArgumentParser._unpatched_dump = ArgumentParser.dump
@@ -155,7 +155,7 @@ def parse_as_dict_patch():
     # Patch save
     def patched_save(self, cfg: Union[Namespace, Dict[str, Any]], *args, multifile: bool = True, **kwargs) -> None:
         if multifile and isinstance(cfg, dict):
-            cfg = self.parse_object(cfg, _skip_check=True)
+            cfg = self.parse_object(cfg, _skip_validation=True)
         return self._unpatched_save(cfg, *args, multifile=multifile, **kwargs)
 
     ArgumentParser._unpatched_save = ArgumentParser.save
@@ -530,6 +530,32 @@ class ParserDeprecations:
         if "title" in kwargs:
             kwargs["help"] = kwargs.pop("title")
         return self.add_class_arguments(*args, **kwargs)
+
+    @deprecated(
+        """
+        ArgumentParser.check_config was deprecated in v4.35.0 and will be removed in
+        v5.0.0. Instead use validate.
+    """
+    )
+    def check_config(self, *args, **kwargs):
+        return self.validate(*args, **kwargs)
+
+
+def deprecated_skip_check(component, kwargs: dict, skip_validation: bool) -> bool:
+    skip_check = kwargs.pop("skip_check", None)
+    if kwargs:
+        raise ValueError(f"Unexpected keyword parameters: {set(kwargs.keys())}")
+    if skip_check is not None:
+        skip_validation = skip_check
+        deprecation_warning(
+            component,
+            (
+                "skip_check parameter was deprecated in v4.35.0 and will be removed in "
+                "v5.0.0. Instead use skip_validation."
+            ),
+            stacklevel=3,
+        )
+    return skip_validation
 
 
 ParserError = ArgumentError
