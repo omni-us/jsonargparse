@@ -139,11 +139,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: coverage_without_pyyaml
-          path: ./coverage_without_pyyaml
+          path: ./coverage_without_pyyaml.xml
       - uses: actions/upload-artifact@v4
         with:
           name: junit_without_pyyaml
-          path: ./junit_without_pyyaml
+          path: ./junit_without_pyyaml.xml
 
   build-package:
     runs-on: ubuntu-latest
