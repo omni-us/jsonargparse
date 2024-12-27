@@ -31,6 +31,8 @@ Changed
   parameter of ``ArgumentParser.{dump, save, get_defaults}`` renamed to
   ``skip_validation`` (`#639
   <https://github.com/omni-us/jsonargparse/pull/639>`__).
+- Fail when ``Namespace`` is used as a type to make it clear about being
+  unsupported (`#656 <https://github.com/omni-us/jsonargparse/pull/656>`__).
 
 Fixed
 ^^^^^

@@ -299,6 +299,9 @@ class ActionTypeHint(Action):
         """Whether the given type hint is supported."""
         typehint = get_unaliased_type(typehint)
 
+        if is_subclass(typehint, Namespace):
+            raise ValueError("jsonargparse.Namespace is only intended for parsing results and not supported as a type.")
+
         supported = (
             typehint in root_types
             or get_typehint_origin(typehint) in root_types
