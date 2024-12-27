@@ -2,6 +2,7 @@
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
+
 [project]
 name = "jsonargparse"
 dynamic = ["version"]
@@ -121,14 +122,12 @@ maintainer = [
     "twine>=4.0.2",
 ]
 
-
 [project.urls]
 Documentation-stable = "https://jsonargparse.readthedocs.io/en/stable/"
 Documentation-latest = "https://jsonargparse.readthedocs.io/en/latest/"
 Changes = "https://jsonargparse.readthedocs.io/en/stable/changelog.html"
 GitHub = "https://github.com/omni-us/jsonargparse"
 PyPI = "https://pypi.org/project/jsonargparse"
-CircleCI = "https://circleci.com/gh/omni-us/jsonargparse"
 SonarCloud = "https://sonarcloud.io/dashboard?id=omni-us_jsonargparse"
 Codecov = "https://codecov.io/gh/omni-us/jsonargparse"
 
@@ -137,10 +136,8 @@ Codecov = "https://codecov.io/gh/omni-us/jsonargparse"
 platforms = ["Any"]
 packages = ["jsonargparse", "jsonargparse_tests"]
 
-
 [tool.setuptools.dynamic]
 version = {attr = "jsonargparse.__version__"}
-
 
 [tool.setuptools.package-data]
 jsonargparse = ["py.typed"]
