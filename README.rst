@@ -80,7 +80,7 @@ Other notable features include:
   hierarchies.
 
 - **Config file formats:** `json <https://www.json.org/>`__, `yaml
-  <https://yaml.org/>`__, `jsonnet <https://jsonnet.org/>`__ and extendible to
+  <https://yaml.org/>`__, `jsonnet <https://jsonnet.org/>`__ and extendable to
   more formats.
 
 - **Relative paths:** within config files and parsing of config paths referenced
