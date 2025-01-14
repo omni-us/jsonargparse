@@ -20,6 +20,8 @@ Added
 - Support without ``pyyaml``, though only an internal refactor prior to eventual
   removal of ``pyyaml`` as a required dependency in v5.0.0 (`#652
   <https://github.com/omni-us/jsonargparse/pull/652>`__).
+- Support for ``toml`` as config file format (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
 
 Changed
 ^^^^^^^

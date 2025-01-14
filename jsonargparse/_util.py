@@ -37,7 +37,7 @@ from ._common import (
     parser_context,
 )
 from ._deprecated import PathDeprecations
-from ._loaders_dumpers import json_dump, load_value
+from ._loaders_dumpers import json_compact_dump, load_value
 from ._optionals import (
     fsspec_support,
     get_config_read_mode,
@@ -268,10 +268,6 @@ def object_path_serializer(value):
         raise ValueError(f"Only possible to serialize an importable object, given {value}: {ex}") from ex
 
 
-def get_typehint_args(typehint):
-    return getattr(typehint, "__args__", tuple())
-
-
 def get_typehint_origin(typehint):
     if not hasattr(typehint, "__origin__"):
         typehint_class = get_import_path(typehint.__class__)
@@ -319,7 +315,7 @@ def change_to_path_dir(path: Optional["Path"]) -> Iterator[Optional[str]]:
 def hash_item(item):
     try:
         if isinstance(item, (dict, list)):
-            item_hash = hash(json_dump(item))
+            item_hash = hash(json_compact_dump(item))
         else:
             item_hash = hash(item)
     except Exception:

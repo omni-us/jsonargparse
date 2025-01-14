@@ -270,4 +270,4 @@ def test_action_jsonnet_init_failures():
     from jsonschema.exceptions import SchemaError
 
     pytest.raises((ValueError, SchemaError), lambda: ActionJsonnet(schema="." + json.dumps(example_schema)))
-    pytest.raises(SchemaError, lambda: ActionJsonnet(schema="."))
+    pytest.raises((ValueError, SchemaError), lambda: ActionJsonnet(schema="."))

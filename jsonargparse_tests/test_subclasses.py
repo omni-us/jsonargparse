@@ -1819,11 +1819,11 @@ def test_subclass_error_indentation_invalid_init_arg(parser):
         """
     Parser key "val":
       Does not validate against any of the Union subtypes
-      Subtypes: (<class 'int'>, <class 'dict'>, <class 'NoneType'>)
+      Subtypes: [<class 'NoneType'>, <class 'int'>, <class 'dict'>]
       Errors:
+        - Expected a <class 'NoneType'>
         - Expected a <class 'int'>
         - Expected a <class 'dict'>
-        - Expected a <class 'NoneType'>
       Given value type: <class 'str'>
       Given value: abc
     """

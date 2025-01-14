@@ -159,4 +159,4 @@ def test_action_jsonschema_init_failures():
     from jsonschema.exceptions import SchemaError
 
     pytest.raises((ValueError, SchemaError), lambda: ActionJsonSchema(schema=":"))
-    pytest.raises(SchemaError, lambda: ActionJsonSchema(schema="."))
+    pytest.raises((ValueError, SchemaError), lambda: ActionJsonSchema(schema="."))

@@ -29,7 +29,6 @@ from ._stubs_resolver import get_stub_types
 from ._util import (
     ClassFromFunctionBase,
     get_import_path,
-    get_typehint_args,
     get_typehint_origin,
     iter_to_set_str,
     unique,
@@ -325,7 +324,7 @@ def unpack_typed_dict_kwargs(params: ParamList, kwargs_idx: int) -> int:
     annotation = kwargs.annotation
     if is_unpack_typehint(annotation):
         params.pop(kwargs_idx)
-        annotation_args = get_typehint_args(annotation)
+        annotation_args: tuple = getattr(annotation, "__args__", tuple())
         assert len(annotation_args) == 1, "Unpack requires a single type argument"
         dict_annotations = annotation_args[0].__annotations__
         new_params = []
