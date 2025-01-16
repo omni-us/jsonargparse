@@ -682,8 +682,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             cfg_dict = load_value(cfg_str, path=cfg_path, ext_vars=ext_vars)
         except get_loader_exceptions() as ex:
             raise TypeError(f"Problems parsing config: {ex}") from ex
-        if cfg_dict is None:
-            return Namespace()
         if key and isinstance(cfg_dict, dict):
             cfg_dict = cfg_dict.get(key, {})
         if not isinstance(cfg_dict, dict):
@@ -994,6 +992,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
         default_config_files = self._get_default_config_files()
         for key, default_config_file in default_config_files:
+            default_config_file_content = default_config_file.get_content()
+            if not default_config_file_content.strip():
+                continue
             with change_to_path_dir(default_config_file), parser_context(parent_parser=self):
                 cfg_file = self._load_config_parser_mode(default_config_file.get_content(), key=key)
                 cfg = self.merge_config(cfg_file, cfg)

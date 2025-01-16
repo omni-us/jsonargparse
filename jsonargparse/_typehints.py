@@ -176,6 +176,7 @@ mapping_origin_types = {
     abc.MutableMapping,
     OrderedDict,
 }
+sequence_or_mapping_origin_types = sequence_origin_types.union(mapping_origin_types)
 callable_origin_types = {Callable, abc.Callable}
 
 literal_types = {Literal}
@@ -571,6 +572,7 @@ class ActionTypeHint(Action):
                 kwargs = {
                     "sub_add_kwargs": getattr(self, "sub_add_kwargs", {}),
                     "prev_val": prev_val,
+                    "orig_val": orig_val,
                     "append": append,
                     "enable_path": enable_path,
                     "logger": self.logger,
@@ -705,11 +707,10 @@ def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: O
     raise ValueError(message) from exception
 
 
-def raise_union_unexpected_value(uniontype, val: Any, exceptions: List[Exception]) -> NoReturn:
+def raise_union_unexpected_value(subtypes, val: Any, exceptions: List[Exception]) -> NoReturn:
     str_exceptions = [indent_text(str(e), first_line=False) for e in exceptions]
     errors = indent_text("- " + "\n- ".join(str_exceptions))
     errors = errors.replace(f". Got value: {val}", "").replace(f" {val} ", " ")
-    subtypes = uniontype.__args__
     raise ValueError(
         f"Does not validate against any of the Union subtypes\nSubtypes: {subtypes}"
         f"\nErrors:\n{errors}\nGiven value type: {type(val)}\nGiven value: {val}"
@@ -722,6 +723,7 @@ def adapt_typehints(
     serialize=False,
     instantiate_classes=False,
     prev_val=None,
+    orig_val=None,
     append=False,
     list_item=False,
     enable_path=False,
@@ -736,6 +738,7 @@ def adapt_typehints(
         "serialize": serialize,
         "instantiate_classes": instantiate_classes,
         "prev_val": prev_val,
+        "orig_val": orig_val,
         "append": append,
         "enable_path": enable_path,
         "sub_add_kwargs": sub_add_kwargs or {},
@@ -818,16 +821,19 @@ def adapt_typehints(
     # Union
     elif typehint_origin == Union:
         vals = []
-        subtypehints = sort_subtypes_for_append(subtypehints) if append else subtypehints
-        for subtypehint in subtypehints:
+        sorted_subtypes = sort_subtypes_for_union(subtypehints, val, append)
+        for subtype in sorted_subtypes:
             try:
-                vals.append(adapt_typehints(val, subtypehint, **adapt_kwargs))
+                vals.append(adapt_typehints(val, subtype, **adapt_kwargs))
                 break
             except Exception as ex:
+                if subtype is str and not isinstance(val, str) and isinstance(orig_val, str):
+                    vals.append(orig_val)
+                    continue
                 vals.append(ex)
         if all(isinstance(v, Exception) for v in vals):
-            raise_union_unexpected_value(typehint, val, vals)
-        val = [v for v in vals if not isinstance(v, Exception)][0]
+            raise_union_unexpected_value(sorted_subtypes, val, vals)
+        val = vals[-1]
 
     # Tuple or Set
     elif typehint_origin in tuple_set_origin_types:
@@ -859,6 +865,7 @@ def adapt_typehints(
             val_is_list = isinstance(val, list)
             val = prev_val + (val if val_is_list else [val])
             prev_val = prev_val + [None] * (len(val) - len(prev_val) if val_is_list else 1)
+        list_path = None
         if enable_path and type(val) is str:
             with suppress(TypeError):
                 from ._optionals import get_config_read_mode
@@ -877,7 +884,8 @@ def adapt_typehints(
                     adapt_kwargs_n = {**deepcopy(adapt_kwargs), "prev_val": prev_val[n]}
                 else:
                     adapt_kwargs_n = deepcopy(adapt_kwargs)
-                val[n] = adapt_typehints(v, subtypehints[0], list_item=True, **adapt_kwargs_n)
+                with change_to_path_dir(list_path):
+                    val[n] = adapt_typehints(v, subtypehints[0], list_item=True, **adapt_kwargs_n)
 
     # Dict, Mapping
     elif typehint_origin in mapping_origin_types:
@@ -1421,9 +1429,12 @@ def adapt_class_type(
     if dict_kwargs:
         if prev_val and prev_val.get("class_path") == value["class_path"] and prev_val.get("dict_kwargs"):
             dict_kwargs = {**prev_val.get("dict_kwargs"), **dict_kwargs}
-        value["dict_kwargs"] = {
-            k: load_value(v, simple_types=True) if isinstance(v, str) else v for k, v in dict_kwargs.items()
-        }
+        value["dict_kwargs"] = {}
+        for key, val in dict_kwargs.items():
+            if isinstance(val, str):
+                with suppress(get_loader_exceptions()):
+                    val = load_value(val, simple_types=True)
+            value["dict_kwargs"][key] = val
     return value
 
 
@@ -1449,9 +1460,18 @@ def adapt_classes_any(val, serialize, instantiate_classes, sub_add_kwargs):
     return val
 
 
-def sort_subtypes_for_append(subtypes):
-    if subtypes and len(subtypes) > 1:
-        subtypes = sorted(subtypes, key=lambda x: get_typehint_origin(x) not in sequence_origin_types)
+def sort_subtypes_for_union(subtypes, val, append):
+    if len(subtypes) > 1:
+        if isinstance(val, str):
+            key_fn = lambda x: (
+                x != NoneType,
+                get_typehint_origin(x) not in sequence_or_mapping_origin_types,
+            )
+        else:
+            key_fn = lambda x: x != NoneType
+        subtypes = sorted(subtypes, key=key_fn)
+        if append:
+            subtypes = sorted(subtypes, key=lambda x: get_typehint_origin(x) not in sequence_origin_types)
     return subtypes
 
 

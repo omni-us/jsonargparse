@@ -2,10 +2,11 @@
 
 import inspect
 import re
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from contextlib import suppress
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Type
 
 from ._common import load_value_mode, parent_parser
-from ._optionals import import_jsonnet, omegaconf_support, pyyaml_available
+from ._optionals import import_jsonnet, import_toml_dumps, import_toml_loads, omegaconf_support, pyyaml_available
 from ._type_checking import ArgumentParser
 
 __all__ = [
@@ -15,7 +16,23 @@ __all__ = [
 ]
 
 
+not_loaded = object()
 yaml_default_loader = None
+
+
+def load_basic(value):
+    value = value.strip()
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+    if value == "null":
+        return None
+    if value.isdigit() or (value.startswith("-") and value[1:].isdigit()):
+        return int(value)
+    if value.replace(".", "", 1).replace("e", "", 1).replace("-", "", 2).isdigit() and ("e" in value or "." in value):
+        return float(value)
+    return not_loaded
 
 
 def get_yaml_default_loader():
@@ -57,7 +74,7 @@ def get_yaml_default_loader():
     )
 
     yaml_default_loader = DefaultLoader
-    return DefaultLoader
+    return yaml_default_loader
 
 
 def yaml_load(stream):
@@ -74,13 +91,15 @@ def yaml_load(stream):
     return value
 
 
-def json_load(stream):
+def json_load(value):
     import json
 
-    try:
-        return json.loads(stream)
-    except json.JSONDecodeError:
-        return stream
+    return json.loads(value)
+
+
+def toml_load(value):
+    toml_loads, _ = import_toml_loads("toml_load")
+    return toml_loads(value)
 
 
 def jsonnet_load(stream, path="", ext_vars=None):
@@ -101,10 +120,15 @@ def jsonnet_load(stream, path="", ext_vars=None):
 loaders: Dict[str, Callable] = {
     "yaml": yaml_load,
     "json": json_load,
-    "jsonnet": jsonnet_load,
+    "toml": toml_load,
 }
-
 loader_exceptions: Dict[str, Tuple[Type[Exception], ...]] = {}
+loader_json_superset: Dict[str, bool] = {
+    "yaml": True,
+    "json": True,
+    "toml": False,
+}
+loader_params: Dict[str, Set[str]] = {}
 
 
 def get_load_value_mode() -> str:
@@ -123,28 +147,56 @@ def get_loader_exceptions(mode: Optional[str] = None) -> Tuple[Type[Exception], 
         if mode == "yaml":
             loader_exceptions[mode] = (__import__("yaml").YAMLError,)
         elif mode == "json":
-            loader_exceptions[mode] = tuple()
+            loader_exceptions[mode] = (__import__("json").JSONDecodeError,)
+        elif mode == "toml":
+            loader_exceptions[mode] = (import_toml_loads("get_loader_exceptions")[1],)
         elif mode == "jsonnet":
-            return get_loader_exceptions("yaml" if pyyaml_available else "json")
+            return get_loader_exceptions("yaml" if pyyaml_available else "json") + (ValueError,)
     return loader_exceptions[mode]
 
 
-json_or_yaml_load = yaml_load if pyyaml_available else json_load
+def json_or_yaml_load(value):
+    if pyyaml_available:
+        if isinstance(value, str) and value.strip() == "":
+            return value
+        return yaml_load(value)
+    return json_load(value)
+
+
 json_or_yaml_loader_exceptions = get_loader_exceptions("yaml" if pyyaml_available else "json")
 
 
+def load_list_or_dict(value: str):
+    strip = value.strip()
+    if (strip.startswith("[") and strip.endswith("]")) or (strip.startswith("{") and strip.endswith("}")):
+        import json
+
+        with suppress(json.JSONDecodeError):
+            return json.loads(strip)
+    return not_loaded
+
+
 def load_value(value: str, simple_types: bool = False, **kwargs):
-    if not value:
-        return None
-    elif value.strip() == "-":
+    if value.strip() == "-":
         return value
-    loader = loaders[get_load_value_mode()]
-    if kwargs:
-        params = set(list(inspect.signature(loader).parameters)[1:])
-        kwargs = {k: v for k, v in kwargs.items() if k in params}
-    loaded_value = loader(value, **kwargs)
+
+    loaded_value = load_basic(value)
+
+    mode = get_load_value_mode()
+    if loaded_value is not_loaded and not loader_json_superset[mode]:
+        loaded_value = load_list_or_dict(value)
+
+    if loaded_value is not_loaded:
+        loader = loaders[mode]
+        load_kwargs = {}
+        if kwargs and mode in loader_params:
+            params = loader_params[mode]
+            load_kwargs = {k: v for k, v in kwargs.items() if k in params}
+        loaded_value = loader(value, **load_kwargs)
+
     if not simple_types and isinstance(loaded_value, (int, float, bool, str)):
         loaded_value = value
+
     return loaded_value
 
 
@@ -172,7 +224,7 @@ def yaml_comments_dump(data, parser):
     return formatter.add_yaml_comments(dump)
 
 
-def json_dump(data):
+def json_compact_dump(data):
     import json
 
     return json.dumps(data, separators=(",", ":"), **dump_json_kwargs)
@@ -184,11 +236,18 @@ def json_indented_dump(data):
     return json.dumps(data, indent=2, **dump_json_kwargs) + "\n"
 
 
+def toml_dump(data):
+    toml_dumps = import_toml_dumps("toml_dump")
+    return toml_dumps(data)
+
+
 dumpers: Dict[str, Callable] = {
     "yaml": yaml_dump,
     "yaml_comments": yaml_comments_dump,
-    "json": json_dump,
+    "json": json_compact_dump,
+    "json_compact": json_compact_dump,
     "json_indented": json_indented_dump,
+    "toml": toml_dump,
     "jsonnet": json_indented_dump,
 }
 
@@ -196,6 +255,7 @@ comment_prefix: Dict[str, str] = {
     "yaml": "# ",
     "yaml_comments": "# ",
     "jsonnet": "// ",
+    "toml": "# ",
 }
 
 
@@ -220,6 +280,7 @@ def set_loader(
     mode: str,
     loader_fn: Callable[[str], Any],
     exceptions: Tuple[Type[Exception], ...] = tuple(),
+    json_superset: bool = True,
 ):
     """Sets the value loader function to be used when parsing with a certain mode.
 
@@ -234,9 +295,14 @@ def set_loader(
         loader_fn: The loader function to set. Example: ``yaml.safe_load``.
         exceptions: Exceptions that the loader can raise when load fails.
             Example: (yaml.YAMLError,).
+        json_superset: Whether the loader can load JSON data.
     """
     loaders[mode] = loader_fn
     loader_exceptions[mode] = exceptions
+    loader_json_superset[mode] = json_superset
+    params = set(list(inspect.signature(loader_fn).parameters)[1:])
+    if params:
+        loader_params[mode] = params
 
 
 def get_loader(mode: str):
@@ -259,3 +325,6 @@ def set_omegaconf_loader():
         from ._optionals import get_omegaconf_loader
 
         set_loader("omegaconf", get_omegaconf_loader())
+
+
+set_loader("jsonnet", jsonnet_load, get_loader_exceptions("jsonnet"))

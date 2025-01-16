@@ -58,6 +58,7 @@ from jsonargparse_tests.conftest import (
     get_parser_help,
     json_or_yaml_dump,
     json_or_yaml_load,
+    parser_modes,
 )
 
 
@@ -76,15 +77,17 @@ def test_namespace_unsupported_as_type(parser, typehint):
 # basic types tests
 
 
+@parser_modes
 def test_str_no_strip(parser):
     parser.add_argument("--op", type=Optional[str])
-    parser.add_argument("--cfg", action="config")
     assert "  " == parser.parse_args(["--op", "  "]).op
     assert "" == parser.parse_args(["--op", ""]).op
     assert " abc " == parser.parse_args(["--op= abc "]).op
     assert "xyz: " == parser.parse_args(["--op=xyz: "]).op
-    assert " " == parser.parse_args(['--cfg={"op":" "}']).op
     assert None is parser.parse_args(["--op=null"]).op
+    if parser.parser_mode != "toml":
+        parser.add_argument("--cfg", action="config")
+        assert " " == parser.parse_args(['--cfg={"op":" "}']).op
 
 
 @pytest.mark.parametrize("value", ["2022-04-12", "2022-04-32"])
@@ -93,12 +96,14 @@ def test_str_not_timestamp(parser, value):
     assert value == parser.parse_args([value]).foo
 
 
+@parser_modes
 @pytest.mark.parametrize("value", ["1", "02", "3.40", "5.7e-8"])
 def test_str_number_value(parser, value):
     parser.add_argument("--val", type=str)
     assert value == parser.parse_args([f"--val={value}"]).val
 
 
+@parser_modes
 def test_str_yaml_constructor_error(parser):
     parser.add_argument("--val", type=str)
     assert "{{something}}" == parser.parse_args(["--val={{something}}"]).val
@@ -124,6 +129,7 @@ def test_bool_not_a_number(parser, num_type):
             parser.parse_object({"num": value})
 
 
+@parser_modes
 def test_float_scientific_notation(parser):
     parser.add_argument("--num", type=float)
     assert 1e-3 == parser.parse_args(["--num=1e-3"]).num
@@ -136,6 +142,7 @@ def test_complex_number(parser):
     assert json_or_yaml_load(parser.dump(cfg)) == {"complex": "(2+3j)"}
 
 
+@parser_modes
 def test_literal(parser):
     parser.add_argument("--str", type=Literal["a", "b", None])
     parser.add_argument("--int", type=Literal[3, 4])
@@ -162,6 +169,7 @@ def test_union_of_literals(parser):
     assert 2 == parser.parse_args(["--literal=2"]).literal
 
 
+@parser_modes
 def test_type_any(parser):
     parser.add_argument("--any", type=Any)
     assert "abc" == parser.parse_args(["--any=abc"]).any
@@ -215,6 +223,7 @@ class EnumABC(Enum):
     C = 3
 
 
+@parser_modes
 def test_enum_parse(parser):
     parser.add_argument("--enum", type=EnumABC)
     for val in ["A", "B", "C"]:
@@ -270,6 +279,7 @@ def test_literal_enum_values(parser):
 # set tests
 
 
+@parser_modes
 def test_set(parser):
     parser.add_argument("--set", type=Set[int])
     assert {1, 2} == parser.parse_args(["--set=[1, 2]"]).set
@@ -281,6 +291,7 @@ def test_set(parser):
 # tuple tests
 
 
+@parser_modes
 def test_tuple_without_arg(parser):
     parser.add_argument("--tuple", type=tuple)
     cfg = parser.parse_args(['--tuple=[1, "a", true]'])
@@ -289,12 +300,14 @@ def test_tuple_without_arg(parser):
     assert "--tuple [ITEM,...] (type: tuple, default: null)" in help_str
 
 
+@parser_modes
 def test_tuples_nested(parser):
     parser.add_argument("--tuple", type=Tuple[Tuple[str, str], Tuple[Tuple[int, float], Tuple[int, float]]])
     cfg = parser.parse_args(['--tuple=[["foo", "bar"], [[1, 2.02], [3, 3.09]]]'])
     assert (("foo", "bar"), ((1, 2.02), (3, 3.09))) == cfg.tuple
 
 
+@parser_modes
 def test_tuple_ellipsis(parser):
     parser.add_argument("--tuple", type=Tuple[float, ...])
     assert (1.2,) == parser.parse_args(["--tuple=[1.2]"]).tuple
@@ -325,6 +338,7 @@ def test_tuple_union(parser, tmp_cwd):
 # list tests
 
 
+@parser_modes
 @pytest.mark.parametrize("list_type", [Iterable, List, Sequence], ids=str)
 def test_list_variants(parser, list_type):
     parser.add_argument("--list", type=list_type[int])
@@ -345,6 +359,7 @@ def test_list_enum(parser):
     assert [EnumABC.B, EnumABC.A] == parser.parse_args(['--list=["B", "A"]']).list
 
 
+@parser_modes
 def test_list_tuple(parser):
     parser.add_argument("--list", type=List[Tuple[int, float]])
     cfg = parser.parse_args(["--list=[[1, 2.02], [3, 3.09]]"])
@@ -365,6 +380,7 @@ def test_list_str_positional(parser):
     assert cfg.list == ["a", "b"]
 
 
+@parser_modes
 def test_sequence_default_tuple(parser):
     parser.add_argument("--seq", type=Sequence[str], default=("one", "two"))
     cfg = parser.parse_args([])
@@ -374,6 +390,7 @@ def test_sequence_default_tuple(parser):
 # list append tests
 
 
+@parser_modes
 def test_list_append(parser):
     parser.add_argument("--val", type=Union[int, float, List[int]])
     assert 0 == parser.parse_args(["--val=0"]).val
@@ -385,6 +402,7 @@ def test_list_append(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--val=a", "--val+=1"]))
 
 
+@parser_modes
 def test_list_append_default_empty(parser):
     parser.add_argument("--list", type=List[str], default=[])
     assert [] == parser.get_defaults().list
@@ -394,6 +412,7 @@ def test_list_append_default_empty(parser):
     assert [] == parser.get_defaults().list
 
 
+@parser_modes
 def test_list_append_config(parser):
     parser.add_argument("--cfg", action="config")
     parser.add_argument("--val", type=List[int], default=[1, 2])
@@ -468,6 +487,7 @@ def test_list_append_subcommand_subparser_default_config_files(parser, subparser
 # dict tests
 
 
+@parser_modes
 def test_dict_without_arg(parser):
     parser.add_argument("--dict", type=dict)
     assert {} == parser.parse_args(["--dict={}"])["dict"]
@@ -475,6 +495,7 @@ def test_dict_without_arg(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--dict=1"]))
 
 
+@parser_modes
 def test_dict_int_keys(parser):
     parser.add_argument("--d", type=Dict[int, str])
     parser.add_argument("--cfg", action="config")
@@ -514,12 +535,14 @@ def test_dict_command_line_set_items_with_space(parser):
     assert {"a": "x y"} == cfg.dict
 
 
+@parser_modes
 def test_mapping_nested_without_args(parser):
     parser.add_argument("--map", type=Mapping[str, Union[int, Mapping]])
     assert {"a": 1} == parser.parse_args(['--map={"a": 1}']).map
     assert {"b": {"c": 2}} == parser.parse_args(['--map={"b": {"c": 2}}']).map
 
 
+@parser_modes
 def test_typeddict_without_arg(parser):
     parser.add_argument("--typeddict", type=TypedDict("MyDict", {}))
     assert {} == parser.parse_args(["--typeddict={}"])["typeddict"]
@@ -565,7 +588,7 @@ def test_typeddict_with_args_ntotal(parser):
 
 
 @pytest.mark.skipif(not NotRequired, reason="NotRequired introduced in python 3.11 or backported in typing_extensions")
-def test_not_required_support(parser):
+def test_not_required_support():
     assert ActionTypeHint.is_supported_typehint(NotRequired[Any])
 
 
@@ -592,7 +615,7 @@ def test_typeddict_with_not_required_arg(parser):
 
 
 @pytest.mark.skipif(not Required, reason="Required introduced in python 3.11 or backported in typing_extensions")
-def test_required_support(parser):
+def test_required_support():
     assert ActionTypeHint.is_supported_typehint(Required[Any])
 
 

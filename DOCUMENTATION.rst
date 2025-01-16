@@ -190,9 +190,9 @@ All tools implemented with the :func:`.auto_cli` function have the ``--config``
 option to provide settings in a config file (more details in
 :ref:`configuration-files`). This becomes very useful when the number of
 configurable parameters is large. To ease the writing of config files, there is
-also the option ``--print_config`` which prints to standard output a yaml with
-all settings that the tool supports with their default values. Users of the tool
-can be advised to follow the following steps:
+also the option ``--print_config`` which prints to standard output all settings
+that the tool supports with their default values. Users of the tool can be
+advised to follow the following steps:
 
 .. code-block:: bash
 
@@ -1246,27 +1246,30 @@ is useful for example for class instantiation.
 Configuration files
 ===================
 
-An important feature of jsonargparse is the parsing of yaml/json files. The dot
-notation hierarchy of the arguments (see :ref:`nested-namespaces`) are used for
-the expected structure in the config files.
+An important feature of jsonargparse is its ability to parse configuration
+files. The dot notation hierarchy of the arguments (see
+:ref:`nested-namespaces`) defines the expected structure in these files. By
+default, the configuration format is ``yaml``. To change the format, use the
+``parser_mode`` parameter when instantiating the parser, e.g.,
+``ArgumentParser(parser_mode="toml")``.
 
 The :py:attr:`.ArgumentParser.default_config_files` property can be set when
-creating a parser to specify patterns to search for configuration files. For
-example if a parser is created as
+creating a parser to specify patterns for searching configuration files. For
+example, if a parser is created as
 ``ArgumentParser(default_config_files=['~/.myapp.yaml', '/etc/myapp.yaml'])``,
-when parsing if any of those two config files exist it will be parsed and used
-to override the defaults. All matched config files are parsed and applied in the
-given order. The default config files are always parsed first, this means that
-any command line argument will override its values.
+it will search for and parse any of these files if they exist, using them to
+override the defaults. All matched configuration files are parsed and applied in
+the given order. The default configuration files are always parsed first,
+meaning any command line argument will override their values.
 
-It is also possible to add an argument to explicitly provide a configuration
-file path. Providing a config file as an argument does not disable the parsing
-of ``default_config_files``. The config argument would be parsed in the specific
-position among the command line arguments. Therefore the arguments found after
-would override the values from that config file. The config argument can be
-given multiple times, each overriding the values of the previous. Using the
-example parser from the :ref:`nested-namespaces` section above, we could have
-the following config file in yaml format:
+You can also add an argument to explicitly provide a configuration file path.
+Providing a configuration file as an argument does not disable the parsing of
+``default_config_files``. The configuration argument will be parsed in the
+specific position among the command line arguments, so arguments found afterward
+will override the values from that configuration file. The configuration
+argument can be given multiple times, each instance overriding the values of the
+previous one. Using the example parser from the :ref:`nested-namespaces` section
+above, we could have the following configuration file in yaml format:
 
 .. code-block:: yaml
 
@@ -1336,10 +1339,10 @@ yaml comments by using ``--print_config=comments``. Another option is
 
 From within python it is also possible to serialize a config object by using
 either the :py:meth:`.ArgumentParser.dump` or :py:meth:`.ArgumentParser.save`
-methods. Three formats with a particular style are supported: ``yaml``, ``json``
-and ``json_indented``. It is possible to add more dumping formats by using the
-:func:`.set_dumper` function. For example to allow dumping using PyYAML's
-``default_flow_style`` do the following:
+methods. Several formats with a particular style are supported: ``yaml``,
+``toml``, ``json_compact`` and ``json_indented``. It is possible to add more
+dumping formats by using the :func:`.set_dumper` function. For example to allow
+dumping using PyYAML's ``default_flow_style`` do the following:
 
 .. testcode::
 

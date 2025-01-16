@@ -41,6 +41,7 @@ all = [
     "jsonargparse[signatures]",
     "jsonargparse[jsonschema]",
     "jsonargparse[jsonnet]",
+    "jsonargparse[toml]",
     "jsonargparse[urls]",
     "jsonargparse[fsspec]",
     "jsonargparse[ruyaml]",
@@ -60,6 +61,9 @@ jsonnet = [
     "jsonnet>=0.13.0; os_name == 'posix' and python_version < '3.13'",
     "jsonnet-binary>=0.17.0; os_name != 'posix' and python_version < '3.13'",
     "jsonnet-sdist==2024.6.23; python_version == '3.13'",
+]
+toml = [
+    "toml>=0.10.2",
 ]
 urls = [
     "requests>=2.18.4",

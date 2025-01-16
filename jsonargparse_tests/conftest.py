@@ -13,13 +13,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from jsonargparse import ArgumentParser
-from jsonargparse._loaders_dumpers import json_dump, json_load, yaml_dump, yaml_load
+from jsonargparse._loaders_dumpers import json_compact_dump, json_load, yaml_dump, yaml_load
 from jsonargparse._optionals import (
     docstring_parser_support,
     fsspec_support,
+    jsonnet_support,
     jsonschema_support,
     pyyaml_available,
     set_docstring_parse_options,
+    toml_load_available,
     url_support,
 )
 
@@ -34,7 +36,7 @@ columns_env = {"COLUMNS": "200"}
 is_cpython = platform.python_implementation() == "CPython"
 is_posix = os.name == "posix"
 
-json_or_yaml_dump = yaml_dump if pyyaml_available else json_dump
+json_or_yaml_dump = yaml_dump if pyyaml_available else json_compact_dump
 json_or_yaml_load = yaml_load if pyyaml_available else json_load
 
 skip_if_no_pyyaml = pytest.mark.skipif(
@@ -97,9 +99,26 @@ else:
     responses_activate = nothing_decorator
 
 
+def parser_modes(test_function):
+    if "JSONARGPARSE_OMEGACONF_FULL_TEST" in os.environ:
+        parser_modes = ["yaml"]
+    else:
+        parser_modes = ["json"]
+        if toml_load_available:
+            parser_modes += ["toml"]
+        if pyyaml_available:
+            parser_modes += ["yaml"]
+        if jsonnet_support:
+            parser_modes += ["jsonnet"]
+    return pytest.mark.parametrize("parser", parser_modes, indirect=True)(test_function)
+
+
 @pytest.fixture
-def parser() -> ArgumentParser:
-    return ArgumentParser(exit_on_error=False)
+def parser(request) -> ArgumentParser:
+    kwargs = {}
+    if getattr(request, "param", None):
+        kwargs["parser_mode"] = request.param
+    return ArgumentParser(exit_on_error=False, **kwargs)
 
 
 @pytest.fixture

@@ -612,7 +612,7 @@ def test_get_params_class_with_kwargs_in_dict_attribute():
 )
 def test_get_params_local_import_with_kwargs_in_dict_attribute(cls):
     params = get_params(cls)
-    assert ["mode", "loader_fn", "exceptions"] == [p.name for p in params]
+    assert ["mode", "loader_fn", "exceptions", "json_superset"] == [p.name for p in params]
     with source_unavailable():
         assert get_params(cls) == []
 
@@ -840,7 +840,7 @@ def test_get_params_function_module_class():
 
 def test_get_params_function_local_import():
     params = get_params(function_local_import)
-    assert ["mode", "loader_fn", "exceptions"] == [p.name for p in params]
+    assert ["mode", "loader_fn", "exceptions", "json_superset"] == [p.name for p in params]
 
 
 def test_get_params_function_constant_boolean():

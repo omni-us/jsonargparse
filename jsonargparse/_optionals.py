@@ -15,6 +15,8 @@ __all__ = [
 
 
 pyyaml_available = bool(find_spec("yaml"))
+toml_load_available = bool(find_spec("toml") or find_spec("tomllib"))
+toml_dump_available = bool(find_spec("toml"))
 typing_extensions_support = find_spec("typing_extensions") is not None
 typeshed_client_support = find_spec("typeshed_client") is not None
 jsonschema_support = find_spec("jsonschema") is not None
@@ -101,6 +103,24 @@ def missing_package_raise(package, importer):
         yield None
     except ImportError as ex:
         raise ImportError(f"{package} package is required by {importer} :: {ex}") from ex
+
+
+def import_toml_loads(importer):
+    if find_spec("tomllib"):
+        import tomllib
+
+        return tomllib.loads, tomllib.TOMLDecodeError
+    else:
+        with missing_package_raise("toml", importer):
+            import toml
+
+        return toml.loads, toml.TomlDecodeError
+
+
+def import_toml_dumps(importer):
+    with missing_package_raise("toml", importer):
+        import toml
+    return toml.dumps
 
 
 def import_jsonschema(importer):
