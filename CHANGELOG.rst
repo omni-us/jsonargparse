@@ -12,6 +12,16 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.37.0 (2025-01-??)
+--------------------
+
+Added
+^^^^^
+- Experimental support for sub-classing ``ArgumentParser`` to customize
+  ``add_argument`` (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+
+
 v4.36.0 (2025-01-17)
 --------------------
 

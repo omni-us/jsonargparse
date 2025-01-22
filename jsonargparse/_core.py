@@ -88,6 +88,7 @@ from ._util import (
     Path,
     argument_error,
     change_to_path_dir,
+    get_argument_group_class,
     get_private_kwargs,
     identity,
     return_parser_if_captured,
@@ -102,7 +103,7 @@ _parse_known_has_intermixed = "intermixed" in inspect.signature(argparse.Argumen
 class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
     """Extension of argparse._ActionsContainer to support additional functionalities."""
 
-    _action_groups: Sequence["_ArgumentGroup"]  # type: ignore[assignment]
+    _action_groups: Sequence["ArgumentGroup"]  # type: ignore[assignment]
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -154,7 +155,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             action.required = False
         return action
 
-    def add_argument_group(self, *args, name: Optional[str] = None, **kwargs) -> "_ArgumentGroup":
+    def add_argument_group(self, *args, name: Optional[str] = None, **kwargs) -> "ArgumentGroup":
         """Adds a group to the parser.
 
         All the arguments from `argparse.ArgumentParser.add_argument_group
@@ -173,7 +174,8 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         parser = self.parser if hasattr(self, "parser") else self
         if name is not None and name in parser.groups:  # type: ignore[union-attr]
             raise ValueError(f"Group with name {name} already exists.")
-        group = _ArgumentGroup(parser, *args, logger=parser._logger, **kwargs)
+        group_class = getattr(parser, "_group_class", ArgumentGroup)
+        group = group_class(parser, *args, logger=parser._logger, **kwargs)
         group.parser = parser
         parser._action_groups.append(group)  # type: ignore[union-attr]
         if name is not None:
@@ -208,7 +210,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             self.set_defaults(kwargs)
 
 
-class _ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
+class ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     """Extension of argparse._ArgumentGroup to support additional functionalities."""
 
     dest: Optional[str] = None
@@ -219,7 +221,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
     """Parser for command line, configuration files and environment variables."""
 
     formatter_class: Type[DefaultHelpFormatter]
-    groups: Optional[Dict[str, "_ArgumentGroup"]] = None
+    groups: Optional[Dict[str, ArgumentGroup]] = None
+    _group_class: Type[ArgumentGroup]
     _subcommands_action: Optional[_ActionSubCommands] = None
     _instantiators: Optional[InstantiatorsDictType] = None
 
@@ -258,6 +261,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             default_meta: Set the default value on whether to include metadata in config objects.
         """
         super().__init__(*args, formatter_class=formatter_class, logger=logger, **kwargs)
+        self._group_class = get_argument_group_class(self)
         if self.groups is None:
             self.groups = {}
         self.exit_on_error = exit_on_error
@@ -1183,7 +1187,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Returns:
             A configuration object with all subclasses and class groups instantiated.
         """
-        components: List[Union[ActionTypeHint, _ActionConfigLoad, _ArgumentGroup]] = []
+        components: List[Union[ActionTypeHint, _ActionConfigLoad, ArgumentGroup]] = []
         for action in filter_default_actions(self._actions):
             if isinstance(action, ActionTypeHint) or (
                 isinstance(action, _ActionConfigLoad) and is_dataclass_like(action.basetype)
@@ -1439,7 +1443,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         if len(self._default_config_files) > 0:
             if not hasattr(self, "_default_config_files_group"):
                 group_title = "default config file locations"
-                group = _ArgumentGroup(self, title=group_title)
+                group_class = getattr(self, "_group_class", ArgumentGroup)
+                group = group_class(self, title=group_title)
                 self._action_groups = [group] + self._action_groups  # type: ignore[operator]
                 self._default_config_files_group = group
         elif hasattr(self, "_default_config_files_group"):
