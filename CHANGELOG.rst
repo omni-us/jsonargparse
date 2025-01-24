@@ -18,8 +18,8 @@ v4.37.0 (2025-01-??)
 Added
 ^^^^^
 - Experimental support for sub-classing ``ArgumentParser`` to customize
-  ``add_argument`` (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  ``add_argument`` (`#661
+  <https://github.com/omni-us/jsonargparse/pull/661>`__).
 
 
 v4.36.0 (2025-01-17)
