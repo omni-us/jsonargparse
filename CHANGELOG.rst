@@ -17,8 +17,8 @@ v4.36.1 (2025-01-??)
 
 Fixed
 ^^^^^
-- Incorrect instantiation order when instantiation targets share a parent (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+- Incorrect instantiation order when instantiation targets share a parent (`#662
+  <https://github.com/omni-us/jsonargparse/pull/662>`__).
 
 
 v4.36.0 (2025-01-17)
