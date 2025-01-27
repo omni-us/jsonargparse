@@ -826,6 +826,80 @@ def test_on_instantiate_within_deeper_subclass(parser, caplog):
     assert "Applied link 'encoder.output_channels --> decoder.init_args.input_channels'" in caplog.text
 
 
+class SourceA:
+    def __init__(self, param_a: str):
+        self.attr_a = param_a
+
+
+class SourceB:
+    def __init__(self, param_b: str):
+        self.attr_b = param_b
+
+
+class HierarchyGrandchild:
+    def __init__(self, param_grandchild: str):
+        self.attr_grandchild = param_grandchild
+
+
+class HierarchyChild:
+    def __init__(self, param_child: str, grandchild: HierarchyGrandchild):
+        self.attr_child = param_child
+        self.grandchild = grandchild
+
+
+class HierarchyRoot:
+    def __init__(self, child: HierarchyChild):
+        self.child = child
+
+
+def get_source_a_attr(source_a):
+    assert isinstance(source_a, SourceA)
+    return source_a.attr_a
+
+
+def test_on_instantiate_targets_share_parent(parser):
+    config = {
+        "source_a": {
+            "param_a": "value a",
+        },
+        "source_b": {
+            "param_b": "value b",
+        },
+        "root": {
+            "child": {
+                "class_path": "HierarchyChild",
+                "init_args": {
+                    "grandchild": {
+                        "class_path": "HierarchyGrandchild",
+                    },
+                },
+            },
+        },
+    }
+    parser.add_argument("--config", action="config")
+    parser.add_class_arguments(SourceA, "source_a")
+    parser.add_class_arguments(SourceB, "source_b")
+    parser.add_class_arguments(HierarchyRoot, "root")
+    parser.link_arguments(
+        "source_a",
+        "root.child.init_args.grandchild.init_args.param_grandchild",
+        apply_on="instantiate",
+        compute_fn=get_source_a_attr,
+    )
+    parser.link_arguments("source_b.attr_b", "root.child.init_args.param_child", apply_on="instantiate")
+    cfg = parser.parse_args([f"--config={json.dumps(config)}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.source_a, SourceA)
+    assert isinstance(init.source_b, SourceB)
+    assert isinstance(init.root, HierarchyRoot)
+    assert isinstance(init.root.child, HierarchyChild)
+    assert isinstance(init.root.child.grandchild, HierarchyGrandchild)
+    assert init.source_a.attr_a == "value a"
+    assert init.root.child.grandchild.attr_grandchild is init.source_a.attr_a
+    assert init.source_b.attr_b == "value b"
+    assert init.root.child.attr_child is init.source_b.attr_b
+
+
 # link creation failures
 
 
