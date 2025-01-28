@@ -1565,13 +1565,13 @@ that don't have attribute docstrings. To enable, do as follows:
 Customization of arguments
 --------------------------
 
-Since the arguments are added automatically based on the signatures, the
-developer has little control over how those arguments behave. One way to
-customize some of the arguments is to create a subclass of and override
-:py:meth:`.ArgumentParser.add_argument`. For example, by default ``bool``
-arguments are added such that from command line they require a ``true|false``
-value to be given. To change this such that instead :class:`.ActionYesNo` is
-used through a CLI based on :func:`.auto_cli`, you can:
+Since the arguments are added automatically based on the function signatures,
+the developer has limited control over their behavior. To customize some of the
+arguments, you can create a subclass and override the
+:py:meth:`.ArgumentParser.add_argument` method. For example, by default,
+``bool`` arguments require a ``true|false`` value from the command line. To
+change this behavior and use :class:`.ActionYesNo` instead, through a CLI based
+on :func:`.auto_cli`, you can:
 
 .. testcode::
 
