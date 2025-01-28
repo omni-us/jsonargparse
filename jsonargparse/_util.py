@@ -458,6 +458,31 @@ def resolve_relative_path(path: str) -> str:
     return "/".join(resolved)
 
 
+def get_argument_group_class(parser):
+    import ast
+
+    from ._core import ActionsContainer, ArgumentGroup
+
+    if parser.__class__.add_argument != ActionsContainer.add_argument:
+        try:
+            add_argument = parser.__class__.add_argument
+            source = inspect.getsource(add_argument)
+            source = "class _ArgumentGroupAutoSubclass(ArgumentGroup):\n" + source
+            class_ast = ast.parse(source)
+            code = compile(class_ast, filename="<ast>", mode="exec")
+            namespace = {**add_argument.__globals__, "ArgumentGroup": ArgumentGroup}
+            exec(code, namespace)
+            group_class = namespace["_ArgumentGroupAutoSubclass"]
+            group_class.__module__ = parser.__class__.__module__
+            add_argument.__globals__[group_class.__name__] = group_class
+            return group_class
+        except Exception as ex:
+            parser.logger.debug(
+                f"Failed to create ArgumentGroup subclass based on {parser.__class__.__name__}: {ex}", exc_info=ex
+            )
+    return ArgumentGroup
+
+
 class PathError(TypeError):
     """Exception raised for errors in the Path class."""
 
