@@ -1562,6 +1562,33 @@ that don't have attribute docstrings. To enable, do as follows:
     set_docstring_parse_options(style=DocstringStyle.GOOGLE)
     set_docstring_parse_options(attribute_docstrings=False)
 
+Customization of arguments
+--------------------------
+
+Since the arguments are added automatically based on the function signatures,
+the developer has limited control over their behavior. To customize some of the
+arguments, you can create a subclass and override the
+:py:meth:`.ArgumentParser.add_argument` method. For example, by default,
+``bool`` arguments require a ``true|false`` value from the command line. To
+change this behavior and use :class:`.ActionYesNo` instead, through a CLI based
+on :func:`.auto_cli`, you can:
+
+.. testcode::
+
+    from jsonargparse import ArgumentParser, auto_cli
+
+    class CustomArgumentParser(ArgumentParser):
+        def add_argument(self, *args, **kwargs):
+            if "type" in kwargs and kwargs["type"] == bool:
+                kwargs.pop("type")
+                kwargs["action"] = ActionYesNo
+            return super().add_argument(*args, **kwargs)
+
+    def main_function(flag: bool = False):
+        ...
+
+    if __name__ == "__main__":
+        auto_cli(main_function, parser_class=CustomArgumentParser)
 
 Classes from functions
 ----------------------

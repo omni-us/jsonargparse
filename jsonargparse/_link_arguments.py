@@ -20,7 +20,7 @@ from ._actions import (
 )
 from ._namespace import Namespace, split_key, split_key_leaf
 from ._parameter_resolvers import get_signature_parameters
-from ._type_checking import ArgumentParser, _ArgumentGroup
+from ._type_checking import ArgumentGroup, ArgumentParser
 
 __all__ = ["ArgumentLinking"]
 
@@ -47,7 +47,7 @@ def find_subclass_action_or_class_group(
     parser: "ArgumentParser",
     key: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
-) -> Optional[Union[ArgparseAction, "_ArgumentGroup"]]:
+) -> Optional[Union[ArgparseAction, "ArgumentGroup"]]:
     from ._typehints import ActionTypeHint
 
     action = _find_parent_action(parser, key, exclude=exclude)

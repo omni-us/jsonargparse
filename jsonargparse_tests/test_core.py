@@ -43,6 +43,7 @@ from jsonargparse_tests.conftest import (
     skip_if_not_posix,
     skip_if_responses_unavailable,
     skip_if_running_as_root,
+    source_unavailable,
 )
 
 
@@ -1068,3 +1069,33 @@ def test_default_meta_property():
 def test_pickle_parser(example_parser):
     parser = pickle.loads(pickle.dumps(example_parser))
     assert example_parser.get_defaults() == parser.get_defaults()
+
+
+def replace_underscores(args):
+    return [arg.replace("_", "-") for arg in args]
+
+
+class UnderscoresToDashesParser(ArgumentParser):
+    def add_argument(self, *args, **kwargs):
+        args = replace_underscores(args)
+        return super().add_argument(*args, **kwargs)
+
+
+def test_get_argument_group_class_failure(logger):
+    with source_unavailable(), capture_logs(logger) as logs:
+        UnderscoresToDashesParser(logger=logger)
+    assert "Failed to create ArgumentGroup subclass based on" in logs.getvalue()
+
+
+def test_get_argument_group_class_underscores_to_dashes():
+    parser = UnderscoresToDashesParser()
+    parser.add_argument("--int_value", type=int, default=1)
+    group = parser.add_argument_group("group")
+    group.add_argument("--group_float_value", type=float, default=2.0)
+    help_str = get_parser_help(parser)
+    assert "--int-value" in help_str
+    assert "--group-float-value" in help_str
+    cfg = parser.parse_args(["--int-value=2", "--group-float-value=3.0"])
+    assert cfg == Namespace(int_value=2, group_float_value=3.0)
+    clone_parser = pickle.loads(pickle.dumps(parser))
+    assert clone_parser.get_defaults() == parser.get_defaults()
