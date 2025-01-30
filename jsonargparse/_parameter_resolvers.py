@@ -8,7 +8,7 @@ from collections import defaultdict
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from copy import deepcopy
-from functools import partial
+from functools import partial, partialmethod
 from importlib import import_module
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
@@ -101,6 +101,8 @@ def is_method(attr) -> bool:
         attr
     )
 
+def is_partial_method(attr) -> bool:
+    return isinstance(attr, partialmethod) or isinstance(attr, partial)
 
 def is_property(attr) -> bool:
     return isinstance(attr, property)
@@ -509,6 +511,8 @@ def get_component_and_parent(
             component = getattr(function_or_class, "__new__")
         elif is_method(attr):
             component = attr
+        elif is_partial_method(attr):
+            component = getattr(function_or_class, method_or_property)
         elif is_property(attr):
             component = attr.fget
         elif isinstance(attr, classmethod):
