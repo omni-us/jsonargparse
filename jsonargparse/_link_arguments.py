@@ -18,7 +18,7 @@ from ._actions import (
     _find_parent_action,
     filter_default_actions,
 )
-from ._namespace import Namespace, split_key_leaf
+from ._namespace import Namespace, split_key, split_key_leaf
 from ._parameter_resolvers import get_signature_parameters
 from ._type_checking import ArgumentGroup, ArgumentParser
 
@@ -81,7 +81,10 @@ class DirectedGraph:
         for node in [source, target]:
             if node not in self.nodes:
                 self.nodes.append(node)
-        self.edges_dict[self.nodes.index(source)].append(self.nodes.index(target))
+        source_targets_list = self.edges_dict[self.nodes.index(source)]
+        target_index = self.nodes.index(target)
+        if target_index not in source_targets_list:
+            source_targets_list.append(target_index)
 
     def get_topological_order(self):
         exploring = [False] * len(self.nodes)
@@ -97,7 +100,7 @@ class DirectedGraph:
         for target in self.edges_dict[source]:
             if exploring[target]:
                 raise ValueError(
-                    f"Graph has cycles, found while checking {self.nodes[source]} --> " + self.nodes[target]
+                    f"Graph has cycles, found while checking {self.nodes[source]} --> {self.nodes[target]}"
                 )
             elif not visited[target]:
                 self.topological_sort(target, exploring, visited, order)
@@ -406,11 +409,27 @@ class ActionLink(Action):
     def instantiation_order(parser):
         actions = get_link_actions(parser, "instantiate")
         if actions:
+            targets = set()
             graph = DirectedGraph()
+
+            # Add instantiation links as edges
             for action in actions:
                 target = re.sub(r"\.init_args$", "", split_key_leaf(action.target[0])[0])
                 for _, source_action in action.source:
                     graph.add_edge(source_action.dest, target)
+                targets.add(target)
+
+            # Add instantiation target prefixes as edges
+            targets = sorted(targets, key=lambda x: len(split_key(x)))
+            seen_targets = {targets[0]}
+            for target in targets[1:]:
+                parts = [x.replace("|", ".") for x in target.replace("init_args.", "init_args|").split(".")]
+                for num in range(len(parts) - 1):
+                    target_prefix = ".".join(parts[: num + 1])
+                    if target_prefix in seen_targets:
+                        graph.add_edge(target, target_prefix)
+                seen_targets.add(target)
+
             return graph.get_topological_order()
         return []
 

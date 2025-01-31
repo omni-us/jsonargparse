@@ -21,6 +21,11 @@ Added
   ``add_argument`` (`#661
   <https://github.com/omni-us/jsonargparse/pull/661>`__).
 
+Fixed
+^^^^^
+- Incorrect instantiation order when instantiation targets share a parent (`#662
+  <https://github.com/omni-us/jsonargparse/pull/662>`__).
+
 
 v4.36.0 (2025-01-17)
 --------------------
