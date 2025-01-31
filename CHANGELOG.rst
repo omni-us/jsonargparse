@@ -20,7 +20,8 @@ Added
 - Experimental support for sub-classing ``ArgumentParser`` to customize
   ``add_argument`` (`#661
   <https://github.com/omni-us/jsonargparse/pull/661>`__).
-
+- Support for partialmethods (`#664
+  <https://github.com/omni-us/jsonargparse/issues/664>`__).
 
 v4.36.0 (2025-01-17)
 --------------------
