@@ -902,7 +902,6 @@ def test_get_params_some_ignored():
         assert_params(get_params(func_given_kwargs), ["p", "p1"], help=False)
 
 
-# test partial method
 def test_partialmethod():
     ClassA.partial_method_a = partialmethod(ClassA.method_a, pma1=1, pma2=0.5)
     assert_params(get_params(ClassA, "partial_method_a"), ["pma1", "pma2", "kma1"])
