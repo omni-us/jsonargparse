@@ -1374,7 +1374,10 @@ def adapt_class_type(
 
             parent_key, key = target.split(split, maxsplit=1)
 
-            action = next(a for a in parser._actions if a.dest == parent_key)
+            try:
+                action = next(a for a in parser._actions if a.dest == parent_key)
+            except StopIteration:
+                continue
 
             sub_add_kwargs = getattr(action, "sub_add_kwargs")
             sub_add_kwargs.setdefault("linked_targets", set())

@@ -1139,6 +1139,27 @@ def test_on_instantiate_linking_deep_targets_mapping(parser, tmp_path):
     assert isinstance(config_init["b"].a_map["name"].d, DeepD)
 
 
+def test_on_instantiate_linking_deep_targets_undefined_parent(parser, tmp_path):
+    config = {
+        "b": {
+            "class_path": f"{__name__}.DeepBSuper",
+        },
+        "c": {},
+    }
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(json_or_yaml_dump(config))
+
+    parser.add_argument("--config", action="config")
+    parser.add_subclass_arguments(DeepBSuper, nested_key="b", required=True)
+    parser.add_class_arguments(DeepC, nested_key="c")
+    # .init_args.a is undefined in DeepBSuper
+    parser.link_arguments("c", "b.init_args.a.init_args.d", compute_fn=DeepC.fn, apply_on="instantiate")
+
+    config = parser.parse_args([f"--config={config_path}"])
+    config_init = parser.instantiate_classes(config)
+    assert isinstance(config_init["b"], DeepBSuper)
+
+
 class DeepTarget:
     def __init__(self, a: int, b: int) -> None:
         self.a = a
