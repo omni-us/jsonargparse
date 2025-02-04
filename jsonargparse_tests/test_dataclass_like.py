@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
-from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Generic, List, Literal, Optional, Tuple, TypeVar, Union
 from unittest.mock import patch
 
 import pytest
@@ -713,6 +713,18 @@ if annotated and pydantic_support > 1:
         cfg = parser.parse_args(["--n", "{}"])
         assert cfg.n == Namespace(a1=Namespace(a2=1))
 
+    class PingTask(pydantic.BaseModel):
+        type: Literal["ping"] = "ping"
+        attr: str = ""
+
+    class PongTask(pydantic.BaseModel):
+        type: Literal["pong"] = "pong"
+
+    PingPongTask = annotated[
+        Union[PingTask, PongTask],
+        pydantic.Field(discriminator="type"),
+    ]
+
 
 length = "length"
 if pydantic_support:
@@ -806,6 +818,8 @@ class TestPydantic:
         parser.add_argument("--model", type=PydanticSubModel, default=PydanticSubModel(p1="a"))
         cfg = parser.parse_args(["--model.p3=0.2"])
         assert Namespace(p1="a", p2=3, p3=0.2) == cfg.model
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.model, PydanticSubModel)
 
     def test_field_default_factory(self, parser):
         parser.add_argument("--model", type=PydanticFieldFactory)
@@ -830,6 +844,18 @@ class TestPydantic:
         with pytest.raises(ArgumentError) as ctx:
             parser.parse_args(["--model.p1=0"])
         ctx.match("model.p1")
+
+    @pytest.mark.skipif(not (annotated and pydantic_support > 1), reason="Annotated is required")
+    def test_field_union_discriminator_dot_syntax(self, parser):
+        parser.add_argument("--model", type=PingPongTask)
+        cfg = parser.parse_args(["--model.type=pong"])
+        assert cfg.model == Namespace(type="pong")
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.model, PongTask)
+        cfg = parser.parse_args(["--model.type=ping", "--model.attr=abc"])
+        assert cfg.model == Namespace(type="ping", attr="abc")
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.model, PingTask)
 
     @pytest.mark.parametrize(
         ["valid_value", "invalid_value", "cast", "type_str"],

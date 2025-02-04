@@ -25,6 +25,8 @@ Fixed
 ^^^^^
 - Incorrect instantiation order when instantiation targets share a parent (`#662
   <https://github.com/omni-us/jsonargparse/pull/662>`__).
+- Pydantic discriminated unions handled incorrectly (`#667
+  <https://github.com/omni-us/jsonargparse/pull/667>`__).
 - Failure when a link target has an undefined parent (`#668
   <https://github.com/omni-us/jsonargparse/pull/668>`__)
 
