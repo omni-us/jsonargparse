@@ -29,6 +29,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/667>`__).
 - Failure when a link target has an undefined parent (`#668
   <https://github.com/omni-us/jsonargparse/pull/668>`__)
+- Functions that create types now have ``TypeAlias`` return type to avoid mypy
+  errors (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
 
 
 v4.36.0 (2025-01-17)

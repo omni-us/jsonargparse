@@ -39,7 +39,7 @@ class DataClassA:
         a2: a2 help
     """
 
-    a1: PositiveInt = PositiveInt(1)  # type: ignore[valid-type]
+    a1: PositiveInt = PositiveInt(1)
     a2: str = "2"
 
 
@@ -52,7 +52,7 @@ class DataClassB:
         b2: b2 help
     """
 
-    b1: PositiveFloat = PositiveFloat(3.0)  # type: ignore[valid-type]
+    b1: PositiveFloat = PositiveFloat(3.0)
     b2: DataClassA = DataClassA(a2="x")
 
 
