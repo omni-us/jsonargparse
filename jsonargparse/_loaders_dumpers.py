@@ -30,7 +30,12 @@ def load_basic(value):
         return None
     if value.isdigit() or (value.startswith("-") and value[1:].isdigit()):
         return int(value)
-    if not value.startswith('e') and not value.endswith('e') and value.replace(".", "", 1).replace("e", "", 1).replace("-", "", 2).isdigit() and ("e" in value or "." in value):
+    if (
+        not value.startswith("e")
+        and not value.endswith("e")
+        and value.replace(".", "", 1).replace("e", "", 1).replace("-", "", 2).isdigit()
+        and ("e" in value or "." in value)
+    ):
         return float(value)
     return not_loaded
 
