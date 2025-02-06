@@ -5,7 +5,13 @@ import operator
 import os
 import pathlib
 import re
+import sys
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
+else:
+    _TypeAlias = type
 
 from ._common import is_final_class
 from ._optionals import final, pydantic_support
@@ -58,7 +64,7 @@ def extend_base_type(
     docstring: Optional[str] = None,
     extra_attrs: Optional[dict] = None,
     register_key: Optional[Tuple] = None,
-) -> type:
+) -> _TypeAlias:
     """Creates and registers an extension of base type.
 
     Args:
@@ -103,7 +109,7 @@ def restricted_number_type(
     restrictions: Union[Tuple, List[Tuple]],
     join: str = "and",
     docstring: Optional[str] = None,
-) -> type:
+) -> _TypeAlias:
     """Creates or returns an already registered restricted number type class.
 
     Args:
@@ -174,7 +180,7 @@ def restricted_string_type(
     name: str,
     regex: Union[str, Pattern],
     docstring: Optional[str] = None,
-) -> type:
+) -> _TypeAlias:
     """Creates or returns an already registered restricted string type class.
 
     Args:
@@ -213,7 +219,7 @@ def _is_path_type(value, type_class):
     return isinstance(value, Path)
 
 
-def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> type:
+def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlias:
     """Creates or returns an already registered path type class.
 
     Args:
