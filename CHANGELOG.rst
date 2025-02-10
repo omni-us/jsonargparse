@@ -31,8 +31,9 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/668>`__)
 - Functions that create types now have ``TypeAlias`` return type to avoid mypy
   errors (`#671 <https://github.com/omni-us/jsonargparse/pull/671>`__).
-- Bug when parsing strings with digits and a starting or ending 'e' (`#672
-  <https://github.com/omni-us/jsonargparse/pull/673>`__).
+- String parsing regressions (`#673
+  <https://github.com/omni-us/jsonargparse/pull/673>`__, `#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
 
 
 v4.36.0 (2025-01-17)
