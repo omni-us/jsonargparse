@@ -32,8 +32,8 @@ Fixed
 - Functions that create types now have ``TypeAlias`` return type to avoid mypy
   errors (`#671 <https://github.com/omni-us/jsonargparse/pull/671>`__).
 - String parsing regressions (`#673
-  <https://github.com/omni-us/jsonargparse/pull/673>`__, `#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  <https://github.com/omni-us/jsonargparse/pull/673>`__, `#674
+  <https://github.com/omni-us/jsonargparse/pull/674>`__).
 
 
 v4.36.0 (2025-01-17)
