@@ -109,6 +109,15 @@ def test_str_yaml_constructor_error(parser):
     assert "{{something}}" == parser.parse_args(["--val={{something}}"]).val
 
 
+@parser_modes
+def test_str_edge_cases(parser):
+    parser.add_argument("--val", type=str)
+    assert parser.parse_args(["--val=e123"]).val == "e123"
+    assert parser.parse_args(["--val=123e"]).val == "123e"
+    val = "1" * 5000
+    assert parser.parse_args([f"--val={val}"]).val == val
+
+
 def test_bool_parse(parser):
     parser.add_argument("--val", type=bool)
     assert None is parser.get_defaults().val

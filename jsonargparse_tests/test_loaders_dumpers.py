@@ -91,12 +91,6 @@ def test_dump_header_invalid(parser):
         parser.dump_header = True
 
 
-def test_load_value_digits_and_e():
-    with parser_context(load_value_mode="yaml"):
-        assert "e123" == load_value("e123")
-        assert "123e" == load_value("123e")
-
-
 @skip_if_no_pyyaml
 def test_load_value_dash():
     with parser_context(load_value_mode="yaml"):
