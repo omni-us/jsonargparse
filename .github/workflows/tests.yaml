@@ -5,7 +5,7 @@ on:
     branches: [main]
     tags:
       - 'v*'
-  pull_request_target:
+  pull_request:
     branches: [main]
 
 concurrency:
@@ -218,6 +218,7 @@ jobs:
 
   codecov:
     runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request' && 'approval' || '' }}
     needs: [linux, pydantic-v1, without-pyyaml]
     steps:
       - uses: actions/checkout@v4
@@ -237,6 +238,7 @@ jobs:
 
   sonarcloud:
     runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request' && 'approval' || '' }}
     needs: [linux, pydantic-v1, without-pyyaml]
     steps:
       - uses: actions/checkout@v4

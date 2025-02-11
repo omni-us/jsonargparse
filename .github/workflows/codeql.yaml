@@ -3,7 +3,7 @@ name: "CodeQL"
 on:
   push:
     branches: [main]
-  pull_request_target:
+  pull_request:
     branches: [main]
   schedule:
     - cron: "57 5 * * 3"  # M H d m w (Every Wednesday at 5:57 AM)
