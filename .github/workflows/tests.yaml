@@ -218,7 +218,7 @@ jobs:
 
   codecov:
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'pull_request' && 'approval' || null }}
+    environment: approval
     needs: [linux, pydantic-v1, without-pyyaml]
     steps:
       - uses: actions/checkout@v4
@@ -238,7 +238,7 @@ jobs:
 
   sonarcloud:
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'pull_request' && 'approval' || null }}
+    environment: approval
     needs: [linux, pydantic-v1, without-pyyaml]
     steps:
       - uses: actions/checkout@v4
