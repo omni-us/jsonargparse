@@ -218,7 +218,7 @@ jobs:
 
   codecov:
     runs-on: ubuntu-latest
-    environment: approval
+    environment: codecov
     needs: [linux, pydantic-v1, without-pyyaml]
     steps:
       - uses: actions/checkout@v4
@@ -238,7 +238,8 @@ jobs:
 
   sonarcloud:
     runs-on: ubuntu-latest
-    environment: approval
+    environment: sonarcloud
+    if: ${{ secrets.SONAR_TOKEN != '' }}  # Skip for PRs from forks that don't have access to secrets
     needs: [linux, pydantic-v1, without-pyyaml]
     steps:
       - uses: actions/checkout@v4
