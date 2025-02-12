@@ -351,9 +351,11 @@ class SignatureArguments(LoggerProperty):
             annotation = Any
             default = None if is_required else default
             is_required = False
+        is_required_link_target = False
         if is_required and linked_targets is not None and name in linked_targets:
             default = None
             is_required = False
+            is_required_link_target = True
         if (
             kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD}
             or (not is_required and name[0] == "_")
@@ -371,7 +373,7 @@ class SignatureArguments(LoggerProperty):
             kwargs["help"] = param.doc
         if not is_required:
             kwargs["default"] = default
-            if default is None and not is_optional(annotation, object):
+            if default is None and not is_optional(annotation, object) and not is_required_link_target:
                 annotation = Optional[annotation]
         elif not as_positional:
             kwargs["required"] = True

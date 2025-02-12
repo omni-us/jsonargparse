@@ -28,10 +28,15 @@ def load_basic(value):
         return False
     if value == "null":
         return None
-    if value.isdigit() or (value.startswith("-") and value[1:].isdigit()):
-        return int(value)
-    if value.replace(".", "", 1).replace("e", "", 1).replace("-", "", 2).isdigit() and ("e" in value or "." in value):
-        return float(value)
+    try:
+        if value.isdigit() or (value.startswith("-") and value[1:].isdigit()):
+            return int(value)
+        if value.replace(".", "", 1).replace("e", "", 1).replace("-", "", 2).isdigit() and (
+            "e" in value or "." in value
+        ):
+            return float(value)
+    except ValueError:
+        pass
     return not_loaded
 
 

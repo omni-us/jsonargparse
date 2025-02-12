@@ -5,7 +5,7 @@ import os
 from contextlib import contextmanager
 from importlib.metadata import version
 from importlib.util import find_spec
-from typing import Optional
+from typing import Optional, Union
 
 __all__ = [
     "get_config_read_mode",
@@ -348,10 +348,13 @@ def get_module(value):
 
 
 def is_annotated_validator(typehint: type) -> bool:
+    from ._util import get_typehint_origin
+
     return (
         pydantic_support > 1
         and is_annotated(typehint)
         and any(get_module(m) in {"pydantic", "annotated_types"} for m in typehint.__metadata__)  # type: ignore[attr-defined]
+        and get_typehint_origin(typehint.__origin__) != Union  # type: ignore[attr-defined]
     )
 
 

@@ -23,6 +23,21 @@ Added
 - Support for partialmethods (`#665
   <https://github.com/omni-us/jsonargparse/pull/665>`__).
 
+Fixed
+^^^^^
+- Incorrect instantiation order when instantiation targets share a parent (`#662
+  <https://github.com/omni-us/jsonargparse/pull/662>`__).
+- Pydantic discriminated unions handled incorrectly (`#667
+  <https://github.com/omni-us/jsonargparse/pull/667>`__).
+- Failure when a link target has an undefined parent (`#668
+  <https://github.com/omni-us/jsonargparse/pull/668>`__)
+- Functions that create types now have ``TypeAlias`` return type to avoid mypy
+  errors (`#671 <https://github.com/omni-us/jsonargparse/pull/671>`__).
+- String parsing regressions (`#673
+  <https://github.com/omni-us/jsonargparse/pull/673>`__, `#674
+  <https://github.com/omni-us/jsonargparse/pull/674>`__).
+
+
 v4.36.0 (2025-01-17)
 --------------------
 

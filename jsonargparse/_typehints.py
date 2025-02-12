@@ -602,10 +602,19 @@ class ActionTypeHint(Action):
                     val["__path__"] = config_path
                 value[num] = val
             except (TypeError, ValueError) as ex:
-                elem = "" if not islist else f" element {num+1}"
-                error = indent_text(str(ex))
-                raise TypeError(f'Parser key "{self.dest}"{elem}:\n{error}') from ex
+                if self._is_valid_string(val):
+                    value[num] = val
+                else:
+                    elem = "" if not islist else f" element {num+1}"
+                    error = indent_text(str(ex))
+                    raise TypeError(f'Parser key "{self.dest}"{elem}:\n{error}') from ex
         return value if islist else value[0]
+
+    def _is_valid_string(self, value):
+        typehint = self._typehint
+        return isinstance(value, str) and (
+            typehint is str or (get_typehint_origin(typehint) == Union and str in typehint.__args__)
+        )
 
     def instantiate_classes(self, value):
         islist = _is_action_value_list(self)
@@ -1374,7 +1383,10 @@ def adapt_class_type(
 
             parent_key, key = target.split(split, maxsplit=1)
 
-            action = next(a for a in parser._actions if a.dest == parent_key)
+            try:
+                action = next(a for a in parser._actions if a.dest == parent_key)
+            except StopIteration:
+                continue
 
             sub_add_kwargs = getattr(action, "sub_add_kwargs")
             sub_add_kwargs.setdefault("linked_targets", set())
