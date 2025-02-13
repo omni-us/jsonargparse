@@ -35,7 +35,7 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/673>`__, `#674
   <https://github.com/omni-us/jsonargparse/pull/674>`__).
 - Regression when using old ``CLI`` and inferring components from the local
-  context (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  context (`#676 <https://github.com/omni-us/jsonargparse/pull/676>`__).
 
 
 v4.36.0 (2025-01-17)
