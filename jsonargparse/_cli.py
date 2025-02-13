@@ -41,7 +41,7 @@ def auto_cli(
     arguments and runs one of the functions or class methods depending on what
     was parsed. If the 'components' parameter is not given, then the components
     will be all the locals in the context and defined in the same module as from
-    where CLI is called.
+    where auto_cli is called.
 
     Args:
         components: One or more functions/classes to include in the command line interface.
@@ -58,14 +58,12 @@ def auto_cli(
     """
     return_parser = kwargs.pop("return_parser", False)
     stacklevel = kwargs.pop("_stacklevel", 2)
-    caller = inspect.stack()[1][0]
 
     if components is None:
-        module = inspect.getmodule(caller).__name__  # type: ignore[union-attr]
+        caller = inspect.stack()[stacklevel - 1][0]
+        module = inspect.getmodule(caller)
         components = [
-            v
-            for v in caller.f_locals.values()
-            if ((inspect.isclass(v) or callable(v)) and getattr(inspect.getmodule(v), "__name__", None) == module)
+            v for v in vars(module).values() if ((inspect.isclass(v) or callable(v)) and inspect.getmodule(v) is module)
         ]
         if len(components) == 0:
             raise ValueError(

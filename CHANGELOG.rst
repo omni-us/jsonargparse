@@ -34,6 +34,8 @@ Fixed
 - String parsing regressions (`#673
   <https://github.com/omni-us/jsonargparse/pull/673>`__, `#674
   <https://github.com/omni-us/jsonargparse/pull/674>`__).
+- Regression when using old ``CLI`` and inferring components from the local
+  context (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
 
 
 v4.36.0 (2025-01-17)
