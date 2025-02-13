@@ -316,7 +316,7 @@ class Namespace(argparse.Namespace):
 
 
 clash_names: Set[str] = set(dir(Namespace))
-clash_mark = "\u200B"
+clash_mark = "\u200b"
 
 
 def add_clash_mark(key: str) -> str:
