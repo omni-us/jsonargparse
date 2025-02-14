@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.37.0 (2025-01-??)
+v4.37.0 (2025-02-14)
 --------------------
 
 Added

@@ -36,7 +36,7 @@ def load_basic(value):
         ):
             return float(value)
     except ValueError:
-        pass
+        pass  # if parsing fails, return not_loaded
     return not_loaded
 
 
