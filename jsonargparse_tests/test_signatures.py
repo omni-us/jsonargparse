@@ -243,7 +243,18 @@ def test_add_class_implemented_with_new(parser):
 
 class RequiredParams:
     def __init__(self, n: int, m: float):
-        pass
+        self.n = n
+        self.m = m
+
+
+def test_add_class_group_name_dash_required_parameters(parser):
+    parser.add_class_arguments(RequiredParams, "required-params")
+    assert "required-params" in parser.groups
+    cfg = parser.parse_args(["--required-params.n=6", "--required-params.m=0.9"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.required_params, RequiredParams)
+    assert init.required_params.n == 6
+    assert init.required_params.m == 0.9
 
 
 def test_add_class_with_required_parameters(parser):
