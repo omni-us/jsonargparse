@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.37.1 (2025-02-??)
+--------------------
+
+Fixed
+^^^^^
+- ``add_class_arguments`` with dashes in the ``nested_key`` fail to instantiate
+  (`#679 <https://github.com/omni-us/jsonargparse/pull/679>`__).
+
+
 v4.37.0 (2025-02-14)
 --------------------
 

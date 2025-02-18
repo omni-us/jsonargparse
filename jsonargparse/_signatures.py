@@ -546,7 +546,7 @@ class SignatureArguments(LoggerProperty):
             if config_load and nested_key is not None:
                 group.add_argument("--" + nested_key, action=_ActionConfigLoad(basetype=config_load_type))
             if inspect.isclass(obj) and nested_key is not None and instantiate:
-                group.dest = nested_key
+                group.dest = nested_key.replace("-", "_")
                 group.group_class = obj
                 group.instantiate_class = group_instantiate_class
         return group
