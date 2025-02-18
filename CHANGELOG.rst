@@ -18,7 +18,7 @@ v4.37.1 (2025-02-??)
 Fixed
 ^^^^^
 - ``add_class_arguments`` with dashes in the ``nested_key`` fail to instantiate
-  (`#??? <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  (`#679 <https://github.com/omni-us/jsonargparse/pull/679>`__).
 
 
 v4.37.0 (2025-02-14)
