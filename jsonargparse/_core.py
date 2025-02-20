@@ -1051,6 +1051,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         skip_none: bool = True,
         skip_required: bool = False,
         branch: Optional[str] = None,
+        **kwargs,
     ) -> None:
         """Checks that the content of a given configuration object conforms with the parser.
 
@@ -1064,13 +1065,14 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             TypeError: If any of the values are not valid.
             KeyError: If a key in cfg is not defined in the parser.
         """
+        prefix = get_private_kwargs(kwargs, _prefix="")
         cfg = ccfg = cfg.clone()
         if isinstance(branch, str):
             branch_cfg = cfg
             cfg = Namespace()
             cfg[branch] = branch_cfg
 
-        def check_required(cfg, parser, prefix=""):
+        def check_required(cfg, parser, prefix):
             for reqkey in parser.required_args:
                 try:
                     val = cfg[reqkey]
@@ -1082,7 +1084,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                     ) from ex
             subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
             if subcommand is not None and subparser is not None:
-                check_required(cfg.get(subcommand), subparser, subcommand + ".")
+                check_required(cfg.get(subcommand), subparser, prefix + subcommand + ".")
 
         def check_values(cfg):
             sorted_keys = {k: _find_action(self, k) for k in cfg.get_sorted_keys()}
@@ -1119,10 +1121,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                     raise NSKeyError(f"Key '{key}' is not expected")
 
         try:
-            if not skip_required and not lenient_check.get():
-                check_required(cfg, self)
             with parser_context(load_value_mode=self.parser_mode):
                 check_values(cfg)
+            if not skip_required and not lenient_check.get():
+                check_required(cfg, self, prefix)
         except (TypeError, KeyError) as ex:
             prefix = "Validation failed: "
             message = ex.args[0]
@@ -1391,7 +1393,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if leaf_key == action.dest:
                 return value
             subparser = action._name_parser_map[leaf_key]  # type: ignore[attr-defined]
-            subparser.validate(value)
+            subparser.validate(value, _prefix=key + ".")
         elif isinstance(action, _ActionConfigLoad):
             if isinstance(value, str):
                 value = action.check_type(value, self)
