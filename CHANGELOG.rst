@@ -18,8 +18,8 @@ v4.38.0 (2025-02-??)
 Changed
 ^^^^^^^
 - ``validate`` now checks values before required so that errors related to wrong
-  level in a config are easier to understand (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  level in a config are easier to understand (`#681
+  <https://github.com/omni-us/jsonargparse/pull/681>`__).
 
 Fixed
 ^^^^^
