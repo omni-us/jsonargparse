@@ -12,8 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.37.1 (2025-02-??)
+v4.38.0 (2025-02-??)
 --------------------
+
+Changed
+^^^^^^^
+- ``validate`` now checks values before required so that errors related to wrong
+  level in a config are easier to understand (`#681
+  <https://github.com/omni-us/jsonargparse/pull/681>`__).
 
 Fixed
 ^^^^^

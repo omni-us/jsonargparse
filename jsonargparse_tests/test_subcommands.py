@@ -72,9 +72,8 @@ def test_subcommands_not_given_when_many_subcommands(parser, subparser):
 
 
 def test_subcommands_missing_required_subargument(subcommands_parser):
-    with pytest.raises(ArgumentError) as ctx:
+    with pytest.raises(ArgumentError, match='Key "a.ap1" is required'):
         subcommands_parser.parse_args(["a"])
-    ctx.match('"a.ap1" is required')
 
 
 def test_subcommands_undefined_subargument(subcommands_parser):
