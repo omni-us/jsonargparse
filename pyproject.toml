@@ -58,9 +58,8 @@ jsonschema = [
     "jsonschema>=3.2.0",
 ]
 jsonnet = [
-    "jsonnet>=0.13.0; os_name == 'posix' and python_version < '3.13'",
-    "jsonnet-binary>=0.17.0; os_name != 'posix' and python_version < '3.13'",
-    "jsonnet-sdist==2024.6.23; python_version == '3.13'",
+    # "jsonnet>=0.21.0",
+    "jsonnet @ https://github.com/google/jsonnet/zipball/1ffcd4dd1eca31506d700bb9bc0ac5559edda321",
 ]
 toml = [
     "toml>=0.10.2",
