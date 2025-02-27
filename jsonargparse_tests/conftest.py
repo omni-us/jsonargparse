@@ -19,6 +19,7 @@ from jsonargparse._optionals import (
     fsspec_support,
     jsonnet_support,
     jsonschema_support,
+    omegaconf_support,
     pyyaml_available,
     set_docstring_parse_options,
     toml_load_available,
@@ -110,6 +111,8 @@ def parser_modes(test_function):
             parser_modes += ["yaml"]
         if jsonnet_support:
             parser_modes += ["jsonnet"]
+        if omegaconf_support:
+            parser_modes += ["omegaconf"]
     return pytest.mark.parametrize("parser", parser_modes, indirect=True)(test_function)
 
 
