@@ -25,6 +25,8 @@ Fixed
 ^^^^^
 - ``add_class_arguments`` with dashes in the ``nested_key`` fail to instantiate
   (`#679 <https://github.com/omni-us/jsonargparse/pull/679>`__).
+- Regression parsing strings with omegaconf as the parser mode (`#686
+  <https://github.com/omni-us/jsonargparse/pull/686>`__).
 
 
 v4.37.0 (2025-02-14)

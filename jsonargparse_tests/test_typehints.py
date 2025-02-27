@@ -104,9 +104,10 @@ def test_str_number_value(parser, value):
 
 
 @parser_modes
-def test_str_yaml_constructor_error(parser):
+@pytest.mark.parametrize("value", ["{{something}}", "{foo"])
+def test_str_yaml_constructor_error(parser, value):
     parser.add_argument("--val", type=str)
-    assert "{{something}}" == parser.parse_args(["--val={{something}}"]).val
+    assert value == parser.parse_args([f"--val={value}"]).val
 
 
 @parser_modes
