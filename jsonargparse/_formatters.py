@@ -24,6 +24,7 @@ from ._actions import (
     filter_default_actions,
 )
 from ._common import defaults_cache, parent_parser
+from ._completions import ShtabAction
 from ._link_arguments import ActionLink
 from ._namespace import Namespace, NSKeyError
 from ._optionals import import_ruyaml
@@ -109,7 +110,7 @@ class DefaultHelpFormatter(HelpFormatter):
         if action.option_strings == [] or not parser.default_env:
             return super()._format_action_invocation(action)
         extr = ""
-        if not isinstance(action, (_ActionHelpClassPath, _ActionPrintConfig, _HelpAction)):
+        if not isinstance(action, (_ActionHelpClassPath, _ActionPrintConfig, ShtabAction, _HelpAction)):
             extr += "\n  ENV:   " + get_env_var(self, action)
         return "ARG:   " + super()._format_action_invocation(action) + extr
 

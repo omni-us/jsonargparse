@@ -27,6 +27,7 @@ Fixed
   (`#679 <https://github.com/omni-us/jsonargparse/pull/679>`__).
 - Regression parsing strings with omegaconf as the parser mode (`#686
   <https://github.com/omni-us/jsonargparse/pull/686>`__).
+- Help incorrectly showing environment variable name for ``--print_shtab``.
 
 
 v4.37.0 (2025-02-14)
@@ -45,7 +46,7 @@ Fixed
 - Pydantic discriminated unions handled incorrectly (`#667
   <https://github.com/omni-us/jsonargparse/pull/667>`__).
 - Failure when a link target has an undefined parent (`#668
-  <https://github.com/omni-us/jsonargparse/pull/668>`__)
+  <https://github.com/omni-us/jsonargparse/pull/668>`__).
 - Functions that create types now have ``TypeAlias`` return type to avoid mypy
   errors (`#671 <https://github.com/omni-us/jsonargparse/pull/671>`__).
 - String parsing regressions (`#673
