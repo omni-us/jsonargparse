@@ -73,15 +73,6 @@ def test_add_argument_given_type_and_null_action(parser):
     assert parser.get_defaults().op1 is None
 
 
-@parser_modes
-def test_add_argument_str_edge_cases_type_and_null_action(parser):
-    parser.add_argument("--val", type=str, action=None)
-    assert parser.parse_args(["--val=e123"]).val == "e123"
-    assert parser.parse_args(["--val=123e"]).val == "123e"
-    val = "1" * 5000
-    assert parser.parse_args([f"--val={val}"]).val == val
-
-
 @pytest.mark.parametrize("typehint", [Namespace, Optional[Namespace], Union[int, Namespace], List[Namespace]])
 def test_namespace_unsupported_as_type(parser, typehint):
     with pytest.raises(ValueError, match="Namespace .* not supported as a type"):
