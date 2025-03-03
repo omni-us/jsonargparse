@@ -122,7 +122,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             enable_path: Whether to try parsing path/subconfig when argument is a complex type.
         """
         parser = self.parser if hasattr(self, "parser") else self
-        if "action" in kwargs:
+        if "action" in kwargs and kwargs["action"] is not None:
             if ActionParser._is_valid_action_parser(parser, kwargs["action"]):
                 return ActionParser._move_parser_actions(parser, args, kwargs)
             ActionConfigFile._ensure_single_config_argument(self, kwargs["action"])
