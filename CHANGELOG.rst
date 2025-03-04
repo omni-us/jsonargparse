@@ -28,7 +28,8 @@ Fixed
 - Regression parsing strings with omegaconf as the parser mode (`#686
   <https://github.com/omni-us/jsonargparse/pull/686>`__).
 - Help incorrectly showing environment variable name for ``--print_shtab``.
-
+- ``add_argument`` raises error when type is assigned with ``action=None``
+  (`#687 <https://github.com/omni-us/jsonargparse/issues/687>`__).
 
 v4.37.0 (2025-02-14)
 --------------------
