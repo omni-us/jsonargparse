@@ -68,6 +68,11 @@ def test_add_argument_failure_given_type_and_action(parser):
     ctx.match("Providing both type and action not allowed")
 
 
+def test_add_argument_given_type_and_null_action(parser):
+    parser.add_argument("--op1", type=Optional[bool], action=None)
+    assert parser.get_defaults().op1 is None
+
+
 @pytest.mark.parametrize("typehint", [Namespace, Optional[Namespace], Union[int, Namespace], List[Namespace]])
 def test_namespace_unsupported_as_type(parser, typehint):
     with pytest.raises(ValueError, match="Namespace .* not supported as a type"):
