@@ -59,14 +59,18 @@ is done as follows:
 
 .. note::
 
-    The ``.pre-commit-config.yaml`` file was changed such that some hooks are
-    now run on ``pre-push``. If you have an old development environment, please
-    run ``pre-commit install`` again to update the git hooks.
+    ``.pre-commit-config.yaml`` is configured to run the hooks using python
+    3.12. Thus, you need to have python 3.12 installed for pre-commit to work.
 
 The ``pre-push`` stage runs several hooks (tests, doctests, mypy, coverage) that
-take some time. These are intended to let developers know problems which must be
-resolved for any pull request to be considered for merging. If you wish to push
-without running these hooks, use the command ``git push --no-verify``.
+take some time. These hooks are intended to inform developers of issues that
+must be resolved before any pull request can be considered for merging. If you
+wish to push without running these hooks, use the command ``git push
+--no-verify``.
+
+Formatting of the code is done automatically by pre-commit. If some pre-commit
+hooks fail and you decide to skip them, the formatting will be automatically
+applied by a github action in pull requests.
 
 Documentation
 -------------
@@ -86,7 +90,8 @@ Tests
 Running the unit tests can be done either using using `pytest
 <https://docs.pytest.org/>`__ or `tox
 <https://tox.readthedocs.io/en/stable/>`__. The tests are also installed with
-the package, thus can be run in a production system.
+the package, thus can be run in a production system. Also pre-commit runs some
+additional tests.
 
 .. code-block:: bash
 
@@ -95,6 +100,9 @@ the package, thus can be run in a production system.
     pytest --cov                             # Run tests and generate coverage report
     python -m jsonargparse_tests             # Run tests on installed package (requires pytest and pytest-subtests)
     pre-commit run -a --hook-stage pre-push  # Run pre-push git hooks (tests, doctests, mypy, coverage)
+
+Coverage
+--------
 
 For a nice html test coverage report, run:
 
