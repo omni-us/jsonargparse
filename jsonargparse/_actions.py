@@ -409,6 +409,7 @@ class _ActionHelpClassPath(Action):
         if ActionTypeHint.is_callable_typehint(typehint) and hasattr(typehint, "__args__"):
             self.sub_add_kwargs["skip"] = {max(0, len(typehint.__args__) - 1)}
         subparser.add_class_arguments(val_class, dest, **self.sub_add_kwargs)
+        subparser._inner_parser = True
         remove_actions(subparser, (_HelpAction, _ActionPrintConfig, _ActionConfigLoad))
         args = self.get_args_after_opt(parser.args)
         if args:
