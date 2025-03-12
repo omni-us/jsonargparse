@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.38.0 (2025-02-??)
 --------------------
 
+Added
+^^^^^
+- Support ``shtab`` completion of ``Literal`` types (`#693
+  <https://github.com/omni-us/jsonargparse/pull/693>`__).
+
 Changed
 ^^^^^^^
 - ``validate`` now checks values before required so that errors related to wrong
@@ -30,6 +35,9 @@ Fixed
 - Help incorrectly showing environment variable name for ``--print_shtab``.
 - ``add_argument`` raises error when type is assigned with ``action=None``
   (`#687 <https://github.com/omni-us/jsonargparse/issues/687>`__).
+- ``shtab`` failing when parser has positional arguments (`#693
+  <https://github.com/omni-us/jsonargparse/pull/693>`__).
+
 
 v4.37.0 (2025-02-14)
 --------------------

@@ -9,7 +9,7 @@ from contextvars import ContextVar
 from enum import Enum
 from importlib.util import find_spec
 from subprocess import PIPE, Popen
-from typing import List, Union
+from typing import List, Literal, Union
 
 from ._actions import ActionConfigFile, _ActionConfigLoad, _ActionHelpClassPath, remove_actions
 from ._parameter_resolvers import get_signature_parameters
@@ -162,7 +162,8 @@ def shtab_prepare_action(action, parser) -> None:
     choices = None
     if isinstance(action, ActionTypeHint):
         skip = getattr(action, "sub_add_kwargs", {}).get("skip", set())
-        choices = get_typehint_choices(action._typehint, action.option_strings[0], parser, skip)
+        prefix = action.option_strings[0] if action.option_strings else None
+        choices = get_typehint_choices(action._typehint, prefix, parser, skip)
         if shtab_shell.get() == "bash":
             message = f"Expected type: {type_to_str(action._typehint)}"
             add_bash_typehint_completion(parser, action, message, choices)
@@ -232,7 +233,9 @@ def get_typehint_choices(typehint, prefix, parser, skip, choices=None, added_sub
         choices.extend(list(typehint.__members__))
     else:
         origin = get_typehint_origin(typehint)
-        if origin == Union:
+        if origin == Literal:
+            choices.extend([str(a) for a in typehint.__args__ if isinstance(a, (str, int, float))])
+        elif origin == Union:
             for subtype in typehint.__args__:
                 if subtype in added_subclasses or subtype is object:
                     continue
@@ -273,18 +276,19 @@ def add_subactions_and_get_subclass_choices(typehint, prefix, parser, skip, adde
                 init_args[param.name].append(param.annotation)
                 subclasses[param.name].append(path.rsplit(".", 1)[-1])
 
-    for name, subtypes in init_args.items():
-        option_string = f"{prefix}.{name}"
-        if option_string not in parser._option_string_actions:
-            action = parser.add_argument(option_string)
-            for subtype in unique(subtypes):
-                subchoices = get_typehint_choices(subtype, option_string, parser, skip, None, added_subclasses)
-                if shtab_shell.get() == "bash":
-                    message = f"Expected type: {type_to_str(subtype)}; "
-                    message += f"Accepted by subclasses: {', '.join(subclasses[name])}"
-                    add_bash_typehint_completion(parser, action, message, subchoices)
-                elif subchoices:
-                    action.choices = subchoices
+    if prefix is not None:
+        for name, subtypes in init_args.items():
+            option_string = f"{prefix}.{name}"
+            if option_string not in parser._option_string_actions:
+                action = parser.add_argument(option_string)
+                for subtype in unique(subtypes):
+                    subchoices = get_typehint_choices(subtype, option_string, parser, skip, None, added_subclasses)
+                    if shtab_shell.get() == "bash":
+                        message = f"Expected type: {type_to_str(subtype)}; "
+                        message += f"Accepted by subclasses: {', '.join(subclasses[name])}"
+                        add_bash_typehint_completion(parser, action, message, subchoices)
+                    elif subchoices:
+                        action.choices = subchoices
 
     return choices
 

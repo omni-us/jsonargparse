@@ -5,7 +5,7 @@ from enum import Enum
 from importlib.util import find_spec
 from os import PathLike
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Literal, Optional, Union
 from unittest.mock import patch
 
 import pytest
@@ -146,6 +146,19 @@ def test_bash_optional_enum(parser, subtests):
     )
 
 
+def test_bash_literal(parser, subtests):
+    typehint = Optional[Literal["one", "two"]]
+    parser.add_argument("--literal", type=typehint)
+    assert_bash_typehint_completions(
+        subtests,
+        parser,
+        [
+            ("literal", typehint, "", ["one", "two", "null"], "3/3"),
+            ("literal", typehint, "t", ["two"], "1/3"),
+        ],
+    )
+
+
 def test_bash_union(parser, subtests):
     typehint = Optional[Union[bool, AXEnum]]
     parser.add_argument("--union", type=typehint)
@@ -155,6 +168,19 @@ def test_bash_union(parser, subtests):
         [
             ("union", typehint, "", ["true", "false", "ABC", "XY", "XZ", "null"], "6/6"),
             ("union", typehint, "z", [], "0/6"),
+        ],
+    )
+
+
+def test_bash_positional(parser, subtests):
+    typehint = Literal["Alice", "Bob"]
+    parser.add_argument("name", type=typehint)
+    assert_bash_typehint_completions(
+        subtests,
+        parser,
+        [
+            ("name", typehint, "", ["Alice", "Bob"], "2/2"),
+            ("name", typehint, "Al", ["Alice"], "1/2"),
         ],
     )
 
