@@ -58,8 +58,7 @@ jsonschema = [
     "jsonschema>=3.2.0",
 ]
 jsonnet = [
-    # "jsonnet>=0.21.0",
-    "jsonnet @ https://github.com/google/jsonnet/zipball/1ffcd4dd1eca31506d700bb9bc0ac5559edda321",
+    "jsonnet>=0.21.0rc2",
 ]
 toml = [
     "toml>=0.10.2",
