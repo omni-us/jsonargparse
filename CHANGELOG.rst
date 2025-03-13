@@ -25,6 +25,8 @@ Changed
 - ``validate`` now checks values before required so that errors related to wrong
   level in a config are easier to understand (`#681
   <https://github.com/omni-us/jsonargparse/pull/681>`__).
+- ``add_argument`` of a positional and providing ``default`` now raises an error
+  (`#694 <https://github.com/omni-us/jsonargparse/pull/694>`__).
 
 Fixed
 ^^^^^
