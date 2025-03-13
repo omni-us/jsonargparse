@@ -41,9 +41,11 @@ from ._common import (
     InstantiatorsDictType,
     class_instantiators,
     debug_mode_active,
+    get_optionals_as_positionals_actions,
     is_dataclass_like,
     lenient_check,
     parser_context,
+    supports_optionals_as_positionals,
 )
 from ._completions import (
     argcomplete_namespace,
@@ -307,6 +309,23 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
         return namespace, args
 
+    def _positional_optionals(self, cfg, unk):
+        if len(unk) == 0 or not supports_optionals_as_positionals(self):
+            return cfg, unk
+
+        for action in get_optionals_as_positionals_actions(self, include_positionals=True):
+            if action.option_strings == []:
+                if cfg.get(action.dest) is None:
+                    self._logger.debug(f"Positional argument {action.dest} missing, aborting _positional_optionals")
+                    break
+                continue
+
+            cfg[action.dest] = self._check_value_key(action, unk.pop(0), action.dest, cfg)
+            if len(unk) == 0:
+                break
+
+        return cfg, unk
+
     def _parse_optional(self, arg_string):
         subclass_arg = ActionTypeHint.parse_argv_item(arg_string)
         if subclass_arg:
@@ -434,6 +453,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
             with _ActionSubCommands.parse_kwargs_context({"env": env, "defaults": defaults}):
                 cfg, unk = self.parse_known_args(args=args, namespace=cfg)
+                cfg, unk = self._positional_optionals(cfg, unk)
             if unk:
                 self.error(f'Unrecognized arguments: {" ".join(unk)}')
 

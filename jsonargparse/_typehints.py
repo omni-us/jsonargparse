@@ -658,6 +658,8 @@ class ActionTypeHint(Action):
         for link_kwargs in nested_links.get():
             parser.link_arguments(**link_kwargs)
 
+        parser._inner_parser = True
+
         return parser
 
     def extra_help(self):
