@@ -47,6 +47,11 @@ from jsonargparse_tests.conftest import (
 )
 
 
+def test_add_argument_positional_with_default(parser):
+    with pytest.raises(ValueError, match="Positional arguments not allowed to have a default value"):
+        parser.add_argument("pos", default="abc")
+
+
 def test_parse_args_simple(parser):
     parser.add_argument("--op", type=int)
     assert parser.parse_args(["--op=1"]) == Namespace(op=1)
