@@ -27,6 +27,8 @@ Changed
   <https://github.com/omni-us/jsonargparse/pull/681>`__).
 - ``add_argument`` of a positional and providing ``default`` now raises an error
   (`#694 <https://github.com/omni-us/jsonargparse/pull/694>`__).
+- Use latest jsonnet release that works on all platforms and python versions
+  (`#682 <https://github.com/omni-us/jsonargparse/pull/682>`__).
 
 Fixed
 ^^^^^
