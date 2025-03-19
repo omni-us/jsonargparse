@@ -91,7 +91,7 @@ repos:
         if [ "$CHANGELOG" != "$EXPECTED" ] && [ $(echo $BUMPVERSION_NEW_VERSION | grep -cE "[0-9.]+(\.dev|rc)[0-9]+") = 0 ]; then
           if [ $(grep -c "^v$BUMPVERSION_NEW_VERSION " CHANGELOG.rst) = 1 ]; then
             echo "Updating the date for v$BUMPVERSION_NEW_VERSION in CHANGELOG.rst";
-            sed -i "s|^v$BUMPVERSION_NEW_VERSION .*|$EXPECTED|" CHANGELOG.rst;
+            sed -i -e "s|^v$BUMPVERSION_NEW_VERSION .*|$EXPECTED|" CHANGELOG.rst;
             git add CHANGELOG.rst;
           else
             echo "Expected release in CHANGELOG.rst to be "$EXPECTED" or not have a definitive date.";
@@ -123,7 +123,7 @@ repos:
         trap cleanup EXIT;
         cp jsonargparse_tests/*.py "$TEST_DIR";
         cd "$TEST_DIR";
-        sed -i "/^from __future__ import annotations$/d" *.py;
+        sed -i -e "/^from __future__ import annotations$/d" *.py;
         pytest $TEST_DIR;
       fi'
     stages: [pre-push]
