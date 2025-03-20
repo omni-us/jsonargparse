@@ -109,9 +109,7 @@ def set_parsing_settings(*, parse_optionals_as_positionals: Optional[bool] = Non
     if isinstance(parse_optionals_as_positionals, bool):
         parsing_settings["parse_optionals_as_positionals"] = parse_optionals_as_positionals
     elif parse_optionals_as_positionals is not None:
-        raise ValueError(
-            f"parse_optionals_as_positionals must be a boolean or None, but got {parse_optionals_as_positionals}."
-        )
+        raise ValueError(f"parse_optionals_as_positionals must be a boolean, but got {parse_optionals_as_positionals}.")
 
 
 def get_parsing_setting(name: str):

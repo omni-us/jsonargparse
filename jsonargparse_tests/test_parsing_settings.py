@@ -5,7 +5,8 @@ from unittest.mock import patch
 import pytest
 
 from jsonargparse import ActionYesNo, ArgumentError, Namespace, set_parsing_settings
-from jsonargparse_tests.conftest import get_parser_help
+from jsonargparse._common import get_parsing_setting
+from jsonargparse_tests.conftest import capture_logs, get_parser_help
 
 
 @pytest.fixture(autouse=True)
@@ -14,7 +15,17 @@ def patch_parsing_settings():
         yield
 
 
-def test_parse_optionals_as_positionals(parser, subtests):
+def test_get_parsing_setting_failure():
+    with pytest.raises(ValueError, match="Unknown parsing setting"):
+        get_parsing_setting("unknown_setting")
+
+
+def test_set_parse_optionals_as_positionals_failure():
+    with pytest.raises(ValueError, match="parse_optionals_as_positionals must be a boolean"):
+        set_parsing_settings(parse_optionals_as_positionals="invalid")
+
+
+def test_parse_optionals_as_positionals(parser, logger, subtests):
     set_parsing_settings(parse_optionals_as_positionals=True)
 
     parser.add_argument("p1", type=Optional[Literal["p1"]])
@@ -57,6 +68,13 @@ def test_parse_optionals_as_positionals(parser, subtests):
         with pytest.raises(ArgumentError) as ex:
             parser.parse_args(["p1", "6", "invalid"])
         assert re.match('Parser key "o2".*Given value: invalid', ex.value.message, re.DOTALL)
+
+    parser.logger = logger
+    with subtests.test("unrecognized arguments"):
+        with capture_logs(logger) as logs:
+            with pytest.raises(ArgumentError, match="Unrecognized arguments: --unk=x"):
+                parser.parse_args(["--unk=x"])
+        assert "Positional argument p1 missing, aborting _positional_optionals" in logs.getvalue()
 
 
 # TODO: test parse_optionals_as_positionals with subcommands
