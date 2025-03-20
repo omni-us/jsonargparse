@@ -106,9 +106,18 @@ class DefaultHelpFormatter(HelpFormatter):
                     extra_positionals = f"{action.dest} {extra_positionals}" if extra_positionals else action.dest
                     if action.dest not in parser.required_args:
                         extra_positionals = f"[{extra_positionals}]"
+
+                usage_lines = usage.rstrip().split("\n")
+                last_line = usage_lines[-1] + " " + extra_positionals
+                text_width = self._width - self._current_indent
+                if len(usage_lines) == 1 or len(last_line) <= text_width:
+                    usage_lines[-1] = last_line
+                else:
+                    indent = re.sub(r"^([ ]+)[^ ].*$", r"\1", usage_lines[-1])
+                    usage_lines.append(indent + extra_positionals)
+
                 note = "note: extra positionals are parsed as optionals in the order shown above."
-                # TODO: fix wrap formatting of extra positionals
-                usage = re.sub(r"\n\n$", f" {extra_positionals}\n\n{note}\n\n", usage)
+                usage = "\n".join(usage_lines) + f"\n\n{note}\n\n"
 
         else:
             for key in parser.required_args:

@@ -6,7 +6,8 @@ import pytest
 
 from jsonargparse import ActionYesNo, ArgumentError, Namespace, set_parsing_settings
 from jsonargparse._common import get_parsing_setting
-from jsonargparse_tests.conftest import capture_logs, get_parser_help
+from jsonargparse_tests.conftest import capture_logs, get_parse_args_stdout, get_parser_help
+from jsonargparse_tests.test_typehints import Optimizer
 
 
 @pytest.fixture(autouse=True)
@@ -25,7 +26,7 @@ def test_set_parse_optionals_as_positionals_failure():
         set_parsing_settings(parse_optionals_as_positionals="invalid")
 
 
-def test_parse_optionals_as_positionals(parser, logger, subtests):
+def test_parse_optionals_as_positionals_simple(parser, logger, subtests):
     set_parsing_settings(parse_optionals_as_positionals=True)
 
     parser.add_argument("p1", type=Optional[Literal["p1"]])
@@ -56,7 +57,6 @@ def test_parse_optionals_as_positionals(parser, logger, subtests):
         assert cfg == Namespace(p1="p1", o1=3, o2="o2", o3="v3", flag=False)
 
     with subtests.test("extra positional has precedence"):
-        # TODO: document positionals precedence over optional is expected behavior
         cfg = parser.parse_args(["p1", "3", "o2", "--o1=4"])
         assert cfg == Namespace(p1="p1", o1=3, o2="o2", o3=None, flag=False)
 
@@ -77,6 +77,67 @@ def test_parse_optionals_as_positionals(parser, logger, subtests):
         assert "Positional argument p1 missing, aborting _positional_optionals" in logs.getvalue()
 
 
-# TODO: test parse_optionals_as_positionals with subcommands
-# TODO: test parse_optionals_as_positionals with inner parsers
-# TODO: test parse_optionals_as_positionals with required non-positionals
+def test_parse_optionals_as_positionals_subcommands(parser, subparser, subtests):
+    set_parsing_settings(parse_optionals_as_positionals=True)
+
+    subparser.add_argument("p1", type=Optional[Literal["p1"]])
+    subparser.add_argument("--o1", type=Optional[int])
+    subparser.add_argument("--o2", type=Optional[Literal["o2"]])
+    parser.add_argument("--g1")
+    subcommands = parser.add_subcommands()
+    subcommands.add_subcommand("subcmd", subparser)
+
+    with subtests.test("help global"):
+        help_str = get_parser_help(parser)
+        assert " [g1]" not in help_str
+        assert "extra positionals are parsed as optionals in the order shown above" not in help_str
+
+    with subtests.test("help subcommand"):
+        help_str = get_parse_args_stdout(parser, ["subcmd", "-h"])
+        assert " p1 [o1 [o2]]" in help_str
+        assert "extra positionals are parsed as optionals in the order shown above" in help_str
+
+    with subtests.test("no extra positionals"):
+        cfg = parser.parse_args(["subcmd", "--o2=o2", "--o1=1", "p1"])
+        assert cfg.subcmd == Namespace(p1="p1", o1=1, o2="o2")
+
+    with subtests.test("one extra positional"):
+        cfg = parser.parse_args(["subcmd", "--o2=o2", "p1", "2"])
+        assert cfg.subcmd == Namespace(p1="p1", o1=2, o2="o2")
+
+    with subtests.test("two extra positionals"):
+        cfg = parser.parse_args(["subcmd", "p1", "3", "o2"])
+        assert cfg.subcmd == Namespace(p1="p1", o1=3, o2="o2")
+
+    with subtests.test("extra positionals invalid values"):
+        with pytest.raises(ArgumentError) as ex:
+            parser.parse_args(["subcmd", "p1", "o2", "5"])
+        assert re.match('Parser key "o1".*Given value: o2', ex.value.message, re.DOTALL)
+
+
+def test_optionals_as_positionals_usage_wrap(parser):
+    set_parsing_settings(parse_optionals_as_positionals=True)
+
+    parser.prog = "long_prog_name"
+    parser.add_argument("relatively_long_positional")
+    parser.add_argument("--first_long_optional")
+    parser.add_argument("--second_long_optional")
+
+    help_str = get_parser_help(parser, columns="80")
+    assert "usage: long_prog_name " in help_str
+    assert "                      relatively_long_positional" in help_str
+    assert "                      [first_long_optional [second_long_optional]]" in help_str
+
+
+def test_optionals_as_positionals_not_in_subclasses(parser):
+    set_parsing_settings(parse_optionals_as_positionals=True)
+
+    parser.add_argument("p1", type=Optional[Literal["p1"]])
+    parser.add_argument("--o1", type=Optional[int])
+    parser.add_argument("--o2", type=Optimizer)
+
+    help_str = get_parser_help(parser)
+    assert " p1 [o1 [o2]]" in help_str
+
+    help_str = get_parse_args_stdout(parser, ["--o2.help=Adam"])
+    assert "extra positionals are parsed as optionals in the order shown above" not in help_str
