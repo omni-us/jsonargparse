@@ -332,6 +332,51 @@ This can be easily implemented with :func:`.capture_parser` as follows:
     :func:`.auto_cli` is by using :func:`.capture_parser`.
 
 
+Optionals as positionals
+------------------------
+
+It can sometimes be useful to allow optional arguments to be passed both by
+name, such as ``--key=val``, and as positional arguments, such as ``val``. This
+behavior can be enabled by using
+``set_parsing_settings(parse_optionals_as_positionals=True)``. Key points to
+note about this feature are:
+
+- Only optional arguments that accept exactly one value can be passed as
+  positional, i.e., when ``nargs`` is not specified or is set to ``nargs=1``.
+- Optionals are treated as positionals only after the standard positionals and
+  in the order they were added to the parser. The usage section in the help
+  displays the optionals that can be passed as positionals and their order.
+- Optional arguments in parsers with subcommands cannot be passed as
+  positionals. Only the child subparsers, after specifying the subcommand
+  name(s), support this feature.
+
+For instance, consider a parser defined as follows:
+
+.. testcode::
+
+    from jsonargparse import set_parsing_settings
+
+
+    set_parsing_settings(parse_optionals_as_positionals=True)
+
+    parser.add_argument("p1")
+    parser.add_argument("--o2")
+    parser.add_argument("--o3")
+
+The help will display ``p1 [o2 [o3]]`` along with a note indicating that this
+feature is enabled. Name-based parsing, such as ``--o2=val2 --o3=val3 val1``,
+will work as expected. Additionally, the following cases are also valid:
+``--o3=val3 val1 val2`` or ``val1 val2 val3``.
+
+.. note::
+
+    Positional arguments take precedence over optional arguments. This means
+    that if a value is provided both as a positional and as an optional
+    argument, the value from the positional argument will be used, regardless of
+    the order. For example, with the parser above, the command ``val1 val2a
+    --o2=val2b`` would result in ``o2=val1a``.
+
+
 Functions as type
 -----------------
 
