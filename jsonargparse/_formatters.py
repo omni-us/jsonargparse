@@ -23,7 +23,12 @@ from ._actions import (
     _find_action,
     filter_default_actions,
 )
-from ._common import defaults_cache, parent_parser
+from ._common import (
+    defaults_cache,
+    get_optionals_as_positionals_actions,
+    parent_parser,
+    supports_optionals_as_positionals,
+)
 from ._completions import ShtabAction
 from ._link_arguments import ActionLink
 from ._namespace import Namespace, NSKeyError
@@ -88,8 +93,32 @@ class DefaultHelpFormatter(HelpFormatter):
 
     def _format_usage(self, *args, **kwargs) -> str:
         usage = super()._format_usage(*args, **kwargs)
+
         parser = parent_parser.get()
-        if parser:
+        if not parser:
+            return usage
+
+        if supports_optionals_as_positionals(parser):
+            actions = get_optionals_as_positionals_actions(parser)
+            if len(actions) > 0:
+                extra_positionals = ""
+                for action in reversed(actions):
+                    extra_positionals = f"{action.dest} {extra_positionals}" if extra_positionals else action.dest
+                    extra_positionals = f"[{extra_positionals}]"
+
+                usage_lines = usage.rstrip().split("\n")
+                last_line = usage_lines[-1] + " " + extra_positionals
+                text_width = self._width - self._current_indent
+                if len(usage_lines) == 1 or len(last_line) <= text_width:
+                    usage_lines[-1] = last_line
+                else:
+                    indent = re.sub(r"^( +)[^ ].*$", r"\1", usage_lines[-1])
+                    usage_lines.append(indent + extra_positionals)
+
+                note = "note: extra positionals are parsed as optionals in the order shown above."
+                usage = "\n".join(usage_lines) + f"\n\n{note}\n\n"
+
+        else:
             for key in parser.required_args:
                 try:
                     default = parser.get_default(key)
@@ -97,6 +126,7 @@ class DefaultHelpFormatter(HelpFormatter):
                     default = None
                 if default is None and f"[--{key} " in usage:
                     usage = re.sub(f"\\[(--{key} [^\\]]+)]", r"\1", usage, count=1)
+
         return usage
 
     def _format_action_invocation(self, action: Action) -> str:

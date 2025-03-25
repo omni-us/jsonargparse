@@ -34,6 +34,7 @@ from ._type_checking import ArgumentParser
 __all__ = [
     "LoggerProperty",
     "null_logger",
+    "set_parsing_settings",
 ]
 
 ClassType = TypeVar("ClassType")
@@ -86,6 +87,63 @@ def parser_context(**kwargs):
     finally:
         for context_var, token in context_var_tokens:
             context_var.reset(token)
+
+
+parsing_settings = dict(
+    parse_optionals_as_positionals=False,
+)
+
+
+def set_parsing_settings(*, parse_optionals_as_positionals: Optional[bool] = None) -> None:
+    """
+    Modify settings that affect the parsing behavior.
+
+    Args:
+        parse_optionals_as_positionals: [EXPERIMENTAL] If True, the parser will
+            take extra positional command line arguments as values for optional
+            arguments. This means that optional arguments can be given by name
+            --key=value as usual, but also as positional. The extra positionals
+            are applied to optionals in the order that they were added to the
+            parser.
+    """
+    if isinstance(parse_optionals_as_positionals, bool):
+        parsing_settings["parse_optionals_as_positionals"] = parse_optionals_as_positionals
+    elif parse_optionals_as_positionals is not None:
+        raise ValueError(f"parse_optionals_as_positionals must be a boolean, but got {parse_optionals_as_positionals}.")
+
+
+def get_parsing_setting(name: str):
+    if name not in parsing_settings:
+        raise ValueError(f"Unknown parsing setting {name}.")
+    return parsing_settings[name]
+
+
+def get_optionals_as_positionals_actions(parser, include_positionals=False):
+    from jsonargparse._actions import ActionConfigFile, _ActionConfigLoad, filter_default_actions
+    from jsonargparse._completions import ShtabAction
+    from jsonargparse._typehints import ActionTypeHint
+
+    actions = []
+    for action in filter_default_actions(parser._actions):
+        if isinstance(action, (_ActionConfigLoad, ActionConfigFile, ShtabAction)):
+            continue
+        if ActionTypeHint.is_subclass_typehint(action, all_subtypes=False):
+            continue
+        if action.nargs not in {1, None}:
+            continue
+        if not include_positionals and action.option_strings == []:
+            continue
+        actions.append(action)
+
+    return actions
+
+
+def supports_optionals_as_positionals(parser):
+    return (
+        get_parsing_setting("parse_optionals_as_positionals")
+        and not parser._subcommands_action
+        and not getattr(parser, "_inner_parser", False)
+    )
 
 
 def is_subclass(cls, class_or_tuple) -> bool:
