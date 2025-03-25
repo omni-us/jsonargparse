@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 from typing import Literal, Optional
 from unittest.mock import patch
 
@@ -19,6 +20,9 @@ def patch_parsing_settings():
 def test_get_parsing_setting_failure():
     with pytest.raises(ValueError, match="Unknown parsing setting"):
         get_parsing_setting("unknown_setting")
+
+
+# parse_optionals_as_positionals
 
 
 def test_set_parse_optionals_as_positionals_failure():
@@ -129,15 +133,22 @@ def test_optionals_as_positionals_usage_wrap(parser):
     assert "                      [first_long_optional [second_long_optional]]" in help_str
 
 
-def test_optionals_as_positionals_not_in_subclasses(parser):
+@dataclass
+class DataOptions:
+    d1: int = 1
+
+
+def test_optionals_as_positionals_unsupported_arguments(parser):
     set_parsing_settings(parse_optionals_as_positionals=True)
 
     parser.add_argument("p1", type=Optional[Literal["p1"]])
-    parser.add_argument("--o1", type=Optional[int])
-    parser.add_argument("--o2", type=Optimizer)
+    parser.add_argument("--o1", type=Optimizer)
+    parser.add_argument("--o2", type=Optional[int])
+    parser.add_argument("--o3", type=DataOptions)
+    parser.add_argument("--o4.n1", type=float)
 
     help_str = get_parser_help(parser)
-    assert " p1 [o1 [o2]]" in help_str
+    assert " p1 [o2 [o3.d1 [o4.n1]]]" in help_str
 
-    help_str = get_parse_args_stdout(parser, ["--o2.help=Adam"])
+    help_str = get_parse_args_stdout(parser, ["--o1.help=Adam"])
     assert "extra positionals are parsed as optionals in the order shown above" not in help_str

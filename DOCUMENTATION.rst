@@ -343,6 +343,8 @@ note about this feature are:
 
 - Only optional arguments that accept exactly one value can be passed as
   positional, i.e., when ``nargs`` is not specified or is set to ``nargs=1``.
+- Optional arguments with subclass types cannot be passed as positional
+  arguments.
 - Optionals are treated as positionals only after the standard positionals and
   in the order they were added to the parser. The usage section in the help
   displays the optionals that can be passed as positionals and their order.

@@ -121,10 +121,13 @@ def get_parsing_setting(name: str):
 def get_optionals_as_positionals_actions(parser, include_positionals=False):
     from jsonargparse._actions import ActionConfigFile, _ActionConfigLoad, filter_default_actions
     from jsonargparse._completions import ShtabAction
+    from jsonargparse._typehints import ActionTypeHint
 
     actions = []
     for action in filter_default_actions(parser._actions):
         if isinstance(action, (_ActionConfigLoad, ActionConfigFile, ShtabAction)):
+            continue
+        if ActionTypeHint.is_subclass_typehint(action, all_subtypes=False):
             continue
         if action.nargs not in {1, None}:
             continue
