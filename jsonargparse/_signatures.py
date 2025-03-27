@@ -356,11 +356,7 @@ class SignatureArguments(LoggerProperty):
             default = None
             is_required = False
             is_required_link_target = True
-        if (
-            kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD}
-            or (not is_required and name[0] == "_")
-            or (annotation == inspect_empty and not is_required and default is None)
-        ):
+        if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or (not is_required and name[0] == "_"):
             return
         elif skip and name in skip:
             self.logger.debug(skip_message + "Parameter requested to be skipped.")

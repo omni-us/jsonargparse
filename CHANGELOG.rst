@@ -12,6 +12,16 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.39.0 (2025-03-??)
+--------------------
+
+Changed
+^^^^^^^
+- Untyped parameters with ``None`` default no longer skipped when
+  ``fail_untyped=True`` (`#697
+  <https://github.com/omni-us/jsonargparse/pull/697>`__).
+
+
 v4.38.0 (2025-03-26)
 --------------------
 
