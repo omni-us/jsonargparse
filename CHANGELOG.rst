@@ -45,6 +45,8 @@ Added
 ^^^^^
 - Support ``shtab`` completion of ``Literal`` types (`#693
   <https://github.com/omni-us/jsonargparse/pull/693>`__).
+- Support for parsing optionals as positionals (`#692
+  <https://github.com/omni-us/jsonargparse/pull/692>`__).
 
 Changed
 ^^^^^^^
