@@ -23,6 +23,8 @@ Added
   <https://github.com/omni-us/jsonargparse/pull/700>`__).
 - ``auto_cli`` now supports class ``@property`` (`#701
   <https://github.com/omni-us/jsonargparse/pull/701>`__).
+- Resolve parameters completely from stubs when ``inspect.signature`` fails
+  (`#698 <https://github.com/omni-us/jsonargparse/pull/698>`__).
 
 Changed
 ^^^^^^^
@@ -43,8 +45,6 @@ Added
 ^^^^^
 - Support ``shtab`` completion of ``Literal`` types (`#693
   <https://github.com/omni-us/jsonargparse/pull/693>`__).
-- Support for parsing optionals as positionals (`#692
-  <https://github.com/omni-us/jsonargparse/pull/692>`__).
 
 Changed
 ^^^^^^^

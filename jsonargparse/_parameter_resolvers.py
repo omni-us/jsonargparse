@@ -25,7 +25,7 @@ from ._common import (
 )
 from ._optionals import get_annotated_base_type, is_annotated, is_pydantic_model, parse_docs
 from ._postponed_annotations import evaluate_postponed_annotations
-from ._stubs_resolver import get_stub_types
+from ._stubs_resolver import get_arg_type, get_stub_types, get_stubs_resolver
 from ._util import (
     ClassFromFunctionBase,
     get_import_path,
@@ -500,7 +500,10 @@ def get_component_and_parent(
         method_or_property = method_or_property.__name__
     parent = component = None
     if method_or_property:
-        attr = inspect.getattr_static(get_generic_origin(function_or_class), method_or_property)
+        try:
+            attr = inspect.getattr_static(get_generic_origin(function_or_class), method_or_property)
+        except AttributeError as ex:
+            raise AttributeError(f"Attribute '{method_or_property}' not found in {function_or_class}") from ex
         if is_staticmethod(attr):
             component = getattr(function_or_class, method_or_property)
             return component, parent, method_or_property
@@ -880,26 +883,6 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
         return params
 
 
-def get_parameters_by_assumptions(
-    function_or_class: Union[Callable, Type],
-    method_name: Optional[str] = None,
-    logger: Union[bool, str, dict, logging.Logger] = True,
-) -> ParamList:
-    component, parent, method_name = get_component_and_parent(function_or_class, method_name)
-    params, args_idx, kwargs_idx, _, stubs = get_signature_parameters_and_indexes(component, parent, logger)
-
-    if parent and (args_idx >= 0 or kwargs_idx >= 0):
-        with mro_context(parent):
-            subparams = get_mro_parameters(method_name, get_parameters_by_assumptions, logger)
-        if subparams:
-            args, kwargs = split_args_and_kwargs(subparams)
-            params = replace_args_and_kwargs(params, args, kwargs)
-
-    params = replace_args_and_kwargs(params, [], [])
-    add_stub_types(stubs, params, component)
-    return params
-
-
 def get_field_data_pydantic1_model(field, name, doc_params):
     default = field.default
     if field.required:
@@ -997,6 +980,7 @@ def get_parameters_from_pydantic_or_attrs(
 
     if method_or_property or not (pydantic_support or attrs_support):
         return None
+
     function_or_class = get_unaliased_type(function_or_class)
     fields_iterator = get_field_data = None
     if pydantic_support:
@@ -1039,6 +1023,71 @@ def get_parameters_from_pydantic_or_attrs(
                 )
             )
     evaluate_postponed_annotations(params, function_or_class, None, logger)
+
+    return params
+
+
+def get_parameters_from_ast(
+    function_or_class: Union[Callable, Type],
+    method_or_property: Optional[str],
+    logger: logging.Logger,
+) -> Optional[ParamList]:
+    visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
+    return visitor.get_parameters()
+
+
+def get_parameters_from_stubs(
+    function_or_class: Union[Callable, Type],
+    method_or_property: Optional[str],
+    logger: logging.Logger,
+) -> Optional[ParamList]:
+    component, parent, _ = get_component_and_parent(function_or_class, method_or_property)
+    params = None
+    resolver = get_stubs_resolver()
+    stub_import = resolver.get_component_imported_info(component, parent)
+    if stub_import:
+        origin = get_parameter_origins(component, parent)
+        aliases = resolver.get_aliases(stub_import)
+        arg_asts = stub_import.info.ast.args.args + stub_import.info.ast.args.kwonlyargs
+        params = []
+        for num, arg_ast in enumerate(arg_asts):
+            if parent and num == 0:
+                continue
+            try:
+                annotation = get_arg_type(arg_ast.annotation, aliases)
+            except Exception:
+                annotation = inspect._empty
+            params.append(
+                ParamData(
+                    name=arg_ast.arg,
+                    annotation=annotation,
+                    default=UnknownDefault("stubs-resolver"),
+                    kind=inspect._ParameterKind.KEYWORD_ONLY,
+                    component=component,
+                    parent=parent,
+                    origin=origin,
+                )
+            )
+    return params
+
+
+def get_parameters_by_assumptions(
+    function_or_class: Union[Callable, Type],
+    method_name: Optional[str],
+    logger: logging.Logger,
+) -> ParamList:
+    component, parent, method_name = get_component_and_parent(function_or_class, method_name)
+    params, args_idx, kwargs_idx, _, stubs = get_signature_parameters_and_indexes(component, parent, logger)
+
+    if parent and (args_idx >= 0 or kwargs_idx >= 0):
+        with mro_context(parent):
+            subparams = get_mro_parameters(method_name, get_parameters_by_assumptions, logger)
+        if subparams:
+            args, kwargs = split_args_and_kwargs(subparams)
+            params = replace_args_and_kwargs(params, args, kwargs)
+
+    params = replace_args_and_kwargs(params, [], [])
+    add_stub_types(stubs, params, component)
     return params
 
 
@@ -1047,7 +1096,7 @@ def get_signature_parameters(
     method_or_property: Optional[str] = None,
     logger: Union[bool, str, dict, logging.Logger] = True,
 ) -> ParamList:
-    """Get parameters by inspecting ASTs or by inheritance assumptions if source not available.
+    """Get parameters by inspecting ASTs, stubs or by inheritance assumptions.
 
     In contrast to inspect.signature, it follows the use of *args and **kwargs
     attempting to find all accepted named parameters.
@@ -1060,22 +1109,26 @@ def get_signature_parameters(
             the parameters for ``__init__``.
         logger: Useful for debugging. Only logs at ``DEBUG`` level.
     """
+    get_component_and_parent(function_or_class, method_or_property)  # verify input
     logger = parse_logger(logger, "get_signature_parameters")
-    try:
-        params = get_parameters_from_pydantic_or_attrs(function_or_class, method_or_property, logger)
+    params = None
+    for get_parameters in [
+        get_parameters_from_pydantic_or_attrs,
+        get_parameters_from_ast,
+        get_parameters_from_stubs,
+        get_parameters_by_assumptions,
+    ]:
+        try:
+            params = get_parameters(function_or_class, method_or_property, logger)
+        except Exception as ex:
+            logger.debug(
+                "%s failed: function_or_class=%s, method_or_property=%s: %s",
+                get_parameters.__name__,
+                function_or_class,
+                method_or_property,
+                ex,
+                exc_info=ex,
+            )
         if params is not None:
-            return params
-        visitor = ParametersVisitor(function_or_class, method_or_property, logger=logger)
-        return visitor.get_parameters()
-    except Exception as ex:
-        cause = "Source not available"
-        exc_info = None
-        if not isinstance(ex, SourceNotAvailable):
-            cause = "Problems with AST resolving"
-            exc_info = ex
-        logger.debug(
-            f"{cause}, falling back to parameters by assumptions: function_or_class={function_or_class} "
-            f"method_or_property={method_or_property}: {ex}",
-            exc_info=exc_info,
-        )
-        return get_parameters_by_assumptions(function_or_class, method_or_property, logger)
+            break
+    return params or []
