@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.39.0 (2025-03-??)
 --------------------
 
+Added
+^^^^^
+- Resolve parameters completely from stubs when ``inspect.signature`` fails
+  (`#698 <https://github.com/omni-us/jsonargparse/pull/698>`__).
+
 Changed
 ^^^^^^^
 - Untyped parameters with ``None`` default no longer skipped when
