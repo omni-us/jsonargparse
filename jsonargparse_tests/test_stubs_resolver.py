@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import inspect
 import sys
 from calendar import Calendar, TextCalendar
@@ -16,7 +17,7 @@ from uuid import UUID, uuid5
 import pytest
 
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
-from jsonargparse._stubs_resolver import get_mro_method_parent, get_stubs_resolver
+from jsonargparse._stubs_resolver import get_arg_type, get_mro_method_parent, get_stubs_resolver
 from jsonargparse_tests.conftest import (
     capture_logs,
     get_parser_help,
@@ -34,9 +35,30 @@ def skip_if_typeshed_client_unavailable():
 
 
 @contextmanager
-def mock_typeshed_client_unavailable():
+def mock_stubs_missing_types():
     with patch("jsonargparse._parameter_resolvers.add_stub_types"):
         yield
+
+
+@contextmanager
+def mock_stubs_missing_resolver():
+    with patch("jsonargparse._parameter_resolvers.get_stubs_resolver") as mock_instance:
+        mock_instance.return_value.get_component_imported_info.return_value = None
+        yield
+
+
+@contextmanager
+def inspect_signature_failure(mock_obj):
+    original_inspect_signature = inspect.signature
+
+    def inspect_signature(obj):
+        if obj is mock_obj:
+            raise ValueError("inspect_signature failed")
+        return original_inspect_signature(obj)
+
+    with patch("inspect.signature", side_effect=inspect_signature) as mock_signature:
+        yield
+        mock_signature.assert_called_with(mock_obj)
 
 
 def get_param_types(params):
@@ -78,7 +100,7 @@ def test_stubs_resolver_get_imported_info():
 def test_get_params_class_without_inheritance():
     params = get_params(Calendar)
     assert [("firstweekday", int)] == get_param_types(params)
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(Calendar)
     assert [("firstweekday", inspect._empty)] == get_param_types(params)
 
@@ -86,7 +108,7 @@ def test_get_params_class_without_inheritance():
 def test_get_params_class_with_inheritance():
     params = get_params(TextCalendar)
     assert [("firstweekday", int)] == get_param_types(params)
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(TextCalendar)
     assert [("firstweekday", inspect._empty)] == get_param_types(params)
 
@@ -94,7 +116,7 @@ def test_get_params_class_with_inheritance():
 def test_get_params_method():
     params = get_params(Random, "randint")
     assert [("a", int), ("b", int)] == get_param_types(params)
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(Random, "randint")
     assert [("a", inspect._empty), ("b", inspect._empty)] == get_param_types(params)
 
@@ -102,7 +124,7 @@ def test_get_params_method():
 def test_get_params_object_instance_method():
     params = get_params(uniform)
     assert [("a", float), ("b", float)] == get_param_types(params)
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(uniform)
     assert [("a", inspect._empty), ("b", inspect._empty)] == get_param_types(params)
 
@@ -117,7 +139,7 @@ def test_get_params_conditional_python_version():
     else:
         assert Any is params[0].annotation
     assert int is params[1].annotation
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(Random, "seed")
     assert [("a", inspect._empty), ("version", inspect._empty)] == get_param_types(params)
 
@@ -151,7 +173,7 @@ def test_get_params_classmethod():
     assert expected == get_param_names(params)[: len(expected)]
     if sys.version_info >= (3, 10):
         assert all(p.annotation is not inspect._empty for p in params if p.name not in {"compresslevel", "stream"})
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(TarFile, "open")
     assert expected == get_param_names(params)[: len(expected)]
     assert all(p.annotation is inspect._empty for p in params)
@@ -160,7 +182,7 @@ def test_get_params_classmethod():
 def test_get_params_staticmethod():
     params = get_params(DateHeader, "value_parser")
     assert [("value", str)] == get_param_types(params)
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(DateHeader, "value_parser")
     assert [("value", inspect._empty)] == get_param_types(params)
 
@@ -171,7 +193,7 @@ def test_get_params_function():
     if sys.version_info >= (3, 10):
         assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
     assert bool is params[1].annotation
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(ip_network)
     assert [("address", inspect._empty), ("strict", inspect._empty)] == get_param_types(params)
 
@@ -183,7 +205,7 @@ def test_get_params_relative_import_from_init():
     params = get_params(yaml.safe_load)
     assert ["stream"] == get_param_names(params)
     assert params[0].annotation is not inspect._empty
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(yaml.safe_load)
     assert ["stream"] == get_param_names(params)
     assert params[0].annotation is inspect._empty
@@ -210,7 +232,7 @@ def test_get_params_non_unique_alias(logger):
 def test_get_params_complex_function_requests_get(parser):
     from requests import get
 
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(get)
     expected = ["url", "params"]
     assert expected == get_param_names(params)
@@ -240,6 +262,65 @@ def test_get_params_complex_function_requests_get(parser):
     assert ["url", "params"] == list(parser.get_defaults().keys())
     help_str = get_parser_help(parser)
     assert "default: Unknown<stubs-resolver>" in help_str
+
+
+# stubs only resolver tests
+
+
+def test_get_params_inspect_signature_failure_function(logger):
+    with inspect_signature_failure(ip_network), capture_logs(logger) as logs:
+        params = get_params(ip_network, logger=logger)
+    assert ["address", "strict"] == get_param_names(params)
+    assert params[1].annotation == bool
+    if sys.version_info >= (3, 10):
+        assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
+    assert "get_parameters_from_ast failed" in logs.getvalue()
+    assert "get_parameters_by_assumptions failed" not in logs.getvalue()
+
+    with inspect_signature_failure(ip_network), mock_stubs_missing_resolver(), capture_logs(logger) as logs:
+        params = get_params(ip_network, logger=logger)
+    assert params == []
+    assert "get_parameters_from_ast failed" in logs.getvalue()
+    assert "get_parameters_by_assumptions failed" in logs.getvalue()
+
+
+def test_get_params_inspect_signature_failure_method(logger):
+    with inspect_signature_failure(Random.randint), capture_logs(logger) as logs:
+        params = get_params(Random, "randint", logger=logger)
+    assert [("a", int), ("b", int)] == get_param_types(params)
+    assert "get_parameters_from_ast failed" in logs.getvalue()
+    assert "get_parameters_by_assumptions failed" not in logs.getvalue()
+
+    with inspect_signature_failure(Random.randint), mock_stubs_missing_resolver(), capture_logs(logger) as logs:
+        params = get_params(Random, "randint", logger=logger)
+    assert params == []
+    assert "get_parameters_from_ast failed" in logs.getvalue()
+    assert "get_parameters_by_assumptions failed" in logs.getvalue()
+
+
+@contextmanager
+def get_arg_type_bool_fail():
+    original_get_arg_type = get_arg_type
+
+    def mock_get_arg_type(annotation, aliases):
+        if isinstance(annotation, ast.Name) and annotation.id == "bool":
+            raise RuntimeError("failed to get type")
+        return original_get_arg_type(annotation, aliases)
+
+    with patch("jsonargparse._parameter_resolvers.get_arg_type", side_effect=mock_get_arg_type) as mock_signature:
+        yield
+        mock_signature.assert_called()
+
+
+def test_get_params_inspect_signature_failure_missing_type(logger):
+    with inspect_signature_failure(ip_network), get_arg_type_bool_fail(), capture_logs(logger) as logs:
+        params = get_params(ip_network, logger=logger)
+    assert ["address", "strict"] == get_param_names(params)
+    assert params[1].annotation == inspect._empty
+    if sys.version_info >= (3, 10):
+        assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
+    assert "get_parameters_from_ast failed" in logs.getvalue()
+    assert "get_parameters_by_assumptions failed" not in logs.getvalue()
 
 
 # pytorch tests
@@ -278,7 +359,7 @@ def test_get_params_torch_optimizer(class_name):
     cls = getattr(torch.optim, class_name)
     params = get_params(cls)
     assert all(p.annotation is not inspect._empty for p in params)
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(cls)
     assert any(p.annotation is inspect._empty for p in params)
 
@@ -309,6 +390,6 @@ def test_get_params_torch_lr_scheduler(class_name):
     cls = getattr(torch.optim.lr_scheduler, class_name)
     params = get_params(cls)
     assert all(p.annotation is not inspect._empty for p in params)
-    with mock_typeshed_client_unavailable():
+    with mock_stubs_missing_types():
         params = get_params(cls)
     assert any(p.annotation is inspect._empty for p in params)
