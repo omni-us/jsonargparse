@@ -166,6 +166,8 @@ def shtab_prepare_action(action, parser) -> None:
         choices = get_typehint_choices(action._typehint, prefix, parser, skip)
         if shtab_shell.get() == "bash":
             message = f"Expected type: {type_to_str(action._typehint)}"
+            if action.option_strings == []:
+                message = f"Argument: {action.dest}; " + message
             add_bash_typehint_completion(parser, action, message, choices)
             choices = None
     elif isinstance(action, _ActionHelpClassPath):

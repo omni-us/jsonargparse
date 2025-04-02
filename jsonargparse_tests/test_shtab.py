@@ -47,8 +47,17 @@ def get_shtab_script(parser, shell):
     return get_parse_args_stdout(parser, [f"--print_shtab={shell}"])
 
 
+def is_positional(dest, parser):
+    if parser is not None:
+        action = next(a for a in parser._actions if a.dest == dest)
+        return action.option_strings == []
+    return False
+
+
 def assert_bash_typehint_completions(subtests, shtab_script, completions):
+    parser = None
     if isinstance(shtab_script, ArgumentParser):
+        parser = shtab_script
         shtab_script = get_shtab_script(shtab_script, "bash")
     with tempfile.TemporaryDirectory() as tmpdir:
         shtab_script_path = Path(tmpdir) / "comp.sh"
@@ -67,6 +76,8 @@ def assert_bash_typehint_completions(subtests, shtab_script, completions):
                     assert f"Expected type: {typehint}; {extra} matched choices" in err.decode()
                 else:
                     assert f"Expected type: {typehint}; Accepted by subclasses: {extra}" in err.decode()
+                if is_positional(dest, parser):
+                    assert f"Argument: {dest}; Expected type: {typehint}" in err.decode()
 
 
 def test_bash_any(parser, subtests):
