@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.39.0 (2025-03-??)
 --------------------
 
+Added
+^^^^^
+- ``shtab`` hint for positionals in bash now includes the argument name (`#699
+  <https://github.com/omni-us/jsonargparse/pull/699>`__).
+
 Changed
 ^^^^^^^
 - Untyped parameters with ``None`` default no longer skipped when
