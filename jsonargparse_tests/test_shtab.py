@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from jsonargparse import ArgumentParser
+from jsonargparse import ArgumentParser, set_parsing_settings
 from jsonargparse._completions import norm_name
 from jsonargparse._parameter_resolvers import get_signature_parameters
 from jsonargparse._typehints import type_to_str
@@ -194,6 +194,27 @@ def test_bash_positional(parser, subtests):
             ("name", typehint, "Al", ["Alice"], "1/2"),
         ],
     )
+
+
+def test_shtab_bash_optionals_as_positionals(parser, subtests):
+    with patch.dict("jsonargparse._common.parsing_settings"):
+        set_parsing_settings(parse_optionals_as_positionals=True)
+        parser.prog = "tool"
+
+        parser.add_argument("job", type=str)
+        parser.add_argument("--amount", type=int, default=0)
+        parser.add_argument("--flag", type=bool, default=False)
+        assert_bash_typehint_completions(
+            subtests,
+            parser,
+            [
+                ("job", str, "", [], None),
+                ("job", str, "easy", [], None),
+                ("amount", int, "easy ", [], None),
+                ("amount", int, "easy 10", [], None),
+                ("flag", bool, "easy 10 x", [], "0/2"),
+            ],
+        )
 
 
 def test_bash_config(parser):
