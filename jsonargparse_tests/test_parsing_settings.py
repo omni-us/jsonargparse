@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from importlib.util import find_spec
 from typing import Literal, Optional
 from unittest.mock import patch
 
@@ -8,6 +9,7 @@ import pytest
 from jsonargparse import ActionYesNo, ArgumentError, Namespace, set_parsing_settings
 from jsonargparse._common import get_parsing_setting
 from jsonargparse_tests.conftest import capture_logs, get_parse_args_stdout, get_parser_help
+from jsonargparse_tests.test_shtab import assert_bash_typehint_completions
 from jsonargparse_tests.test_typehints import Optimizer
 
 
@@ -152,3 +154,24 @@ def test_optionals_as_positionals_unsupported_arguments(parser):
 
     help_str = get_parse_args_stdout(parser, ["--o1.help=Adam"])
     assert "extra positionals are parsed as optionals in the order shown above" not in help_str
+
+
+@pytest.mark.skipif(not find_spec("shtab"), reason="shtab package is required")
+def test_shtab_bash_optionals_as_positionals(parser, subtests):
+    set_parsing_settings(parse_optionals_as_positionals=True)
+    parser.prog = "tool"
+
+    parser.add_argument("job", type=str)
+    parser.add_argument("--amount", type=int, default=0)
+    parser.add_argument("--flag", type=bool, default=False)
+    assert_bash_typehint_completions(
+        subtests,
+        parser,
+        [
+            ("job", str, "", [], None),
+            ("job", str, "easy", [], None),
+            ("amount", int, "easy ", [], None),
+            ("amount", int, "easy 10", [], None),
+            ("flag", bool, "easy 10 x", [], "0/2"),
+        ],
+    )

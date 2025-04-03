@@ -19,6 +19,8 @@ Added
 ^^^^^
 - ``shtab`` hint for positionals in bash now includes the argument name (`#699
   <https://github.com/omni-us/jsonargparse/pull/699>`__).
+- ``shtab`` support for optionals parsed as positionals (`#700
+  <https://github.com/omni-us/jsonargparse/pull/700>`__).
 
 Changed
 ^^^^^^^
