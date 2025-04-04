@@ -237,6 +237,25 @@ def test_method_with_config_parameter():
     assert "p1: 1, config: {}" == out.strip()
 
 
+class WithProperty:
+    def __init__(self, num: int = 1):
+        self._num = num
+
+    @property
+    def prop(self):
+        """Description of property"""
+        return self._num + 1
+
+
+def test_class_property_value():
+    assert 3 == auto_cli(WithProperty, args=["--num=2", "prop"])
+    if docstring_parser_support:
+        help_str = get_cli_stdout(WithProperty, args=["--help"])
+        assert "Description of property" in help_str
+        help_str = get_cli_stdout(WithProperty, args=["prop", "--help"])
+        assert "Description of property" in help_str
+
+
 # function and class tests
 
 

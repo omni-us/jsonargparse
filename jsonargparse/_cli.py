@@ -157,7 +157,7 @@ def _add_subcommands(
                 remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
 
 
-def has_parameter(component, name):
+def has_parameter(component, name) -> bool:
     return name in inspect.signature(component).parameters.keys()
 
 
@@ -170,7 +170,9 @@ def _add_component_to_parser(
 ):
     kwargs: dict = dict(as_positional=as_positional, fail_untyped=fail_untyped, sub_configs=True)
     if inspect.isclass(component):
-        class_methods = [k for k, v in inspect.getmembers(component) if callable(v) and k[0] != "_"]
+        class_methods = [
+            k for k, v in inspect.getmembers(component) if (callable(v) or isinstance(v, property)) and k[0] != "_"
+        ]
         if not class_methods:
             added_args = parser.add_class_arguments(component, as_group=False, **kwargs)
             if not parser.description:
@@ -182,12 +184,13 @@ def _add_component_to_parser(
             method_object = getattr(component, method)
             description = get_help_str(method_object, parser.logger)
             subparser = type(parser)(description=description)
-            if not has_parameter(getattr(component, method), "config"):
-                subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
-            added_subargs = subparser.add_method_arguments(component, method, as_group=False, **kwargs)
-            added_args += [f"{method}.{a}" for a in added_subargs]
-            if not added_subargs:
-                remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
+            if not isinstance(method_object, property):
+                if not has_parameter(method_object, "config"):
+                    subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
+                added_subargs = subparser.add_method_arguments(component, method, as_group=False, **kwargs)
+                added_args += [f"{method}.{a}" for a in added_subargs]
+                if not added_subargs:
+                    remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
             subcommands.add_subcommand(method, subparser, help=get_help_str(method_object, parser.logger))
     else:
         added_args = parser.add_function_arguments(component, as_group=False, **kwargs)
@@ -203,6 +206,8 @@ def _run_component(component, cfg):
         subcommand_cfg = cfg.pop(subcommand, {})
         subcommand_cfg.pop("config", None)
         component_obj = component(**cfg)
+        if isinstance(getattr(component, subcommand), property):
+            return getattr(component_obj, subcommand)
         component = getattr(component_obj, subcommand)
         cfg = subcommand_cfg
     if inspect.iscoroutinefunction(component):

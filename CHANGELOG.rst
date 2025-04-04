@@ -21,6 +21,8 @@ Added
   <https://github.com/omni-us/jsonargparse/pull/699>`__).
 - ``shtab`` support for optionals parsed as positionals (`#700
   <https://github.com/omni-us/jsonargparse/pull/700>`__).
+- ``auto_cli`` now supports class ``@property`` (`#701
+  <https://github.com/omni-us/jsonargparse/pull/701>`__).
 
 Changed
 ^^^^^^^
