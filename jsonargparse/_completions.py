@@ -6,7 +6,7 @@ import re
 from collections import defaultdict
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
-from copy import deepcopy
+from copy import copy
 from enum import Enum
 from importlib.util import find_spec
 from subprocess import PIPE, Popen
@@ -133,7 +133,7 @@ def shtab_prepare_actions(parser) -> None:
             shtab_prepare_actions(subparser)
     if get_parsing_setting("parse_optionals_as_positionals"):
         for action in get_optionals_as_positionals_actions(parser):
-            clone = deepcopy(action)
+            clone = copy(action)
             clone.option_strings = []
             clone.nargs = "?"
             parser._actions.append(clone)
