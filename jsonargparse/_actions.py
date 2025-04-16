@@ -578,6 +578,9 @@ class ActionParser:
         base_action_group._actions = filter_default_actions(base_action_group._actions)
         base_action_group._group_actions = filter_default_actions(base_action_group._group_actions)
         extra_action_groups = subparser._action_groups[2:]
+        for group in extra_action_groups:
+            if group.dest is not None:
+                group.dest = dest + "." + group.dest
 
         parser.add_argument(args[0], action=_ActionConfigLoad)
         parser.required_args.update(required_args)
