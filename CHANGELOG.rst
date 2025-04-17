@@ -30,6 +30,11 @@ Changed
   ``fail_untyped=True`` (`#697
   <https://github.com/omni-us/jsonargparse/pull/697>`__).
 
+Fixed
+^^^^^
+- ``ActionParser`` not updating ``dest`` of groups for instantiation (`#707
+  <https://github.com/omni-us/jsonargparse/pull/707>`__).
+
 
 v4.38.0 (2025-03-26)
 --------------------
