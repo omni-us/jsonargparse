@@ -23,6 +23,8 @@ Added
   <https://github.com/omni-us/jsonargparse/pull/700>`__).
 - ``auto_cli`` now supports class ``@property`` (`#701
   <https://github.com/omni-us/jsonargparse/pull/701>`__).
+- Resolve parameters completely from stubs when ``inspect.signature`` fails
+  (`#698 <https://github.com/omni-us/jsonargparse/pull/698>`__).
 
 Changed
 ^^^^^^^
