@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import sys
 from typing import Any, Dict, Generic, List, Literal, Optional, Tuple, TypeVar, Union
 from unittest.mock import patch
 
@@ -539,32 +540,29 @@ def test_nested_generic_dataclass(parser):
     assert "--x.y.g4 g4          (required, type: dict[str, union[float, bool]])" in help_str
 
 
-V = TypeVar("V")
+if sys.version_info >= (3, 9):
+    V = TypeVar("V")
 
+    @dataclasses.dataclass(frozen=True)
+    class GenericChild(Generic[V]):
+        value: V
 
-@dataclasses.dataclass(frozen=True)
-class GenericChild(Generic[V]):
-    value: V
+    @dataclasses.dataclass(frozen=True)
+    class GenericBase(Generic[V]):
+        children: tuple[GenericChild[V], ...]
 
+    @dataclasses.dataclass(frozen=True)
+    class GenericSubclass(GenericBase[str]):
+        children: tuple[GenericChild[str], ...]
 
-@dataclasses.dataclass(frozen=True)
-class GenericBase(Generic[V]):
-    children: tuple[GenericChild[V], ...]
-
-
-@dataclasses.dataclass(frozen=True)
-class GenericSubclass(GenericBase[str]):
-    children: tuple[GenericChild[str], ...]
-
-
-def test_generic_dataclass_subclass(parser):
-    parser.add_class_arguments(GenericSubclass, "x")
-    cfg = parser.parse_args(['--x.children=[{"value": "a"}, {"value": "b"}]'])
-    init = parser.instantiate_classes(cfg)
-    assert cfg.x.children == (Namespace(value="a"), Namespace(value="b"))
-    assert isinstance(init.x, GenericSubclass)
-    assert isinstance(init.x.children[0], GenericChild)
-    assert isinstance(init.x.children[1], GenericChild)
+    def test_generic_dataclass_subclass(parser):
+        parser.add_class_arguments(GenericSubclass, "x")
+        cfg = parser.parse_args(['--x.children=[{"value": "a"}, {"value": "b"}]'])
+        init = parser.instantiate_classes(cfg)
+        assert cfg.x.children == (Namespace(value="a"), Namespace(value="b"))
+        assert isinstance(init.x, GenericSubclass)
+        assert isinstance(init.x.children[0], GenericChild)
+        assert isinstance(init.x.children[1], GenericChild)
 
 
 # union mixture tests
