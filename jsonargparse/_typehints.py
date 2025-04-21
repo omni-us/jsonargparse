@@ -644,7 +644,7 @@ class ActionTypeHint(Action):
         parser = parent_parser.get()
         parser = type(parser)(exit_on_error=False, logger=parser.logger, parser_mode=parser.parser_mode)
         remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
-        if inspect.isclass(val_class):
+        if inspect.isclass(val_class) or inspect.isclass(get_typehint_origin(val_class)):
             parser.add_class_arguments(val_class, **kwargs)
         else:
             kwargs = {k: v for k, v in kwargs.items() if k != "instantiate"}
