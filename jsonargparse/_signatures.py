@@ -537,7 +537,7 @@ class SignatureArguments(LoggerProperty):
                     doc_group = str(obj[0])
                 else:
                     doc_group = str(obj)
-            name = obj.__name__ if nested_key is None else nested_key
+            name = get_object_name(obj) if nested_key is None else nested_key
             group = self.add_argument_group(strip_title(doc_group), name=name)
             if config_load and nested_key is not None:
                 group.add_argument("--" + nested_key, action=_ActionConfigLoad(basetype=config_load_type))
@@ -546,6 +546,12 @@ class SignatureArguments(LoggerProperty):
                 group.group_class = obj
                 group.instantiate_class = group_instantiate_class
         return group
+
+
+def get_object_name(obj) -> str:
+    if hasattr(obj, "__name__"):
+        return obj.__name__
+    return str(obj).split(".")[-1].replace("[", "_").replace("]", "")
 
 
 def group_instantiate_class(group, cfg):
