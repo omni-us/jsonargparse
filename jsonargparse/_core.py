@@ -1400,7 +1400,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         with parser_context(parent_parser=self):
             ActionTypeHint.discard_init_args_on_class_path_change(self, cfg_to, cfg_from)
         cfg_to.update(cfg_from)
-        ActionTypeHint.apply_appends(self, cfg_to)
         return cfg_to
 
     def _check_value_key(

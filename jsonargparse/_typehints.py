@@ -485,16 +485,6 @@ class ActionTypeHint(Action):
             )
         )
 
-    @staticmethod
-    def apply_appends(parser, cfg):
-        for key in [k for k in cfg.keys() if k.endswith("+")]:
-            action = _find_action(parser, key[:-1])
-            if ActionTypeHint.supports_append(action):
-                with parser_context(load_value_mode=parser.parser_mode):
-                    val = action._check_type_(cfg[key], append=True, cfg=cfg)
-                cfg[key[:-1]] = val
-                cfg.pop(key)
-
     def serialize(self, value, dump_kwargs=None):
         sub_add_kwargs = getattr(self, "sub_add_kwargs", {})
         with dump_kwargs_context(dump_kwargs):
