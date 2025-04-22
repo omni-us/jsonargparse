@@ -38,6 +38,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/707>`__).
 - Nested generic dataclasses not working correctly (`#709
   <https://github.com/omni-us/jsonargparse/pull/709>`__).
+- List append nested in subclass not working (`#710
+  <https://github.com/omni-us/jsonargparse/pull/710>`__).
 
 
 v4.38.0 (2025-03-26)

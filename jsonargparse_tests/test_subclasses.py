@@ -1080,7 +1080,9 @@ def test_subclass_discard_init_args_with_default_config_files(parser, tmp_cwd, l
         cfg = parser.parse_args(['--cal={"class_path": "calendar.Calendar", "init_args": {"firstweekday": 3}}'])
     assert "discarding init_args: {'param': '1'}" in logs.getvalue()
     assert cfg.cal.init_args == Namespace(firstweekday=3)
-    assert type(parser.instantiate_classes(cfg).cal) is Calendar
+    with capture_logs(logger) as logs:
+        assert type(parser.instantiate_classes(cfg).cal) is Calendar
+    assert logs.getvalue()
 
 
 class Arch:
@@ -1165,7 +1167,9 @@ def test_discard_init_args_config_nested(parser, logger, tmp_cwd, method):
     with capture_logs(logger) as logs:
         cfg = parser.parse_args([f"--cfg={config_path}"])
     assert "discarding init_args: {'s1': 'x'}" in logs.getvalue()
-    init = parser.instantiate_classes(cfg)
+    with capture_logs(logger) as logs:
+        init = parser.instantiate_classes(cfg)
+    assert logs.getvalue()
     assert isinstance(init.main, ConfigDiscardMain)
     assert isinstance(init.main.sub, ConfigDiscardSub2)
 
@@ -1216,7 +1220,9 @@ def test_subclass_discard_init_args_dict_looks_like_subclass(parser, logger, tmp
     with capture_logs(logger) as logs:
         cfg = parser.parse_args([f"--cfg={config_paths[1]}", f"--cfg={config_paths[2]}"])
     assert "discarding init_args: {'s1': 1}" in logs.getvalue()
-    init = parser.instantiate_classes(cfg)
+    with capture_logs(logger) as logs:
+        init = parser.instantiate_classes(cfg)
+    assert logs.getvalue()
     assert isinstance(init.main, DictDiscardMain)
     assert isinstance(init.main.sub, dict)
     assert init.main.sub["init_args"]["s2"] == 2
