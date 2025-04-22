@@ -499,6 +499,32 @@ def test_list_append_subcommand_subparser_default_config_files(parser, subparser
     assert cfg.sub.nums == [2]
 
 
+class NestedList:
+    def __init__(
+        self,
+        nested: List[Dict[str, str]] = [{"a": "random_crop"}, {"b": "random_blur"}],
+    ) -> None:
+        self.nested = nested
+
+
+def test_list_append_dicts_nested_with_default(parser):
+    parser.add_argument("--cls", type=NestedList, default={"class_path": "NestedList"})
+    cfg = parser.parse_args(['--cls.nested+={"d":"random_perspective"}'])
+    assert cfg.cls.class_path == f"{__name__}.NestedList"
+    assert cfg.cls.init_args == Namespace(
+        nested=[{"a": "random_crop"}, {"b": "random_blur"}, {"d": "random_perspective"}]
+    )
+
+
+def test_list_append_dicts_nested_without_default(parser):
+    parser.add_argument("--cls", type=NestedList)
+    cfg = parser.parse_args(["--cls=NestedList", '--cls.nested+={"d":"random_perspective"}'])
+    assert cfg.cls.class_path == f"{__name__}.NestedList"
+    assert cfg.cls.init_args == Namespace(
+        nested=[{"a": "random_crop"}, {"b": "random_blur"}, {"d": "random_perspective"}]
+    )
+
+
 # dict tests
 
 

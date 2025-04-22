@@ -953,6 +953,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
     ## Methods related to defaults ##
 
     def _get_default_config_files(self) -> List[Tuple[Optional[str], Path]]:
+        if getattr(self, "_inner_parser", False):
+            return []
+
         default_config_files = []
 
         for key, parser in parent_parsers.get():
@@ -1022,7 +1025,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if not default_config_file_content.strip():
                 continue
             with change_to_path_dir(default_config_file), parser_context(parent_parser=self):
-                cfg_file = self._load_config_parser_mode(default_config_file.get_content(), key=key)
+                cfg_file = self._load_config_parser_mode(default_config_file_content, key=key, prev_cfg=cfg)
                 cfg = self.merge_config(cfg_file, cfg)
                 try:
                     with _ActionPrintConfig.skip_print_config():
@@ -1365,11 +1368,15 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 continue
 
             action_dest = action.dest if subcommand is None else subcommand + "." + action.dest
+            append = False
+            if action_dest not in cfg and key.endswith("+"):
+                append = True
+                cfg[action_dest] = cfg.pop(key)
             value = cfg[action_dest]
             if skip_fn and skip_fn(value):
                 continue
             with parser_context(parent_parser=self, lenient_check=True):
-                value = self._check_value_key(action, value, action_dest, prev_cfg)
+                value = self._check_value_key(action, value, action_dest, prev_cfg, append=append)
             if isinstance(action, _ActionConfigLoad):
                 config_keys.add(action_dest)
                 keys.append(action_dest)
@@ -1396,7 +1403,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         ActionTypeHint.apply_appends(self, cfg_to)
         return cfg_to
 
-    def _check_value_key(self, action: argparse.Action, value: Any, key: str, cfg: Optional[Namespace]) -> Any:
+    def _check_value_key(
+        self, action: argparse.Action, value: Any, key: str, cfg: Optional[Namespace], append: bool = False
+    ) -> Any:
         """Checks the value for a given action.
 
         Args:
@@ -1421,7 +1430,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                 value = action.check_type(value, self)
         elif hasattr(action, "_check_type"):
             with parser_context(parent_parser=self):
-                value = action._check_type_(value, cfg=cfg)  # type: ignore[attr-defined]
+                value = action._check_type_(value, cfg=cfg, append=append)  # type: ignore[attr-defined]
         elif action.type is not None:
             try:
                 if action.nargs in {None, "?"} or action.nargs == 0:

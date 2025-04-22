@@ -64,7 +64,7 @@ def _find_action_and_subcommand(
         actions = [a for a in actions if not isinstance(a, exclude)]
     fallback_action = None
     for action in actions:
-        if action.dest == dest:
+        if action.dest == dest or f"--{dest}" in action.option_strings:
             if isinstance(action, _ActionConfigLoad):
                 fallback_action = action
             else:

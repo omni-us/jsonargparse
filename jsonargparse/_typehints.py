@@ -43,6 +43,7 @@ from ._actions import (
     _find_parent_action,
     _is_action_value_list,
     parent_parsers_context,
+    parse_kwargs,
     remove_actions,
 )
 from ._common import (
@@ -1058,10 +1059,14 @@ def adapt_typehints(
         if serialize and isinstance(val, str):
             return val
 
-        val_input = val
+        prev_implicit_defaults = False
         if prev_val is None and not inspect.isabstract(typehint) and not is_protocol(typehint):
             with suppress(ValueError):
                 prev_val = Namespace(class_path=get_import_path(typehint))  # implicit class_path
+                if parse_kwargs.get().get("defaults") is True:
+                    prev_implicit_defaults = True
+
+        val_input = val
         val = subclass_spec_as_namespace(val, prev_val)
         if not is_subclass_spec(val):
             msg = "Does not implement protocol" if is_protocol(typehint) else "Not a valid subclass of"
@@ -1088,6 +1093,9 @@ def adapt_typehints(
                     return_type = get_return_type(val_class, logger)
                     if is_subclass_or_implements_protocol(return_type, typehint):
                         not_subclass = False
+            elif prev_implicit_defaults:
+                inner_parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs)
+                prev_val.init_args = inner_parser.get_defaults()
             if not_subclass:
                 msg = "implement protocol" if is_protocol(typehint) else "correspond to a subclass of"
                 raise_unexpected_value(f"Import path {val['class_path']} does not {msg} {typehint.__name__}")
