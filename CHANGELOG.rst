@@ -25,6 +25,8 @@ Added
   <https://github.com/omni-us/jsonargparse/pull/701>`__).
 - Resolve parameters completely from stubs when ``inspect.signature`` fails
   (`#698 <https://github.com/omni-us/jsonargparse/pull/698>`__).
+- Option to enable validation of default values (`#711
+  <https://github.com/omni-us/jsonargparse/pull/711>`__).
 
 Changed
 ^^^^^^^

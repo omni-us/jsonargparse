@@ -22,6 +22,28 @@ def test_get_parsing_setting_failure():
         get_parsing_setting("unknown_setting")
 
 
+# validate_defaults
+
+
+def test_set_validate_defaults_failure():
+    with pytest.raises(ValueError, match="validate_defaults must be a boolean"):
+        set_parsing_settings(validate_defaults="invalid")
+
+
+def test_validate_defaults_success(parser):
+    set_parsing_settings(validate_defaults=True)
+
+    parser.add_argument("--num", type=int, default=1)
+    parser.add_argument("--untyped", default=2)
+
+
+def test_validate_defaults_failure(parser):
+    set_parsing_settings(validate_defaults=True)
+
+    with pytest.raises(ValueError, match="Default value is not valid:"):
+        parser.add_argument("--num", type=int, default="x")
+
+
 # parse_optionals_as_positionals
 
 

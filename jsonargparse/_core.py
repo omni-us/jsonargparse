@@ -46,6 +46,7 @@ from ._common import (
     lenient_check,
     parser_context,
     supports_optionals_as_positionals,
+    validate_default,
 )
 from ._completions import (
     argcomplete_namespace,
@@ -151,6 +152,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             raise ValueError(f'Argument with destination name "{action.dest}" not allowed.')
         if action.option_strings == [] and "default" in kwargs:
             raise ValueError("Positional arguments not allowed to have a default value.")
+        validate_default(self, action)
         if action.help is None:
             action.help = empty_help
         if action.required:

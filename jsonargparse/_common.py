@@ -29,7 +29,7 @@ from ._optionals import (
     reconplogger_support,
     typing_extensions_import,
 )
-from ._type_checking import ArgumentParser
+from ._type_checking import ActionsContainer, ArgumentParser
 
 __all__ = [
     "LoggerProperty",
@@ -55,7 +55,7 @@ class InstantiatorCallable(Protocol):
 InstantiatorsDictType = Dict[Tuple[type, bool], InstantiatorCallable]
 
 
-parent_parser: ContextVar[Optional["ArgumentParser"]] = ContextVar("parent_parser", default=None)
+parent_parser: ContextVar[Optional[ArgumentParser]] = ContextVar("parent_parser", default=None)
 parser_capture: ContextVar[bool] = ContextVar("parser_capture", default=False)
 defaults_cache: ContextVar[Optional[Namespace]] = ContextVar("defaults_cache", default=None)
 lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", default=False)
@@ -90,22 +90,34 @@ def parser_context(**kwargs):
 
 
 parsing_settings = dict(
+    validate_defaults=False,
     parse_optionals_as_positionals=False,
 )
 
 
-def set_parsing_settings(*, parse_optionals_as_positionals: Optional[bool] = None) -> None:
+def set_parsing_settings(
+    *,
+    validate_defaults: Optional[bool] = None,
+    parse_optionals_as_positionals: Optional[bool] = None,
+) -> None:
     """
     Modify settings that affect the parsing behavior.
 
     Args:
+        validate_defaults: Whether default values must be valid according to the
+            argument type. The default is False, meaning no default validation,
+            like in argparse.
         parse_optionals_as_positionals: [EXPERIMENTAL] If True, the parser will
             take extra positional command line arguments as values for optional
             arguments. This means that optional arguments can be given by name
             --key=value as usual, but also as positional. The extra positionals
             are applied to optionals in the order that they were added to the
-            parser.
+            parser. By default, this is False.
     """
+    if isinstance(validate_defaults, bool):
+        parsing_settings["validate_defaults"] = validate_defaults
+    elif validate_defaults is not None:
+        raise ValueError(f"validate_defaults must be a boolean, but got {validate_defaults}.")
     if isinstance(parse_optionals_as_positionals, bool):
         parsing_settings["parse_optionals_as_positionals"] = parse_optionals_as_positionals
     elif parse_optionals_as_positionals is not None:
@@ -116,6 +128,18 @@ def get_parsing_setting(name: str):
     if name not in parsing_settings:
         raise ValueError(f"Unknown parsing setting {name}.")
     return parsing_settings[name]
+
+
+def validate_default(container: ActionsContainer, action: argparse.Action):
+    if not isinstance(action, Action) or not get_parsing_setting("validate_defaults") or action.default is None:
+        return
+    try:
+        with parser_context(parent_parser=container):
+            default = action.default
+            action.default = None
+            action.default = action._check_type_(default)
+    except Exception as ex:
+        raise ValueError(f"Default value is not valid: {ex}") from ex
 
 
 def get_optionals_as_positionals_actions(parser, include_positionals=False):
