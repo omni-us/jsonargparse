@@ -21,7 +21,7 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     Namespace,
-    set_config_read_mode,
+    set_parsing_settings,
     strip_meta,
 )
 from jsonargparse._formatters import get_env_var
@@ -579,7 +579,7 @@ def parser_schema_jsonnet(parser, example_parser):
 def test_parse_args_url_config(parser_schema_jsonnet):
     import responses
 
-    set_config_read_mode(urls_enabled=True)
+    set_parsing_settings(config_read_mode_urls_enabled=True)
     parser, expected, subparser_body, schema_body, jsonnet_body = parser_schema_jsonnet
 
     base_url = "http://jsonargparse.com/"
@@ -606,7 +606,7 @@ def test_parse_args_url_config(parser_schema_jsonnet):
     if jsonnet_support:
         assert expected.jsonnet == cfg.jsonnet
 
-    set_config_read_mode(urls_enabled=False)
+    set_parsing_settings(config_read_mode_urls_enabled=False)
 
 
 def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):

@@ -33,6 +33,9 @@ Changed
 - Untyped parameters with ``None`` default no longer skipped when
   ``fail_untyped=True`` (`#697
   <https://github.com/omni-us/jsonargparse/pull/697>`__).
+- ``config_read_mode`` and ``docstring_parse`` options can now be set using
+  ``set_parsing_settings`` (`#712
+  <https://github.com/omni-us/jsonargparse/pull/712>`__).
 
 Fixed
 ^^^^^
@@ -42,6 +45,15 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/709>`__).
 - List append nested in subclass not working (`#710
   <https://github.com/omni-us/jsonargparse/pull/710>`__).
+
+Deprecated
+^^^^^^^^^^
+- ``get_config_read_mode``, ``set_config_read_mode`` and
+  ``set_docstring_parse_options`` are deprecated and will be removed in v5.0.0.
+  Instead of ``set_config_read_mode`` and ``set_docstring_parse_options`` use
+  ``set_parsing_settings``. There will be no replacement for
+  ``get_config_read_mode`` since this is considered internal (`#712
+  <https://github.com/omni-us/jsonargparse/pull/712>`__).
 
 
 v4.38.0 (2025-03-26)

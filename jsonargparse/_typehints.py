@@ -870,9 +870,9 @@ def adapt_typehints(
         list_path = None
         if enable_path and type(val) is str:
             with suppress(TypeError):
-                from ._optionals import get_config_read_mode
+                from ._optionals import _get_config_read_mode
 
-                list_path = Path(val, mode=get_config_read_mode())
+                list_path = Path(val, mode=_get_config_read_mode())
                 val = list_path.get_content().splitlines()
         if isinstance(val, NestedArg) and subtypehints is not None:
             val = (prev_val[:-1] if isinstance(prev_val, list) else []) + [val]

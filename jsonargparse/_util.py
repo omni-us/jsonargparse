@@ -39,8 +39,8 @@ from ._common import (
 from ._deprecated import PathDeprecations
 from ._loaders_dumpers import json_compact_dump, load_value
 from ._optionals import (
+    _get_config_read_mode,
     fsspec_support,
-    get_config_read_mode,
     import_fsspec,
     import_requests,
     url_support,
@@ -135,7 +135,7 @@ def parse_value_or_config(
     cfg_path = None
     if enable_path and type(value) is str and value != "-":
         try:
-            cfg_path = Path(value, mode=get_config_read_mode())
+            cfg_path = Path(value, mode=_get_config_read_mode())
         except TypeError:
             pass
         else:

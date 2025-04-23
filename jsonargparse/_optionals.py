@@ -8,9 +8,7 @@ from importlib.util import find_spec
 from typing import Optional, Union
 
 __all__ = [
-    "get_config_read_mode",
-    "set_config_read_mode",
-    "set_docstring_parse_options",
+    "_get_config_read_mode",
 ]
 
 
@@ -165,7 +163,7 @@ def import_reconplogger(importer):
     return reconplogger
 
 
-def set_config_read_mode(
+def _set_config_read_mode(
     urls_enabled: bool = False,
     fsspec_enabled: bool = False,
 ):
@@ -183,7 +181,7 @@ def set_config_read_mode(
     def update_mode(flag, enabled):
         global _config_read_mode
         if enabled:
-            imports[flag]("set_config_read_mode")
+            imports[flag]("_set_config_read_mode")
             if flag not in _config_read_mode:
                 _config_read_mode = _config_read_mode.replace("f", "f" + flag)
         else:
@@ -193,12 +191,12 @@ def set_config_read_mode(
     update_mode("s", fsspec_enabled)
 
 
-def get_config_read_mode() -> str:
+def _get_config_read_mode() -> str:
     """Returns the current config reading mode."""
     return _config_read_mode
 
 
-def set_docstring_parse_options(style=None, attribute_docstrings: Optional[bool] = None):
+def _set_docstring_parse_options(style=None, attribute_docstrings: Optional[bool] = None):
     """Sets options for docstring parsing.
 
     Args:
@@ -206,7 +204,7 @@ def set_docstring_parse_options(style=None, attribute_docstrings: Optional[bool]
         attribute_docstrings: Whether to parse attribute docstrings (slower).
     """
     global _docstring_parse_options
-    dp = import_docstring_parser("set_docstring_parse_options")
+    dp = import_docstring_parser("_set_docstring_parse_options")
     if style is not None:
         if not isinstance(style, dp.DocstringStyle):
             raise ValueError(f"Expected style to be of type {dp.DocstringStyle}.")

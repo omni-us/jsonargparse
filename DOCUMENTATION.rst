@@ -701,10 +701,10 @@ triggered to check if it is accessible. To get the content of the parsed path,
 without needing to care if it is a local file or a URL, the
 :py:meth:`.Path.get_content` method Scan be used.
 
-If you import ``from jsonargparse import set_config_read_mode`` and then run
-``set_config_read_mode(urls_enabled=True)`` or
-``set_config_read_mode(fsspec_enabled=True)``, the following functions and
-classes will also support loading from URLs:
+If you import ``from jsonargparse import set_parsing_settings`` and then run
+``set_parsing_settings(config_read_mode_urls_enabled=True)`` or
+``set_parsing_settings(config_read_mode_fsspec_enabled=True)``, the following
+functions and classes will also support loading from URLs:
 :py:meth:`.ArgumentParser.parse_path`, :py:meth:`.ArgumentParser.get_defaults`
 (``default_config_files`` argument), `action="config"`,
 :class:`.ActionJsonSchema`, :class:`.ActionJsonnet` and :class:`.ActionParser`.
@@ -1576,9 +1576,9 @@ single style, this is inefficient. A single style can be configured as follows:
 .. testcode:: docstrings
 
     from docstring_parser import DocstringStyle
-    from jsonargparse import set_docstring_parse_options
+    from jsonargparse import set_parsing_settings
 
-    set_docstring_parse_options(style=DocstringStyle.REST)
+    set_parsing_settings(docstring_parse_style=DocstringStyle.REST)
 
 The second option that can be configured is the support for `attribute
 docstrings <https://peps.python.org/pep-0257/#what-is-a-docstring>`__ (i.e.
@@ -1589,9 +1589,9 @@ that don't have attribute docstrings. To enable, do as follows:
 .. testcode:: docstrings
 
     from dataclasses import dataclass
-    from jsonargparse import set_docstring_parse_options
+    from jsonargparse import set_parsing_settings
 
-    set_docstring_parse_options(attribute_docstrings=True)
+    set_parsing_settings(docstring_parse_attribute_docstrings=True)
 
 
     @dataclass
@@ -1606,8 +1606,8 @@ that don't have attribute docstrings. To enable, do as follows:
 
 .. testcleanup:: docstrings
 
-    set_docstring_parse_options(style=DocstringStyle.GOOGLE)
-    set_docstring_parse_options(attribute_docstrings=False)
+    set_parsing_settings(docstring_parse_style=DocstringStyle.GOOGLE)
+    set_parsing_settings(docstring_parse_attribute_docstrings=False)
 
 Customization of arguments
 --------------------------

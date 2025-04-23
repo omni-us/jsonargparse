@@ -77,8 +77,8 @@ from ._namespace import (
     strip_meta,
 )
 from ._optionals import (
+    _get_config_read_mode,
     fsspec_support,
-    get_config_read_mode,
     import_fsspec,
     import_jsonnet,
     pyyaml_available,
@@ -619,7 +619,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Raises:
             ArgumentError: If the parsing fails error and exit_on_error=True.
         """
-        fpath = Path(cfg_path, mode=get_config_read_mode())
+        fpath = Path(cfg_path, mode=_get_config_read_mode())
         with change_to_path_dir(fpath):
             cfg_str = fpath.get_content()
             parsed_cfg = self.parse_string(
@@ -971,7 +971,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
         if len(default_config_files) > 0:
             with suppress(TypeError):
-                return [(k, Path(v, mode=get_config_read_mode())) for k, v in default_config_files]
+                return [(k, Path(v, mode=_get_config_read_mode())) for k, v in default_config_files]
         return []
 
     def get_default(self, dest: str) -> Any:

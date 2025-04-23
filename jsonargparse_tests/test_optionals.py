@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from jsonargparse import get_config_read_mode, set_config_read_mode
+from jsonargparse import set_parsing_settings
 from jsonargparse._optionals import (
+    _get_config_read_mode,
     docstring_parser_support,
     fsspec_support,
     get_docstring_parse_options,
@@ -16,7 +17,6 @@ from jsonargparse._optionals import (
     jsonnet_support,
     jsonschema_support,
     ruyaml_support,
-    set_docstring_parse_options,
     url_support,
 )
 from jsonargparse_tests.conftest import (
@@ -94,17 +94,17 @@ def test_docstring_parse_options():
     options = get_docstring_parse_options()
 
     for style in [DocstringStyle.NUMPYDOC, DocstringStyle.GOOGLE]:
-        set_docstring_parse_options(style=style)
+        set_parsing_settings(docstring_parse_style=style)
         assert options["style"] == style
     with pytest.raises(ValueError):
-        set_docstring_parse_options(style="invalid")
+        set_parsing_settings(docstring_parse_style="invalid")
 
     assert options["attribute_docstrings"] is False
     for attribute_docstrings in [True, False]:
-        set_docstring_parse_options(attribute_docstrings=attribute_docstrings)
+        set_parsing_settings(docstring_parse_attribute_docstrings=attribute_docstrings)
         assert options["attribute_docstrings"] is attribute_docstrings
     with pytest.raises(ValueError):
-        set_docstring_parse_options(attribute_docstrings="invalid")
+        set_parsing_settings(docstring_parse_attribute_docstrings="invalid")
 
 
 # fsspec support
@@ -142,37 +142,37 @@ def test_ruyaml_support_false():
 
 @skip_if_requests_unavailable
 def test_config_read_mode_url_support_true():
-    assert "fr" == get_config_read_mode()
-    set_config_read_mode(urls_enabled=True)
-    assert "fur" == get_config_read_mode()
-    set_config_read_mode(urls_enabled=False)
-    assert "fr" == get_config_read_mode()
+    assert "fr" == _get_config_read_mode()
+    set_parsing_settings(config_read_mode_urls_enabled=True)
+    assert "fur" == _get_config_read_mode()
+    set_parsing_settings(config_read_mode_urls_enabled=False)
+    assert "fr" == _get_config_read_mode()
 
 
 @pytest.mark.skipif(url_support, reason="request package should not be installed")
 def test_config_read_mode_url_support_false():
-    assert "fr" == get_config_read_mode()
+    assert "fr" == _get_config_read_mode()
     with pytest.raises(ImportError):
-        set_config_read_mode(urls_enabled=True)
-    assert "fr" == get_config_read_mode()
-    set_config_read_mode(urls_enabled=False)
-    assert "fr" == get_config_read_mode()
+        set_parsing_settings(config_read_mode_urls_enabled=True)
+    assert "fr" == _get_config_read_mode()
+    set_parsing_settings(config_read_mode_urls_enabled=False)
+    assert "fr" == _get_config_read_mode()
 
 
 @skip_if_fsspec_unavailable
 def test_config_read_mode_fsspec_support_true():
-    assert "fr" == get_config_read_mode()
-    set_config_read_mode(fsspec_enabled=True)
-    assert "fsr" == get_config_read_mode()
-    set_config_read_mode(fsspec_enabled=False)
-    assert "fr" == get_config_read_mode()
+    assert "fr" == _get_config_read_mode()
+    set_parsing_settings(config_read_mode_fsspec_enabled=True)
+    assert "fsr" == _get_config_read_mode()
+    set_parsing_settings(config_read_mode_fsspec_enabled=False)
+    assert "fr" == _get_config_read_mode()
 
 
 @pytest.mark.skipif(fsspec_support, reason="fsspec package should not be installed")
 def test_config_read_mode_fsspec_support_false():
-    assert "fr" == get_config_read_mode()
+    assert "fr" == _get_config_read_mode()
     with pytest.raises(ImportError):
-        set_config_read_mode(fsspec_enabled=True)
-    assert "fr" == get_config_read_mode()
-    set_config_read_mode(fsspec_enabled=False)
-    assert "fr" == get_config_read_mode()
+        set_parsing_settings(config_read_mode_fsspec_enabled=True)
+    assert "fr" == _get_config_read_mode()
+    set_parsing_settings(config_read_mode_fsspec_enabled=False)
+    assert "fr" == _get_config_read_mode()
