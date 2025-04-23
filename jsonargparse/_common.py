@@ -6,7 +6,6 @@ import os
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (  # type: ignore[attr-defined]
-    TYPE_CHECKING,
     Dict,
     Generic,
     List,
@@ -32,10 +31,7 @@ from ._optionals import (
     reconplogger_support,
     typing_extensions_import,
 )
-from ._type_checking import ActionsContainer, ArgumentParser
-
-if TYPE_CHECKING:
-    import docstring_parser
+from ._type_checking import ActionsContainer, ArgumentParser, docstring_parser
 
 __all__ = [
     "LoggerProperty",

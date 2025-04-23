@@ -48,11 +48,11 @@ Fixed
 
 Deprecated
 ^^^^^^^^^^
-- ``get_config_read_mode`` and ``set_docstring_parse_options`` are deprecated
-  and will be removed in v5.0.0, instead use ``set_parsing_settings`` (`#712
-  <https://github.com/omni-us/jsonargparse/pull/712>`__).
-- ``get_config_read_mode`` is deprecated and will be removed in v5.0.0. There will
-  be no replacement since this is considered internal (`#712
+- ``get_config_read_mode``, ``set_config_read_mode`` and
+  ``set_docstring_parse_options`` are deprecated and will be removed in v5.0.0.
+  Instead of ``set_config_read_mode`` and ``set_docstring_parse_options`` use
+  ``set_parsing_settings``. There will be no replacement for
+  ``get_config_read_mode`` since this is considered internal (`#712
   <https://github.com/omni-us/jsonargparse/pull/712>`__).
 
 

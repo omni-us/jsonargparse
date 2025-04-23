@@ -20,6 +20,9 @@ from jsonargparse import (
     LoggerProperty,
     Namespace,
     Path,
+    get_config_read_mode,
+    set_config_read_mode,
+    set_docstring_parse_options,
     set_url_support,
 )
 from jsonargparse._deprecated import (
@@ -34,8 +37,8 @@ from jsonargparse._deprecated import (
     usage_and_exit_error_handler,
 )
 from jsonargparse._optionals import (
-    _get_config_read_mode,
     docstring_parser_support,
+    get_docstring_parse_options,
     jsonnet_support,
     pyyaml_available,
     url_support,
@@ -45,6 +48,7 @@ from jsonargparse_tests.conftest import (
     get_parser_help,
     is_posix,
     skip_if_docstring_parser_unavailable,
+    skip_if_fsspec_unavailable,
     skip_if_requests_unavailable,
 )
 from jsonargparse_tests.test_dataclass_like import DataClassA
@@ -186,7 +190,13 @@ def test_ActionOperators():
 
 @skip_if_requests_unavailable
 def test_url_support_true():
-    assert "fr" == _get_config_read_mode()
+    with catch_warnings(record=True) as w:
+        assert "fr" == get_config_read_mode()
+    assert_deprecation_warn(
+        w,
+        message="get_config_read_mode was deprecated",
+        code="get_config_read_mode()",
+    )
     with catch_warnings(record=True) as w:
         set_url_support(True)
     assert_deprecation_warn(
@@ -194,21 +204,48 @@ def test_url_support_true():
         message="set_url_support was deprecated",
         code="set_url_support(True)",
     )
-    assert "fur" == _get_config_read_mode()
+    assert "fur" == get_config_read_mode()
     set_url_support(False)
-    assert "fr" == _get_config_read_mode()
+    assert "fr" == get_config_read_mode()
 
 
 @pytest.mark.skipif(url_support, reason="requests package should not be installed")
 def test_url_support_false():
-    assert "fr" == _get_config_read_mode()
+    with catch_warnings(record=True) as w:
+        assert "fr" == get_config_read_mode()
+    assert_deprecation_warn(
+        w,
+        message="get_config_read_mode was deprecated",
+        code="get_config_read_mode()",
+    )
     with catch_warnings(record=True) as w:
         with pytest.raises(ImportError):
             set_url_support(True)
         assert "set_url_support was deprecated" in str(w[-1].message)
-    assert "fr" == _get_config_read_mode()
+    assert "fr" == get_config_read_mode()
     set_url_support(False)
-    assert "fr" == _get_config_read_mode()
+    assert "fr" == get_config_read_mode()
+
+
+@skip_if_fsspec_unavailable
+def test_set_config_read_mode():
+    with catch_warnings(record=True) as w:
+        assert "fr" == get_config_read_mode()
+    assert_deprecation_warn(
+        w,
+        message="get_config_read_mode was deprecated",
+        code="get_config_read_mode()",
+    )
+    with catch_warnings(record=True) as w:
+        set_config_read_mode(fsspec_enabled=True)
+    assert_deprecation_warn(
+        w,
+        message="set_config_read_mode was deprecated",
+        code="set_config_read_mode(fsspec_enabled=True)",
+    )
+    assert "fsr" == get_config_read_mode()
+    set_config_read_mode(fsspec_enabled=False)
+    assert "fr" == get_config_read_mode()
 
 
 def test_instantiate_subclasses():
@@ -553,6 +590,24 @@ def test_import_import_docstring_parse():
         code="from jsonargparse.optionals import import_docstring_parse",
     )
     assert import_docstring_parse is import_docstring_parser
+
+
+@skip_if_docstring_parser_unavailable
+def test_docstring_parse_options():
+    from docstring_parser import DocstringStyle
+
+    options = get_docstring_parse_options()
+    options["style"] = None
+
+    with catch_warnings(record=True) as w:
+        for style in [DocstringStyle.NUMPYDOC, DocstringStyle.GOOGLE]:
+            set_docstring_parse_options(style=style)
+            assert options["style"] == style
+    assert_deprecation_warn(
+        w,
+        message="set_docstring_parse_options was deprecated",
+        code="set_docstring_parse_options(style=style)",
+    )
 
 
 def test_import_from_deprecated():
