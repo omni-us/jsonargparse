@@ -34,8 +34,8 @@ Changed
   ``fail_untyped=True`` (`#697
   <https://github.com/omni-us/jsonargparse/pull/697>`__).
 - ``config_read_mode`` and ``docstring_parse`` options can now be set using
-  ``set_parsing_settings`` (`#711
-  <https://github.com/omni-us/jsonargparse/pull/711>`__).
+  ``set_parsing_settings`` (`#712
+  <https://github.com/omni-us/jsonargparse/pull/712>`__).
 
 Fixed
 ^^^^^
@@ -49,11 +49,11 @@ Fixed
 Deprecated
 ^^^^^^^^^^
 - ``get_config_read_mode`` and ``set_docstring_parse_options`` are deprecated
-  and will be removed in v5.0.0, instead use ``set_parsing_settings`` (`#711
-  <https://github.com/omni-us/jsonargparse/pull/711>`__).
+  and will be removed in v5.0.0, instead use ``set_parsing_settings`` (`#712
+  <https://github.com/omni-us/jsonargparse/pull/712>`__).
 - ``get_config_read_mode`` is deprecated and will be removed in v5.0.0. There will
-  be no replacement since this is considered internal (`#711
-  <https://github.com/omni-us/jsonargparse/pull/711>`__).
+  be no replacement since this is considered internal (`#712
+  <https://github.com/omni-us/jsonargparse/pull/712>`__).
 
 
 v4.38.0 (2025-03-26)
