@@ -6,6 +6,7 @@ import os
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (  # type: ignore[attr-defined]
+    TYPE_CHECKING,
     Dict,
     Generic,
     List,
@@ -20,6 +21,8 @@ from typing import (  # type: ignore[attr-defined]
 
 from ._namespace import Namespace
 from ._optionals import (
+    _set_config_read_mode,
+    _set_docstring_parse_options,
     capture_typing_extension_shadows,
     get_alias_target,
     get_annotated_base_type,
@@ -30,6 +33,9 @@ from ._optionals import (
     typing_extensions_import,
 )
 from ._type_checking import ActionsContainer, ArgumentParser
+
+if TYPE_CHECKING:
+    import docstring_parser
 
 __all__ = [
     "LoggerProperty",
@@ -98,6 +104,10 @@ parsing_settings = dict(
 def set_parsing_settings(
     *,
     validate_defaults: Optional[bool] = None,
+    config_read_mode_urls_enabled: Optional[bool] = None,
+    config_read_mode_fsspec_enabled: Optional[bool] = None,
+    docstring_parse_style: Optional["docstring_parser.DocstringStyle"] = None,
+    docstring_parse_attribute_docstrings: Optional[bool] = None,
     parse_optionals_as_positionals: Optional[bool] = None,
 ) -> None:
     """
@@ -107,6 +117,14 @@ def set_parsing_settings(
         validate_defaults: Whether default values must be valid according to the
             argument type. The default is False, meaning no default validation,
             like in argparse.
+        config_read_mode_urls_enabled: Whether to read config files from URLs
+            using requests package. Default is False.
+        config_read_mode_fsspec_enabled: Whether to read config files from
+            fsspec supported file systems. Default is False.
+        docstring_parse_style: The docstring style to expect. Default is
+            DocstringStyle.AUTO.
+        docstring_parse_attribute_docstrings: Whether to parse attribute
+            docstrings (slower). Default is False.
         parse_optionals_as_positionals: [EXPERIMENTAL] If True, the parser will
             take extra positional command line arguments as values for optional
             arguments. This means that optional arguments can be given by name
@@ -114,10 +132,22 @@ def set_parsing_settings(
             are applied to optionals in the order that they were added to the
             parser. By default, this is False.
     """
+    # validate_defaults
     if isinstance(validate_defaults, bool):
         parsing_settings["validate_defaults"] = validate_defaults
     elif validate_defaults is not None:
         raise ValueError(f"validate_defaults must be a boolean, but got {validate_defaults}.")
+    # config_read_mode
+    if config_read_mode_urls_enabled is not None:
+        _set_config_read_mode(urls_enabled=config_read_mode_urls_enabled)
+    if config_read_mode_fsspec_enabled is not None:
+        _set_config_read_mode(fsspec_enabled=config_read_mode_fsspec_enabled)
+    # docstring_parse
+    if docstring_parse_style is not None:
+        _set_docstring_parse_options(style=docstring_parse_style)
+    if docstring_parse_attribute_docstrings is not None:
+        _set_docstring_parse_options(attribute_docstrings=docstring_parse_attribute_docstrings)
+    # parse_optionals_as_positionals
     if isinstance(parse_optionals_as_positionals, bool):
         parsing_settings["parse_optionals_as_positionals"] = parse_optionals_as_positionals
     elif parse_optionals_as_positionals is not None:

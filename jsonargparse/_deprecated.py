@@ -22,6 +22,9 @@ __all__ = [
     "ActionPath",
     "ActionPathList",
     "ParserError",
+    "get_config_read_mode",
+    "set_docstring_parse_options",
+    "set_config_read_mode",
     "set_url_support",
     "usage_and_exit_error_handler",
 ]
@@ -350,16 +353,66 @@ class ActionPathList(Action):
     """
     set_url_support was deprecated in v3.12.0 and will be removed in v5.0.0.
     Optional config read modes should now be set using function
-    set_config_read_mode.
+    set_parsing_settings.
 """
 )
 def set_url_support(enabled: bool):
     """Enables/disables URL support for config read mode."""
-    from ._optionals import get_config_read_mode, set_config_read_mode
+    from ._optionals import _get_config_read_mode, _set_config_read_mode
 
-    set_config_read_mode(
+    _set_config_read_mode(
         urls_enabled=enabled,
-        fsspec_enabled=True if "s" in get_config_read_mode() else False,
+        fsspec_enabled=True if "s" in _get_config_read_mode() else False,
+    )
+
+
+@deprecated(
+    """
+    set_config_read_mode was deprecated in v4.39.0 and will be removed in
+    v5.0.0. Optional config read modes should now be set using function
+    set_parsing_settings.
+"""
+)
+def set_config_read_mode(
+    urls_enabled: bool = False,
+    fsspec_enabled: bool = False,
+):
+    """Enables/disables optional config read modes."""
+    from ._optionals import _set_config_read_mode
+
+    _set_config_read_mode(
+        urls_enabled=urls_enabled,
+        fsspec_enabled=fsspec_enabled,
+    )
+
+
+@deprecated(
+    """
+    get_config_read_mode was deprecated in v4.39.0 and will be removed in
+    v5.0.0. The config read mode is internal and thus shouldn't be used.
+"""
+)
+def get_config_read_mode() -> str:
+    """Returns the current config reading mode."""
+    from ._optionals import _get_config_read_mode
+
+    return _get_config_read_mode()
+
+
+@deprecated(
+    """
+    set_docstring_parse_options was deprecated in v4.39.0 and will be removed in
+    v5.0.0. Docstring parse options should now be set using function
+    set_parsing_settings.
+"""
+)
+def set_docstring_parse_options(style=None, attribute_docstrings: Optional[bool] = None):
+    """Sets options for docstring parsing."""
+    from ._optionals import _set_docstring_parse_options
+
+    _set_docstring_parse_options(
+        style=style,
+        attribute_docstrings=attribute_docstrings,
     )
 
 

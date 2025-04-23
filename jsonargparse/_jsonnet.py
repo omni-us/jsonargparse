@@ -7,7 +7,7 @@ from ._common import Action, parser_context
 from ._jsonschema import ActionJsonSchema
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._optionals import (
-    get_config_read_mode,
+    _get_config_read_mode,
     get_jsonschema_exceptions,
     import_jsonnet,
     import_jsonschema,
@@ -157,7 +157,7 @@ class ActionJsonnet(Action):
         fname = "snippet"
         snippet = jsonnet
         try:
-            fpath = Path(jsonnet, mode=get_config_read_mode())
+            fpath = Path(jsonnet, mode=_get_config_read_mode())
         except TypeError:
             pass
         else:

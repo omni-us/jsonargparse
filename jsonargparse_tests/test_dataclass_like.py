@@ -8,14 +8,20 @@ from unittest.mock import patch
 
 import pytest
 
-from jsonargparse import ArgumentError, ArgumentParser, Namespace, compose_dataclasses, lazy_instance
+from jsonargparse import (
+    ArgumentError,
+    ArgumentParser,
+    Namespace,
+    compose_dataclasses,
+    lazy_instance,
+    set_parsing_settings,
+)
 from jsonargparse._namespace import NSKeyError
 from jsonargparse._optionals import (
     attrs_support,
     docstring_parser_support,
     pydantic_support,
     pydantic_supports_field_init,
-    set_docstring_parse_options,
     typing_extensions_import,
 )
 from jsonargparse.typing import PositiveFloat, PositiveInt, final
@@ -385,7 +391,7 @@ class WithAttrDocs:
 @skip_if_docstring_parser_unavailable
 @patch.dict("jsonargparse._optionals._docstring_parse_options")
 def test_attribute_docstrings(parser):
-    set_docstring_parse_options(attribute_docstrings=True)
+    set_parsing_settings(docstring_parse_attribute_docstrings=True)
     parser.add_class_arguments(WithAttrDocs)
     help_str = get_parser_help(parser)
     assert "attr_str description (type: str, default: a)" in help_str

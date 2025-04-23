@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from jsonargparse import ArgumentParser
+from jsonargparse import ArgumentParser, set_parsing_settings
 from jsonargparse._loaders_dumpers import json_compact_dump, json_load, yaml_dump, yaml_load
 from jsonargparse._optionals import (
     docstring_parser_support,
@@ -21,7 +21,6 @@ from jsonargparse._optionals import (
     jsonschema_support,
     omegaconf_support,
     pyyaml_available,
-    set_docstring_parse_options,
     toml_load_available,
     url_support,
 )
@@ -29,7 +28,7 @@ from jsonargparse._optionals import (
 if docstring_parser_support:
     from docstring_parser import DocstringStyle
 
-    set_docstring_parse_options(style=DocstringStyle.GOOGLE)
+    set_parsing_settings(docstring_parse_style=DocstringStyle.GOOGLE)
 
 
 columns = "200"

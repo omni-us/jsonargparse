@@ -20,7 +20,6 @@ from jsonargparse import (
     LoggerProperty,
     Namespace,
     Path,
-    get_config_read_mode,
     set_url_support,
 )
 from jsonargparse._deprecated import (
@@ -34,7 +33,13 @@ from jsonargparse._deprecated import (
     shown_deprecation_warnings,
     usage_and_exit_error_handler,
 )
-from jsonargparse._optionals import docstring_parser_support, jsonnet_support, pyyaml_available, url_support
+from jsonargparse._optionals import (
+    _get_config_read_mode,
+    docstring_parser_support,
+    jsonnet_support,
+    pyyaml_available,
+    url_support,
+)
 from jsonargparse._util import argument_error
 from jsonargparse_tests.conftest import (
     get_parser_help,
@@ -181,7 +186,7 @@ def test_ActionOperators():
 
 @skip_if_requests_unavailable
 def test_url_support_true():
-    assert "fr" == get_config_read_mode()
+    assert "fr" == _get_config_read_mode()
     with catch_warnings(record=True) as w:
         set_url_support(True)
     assert_deprecation_warn(
@@ -189,21 +194,21 @@ def test_url_support_true():
         message="set_url_support was deprecated",
         code="set_url_support(True)",
     )
-    assert "fur" == get_config_read_mode()
+    assert "fur" == _get_config_read_mode()
     set_url_support(False)
-    assert "fr" == get_config_read_mode()
+    assert "fr" == _get_config_read_mode()
 
 
 @pytest.mark.skipif(url_support, reason="requests package should not be installed")
 def test_url_support_false():
-    assert "fr" == get_config_read_mode()
+    assert "fr" == _get_config_read_mode()
     with catch_warnings(record=True) as w:
         with pytest.raises(ImportError):
             set_url_support(True)
         assert "set_url_support was deprecated" in str(w[-1].message)
-    assert "fr" == get_config_read_mode()
+    assert "fr" == _get_config_read_mode()
     set_url_support(False)
-    assert "fr" == get_config_read_mode()
+    assert "fr" == _get_config_read_mode()
 
 
 def test_instantiate_subclasses():

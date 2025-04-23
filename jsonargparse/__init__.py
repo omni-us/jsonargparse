@@ -64,9 +64,9 @@ __all__ += _actions.__all__
 __all__ += _namespace.__all__
 __all__ += _formatters.__all__
 __all__ += _optionals.__all__
+__all__ += _common.__all__
 __all__ += _loaders_dumpers.__all__
 __all__ += _util.__all__
-__all__ += _common.__all__
 __all__ += _deprecated.__all__
 
 
