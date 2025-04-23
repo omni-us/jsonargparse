@@ -25,6 +25,11 @@ def test_get_parsing_setting_failure():
 # validate_defaults
 
 
+def test_set_validate_defaults_failure():
+    with pytest.raises(ValueError, match="validate_defaults must be a boolean"):
+        set_parsing_settings(validate_defaults="invalid")
+
+
 def test_validate_defaults_success(parser):
     set_parsing_settings(validate_defaults=True)
 
