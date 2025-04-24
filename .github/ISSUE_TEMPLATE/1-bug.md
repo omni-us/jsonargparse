@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report for something that doesn't work as expected
 title: ''
 labels: bug
 assignees: ''
@@ -16,19 +16,24 @@ assignees: ''
 
 <!--
 Please include a code snippet that reproduces the bug and the output that
-running it gives. The following snippet templates might help:
+running it gives. The following snippet templates might help. Replace "..." with
+actual implementation details.
 
-1. Using the CLI function
+1. Using the auto_cli function
 
 ```python
-from jsonargparse import CLI
+from jsonargparse import auto_cli
 
 # Here define one or more functions or classes
 def func1(param1: int, ...):
     ...
 
-# Run the CLI providing the components
-CLI([func1, ...], exit_on_error=False)
+# Run the CLI providing the components and arguments
+auto_cli(
+    [func1, ...],
+    args=["--param1=value1", ...],
+    exit_on_error=False,
+)
 ```
 
 2. Manually constructing a parser
@@ -39,11 +44,11 @@ from jsonargparse import ArgumentParser
 parser = ArgumentParser(exit_on_error=False)
 # Here add to the parser only argument(s) relevant to the problem
 
-# If a yaml config is required, it can be included in the same snippet as follows:
-import yaml
+# If a config is required, it can be included in the same snippet as follows:
+import json
 
 parser.add_argument("--config", action="config")
-config = yaml.safe_dump(
+config = json.dumps(
     {
         "key1": "val1",
     }
