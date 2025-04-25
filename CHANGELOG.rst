@@ -27,6 +27,8 @@ Added
   (`#698 <https://github.com/omni-us/jsonargparse/pull/698>`__).
 - Option to enable validation of default values (`#711
   <https://github.com/omni-us/jsonargparse/pull/711>`__).
+- New method to get a list of link targets (`#715
+  <https://github.com/omni-us/jsonargparse/pull/715>`__).
 
 Changed
 ^^^^^^^

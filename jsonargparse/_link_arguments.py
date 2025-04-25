@@ -515,3 +515,7 @@ class ArgumentLinking:
             ValueError: If an invalid parameter is given.
         """
         ActionLink(self, source, target, compute_fn, apply_on)
+
+    def get_link_targets(self, apply_on: str) -> List[str]:
+        """Get all keys that are targets of links."""
+        return [a.target[0] for a in get_link_actions(self, apply_on)]  # type: ignore[arg-type]
