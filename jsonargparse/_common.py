@@ -64,6 +64,7 @@ lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", defaul
 load_value_mode: ContextVar[Optional[str]] = ContextVar("load_value_mode", default=None)
 class_instantiators: ContextVar[Optional[InstantiatorsDictType]] = ContextVar("class_instantiators", default=None)
 nested_links: ContextVar[List[dict]] = ContextVar("nested_links", default=[])
+applied_instantiation_links: ContextVar[Optional[set]] = ContextVar("applied_instantiation_links", default=None)
 
 
 parser_context_vars = dict(
@@ -74,6 +75,7 @@ parser_context_vars = dict(
     load_value_mode=load_value_mode,
     class_instantiators=class_instantiators,
     nested_links=nested_links,
+    applied_instantiation_links=applied_instantiation_links,
 )
 
 
@@ -270,6 +272,12 @@ class ClassInstantiator:
     def __call__(self, class_type: Type[ClassType], *args, **kwargs) -> ClassType:
         for (cls, subclasses), instantiator in self.instantiators.items():
             if class_type is cls or (subclasses and is_subclass(class_type, cls)):
+                param_names = set(inspect.signature(instantiator).parameters.keys())
+                if "applied_instantiation_links" in param_names:
+                    applied_links = applied_instantiation_links.get() or set()
+                    kwargs["applied_instantiation_links"] = {
+                        action.target[0]: action.applied_value for action in applied_links
+                    }
                 return instantiator(class_type, *args, **kwargs)
         return default_class_instantiator(class_type, *args, **kwargs)
 
