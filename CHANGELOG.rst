@@ -27,6 +27,9 @@ Added
   (`#698 <https://github.com/omni-us/jsonargparse/pull/698>`__).
 - Option to enable validation of default values (`#711
   <https://github.com/omni-us/jsonargparse/pull/711>`__).
+- Experimental support for custom instantiators receiving values applied by
+  instantiation links (`#716
+  <https://github.com/omni-us/jsonargparse/pull/716>`__).
 
 Changed
 ^^^^^^^

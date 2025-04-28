@@ -363,6 +363,7 @@ class ActionLink(Action):
             else:
                 value = action.call_compute_fn(source_objects)
             ActionLink.set_target_value(action, value, cfg, parser.logger)
+            action.applied_value = value
             applied_links.add(action)
             parser.logger.debug(f"Applied link '{action.option_strings[0]}'.")
 

@@ -1174,6 +1174,14 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         For reference, the default instantiator is ``return class_type(*args,
         **kwargs)``.
 
+        In some use cases, the instantiator function might need access to values
+        applied by instantiation links. For this, the instantiator function can
+        have an additional keyword parameter ``applied_instantiation_links:
+        dict``. This parameter will be populated with a dictionary having as
+        keys the targets of the instantiation links and corresponding values
+        that were applied. Support for ``applied_instantiation_links`` parameter
+        is EXPERIMENTAL and subject to change or removal in future versions.
+
         Args:
             instantiator: Function that instantiates a class.
             class_type: The class type to instantiate.
@@ -1246,10 +1254,15 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
                             parent_parser=self,
                             nested_links=ActionLink.get_nested_links(self, component),
                             class_instantiators=self._get_instantiators(),
+                            applied_instantiation_links=cfg.get("__applied_instantiation_links__"),
                         ):
                             parent[key] = component.instantiate_classes(value)
             else:
-                with parser_context(load_value_mode=self.parser_mode, class_instantiators=self._get_instantiators()):
+                with parser_context(
+                    load_value_mode=self.parser_mode,
+                    class_instantiators=self._get_instantiators(),
+                    applied_instantiation_links=cfg.get("__applied_instantiation_links__"),
+                ):
                     component.instantiate_class(component, cfg)
 
         ActionLink.apply_instantiation_links(self, cfg, order=order)

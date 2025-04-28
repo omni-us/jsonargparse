@@ -900,6 +900,44 @@ def test_on_instantiate_targets_share_parent(parser):
     assert init.root.child.attr_child is init.source_b.attr_b
 
 
+class Dataloader:
+    def __init__(self, batch_size: int = 6):
+        self.batch_size = batch_size
+        self.num_classes = 7
+
+
+class CustomOptimizer(Optimizer):
+    def __init__(self, params: List[int], num_classes: int, **kwargs):
+        super().__init__(params, **kwargs)
+
+
+def custom_instantiator(class_type, *args, applied_instantiation_links: dict, **kwargs):
+    init = class_type(*args, **kwargs)
+    init.applied_instantiation_links = applied_instantiation_links
+    return init
+
+
+def test_on_instantiate_targets_passed_to_instantiator(parser):
+    parser.add_argument("--data", type=Dataloader)
+    parser.add_argument("--model", type=Model)
+    parser.link_arguments(
+        "data.num_classes",
+        "model.init_args.optimizer.init_args.num_classes",
+        apply_on="instantiate",
+    )
+    parser.add_instantiator(custom_instantiator, Dataloader, subclasses=True)
+    parser.add_instantiator(custom_instantiator, Model, subclasses=True)
+
+    cfg = parser.parse_args(["--data=Dataloader", "--model=Model", "--model.label=ok"])
+    init = parser.instantiate_classes(cfg)
+
+    assert isinstance(init.data, Dataloader)
+    assert init.data.applied_instantiation_links == {}
+    assert isinstance(init.model, Model)
+    assert callable(init.model.optimizer)
+    assert init.model.applied_instantiation_links == {"model.init_args.optimizer.init_args.num_classes": 7}
+
+
 # link creation failures
 
 
