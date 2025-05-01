@@ -33,6 +33,7 @@ def test_set_validate_defaults_failure():
 def test_validate_defaults_success(parser):
     set_parsing_settings(validate_defaults=True)
 
+    parser.add_argument("--config", action="config")
     parser.add_argument("--num", type=int, default=1)
     parser.add_argument("--untyped", default=2)
 
