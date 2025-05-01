@@ -442,6 +442,21 @@ def test_on_parse_save_required_target_subclass_param(parser, tmp_cwd):
     assert saved == {"a": {"a": 1}, "c": {"class_path": f"{__name__}.RequiredTargetC", "init_args": {}}}
 
 
+def test_on_parse_save_required_target_entire_dataclass(parser, tmp_cwd):
+    parser.add_class_arguments(RequiredTargetA, "a")
+    parser.add_subclass_arguments(RequiredTargetC, "c")
+    parser.link_arguments("a", "c.init_args.b")
+    cfg = parser.parse_args(["--a.a=1", f"--c={__name__}.RequiredTargetC"])
+    expected = {"a": {"a": 1}, "c": {"class_path": f"{__name__}.RequiredTargetC"}}
+    parser.save(cfg, "config.yaml", multifile=False)
+    saved = json_or_yaml_load((tmp_cwd / "config.yaml").read_text())
+    assert saved == expected
+    (tmp_cwd / "config.yaml").unlink()
+    parser.save(cfg, "config.yaml", multifile=True)
+    saved = json_or_yaml_load((tmp_cwd / "config.yaml").read_text())
+    assert saved == expected
+
+
 class Optimizer:
     def __init__(self, params: List[int], lr: float):
         self.params = params
