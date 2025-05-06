@@ -15,7 +15,7 @@ else:
 
 from ._common import is_final_class
 from ._optionals import final, pydantic_support
-from ._util import Path, get_import_path, get_private_kwargs, import_object
+from ._util import Path, get_import_path, import_object
 
 __all__ = [
     "final",
@@ -219,7 +219,7 @@ def _is_path_type(value, type_class):
     return isinstance(value, Path)
 
 
-def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlias:
+def path_type(mode: str, docstring: Optional[str] = None) -> _TypeAlias:
     """Creates or returns an already registered path type class.
 
     Args:
@@ -233,14 +233,6 @@ def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlia
     name = "Path_" + mode
     key_name = "path " + "".join(sorted(mode))
 
-    skip_check = get_private_kwargs(kwargs, skip_check=False)
-    if skip_check:
-        from ._deprecated import path_skip_check_deprecation
-
-        path_skip_check_deprecation(stacklevel=4)
-        name += "_skip_check"
-        key_name += " skip_check"
-
     register_key = (key_name, str)
     if register_key in registered_types:
         return registered_types[register_key]
@@ -248,11 +240,10 @@ def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlia
     class PathType(Path):
         _expression = name
         _mode = mode
-        _skip_check = skip_check
         _type = str
 
         def __init__(self, v, **k):
-            super().__init__(v, mode=self._mode, skip_check=self._skip_check, **k)
+            super().__init__(v, mode=self._mode, **k)
 
     restricted_type = type(name, (PathType,), {"__doc__": docstring})
     add_type(restricted_type, register_key, type_check=_is_path_type)
