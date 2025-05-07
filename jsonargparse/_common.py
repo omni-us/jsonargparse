@@ -159,13 +159,13 @@ def get_parsing_setting(name: str):
 
 
 def validate_default(container: ActionsContainer, action: argparse.Action):
-    if not isinstance(action, Action) or not get_parsing_setting("validate_defaults") or action.default is None:
+    if action.default is None or not get_parsing_setting("validate_defaults") or not hasattr(action, "_check_type"):
         return
     try:
         with parser_context(parent_parser=container):
             default = action.default
             action.default = None
-            action.default = action._check_type_(default)
+            action.default = action._check_type_(default)  # type: ignore[attr-defined]
     except Exception as ex:
         raise ValueError(f"Default value is not valid: {ex}") from ex
 
