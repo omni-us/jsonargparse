@@ -19,6 +19,9 @@ Fixed
 ^^^^^
 - ``set_parsing_settings(validate_defaults=True)`` fails when the parser has a
   config action (`#718 <https://github.com/omni-us/jsonargparse/pull/718>`__).
+- Regression causing dump/save to fail when ``skip_link_targets=True`` and target
+  being an entire required dataclass (`#717
+  <https://github.com/omni-us/jsonargparse/pull/717>`__).
 
 
 v4.39.0 (2025-04-29)

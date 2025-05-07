@@ -786,12 +786,13 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         check_valid_dump_format(format)
 
         cfg = strip_meta(cfg)
-        if skip_link_targets:
-            ActionLink.strip_link_target_keys(self, cfg)
 
         with parser_context(load_value_mode=self.parser_mode):
             if not skip_validation:
                 self.validate(cfg)
+
+            if skip_link_targets:
+                ActionLink.strip_link_target_keys(self, cfg)
 
             dump_kwargs = {"skip_validation": skip_validation, "skip_none": skip_none}
             self._dump_cleanup_actions(cfg, self._actions, dump_kwargs)
@@ -826,7 +827,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
             if isinstance(action, ActionTypeHint):
                 value = cfg.get(action_dest)
                 if value is not None:
-                    with parser_context(parent_parser=self):
+                    with parser_context(parent_parser=self, lenient_check=True):
                         if dump_kwargs.get("skip_validation"):
                             with suppress(ValueError):
                                 value = action.serialize(value, dump_kwargs=dump_kwargs)
@@ -914,11 +915,12 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
 
         else:
             cfg = cfg.clone()
-            ActionLink.strip_link_target_keys(self, cfg)
 
             if not skip_validation:
                 with parser_context(load_value_mode=self.parser_mode):
                     self.validate(strip_meta(cfg), branch=branch)
+
+            ActionLink.strip_link_target_keys(self, cfg)
 
             def save_paths(cfg):
                 for key in cfg.get_sorted_keys():
