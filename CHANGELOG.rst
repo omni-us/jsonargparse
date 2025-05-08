@@ -23,6 +23,13 @@ Fixed
   being an entire required dataclass (`#717
   <https://github.com/omni-us/jsonargparse/pull/717>`__).
 
+Deprecated
+^^^^^^^^^^
+- ``LoggerProperty`` is deprecated and will be removed in v5.0.0. There is no
+  replacement since jsonargparse is not a logging library. A similar class can
+  be found in ``reconplogger`` (`#???
+  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+
 
 v4.39.0 (2025-04-29)
 --------------------

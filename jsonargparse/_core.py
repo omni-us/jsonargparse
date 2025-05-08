@@ -39,6 +39,7 @@ from ._actions import (
 from ._common import (
     InstantiatorCallable,
     InstantiatorsDictType,
+    LoggerProperty,
     class_instantiators,
     debug_mode_active,
     get_optionals_as_positionals_actions,
@@ -223,7 +224,7 @@ class ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     parser: Optional[Union["ArgumentParser", "ActionsContainer"]] = None
 
 
-class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argparse.ArgumentParser):
+class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, LoggerProperty, argparse.ArgumentParser):
     """Parser for command line, configuration files and environment variables."""
 
     formatter_class: Type[DefaultHelpFormatter]
@@ -257,7 +258,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, argp
         Args:
             env_prefix: Prefix for environment variables. ``True`` to derive from ``prog``.
             formatter_class: Class for printing help messages.
-            logger: Configures the logger, see :class:`.LoggerProperty`.
+            logger: Logger to use or configuration for logger.
             version: Program version which will be printed by the --version argument.
             print_config: Name for print config argument, ``%s`` is replaced by config dest, set None to disable.
             parser_mode: Mode for parsing values: ``yaml``, ``json``, ``jsonnet`` or added via :func:`.set_loader`.

@@ -34,8 +34,6 @@ from ._optionals import (
 from ._type_checking import ActionsContainer, ArgumentParser, docstring_parser
 
 __all__ = [
-    "LoggerProperty",
-    "null_logger",
     "set_parsing_settings",
 ]
 
@@ -363,7 +361,7 @@ class LoggerProperty:
         if logger is None:
             from ._deprecated import deprecation_warning, logger_property_none_message
 
-            deprecation_warning((LoggerProperty.logger, None), logger_property_none_message, stacklevel=2)
+            deprecation_warning((LoggerProperty.logger, None), logger_property_none_message, stacklevel=6)
             logger = False
         if not logger and debug_mode_active():
             logger = {"level": "DEBUG"}

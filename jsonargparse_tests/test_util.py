@@ -15,11 +15,13 @@ import pytest
 
 from jsonargparse import (
     ArgumentParser,
-    LoggerProperty,
     Namespace,
     Path,
     capture_parser,
     class_from_function,
+)
+from jsonargparse._common import (
+    LoggerProperty,
     null_logger,
 )
 from jsonargparse._optionals import (
