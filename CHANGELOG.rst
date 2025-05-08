@@ -27,8 +27,11 @@ Deprecated
 ^^^^^^^^^^
 - ``LoggerProperty`` is deprecated and will be removed in v5.0.0. There is no
   replacement since jsonargparse is not a logging library. A similar class can
-  be found in ``reconplogger`` (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+  be found in ``reconplogger`` (`#719
+  <https://github.com/omni-us/jsonargparse/pull/719>`__).
+- ``namespace_to_dict`` is deprecated and will be removed in v5.0.0. Instead use
+  ``.clone().as_dict()`` or ``.as_dict()`` (`#720
+  <https://github.com/omni-us/jsonargparse/pull/720>`__).
 
 
 v4.39.0 (2025-04-29)
