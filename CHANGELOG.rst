@@ -23,6 +23,11 @@ Fixed
   being an entire required dataclass (`#717
   <https://github.com/omni-us/jsonargparse/pull/717>`__).
 
+Changed
+^^^^^^^
+- Use latest jsonnet release that works on all platforms and python versions
+  (`#682 <https://github.com/omni-us/jsonargparse/pull/682>`__).
+
 Deprecated
 ^^^^^^^^^^
 - ``LoggerProperty`` is deprecated and will be removed in v5.0.0. There is no
