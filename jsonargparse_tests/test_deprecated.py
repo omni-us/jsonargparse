@@ -17,7 +17,6 @@ from jsonargparse import (
     ActionJsonnet,
     ArgumentError,
     ArgumentParser,
-    LoggerProperty,
     Namespace,
     Path,
     get_config_read_mode,
@@ -31,6 +30,7 @@ from jsonargparse._deprecated import (
     ActionOperators,
     ActionPath,
     ActionPathList,
+    LoggerProperty,
     ParserError,
     deprecation_warning,
     shown_deprecation_warnings,
@@ -296,13 +296,27 @@ def test_multiple_functions_cli():
     assert isinstance(parser, ArgumentParser)
 
 
+class InheritsLoggerProperty(LoggerProperty):
+    pass
+
+
+def test_logger_property():
+    with catch_warnings(record=True) as w:
+        InheritsLoggerProperty()
+    assert_deprecation_warn(
+        w,
+        message="LoggerProperty was deprecated",
+        code="InheritsLoggerProperty()",
+    )
+
+
 def test_logger_property_none():
     with catch_warnings(record=True) as w:
-        LoggerProperty(logger=None)
+        ArgumentParser(logger=None)
     assert_deprecation_warn(
         w,
         message=" Setting the logger property to None was deprecated",
-        code="LoggerProperty(logger=None)",
+        code="ArgumentParser(logger=None)",
     )
 
 
