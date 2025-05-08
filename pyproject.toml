@@ -58,7 +58,7 @@ jsonschema = [
     "jsonschema>=3.2.0",
 ]
 jsonnet = [
-    "jsonnet>=0.21.0rc2",
+    "jsonnet>=0.21.0",
 ]
 toml = [
     "toml>=0.10.2",
