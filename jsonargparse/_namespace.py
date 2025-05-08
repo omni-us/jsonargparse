@@ -18,7 +18,6 @@ from typing import (
 
 __all__ = [
     "Namespace",
-    "namespace_to_dict",
     "dict_to_namespace",
     "strip_meta",
 ]
@@ -331,11 +330,6 @@ def del_clash_mark(key: str) -> str:
     return key
 
 
-def namespace_to_dict(namespace: Namespace) -> Dict[str, Any]:
-    """Returns a copy of a nested namespace converted into a nested dictionary."""
-    return namespace.clone().as_dict()
-
-
 def expand_dict(cfg):
     for k, v in cfg.items():
         if isinstance(v, dict) and all(isinstance(k, str) for k in v.keys()):
@@ -348,7 +342,13 @@ def expand_dict(cfg):
 
 
 def dict_to_namespace(cfg_dict: Union[Dict[str, Any], Namespace]) -> Namespace:
-    """Converts a nested dictionary into a nested namespace."""
+    """Converts a nested dictionary into a nested namespace.
+
+    Note: Using this function is generally discouraged because it may not
+          produce the same results as a parser would. However, it remains part
+          of the public API to support valid use cases and ensure backward
+          compatibility.
+    """
     cfg_dict = recreate_branches(cfg_dict)
     return expand_dict(cfg_dict)
 

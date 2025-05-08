@@ -5,7 +5,7 @@ import platform
 
 import pytest
 
-from jsonargparse import Namespace, dict_to_namespace, namespace_to_dict
+from jsonargparse import Namespace, dict_to_namespace
 from jsonargparse._namespace import meta_keys
 
 skip_if_no_setattr_insertion_order = pytest.mark.skipif(
@@ -217,17 +217,6 @@ def test_init_invalid():
         Namespace(argparse.Namespace(), x=1)
 
 
-def test_namespace_to_dict():
-    ns = Namespace()
-    ns["w"] = 1
-    ns["x.y"] = 2
-    ns["x.z"] = 3
-    dic1 = namespace_to_dict(ns)
-    dic2 = ns.as_dict()
-    assert dic1 == dic2
-    assert dic1 is not dic2
-
-
 def test_dict_to_namespace():
     ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
     dic = {"a": 1, "b": {"c": 2}, "d": [{"e": 3}]}
@@ -259,7 +248,7 @@ def test_shallow_clashing_keys():
     assert ns.as_flat() == argparse.Namespace(pop=2)
     del ns["pop"]
     assert ns == Namespace()
-    assert namespace_to_dict(Namespace(update=3)) == {"update": 3}
+    assert Namespace(update=3).as_dict() == {"update": 3}
 
 
 def test_leaf_clashing_keys():
