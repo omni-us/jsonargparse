@@ -27,6 +27,49 @@ a `substantial user base
 it serves as the framework behind pytorch-lightning's `LightningCLI
 <https://lightning.ai/docs/pytorch/stable/cli/lightning_cli.html>`__.
 
+Teaser examples
+---------------
+
+CLI with minimal boilerplate:
+
+.. code-block:: python
+
+    from jsonargparse import auto_cli
+
+    def main_function(...):  # your main parameters and logic here
+        ...
+
+    if __name__ == "__main__":
+        auto_cli(main_function)  # parses arguments and runs main_function
+
+Minimal boilerplate but manually parsing:
+
+.. code-block:: python
+
+    from jsonargparse import auto_parser
+
+    ...
+
+    if __name__ == "__main__":
+        parser = auto_parser(main_function)
+        cfg = parser.parse_args()
+        ...
+
+Powerful argparse-like low level parsers:
+
+.. code-block:: python
+
+    from typing import Union, Literal
+    from jsonargparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument("--config", action="config")  # support config files
+    parser.add_argument("--opt", type=Union[int, Literal["off"])  # complex arguments via type hints
+    parser.add_function_arguments(main_function, "function")  # add entire function signatures
+    ...
+    cfg = parser.parse_args()
+    ...
+
 
 Features
 --------
