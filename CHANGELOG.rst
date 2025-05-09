@@ -15,6 +15,12 @@ paths are considered internals and can change in minor and patch releases.
 v4.40.0 (2025-05-??)
 --------------------
 
+Added
+^^^^^
+- New ``auto_parser`` function for convenience and more visibility of the
+  ``capture_parser`` feature (`#721
+  <https://github.com/omni-us/jsonargparse/pull/721>`__).
+
 Fixed
 ^^^^^
 - ``set_parsing_settings(validate_defaults=True)`` fails when the parser has a

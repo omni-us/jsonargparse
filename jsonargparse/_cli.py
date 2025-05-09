@@ -8,9 +8,13 @@ from ._core import ArgumentParser
 from ._deprecated import deprecation_warning_cli_return_parser
 from ._namespace import Namespace, dict_to_namespace
 from ._optionals import get_doc_short_description
-from ._util import default_config_option_help
+from ._util import capture_parser, default_config_option_help
 
-__all__ = ["CLI", "auto_cli"]
+__all__ = [
+    "CLI",
+    "auto_cli",
+    "auto_parser",
+]
 
 
 ComponentType = Union[Callable, Type]
@@ -123,6 +127,14 @@ def auto_cli(
             break
     component = components_ns[subcommand]
     return _run_component(component, init.get(subcommand))
+
+
+def auto_parser(*args, **kwargs) -> ArgumentParser:
+    """Same as auto_cli, but returns the parser, so doesn't parse arguments or run.
+
+    This is a shorthand for ``capture_parser(lambda: auto_cli(*args, **kwargs))``.
+    """
+    return capture_parser(lambda: auto_cli(*args, **kwargs))
 
 
 def get_help_str(component, logger):

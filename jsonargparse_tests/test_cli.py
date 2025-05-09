@@ -15,7 +15,8 @@ from unittest.mock import patch
 
 import pytest
 
-from jsonargparse import CLI, auto_cli, capture_parser, lazy_instance
+from jsonargparse import CLI, auto_cli, auto_parser, capture_parser, lazy_instance
+from jsonargparse._namespace import Namespace
 from jsonargparse._optionals import docstring_parser_support, ruyaml_support
 from jsonargparse.typing import final
 from jsonargparse_tests.conftest import json_or_yaml_dump, json_or_yaml_load, skip_if_docstring_parser_unavailable
@@ -26,6 +27,15 @@ def get_cli_stdout(*args, **kwargs) -> str:
     with redirect_stdout(out), suppress(SystemExit), patch.dict(os.environ, {"COLUMNS": "150"}):
         auto_cli(*args, **kwargs)
     return out.getvalue()
+
+
+def simple_main(a1: int = 0, a2: bool = False):
+    pass
+
+
+def test_auto_parser():
+    parser = auto_parser(simple_main)
+    assert parser.parse_args([]) == Namespace(config=None, a1=0, a2=False)
 
 
 # failure cases

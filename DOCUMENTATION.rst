@@ -329,7 +329,8 @@ This can be easily implemented with :func:`.capture_parser` as follows:
 .. note::
 
     The official way to obtain the parser for command line tools based on
-    :func:`.auto_cli` is by using :func:`.capture_parser`.
+    :func:`.auto_cli` is by using :func:`.auto_parser`, which is just a
+    convenience function that calls :func:`.capture_parser`.
 
 
 Optionals as positionals
