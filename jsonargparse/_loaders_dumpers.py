@@ -225,7 +225,8 @@ def yaml_dump(data):
 
 def yaml_comments_dump(data, parser):
     dump = dumpers["yaml"](data)
-    formatter = parser.formatter_class(parser.prog)
+    formatter_class = create_help_formatter_with_comments(parser.formatter_class)
+    formatter = formatter_class(parser.prog)
     return formatter.add_yaml_comments(dump)
 
 
@@ -333,3 +334,26 @@ def set_omegaconf_loader():
 
 
 set_loader("jsonnet", jsonnet_load, get_loader_exceptions("jsonnet"))
+
+
+def create_help_formatter_with_comments(formatter_class: Type["HelpFormatter"]) -> Type["HelpFormatter"]:
+    """Creates a dynamic class that combines a formatter with YAML comment functionality.
+
+    Args:
+        formatter_class: The base formatter class to extend.
+
+    Returns:
+        A new class that inherits from both the formatter and YAMLCommentFormatter.
+    """
+    from ._formatters import YAMLCommentFormatter
+
+    class DynamicHelpFormatter(formatter_class):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._yaml_formatter = YAMLCommentFormatter(self)
+
+        def add_yaml_comments(self, cfg: str) -> str:
+            """Adds help text as yaml comments."""
+            return self._yaml_formatter.add_yaml_comments(cfg)
+
+    return DynamicHelpFormatter
