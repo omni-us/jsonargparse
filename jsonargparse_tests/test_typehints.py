@@ -753,8 +753,7 @@ def test_invalid_inherited_unpack_typeddict(parser, init_args):
         parser.parse_args([f"--testclass={json.dumps(test_config)}"])
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Python 3.8 lacked runtime inspection of TypedDict required keys")
-def test_typeddict_totality_inheritance(parser):
+if sys.version_info >= (3, 9):
 
     class BottomDict(TypedDict, total=True):
         a: int
@@ -765,6 +764,9 @@ def test_typeddict_totality_inheritance(parser):
     class TopDict(MiddleDict, total=True):
         c: int
 
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Python 3.8 lacked runtime inspection of TypedDict required keys")
+def test_typeddict_totality_inheritance(parser):
     parser.add_argument("--middledict", type=MiddleDict, required=False)
     parser.add_argument("--topdict", type=TopDict, required=False)
     assert {"a": 1} == parser.parse_args(['--middledict={"a": 1}'])["middledict"]

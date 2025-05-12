@@ -11,11 +11,13 @@ from contextvars import ContextVar
 from copy import deepcopy
 from enum import Enum
 from functools import partial
+from importlib import import_module
 from types import FunctionType, MappingProxyType
 from typing import (
     Any,
     Callable,
     Dict,
+    ForwardRef,
     Iterable,
     List,
     Literal,
@@ -719,6 +721,15 @@ def raise_union_unexpected_value(subtypes, val: Any, exceptions: List[Exception]
     ) from exceptions[0]
 
 
+def resolve_forward_ref(ref):
+    if not isinstance(ref, ForwardRef) or not ref.__forward_module__:
+        return ref
+
+    aliases = __builtins__.copy()
+    aliases.update(vars(import_module(ref.__forward_module__)))
+    return aliases.get(ref.__forward_arg__, ref)
+
+
 def adapt_typehints(
     val,
     typehint,
@@ -954,7 +965,8 @@ def adapt_typehints(
             if extra_keys:
                 raise_unexpected_value(f"Unexpected keys: {extra_keys}", val)
             for k, v in val.items():
-                val[k] = adapt_typehints(v, typehint.__annotations__[k], **adapt_kwargs)
+                subtypehint = resolve_forward_ref(typehint.__annotations__[k])
+                val[k] = adapt_typehints(v, subtypehint, **adapt_kwargs)
         if typehint_origin is MappingProxyType and not serialize:
             val = MappingProxyType(val)
         elif typehint_origin is OrderedDict:
@@ -1099,6 +1111,11 @@ def adapt_typehints(
     # TypeAliasType -- 3.12 `type x = y` or manually via typing_extensions
     elif is_alias_type(typehint):
         return adapt_typehints(val, get_alias_target(typehint), **adapt_kwargs)
+
+    else:
+        if str(typehint) == "+VT_co":
+            return val  # required for typing.Mapping in python 3.8
+        raise RuntimeError(f"The code should never reach here: typehint={typehint}")  # pragma: no cover
 
     return val
 
