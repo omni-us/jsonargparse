@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import sys
+
 import pytest
 
 from jsonargparse import set_parsing_settings
 from jsonargparse._optionals import (
     _get_config_read_mode,
     docstring_parser_support,
+    final,
     fsspec_support,
     get_docstring_parse_options,
     import_docstring_parser,
@@ -19,6 +22,7 @@ from jsonargparse._optionals import (
     ruyaml_support,
     url_support,
 )
+from jsonargparse.typing import is_final_class
 from jsonargparse_tests.conftest import (
     skip_if_docstring_parser_unavailable,
     skip_if_fsspec_unavailable,
@@ -176,3 +180,17 @@ def test_config_read_mode_fsspec_support_false():
     assert "fr" == _get_config_read_mode()
     set_parsing_settings(config_read_mode_fsspec_enabled=False)
     assert "fr" == _get_config_read_mode()
+
+
+# final decorator tests
+
+
+@final
+class FinalClass:
+    pass
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="final decorator __final__ introduced in python 3.11")
+def test_final_decorator():
+    assert is_final_class(FinalClass) is True
+    assert is_final_class(test_final_decorator) is False

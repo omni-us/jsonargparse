@@ -64,10 +64,12 @@ Powerful argparse-like low level parsers:
 
     parser = ArgumentParser()
     parser.add_argument("--config", action="config")  # support config files
-    parser.add_argument("--opt", type=Union[int, Literal["off"])  # complex arguments via type hints
-    parser.add_function_arguments(main_function, "function")  # add entire function signatures
+    parser.add_argument("--opt", type=Union[int, Literal["off"]])  # complex arguments via type hints
+    parser.add_function_arguments(main_function, "function")  # add function parameters
+    parser.add_class_arguments(SomeClass, "class")  # add class parameters
     ...
     cfg = parser.parse_args()
+    init = parser.instantiate_classes(cfg)
     ...
 
 
