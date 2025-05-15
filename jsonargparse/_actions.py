@@ -672,7 +672,6 @@ class _ActionSubCommands(_SubParsersAction):
         parser.default_env = self.parent_parser.default_env
         parser.parent_parser = self.parent_parser
         parser.parser_mode = self.parent_parser.parser_mode
-        parser._error_handler = self.parent_parser._error_handler
         parser.exit_on_error = self.parent_parser.exit_on_error
         parser.logger = self.parent_parser.logger
         parser.subcommand = name

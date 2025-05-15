@@ -53,7 +53,6 @@ from ._completions import (
     argcomplete_namespace,
     handle_completions,
 )
-from ._deprecated import ParserDeprecations, deprecated_skip_check
 from ._formatters import DefaultHelpFormatter, empty_help, get_env_var
 from ._jsonnet import ActionJsonnet
 from ._jsonschema import ActionJsonSchema
@@ -226,7 +225,7 @@ class ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     parser: Optional[Union["ArgumentParser", ActionsContainer]] = None
 
 
-class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, LoggerProperty, argparse.ArgumentParser):
+class ArgumentParser(ActionsContainer, ArgumentLinking, LoggerProperty, argparse.ArgumentParser):
     """Parser for command line, configuration files and environment variables."""
 
     formatter_class: Type[DefaultHelpFormatter]
@@ -770,7 +769,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         skip_validation: bool = False,
         yaml_comments: bool = False,
         skip_link_targets: bool = True,
-        **kwargs,
     ) -> str:
         """Generates a yaml or json string for the given configuration object.
 
@@ -790,7 +788,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
-        skip_validation = deprecated_skip_check(ArgumentParser.dump, kwargs, skip_validation)
         check_valid_dump_format(format)
 
         cfg = strip_meta(cfg)
@@ -874,7 +871,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         overwrite: bool = False,
         multifile: bool = True,
         branch: Optional[str] = None,
-        **kwargs,
     ) -> None:
         """Writes to file(s) the yaml or json for the given configuration object.
 
@@ -891,7 +887,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
-        skip_validation = deprecated_skip_check(ArgumentParser.save, kwargs, skip_validation)
         check_valid_dump_format(format)
 
         def check_overwrite(path):
@@ -1010,7 +1005,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             check_suppressed_default()
         return defaults.get(action.dest)
 
-    def get_defaults(self, skip_validation: bool = False, **kwargs) -> Namespace:
+    def get_defaults(self, skip_validation: bool = False) -> Namespace:
         """Returns a namespace with all default values.
 
         Args:
@@ -1019,7 +1014,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         Returns:
             An object with all default values as attributes.
         """
-        skip_validation = deprecated_skip_check(ArgumentParser.get_defaults, kwargs, skip_validation)
         cfg = Namespace()
         for action in filter_default_actions(self._actions):
             if (
@@ -1071,8 +1065,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
     def error(self, message: str, ex: Optional[Exception] = None) -> NoReturn:
         """Logs error message if a logger is set and exits or raises an ArgumentError."""
         self._logger.error(message)
-        if callable(self._error_handler):
-            self._error_handler(self, message)
         if not self.exit_on_error:
             raise argument_error(message) from ex
         elif debug_mode_active():
@@ -1576,15 +1568,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     @env_prefix.setter
     def env_prefix(self, env_prefix: Union[bool, str]):
-        if env_prefix is None:
-            from ._deprecated import (
-                deprecation_warning,
-                env_prefix_property_none_message,
-            )
-
-            deprecation_warning(ArgumentParser, env_prefix_property_none_message, stacklevel=3)
-            env_prefix = False
-        elif env_prefix is True:
+        if env_prefix is True:
             env_prefix = os.path.splitext(self.prog)[0]
         elif not isinstance(env_prefix, (bool, str)):
             raise ValueError("env_prefix expects a string or a boolean.")
@@ -1634,9 +1618,3 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         ):
             raise ValueError("Expected dump_header to be None or a list of strings.")
         self._dump_header = dump_header
-
-
-from ._deprecated import parse_as_dict_patch  # noqa: E402
-
-if "SPHINX_BUILD" not in os.environ:
-    parse_as_dict_patch()

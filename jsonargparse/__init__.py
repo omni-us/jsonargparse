@@ -12,7 +12,6 @@ from ._actions import *  # noqa: F403
 from ._cli import *  # noqa: F403
 from ._common import *  # noqa: F403
 from ._core import *  # noqa: F403
-from ._deprecated import *  # noqa: F403
 from ._formatters import *  # noqa: F403
 from ._jsonnet import *  # noqa: F403
 from ._jsonschema import *  # noqa: F403
@@ -40,7 +39,6 @@ from . import (
     _cli,
     _common,
     _core,
-    _deprecated,
     _formatters,
     _jsonnet,
     _jsonschema,
@@ -67,7 +65,6 @@ __all__ += _optionals.__all__
 __all__ += _common.__all__
 __all__ += _loaders_dumpers.__all__
 __all__ += _util.__all__
-__all__ += _deprecated.__all__
 
 
 __version__ = "4.41.0"

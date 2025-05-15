@@ -351,12 +351,3 @@ def dict_to_namespace(cfg_dict: Union[Dict[str, Any], Namespace]) -> Namespace:
     """
     cfg_dict = recreate_branches(cfg_dict)
     return expand_dict(cfg_dict)
-
-
-# Temporal to provide backward compatibility in pytorch-lightning
-from importlib.util import find_spec  # noqa: E402
-
-if find_spec("yaml"):
-    import yaml
-
-    yaml.SafeDumper.add_representer(Namespace, lambda d, x: d.represent_mapping("tag:yaml.org,2002:map", x.as_dict()))
