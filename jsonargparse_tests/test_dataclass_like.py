@@ -1005,7 +1005,7 @@ class TestPydantic:
                 args = [arg.replace("_", "-") for arg in args]
                 return super().add_argument(*args, **kwargs)
 
-        parser = UnderscoresToDashesParser(parse_as_dict=False, default_env=True)
+        parser = UnderscoresToDashesParser(default_env=True)
         parser.add_class_arguments(NestedDefaultsD)
         ns = parser.parse_args([])
         cfg = parser.instantiate_classes(ns)

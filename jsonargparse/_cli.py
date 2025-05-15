@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from ._actions import ActionConfigFile, _ActionPrintConfig, remove_actions
 from ._core import ArgumentParser
-from ._deprecated import deprecation_warning_cli_return_parser
 from ._namespace import Namespace, dict_to_namespace
 from ._optionals import get_doc_short_description
 from ._util import capture_parser, default_config_option_help
@@ -60,7 +59,6 @@ def auto_cli(
     Returns:
         The value returned by the executed function or class method.
     """
-    return_parser = kwargs.pop("return_parser", False)
     stacklevel = kwargs.pop("_stacklevel", 2)
 
     if components is None:
@@ -98,9 +96,6 @@ def auto_cli(
         _add_component_to_parser(components, parser, as_positional, fail_untyped, config_help)
         if set_defaults is not None:
             parser.set_defaults(set_defaults)
-        if return_parser:
-            deprecation_warning_cli_return_parser(stacklevel)
-            return parser
         cfg = parser.parse_args(args)
         init = parser.instantiate_classes(cfg)
         return _run_component(components, init)
@@ -112,9 +107,6 @@ def auto_cli(
 
     if set_defaults is not None:
         parser.set_defaults(set_defaults)
-    if return_parser:
-        deprecation_warning_cli_return_parser(stacklevel)
-        return parser
     cfg = parser.parse_args(args)
     init = parser.instantiate_classes(cfg)
     components_ns = dict_to_namespace(components)
