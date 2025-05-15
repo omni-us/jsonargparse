@@ -71,9 +71,10 @@ def is_compatible_final(final) -> bool:
     return getattr(FinalClass, "__final__", False)  # __final__ available in stdlib from python 3.11
 
 
+fallback_final = final
 stdlib_final = typing_extensions_import("final")
 if stdlib_final and is_compatible_final(stdlib_final) and "SPHINX_BUILD" not in os.environ:
-    final = stdlib_final  # noqa: F811
+    final = stdlib_final
 
 
 def import_typeshed_client():

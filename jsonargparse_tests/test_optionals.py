@@ -8,7 +8,7 @@ from jsonargparse import set_parsing_settings
 from jsonargparse._optionals import (
     _get_config_read_mode,
     docstring_parser_support,
-    final,
+    fallback_final,
     fsspec_support,
     get_docstring_parse_options,
     import_docstring_parser,
@@ -185,7 +185,7 @@ def test_config_read_mode_fsspec_support_false():
 # final decorator tests
 
 
-@final
+@fallback_final
 class FinalClass:
     pass
 
