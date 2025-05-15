@@ -185,7 +185,7 @@ def capture_logs(logger: logging.Logger) -> Iterator[StringIO]:
 
 @contextmanager
 def source_unavailable():
-    with patch("inspect.getsource", side_effect=OSError("could not get source code")):
+    with patch("inspect.getsource", side_effect=OSError("mock source code not available")):
         yield
 
 

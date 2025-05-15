@@ -52,7 +52,7 @@ all = [
 signatures = [
     "jsonargparse[typing-extensions]",
     "docstring-parser>=0.15",
-    "typeshed-client>=2.1.0",
+    "typeshed-client>=2.3.0",
 ]
 jsonschema = [
     "jsonschema>=3.2.0",
