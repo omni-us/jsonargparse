@@ -30,6 +30,9 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/717>`__).
 - ``TypedDict`` values not validated when types are forward references (`#722
   <https://github.com/omni-us/jsonargparse/pull/722>`__).
+- Stubs-only resolver incorrectly triggered when ``inspect.signature`` available
+  leading to missing parameter defaults (`#724
+  <https://github.com/omni-us/jsonargparse/pull/724>`__).
 
 Changed
 ^^^^^^^

@@ -4,7 +4,6 @@ import sys
 from contextlib import suppress
 from copy import deepcopy
 from importlib import import_module
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from ._optionals import import_typeshed_client, typeshed_client_support
@@ -105,9 +104,7 @@ stubs_resolver = None
 def get_stubs_resolver():
     global stubs_resolver
     if not stubs_resolver:
-        search_path = [Path(p) for p in sys.path]
-        search_context = tc.get_search_context(search_path=search_path)
-        stubs_resolver = StubsResolver(search_context=search_context)
+        stubs_resolver = StubsResolver()
     return stubs_resolver
 
 
@@ -134,8 +131,8 @@ def get_source_module(path: str, component) -> tc.ModulePath:
 
 
 class StubsResolver(tc.Resolver):
-    def __init__(self, search_context=None) -> None:
-        super().__init__(search_context)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self._module_ast_cache: Dict[str, Optional[ast.AST]] = {}
         self._module_assigns_cache: Dict[str, Dict[str, ast.Assign]] = {}
         self._module_imports_cache: Dict[str, Dict[str, Tuple[Optional[str], str]]] = {}
@@ -144,8 +141,8 @@ class StubsResolver(tc.Resolver):
         resolved = self.get_fully_qualified_name(path)
         imported_info = None
         if isinstance(resolved, tc.ImportedInfo):
-            resolved = resolved.info
-        if isinstance(resolved, tc.NameInfo):
+            imported_info = resolved
+        elif isinstance(resolved, tc.NameInfo):
             source_module = get_source_module(path, component)
             imported_info = tc.ImportedInfo(source_module=source_module, info=resolved)
         return imported_info

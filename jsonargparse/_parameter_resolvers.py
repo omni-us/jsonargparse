@@ -1042,6 +1042,11 @@ def get_parameters_from_stubs(
     logger: logging.Logger,
 ) -> Optional[ParamList]:
     component, parent, _ = get_component_and_parent(function_or_class, method_or_property)
+    try:
+        inspect.signature(component)
+        return None
+    except Exception:
+        pass  # only from stubs if getting signature fails
     params = None
     resolver = get_stubs_resolver()
     stub_import = resolver.get_component_imported_info(component, parent)

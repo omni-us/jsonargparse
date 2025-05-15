@@ -73,7 +73,7 @@ def test_get_types_pep604():
 def test_get_types_pep604_source_unavailable(logger):
     with source_unavailable(), pytest.raises(TypeError) as ctx, capture_logs(logger) as logs:
         get_types(function_pep604, logger)
-    ctx.match("could not get source code")
+    ctx.match("mock source code not available")
     assert "Failed to parse to source code" in logs.getvalue()
 
 
