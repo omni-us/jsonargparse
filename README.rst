@@ -48,18 +48,14 @@ Minimal boilerplate but manually parsing:
 
     from jsonargparse import auto_parser
 
+    parser = auto_parser(main_function)
+    cfg = parser.parse_args()
     ...
-
-    if __name__ == "__main__":
-        parser = auto_parser(main_function)
-        cfg = parser.parse_args()
-        ...
 
 Powerful argparse-like low level parsers:
 
 .. code-block:: python
 
-    from typing import Union, Literal
     from jsonargparse import ArgumentParser
 
     parser = ArgumentParser()
