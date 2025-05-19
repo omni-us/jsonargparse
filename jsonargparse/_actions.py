@@ -139,7 +139,9 @@ def remove_actions(parser, types):
 
 
 def filter_default_actions(actions):
-    default = (_HelpAction, _ActionHelpClassPath, _ActionPrintConfig)
+    from ._completions import ShtabAction
+
+    default = (_HelpAction, _ActionHelpClassPath, _ActionPrintConfig, ShtabAction)
     if isinstance(actions, list):
         return [a for a in actions if not isinstance(a, default)]
     return {k: a for k, a in actions.items() if not isinstance(a, default)}

@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.40.1 (2025-05-??)
+--------------------
+
+Fixed
+^^^^^
+- ``print_shtab`` incorrectly parsed from environment variable (`#725
+  <https://github.com/omni-us/jsonargparse/pull/725>`__).
+
+
 v4.40.0 (2025-05-16)
 --------------------
 
