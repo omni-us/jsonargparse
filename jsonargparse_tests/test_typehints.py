@@ -1239,6 +1239,21 @@ def test_callable_args_return_type_class_subconfig(parser, tmp_cwd):
     assert optimizer.momentum == 0.8
 
 
+def test_callable_args_pickleable(parser, tmp_cwd):
+    config = {
+        "class_path": "Adam",
+        "init_args": {"momentum": 0.8},
+    }
+    Path("optimizer.yaml").write_text(json_or_yaml_dump(config))
+    parser.add_class_arguments(CallableSubconfig, "m", sub_configs=True)
+    cfg = parser.parse_args(["--m.o=optimizer.yaml"])
+    init = parser.instantiate_classes(cfg)
+
+    filepath = str(tmp_cwd) + "/pickled.pkl"
+    with open(filepath, "wb") as f:
+        pickle.dump(init, f)
+
+
 class Module:
     pass
 
