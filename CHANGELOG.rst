@@ -11,6 +11,14 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
+v4.40.1 (2025-06-??)
+--------------------
+
+Fixed
+^^^^^
+- ``adapt_class_type`` used a locally defined `partial_instance` wrapper
+  function that is not pickleable.
+
 
 v4.40.1 (2025-05-??)
 --------------------
