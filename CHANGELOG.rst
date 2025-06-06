@@ -11,7 +11,7 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
-v4.40.1 (2025-06-??)
+v4.40.2 (2025-06-??)
 --------------------
 
 Fixed
