@@ -1424,11 +1424,11 @@ def adapt_class_type(
         instantiator_fn = get_class_instantiator()
 
         if partial_classes:
-
-            def partial_instance(*args):
-                return instantiator_fn(val_class, *args, **{**init_args, **dict_kwargs})
-
-            return partial_instance
+            return partial(
+                instantiator_fn,
+                val_class,
+                **{**init_args, **dict_kwargs},
+            )
         return instantiator_fn(val_class, **{**init_args, **dict_kwargs})
 
     prev_init_args = prev_val.get("init_args") if isinstance(prev_val, Namespace) else None

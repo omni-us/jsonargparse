@@ -11,7 +11,6 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
-
 v4.40.1 (2025-05-??)
 --------------------
 
@@ -19,6 +18,9 @@ Fixed
 ^^^^^
 - ``print_shtab`` incorrectly parsed from environment variable (`#725
   <https://github.com/omni-us/jsonargparse/pull/725>`__).
+- ``adapt_class_type`` used a locally defined `partial_instance` wrapper
+  function that is not pickleable (`#728
+  <https://github.com/omni-us/jsonargparse/pull/728>`__).
 
 
 v4.40.0 (2025-05-16)
