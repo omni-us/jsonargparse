@@ -55,7 +55,7 @@ jobs:
           path: ./junit_py*
 
   windows:
-    runs-on: windows-2019
+    runs-on: windows-2025
     strategy:
       fail-fast: false
       matrix:
