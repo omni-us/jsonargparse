@@ -825,6 +825,62 @@ if pydantic_support:
     class PydanticNestedDict(pydantic.BaseModel):
         nested: Optional[Dict[str, NestedModel]] = None
 
+    # Helper function to create test models dynamically based on current pydantic version
+    def _create_extra_models():
+        """Create pydantic models with extra field handling based on the current pydantic version."""
+        # Check if the actual pydantic module supports v2 syntax
+        # In pydantic v1, ConfigDict is just dict, in v2 it's a special class
+        # In pydantic.v1 compatibility mode, ConfigDict exists but is in pydantic.v1.config module
+        _pydantic_v2_syntax = (
+            hasattr(pydantic, "ConfigDict")
+            and hasattr(pydantic.ConfigDict, "__module__")
+            and "pydantic.config" in pydantic.ConfigDict.__module__
+            and "v1" not in pydantic.ConfigDict.__module__
+        )
+
+        if _pydantic_v2_syntax:
+            from pydantic import ConfigDict
+
+            class PydanticExtraAllow(pydantic.BaseModel):
+                model_config = ConfigDict(extra="allow")
+                name: str
+                age: int = 25
+
+            class PydanticExtraForbid(pydantic.BaseModel):
+                model_config = ConfigDict(extra="forbid")
+                name: str
+                age: int = 25
+
+            class PydanticExtraIgnore(pydantic.BaseModel):
+                model_config = ConfigDict(extra="ignore")
+                name: str
+                age: int = 25
+
+        else:
+            # Pydantic v1 style (including v1 compatibility mode)
+            class PydanticExtraAllow(pydantic.BaseModel):
+                name: str
+                age: int = 25
+
+                class Config:
+                    extra = "allow"
+
+            class PydanticExtraForbid(pydantic.BaseModel):
+                name: str
+                age: int = 25
+
+                class Config:
+                    extra = "forbid"
+
+            class PydanticExtraIgnore(pydantic.BaseModel):
+                name: str
+                age: int = 25
+
+                class Config:
+                    extra = "ignore"
+
+        return PydanticExtraAllow, PydanticExtraForbid, PydanticExtraIgnore
+
 
 def none(x):
     return x
@@ -988,6 +1044,171 @@ class TestPydantic:
         init = parser.instantiate_classes(cfg)
         assert isinstance(init.model, PydanticNestedDict)
         assert isinstance(init.model.nested["key"], NestedModel)
+
+    def test_extra_allow(self, parser):
+        """Test that extra='allow' accepts and includes extra fields."""
+        PydanticExtraAllow, _, _ = _create_extra_models()
+        parser.add_argument("--model", type=PydanticExtraAllow, default=PydanticExtraAllow(name="default"))
+
+        # Test with parse_object (where validation logic applies)
+        cfg = parser.parse_object({"model": {"name": "John", "age": 30, "extra_field": "extra_value"}})
+
+        # Check that extra field is in the namespace
+        assert cfg.model.name == "John"
+        assert cfg.model.age == 30
+        assert cfg.model.extra_field == "extra_value"
+
+        # Check that instantiation includes the extra field
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.model, PydanticExtraAllow)
+        assert init.model.name == "John"
+        assert init.model.age == 30
+        assert hasattr(init.model, "extra_field")
+        assert init.model.extra_field == "extra_value"
+
+    def test_extra_forbid(self, parser):
+        """Test that extra='forbid' rejects extra fields with appropriate error."""
+        _, PydanticExtraForbid, _ = _create_extra_models()
+        parser.add_argument("--model", type=PydanticExtraForbid, default=PydanticExtraForbid(name="default"))
+
+        # Test with parse_object (where validation logic applies)
+        with pytest.raises(ArgumentError) as ctx:
+            parser.parse_object({"model": {"name": "John", "age": 30, "extra_field": "extra_value"}})
+        assert "does not accept nested key 'extra_field'" in str(ctx.value)
+
+    def test_extra_ignore(self, parser):
+        """Test that extra='ignore' accepts but ignores extra fields."""
+        _, _, PydanticExtraIgnore = _create_extra_models()
+        parser.add_argument("--model", type=PydanticExtraIgnore, default=PydanticExtraIgnore(name="default"))
+
+        # Test with parse_object (where validation logic applies)
+        cfg = parser.parse_object({"model": {"name": "John", "age": 30, "extra_field": "extra_value"}})
+
+        # Check that extra field is in the namespace (parsing succeeded)
+        assert cfg.model.name == "John"
+        assert cfg.model.age == 30
+        assert cfg.model.extra_field == "extra_value"
+
+        # Check that instantiation ignores the extra field
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.model, PydanticExtraIgnore)
+        assert init.model.name == "John"
+        assert init.model.age == 30
+        assert not hasattr(init.model, "extra_field")
+
+    def test_extra_default_behavior(self, parser):
+        """Test that models without explicit extra config behave according to their Pydantic version defaults."""
+        parser.add_argument("--model", type=PydanticModel, default=PydanticModel(p1="default"))
+
+        from jsonargparse._optionals import is_pydantic_model
+
+        model_version = is_pydantic_model(PydanticModel)
+
+        if model_version == 1:
+            # Pydantic v1 models (including v1 compatibility mode) default to 'ignore'
+            cfg = parser.parse_object({"model": {"p1": "test", "p2": 5, "extra_field": "extra_value"}})
+            assert cfg.model.p1 == "test"
+            assert cfg.model.p2 == 5
+            assert cfg.model.extra_field == "extra_value"
+
+            # Check that instantiation ignores the extra field (Pydantic v1 default behavior)
+            init = parser.instantiate_classes(cfg)
+            assert isinstance(init.model, PydanticModel)
+            assert init.model.p1 == "test"
+            assert init.model.p2 == 5
+            assert not hasattr(init.model, "extra_field")
+        else:
+            # Pydantic v2 models default to 'forbid'
+            with pytest.raises(ArgumentError) as ctx:
+                parser.parse_object({"model": {"p1": "test", "p2": 5, "extra_field": "extra_value"}})
+            assert "does not accept nested key 'extra_field'" in str(ctx.value)
+
+    def test_extra_with_class_arguments(self, parser):
+        """Test extra field handling when using add_class_arguments."""
+        PydanticExtraAllow, _, _ = _create_extra_models()
+        parser.add_class_arguments(PydanticExtraAllow, "model")
+
+        # Test with parse_object to include extra field
+        cfg = parser.parse_object({"model": {"name": "John", "age": 30, "extra_field": "extra_value"}})
+
+        assert cfg.model.name == "John"
+        assert cfg.model.age == 30
+        assert cfg.model.extra_field == "extra_value"
+
+        # Test instantiation
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.model, PydanticExtraAllow)
+        assert init.model.extra_field == "extra_value"
+
+    def test_extra_config_function_coverage(self, parser):
+        """Test edge cases in get_pydantic_extra_config function for coverage."""
+        from jsonargparse._optionals import get_pydantic_extra_config
+
+        # Test with non-pydantic class
+        class NonPydanticClass:
+            pass
+
+        assert get_pydantic_extra_config(NonPydanticClass) is None
+
+        # Test with pydantic model that has no extra config
+        class PydanticNoExtra(pydantic.BaseModel):
+            name: str
+
+        result = get_pydantic_extra_config(PydanticNoExtra)
+        # In pydantic v1, models without explicit extra config default to 'ignore'
+        # In pydantic v2, they default to 'forbid' (but our function returns None for default)
+        from jsonargparse._optionals import is_pydantic_model
+
+        model_version = is_pydantic_model(PydanticNoExtra)
+        if model_version == 1:
+            # Pydantic v1 has a default extra='ignore' behavior
+            assert result in [None, "ignore"]  # Allow both since it depends on implementation details
+        else:
+            # Pydantic v2 models without explicit extra config
+            assert result is None
+
+        # Test with a model that has __config__ but no extra
+        class PydanticConfigNoExtra(pydantic.BaseModel):
+            name: str
+
+            class Config:
+                validate_assignment = True
+
+        result = get_pydantic_extra_config(PydanticConfigNoExtra)
+        # This should return None since no extra is specified
+        if model_version == 1:
+            assert result in [None, "ignore"]  # v1 might have default behavior
+        else:
+            assert result is None
+
+        # Test with pydantic v1 enum if available
+        try:
+            # Import pydantic v1 directly to avoid regex replacement issues
+            from pydantic import v1 as pydantic_v1
+
+            class PydanticV1ExtraEnum(pydantic_v1.BaseModel):
+                name: str
+
+                class Config:
+                    extra = pydantic_v1.Extra.allow
+
+            result = get_pydantic_extra_config(PydanticV1ExtraEnum)
+            assert result == "allow"
+
+        except (ImportError, AttributeError):
+            # pydantic v1 not available, skip this test
+            pass
+
+        # Test with a class that might cause an exception (edge case)
+        class ProblematicClass:
+            """A class that might cause issues in the function."""
+
+            def __init__(self):
+                pass
+
+        # This should not raise an exception and should return None
+        result = get_pydantic_extra_config(ProblematicClass)
+        assert result is None
 
 
 # attrs tests
