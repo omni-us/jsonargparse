@@ -361,3 +361,58 @@ def validate_annotated(value, typehint: type):
     from pydantic import TypeAdapter
 
     return TypeAdapter(typehint).validate_python(value)
+
+
+def get_pydantic_extra_config(class_type) -> Optional[str]:
+    """Get the 'extra' configuration from a Pydantic model.
+
+    Args:
+        class_type: The class to check for Pydantic extra configuration.
+
+    Returns:
+        The extra configuration ('allow', 'forbid', 'ignore') or None if not a Pydantic model.
+    """
+    pydantic_model_version = is_pydantic_model(class_type)
+    if not pydantic_model_version:
+        return None
+
+    try:
+
+        # Handle Pydantic v2 models
+        if pydantic_model_version > 1:
+            # Check for model_config attribute (Pydantic v2 style)
+            if hasattr(class_type, "model_config"):
+                config = class_type.model_config
+                if hasattr(config, "get"):
+                    # ConfigDict case
+                    return config.get("extra")
+                elif hasattr(config, "extra"):
+                    # Direct attribute access
+                    return config.extra
+
+            # Check for __config__ attribute (legacy support in v2)
+            if hasattr(class_type, "__config__"):
+                config = class_type.__config__
+                if hasattr(config, "extra"):
+                    return config.extra
+
+        # Handle Pydantic v1 models (including v1 compatibility mode in v2)
+        else:
+            if hasattr(class_type, "__config__"):
+                config = class_type.__config__
+                if hasattr(config, "extra"):
+                    extra_value = config.extra
+                    # Handle Pydantic v1 Extra enum
+                    if hasattr(extra_value, "value"):
+                        return extra_value.value
+                    elif isinstance(extra_value, str):
+                        return extra_value
+                    else:
+                        # Convert enum to string by taking the last part after the dot
+                        return str(extra_value).split(".")[-1]
+
+    except Exception:
+        # If anything goes wrong, return None to fall back to default behavior
+        pass
+
+    return None
