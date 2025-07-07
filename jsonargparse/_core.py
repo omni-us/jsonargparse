@@ -1147,8 +1147,24 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                     group_key = next((g for g in self.groups if key.startswith(g + ".")), None)
                     if group_key:
                         subkey = key[len(group_key) + 1 :]
-                        raise NSKeyError(f"Group '{group_key}' does not accept nested key '{subkey}'")
-                    raise NSKeyError(f"Key '{key}' is not expected")
+                        # Check if this is a Pydantic model with extra configuration
+                        group = self.groups[group_key]
+                        should_raise_error = True
+                        if hasattr(group, "group_class") and group.group_class:
+                            from ._optionals import get_pydantic_extra_config
+
+                            extra_config = get_pydantic_extra_config(group.group_class)
+                            if extra_config == "allow":
+                                # Allow extra fields - don't raise an error
+                                should_raise_error = False
+                            elif extra_config == "ignore":
+                                # Ignore extra fields - don't raise an error, Pydantic will ignore during instantiation
+                                should_raise_error = False
+                            # For 'forbid' or None (default), raise error
+                        if should_raise_error:
+                            raise NSKeyError(f"Group '{group_key}' does not accept nested key '{subkey}'")
+                    else:
+                        raise NSKeyError(f"Key '{key}' is not expected")
 
         try:
             with parser_context(load_value_mode=self.parser_mode):
