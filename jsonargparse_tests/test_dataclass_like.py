@@ -115,9 +115,11 @@ class NestedDefaultsA:
 class NestedDefaultsB:
     a: List[NestedDefaultsA]
 
+
 @dataclasses.dataclass
 class NestedDefaultsC:
     field_with_dash: int = 5
+
 
 @dataclasses.dataclass
 class NestedDefaultsD:
