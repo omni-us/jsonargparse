@@ -115,6 +115,14 @@ class NestedDefaultsA:
 class NestedDefaultsB:
     a: List[NestedDefaultsA]
 
+@dataclasses.dataclass
+class NestedDefaultsC:
+    field_with_dash: int = 5
+
+@dataclasses.dataclass
+class NestedDefaultsD:
+    c_with_dash: NestedDefaultsC = dataclasses.field(default_factory=NestedDefaultsC)
+
 
 def test_add_dataclass_nested_defaults(parser):
     parser.add_class_arguments(NestedDefaultsB, "data")
@@ -988,6 +996,18 @@ class TestPydantic:
         init = parser.instantiate_classes(cfg)
         assert isinstance(init.model, PydanticNestedDict)
         assert isinstance(init.model.nested["key"], NestedModel)
+
+    def test_dashes_in_nested_dataclass(self):
+        class UnderscoresToDashesParser(ArgumentParser):
+            def add_argument(self, *args, **kwargs):
+                args = [arg.replace("_", "-") for arg in args]
+                return super().add_argument(*args, **kwargs)
+
+        parser = UnderscoresToDashesParser(parse_as_dict=False, default_env=True)
+        parser.add_class_arguments(NestedDefaultsD)
+        ns = parser.parse_args([])
+        cfg = parser.instantiate_classes(ns)
+        assert cfg.c_with_dash.field_with_dash == 5
 
 
 # attrs tests
