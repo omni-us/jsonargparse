@@ -21,6 +21,7 @@ Fixed
 - ``adapt_class_type`` used a locally defined `partial_instance` wrapper
   function that is not pickleable (`#728
   <https://github.com/omni-us/jsonargparse/pull/728>`__).
+- ArgumentParser with dashes incorrectly resolves paths to default values()
 
 
 v4.40.0 (2025-05-16)
