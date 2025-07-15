@@ -201,6 +201,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         """
         for arg in args:
             for dest, default in arg.items():
+                dest = dest.replace("-", "_")
                 action = _find_action(self, dest)
                 if action is None:
                     raise NSKeyError(f'No action for key "{dest}" to set its default.')
@@ -458,7 +459,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 cfg, unk = self.parse_known_args(args=args, namespace=cfg)
                 cfg, unk = self._positional_optionals(cfg, unk)
             if unk:
-                self.error(f'Unrecognized arguments: {" ".join(unk)}')
+                self.error(f"Unrecognized arguments: {' '.join(unk)}")
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
