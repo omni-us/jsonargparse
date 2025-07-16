@@ -339,7 +339,7 @@ class LoggerProperty:
 
     def __init__(self, *args, logger: Union[bool, str, dict, logging.Logger] = False, **kwargs):
         """Initializer for LoggerProperty class."""
-        self.logger = logger  # type: ignore[assignment]
+        self.logger = logger
         super().__init__(*args, **kwargs)
 
     @property
