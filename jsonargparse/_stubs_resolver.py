@@ -157,11 +157,9 @@ class StubsResolver(tc.Resolver):
         stub_import = parent and self.get_imported_info(f"{parent.__module__}.{parent.__name__}", component)
         if stub_import and isinstance(stub_import.info.ast, ast.AST):
             method_ast = MethodsVisitor().find(stub_import.info.ast, component.__name__)
-            if method_ast is None:
-                stub_import = None
-            else:
-                name_info = tc.NameInfo(name=component.__qualname__, is_exported=False, ast=method_ast)
-                stub_import = tc.ImportedInfo(source_module=stub_import.source_module, info=name_info)
+            assert method_ast
+            name_info = tc.NameInfo(name=component.__qualname__, is_exported=False, ast=method_ast)
+            stub_import = tc.ImportedInfo(source_module=stub_import.source_module, info=name_info)
         return stub_import
 
     def get_aliases(self, imported_info: tc.ImportedInfo):
