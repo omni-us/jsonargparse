@@ -23,6 +23,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/728>`__).
 - ArgumentParser with dashes incorrectly resolves paths to default values (`#736
   <https://github.com/omni-us/jsonargparse/pull/736>`__).
+- Fix failing tests due to new version of ``typeshed-client`` (`#740
+  <https://github.com/omni-us/jsonargparse/pull/740>`__).
 
 
 v4.40.0 (2025-05-16)
