@@ -52,7 +52,8 @@ all = [
 signatures = [
     "jsonargparse[typing-extensions]",
     "docstring-parser>=0.15",
-    "typeshed-client>=2.3.0",
+    "typeshed-client>=2.3.0; python_version == '3.8'",
+    "typeshed-client>=2.8.2; python_version >= '3.9'",
 ]
 jsonschema = [
     "jsonschema>=3.2.0",

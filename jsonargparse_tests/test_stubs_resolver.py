@@ -144,9 +144,9 @@ def test_get_params_conditional_python_version():
     assert [("a", inspect._empty), ("version", inspect._empty)] == get_param_types(params)
 
 
-@patch("jsonargparse._stubs_resolver.exec")
-def test_get_params_exec_failure(mock_exec):
-    mock_exec.side_effect = NameError("failed")
+@patch("jsonargparse._parameter_resolvers.get_stub_types")
+def test_get_params_exec_failure(mock_get_stub_types):
+    mock_get_stub_types.return_value = None
     params = get_params(Random, "seed")
     assert [("a", inspect._empty), ("version", inspect._empty)] == get_param_types(params)
 
@@ -172,7 +172,9 @@ def test_get_params_classmethod():
         expected = expected[:4] + ["compresslevel"] + expected[4:]
     assert expected == get_param_names(params)[: len(expected)]
     if sys.version_info >= (3, 10):
-        assert all(p.annotation is not inspect._empty for p in params if p.name not in {"compresslevel", "stream"})
+        assert all(
+            p.annotation is not inspect._empty for p in params if p.name not in {"fileobj", "compresslevel", "stream"}
+        )
     with mock_stubs_missing_types():
         params = get_params(TarFile, "open")
     assert expected == get_param_names(params)[: len(expected)]
