@@ -11,6 +11,7 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
+
 v4.40.1 (2025-05-??)
 --------------------
 
@@ -25,6 +26,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/736>`__).
 - Fix failing tests due to new version of ``typeshed-client`` (`#740
   <https://github.com/omni-us/jsonargparse/pull/740>`__).
+- Require new version of ``docstring-parser`` to avoid deprecation warnings
+  (`#741 <https://github.com/omni-us/jsonargparse/pull/741>`__).
 
 
 v4.40.0 (2025-05-16)
