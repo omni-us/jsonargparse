@@ -26,20 +26,20 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - name: without optional dependencies and without pyyaml
+      - name: Test without optional dependencies and without pyyaml
         run: |
           pip install .[coverage]
           pip uninstall -y pyyaml types-PyYAML
           pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml
           mv coverage.xml coverage_py${{ matrix.python }}_bare.xml
           mv junit.xml junit_py${{ matrix.python }}_bare.xml
-      - name: with all optional dependencies
+      - name: Test with all optional dependencies
         run: |
           pip install .[test,all]
           pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml
           mv coverage.xml coverage_py${{ matrix.python }}_all.xml
           mv junit.xml junit_py${{ matrix.python }}_all.xml
-      - name: without future annotations
+      - name: Test without future annotations
         run: |
           sed -i '/^from __future__ import annotations$/d' jsonargparse_tests/test_*.py
           pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml
@@ -157,10 +157,11 @@ jobs:
         with:
           name: package
           path: dist
-      - name: Test without optional dependencies
+      - name: Test without optional dependencies and without pyyaml
         run: |
           cd dist
           pip install $(ls *.whl)[test-no-urls]
+          pip uninstall -y pyyaml
           python -m jsonargparse_tests
       - name: Test with all optional dependencies
         run: |

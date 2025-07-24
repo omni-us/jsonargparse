@@ -50,7 +50,6 @@ def ast_annassign_to_assign(node: ast.AnnAssign) -> ast.Assign:
     return ast.Assign(
         targets=[node.target],
         value=node.value,  # type: ignore[arg-type]
-        type_ignores=[],  # type: ignore[call-arg]
         lineno=node.lineno,
         end_lineno=node.lineno,
     )
