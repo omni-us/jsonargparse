@@ -275,7 +275,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         self.exit_on_error = exit_on_error
         self.required_args: Set[str] = set()
         self.save_path_content: Set[str] = set()
-        self.default_config_files = default_config_files  # type: ignore[assignment]
+        self.default_config_files = default_config_files
         self.default_meta = default_meta
         self.default_env = default_env
         self.env_prefix = env_prefix

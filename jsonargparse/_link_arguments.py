@@ -168,7 +168,7 @@ class ActionLink(Action):
                     if is_target_subclass:
                         help_dest = f"{self.target[1].dest}.help"
                         for action in group._group_actions:
-                            if action.dest == help_dest:  # type: ignore[union-attr]
+                            if action.dest == help_dest:
                                 group._group_actions.remove(action)
                                 break
                     if group._group_actions and all(isinstance(a, _ActionConfigLoad) for a in group._group_actions):
