@@ -1081,7 +1081,8 @@ def adapt_typehints(
             )
 
         try:
-            val_class = import_object(resolve_class_path_by_name(typehint, val["class_path"]))
+            class_path = resolve_class_path_by_name(typehint, val["class_path"])
+            val_class = import_object(class_path)
             if is_instance_or_supports_protocol(val_class, typehint):
                 return val_class  # importable instance
             if is_protocol(val_class):
@@ -1098,10 +1099,14 @@ def adapt_typehints(
             elif prev_implicit_defaults:
                 inner_parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs)
                 prev_val.init_args = inner_parser.get_defaults()
+                if prev_val.class_path != class_path:
+                    inner_parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
+                    for key in inner_parser.get_defaults().keys():
+                        prev_val.init_args.pop(key, None)
             if not_subclass:
                 msg = "implement protocol" if is_protocol(typehint) else "correspond to a subclass of"
                 raise_unexpected_value(f"Import path {val['class_path']} does not {msg} {typehint.__name__}")
-            val["class_path"] = get_import_path(val_class)
+            val["class_path"] = class_path
             val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
         except (ImportError, AttributeError, AssertionError, ArgumentError) as ex:
             class_path = val if isinstance(val, str) else val["class_path"]

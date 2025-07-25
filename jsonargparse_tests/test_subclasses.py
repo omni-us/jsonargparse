@@ -51,6 +51,24 @@ def test_subclass_basics(parser, type):
     assert init["op"] is None
 
 
+class BaseClassDefault:
+    def __init__(self, param: str = "base_default"):
+        self.param = param
+
+
+class SubClassDefault(BaseClassDefault):
+    def __init__(self, param: str = "sub_default"):
+        super().__init__(param=param)
+
+
+def test_subclass_defaults(parser):
+    parser.add_subclass_arguments(BaseClassDefault, "cls")
+    cfg = parser.parse_args(["--cls=BaseClassDefault"])
+    assert cfg.cls.init_args.param == "base_default"
+    cfg = parser.parse_args(["--cls=SubClassDefault"])
+    assert cfg.cls.init_args.param == "sub_default"
+
+
 def test_subclass_init_args_in_subcommand(parser, subparser):
     subparser.add_subclass_arguments(Calendar, "cal", default=lazy_instance(Calendar))
     subcommands = parser.add_subcommands()
