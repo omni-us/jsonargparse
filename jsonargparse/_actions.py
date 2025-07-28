@@ -46,7 +46,7 @@ def _is_branch_key(parser, key: str) -> bool:
 
 
 def _find_action_and_subcommand(
-    parser: Union["ArgumentParser", "ActionsContainer"],
+    parser: Union[ArgumentParser, ActionsContainer],
     dest: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
 ) -> Tuple[Optional[ArgparseAction], Optional[str]]:
@@ -83,7 +83,7 @@ def _find_action_and_subcommand(
 
 
 def _find_action(
-    parser: Union["ArgumentParser", "ActionsContainer"],
+    parser: Union[ArgumentParser, ActionsContainer],
     dest: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
 ) -> Optional[ArgparseAction]:
@@ -91,7 +91,7 @@ def _find_action(
 
 
 def _find_parent_action_and_subcommand(
-    parser: "ArgumentParser",
+    parser: ArgumentParser,
     key: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
 ) -> Tuple[Optional[ArgparseAction], Optional[str]]:
@@ -106,7 +106,7 @@ def _find_parent_action_and_subcommand(
 
 
 def _find_parent_action(
-    parser: "ArgumentParser",
+    parser: ArgumentParser,
     key: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
 ) -> Optional[ArgparseAction]:
@@ -516,7 +516,7 @@ class ActionParser:
 
     def __init__(
         self,
-        parser: Optional["ArgumentParser"] = None,
+        parser: Optional[ArgumentParser] = None,
     ):
         """Initializer for ActionParser instance.
 
@@ -616,7 +616,7 @@ def parent_parsers_context(key, parser):
 class _ActionSubCommands(_SubParsersAction):
     """Extension of argparse._SubParsersAction to modify subcommands functionality."""
 
-    parent_parser: "ArgumentParser"
+    parent_parser: ArgumentParser
     env_prefix: str
 
     def add_parser(self, name, **kwargs):
@@ -692,11 +692,11 @@ class _ActionSubCommands(_SubParsersAction):
 
     @staticmethod
     def get_subcommands(
-        parser: "ArgumentParser",
+        parser: ArgumentParser,
         cfg: Namespace,
         prefix: str = "",
         fail_no_subcommand: bool = True,
-    ) -> Tuple[Optional[List[str]], Optional[List["ArgumentParser"]]]:
+    ) -> Tuple[Optional[List[str]], Optional[List[ArgumentParser]]]:
         """Returns subcommand names and corresponding subparsers."""
         if parser._subcommands_action is None:
             return None, None
@@ -748,11 +748,11 @@ class _ActionSubCommands(_SubParsersAction):
 
     @staticmethod
     def get_subcommand(
-        parser: "ArgumentParser",
+        parser: ArgumentParser,
         cfg: Namespace,
         prefix: str = "",
         fail_no_subcommand: bool = True,
-    ) -> Tuple[Optional[str], Optional["ArgumentParser"]]:
+    ) -> Tuple[Optional[str], Optional[ArgumentParser]]:
         """Returns a single subcommand name and corresponding subparser."""
         subcommands, subparsers = _ActionSubCommands.get_subcommands(
             parser,
@@ -764,7 +764,7 @@ class _ActionSubCommands(_SubParsersAction):
 
     @staticmethod
     def handle_subcommands(
-        parser: "ArgumentParser",
+        parser: ArgumentParser,
         cfg: Namespace,
         env: Optional[bool],
         defaults: bool,

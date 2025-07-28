@@ -242,7 +242,7 @@ class DefaultHelpFormatter(HelpFormatter):
     def set_yaml_start_comment(
         self,
         text: str,
-        cfg: "ruyamlCommentedMap",
+        cfg: ruyamlCommentedMap,
     ):
         """Sets the start comment to a ruyaml object.
 
@@ -255,7 +255,7 @@ class DefaultHelpFormatter(HelpFormatter):
     def set_yaml_group_comment(
         self,
         text: str,
-        cfg: "ruyamlCommentedMap",
+        cfg: ruyamlCommentedMap,
         key: str,
         depth: int,
     ):
@@ -272,7 +272,7 @@ class DefaultHelpFormatter(HelpFormatter):
     def set_yaml_argument_comment(
         self,
         text: str,
-        cfg: "ruyamlCommentedMap",
+        cfg: ruyamlCommentedMap,
         key: str,
         depth: int,
     ):
