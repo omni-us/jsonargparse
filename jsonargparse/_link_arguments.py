@@ -26,7 +26,7 @@ __all__ = ["ArgumentLinking"]
 
 
 def find_parent_or_child_actions(
-    parser: "ArgumentParser",
+    parser: ArgumentParser,
     key: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
 ) -> Optional[List[ArgparseAction]]:
@@ -44,7 +44,7 @@ def find_parent_or_child_actions(
 
 
 def find_subclass_action_or_class_group(
-    parser: "ArgumentParser",
+    parser: ArgumentParser,
     key: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
 ) -> Optional[Union[ArgparseAction, "ArgumentGroup"]]:
@@ -271,7 +271,7 @@ class ActionLink(Action):
             raise ValueError(f"Call to compute_fn of link '{link}' with args ({args}) failed: {ex}") from ex
 
     @staticmethod
-    def apply_parsing_links(parser: "ArgumentParser", cfg: Namespace) -> None:
+    def apply_parsing_links(parser: ArgumentParser, cfg: Namespace) -> None:
         if apply_config_skip.get() or _ActionPrintConfig.is_print_config_requested(parser):
             return
 
@@ -473,7 +473,7 @@ class ActionLink(Action):
                     ActionLink.strip_link_target_keys(subparsers[num], cfg[subcommand])
 
 
-def get_link_actions(parser: "ArgumentParser", apply_on: str, skip=set()) -> List[ActionLink]:
+def get_link_actions(parser: ArgumentParser, apply_on: str, skip=set()) -> List[ActionLink]:
     if not hasattr(parser, "_links_group"):
         return []
     return [a for a in parser._links_group._group_actions if a.apply_on == apply_on and a not in skip]

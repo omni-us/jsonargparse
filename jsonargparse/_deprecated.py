@@ -524,7 +524,7 @@ class DebugException(Exception):
     this function.
 """
 )
-def usage_and_exit_error_handler(parser: "ArgumentParser", message: str) -> None:
+def usage_and_exit_error_handler(parser: ArgumentParser, message: str) -> None:
     """Prints the usage and exits with error code 2 (same behavior as argparse).
 
     Args:

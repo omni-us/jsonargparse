@@ -269,7 +269,7 @@ def check_valid_dump_format(dump_format: str):
         raise ValueError(f'Unknown output format "{dump_format}".')
 
 
-def dump_using_format(parser: "ArgumentParser", data: dict, dump_format: str) -> str:
+def dump_using_format(parser: ArgumentParser, data: dict, dump_format: str) -> str:
     if dump_format == "parser_mode":
         dump_format = parser.parser_mode if parser.parser_mode in dumpers else "yaml"
     args = (data, parser) if dump_format == "yaml_comments" else (data,)
