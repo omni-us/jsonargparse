@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.40.2 (2025-07-??)
+--------------------
+
+Fixed
+^^^^^
+- Linking entire dataclasses on instantiation not working (`#746
+  <https://github.com/omni-us/jsonargparse/pull/746>`__).
+
+
 v4.40.1 (2025-07-24)
 --------------------
 
