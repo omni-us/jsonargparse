@@ -17,6 +17,8 @@ v4.40.2 (2025-07-??)
 
 Fixed
 ^^^^^
+- Subclass defaults incorrectly taken from base class (`#743
+  <https://github.com/omni-us/jsonargparse/pull/743>`__).
 - Linking entire dataclasses on instantiation not working (`#746
   <https://github.com/omni-us/jsonargparse/pull/746>`__).
 
@@ -26,8 +28,8 @@ v4.40.1 (2025-07-24)
 
 Fixed
 ^^^^^
-- ``print_shtab`` incorrectly parsed from environment variable (`#725
-  <https://github.com/omni-us/jsonargparse/pull/725>`__).
+- ``print_shtab`` incorrectly parsed from environment variable (`#726
+  <https://github.com/omni-us/jsonargparse/pull/726>`__).
 - ``adapt_class_type`` used a locally defined `partial_instance` wrapper
   function that is not pickleable (`#728
   <https://github.com/omni-us/jsonargparse/pull/728>`__).
