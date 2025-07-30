@@ -25,7 +25,7 @@ def test_on_parse_help_target_lacking_type_and_help(parser):
     parser.add_argument("--b")
     parser.link_arguments("a", "b")
     help_str = get_parser_help(parser)
-    assert "Target argument 'b' lacks type and help" in help_str
+    assert "Target 'b' lacks type and help" in help_str
 
 
 def test_on_parse_shallow_print_config(parser):
@@ -951,6 +951,35 @@ def test_on_instantiate_targets_passed_to_instantiator(parser):
     assert isinstance(init.model, Model)
     assert callable(init.model.optimizer)
     assert init.model.applied_instantiation_links == {"model.init_args.optimizer.init_args.num_classes": 7}
+
+
+@dataclass
+class DataDep:
+    param: int = 1
+
+
+@dataclass
+class DepContainer:
+    dep: DataDep
+    ref: str = ""
+
+
+def test_on_instantiate_target_entire_dataclass(parser, tmp_cwd):
+    parser.add_class_arguments(DataDep, "data")
+    parser.add_class_arguments(DepContainer, "container")
+    parser.link_arguments("data", "container.dep", apply_on="instantiate")
+
+    defaults = parser.get_defaults()
+    assert defaults == Namespace(data=Namespace(param=1), container=Namespace(ref=""))
+    cfg = parser.parse_args(["--data.param=2", "--container.ref=x"])
+    assert cfg == Namespace(data=Namespace(param=2), container=Namespace(ref="x"))
+    init = parser.instantiate_classes(cfg)
+    assert init.data is init.container.dep
+    assert init.container.dep.param == 2
+
+    help_str = get_parser_help(parser)
+    assert "data --> container.dep [applied on instantiate]" in help_str
+    assert "--container.dep" not in help_str
 
 
 # link creation failures

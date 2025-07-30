@@ -16,6 +16,7 @@ from ._actions import (
     _ActionPrintConfig,
     _ActionSubCommands,
     _find_parent_action,
+    _find_parent_action_and_subcommand,
     filter_default_actions,
 )
 from ._namespace import Namespace, split_key, split_key_leaf
@@ -47,7 +48,7 @@ def find_subclass_action_or_class_group(
     parser: ArgumentParser,
     key: str,
     exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
-) -> Optional[Union[ArgparseAction, "ArgumentGroup"]]:
+) -> Optional[Union[ArgparseAction, ArgumentGroup]]:
     from ._typehints import ActionTypeHint
 
     action = _find_parent_action(parser, key, exclude=exclude)
@@ -142,14 +143,16 @@ class ActionLink(Action):
             ]
 
         # Set and check target action
-        self.target = (target, _find_parent_action(parser, target, exclude=exclude))
+        self.target = (target, find_parent_action_or_group(parser, target, exclude=exclude))
         for key, action in self.source + [self.target]:
             if action is None:
                 raise ValueError(f'No action for key "{key}".')
         assert self.target[1] is not None
 
+        from ._core import ArgumentGroup
         from ._typehints import ActionTypeHint
 
+        is_target_group = isinstance(self.target[1], ArgumentGroup)
         is_target_subclass = ActionTypeHint.is_subclass_typehint(self.target[1], all_subtypes=False, also_lists=True)
         valid_target_init_arg = is_target_subclass and target.startswith(f"{self.target[1].dest}.init_args.")
         valid_target_leaf = self.target[1].dest == target
@@ -157,8 +160,16 @@ class ActionLink(Action):
             prefix = f"{self.target[1].dest}.init_args."
             raise ValueError(f'Target key expected to start with "{prefix}", got "{target}".')
 
+        # Remove target group and child actions
+        if is_target_group:
+            parser._action_groups.remove(self.target[1])
+            del parser.groups[target]
+            for action in list(parser._actions):
+                if action.dest == target or action.dest.startswith(f"{target}."):
+                    parser._actions.remove(action)
         # Replace target action with link action
-        if not is_target_subclass or valid_target_leaf:
+        elif not is_target_subclass or valid_target_leaf:
+            assert isinstance(self.target[1], ArgparseAction)
             for key in self.target[1].option_strings:
                 parser._option_string_actions[key] = self
             parser._actions[parser._actions.index(self.target[1])] = self
@@ -181,7 +192,7 @@ class ActionLink(Action):
         if target in parser.required_args:
             parser.required_args.remove(target)
         if is_target_subclass and not valid_target_leaf:
-            sub_add_kwargs = self.target[1].sub_add_kwargs  # type: ignore[attr-defined]
+            sub_add_kwargs = self.target[1].sub_add_kwargs  # type: ignore[union-attr]
             if "linked_targets" not in sub_add_kwargs:
                 sub_add_kwargs["linked_targets"] = set()
             subtarget = target.split(".init_args.", 1)[1]
@@ -209,10 +220,15 @@ class ActionLink(Action):
             type_attr = None
             help_str = f"Use --{self.target[1].dest}.help for details."
         else:
-            type_attr = getattr(self.target[1], "_typehint", self.target[1].type)
-            help_str = self.target[1].help
+            if is_target_group:
+                type_attr = self.target[1].group_class  # type: ignore[union-attr]
+                help_str = self.target[1].title  # type: ignore[union-attr]
+            else:
+                assert isinstance(self.target[1], ArgparseAction)
+                type_attr = getattr(self.target[1], "_typehint", self.target[1].type)
+                help_str = self.target[1].help
             if help_str == import_module("jsonargparse._formatters").empty_help:
-                help_str = f"Target argument '{self.target[1].dest}' lacks type and help"
+                help_str = f"Target '{self.target[1].dest}' lacks type and help"
 
         super().__init__(
             [link_str],
@@ -392,8 +408,9 @@ class ActionLink(Action):
 
         if ActionTypeHint.is_subclass_typehint(target_action, all_subtypes=False, also_lists=True):
             if target_key == target_action.dest:
-                target_action._check_type(value)  # type: ignore[attr-defined]
+                target_action._check_type(value)  # type: ignore[union-attr]
             else:
+                assert isinstance(target_action.dest, str)
                 parent = cfg.get(target_action.dest)
                 child_key = target_key[len(target_action.dest) + 1 :]
                 if isinstance(parent, list) and any(isinstance(i, Namespace) and child_key in i for i in parent):
@@ -471,6 +488,17 @@ class ActionLink(Action):
             for num, subcommand in enumerate(subcommands):
                 if subcommand in cfg:
                     ActionLink.strip_link_target_keys(subparsers[num], cfg[subcommand])
+
+
+def find_parent_action_or_group(
+    parser: ArgumentParser,
+    key: str,
+    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+) -> Optional[Union[ArgparseAction, ArgumentGroup]]:
+    action_or_group = _find_parent_action_and_subcommand(parser, key, exclude=exclude)[0]
+    if not action_or_group and parser.groups and key in parser.groups:
+        return parser.groups[key]
+    return action_or_group
 
 
 def get_link_actions(parser: ArgumentParser, apply_on: str, skip=set()) -> List[ActionLink]:
