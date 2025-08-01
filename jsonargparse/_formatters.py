@@ -288,7 +288,7 @@ class DefaultHelpFormatter(HelpFormatter):
 
 
 def get_env_var(
-    parser_or_formatter: Union["ArgumentParser", DefaultHelpFormatter],
+    parser_or_formatter: Union[ArgumentParser, DefaultHelpFormatter],
     action: Optional[Action] = None,
 ) -> str:
     """Returns the environment variable name for a given parser or formatter and action."""

@@ -222,7 +222,7 @@ class ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     """Extension of argparse._ArgumentGroup to support additional functionalities."""
 
     dest: Optional[str] = None
-    parser: Optional[Union["ArgumentParser", "ActionsContainer"]] = None
+    parser: Optional[Union["ArgumentParser", ActionsContainer]] = None
 
 
 class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, LoggerProperty, argparse.ArgumentParser):

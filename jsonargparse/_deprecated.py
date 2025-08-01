@@ -553,7 +553,7 @@ class ParserDeprecations:
         self.error_handler = error_handler
 
     @property
-    def error_handler(self) -> Optional[Callable[["ArgumentParser", str], None]]:
+    def error_handler(self) -> Optional[Callable[[ArgumentParser, str], None]]:
         """Property for the error_handler function that is called when there are parsing errors.
 
         :getter: Returns the current error_handler function.
