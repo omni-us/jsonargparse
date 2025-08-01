@@ -87,11 +87,11 @@ def yaml_load(stream):
 
     value = yaml.load(stream, Loader=get_yaml_default_loader())
     if isinstance(value, dict) and value and all(v is None for v in value.values()):
-        if len(value) == 1 and stream.strip() == next(iter(value.keys())) + ":":
+        if len(value) == 1 and stream.strip() == next(iter(value)) + ":":
             value = stream
         else:
             keys = set(stream.strip(" {}").replace(" ", "").split(","))
-            if len(keys) > 0 and keys == set(value.keys()):
+            if len(keys) > 0 and keys == set(value):
                 value = stream
     return value
 
@@ -284,7 +284,7 @@ def dump_using_format(parser: ArgumentParser, data: dict, dump_format: str) -> s
 def set_loader(
     mode: str,
     loader_fn: Callable[[str], Any],
-    exceptions: Tuple[Type[Exception], ...] = tuple(),
+    exceptions: Tuple[Type[Exception], ...] = (),
     json_superset: bool = True,
 ):
     """Sets the value loader function to be used when parsing with a certain mode.

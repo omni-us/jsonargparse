@@ -544,7 +544,7 @@ class ActionParser:
         title = kwargs.pop("title", kwargs.pop("help", None))
         description = kwargs.pop("description", subparser.description)
         if len(kwargs) > 0:
-            raise ValueError(f"ActionParser does not accept the following parameters: {set(kwargs.keys())}")
+            raise ValueError(f"ActionParser does not accept the following parameters: {set(kwargs)}")
         if not (len(args) == 1 and args[0].startswith("--")):
             raise ValueError(f"ActionParser only accepts a single optional key but got {args}")
         prefix = args[0][2:]
@@ -558,7 +558,7 @@ class ActionParser:
         for key, action in filter_default_actions(subparser._option_string_actions).items():
             option_string_actions[add_prefix(key)] = action
 
-        isect = set(option_string_actions.keys()).intersection(set(parser._option_string_actions.keys()))
+        isect = set(option_string_actions).intersection(set(parser._option_string_actions))
         if len(isect) > 0:
             raise ValueError(f"ActionParser conflicting keys: {isect}")
 
@@ -705,7 +705,7 @@ class _ActionSubCommands(_SubParsersAction):
         require_single = single_subcommand.get()
 
         # Get subcommand settings keys
-        subcommand_keys = [k for k in action.choices.keys() if isinstance(cfg.get(prefix + k), Namespace)]
+        subcommand_keys = [k for k in action.choices if isinstance(cfg.get(prefix + k), Namespace)]
 
         # Get subcommand
         subcommand = None
@@ -735,7 +735,7 @@ class _ActionSubCommands(_SubParsersAction):
                 # If subcommand is required and no subcommand is provided,
                 # present the user with a friendly error message to remind them of
                 # the available subcommands and to select one.
-                available_subcommands = list(action._name_parser_map.keys())
+                available_subcommands = list(action._name_parser_map)
                 if len(available_subcommands) <= 5:
                     candidate_subcommands_str = "{" + ",".join(available_subcommands) + "}"
                 else:

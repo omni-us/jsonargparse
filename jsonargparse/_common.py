@@ -65,16 +65,16 @@ nested_links: ContextVar[List[dict]] = ContextVar("nested_links", default=[])
 applied_instantiation_links: ContextVar[Optional[set]] = ContextVar("applied_instantiation_links", default=None)
 
 
-parser_context_vars = dict(
-    parent_parser=parent_parser,
-    parser_capture=parser_capture,
-    defaults_cache=defaults_cache,
-    lenient_check=lenient_check,
-    load_value_mode=load_value_mode,
-    class_instantiators=class_instantiators,
-    nested_links=nested_links,
-    applied_instantiation_links=applied_instantiation_links,
-)
+parser_context_vars = {
+    "parent_parser": parent_parser,
+    "parser_capture": parser_capture,
+    "defaults_cache": defaults_cache,
+    "lenient_check": lenient_check,
+    "load_value_mode": load_value_mode,
+    "class_instantiators": class_instantiators,
+    "nested_links": nested_links,
+    "applied_instantiation_links": applied_instantiation_links,
+}
 
 
 @contextmanager
@@ -91,10 +91,10 @@ def parser_context(**kwargs):
             context_var.reset(token)
 
 
-parsing_settings = dict(
-    validate_defaults=False,
-    parse_optionals_as_positionals=False,
-)
+parsing_settings = {
+    "validate_defaults": False,
+    "parse_optionals_as_positionals": False,
+}
 
 
 def set_parsing_settings(
@@ -270,7 +270,7 @@ class ClassInstantiator:
     def __call__(self, class_type: Type[ClassType], *args, **kwargs) -> ClassType:
         for (cls, subclasses), instantiator in self.instantiators.items():
             if class_type is cls or (subclasses and is_subclass(class_type, cls)):
-                param_names = set(inspect.signature(instantiator).parameters.keys())
+                param_names = set(inspect.signature(instantiator).parameters)
                 if "applied_instantiation_links" in param_names:
                     applied_links = applied_instantiation_links.get() or set()
                     kwargs["applied_instantiation_links"] = {
@@ -316,7 +316,7 @@ def setup_default_logger(data, level, caller):
 def parse_logger(logger: Union[bool, str, dict, logging.Logger], caller):
     if not isinstance(logger, (bool, str, dict, logging.Logger)):
         raise ValueError(f"Expected logger to be an instance of (bool, str, dict, logging.Logger), but got {logger}.")
-    if isinstance(logger, dict) and len(set(logger.keys()) - {"name", "level"}) > 0:
+    if isinstance(logger, dict) and len(set(logger) - {"name", "level"}) > 0:
         value = {k: v for k, v in logger.items() if k not in {"name", "level"}}
         raise ValueError(f"Unexpected data to configure logger: {value}.")
     if logger is False:
@@ -384,6 +384,6 @@ class Action(LoggerProperty, argparse.Action):
 
     def _check_type_(self, value, **kwargs):
         if not hasattr(self, "_check_type_kwargs"):
-            self._check_type_kwargs = set(inspect.signature(self._check_type).parameters.keys())
+            self._check_type_kwargs = set(inspect.signature(self._check_type).parameters)
         kwargs = {k: v for k, v in kwargs.items() if k in self._check_type_kwargs}
         return self._check_type(value, **kwargs)

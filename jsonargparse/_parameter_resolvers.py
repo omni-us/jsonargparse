@@ -172,7 +172,7 @@ def ast_is_call_with_value(node, value_dump) -> bool:
 
 
 ast_constant_attr = {ast.Constant: "value"}
-ast_constant_types = tuple(ast_constant_attr.keys())
+ast_constant_types = tuple(ast_constant_attr)
 
 
 def ast_is_constant(node):
@@ -324,7 +324,7 @@ def unpack_typed_dict_kwargs(params: ParamList, kwargs_idx: int) -> int:
     annotation = kwargs.annotation
     if is_unpack_typehint(annotation):
         params.pop(kwargs_idx)
-        annotation_args: tuple = getattr(annotation, "__args__", tuple())
+        annotation_args: tuple = getattr(annotation, "__args__", ())
         assert len(annotation_args) == 1, "Unpack requires a single type argument"
         dict_annotations = annotation_args[0].__annotations__
         new_params = []
@@ -710,7 +710,7 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 subclass_types = get_subclass_types(param.annotation, callable_return=True)
                 if not (class_type and subclass_types and is_subclass(class_type, subclass_types)):
                     continue
-                subclass_spec: dict = dict(class_path=get_import_path(class_type), init_args=dict())
+                subclass_spec: dict = {"class_path": get_import_path(class_type), "init_args": {}}
                 for kwarg in node.keywords:
                     if kwarg.arg and ast_is_constant(kwarg.value):
                         subclass_spec["init_args"][kwarg.arg] = ast_get_constant_value(kwarg.value)
@@ -890,11 +890,11 @@ def get_field_data_pydantic1_model(field, name, doc_params):
     elif field.default_factory:
         default = field.default_factory()
 
-    return dict(
-        annotation=field.annotation,
-        default=default,
-        doc=field.field_info.description or doc_params.get(name),
-    )
+    return {
+        "annotation": field.annotation,
+        "default": default,
+        "doc": field.field_info.description or doc_params.get(name),
+    }
 
 
 def get_field_data_pydantic2_dataclass(field, name, doc_params):
@@ -921,11 +921,11 @@ def get_field_data_pydantic2_dataclass(field, name, doc_params):
         field_type = get_annotated_base_type(field.type)
     else:
         field_type = field.type
-    return dict(
-        annotation=field_type,
-        default=default,
-        doc=doc_params.get(name),
-    )
+    return {
+        "annotation": field_type,
+        "default": default,
+        "doc": doc_params.get(name),
+    }
 
 
 def get_field_data_pydantic2_model(field, name, doc_params):
@@ -935,11 +935,11 @@ def get_field_data_pydantic2_model(field, name, doc_params):
     elif field.default_factory:
         default = field.default_factory()
 
-    return dict(
-        annotation=field.rebuild_annotation(),
-        default=default,
-        doc=field.description or doc_params.get(name),
-    )
+    return {
+        "annotation": field.rebuild_annotation(),
+        "default": default,
+        "doc": field.description or doc_params.get(name),
+    }
 
 
 def get_field_data_attrs(field, name, doc_params):
@@ -951,11 +951,11 @@ def get_field_data_attrs(field, name, doc_params):
     elif isinstance(default, attrs.Factory):
         default = default.factory()
 
-    return dict(
-        annotation=field.type,
-        default=default,
-        doc=doc_params.get(name),
-    )
+    return {
+        "annotation": field.type,
+        "default": default,
+        "doc": doc_params.get(name),
+    }
 
 
 def is_init_field_pydantic2_dataclass(field) -> bool:

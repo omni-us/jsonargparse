@@ -222,7 +222,7 @@ def function_type_checking_union(p1: Union[bool, TypeCheckingClass1, int], p2: U
 
 def test_get_types_type_checking_union():
     types = get_types(function_type_checking_union)
-    assert list(types.keys()) == ["p1", "p2"]
+    assert list(types) == ["p1", "p2"]
     assert str(types["p1"]) == f"typing.Union[bool, {__name__}.TypeCheckingClass1, int]"
     assert str(types["p2"]) == f"typing.Union[float, {__name__}.TypeCheckingClass2]"
 
@@ -233,7 +233,7 @@ def function_type_checking_alias(p1: type_checking_alias, p2: "type_checking_ali
 
 def test_get_types_type_checking_alias():
     types = get_types(function_type_checking_alias)
-    assert list(types.keys()) == ["p1", "p2"]
+    assert list(types) == ["p1", "p2"]
     assert str(types["p1"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str]]"
     assert str(types["p2"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str]]"
 
@@ -244,7 +244,7 @@ def function_type_checking_optional_alias(p1: type_checking_alias | None, p2: Op
 
 def test_get_types_type_checking_optional_alias():
     types = get_types(function_type_checking_optional_alias)
-    assert list(types.keys()) == ["p1", "p2"]
+    assert list(types) == ["p1", "p2"]
     assert str(types["p1"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str], NoneType]"
     assert str(types["p2"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str], NoneType]"
 
@@ -255,7 +255,7 @@ def function_type_checking_list(p1: List[Union["TypeCheckingClass1", TypeCheckin
 
 def test_get_types_type_checking_list():
     types = get_types(function_type_checking_list)
-    assert list(types.keys()) == ["p1"]
+    assert list(types) == ["p1"]
     lst = "typing.List"
     assert str(types["p1"]) == f"{lst}[typing.Union[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]]"
 
@@ -266,7 +266,7 @@ def function_type_checking_tuple(p1: Tuple[TypeCheckingClass1, "TypeCheckingClas
 
 def test_get_types_type_checking_tuple():
     types = get_types(function_type_checking_tuple)
-    assert list(types.keys()) == ["p1"]
+    assert list(types) == ["p1"]
     tpl = "typing.Tuple"
     assert str(types["p1"]) == f"{tpl}[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]"
 
@@ -277,7 +277,7 @@ def function_type_checking_type(p1: Type["TypeCheckingClass2"]):
 
 def test_get_types_type_checking_type():
     types = get_types(function_type_checking_type)
-    assert list(types.keys()) == ["p1"]
+    assert list(types) == ["p1"]
     tpl = "typing.Type"
     assert str(types["p1"]) == f"{tpl}[{__name__}.TypeCheckingClass2]"
 
@@ -288,7 +288,7 @@ def function_type_checking_dict(p1: Dict[str, Union[TypeCheckingClass1, "TypeChe
 
 def test_get_types_type_checking_dict():
     types = get_types(function_type_checking_dict)
-    assert list(types.keys()) == ["p1"]
+    assert list(types) == ["p1"]
     dct = "typing.Dict"
     assert str(types["p1"]) == f"{dct}[str, typing.Union[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]]"
 

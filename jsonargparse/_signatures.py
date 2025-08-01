@@ -122,7 +122,7 @@ class SignatureArguments(LoggerProperty):
                 defaults = default.lazy_get_init_args().as_dict()
             elif is_dataclass_like(default.__class__):
                 defaults = dataclass_to_dict(default)
-                args = set(k[len(prefix) :] for k in added_args)
+                args = {k[len(prefix) :] for k in added_args}
                 skip_not_added = [k for k in defaults if k not in args]
                 if skip_not_added:
                     skip.update(skip_not_added)  # skip init=False

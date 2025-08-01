@@ -680,10 +680,10 @@ class ActionTypeHint(Action):
             return ["true", "false", "null"]
         elif is_subclass(self._typehint, Enum):
             enum = self._typehint
-            return list(enum.__members__.keys())
+            return list(enum.__members__)
         elif is_optional(self._typehint, Enum):
             enum = get_optional_arg(self._typehint)
-            return list(enum.__members__.keys()) + ["null"]
+            return list(enum.__members__) + ["null"]
         elif is_optional(self._typehint, Path):
             files_completer = get_files_completer()
             return ["null"] + sorted(files_completer(prefix, **kwargs))
@@ -773,7 +773,7 @@ def adapt_typehints(
     # Literal
     elif typehint_origin in literal_types:
         if val not in subtypehints and isinstance(val, str):
-            subtypes = Union[tuple({type(v) for v in subtypehints if type(v) is not str})]
+            subtypes = Union[tuple((type(v) for v in subtypehints if type(v) is not str))]
             val = adapt_typehints(val, subtypes, **adapt_kwargs)
         if val not in subtypehints:
             raise_unexpected_value(f"Expected a {typehint}", val)
@@ -1451,7 +1451,7 @@ def adapt_class_type(
             value["init_args"] = load_value(parser.dump(init_args, **dump_kwargs.get()))
     else:
         if isinstance(dict_kwargs, dict):
-            for key in list(dict_kwargs.keys()):
+            for key in list(dict_kwargs):
                 if _find_action(parser, key):
                     init_args[key] = dict_kwargs.pop(key)
         elif dict_kwargs:
@@ -1576,7 +1576,7 @@ def typehint_metavar(typehint):
         metavar = iter_to_set_str(enum.__members__)
     elif is_optional(typehint, Enum):
         enum = typehint.__args__[0]
-        metavar = iter_to_set_str(list(enum.__members__.keys()) + ["null"])
+        metavar = iter_to_set_str(list(enum.__members__) + ["null"])
     elif typehint_origin in tuple_set_origin_types:
         metavar = "[ITEM,...]"
     return metavar

@@ -896,7 +896,7 @@ def test_default_config_files_pattern(parser, subtests, tmp_cwd):
 def test_named_argument_groups(parser):
     parser.add_argument_group("Group 1", name="group1")
     parser.add_argument_group("Group 2", name="group2")
-    assert {"group1", "group2"} == set(parser.groups.keys())
+    assert {"group1", "group2"} == set(parser.groups)
     with pytest.raises(ValueError) as ctx:
         parser.add_argument_group("Bad", name="group1")
     ctx.match("Group with name group1 already exists")
