@@ -601,7 +601,7 @@ class ParserDeprecations:
 def deprecated_skip_check(component, kwargs: dict, skip_validation: bool) -> bool:
     skip_check = kwargs.pop("skip_check", None)
     if kwargs:
-        raise ValueError(f"Unexpected keyword parameters: {set(kwargs.keys())}")
+        raise ValueError(f"Unexpected keyword parameters: {set(kwargs)}")
     if skip_check is not None:
         skip_validation = skip_check
         deprecation_warning(

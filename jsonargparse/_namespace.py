@@ -332,11 +332,11 @@ def del_clash_mark(key: str) -> str:
 
 def expand_dict(cfg):
     for k, v in cfg.items():
-        if isinstance(v, dict) and all(isinstance(k, str) for k in v.keys()):
+        if isinstance(v, dict) and all(isinstance(k, str) for k in v):
             cfg[k] = expand_dict(v)
         elif isinstance(v, list):
             for nn, vv in enumerate(v):
-                if isinstance(vv, dict) and all(isinstance(k, str) for k in vv.keys()):
+                if isinstance(vv, dict) and all(isinstance(k, str) for k in vv):
                     cfg[k][nn] = expand_dict(vv)
     return Namespace(**cfg)
 

@@ -170,7 +170,7 @@ def _add_subcommands(
 
 
 def has_parameter(component, name) -> bool:
-    return name in inspect.signature(component).parameters.keys()
+    return name in inspect.signature(component).parameters
 
 
 def _add_component_to_parser(
@@ -180,7 +180,7 @@ def _add_component_to_parser(
     fail_untyped: bool,
     config_help: str,
 ):
-    kwargs: dict = dict(as_positional=as_positional, fail_untyped=fail_untyped, sub_configs=True)
+    kwargs: dict = {"as_positional": as_positional, "fail_untyped": fail_untyped, "sub_configs": True}
     if inspect.isclass(component):
         class_methods = [
             k for k, v in inspect.getmembers(component) if (callable(v) or isinstance(v, property)) and k[0] != "_"

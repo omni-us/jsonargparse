@@ -293,7 +293,7 @@ def test_subcommand_default_config_add_subdefaults(parser, subparser, tmp_cwd):
     subcommands.add_subcommand("fit", subparser)
     cfg = parser.parse_args([])
     assert cfg.fit.model.class_path == f"{__name__}.Model"
-    assert list(cfg.fit.model.init_args.__dict__.keys()) == ["submodel"]
+    assert list(cfg.fit.model.init_args.__dict__) == ["submodel"]
     assert cfg.fit.model.init_args.submodel.class_path == f"{__name__}.SubModel"
     assert cfg.fit.model.init_args.submodel.init_args == Namespace(p1=1, p2="-")
     init = parser.instantiate_classes(cfg)

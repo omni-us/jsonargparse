@@ -353,7 +353,7 @@ def indent_text(text: str, first_line: bool = True) -> str:
 def get_private_kwargs(data, **kwargs):
     extracted = [data.pop(name, default) for name, default in kwargs.items()]
     if data:
-        raise ValueError(f"Unexpected keyword parameters: {set(data.keys())}")
+        raise ValueError(f"Unexpected keyword parameters: {set(data)}")
     return extracted[0] if len(extracted) == 1 else extracted
 
 

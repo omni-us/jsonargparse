@@ -554,7 +554,7 @@ def assert_params(params, expected, origins={}, help=True):
     if help:
         docs = [f"help for {p.name}" for p in params] if docstring_parser_support else [None] * len(params)
         assert docs == [p.doc for p in params]
-    assert all(isinstance(params[n].default, ConditionalDefault) for n in origins.keys())
+    assert all(isinstance(params[n].default, ConditionalDefault) for n in origins)
     param_origins = {
         n: [o.split(f"{__name__}.", 1)[1] for o in p.origin] for n, p in enumerate(params) if p.origin is not None
     }
