@@ -260,7 +260,10 @@ def type_requires_eval(typehint):
 
 
 def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
-    global_vars = vars(import_module(obj.__module__))
+    global_vars = obj.__globals__.copy() if hasattr(obj, "__globals__") else {}
+    for key, value in vars(import_module(obj.__module__)).items():  # needed for pydantic-v1
+        if key not in global_vars:
+            global_vars[key] = value
     try:
         module_source = inspect.getsource(sys.modules[obj.__module__]) if obj.__module__ in sys.modules else ""
         if "TYPE_CHECKING" in module_source:
@@ -349,7 +352,7 @@ def evaluate_postponed_annotations(params, component, parent, logger):
 def get_return_type(component, logger=None):
     return_type = inspect.signature(component).return_annotation
     if type_requires_eval(return_type):
-        global_vars = vars(import_module(component.__module__))
+        global_vars = get_global_vars(component, logger)
         try:
             return_type = get_type_hints(component, global_vars)["return"]
             if isinstance(return_type, ForwardRef):

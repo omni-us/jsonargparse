@@ -313,6 +313,8 @@ class DataclassForwardRef:
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="not working in python 3.8")
 def test_get_types_type_checking_dataclass_init_forward_ref():
+    import xml.dom
+
     types = get_types(DataclassForwardRef.__init__)
     assert types == {"p1": int, "p2": Optional[xml.dom.Node], "return": type(None)}
 
