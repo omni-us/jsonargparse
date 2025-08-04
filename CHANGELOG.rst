@@ -21,6 +21,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/743>`__).
 - Linking entire dataclasses on instantiation not working (`#746
   <https://github.com/omni-us/jsonargparse/pull/746>`__).
+- Introspection of postponed annotations from jax not working (`#749
+  <https://github.com/omni-us/jsonargparse/pull/749>`__).
 
 
 v4.40.1 (2025-07-24)
@@ -441,9 +443,8 @@ Added
 - Allow adding config argument with ``action="config"`` avoiding need to import
   action class (`#512
   <https://github.com/omni-us/jsonargparse/pull/512>`__).
-- Allow providing a function with return type a class in ``class_path``
-  (`lightning#13613
-  <https://github.com/Lightning-AI/pytorch-lightning/discussions/13613>`__).
+- Allow providing a function with return type a class in ``class_path`` (`#513
+  <https://github.com/omni-us/jsonargparse/pull/513>`__).
 - Automatic ``--print_shtab`` option when ``shtab`` is installed, providing
   completions for many type hints without the need to modify code (`#528
   <https://github.com/omni-us/jsonargparse/pull/528>`__).
