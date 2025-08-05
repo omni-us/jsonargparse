@@ -23,4 +23,4 @@ task is not relevant or leave empty when in doubt.
 - [ ] Did you write **unit tests** such that there is 100% coverage on related code? (required for bug fixes and new features)
 - [ ] Did you verify that new and existing **tests pass locally**?
 - [ ] Did you make sure that all changes preserve **backward compatibility**?
-- [ ] Did you update **the CHANGELOG**? (not for typos, docs, test updates, or minor internal changes/refactors)
+- [ ] Did you update **the CHANGELOG** with the pull request link? (not for typos, docs, test updates, or minor internal changes/refactors)

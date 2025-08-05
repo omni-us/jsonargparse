@@ -154,7 +154,7 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/686>`__).
 - Help incorrectly showing environment variable name for ``--print_shtab``.
 - ``add_argument`` raises error when type is assigned with ``action=None``
-  (`#687 <https://github.com/omni-us/jsonargparse/issues/687>`__).
+  (`#687 <https://github.com/omni-us/jsonargparse/pull/687>`__).
 - ``shtab`` failing when parser has positional arguments (`#693
   <https://github.com/omni-us/jsonargparse/pull/693>`__).
 
@@ -381,10 +381,7 @@ Added
 - Support for ``OrderedDict`` as a type (`#545
   <https://github.com/omni-us/jsonargparse/pull/545>`__).
 - New function ``get_loader`` to get the current loader for a given parser mode
-  (`#479 comment
-  <https://github.com/omni-us/jsonargparse/issues/479#issuecomment-2022596544>`__,
-  `#536 comment
-  <https://github.com/omni-us/jsonargparse/issues/536#issuecomment-2186961644>`__).
+  (`#543 <https://github.com/omni-us/jsonargparse/pull/543>`__).
 
 Fixed
 ^^^^^
@@ -392,11 +389,9 @@ Fixed
   ``skip_link_targets=False`` (`#542
   <https://github.com/omni-us/jsonargparse/pull/542>`__).
 - ``default_config_files`` making parse fail for subcommands and nested subclass
-  types (`lightning-forums#5963
-  <https://lightning.ai/forums/t/problem-lightningcli-with-default-config-files/5963>`__).
-- Fixes related to transformers ``PreTrainedModel.from_pretrained``
-  (`lightning#19863 comment
-  <https://github.com/Lightning-AI/pytorch-lightning/discussions/19863#discussioncomment-9821765>`__):
+  types (`#549 <https://github.com/omni-us/jsonargparse/pull/549>`__).
+- Fixes related to transformers ``PreTrainedModel.from_pretrained`` (`#551
+  <https://github.com/omni-us/jsonargparse/pull/551>`__):
 
     - Import path of inherited classmethod not resolving correctly (`#548
       <https://github.com/omni-us/jsonargparse/pull/548>`__).
@@ -426,8 +421,7 @@ Fixed
 - Resolving of import paths for some ``torch`` functions not working (`#535
   <https://github.com/omni-us/jsonargparse/pull/535>`__).
 - ``--print_shtab`` crashing on failure to get signature parameters from one
-  class (`lightning#10858 comment
-  <https://github.com/Lightning-AI/pytorch-lightning/discussions/10858#discussioncomment-9846252>`__).
+  class (`#537 <https://github.com/omni-us/jsonargparse/pull/537>`__).
 
 Changed
 ^^^^^^^
@@ -452,10 +446,10 @@ Added
 Fixed
 ^^^^^
 - Parsing incorrectly provides file content when type is a union with a
-  subclass, PathLike and string (`#516
-  <https://github.com/omni-us/jsonargparse/issues/516>`__).
-- ``--print_config`` failing in some cases (`#517
-  <https://github.com/omni-us/jsonargparse/issues/517>`__).
+  subclass, PathLike and string (`#518
+  <https://github.com/omni-us/jsonargparse/pull/518>`__).
+- ``--print_config`` failing in some cases (`#531
+  <https://github.com/omni-us/jsonargparse/pull/531>`__).
 - Callable that returns class not using required parameter default from lambda
   (`#523 <https://github.com/omni-us/jsonargparse/pull/523>`__).
 - Failing to parse list of dataclasses with nested optional dataclass (`#527
@@ -464,7 +458,7 @@ Fixed
   ``python>=3.11`` (`#522
   <https://github.com/omni-us/jsonargparse/pull/522>`__).
 - Optional pydantic model failing to parse with `__pydantic_private__` error
-  (`#521 <https://github.com/omni-us/jsonargparse/issues/521>`__).
+  (`#530 <https://github.com/omni-us/jsonargparse/pull/530>`__).
 
 
 v4.29.0 (2024-05-24)
@@ -485,15 +479,14 @@ Fixed
   ``Union`` types (`#498 <https://github.com/omni-us/jsonargparse/pull/498>`__).
 - Nested parameters failing to parse from command line when value includes
   space (`#499 <https://github.com/omni-us/jsonargparse/pull/499>`__).
-- ``format_usage()`` not working (`#501
-  <https://github.com/omni-us/jsonargparse/issues/501>`__).
+- ``format_usage()`` not working (`#502
+  <https://github.com/omni-us/jsonargparse/pull/502>`__).
 - Not able to modify init args for callable with class return and default class
   (`#504 <https://github.com/omni-us/jsonargparse/pull/504>`__).
 - Nested values not validated when type not subclass and nested keys for
-  subclass (`#503 comment
-  <https://github.com/omni-us/jsonargparse/issues/503#issuecomment-2119724341>`__).
+  subclass (`#506 <https://github.com/omni-us/jsonargparse/pull/506>`__).
 - Dataclass with nested optional dataclass and default field factory failing to
-  parse (`#507 <https://github.com/omni-us/jsonargparse/issues/507>`__).
+  parse (`#508 <https://github.com/omni-us/jsonargparse/pull/508>`__).
 
 Changed
 ^^^^^^^
