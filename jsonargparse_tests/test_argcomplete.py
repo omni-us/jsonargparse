@@ -60,11 +60,14 @@ def complete_line(parser, value):
 
 def test_handle_completions(parser):
     parser.add_argument("--option")
-    with patch("argcomplete.autocomplete") as mock, patch.dict(
-        os.environ,
-        {
-            "_ARGCOMPLETE": "1",
-        },
+    with (
+        patch("argcomplete.autocomplete") as mock,
+        patch.dict(
+            os.environ,
+            {
+                "_ARGCOMPLETE": "1",
+            },
+        ),
     ):
         parser.parse_args([])
     assert mock.called

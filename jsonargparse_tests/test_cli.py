@@ -157,7 +157,6 @@ def conditional_function(fn: "Literal['A', 'B']", *args, **kwargs):
     raise NotImplementedError(fn)
 
 
-@pytest.mark.skipif(condition=sys.version_info < (3, 9), reason="python>=3.9 is required")
 def test_literal_conditional_function():
     out = get_cli_stdout(conditional_function, args=["--help"])
     assert "Conditional arguments" in out

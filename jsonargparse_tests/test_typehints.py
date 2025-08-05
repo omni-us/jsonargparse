@@ -207,16 +207,14 @@ def test_type_any_dump(parser):
 
 
 def test_type_typehint_without_arg(parser):
-    type_class = Type if sys.version_info < (3, 9) else type
-    parser.add_argument("--type", type=type_class)
+    parser.add_argument("--type", type=type)
     cfg = parser.parse_args(["--type=uuid.UUID"])
     assert cfg.type is uuid.UUID
     assert json_or_yaml_load(parser.dump(cfg)) == {"type": "uuid.UUID"}
 
 
 def test_type_typehint_with_arg(parser):
-    type_class = Type if sys.version_info < (3, 9) else type
-    parser.add_argument("--cal", type=type_class[Calendar])
+    parser.add_argument("--cal", type=type[Calendar])
     cfg = parser.parse_args(["--cal=calendar.Calendar"])
     assert cfg.cal is Calendar
     assert json_or_yaml_load(parser.dump(cfg)) == {"cal": "calendar.Calendar"}
@@ -753,19 +751,18 @@ def test_invalid_inherited_unpack_typeddict(parser, init_args):
         parser.parse_args([f"--testclass={json.dumps(test_config)}"])
 
 
-if sys.version_info >= (3, 9):
-
-    class BottomDict(TypedDict, total=True):
-        a: int
-
-    class MiddleDict(BottomDict, total=False):
-        b: int
-
-    class TopDict(MiddleDict, total=True):
-        c: int
+class BottomDict(TypedDict, total=True):
+    a: int
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Python 3.8 lacked runtime inspection of TypedDict required keys")
+class MiddleDict(BottomDict, total=False):
+    b: int
+
+
+class TopDict(MiddleDict, total=True):
+    c: int
+
+
 def test_typeddict_totality_inheritance(parser):
     parser.add_argument("--middledict", type=MiddleDict, required=False)
     parser.add_argument("--topdict", type=TopDict, required=False)
@@ -804,7 +801,6 @@ def test_mapping_default_mapping_proxy_type(parser):
     assert parser.dump(cfg, format="json") == '{"mapping":{"x":1}}'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="OrderedDict subscriptable since python 3.9")
 def test_ordered_dict(parser):
     parser.add_argument("--odict", type=eval("OrderedDict[str, int]"))
     cfg = parser.parse_args(['--odict={"a":1, "b":2}'])

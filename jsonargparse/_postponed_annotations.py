@@ -7,7 +7,7 @@ from collections import namedtuple
 from copy import deepcopy
 from dataclasses import is_dataclass
 from importlib import import_module
-from typing import Any, Dict, ForwardRef, FrozenSet, List, Optional, Set, Tuple, Type, Union, get_type_hints
+from typing import Any, ForwardRef, List, Optional, Union, get_type_hints
 
 from ._optionals import typing_extensions_import
 from ._typehints import mapping_origin_types, sequence_origin_types, tuple_set_origin_types
@@ -16,28 +16,9 @@ from ._util import get_typehint_origin
 var_map = namedtuple("var_map", "name value")
 none_map = var_map(name="NoneType", value=type(None))
 union_map = var_map(name="Union", value=Union)
-pep585_map = {
-    "dict": var_map(name="Dict", value=Dict),
-    "frozenset": var_map(name="FrozenSet", value=FrozenSet),
-    "list": var_map(name="List", value=List),
-    "set": var_map(name="Set", value=Set),
-    "tuple": var_map(name="Tuple", value=Tuple),
-    "type": var_map(name="Type", value=Type),
-}
 
 
 class BackportTypeHints(ast.NodeTransformer):
-    def visit_Subscript(self, node: ast.Subscript) -> ast.Subscript:
-        if isinstance(node.value, ast.Name) and node.value.id in pep585_map:
-            value = self.new_name_load(pep585_map[node.value.id])
-        else:
-            value = node.value  # type: ignore[assignment]
-        return ast.Subscript(
-            value=value,
-            slice=self.visit(node.slice),
-            ctx=ast.Load(),
-        )
-
     def visit_Constant(self, node: ast.Constant) -> Union[ast.Constant, ast.Name]:
         if node.value is None:
             return self.new_name_load(none_map)
@@ -193,16 +174,7 @@ def get_arg_type(arg_ast, aliases):
     return exec_vars["___arg_type___"]
 
 
-def getattr_recursive(obj, attr):
-    if "." in attr:
-        attr, *attrs = attr.split(".", 1)
-        return getattr_recursive(getattr(obj, attr), attrs[0])
-    return getattr(obj, attr)
-
-
 def resolve_forward_refs(arg_type, aliases, logger):
-    if isinstance(arg_type, str) and arg_type in aliases:
-        arg_type = aliases[arg_type]
 
     def resolve_subtypes_forward_refs(typehint):
         if has_subtypes(typehint):
@@ -213,8 +185,6 @@ def resolve_forward_refs(arg_type, aliases, logger):
                         forward_arg, *forward_args = arg.__forward_arg__.split(".", 1)
                         if forward_arg in aliases:
                             arg = aliases[forward_arg]
-                            if forward_args:
-                                arg = getattr_recursive(arg, forward_args[0])
                         else:
                             raise NameError(f"Name '{forward_arg}' is not defined")
                     else:
@@ -222,15 +192,6 @@ def resolve_forward_refs(arg_type, aliases, logger):
                     subtypes.append(arg)
                 if subtypes != list(typehint.__args__):
                     typehint_origin = get_typehint_origin(typehint)
-                    if sys.version_info < (3, 10):
-                        if typehint_origin in sequence_origin_types:
-                            typehint_origin = List
-                        elif typehint_origin in tuple_set_origin_types:
-                            typehint_origin = Tuple
-                        elif typehint_origin in mapping_origin_types:
-                            typehint_origin = Dict
-                        elif typehint_origin == type:
-                            typehint_origin = Type
                     typehint = typehint_origin[tuple(subtypes)]
             except Exception as ex:
                 if logger:
@@ -292,7 +253,7 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
     except Exception as ex2:
         if isinstance(types, Exception):
             if logger:
-                logger.debug(f"Failed to parse to source code for {obj}", exc_info=ex2)
+                logger.debug(f"Failed to parse the source code for {obj}", exc_info=ex2)
             raise type(types)(f"{repr(types)} + {repr(ex2)}") from ex2  # type: ignore[arg-type]
         return types
 
@@ -303,19 +264,13 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
         ex = types
         types = {}
 
-    if isinstance(node, ast.FunctionDef):
-        arg_asts = [(a.arg, a.annotation) for a in node.args.args + node.args.kwonlyargs]
-    else:
-        arg_asts = [(a.target.id, a.annotation) for a in node.body if isinstance(a, ast.AnnAssign)]  # type: ignore[union-attr]
+    arg_asts = [(a.arg, a.annotation) for a in node.args.args + node.args.kwonlyargs]  # type: ignore[union-attr]
 
     for name, annotation in arg_asts:
         if annotation and (name not in types or type_requires_eval(types[name])):
             try:
-                if isinstance(annotation, ast.Constant) and annotation.value in aliases:
-                    types[name] = aliases[annotation.value]
-                else:
-                    arg_type = get_arg_type(annotation, aliases)
-                    types[name] = resolve_forward_refs(arg_type, aliases, logger)
+                arg_type = get_arg_type(annotation, aliases)
+                types[name] = resolve_forward_refs(arg_type, aliases, logger)
             except Exception as ex3:
                 types[name] = ex3
 
@@ -355,8 +310,6 @@ def get_return_type(component, logger=None):
         global_vars = get_global_vars(component, logger)
         try:
             return_type = get_type_hints(component, global_vars)["return"]
-            if isinstance(return_type, ForwardRef):
-                return_type = resolve_forward_refs(return_type.__forward_arg__, global_vars, logger)
         except Exception as ex:
             if logger:
                 logger.debug(f"Unable to evaluate types for {component}", exc_info=ex)
