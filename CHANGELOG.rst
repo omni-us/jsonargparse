@@ -23,6 +23,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/746>`__).
 - Introspection of postponed annotations from jax not working (`#749
   <https://github.com/omni-us/jsonargparse/pull/749>`__).
+- ``without-future-annotations`` test not included in local coverage (`#751
+  <https://github.com/omni-us/jsonargparse/pull/751>`__).
 
 
 v4.40.1 (2025-07-24)

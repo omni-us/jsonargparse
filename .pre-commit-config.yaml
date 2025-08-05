@@ -111,26 +111,6 @@ repos:
     pass_filenames: false
     verbose: true
 
-  - id: test-without-future-annotations
-    name: test-without-future-annotations
-    entry: bash -c '
-      set -e;
-      if [ $(pip3 list 2>/dev/null | grep -F "$(pwd)" | grep -c ^jsonargparse) = 0 ]; then
-        echo "$(tput setaf 6) Skipped, jsonargparse not installed as editable $(tput sgr0)";
-      else
-        TEST_DIR=$(mktemp -d -t _jsonargparse_tests_XXXXXX);
-        cleanup () { rm -rf "$TEST_DIR"; };
-        trap cleanup EXIT;
-        cp jsonargparse_tests/*.py "$TEST_DIR";
-        cd "$TEST_DIR";
-        sed -i -e "/^from __future__ import annotations$/d" *.py;
-        pytest $TEST_DIR;
-      fi'
-    stages: [pre-push]
-    language: system
-    pass_filenames: false
-    verbose: true
-
   - id: doctest
     name: sphinx-build -M doctest sphinx sphinx/_build sphinx/index.rst
     entry: bash -c '
