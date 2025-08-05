@@ -479,15 +479,14 @@ Fixed
   ``Union`` types (`#498 <https://github.com/omni-us/jsonargparse/pull/498>`__).
 - Nested parameters failing to parse from command line when value includes
   space (`#499 <https://github.com/omni-us/jsonargparse/pull/499>`__).
-- ``format_usage()`` not working (`#501
-  <https://github.com/omni-us/jsonargparse/issues/501>`__).
+- ``format_usage()`` not working (`#502
+  <https://github.com/omni-us/jsonargparse/pull/502>`__).
 - Not able to modify init args for callable with class return and default class
   (`#504 <https://github.com/omni-us/jsonargparse/pull/504>`__).
 - Nested values not validated when type not subclass and nested keys for
-  subclass (`#503 comment
-  <https://github.com/omni-us/jsonargparse/issues/503#issuecomment-2119724341>`__).
+  subclass (`#506 <https://github.com/omni-us/jsonargparse/pull/506>`__).
 - Dataclass with nested optional dataclass and default field factory failing to
-  parse (`#507 <https://github.com/omni-us/jsonargparse/issues/507>`__).
+  parse (`#508 <https://github.com/omni-us/jsonargparse/pull/508>`__).
 
 Changed
 ^^^^^^^
