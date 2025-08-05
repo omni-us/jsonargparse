@@ -191,7 +191,7 @@ Villegas = "Villegas"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{38,39,310,311,312,313}-{all,no}-extras,omegaconf,pydantic-v1,without-pyyaml
+envlist = py{38,39,310,311,312,313}-{all,no}-extras,omegaconf,pydantic-v1,without-pyyaml,without-future-annotations
 skip_missing_interpreters = true
 
 [testenv]
@@ -238,4 +238,18 @@ extras = test,coverage,all
 commands =
     pip uninstall -y argcomplete omegaconf pyyaml reconplogger responses ruyaml types-PyYAML
     python -m pytest {posargs}
+
+[testenv:without-future-annotations]
+extras = test,coverage,all
+allowlist_externals = sh
+commands =
+    sh -c "\
+        rm -rf /tmp/_without_future_annotations; \
+        mkdir /tmp/_without_future_annotations; \
+        cp *.py /tmp/_without_future_annotations; \
+        sed -i -e '/^from __future__ import annotations$/d' /tmp/_without_future_annotations/*.py; \
+    "
+    python -m pytest /tmp/_without_future_annotations {posargs}
+commands_post =
+    sh -c "rm -rf /tmp/_without_future_annotations"
 """
