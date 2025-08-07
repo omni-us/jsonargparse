@@ -947,17 +947,6 @@ def adapt_typehints(
                 required_keys.difference_update(
                     {k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) in not_required_types}
                 )
-            # The standard library TypedDict in Python 3.8 does not store runtime information
-            # about which (if any) keys are optional. See https://bugs.python.org/issue38834.
-            # Thus, fall back to totality and explicitly Required keys
-            elif typehint.__total__:
-                required_keys = {
-                    k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) not in not_required_types
-                }
-            else:
-                required_keys = {
-                    k for k, v in typehint.__annotations__.items() if get_typehint_origin(v) in required_types
-                }
             missing_keys = required_keys - val.keys()
             if missing_keys:
                 raise_unexpected_value(f"Missing required keys: {missing_keys}", val)
@@ -1118,8 +1107,6 @@ def adapt_typehints(
         return adapt_typehints(val, get_alias_target(typehint), **adapt_kwargs)
 
     else:
-        if str(typehint) == "+VT_co":
-            return val  # required for typing.Mapping in python 3.8
         raise RuntimeError(f"The code should never reach here: typehint={typehint}")  # pragma: no cover
 
     return val

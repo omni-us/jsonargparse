@@ -2,6 +2,7 @@ import logging
 import os
 import platform
 import re
+import sys
 from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
 from functools import wraps
 from importlib.util import find_spec
@@ -184,7 +185,9 @@ def capture_logs(logger: logging.Logger) -> Iterator[StringIO]:
 
 
 @contextmanager
-def source_unavailable():
+def source_unavailable(obj=None):
+    if obj and obj.__module__ in sys.modules:
+        del sys.modules[obj.__module__]
     with patch("inspect.getsource", side_effect=OSError("mock source code not available")):
         yield
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 import textwrap
 import warnings
 from calendar import Calendar, HTMLCalendar, TextCalendar
@@ -407,8 +406,7 @@ def test_instantiator_undefined_return(parser, logger):
         parser.parse_args([f"--cls={__name__}.function_undefined_return", "--cls.p1=2"])
     ctx.match("function_undefined_return does not correspond to a subclass of")
     assert "function_undefined_return does not correspond to a subclass of" in logs.getvalue()
-    if sys.version_info >= (3, 9):
-        assert "Unable to evaluate types for" in logs.getvalue()
+    assert "Unable to evaluate types for" in logs.getvalue()
 
 
 # importable instances
