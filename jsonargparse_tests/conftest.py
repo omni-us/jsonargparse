@@ -189,6 +189,12 @@ def source_unavailable():
         yield
 
 
+@pytest.fixture(autouse=True)
+def no_color():
+    with patch.dict(os.environ, {"NO_COLOR": "true"}):
+        yield
+
+
 def get_parser_help(parser: ArgumentParser, strip=False, columns=columns) -> str:
     out = StringIO()
     with patch.dict(os.environ, {"COLUMNS": columns}):
