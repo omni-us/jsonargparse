@@ -17,8 +17,8 @@ v4.41.0 (2025-08-??)
 
 Added
 ^^^^^
-- Support for Python 3.14 (`#???
-  <https://github.com/omni-us/jsonargparse/pull/???>`__).
+- Support for Python 3.14 (`#753
+  <https://github.com/omni-us/jsonargparse/pull/753>`__).
 
 Changed
 ^^^^^^^
