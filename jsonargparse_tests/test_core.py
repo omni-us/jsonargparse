@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import pickle
+import sys
 from calendar import Calendar
 from contextlib import redirect_stderr
 from io import StringIO
@@ -266,16 +267,17 @@ def test_default_env_override_false():
 
 
 def test_env_prefix_true():
-    parser = ArgumentParser(env_prefix=True, default_env=True, exit_on_error=False)
-    parser.add_argument("--test_arg", type=str, required=True)
+    with patch("sys.argv", ["fake.py"]), patch.dict(sys.modules, {"__main__": {}}):
+        parser = ArgumentParser(env_prefix=True, default_env=True, exit_on_error=False)
+        assert parser.prog == "fake.py"
+        parser.add_argument("--test_arg", type=str, required=True)
 
-    with patch.dict(os.environ, {"TEST_ARG": "one"}):
-        pytest.raises(ArgumentError, lambda: parser.parse_args([]))
+        with patch.dict(os.environ, {"TEST_ARG": "one"}):
+            pytest.raises(ArgumentError, lambda: parser.parse_args([]))
 
-    prefix = os.path.splitext(parser.prog)[0].upper()
-    with patch.dict(os.environ, {f"{prefix}_TEST_ARG": "one"}):
-        cfg = parser.parse_args([])
-    assert "one" == cfg.test_arg
+        with patch.dict(os.environ, {"FAKE_TEST_ARG": "one"}):
+            cfg = parser.parse_args([])
+        assert "one" == cfg.test_arg
 
 
 def test_env_prefix_false():

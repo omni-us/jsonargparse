@@ -537,8 +537,12 @@ def test_generic_dataclass(parser):
     help_str = get_parser_help(parser).lower()
     assert "--data.g1 g1          (required, type: int)" in help_str
     assert "--data.g2 [item,...]  (required, type: tuple[int, int])" in help_str
-    assert "--data.g3 g3          (required, type: union[str, int])" in help_str
-    assert "--data.g4 g4          (required, type: dict[str, union[int, bool]])" in help_str
+    if sys.version_info < (3, 14):
+        assert "--data.g3 g3          (required, type: union[str, int])" in help_str
+        assert "--data.g4 g4          (required, type: dict[str, union[int, bool]])" in help_str
+    else:
+        assert "--data.g3 g3          (required, type: str | int)" in help_str
+        assert "--data.g4 g4          (required, type: dict[str, int | bool])" in help_str
 
 
 @dataclasses.dataclass
@@ -551,8 +555,12 @@ def test_nested_generic_dataclass(parser):
     help_str = get_parser_help(parser).lower()
     assert "--x.y.g1 g1          (required, type: float)" in help_str
     assert "--x.y.g2 [item,...]  (required, type: tuple[float, float])" in help_str
-    assert "--x.y.g3 g3          (required, type: union[str, float])" in help_str
-    assert "--x.y.g4 g4          (required, type: dict[str, union[float, bool]])" in help_str
+    if sys.version_info < (3, 14):
+        assert "--x.y.g3 g3          (required, type: union[str, float])" in help_str
+        assert "--x.y.g4 g4          (required, type: dict[str, union[float, bool]])" in help_str
+    else:
+        assert "--x.y.g3 g3          (required, type: str | float)" in help_str
+        assert "--x.y.g4 g4          (required, type: dict[str, float | bool])" in help_str
 
 
 V = TypeVar("V")

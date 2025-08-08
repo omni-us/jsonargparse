@@ -172,8 +172,12 @@ def function_type_checking_union(p1: Union[bool, TypeCheckingClass1, int], p2: U
 def test_get_types_type_checking_union():
     types = get_types(function_type_checking_union)
     assert list(types) == ["p1", "p2"]
-    assert str(types["p1"]) == f"typing.Union[bool, {__name__}.TypeCheckingClass1, int]"
-    assert str(types["p2"]) == f"typing.Union[float, {__name__}.TypeCheckingClass2]"
+    if sys.version_info < (3, 14):
+        assert str(types["p1"]) == f"typing.Union[bool, {__name__}.TypeCheckingClass1, int]"
+        assert str(types["p2"]) == f"typing.Union[float, {__name__}.TypeCheckingClass2]"
+    else:
+        assert str(types["p1"]) == f"bool | {__name__}.TypeCheckingClass1 | int"
+        assert str(types["p2"]) == f"float | {__name__}.TypeCheckingClass2"
 
 
 def function_type_checking_alias(p1: type_checking_alias, p2: "type_checking_alias"):
@@ -183,8 +187,12 @@ def function_type_checking_alias(p1: type_checking_alias, p2: "type_checking_ali
 def test_get_types_type_checking_alias():
     types = get_types(function_type_checking_alias)
     assert list(types) == ["p1", "p2"]
-    assert str(types["p1"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str]]"
-    assert str(types["p2"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str]]"
+    if sys.version_info < (3, 14):
+        assert str(types["p1"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str]]"
+        assert str(types["p2"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str]]"
+    else:
+        assert str(types["p1"]) == f"int | {__name__}.TypeCheckingClass2 | typing.List[str]"
+        assert str(types["p2"]) == f"int | {__name__}.TypeCheckingClass2 | typing.List[str]"
 
 
 def function_type_checking_optional_alias(p1: type_checking_alias | None, p2: Optional["type_checking_alias"]):
@@ -194,8 +202,12 @@ def function_type_checking_optional_alias(p1: type_checking_alias | None, p2: Op
 def test_get_types_type_checking_optional_alias():
     types = get_types(function_type_checking_optional_alias)
     assert list(types) == ["p1", "p2"]
-    assert str(types["p1"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str], NoneType]"
-    assert str(types["p2"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str], NoneType]"
+    if sys.version_info < (3, 14):
+        assert str(types["p1"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str], NoneType]"
+        assert str(types["p2"]) == f"typing.Union[int, {__name__}.TypeCheckingClass2, typing.List[str], NoneType]"
+    else:
+        assert str(types["p1"]) == f"int | {__name__}.TypeCheckingClass2 | typing.List[str] | None"
+        assert str(types["p2"]) == f"int | {__name__}.TypeCheckingClass2 | typing.List[str] | None"
 
 
 def function_type_checking_list(p1: List[Union["TypeCheckingClass1", TypeCheckingClass2]]):
@@ -206,7 +218,10 @@ def test_get_types_type_checking_list():
     types = get_types(function_type_checking_list)
     assert list(types) == ["p1"]
     lst = "typing.List"
-    assert str(types["p1"]) == f"{lst}[typing.Union[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]]"
+    if sys.version_info < (3, 14):
+        assert str(types["p1"]) == f"{lst}[typing.Union[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]]"
+    else:
+        assert str(types["p1"]) == f"{lst}[{__name__}.TypeCheckingClass1 | {__name__}.TypeCheckingClass2]"
 
 
 def function_type_checking_tuple(p1: Tuple[TypeCheckingClass1, "TypeCheckingClass2"]):
@@ -239,7 +254,13 @@ def test_get_types_type_checking_dict():
     types = get_types(function_type_checking_dict)
     assert list(types) == ["p1"]
     dct = "typing.Dict"
-    assert str(types["p1"]) == f"{dct}[str, typing.Union[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]]"
+    if sys.version_info < (3, 14):
+        assert (
+            str(types["p1"])
+            == f"{dct}[str, typing.Union[{__name__}.TypeCheckingClass1, {__name__}.TypeCheckingClass2]]"
+        )
+    else:
+        assert str(types["p1"]) == f"{dct}[str, {__name__}.TypeCheckingClass1 | {__name__}.TypeCheckingClass2]"
 
 
 def function_type_checking_undefined_forward_ref(p1: List["Undefined"], p2: bool):  # type: ignore  # noqa: F821
