@@ -2,11 +2,19 @@
 
 import inspect
 import re
+from argparse import HelpFormatter
 from contextlib import suppress
 from typing import Any, Callable, Dict, Optional, Set, Tuple, Type
 
 from ._common import load_value_mode, parent_parser
-from ._optionals import import_jsonnet, import_toml_dumps, import_toml_loads, omegaconf_support, pyyaml_available
+from ._optionals import (
+    import_jsonnet,
+    import_toml_dumps,
+    import_toml_loads,
+    omegaconf_support,
+    pyyaml_available,
+    ruyaml_support,
+)
 from ._type_checking import ArgumentParser
 
 __all__ = [
@@ -249,13 +257,14 @@ def toml_dump(data):
 
 dumpers: Dict[str, Callable] = {
     "yaml": yaml_dump,
-    "yaml_comments": yaml_comments_dump,
     "json": json_compact_dump,
     "json_compact": json_compact_dump,
     "json_indented": json_indented_dump,
     "toml": toml_dump,
     "jsonnet": json_indented_dump,
 }
+if ruyaml_support:
+    dumpers["yaml_comments"] = yaml_comments_dump
 
 comment_prefix: Dict[str, str] = {
     "yaml": "# ",
@@ -336,7 +345,7 @@ def set_omegaconf_loader():
 set_loader("jsonnet", jsonnet_load, get_loader_exceptions("jsonnet"))
 
 
-def create_help_formatter_with_comments(formatter_class: Type["HelpFormatter"]) -> Type["HelpFormatter"]:
+def create_help_formatter_with_comments(formatter_class: Type[HelpFormatter]) -> Type[HelpFormatter]:
     """Creates a dynamic class that combines a formatter with YAML comment functionality.
 
     Args:
@@ -347,7 +356,7 @@ def create_help_formatter_with_comments(formatter_class: Type["HelpFormatter"]) 
     """
     from ._formatters import YAMLCommentFormatter
 
-    class DynamicHelpFormatter(formatter_class):
+    class DynamicHelpFormatter(formatter_class):  # type: ignore[valid-type,misc]
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self._yaml_formatter = YAMLCommentFormatter(self)

@@ -30,7 +30,7 @@ from ._common import (
     supports_optionals_as_positionals,
 )
 from ._completions import ShtabAction
-from ._deprecated import deprecated
+from ._deprecated import HelpFormatterDeprecations
 from ._link_arguments import ActionLink
 from ._namespace import Namespace, NSKeyError
 from ._optionals import import_ruyaml
@@ -119,7 +119,7 @@ class YAMLCommentFormatter:
     def set_yaml_start_comment(
         self,
         text: str,
-        cfg: "ruyamlCommentedMap",
+        cfg: ruyamlCommentedMap,
     ):
         """Sets the start comment to a ruyaml object.
 
@@ -132,7 +132,7 @@ class YAMLCommentFormatter:
     def set_yaml_group_comment(
         self,
         text: str,
-        cfg: "ruyamlCommentedMap",
+        cfg: ruyamlCommentedMap,
         key: str,
         depth: int,
     ):
@@ -149,7 +149,7 @@ class YAMLCommentFormatter:
     def set_yaml_argument_comment(
         self,
         text: str,
-        cfg: "ruyamlCommentedMap",
+        cfg: ruyamlCommentedMap,
         key: str,
         depth: int,
     ):
@@ -164,7 +164,7 @@ class YAMLCommentFormatter:
         cfg.yaml_set_comment_before_after_key(key, before="\n" + text, indent=2 * depth)
 
 
-class DefaultHelpFormatter(HelpFormatter):
+class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
     """Help message formatter that includes types, default values and env var names.
 
     This class is an extension of `argparse.HelpFormatter
@@ -173,69 +173,6 @@ class DefaultHelpFormatter(HelpFormatter):
     with ``default_env=True`` command line options are preceded by 'ARG:' and
     the respective environment variable name is included preceded by 'ENV:'.
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._yaml_formatter = YAMLCommentFormatter(self)
-
-    @deprecated(
-        """
-        The add_yaml_comments method is deprecated and will be removed in a future version.
-        Use :class:`YAMLCommentFormatter` instead.
-    """
-    )
-    def add_yaml_comments(self, cfg: str) -> str:
-        """Adds help text as yaml comments."""
-        return self._yaml_formatter.add_yaml_comments(cfg)
-
-    @deprecated(
-        """
-        The set_yaml_start_comment method is deprecated and will be removed in a future version.
-        Use :class:`YAMLCommentFormatter` instead.
-    """
-    )
-    def set_yaml_start_comment(self, text: str, cfg: "ruyamlCommentedMap"):
-        """Sets the start comment to a ruyaml object.
-
-        Args:
-            text: The content to use for the comment.
-            cfg: The ruyaml object.
-        """
-        self._yaml_formatter.set_yaml_start_comment(text, cfg)
-
-    @deprecated(
-        """
-        The set_yaml_group_comment method is deprecated and will be removed in a future version.
-        Use :class:`YAMLCommentFormatter` instead.
-    """
-    )
-    def set_yaml_group_comment(self, text: str, cfg: "ruyamlCommentedMap", key: str, depth: int):
-        """Sets the comment for a group to a ruyaml object.
-
-        Args:
-            text: The content to use for the comment.
-            cfg: The parent ruyaml object.
-            key: The key of the group.
-            depth: The nested level of the group.
-        """
-        self._yaml_formatter.set_yaml_group_comment(text, cfg, key, depth)
-
-    @deprecated(
-        """
-        The set_yaml_argument_comment method is deprecated and will be removed in a future version.
-        Use :class:`YAMLCommentFormatter` instead.
-    """
-    )
-    def set_yaml_argument_comment(self, text: str, cfg: "ruyamlCommentedMap", key: str, depth: int):
-        """Sets the comment for an argument to a ruyaml object.
-
-        Args:
-            text: The content to use for the comment.
-            cfg: The parent ruyaml object.
-            key: The key of the argument.
-            depth: The nested level of the argument.
-        """
-        self._yaml_formatter.set_yaml_argument_comment(text, cfg, key, depth)
 
     def _get_help_string(self, action: Action) -> str:
         action_help = " " if action.help == empty_help else action.help
