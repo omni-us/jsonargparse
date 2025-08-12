@@ -2,6 +2,7 @@ from __future__ import annotations  # keep
 
 import dataclasses
 import os
+import sys
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
 
 import pytest
