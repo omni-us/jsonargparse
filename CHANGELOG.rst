@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.41.0 (2025-08-??)
+--------------------
+
+Changed
+^^^^^^^
+- Removed support for python 3.8 (`#752
+  <https://github.com/omni-us/jsonargparse/pull/752>`__).
+
+
 v4.40.2 (2025-08-06)
 --------------------
 

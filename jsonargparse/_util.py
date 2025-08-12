@@ -390,8 +390,6 @@ def class_from_function(
     if isinstance(func_return, str):
         try:
             func_return = get_type_hints(func)["return"]
-            if isinstance(func_return, __import__("typing").ForwardRef):
-                func_return = func_return._evaluate(func.__globals__, {})
         except Exception as ex:
             func_return = inspect.signature(func).return_annotation
             raise ValueError(f"Unable to dereference {func_return}, the return type of {func}: {ex}") from ex

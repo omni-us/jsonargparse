@@ -107,9 +107,8 @@ Other notable features include:
 - **Extensive type hint support:** nested types (union, optional), containers
   (list, dict, etc.), user-defined generics, restricted types (regex, numbers),
   paths, URLs, types from stubs (``*.pyi``), future annotations (PEP `563
-  <https://peps.python.org/pep-0563/>`__), and backports (PEPs `604
-  <https://peps.python.org/pep-0604>`__/`585
-  <https://peps.python.org/pep-0585>`__).
+  <https://peps.python.org/pep-0563/>`__), and backports (PEP `604
+  <https://peps.python.org/pep-0604>`__).
 
 - **Keyword arguments introspection:** resolving of parameters used via
   ``**kwargs``.

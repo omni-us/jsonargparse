@@ -11,22 +11,21 @@ authors = [
     {name = "Mauricio Villegas", email = "mauricio@omnius.com"},
 ]
 readme = "README.rst"
-license = {file = "LICENSE.rst"}
-requires-python = ">=3.8"
+license = "MIT"
+license-files = ["LICENSE.rst"]
+requires-python = ">=3.9"
 
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
@@ -52,8 +51,7 @@ all = [
 signatures = [
     "jsonargparse[typing-extensions]",
     "docstring-parser>=0.17",
-    "typeshed-client>=2.3.0; python_version == '3.8'",
-    "typeshed-client>=2.8.2; python_version >= '3.9'",
+    "typeshed-client>=2.8.2",
 ]
 jsonschema = [
     "jsonschema>=3.2.0",
@@ -191,7 +189,7 @@ Villegas = "Villegas"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{38,39,310,311,312,313}-{all,no}-extras,omegaconf,pydantic-v1,without-pyyaml,without-future-annotations
+envlist = py{39,310,311,312,313}-{all,no}-extras,omegaconf,pydantic-v1,without-pyyaml,without-future-annotations
 skip_missing_interpreters = true
 
 [testenv]

@@ -301,9 +301,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         namespace = argcomplete_namespace(caller, self, namespace)
 
         try:
-            with patch_namespace(), parser_context(
-                parent_parser=self, lenient_check=True
-            ), ActionTypeHint.subclass_arg_context(self):
+            with (
+                patch_namespace(),
+                parser_context(parent_parser=self, lenient_check=True),
+                ActionTypeHint.subclass_arg_context(self),
+            ):
                 kwargs = {}
                 if _parse_known_has_intermixed:
                     kwargs["intermixed"] = False

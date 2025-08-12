@@ -10,7 +10,6 @@ from importlib.util import find_spec
 from ipaddress import ip_network
 from random import Random, SystemRandom, uniform
 from tarfile import TarFile
-from typing import Any
 from unittest.mock import patch
 from uuid import UUID, uuid5
 
@@ -134,10 +133,8 @@ def test_get_params_conditional_python_version():
     assert ["a", "version"] == get_param_names(params)
     if sys.version_info >= (3, 10):
         assert "int | float | str | bytes | bytearray | None" == str(params[0].annotation)
-    elif sys.version_info[:2] == (3, 9):
-        assert "typing.Union[int, float, str, bytes, bytearray, NoneType]" == str(params[0].annotation)
     else:
-        assert Any is params[0].annotation
+        assert "typing.Union[int, float, str, bytes, bytearray, NoneType]" == str(params[0].annotation)
     assert int is params[1].annotation
     with mock_stubs_missing_types():
         params = get_params(Random, "seed")
