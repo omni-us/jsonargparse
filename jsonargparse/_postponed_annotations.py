@@ -182,7 +182,7 @@ def resolve_forward_refs(arg_type, aliases, logger):
                 subtypes = []
                 for arg in typehint.__args__:
                     if isinstance(arg, ForwardRef):
-                        forward_arg, *forward_args = arg.__forward_arg__.split(".", 1)
+                        forward_arg, *_ = arg.__forward_arg__.split(".", 1)
                         if forward_arg in aliases:
                             arg = aliases[forward_arg]
                         else:
