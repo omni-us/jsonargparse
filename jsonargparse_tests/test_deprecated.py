@@ -745,23 +745,19 @@ def test_DefaultHelpFormatter_yaml_comments(parser):
     with catch_warnings(record=True) as w:
         formatter.add_yaml_comments("arg: 1")
     assert "add_yaml_comments method is deprecated and will be removed in v5.0.0" in str(w[-1].message)
-    assert ":class:`YAMLCommentFormatter`" in str(w[-1].message)
     assert "formatter.add_yaml_comments(" in source[w[-1].lineno - 1]
 
     with catch_warnings(record=True) as w:
         formatter.set_yaml_start_comment("start", cfg)
     assert "set_yaml_start_comment method is deprecated and will be removed in v5.0.0" in str(w[-1].message)
-    assert ":class:`YAMLCommentFormatter`" in str(w[-1].message)
     assert "formatter.set_yaml_start_comment(" in source[w[-1].lineno - 1]
 
     with catch_warnings(record=True) as w:
         formatter.set_yaml_group_comment("group", cfg, "arg", 0)
     assert "set_yaml_group_comment method is deprecated and will be removed in v5.0.0" in str(w[-1].message)
-    assert ":class:`YAMLCommentFormatter`" in str(w[-1].message)
     assert "formatter.set_yaml_group_comment(" in source[w[-1].lineno - 1]
 
     with catch_warnings(record=True) as w:
         formatter.set_yaml_argument_comment("arg", cfg, "arg", 0)
     assert "set_yaml_argument_comment method is deprecated and will be removed in v5.0.0" in str(w[-1].message)
-    assert ":class:`YAMLCommentFormatter`" in str(w[-1].message)
     assert "formatter.set_yaml_argument_comment(" in source[w[-1].lineno - 1]

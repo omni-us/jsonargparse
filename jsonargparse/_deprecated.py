@@ -710,22 +710,12 @@ class HelpFormatterDeprecations:
         super().__init__(*args, **kwargs)
         self._yaml_formatter = YAMLCommentFormatter(self)
 
-    @deprecated(
-        """
-        The add_yaml_comments method is deprecated and will be removed in v5.0.0.
-        Use :class:`YAMLCommentFormatter` instead.
-    """
-    )
+    @deprecated("The add_yaml_comments method is deprecated and will be removed in v5.0.0.")
     def add_yaml_comments(self, cfg: str) -> str:
         """Adds help text as yaml comments."""
         return self._yaml_formatter.add_yaml_comments(cfg)
 
-    @deprecated(
-        """
-        The set_yaml_start_comment method is deprecated and will be removed in v5.0.0.
-        Use :class:`YAMLCommentFormatter` instead.
-    """
-    )
+    @deprecated("The set_yaml_start_comment method is deprecated and will be removed in v5.0.0.")
     def set_yaml_start_comment(self, text: str, cfg: ruyamlCommentedMap):
         """Sets the start comment to a ruyaml object.
 
@@ -735,12 +725,7 @@ class HelpFormatterDeprecations:
         """
         self._yaml_formatter.set_yaml_start_comment(text, cfg)
 
-    @deprecated(
-        """
-        The set_yaml_group_comment method is deprecated and will be removed in v5.0.0.
-        Use :class:`YAMLCommentFormatter` instead.
-    """
-    )
+    @deprecated("The set_yaml_group_comment method is deprecated and will be removed in v5.0.0.")
     def set_yaml_group_comment(self, text: str, cfg: ruyamlCommentedMap, key: str, depth: int):
         """Sets the comment for a group to a ruyaml object.
 
@@ -752,12 +737,7 @@ class HelpFormatterDeprecations:
         """
         self._yaml_formatter.set_yaml_group_comment(text, cfg, key, depth)
 
-    @deprecated(
-        """
-        The set_yaml_argument_comment method is deprecated and will be removed in v5.0.0.
-        Use :class:`YAMLCommentFormatter` instead.
-    """
-    )
+    @deprecated("The set_yaml_argument_comment method is deprecated and will be removed in v5.0.0.")
     def set_yaml_argument_comment(self, text: str, cfg: ruyamlCommentedMap, key: str, depth: int):
         """Sets the comment for an argument to a ruyaml object.
 

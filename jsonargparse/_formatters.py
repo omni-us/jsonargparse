@@ -37,7 +37,7 @@ from ._optionals import import_ruyaml
 from ._type_checking import ArgumentParser, ruyamlCommentedMap
 from ._typehints import ActionTypeHint, type_to_str
 
-__all__ = ["DefaultHelpFormatter", "YAMLCommentFormatter"]
+__all__ = ["DefaultHelpFormatter"]
 
 
 empty_help: str = "_EMPTY_HELP_"

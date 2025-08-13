@@ -31,8 +31,9 @@ Changed
 Deprecated
 ^^^^^^^^^^
 - ``DefaultHelpFormatter.*_yaml*_comment*`` methods are deprecated and will be
-  removed in v5.0.0. Instead use the new class ``YAMLCommentFormatter`` (`#754
-  <https://github.com/omni-us/jsonargparse/pull/754>`__).
+  removed in v5.0.0. This logic has been moved to a new private class
+  ``YAMLCommentFormatter``. If deemed necessary, this class might be made public
+  in the future (`#754 <https://github.com/omni-us/jsonargparse/pull/754>`__).
 
 
 v4.40.2 (2025-08-06)
