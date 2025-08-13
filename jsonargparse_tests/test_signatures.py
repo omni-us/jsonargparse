@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 from unittest.mock import patch
@@ -308,10 +309,17 @@ def test_add_class_conditional_kwargs(parser):
         expected += [
             "help for func (required, type: str)",
             "help for kmg1 (type: int, default: 1)",
-            "help for kmg2 (type: Union[str, float], default: Conditional<ast-resolver> {-, 2.3})",
             "help for kmg3 (type: bool, default: Conditional<ast-resolver> {True, False})",
             "help for kmg4 (type: int, default: Conditional<ast-resolver> {4, NOT_ACCEPTED})",
         ]
+        if sys.version_info < (3, 14):
+            expected += [
+                "help for kmg2 (type: Union[str, float], default: Conditional<ast-resolver> {-, 2.3})",
+            ]
+        else:
+            expected += [
+                "help for kmg2 (type: str | float, default: Conditional<ast-resolver> {-, 2.3})",
+            ]
     for value in expected:
         assert value in help_str
 

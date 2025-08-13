@@ -1615,9 +1615,10 @@ class LazyInitBaseClass:
                 self.__dict__[name] = seen_methods[id(member)]
             else:
                 lazy_method = partial(self._lazy_init_then_call_method, name)
-                self.__dict__[name] = lazy_method
                 if name == "__call__":
+                    lazy_method = staticmethod(lazy_method)  # type: ignore[assignment]
                     self._lazy.__call__ = lazy_method  # type: ignore[method-assign]
+                self.__dict__[name] = lazy_method
                 seen_methods[id(member)] = lazy_method
 
     def _lazy_init(self):

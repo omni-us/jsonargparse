@@ -345,7 +345,10 @@ def test_tuple_union(parser, tmp_cwd):
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple=[2, "a"]']))
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--tuple={"a":1, "b":"2"}']))
     help_str = get_parser_help(parser, strip=True)
-    assert "--tuple [ITEM,...] (type: Tuple[Union[int, EnumABC], Path_fc, NotEmptyStr], default: null)" in help_str
+    if sys.version_info < (3, 14):
+        assert "--tuple [ITEM,...] (type: Tuple[Union[int, EnumABC], Path_fc, NotEmptyStr], default: null)" in help_str
+    else:
+        assert "--tuple [ITEM,...] (type: Tuple[int | EnumABC, Path_fc, NotEmptyStr], default: null)" in help_str
 
 
 # list tests
@@ -1404,6 +1407,8 @@ def test_lazy_instance_callable():
     optimizer = lazy_optimizer([1, 2])
     assert optimizer.lr == 0.2
     assert optimizer.params == [1, 2]
+    optimizer = lazy_optimizer([3, 4])
+    assert optimizer.params == [3, 4]
 
 
 # other tests
