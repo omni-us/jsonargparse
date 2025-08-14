@@ -24,6 +24,16 @@ Changed
 ^^^^^^^
 - Removed support for python 3.8 (`#752
   <https://github.com/omni-us/jsonargparse/pull/752>`__).
+- ``YAML`` comments feature is now implemented in a separate class to allow
+  better support for custom help formatters without breaking the comments (`#754
+  <https://github.com/omni-us/jsonargparse/pull/754>`__).
+
+Deprecated
+^^^^^^^^^^
+- ``DefaultHelpFormatter.*_yaml*_comment*`` methods are deprecated and will be
+  removed in v5.0.0. This logic has been moved to a new private class
+  ``YAMLCommentFormatter``. If deemed necessary, this class might be made public
+  in the future (`#754 <https://github.com/omni-us/jsonargparse/pull/754>`__).
 
 
 v4.40.2 (2025-08-06)

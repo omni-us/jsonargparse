@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from ._common import Action, is_subclass, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
-from ._optionals import _get_config_read_mode
+from ._optionals import _get_config_read_mode, ruyaml_support
 from ._type_checking import ActionsContainer, ArgumentParser
 from ._util import (
     Path,
@@ -251,13 +251,16 @@ class _ActionPrintConfig(Action):
             help=(
                 "Print the configuration after applying all other arguments and exit. The optional "
                 "flags customizes the output and are one or more keywords separated by comma. The "
-                "supported flags are: comments, skip_default, skip_null."
-            ),
+                "supported flags are:%s skip_default, skip_null."
+            )
+            % (" comments," if ruyaml_support else ""),
         )
 
     def __call__(self, parser, namespace, value, option_string=None):
         kwargs = {"subparser": parser, "key": None, "skip_none": False, "skip_validation": False}
-        valid_flags = {"": None, "comments": "yaml_comments", "skip_default": "skip_default", "skip_null": "skip_none"}
+        valid_flags = {"": None, "skip_default": "skip_default", "skip_null": "skip_none"}
+        if ruyaml_support:
+            valid_flags["comments"] = "yaml_comments"
         if value is not None:
             flags = value[0].split(",")
             invalid_flags = [f for f in flags if f not in valid_flags]

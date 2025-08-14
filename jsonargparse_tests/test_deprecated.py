@@ -37,11 +37,14 @@ from jsonargparse._deprecated import (
     shown_deprecation_warnings,
     usage_and_exit_error_handler,
 )
+from jsonargparse._formatters import DefaultHelpFormatter
 from jsonargparse._optionals import (
     docstring_parser_support,
     get_docstring_parse_options,
+    import_ruyaml,
     jsonnet_support,
     pyyaml_available,
+    ruyaml_support,
     url_support,
 )
 from jsonargparse._util import argument_error
@@ -726,3 +729,35 @@ def test_namespace_to_dict():
         message="namespace_to_dict was deprecated",
         code="dic1 = namespace_to_dict(ns)",
     )
+
+
+@pytest.mark.skipif(not ruyaml_support, reason="ruyaml package is required")
+def test_DefaultHelpFormatter_yaml_comments(parser):
+    parser.add_argument("--arg", type=int, help="Description")
+    formatter = DefaultHelpFormatter(prog="test")
+    from jsonargparse._common import parent_parser
+
+    parent_parser.set(parser)
+    ruyaml = import_ruyaml("test_DefaultHelpFormatter_yaml_comments")
+    yaml = ruyaml.YAML()
+    cfg = yaml.load("arg: 1")
+
+    with catch_warnings(record=True) as w:
+        formatter.add_yaml_comments("arg: 1")
+    assert "add_yaml_comments method is deprecated and will be removed in v5.0.0" in str(w[-1].message)
+    assert "formatter.add_yaml_comments(" in source[w[-1].lineno - 1]
+
+    with catch_warnings(record=True) as w:
+        formatter.set_yaml_start_comment("start", cfg)
+    assert "set_yaml_start_comment method is deprecated and will be removed in v5.0.0" in str(w[-1].message)
+    assert "formatter.set_yaml_start_comment(" in source[w[-1].lineno - 1]
+
+    with catch_warnings(record=True) as w:
+        formatter.set_yaml_group_comment("group", cfg, "arg", 0)
+    assert "set_yaml_group_comment method is deprecated and will be removed in v5.0.0" in str(w[-1].message)
+    assert "formatter.set_yaml_group_comment(" in source[w[-1].lineno - 1]
+
+    with catch_warnings(record=True) as w:
+        formatter.set_yaml_argument_comment("arg", cfg, "arg", 0)
+    assert "set_yaml_argument_comment method is deprecated and will be removed in v5.0.0" in str(w[-1].message)
+    assert "formatter.set_yaml_argument_comment(" in source[w[-1].lineno - 1]

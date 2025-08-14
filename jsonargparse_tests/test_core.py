@@ -761,10 +761,20 @@ def test_print_config_skip_null(print_parser):
 @pytest.mark.skipif(not ruyaml_support, reason="ruyaml package is required")
 @skip_if_docstring_parser_unavailable
 def test_print_config_comments(print_parser):
+    help_str = get_parser_help(print_parser)
+    assert "comments," in help_str
     out = get_parse_args_stdout(print_parser, ["--print_config=comments"])
     assert "# cli tool" in out
     assert "# Option v1. (default: 1)" in out
     assert "# Option v2. (default: 2)" in out
+
+
+@pytest.mark.skipif(ruyaml_support, reason="ruyaml package should not be installed")
+def test_print_config_comments_unavailable(print_parser):
+    help_str = get_parser_help(print_parser)
+    assert "comments," not in help_str
+    with pytest.raises(ArgumentError, match='Invalid option "comments"'):
+        get_parse_args_stdout(print_parser, ["--print_config=comments"])
 
 
 def test_print_config_invalid_flag(print_parser):

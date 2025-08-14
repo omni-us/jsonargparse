@@ -14,7 +14,7 @@ from typing import Any, Callable, Dict, Optional, Set
 from ._common import Action, null_logger
 from ._common import LoggerProperty as InternalLoggerProperty
 from ._namespace import Namespace
-from ._type_checking import ArgumentParser
+from ._type_checking import ArgumentParser, ruyamlCommentedMap
 
 __all__ = [
     "ActionEnum",
@@ -701,3 +701,50 @@ class LoggerProperty(InternalLoggerProperty):
 def namespace_to_dict(namespace: Namespace) -> Dict[str, Any]:
     """Returns a copy of a nested namespace converted into a nested dictionary."""
     return namespace.clone().as_dict()
+
+
+class HelpFormatterDeprecations:
+    def __init__(self, *args, **kwargs):
+        from jsonargparse._formatters import YAMLCommentFormatter
+
+        super().__init__(*args, **kwargs)
+        self._yaml_formatter = YAMLCommentFormatter(self)
+
+    @deprecated("The add_yaml_comments method is deprecated and will be removed in v5.0.0.")
+    def add_yaml_comments(self, cfg: str) -> str:
+        """Adds help text as yaml comments."""
+        return self._yaml_formatter.add_yaml_comments(cfg)
+
+    @deprecated("The set_yaml_start_comment method is deprecated and will be removed in v5.0.0.")
+    def set_yaml_start_comment(self, text: str, cfg: ruyamlCommentedMap):
+        """Sets the start comment to a ruyaml object.
+
+        Args:
+            text: The content to use for the comment.
+            cfg: The ruyaml object.
+        """
+        self._yaml_formatter.set_yaml_start_comment(text, cfg)
+
+    @deprecated("The set_yaml_group_comment method is deprecated and will be removed in v5.0.0.")
+    def set_yaml_group_comment(self, text: str, cfg: ruyamlCommentedMap, key: str, depth: int):
+        """Sets the comment for a group to a ruyaml object.
+
+        Args:
+            text: The content to use for the comment.
+            cfg: The parent ruyaml object.
+            key: The key of the group.
+            depth: The nested level of the group.
+        """
+        self._yaml_formatter.set_yaml_group_comment(text, cfg, key, depth)
+
+    @deprecated("The set_yaml_argument_comment method is deprecated and will be removed in v5.0.0.")
+    def set_yaml_argument_comment(self, text: str, cfg: ruyamlCommentedMap, key: str, depth: int):
+        """Sets the comment for an argument to a ruyaml object.
+
+        Args:
+            text: The content to use for the comment.
+            cfg: The parent ruyaml object.
+            key: The key of the argument.
+            depth: The nested level of the argument.
+        """
+        self._yaml_formatter.set_yaml_argument_comment(text, cfg, key, depth)
