@@ -19,6 +19,8 @@ Added
 ^^^^^
 - Support for Python 3.14 (`#753
   <https://github.com/omni-us/jsonargparse/pull/753>`__).
+- Support callable protocols for instance factory dependency injection (`#758
+  <https://github.com/omni-us/jsonargparse/pull/758>`__).
 
 Fixed
 ^^^^^
