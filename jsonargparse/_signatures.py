@@ -357,6 +357,10 @@ class SignatureArguments(LoggerProperty):
         elif kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD}:
             # These parameter types don't translate well to CLI arguments
             return  # Skip entirely
+        elif kind is None:
+            # Fallback for programmatically created parameters without kind
+            is_required = default == inspect_empty  # Required if no default
+            is_option = False  # Can be positional (preserve old behavior)
         else:
             raise ValueError(f"Unknown parameter kind: {kind}")
         src = get_parameter_origins(param.component, param.parent)
