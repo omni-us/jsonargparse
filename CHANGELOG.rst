@@ -22,6 +22,9 @@ Added
 
 Changed
 ^^^^^^^
+- Improved parameter kind handling for argument requirement determination.
+  ``KEYWORD_ONLY`` parameters now correctly use ``--flag`` style (`#756
+  <https://github.com/omni-us/jsonargparse/pull/756>`__).
 - Removed support for python 3.8 (`#752
   <https://github.com/omni-us/jsonargparse/pull/752>`__).
 - ``YAML`` comments feature is now implemented in a separate class to allow
