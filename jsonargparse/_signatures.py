@@ -344,7 +344,21 @@ class SignatureArguments(LoggerProperty):
                     default = None
                 elif get_typehint_origin(annotation) in not_required_types:
                     default = SUPPRESS
-        is_required = default == inspect_empty
+        # Determine argument characteristics based on parameter kind and default value
+        if kind == kinds.POSITIONAL_ONLY:
+            is_required = True  # Always required
+            is_option = False  # Can be positional
+        elif kind == kinds.POSITIONAL_OR_KEYWORD:
+            is_required = default == inspect_empty  # Required if no default
+            is_option = False  # Can be positional
+        elif kind == kinds.KEYWORD_ONLY:
+            is_required = default == inspect_empty  # Required if no default
+            is_option = True  # Must use --flag style
+        elif kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD}:
+            # These parameter types don't translate well to CLI arguments
+            return  # Skip entirely
+        else:
+            raise ValueError(f"Unknown parameter kind: {kind}")
         src = get_parameter_origins(param.component, param.parent)
         skip_message = f'Skipping parameter "{name}" from "{src}" because of: '
         if not fail_untyped and annotation == inspect_empty:
@@ -356,7 +370,7 @@ class SignatureArguments(LoggerProperty):
             default = None
             is_required = False
             is_required_link_target = True
-        if kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD} or (not is_required and name[0] == "_"):
+        if not is_required and name[0] == "_":
             return
         elif skip and name in skip:
             self.logger.debug(skip_message + "Parameter requested to be skipped.")
@@ -371,12 +385,12 @@ class SignatureArguments(LoggerProperty):
             kwargs["default"] = default
             if default is None and not is_optional(annotation, object) and not is_required_link_target:
                 annotation = Optional[annotation]
-        elif not as_positional:
+        elif not as_positional or is_option:
             kwargs["required"] = True
         is_subclass_typehint = False
         is_dataclass_like_typehint = is_dataclass_like(annotation)
         dest = (nested_key + "." if nested_key else "") + name
-        args = [dest if is_required and as_positional else "--" + dest]
+        args = [dest if is_required and as_positional and not is_option else "--" + dest]
         if param.origin:
             parser = container
             if not isinstance(container, ArgumentParser):
