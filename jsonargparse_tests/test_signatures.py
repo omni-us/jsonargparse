@@ -699,14 +699,16 @@ def test_add_function_param_conflict(parser):
     ctx.match("Unable to add parameter 'cfg' from")
 
 
-def func_positional_only(a: int, /, b: int = 1):
-    return a, b
+def func_positional_and_keyword(a: int, /, b: int, *, c: int, d: int = 1):
+    pass
 
 
-def test_add_function_positional_only_parameters(parser):
-    added_args = parser.add_function_arguments(func_positional_only)
+def test_add_function_positional_and_keyword_parameters(parser):
+    parser.add_function_arguments(func_positional_and_keyword, as_positional=True)
 
     # Test that we can parse with both parameters
-    cfg = parser.parse_args(["--a=1", "--b=2"])
+    cfg = parser.parse_args(["1", "2", "--c=3", "--d=4"])
     assert cfg.a == 1
     assert cfg.b == 2
+    assert cfg.c == 3
+    assert cfg.d == 4
