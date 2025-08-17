@@ -706,7 +706,7 @@ def func_positional_only(a: int, /, b: int = 1):
 
 def test_add_function_positional_only_parameters(parser):
     """Test coverage for POSITIONAL_ONLY parameter handling (lines 349-350)."""
-    added_args = parser.add_function_arguments(func_positional_only, fail_untyped=False)
+    added_args = parser.add_function_arguments(func_positional_only)
 
     # Test that we can parse with both parameters
     cfg = parser.parse_args(["--a=1", "--b=2"])
