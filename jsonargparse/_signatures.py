@@ -347,20 +347,20 @@ class SignatureArguments(LoggerProperty):
         # Determine argument characteristics based on parameter kind and default value
         if kind == kinds.POSITIONAL_ONLY:
             is_required = True  # Always required
-            is_option = False  # Can be positional
+            is_non_positional = False  # Can be positional
         elif kind == kinds.POSITIONAL_OR_KEYWORD:
             is_required = default == inspect_empty  # Required if no default
-            is_option = False  # Can be positional
+            is_non_positional = False  # Can be positional
         elif kind == kinds.KEYWORD_ONLY:
             is_required = default == inspect_empty  # Required if no default
-            is_option = True  # Must use --flag style
+            is_non_positional = True  # Must use --flag style
         elif kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD}:
             # These parameter types don't translate well to CLI arguments
             return  # Skip entirely
         elif kind is None:
             # Fallback for programmatically created parameters without kind
             is_required = default == inspect_empty  # Required if no default
-            is_option = False  # Can be positional (preserve old behavior)
+            is_non_positional = False  # Can be positional (preserve old behavior)
         else:
             raise ValueError(f"Unknown parameter kind: {kind}")
         src = get_parameter_origins(param.component, param.parent)
@@ -389,12 +389,12 @@ class SignatureArguments(LoggerProperty):
             kwargs["default"] = default
             if default is None and not is_optional(annotation, object) and not is_required_link_target:
                 annotation = Optional[annotation]
-        elif not as_positional or is_option:
+        elif not as_positional or is_non_positional:
             kwargs["required"] = True
         is_subclass_typehint = False
         is_dataclass_like_typehint = is_dataclass_like(annotation)
         dest = (nested_key + "." if nested_key else "") + name
-        args = [dest if is_required and as_positional and not is_option else "--" + dest]
+        args = [dest if is_required and as_positional and not is_non_positional else "--" + dest]
         if param.origin:
             parser = container
             if not isinstance(container, ArgumentParser):
