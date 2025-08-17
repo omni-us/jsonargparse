@@ -700,7 +700,6 @@ def test_add_function_param_conflict(parser):
 
 
 def func_positional_only(a: int, /, b: int = 1):
-    """Function with positional-only parameters."""
     return a, b
 
 
