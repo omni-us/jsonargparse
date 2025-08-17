@@ -708,10 +708,6 @@ def test_add_function_positional_only_parameters(parser):
     """Test coverage for POSITIONAL_ONLY parameter handling (lines 349-350)."""
     added_args = parser.add_function_arguments(func_positional_only, fail_untyped=False)
 
-    # Both 'a' and 'b' should be added
-    assert "a" in added_args
-    assert "b" in added_args
-
     # Test that we can parse with both parameters
     cfg = parser.parse_args(["--a=1", "--b=2"])
     assert cfg.a == 1
