@@ -354,13 +354,12 @@ class SignatureArguments(LoggerProperty):
         elif kind == kinds.KEYWORD_ONLY:
             is_required = default == inspect_empty  # Required if no default
             is_non_positional = True  # Must use --flag style
-        elif kind in {kinds.VAR_POSITIONAL, kinds.VAR_KEYWORD}:
-            # These parameter types don't translate well to CLI arguments
-            return  # Skip entirely
-        else:
-            # Fallback for programmatically created parameters without kind
+        elif kind is None:
+            # programmatically created parameters without kind
             is_required = default == inspect_empty  # Required if no default
             is_non_positional = False  # Can be positional (preserve old behavior)
+        else:
+            raise RuntimeError(f"The code should never reach here: typehint={typehint}")  # pragma: no cover
         src = get_parameter_origins(param.component, param.parent)
         skip_message = f'Skipping parameter "{name}" from "{src}" because of: '
         if not fail_untyped and annotation == inspect_empty:

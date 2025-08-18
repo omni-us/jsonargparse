@@ -699,16 +699,17 @@ def test_add_function_param_conflict(parser):
     ctx.match("Unable to add parameter 'cfg' from")
 
 
-def func_positional_and_keyword(a: int, /, b: int, *, c: int, d: int = 1):
+def func_positional_and_keyword_only(a: int, /, b: int, *, c: int, d: int = 1):
     pass
 
 
-def test_add_function_positional_and_keyword_parameters(parser):
+def test_add_function_positional_and_keyword_only_parameters(parser):
     parser.add_function_arguments(func_positional_and_keyword, as_positional=True)
 
     # Test that we can parse with both parameters
     cfg = parser.parse_args(["1", "2", "--c=3", "--d=4"])
-    assert cfg.a == 1
-    assert cfg.b == 2
-    assert cfg.c == 3
-    assert cfg.d == 4
+    assert cfg == Namespace(a=1, b=2, c=3, d=4)
+    with pytest.raises(ArgumentError, match="Unrecognized arguments: --b=2"):
+        parser.parse_args(["1", "--b=2", "--c=3", "--d=4"])
+    with pytest.raises(ArgumentError, match='Key "c" is required'):
+        parser.parse_args(["1", "2", "--d=4"])
