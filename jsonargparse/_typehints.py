@@ -1332,8 +1332,6 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
             add_subclasses(subclass)
 
     if get_typehint_origin(cls) in callable_origin_types:
-        if len(getattr(cls, "__args__", [])) < 2:
-            return subclass_list
         cls = cls.__args__[-1]
 
     if get_typehint_origin(cls) in {Union, Type, type}:

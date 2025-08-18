@@ -1125,6 +1125,28 @@ def test_callable_protocol_instance_factory(parser, subtests):
         assert "--optimizer.params" not in help_str
 
 
+class OptimizerFactoryPositionalAndKeyword(Protocol):
+    def __call__(self, lr: float, /, params: List[float]) -> Optimizer: ...
+
+
+def test_callable_protocol_instance_factory_with_positional(parser):
+    parser.add_argument("--optimizer", type=OptimizerFactoryPositionalAndKeyword)
+
+    value = {
+        "class_path": "DifferentParamsOrder",
+        "init_args": {
+            "momentum": 0.9,
+        },
+    }
+    cfg = parser.parse_args([f"--optimizer={json.dumps(value)}"])
+    init = parser.instantiate_classes(cfg)
+    optimizer = init.optimizer(0.2, params=[0, 1])
+    assert optimizer.lr == 0.2
+    assert optimizer.params == [0, 1]
+    assert optimizer.momentum == 0.9
+    assert isinstance(optimizer, DifferentParamsOrder)
+
+
 def test_optional_callable_return_type_help(parser):
     parser.add_argument("--optimizer", type=Optional[Callable[[List[float]], Optimizer]])
     help_str = get_parser_help(parser)
