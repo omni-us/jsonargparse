@@ -20,6 +20,12 @@ Added
 - Support for Python 3.14 (`#753
   <https://github.com/omni-us/jsonargparse/pull/753>`__).
 
+Fixed
+^^^^^
+- Improved parameter kind handling for argument requirement determination.
+  ``KEYWORD_ONLY`` parameters now correctly use ``--flag`` style (`#756
+  <https://github.com/omni-us/jsonargparse/pull/756>`__).
+
 Changed
 ^^^^^^^
 - Removed support for python 3.8 (`#752
