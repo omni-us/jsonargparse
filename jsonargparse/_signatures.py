@@ -359,7 +359,7 @@ class SignatureArguments(LoggerProperty):
             is_required = default == inspect_empty  # Required if no default
             is_non_positional = False  # Can be positional (preserve old behavior)
         else:
-            raise RuntimeError(f"The code should never reach here: typehint={typehint}")  # pragma: no cover
+            raise RuntimeError(f"The code should never reach here: kind={kind}")  # pragma: no cover
         src = get_parameter_origins(param.component, param.parent)
         skip_message = f'Skipping parameter "{name}" from "{src}" because of: '
         if not fail_untyped and annotation == inspect_empty:
