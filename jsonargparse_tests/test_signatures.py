@@ -704,7 +704,7 @@ def func_positional_and_keyword_only(a: int, /, b: int, *, c: int, d: int = 1):
 
 
 def test_add_function_positional_and_keyword_only_parameters(parser):
-    parser.add_function_arguments(func_positional_and_keyword, as_positional=True)
+    parser.add_function_arguments(func_positional_and_keyword_only, as_positional=True)
 
     # Test that we can parse with both parameters
     cfg = parser.parse_args(["1", "2", "--c=3", "--d=4"])
