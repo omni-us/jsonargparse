@@ -398,6 +398,37 @@ a function, it is recommended to implement a type, see :ref:`custom-types`.
     parser.add_argument("--int_or_off", type=int_or_off)
 
 
+Always fail arguments
+---------------------
+
+In scenarios where an argument should be included in the parser but should
+always fail parsing, there is the :class:`.ActionFail` action. This is
+particularly useful when a feature is optional and only accessible if a specific
+package is installed:
+
+.. testsetup:: always-fail
+
+    parser = ArgumentParser()
+    some_package_installed = False
+
+.. testcode:: always-fail
+
+    from jsonargparse import ActionFail
+
+    if some_package_installed:
+        parser.add_argument("--module", type=SomeClass)
+    else:
+        parser.add_argument(
+            "--module",
+            action=ActionFail(message="install 'package' to enable"),
+            help="Option unavailable due to missing 'package'",
+        )
+
+With this setup, if the argument is provided as ``--module=...`` or in a nested
+form like ``--module.child=...``, the parsing will fail and display the
+configured error message.
+
+
 .. _type-hints:
 
 Type hints

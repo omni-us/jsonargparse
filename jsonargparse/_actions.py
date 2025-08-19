@@ -29,8 +29,9 @@ from ._util import (
 
 __all__ = [
     "ActionConfigFile",
-    "ActionYesNo",
+    "ActionFail",
     "ActionParser",
+    "ActionYesNo",
 ]
 
 
@@ -65,7 +66,7 @@ def _find_action_and_subcommand(
     fallback_action = None
     for action in actions:
         if action.dest == dest or f"--{dest}" in action.option_strings:
-            if isinstance(action, _ActionConfigLoad):
+            if isinstance(action, (_ActionConfigLoad, ActionFail)):
                 fallback_action = action
             else:
                 return action, None
@@ -433,6 +434,30 @@ class _ActionHelpClassPath(Action):
                     num += 1
                 break
         return args[num + 1 :]
+
+
+class ActionFail(Action):
+    """Action that always fails parsing with a given error."""
+
+    def __init__(self, message: str = "option unavailable", **kwargs):
+        """Initializer for ActionFail instance.
+
+        Args:
+            message: Text for the error to show.
+        """
+        if len(kwargs) == 0:
+            self._message = message
+        else:
+            self._message = kwargs.pop("_message")
+            kwargs["default"] = SUPPRESS
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs):
+        """Always fails with given message."""
+        if len(args) == 0:
+            kwargs["_message"] = self._message
+            return ActionFail(**kwargs)
+        args[0].error(self._message)
 
 
 class ActionYesNo(Action):
