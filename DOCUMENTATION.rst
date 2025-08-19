@@ -1035,96 +1035,9 @@ A second option is a class that once instantiated becomes callable:
     >>> init.callable(5)
     8
 
-The third option is only applicable when the type is a callable that has a class
-as return type or a ``Union`` including a class. This is useful to support
-dependency injection for classes that require a parameter that is only available
-after injection. The parser supports this automatically by providing a function
-that receives this parameter and returns the instance of the class. Take for
-example the classes:
-
-.. testcode:: callable
-
-    class Optimizer:
-        def __init__(self, params: Iterable):
-            self.params = params
-
-
-    class SGD(Optimizer):
-        def __init__(self, params: Iterable, lr: float):
-            super().__init__(params)
-            self.lr = lr
-
-.. testcode:: callable
-    :hide:
-
-    doctest_mock_class_in_main(SGD)
-
-A possible parser and callable behavior would be:
-
-.. doctest:: callable
-
-    >>> value = {
-    ...     "class_path": "SGD",
-    ...     "init_args": {
-    ...         "lr": 0.01,
-    ...     },
-    ... }
-
-    >>> parser.add_argument("--optimizer", type=Callable[[Iterable], Optimizer])  # doctest: +IGNORE_RESULT
-    >>> cfg = parser.parse_args(["--optimizer", str(value)])
-    >>> cfg.optimizer
-    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.01))
-    >>> init = parser.instantiate_classes(cfg)
-    >>> optimizer = init.optimizer([1, 2, 3])
-    >>> isinstance(optimizer, SGD)
-    True
-    >>> optimizer.params, optimizer.lr
-    ([1, 2, 3], 0.01)
-
-Multiple arguments available after injection are also supported and can be
-specified the same way with a ``Callable`` type hint. For example, for two
-``Iterable`` arguments, you can use the following syntax: ``Callable[[Iterable,
-Iterable], Type]``. Please be aware that the arguments are passed as positional
-arguments, this means that the injected function would be called like
-``function(value1, value2)``. Similarly, for a callable that accepts zero
-arguments, the syntax would be ``Callable[[], Type]``.
-
-.. note::
-
-    When the ``Callable`` has a class return type, it is possible to specify the
-    ``class_path`` giving only its name if imported before parsing, as explained
-    in :ref:`sub-classes-command-line`.
-
-If the same type above is used as type hint of a parameter of another class, a
-default can be set using a lambda, for example:
-
-.. testcode:: callable
-
-    class Model:
-        def __init__(
-            self,
-            optimizer: Callable[[Iterable], Optimizer] = lambda p: SGD(p, lr=0.05),
-        ):
-            self.optimizer = optimizer
-
-Then a parser and behavior could be:
-
-.. code-block::
-
-    >>> parser.add_class_arguments(Model, 'model')
-    >>> cfg = parser.get_defaults()
-    >>> cfg.model.optimizer
-    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.05))
-    >>> init = parser.instantiate_classes(cfg)
-    >>> optimizer = init.model.optimizer([1, 2, 3])
-    >>> optimizer.params, optimizer.lr
-    ([1, 2, 3], 0.05)
-
-See :ref:`ast-resolver` for limitations of lambda defaults in signatures.
-Providing a lambda default to :py:meth:`.ActionsContainer.add_argument` does not
-work since there is no AST resolving. In this case, a dict with ``class_path``
-and ``init_args`` can be used as default.
-
+The third option is only applicable when the type is a callable that returns
+class instances. This is a form of :ref:`dependency-injection`, so this third
+case is explained in section :ref:`instance-factories`.
 
 .. _registering-types:
 
@@ -1967,28 +1880,55 @@ the stubs. In these cases in the parser help the default is shown as
 ``Unknown<stubs-resolver>`` and not included in
 :py:meth:`.ArgumentParser.get_defaults` or the output of ``--print_config``.
 
+
+.. _dependency-injection:
+
+Dependency injection
+====================
+
+Dependency injection is a software design pattern that separates the
+instantiation details of objects from their usage, resulting in more loosely
+coupled programs, see the `wikipedia article
+<https://en.wikipedia.org/wiki/Dependency_injection>`__. Because of its
+benefits, support for dependency injection has been a design goal of
+jsonargparse.
+
+In python, dependency injection is achieved by:
+
+- Using as type hint a class, such that the parameter accepts an instance of
+  this class or any subclass, e.g. ``module: ModuleBaseClass``.
+- Using as type hint a callable that returns an instance of a class, such that
+  the parameter accepts a function for instantiation. This could be either
+  using ``Callable``, e.g. ``module: Callable[[int], ModuleBaseClass]``, or a
+  protocol, e.g. ``module: ModuleFactoryProtocol``.
+
 .. _sub-classes:
 
 Class type and sub-classes
-==========================
+--------------------------
 
-It is possible to use an arbitrary class as a type such that the argument
-accepts an instance of this class or any derived subclass. This practice is
-known as `dependency injection
-<https://en.wikipedia.org/wiki/Dependency_injection>`__. In the config file a
-class is represented by a dictionary with a ``class_path`` entry indicating the
-dot notation expression to import the class, and optionally some ``init_args``
-that would be used to instantiate it. When parsing, it will be checked that the
-class can be imported, that it is a subclass of the given type and that
-``init_args`` values correspond to valid arguments to instantiate it. After
-parsing, the config object will include the ``class_path`` and ``init_args``
-entries. To get a config object with all sub-classes instantiated, the
-:py:meth:`.ArgumentParser.instantiate_classes` method is used. The ``skip``
-parameter of the signature methods can also be used to exclude arguments within
-subclasses. This is done by giving its relative destination key, i.e. as
-``param.init_args.subparam``.
+When a class is used as a type hint, jsonargparse expects in config files a
+dictionary with a ``class_path`` entry indicating the dot notation expression to
+import the class, and optionally some ``init_args`` that would be used to
+instantiate it. When parsing, it will be checked that the class can be imported,
+that it is a subclass of the given type and that ``init_args`` values correspond
+to valid arguments to instantiate it. After parsing, the config object will
+include the ``class_path`` and ``init_args`` entries. To get a config object
+with all nested sub-classes instantiated, the
+:py:meth:`.ArgumentParser.instantiate_classes` method is used.
 
-A simple example would be having some config file ``config.yaml`` as:
+Additional to using a class as type hint in signatures, for low level
+construction of parsers, there are also the methods
+:py:meth:`.SignatureArguments.add_class_arguments` and
+:py:meth:`.SignatureArguments.add_subclass_arguments`. These methods accept a
+``skip`` argument that can be used to exclude parameters within subclasses. This
+is done by giving its relative destination key, i.e. as
+``param.init_args.subparam``. An individual argument can also be added having as
+type a class, i.e. ``parser.add_argument("--module", type=ModuleBase)``.
+
+A simple example with a top-level class to instantiate, with a parameter that
+expects an injected class instance, would be having some config file
+``config.yaml`` as:
 
 .. code-block:: yaml
 
@@ -2030,6 +1970,10 @@ Then in python:
     {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
 
     >>> cfg = parser.instantiate_classes(cfg)
+    >>> isinstance(cfg.myclass, MyClass)
+    True
+    >>> isinstance(cfg.myclass.calendar, Calendar)
+    True
     >>> cfg.myclass.calendar.getfirstweekday()
     1
 
@@ -2037,13 +1981,20 @@ In this example the ``class_path`` points to the same class used for the type.
 But a subclass of ``Calendar`` with an extended set of init parameters would
 also work.
 
-An individual argument can also be added having as type a class, i.e.
-``parser.add_argument('--calendar', type=Calendar)``. There is also another
-method :py:meth:`.SignatureArguments.add_subclass_arguments` which does the same
-as ``add_argument``, but has some added benefits: 1) the argument is added in a
-new group automatically; 2) the argument values can be given in an independent
-config file by specifying a path to it; and 3) by default sets a useful
-``metavar`` and ``help`` strings.
+If the previous example were changed to use
+:py:meth:`.SignatureArguments.add_subclass_arguments` instead of
+:py:meth:`.SignatureArguments.add_class_arguments`, then subclasses ``MyClass``
+would also be accepted. In this case the config would be like:
+
+.. code-block:: yaml
+
+    myclass:
+      class_path: my_module.MyClass
+      init_args:
+        calendar:
+          class_path: calendar.TextCalendar
+          init_args:
+            firstweekday: 1
 
 .. note::
 
@@ -2057,14 +2008,149 @@ config file by specifying a path to it; and 3) by default sets a useful
     type a class. The accepted ``init_args`` would be the parameters of that
     function.
 
+.. _instance-factories:
+
+Instance factories
+------------------
+
+As explained at the beginning of section :ref:`dependency-injection`, callables
+that return instances of classes, referred to as instance factories, represent
+an alternative approach to dependency injection. This is useful to support
+dependency injection of classes that require parameters that are only available
+after injection. For this case, when
+:py:meth:`.ArgumentParser.instantiate_classes` is run, a partial function is
+provided, which might accept parameters and returns the instance of the class.
+Two options are possible, either using ``Callable`` or ``Protocol``. First to
+illustrate the ``Callable`` option, take for example the classes:
+
+.. testcode:: callable
+
+    class Optimizer:
+        def __init__(self, params: Iterable):
+            self.params = params
+
+
+    class SGD(Optimizer):
+        def __init__(self, params: Iterable, lr: float):
+            super().__init__(params)
+            self.lr = lr
+
+.. testcode:: callable
+    :hide:
+
+    doctest_mock_class_in_main(SGD)
+
+A possible parser and callable behavior would be:
+
+.. doctest:: callable
+
+    >>> value = {
+    ...     "class_path": "SGD",
+    ...     "init_args": {
+    ...         "lr": 0.01,
+    ...     },
+    ... }
+
+    >>> parser.add_argument("--optimizer", type=Callable[[Iterable], Optimizer])  # doctest: +IGNORE_RESULT
+    >>> cfg = parser.parse_args(["--optimizer", str(value)])
+    >>> cfg.optimizer
+    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.01))
+    >>> init = parser.instantiate_classes(cfg)
+    >>> optimizer = init.optimizer([1, 2, 3])
+    >>> isinstance(optimizer, SGD)
+    True
+    >>> optimizer.params, optimizer.lr
+    ([1, 2, 3], 0.01)
+
+.. note::
+
+    When the ``Callable`` has a class return type, it is possible to specify the
+    ``class_path`` giving only its name if imported before parsing, as explained
+    in :ref:`sub-classes-command-line`.
+
+If the same type above is used as type hint of a parameter of another class, a
+default can be set using a lambda, for example:
+
+.. testcode:: callable
+
+    class Model:
+        def __init__(
+            self,
+            optimizer: Callable[[Iterable], Optimizer] = lambda p: SGD(p, lr=0.05),
+        ):
+            self.optimizer = optimizer
+
+Then a parser and behavior could be:
+
+.. code-block::
+
+    >>> parser.add_class_arguments(Model, 'model')
+    >>> cfg = parser.get_defaults()
+    >>> cfg.model.optimizer
+    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.05))
+    >>> init = parser.instantiate_classes(cfg)
+    >>> optimizer = init.model.optimizer([1, 2, 3])
+    >>> optimizer.params, optimizer.lr
+    ([1, 2, 3], 0.05)
+
+See :ref:`ast-resolver` for limitations of lambda defaults in signatures.
+Providing a lambda default to :py:meth:`.ActionsContainer.add_argument` does not
+work since there is no AST resolving. In this case, a dict with ``class_path``
+and ``init_args`` can be used as default.
+
+Multiple arguments required after injection is also supported and can be
+specified the same way with a ``Callable``. For example, for two
+``Iterable`` arguments, you can use the syntax: ``Callable[[Iterable,
+Iterable], Type]``. Similarly, for a callable that accepts zero
+arguments, the syntax would be ``Callable[[], Type]``.
+
+Note the big limitation that ``Callable`` has. It is only possible to specify
+positional and unnamed parameters. To overcome this limitation, the second
+option, a callable ``Protocol`` can be used instead. Building up from the same
+example, an ``OptimizerFactory`` protocol can be defined as:
+
+.. testcode:: callable
+
+    class OptimizerFactory(Protocol):
+        def __call__(self, params: Iterable) -> Optimizer: ...
+
+Then a parser and protocol behavior would be:
+
+.. testcode:: callable
+    :hide:
+
+    parser = ArgumentParser()
+
+.. doctest:: callable
+
+    >>> value = {
+    ...     "class_path": "SGD",
+    ...     "init_args": {
+    ...         "lr": 0.02,
+    ...     },
+    ... }
+
+    >>> parser.add_argument("--optimizer", type=OptimizerFactory)  # doctest: +IGNORE_RESULT
+    >>> cfg = parser.parse_args(["--optimizer", str(value)])
+    >>> cfg.optimizer
+    Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.02))
+    >>> init = parser.instantiate_classes(cfg)
+    >>> optimizer = init.optimizer(params=[6, 5])
+    >>> optimizer.params, optimizer.lr
+    ([6, 5], 0.02)
+
+The key difference with respect to the ``Callable`` is being able to call
+``init.optimizer()`` with keyword arguments ``params=[6, 5]``.
+
 .. _sub-classes-command-line:
 
 Command line
 ------------
 
-The help of the parser does not show details for a type class since this depends
-on the subclass. To get details for a particular subclass there is a specific
-help option that receives the import path. Take for example a parser defined as:
+The help of the parser does not show accepted parameters of a class since this
+depends on the chosen subclass. To get details for a particular subclass there
+is a help option that receives the import path. Take for example a parser
+defined as:
 
 .. testcode::
 
@@ -2162,6 +2248,12 @@ example above, this would be:
 
 Like this, the parsed default will be a dict with ``class_path`` and
 ``init_args``, again avoiding the risk of mutability.
+
+The use of :func:`.lazy_instance` is somewhat discouraged. A function that
+delays the initialization of instances, and works for all possible cases out
+there, is challenging. The current implementation is known to have some
+problems. Instead of using :func:`.lazy_instance`, you could consider switching
+to :ref:`instance-factories`.
 
 .. note::
 

@@ -267,7 +267,7 @@ class SignatureArguments(LoggerProperty):
         """
         params = get_signature_parameters(function_or_class, method_name, logger=self.logger)
 
-        skip_positionals = [s for s in (skip or []) if isinstance(s, int)]
+        skip_positionals = [s for s in (skip or []) if isinstance(s, int) and s != 0]
         if skip_positionals:
             if len(skip_positionals) > 1 or any(p <= 0 for p in skip_positionals):
                 raise ValueError(f"Unexpected number of positionals to skip: {skip_positionals}")
