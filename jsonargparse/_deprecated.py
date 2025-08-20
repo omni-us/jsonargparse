@@ -173,29 +173,6 @@ def parse_as_dict_patch():
 
 @deprecated(
     """
-    instantiate_subclasses was deprecated in v4.0.0 and will be removed in v5.0.0.
-"""
-)
-def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
-    """Calls instantiate_classes with instantiate_groups=False.
-
-    Args:
-        cfg: The configuration object to use.
-
-    Returns:
-        A configuration object with all subclasses instantiated.
-    """
-    return self.instantiate_classes(cfg, instantiate_groups=False)
-
-
-def instantiate_subclasses_patch():
-    from ._core import ArgumentParser
-
-    ArgumentParser.instantiate_subclasses = instantiate_subclasses
-
-
-@deprecated(
-    """
     ActionEnum was deprecated in v3.9.0 and will be removed in v5.0.0. Enums now
     should be given directly as a type as explained in :ref:`enums`.
 """
@@ -583,6 +560,15 @@ class ParserDeprecations:
             self._error_handler = error_handler
         else:
             raise ValueError("error_handler can be either a Callable or None.")
+
+    @deprecated(
+        """
+        instantiate_subclasses was deprecated in v4.0.0 and will be removed in v5.0.0.
+        Instead use instantiate_classes.
+    """
+    )
+    def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
+        return self.instantiate_classes(cfg, instantiate_groups=False)  # type: ignore[attr-defined]
 
     @deprecated(
         """
