@@ -27,6 +27,8 @@ Fixed
 - Improved parameter kind handling for argument requirement determination.
   ``KEYWORD_ONLY`` parameters now correctly use ``--flag`` style (`#756
   <https://github.com/omni-us/jsonargparse/pull/756>`__).
+- Some deprecations not shown in the API documentation (`#760
+  <https://github.com/omni-us/jsonargparse/pull/760>`__).
 
 Changed
 ^^^^^^^
