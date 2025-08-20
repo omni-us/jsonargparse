@@ -345,7 +345,13 @@ def test_error_handler_parameter():
         message="error_handler was deprecated in v4.20.0",
         code=code,
     )
-    assert parser.error_handler == usage_and_exit_error_handler
+    with catch_warnings(record=True) as w:
+        assert parser.error_handler == usage_and_exit_error_handler
+    assert_deprecation_warn(
+        w,
+        message="error_handler property is deprecated",
+        code="parser.error_handler",
+    )
     with suppress_stderr(), pytest.raises(SystemExit), catch_warnings(record=True):
         parser.parse_args(["--invalid"])
 
@@ -363,7 +369,13 @@ def test_error_handler_property():
         message="error_handler was deprecated in v4.20.0",
         code="parser.error_handler = custom_error_handler",
     )
-    assert parser.error_handler == custom_error_handler
+    with catch_warnings(record=True) as w:
+        assert parser.error_handler == custom_error_handler
+    assert_deprecation_warn(
+        w,
+        message="error_handler property is deprecated",
+        code="parser.error_handler",
+    )
 
     out = StringIO()
     with redirect_stdout(out), pytest.raises(SystemExit):

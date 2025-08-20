@@ -22,7 +22,9 @@ __all__ = [
     "ActionOperators",
     "ActionPath",
     "ActionPathList",
+    "HelpFormatterDeprecations",
     "LoggerProperty",
+    "ParserDeprecations",
     "ParserError",
     "get_config_read_mode",
     "namespace_to_dict",
@@ -462,6 +464,8 @@ path_immutable_attrs_message = """
 
 
 class PathDeprecations:
+    """Deprecated methods for Path."""
+
     @property
     def rel_path(self):
         deprecation_warning("Path attr get", path_immutable_attrs_message)
@@ -548,11 +552,14 @@ def deprecation_warning_error_handler(stacklevel):
 
 
 class ParserDeprecations:
+    """Helper class for ArgumentParser deprecations. Will be removed in v5.0.0."""
+
     def __init__(self, *args, error_handler=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.error_handler = error_handler
 
     @property
+    @deprecated("error_handler property is deprecated and will be removed in v5.0.0.")
     def error_handler(self) -> Optional[Callable[[ArgumentParser, str], None]]:
         """Property for the error_handler function that is called when there are parsing errors.
 
@@ -704,6 +711,8 @@ def namespace_to_dict(namespace: Namespace) -> Dict[str, Any]:
 
 
 class HelpFormatterDeprecations:
+    """Helper class for DefaultHelpFormatter deprecations. Will be removed in v5.0.0."""
+
     def __init__(self, *args, **kwargs):
         from jsonargparse._formatters import YAMLCommentFormatter
 
