@@ -402,9 +402,9 @@ Always fail arguments
 ---------------------
 
 In scenarios where an argument should be included in the parser but should
-always fail parsing, there is the :class:`.ActionFail` action. This is
-particularly useful when a feature is optional and only accessible if a specific
-package is installed:
+always fail parsing, there is the :class:`.ActionFail` action. For example a use
+case can be an optional feature that is only accessible if a specific package is
+installed:
 
 .. testsetup:: always-fail
 
@@ -420,11 +420,11 @@ package is installed:
     else:
         parser.add_argument(
             "--module",
-            action=ActionFail(message="install 'package' to enable"),
+            action=ActionFail(message="install 'package' to enable %(option)s"),
             help="Option unavailable due to missing 'package'",
         )
 
-With this setup, if the argument is provided as ``--module=...`` or in a nested
+With this setup, if an argument is provided as ``--module=...`` or in a nested
 form like ``--module.child=...``, the parsing will fail and display the
 configured error message.
 

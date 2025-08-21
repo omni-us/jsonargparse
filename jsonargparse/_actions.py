@@ -443,13 +443,16 @@ class ActionFail(Action):
         """Initializer for ActionFail instance.
 
         Args:
-            message: Text for the error to show.
+            message: Text for the error to show. Use `%(option)s`/`%(value)s` to include the option and/or value.
         """
         if len(kwargs) == 0:
             self._message = message
         else:
             self._message = kwargs.pop("_message")
             kwargs["default"] = SUPPRESS
+            kwargs["required"] = False
+            if kwargs["option_strings"] == []:
+                kwargs["nargs"] = "?"
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -457,7 +460,10 @@ class ActionFail(Action):
         if len(args) == 0:
             kwargs["_message"] = self._message
             return ActionFail(**kwargs)
-        args[0].error(self._message)
+        parser, _, value, option = args
+        if not (self.nargs == "?" and value is None):
+            parser.error(self._message % {"value": value, "option": option})
+        return None
 
 
 class ActionYesNo(Action):
