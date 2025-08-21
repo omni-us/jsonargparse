@@ -6,11 +6,21 @@ labels: enhancement
 assignees: ''
 ---
 
-<!-- If you like this project, please ⭐ star it https://github.com/omni-us/jsonargparse/ -->
+<!--
+Thank you very much for contributing! If you enjoy this project, please consider
+giving it a ⭐ star on [GitHub](https://github.com/omni-us/jsonargparse/) or
+sponsor it via [GitHub Sponsors](https://github.com/sponsors/mauvilsa). Even the
+smallest donation is greatly appreciated and helps support the project.
+-->
+
+<!--
+Note: If your proposal is better explained through actual code changes, feel
+free to create a pull request directly instead of opening an issue.
+-->
 
 ## 🚀 Feature request
 
-<!-- A clear and concise description of the feature proposal. -->
+<!-- Here write a clear and concise description of the feature proposal. -->
 
 ### Motivation
 

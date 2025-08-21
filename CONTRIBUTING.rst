@@ -17,6 +17,15 @@ people to help and contribute, among them:
 - Create `pull requests <https://github.com/omni-us/jsonargparse/pulls>`__ with
   documentation improvements, bug fixes or new features.
 
+.. note::
+
+    While creating an issue before submitting a pull request is not mandatory,
+    it might be helpful. Issues allow for discussion and feedback before
+    significant development effort is invested. However, in some cases, code
+    changes can better illustrate a proposal, making it more effective to submit
+    a pull request directly. In such cases please avoid opening a largely
+    redundant issue.
+
 Development environment
 -----------------------
 
@@ -49,9 +58,9 @@ The crucial step is installing the requirements which would be done by running:
 pre-commit
 ----------
 
-Please also install the `pre-commit <https://pre-commit.com/>`__ git hook
-scripts so that unit tests and code checks are automatically run locally. This
-is done as follows:
+Please also install the `pre-commit <https://pre-commit.com/>`__ git hooks so
+that unit tests and code checks are automatically run locally. This is done as
+follows:
 
 .. code-block:: bash
 
@@ -59,14 +68,17 @@ is done as follows:
 
 .. note::
 
-    ``.pre-commit-config.yaml`` is configured to run the hooks using python
-    3.12. Thus, you need to have python 3.12 installed for pre-commit to work.
+    ``.pre-commit-config.yaml`` is configured to run the hooks using Python
+    3.12. Ensure you have Python 3.12 installed and available in your
+    environment for ``pre-commit`` to function correctly. For development, other
+    Python versions will work, but for convenience, Python 3.12 can also be
+    used.
 
-The ``pre-push`` stage runs several hooks (tests, doctests, mypy, coverage) that
-take some time. These hooks are intended to inform developers of issues that
-must be resolved before any pull request can be considered for merging. If you
-wish to push without running these hooks, use the command ``git push
---no-verify``.
+The ``pre-push`` stage runs several hooks, including tests, doctests, mypy, and
+coverage. These hooks are designed to inform developers of issues that must be
+resolved before a pull request can be merged. Note that these hooks may take
+some time to complete. If you wish to push without running these hooks, use the
+command ``git push --no-verify``.
 
 Formatting of the code is done automatically by pre-commit. If some pre-commit
 hooks fail and you decide to skip them, the formatting will be automatically
@@ -87,7 +99,7 @@ browser.
 Tests
 -----
 
-Running the unit tests can be done either using using `pytest
+Running the unit tests can be done either using `pytest
 <https://docs.pytest.org/>`__ or `tox
 <https://tox.readthedocs.io/en/stable/>`__. The tests are also installed with
 the package, thus can be run in a production system. Also pre-commit runs some
@@ -150,9 +162,10 @@ example:
     ^^^^^
     -
 
-If no such section exists, just add it. Have a look at previous releases to
-decide under which subsection the new entry should go. If you are unsure, ask in
-the pull request.
+If no such section exists, just add it. New sections should include ``-??`` in
+the date to illustrate that the release date is not known yet. Have a look at
+previous releases to decide under which subsection the new entry should go. If
+you are unsure, ask in the pull request.
 
 Please don't open pull requests with breaking changes unless this has been
 discussed and agreed upon in an issue.
