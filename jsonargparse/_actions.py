@@ -461,9 +461,7 @@ class ActionFail(Action):
             kwargs["_message"] = self._message
             return ActionFail(**kwargs)
         parser, _, value, option = args
-        if not (self.nargs == "?" and value is None):
-            parser.error(self._message % {"value": value, "option": option})
-        return None
+        parser.error(self._message % {"value": value, "option": option})
 
 
 class ActionYesNo(Action):
