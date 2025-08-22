@@ -39,6 +39,7 @@ from typing import (
 from ._actions import (
     Action,
     ActionConfigFile,
+    ActionFail,
     _ActionHelpClassPath,
     _ActionPrintConfig,
     _find_action,
@@ -405,7 +406,7 @@ class ActionTypeHint(Action):
                 action = _find_parent_action(parser, arg_base[2:])
 
         typehint = typehint_from_action(action)
-        if typehint:
+        if typehint or isinstance(action, ActionFail):
             if parse_optional_num_return == 4:
                 return action, arg_base, sep, explicit_arg
             elif parse_optional_num_return == 1:

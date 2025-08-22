@@ -21,6 +21,8 @@ Added
   <https://github.com/omni-us/jsonargparse/pull/753>`__).
 - Support callable protocols for instance factory dependency injection (`#758
   <https://github.com/omni-us/jsonargparse/pull/758>`__).
+- New ``ActionFail`` for arguments that should fail parsing with a given error
+  message (`#759 <https://github.com/omni-us/jsonargparse/pull/759>`__).
 
 Fixed
 ^^^^^

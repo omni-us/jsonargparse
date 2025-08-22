@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 
 from jsonargparse import (
+    SUPPRESS,
+    ActionFail,
     ActionParser,
     ActionYesNo,
     ArgumentError,
@@ -58,6 +60,40 @@ def test_action_config_file_argument_errors(parser, tmp_cwd):
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", '"""']))
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg=not-exist"]))
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", '{"k":"v"}']))
+
+
+# ActionFail tests
+
+
+def test_action_fail_optional(parser):
+    parser.add_argument(
+        "--unavailable",
+        action=ActionFail(message="needs package xyz"),
+        help="Option not available due to missing package xyz",
+    )
+    help_str = get_parser_help(parser)
+    assert "--unavailable" in help_str
+    assert "Option not available due to missing package xyz" in help_str
+    defaults = parser.get_defaults()
+    assert "unavailable" not in defaults
+    with pytest.raises(ArgumentError, match="needs package xyz"):
+        parser.parse_args(["--unavailable=x"])
+    with pytest.raises(ArgumentError, match="needs package xyz"):
+        parser.parse_args(["--unavailable.child=x"])
+
+
+def test_action_fail_positional(parser):
+    parser.add_argument(
+        "unexpected",
+        action=ActionFail(message="unexpected positional: %(value)s"),
+        help=SUPPRESS,
+    )
+    parser.add_argument("--something", default="else")
+    help_str = get_parser_help(parser)
+    assert "unexpected" not in help_str
+    assert parser.parse_args([]) == Namespace(something="else")
+    with pytest.raises(ArgumentError, match="unexpected positional: given_value"):
+        parser.parse_args(["given_value"])
 
 
 # ActionYesNo tests
