@@ -228,6 +228,15 @@ def test_parse_env_config(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_env({"APP_CFG": '{"undefined": True}'}))
 
 
+def test_parse_env_positional():
+    parser = ArgumentParser(prog="app", exit_on_error=False, default_env=True)
+    parser.add_argument("pos", type=int)
+    with patch.dict(os.environ, {"APP_POS": "1"}):
+        assert parser.parse_env() == Namespace(pos=1)
+    with pytest.raises(ArgumentError, match="Got value: 1.1"):
+        parser.parse_env({"APP_POS": "1.1"})
+
+
 def test_parse_env_positional_nargs_plus(parser):
     parser.env_prefix = "app"
     parser.add_argument("req", nargs="+")

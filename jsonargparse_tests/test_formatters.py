@@ -32,6 +32,13 @@ def test_help_action_config_file(parser):
     assert "APP_PRINT_CONFIG" not in help_str
 
 
+def test_help_positional(parser):
+    parser.add_argument("pos")
+    help_str = get_parser_help(parser)
+    assert "ARG:   pos" in help_str
+    assert "ENV:   APP_POS" in help_str
+
+
 def test_help_required_and_default(parser):
     parser.add_argument("--v1", help="Option v1.", default="v1", required=True)
     help_str = get_parser_help(parser)

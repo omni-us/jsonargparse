@@ -247,7 +247,7 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
             if parser.default_env:
                 value = f"ENV:   {get_env_var(self, action)}\n\n  {value}"
             return value
-        if action.option_strings == [] or not parser.default_env:
+        if not parser.default_env:
             return super()._format_action_invocation(action)
         extr = ""
         if not isinstance(action, (_ActionHelpClassPath, _ActionPrintConfig, ShtabAction, _HelpAction)):
