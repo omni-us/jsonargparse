@@ -63,6 +63,7 @@ load_value_mode: ContextVar[Optional[str]] = ContextVar("load_value_mode", defau
 class_instantiators: ContextVar[Optional[InstantiatorsDictType]] = ContextVar("class_instantiators", default=None)
 nested_links: ContextVar[List[dict]] = ContextVar("nested_links", default=[])
 applied_instantiation_links: ContextVar[Optional[set]] = ContextVar("applied_instantiation_links", default=None)
+path_dump_preserve_relative: ContextVar[bool] = ContextVar("path_dump_preserve_relative", default=False)
 
 
 parser_context_vars = {
@@ -74,6 +75,7 @@ parser_context_vars = {
     "class_instantiators": class_instantiators,
     "nested_links": nested_links,
     "applied_instantiation_links": applied_instantiation_links,
+    "path_dump_preserve_relative": path_dump_preserve_relative,
 }
 
 

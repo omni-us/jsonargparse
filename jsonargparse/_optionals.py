@@ -286,6 +286,22 @@ def get_omegaconf_loader():
     return omegaconf_load
 
 
+def omegaconf_apply(parser, cfg):
+    if "${" not in str(cfg):
+        return cfg
+
+    with missing_package_raise("omegaconf", "omegaconf_apply"):
+        from omegaconf import OmegaConf
+
+    from ._common import parser_context
+
+    with parser_context(path_dump_preserve_relative=True):
+        cfg_dict = parser.dump(cfg, format="json", skip_validation=True)
+    cfg_omegaconf = OmegaConf.create(cfg_dict)
+    cfg_dict = OmegaConf.to_container(cfg_omegaconf, resolve=True)
+    return parser._apply_actions(cfg_dict)
+
+
 annotated_alias = typing_extensions_import("_AnnotatedAlias")
 
 

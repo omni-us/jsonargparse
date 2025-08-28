@@ -282,11 +282,13 @@ current_path_dir: ContextVar[Optional[str]] = ContextVar("current_path_dir", def
 
 
 @contextmanager
-def change_to_path_dir(path: Optional["Path"]) -> Iterator[Optional[str]]:
+def change_to_path_dir(path: Optional[Union["Path", str]]) -> Iterator[Optional[str]]:
     """A context manager for running code in the directory of a path."""
     path_dir = current_path_dir.get()
     chdir: Union[bool, str] = False
     if path is not None:
+        if isinstance(path, str):
+            path = Path(path, mode="d")
         if path._url_data and (path.is_url or path.is_fsspec):
             scheme = path._url_data.scheme
             path_dir = path._url_data.url_path

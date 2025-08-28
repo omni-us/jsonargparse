@@ -2398,8 +2398,8 @@ instantiates :class:`Data` first, then use the ``num_classes`` attribute to
 instantiate :class:`Model`.
 
 
-Variable interpolation
-======================
+OmegaConf variable interpolation
+================================
 
 One of the possible reasons to add a parser mode (see :ref:`custom-loaders`) can
 be to have support for variable interpolation in yaml files. Any library could
@@ -2463,10 +2463,22 @@ This yaml could be parsed as follows:
 
 .. note::
 
-    The ``parser_mode='omegaconf'`` provides support for `OmegaConf's
-    <https://omegaconf.readthedocs.io/>`__ variable interpolation in a single
-    yaml file. It is not possible to do interpolation across multiple yaml files
-    or in an isolated individual command line argument.
+    The ``parser_mode="omegaconf"`` provides support for `OmegaConf's resolvers
+    <https://omegaconf.readthedocs.io/en/latest/custom_resolvers.html/>`__ in a
+    single YAML file. It is not possible to do interpolation across multiple
+    YAML files or in an isolated individual command line argument.
+
+Experimental ``omegaconf+`` mode
+--------------------------------
+
+There is a new experimental ``omegaconf+`` parser mode that doesn't suffer from
+the limitations of ``omegaconf`` mentioned above. Instead of applying OmegaConf
+resolvers for each YAML config, the resolving is applied once at the end of
+parsing. Because of this, in nested subconfigs, references to config nodes need
+to be relative to work correctly.
+
+Depending on feedback from the community, this mode might become the default
+``omegaconf`` mode in v5.0.0.
 
 
 .. _environment-variables:

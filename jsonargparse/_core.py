@@ -82,6 +82,7 @@ from ._optionals import (
     fsspec_support,
     import_fsspec,
     import_jsonnet,
+    omegaconf_apply,
     pyyaml_available,
 )
 from ._parameter_resolvers import UnknownDefault
@@ -378,9 +379,12 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             with parser_context(lenient_check=True):
                 ActionTypeHint.add_sub_defaults(self, cfg)
 
-        _ActionPrintConfig.print_config_if_requested(self, cfg)
-
         with parser_context(parent_parser=self):
+            if not skip_validation and self.parser_mode == "omegaconf+":
+                cfg = omegaconf_apply(self, cfg)
+
+            _ActionPrintConfig.print_config_if_requested(self, cfg)
+
             try:
                 ActionLink.apply_parsing_links(self, cfg)
             except Exception as ex:
@@ -1450,7 +1454,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 value = action.check_type(value, self)
         elif hasattr(action, "_check_type"):
             with parser_context(parent_parser=self):
-                value = action._check_type_(value, cfg=cfg, append=append)  # type: ignore[attr-defined]
+                value = action._check_type_(value, cfg=cfg, append=append, mode=self.parser_mode)  # type: ignore[attr-defined]
         elif action.type is not None:
             try:
                 if action.nargs in {None, "?"} or action.nargs == 0:
@@ -1593,8 +1597,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     @parser_mode.setter
     def parser_mode(self, parser_mode: str):
-        if parser_mode == "omegaconf":
-            set_omegaconf_loader()
+        if parser_mode in {"omegaconf", "omegaconf+"}:
+            set_omegaconf_loader(parser_mode)
         if parser_mode not in loaders:
             raise ValueError(f"The only accepted values for parser_mode are {set(loaders)}.")
         if parser_mode == "jsonnet":

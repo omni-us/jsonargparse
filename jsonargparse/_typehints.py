@@ -54,6 +54,7 @@ from ._common import (
     get_unaliased_type,
     is_dataclass_like,
     is_subclass,
+    lenient_check,
     nested_links,
     parent_parser,
     parser_context,
@@ -545,7 +546,7 @@ class ActionTypeHint(Action):
         cfg.update(val, self.dest)
         return None
 
-    def _check_type(self, value, append=False, cfg=None):
+    def _check_type(self, value, append=False, cfg=None, mode=None):
         islist = _is_action_value_list(self)
         if not islist:
             value = [value]
@@ -584,7 +585,14 @@ class ActionTypeHint(Action):
                                 val = adapt_typehints(orig_val, self._typehint, default=self.default, **kwargs)
                             ex = None
                     except ValueError:
-                        if self._enable_path and config_path is None and isinstance(orig_val, str):
+                        if (
+                            lenient_check.get()
+                            and mode == "omegaconf+"
+                            and isinstance(orig_val, str)
+                            and "${" in orig_val
+                        ):
+                            ex = None
+                        elif self._enable_path and config_path is None and isinstance(orig_val, str):
                             msg = f"\n- Expected a config path but {orig_val} either not accessible or invalid\n- "
                             raise type(ex)(msg + str(ex)) from ex
                     if ex:
