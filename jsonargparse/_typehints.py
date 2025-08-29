@@ -525,7 +525,7 @@ class ActionTypeHint(Action):
             if "nargs" in kwargs and kwargs["nargs"] == 0:
                 raise ValueError("ActionTypeHint does not allow nargs=0.")
             return ActionTypeHint(**kwargs)
-        cfg, val, opt_str = args[1:]
+        parser, cfg, val, opt_str = args
         if not (self.nargs == "?" and val is None):
             if isinstance(opt_str, str) and opt_str.startswith(f"--{self.dest}."):
                 if opt_str.startswith(f"--{self.dest}.init_args."):
@@ -534,7 +534,7 @@ class ActionTypeHint(Action):
                     sub_opt = opt_str[len(f"--{self.dest}.") :]
                 val = NestedArg(key=sub_opt, val=val)
             append = opt_str == f"--{self.dest}+"
-            val = self._check_type_(val, append=append, cfg=cfg)
+            val = self._check_type_(val, append=append, cfg=cfg, mode=parser.parser_mode)
             if is_subclass_spec(val):
                 prev_val = cfg.get(self.dest)
                 if is_subclass_spec(prev_val) and "init_args" in prev_val:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +14,7 @@ from jsonargparse._common import parser_context
 from jsonargparse._loaders_dumpers import loaders, yaml_dump
 from jsonargparse._optionals import omegaconf_support
 from jsonargparse.typing import Path_fr
+from jsonargparse_tests.conftest import get_parser_help
 
 if omegaconf_support:
     from omegaconf import OmegaConf
@@ -99,7 +101,7 @@ def test_omegaconf_global_interpolation(parser):
 
 
 @skip_if_omegaconf_unavailable
-def test_omegaconf_global_resolver_non_str_type(parser):
+def test_omegaconf_global_resolver_config(parser):
     OmegaConf.register_new_resolver("increment", lambda x: x + 1)
 
     parser.parser_mode = "omegaconf+"
@@ -114,6 +116,36 @@ def test_omegaconf_global_resolver_non_str_type(parser):
     assert cfg == Namespace(value=5, incremented=6)  # currently config is lost
 
     OmegaConf.clear_resolver("increment")
+
+
+@skip_if_omegaconf_unavailable
+def test_omegaconf_global_resolver_argument(parser):
+    def const(expr: str):
+        allowed = {"pi": math.pi}
+        return eval(expr, {"__builtins__": None}, allowed)
+
+    OmegaConf.register_new_resolver("const", const)
+
+    parser.parser_mode = "omegaconf+"
+    parser.add_argument("--value", type=float)
+    cfg = parser.parse_args(["--value=${const:3*pi/4}"])
+    assert cfg.value == 3 * math.pi / 4
+
+    OmegaConf.clear_resolver("const")
+
+
+@skip_if_omegaconf_unavailable
+@patch.dict(os.environ, {"X": "true"})
+def test_omegaconf_global_resolver_default(parser):
+    parser.parser_mode = "omegaconf+"
+    action = parser.add_argument("--env", type=bool, default="${oc.env:X}")
+    assert action.default == "${oc.env:X}"
+
+    help_str = get_parser_help(parser)
+    assert "default: ${oc.env:X}" in help_str
+
+    cfg = parser.parse_args([])
+    assert cfg.env is True
 
 
 @dataclass
