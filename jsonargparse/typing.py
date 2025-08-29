@@ -13,9 +13,9 @@ if sys.version_info >= (3, 10):
 else:
     _TypeAlias = type
 
-from ._common import is_final_class
+from ._common import is_final_class, path_dump_preserve_relative
 from ._optionals import final, pydantic_support
-from ._util import Path, get_import_path, get_private_kwargs, import_object
+from ._util import Path, change_to_path_dir, get_import_path, get_private_kwargs, import_object
 
 __all__ = [
     "final",
@@ -219,6 +219,15 @@ def _is_path_type(value, type_class):
     return isinstance(value, Path)
 
 
+def _serialize_path(path: Path):
+    if path_dump_preserve_relative.get() and path.relative != path.absolute:
+        return {
+            "relative": path._relative,
+            "cwd": path._cwd,
+        }
+    return str(path)
+
+
 def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlias:
     """Creates or returns an already registered path type class.
 
@@ -249,10 +258,14 @@ def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlia
         _expression = name
         _mode = mode
         _skip_check = skip_check
-        _type = str
+        _type = _serialize_path
 
         def __init__(self, v, **k):
-            super().__init__(v, mode=self._mode, skip_check=self._skip_check, **k)
+            if isinstance(v, dict) and set(v) == {"cwd", "relative"}:
+                with change_to_path_dir(v["cwd"]):
+                    super().__init__(v["relative"], mode=self._mode, skip_check=self._skip_check, **k)
+            else:
+                super().__init__(v, mode=self._mode, skip_check=self._skip_check, **k)
 
     restricted_type = type(name, (PathType,), {"__doc__": docstring})
     add_type(restricted_type, register_key, type_check=_is_path_type)

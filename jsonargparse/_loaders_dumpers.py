@@ -335,11 +335,12 @@ def set_dumper(format_name: str, dumper_fn: Callable[[Any], str]):
     dumpers[format_name] = dumper_fn
 
 
-def set_omegaconf_loader():
-    if omegaconf_support and "omegaconf" not in loaders:
+def set_omegaconf_loader(mode="omegaconf"):
+    if omegaconf_support and mode not in loaders:
         from ._optionals import get_omegaconf_loader
 
-        set_loader("omegaconf", get_omegaconf_loader(), get_loader_exceptions("yaml"))
+        loader = yaml_load if mode == "omegaconf+" else get_omegaconf_loader()
+        set_loader(mode, loader, get_loader_exceptions("yaml"))
 
 
 set_loader("jsonnet", jsonnet_load, get_loader_exceptions("jsonnet"))

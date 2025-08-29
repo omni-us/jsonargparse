@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
@@ -11,8 +10,8 @@ import pytest
 
 from jsonargparse import ArgumentParser, get_loader, set_dumper, set_loader
 from jsonargparse._common import parser_context
-from jsonargparse._loaders_dumpers import load_value, loaders, yaml_dump
-from jsonargparse._optionals import omegaconf_support, pyyaml_available, toml_dump_available, toml_load_available
+from jsonargparse._loaders_dumpers import load_value
+from jsonargparse._optionals import pyyaml_available, toml_dump_available, toml_load_available
 from jsonargparse_tests.conftest import get_parse_args_stdout, json_or_yaml_dump, json_or_yaml_load, skip_if_no_pyyaml
 
 if pyyaml_available:
@@ -170,54 +169,3 @@ def test_toml_print_config(parser):
     parser.add_argument("--group.child2", type=List[float], default=[3.0, 4.5])
     out = get_parse_args_stdout(parser, ["--print_config"])
     assert out.strip() == toml_config.strip()
-
-
-# omegaconf tests
-
-
-@pytest.mark.skipif(not omegaconf_support, reason="omegaconf package is required")
-def test_parser_mode_omegaconf_interpolation():
-    parser = ArgumentParser(parser_mode="omegaconf")
-    parser.add_argument("--server.host", type=str)
-    parser.add_argument("--server.port", type=int)
-    parser.add_argument("--client.url", type=str)
-    parser.add_argument("--config", action="config")
-
-    config = {
-        "server": {
-            "host": "localhost",
-            "port": 80,
-        },
-        "client": {
-            "url": "http://${server.host}:${server.port}/",
-        },
-    }
-    cfg = parser.parse_args([f"--config={yaml_dump(config)}"])
-    assert cfg.client.url == "http://localhost:80/"
-    assert "url: http://localhost:80/" in parser.dump(cfg)
-
-
-@pytest.mark.skipif(not omegaconf_support, reason="omegaconf package is required")
-def test_parser_mode_omegaconf_interpolation_in_subcommands(parser, subparser):
-    subparser.add_argument("--config", action="config")
-    subparser.add_argument("--source", type=str)
-    subparser.add_argument("--target", type=str)
-
-    parser.parser_mode = "omegaconf"
-    subcommands = parser.add_subcommands()
-    subcommands.add_subcommand("sub", subparser)
-
-    config = {
-        "source": "hello",
-        "target": "${source}",
-    }
-    cfg = parser.parse_args(["sub", f"--config={yaml_dump(config)}"])
-    assert cfg.sub.target == "hello"
-
-
-@pytest.mark.skipif(
-    not (omegaconf_support and "JSONARGPARSE_OMEGACONF_FULL_TEST" in os.environ),
-    reason="only for omegaconf as the yaml loader",
-)
-def test_omegaconf_as_yaml_loader():
-    assert loaders["yaml"] is loaders["omegaconf"]

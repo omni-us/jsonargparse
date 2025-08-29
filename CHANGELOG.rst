@@ -23,6 +23,11 @@ Added
   <https://github.com/omni-us/jsonargparse/pull/758>`__).
 - New ``ActionFail`` for arguments that should fail parsing with a given error
   message (`#759 <https://github.com/omni-us/jsonargparse/pull/759>`__).
+- Experimental ``omegaconf+`` parser mode that supports variable interpolation
+  and resolving across configs and command line arguments. Depending on
+  community feedback, in v5.0.0 this new mode could replace the current
+  ``omegaconf`` mode, introducing a breaking change (`#765
+  <https://github.com/omni-us/jsonargparse/pull/765>`__).
 
 Fixed
 ^^^^^
@@ -34,6 +39,8 @@ Fixed
 - Environment variable names not shown in help for positional arguments when
   ``default_env`` is true (`#763
   <https://github.com/omni-us/jsonargparse/pull/763>`__).
+- ``parse_object`` not parsing correctly configs (`#765
+  <https://github.com/omni-us/jsonargparse/pull/765>`__).
 
 Changed
 ^^^^^^^

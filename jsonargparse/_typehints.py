@@ -54,6 +54,7 @@ from ._common import (
     get_unaliased_type,
     is_dataclass_like,
     is_subclass,
+    lenient_check,
     nested_links,
     parent_parser,
     parser_context,
@@ -524,7 +525,7 @@ class ActionTypeHint(Action):
             if "nargs" in kwargs and kwargs["nargs"] == 0:
                 raise ValueError("ActionTypeHint does not allow nargs=0.")
             return ActionTypeHint(**kwargs)
-        cfg, val, opt_str = args[1:]
+        parser, cfg, val, opt_str = args
         if not (self.nargs == "?" and val is None):
             if isinstance(opt_str, str) and opt_str.startswith(f"--{self.dest}."):
                 if opt_str.startswith(f"--{self.dest}.init_args."):
@@ -533,7 +534,7 @@ class ActionTypeHint(Action):
                     sub_opt = opt_str[len(f"--{self.dest}.") :]
                 val = NestedArg(key=sub_opt, val=val)
             append = opt_str == f"--{self.dest}+"
-            val = self._check_type_(val, append=append, cfg=cfg)
+            val = self._check_type_(val, append=append, cfg=cfg, mode=parser.parser_mode)
             if is_subclass_spec(val):
                 prev_val = cfg.get(self.dest)
                 if is_subclass_spec(prev_val) and "init_args" in prev_val:
@@ -545,7 +546,7 @@ class ActionTypeHint(Action):
         cfg.update(val, self.dest)
         return None
 
-    def _check_type(self, value, append=False, cfg=None):
+    def _check_type(self, value, append=False, cfg=None, mode=None):
         islist = _is_action_value_list(self)
         if not islist:
             value = [value]
@@ -584,7 +585,14 @@ class ActionTypeHint(Action):
                                 val = adapt_typehints(orig_val, self._typehint, default=self.default, **kwargs)
                             ex = None
                     except ValueError:
-                        if self._enable_path and config_path is None and isinstance(orig_val, str):
+                        if (
+                            lenient_check.get()
+                            and mode == "omegaconf+"
+                            and isinstance(orig_val, str)
+                            and "${" in orig_val
+                        ):
+                            ex = None
+                        elif self._enable_path and config_path is None and isinstance(orig_val, str):
                             msg = f"\n- Expected a config path but {orig_val} either not accessible or invalid\n- "
                             raise type(ex)(msg + str(ex)) from ex
                     if ex:
