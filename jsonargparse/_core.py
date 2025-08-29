@@ -380,7 +380,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 ActionTypeHint.add_sub_defaults(self, cfg)
 
         with parser_context(parent_parser=self):
-            if not skip_validation and self.parser_mode == "omegaconf+":
+            if not lenient_check.get() and self.parser_mode == "omegaconf+":
                 cfg = omegaconf_apply(self, cfg)
 
             _ActionPrintConfig.print_config_if_requested(self, cfg)
@@ -1405,6 +1405,13 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             if isinstance(action, _ActionConfigLoad):
                 config_keys.add(action_dest)
                 keys.append(action_dest)
+            elif isinstance(action, ActionConfigFile):
+                if isinstance(value, str):
+                    cfg.pop(action_dest)
+                    preserve = Namespace({k: cfg[k] for k in keys[num:]})
+                    ActionConfigFile.apply_config(self, cfg, action_dest, value)
+                    cfg.update(preserve)
+                    continue
             elif getattr(action, "jsonnet_ext_vars", False):
                 prev_cfg[action_dest] = value
             cfg[action_dest] = value

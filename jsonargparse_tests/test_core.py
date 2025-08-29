@@ -191,6 +191,17 @@ def test_parse_object_simple(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_object({"undefined": True}))
 
 
+def test_parse_object_config(parser):
+    parser.add_argument("--cfg", action="config")
+    parser.add_argument("--a", type=int)
+    parser.add_argument("--b", type=int)
+    path = Path("config.json")
+    path.write_text('{"a": 1, "b": 2}')
+    cfg = parser.parse_object({"b": 0, "cfg": str(path), "a": 3})
+    assert cfg.pop("cfg")[0].relative == "config.json"
+    assert cfg == Namespace(a=3, b=2)
+
+
 def test_parse_object_nested(parser):
     parser.add_argument("--l1.l2.op", type=float)
     assert parser.parse_object({"l1": {"l2": {"op": 2.1}}}).l1.l2.op == 2.1

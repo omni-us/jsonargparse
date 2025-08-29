@@ -39,6 +39,8 @@ Fixed
 - Environment variable names not shown in help for positional arguments when
   ``default_env`` is true (`#763
   <https://github.com/omni-us/jsonargparse/pull/763>`__).
+- ``parse_object`` not parsing correctly configs (`#765
+  <https://github.com/omni-us/jsonargparse/pull/765>`__).
 
 Changed
 ^^^^^^^

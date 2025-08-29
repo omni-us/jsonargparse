@@ -296,7 +296,9 @@ def omegaconf_apply(parser, cfg):
     from ._common import parser_context
 
     with parser_context(path_dump_preserve_relative=True):
-        cfg_dict = parser.dump(cfg, format="json", skip_validation=True)
+        cfg_dict = parser.dump(
+            cfg, format="json_compact", skip_validation=True, skip_none=False, skip_link_targets=False
+        )
     cfg_omegaconf = OmegaConf.create(cfg_dict)
     cfg_dict = OmegaConf.to_container(cfg_omegaconf, resolve=True)
     return parser._apply_actions(cfg_dict)
