@@ -198,7 +198,8 @@ def test_parse_object_config(parser):
     path = Path("config.json")
     path.write_text('{"a": 1, "b": 2}')
     cfg = parser.parse_object({"b": 0, "cfg": str(path), "a": 3})
-    assert cfg.pop("cfg")[0].relative == "config.json"
+    popped_cfg = cfg.pop("cfg")
+    assert popped_cfg[0].relative == "config.json"
     assert cfg == Namespace(a=3, b=2)
 
 
