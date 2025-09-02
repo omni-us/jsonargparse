@@ -7,10 +7,11 @@ assignees: ''
 ---
 
 <!--
-Thank you very much for contributing! If you enjoy this project, please consider
-giving it a ⭐ star on [GitHub](https://github.com/omni-us/jsonargparse/) or
-sponsor it via [GitHub Sponsors](https://github.com/sponsors/mauvilsa). Even the
-smallest donation is greatly appreciated and helps support the project.
+Thank you for contributing! If you enjoy this project, please consider:
+- ⭐ Starring it on GitHub: https://github.com/omni-us/jsonargparse
+- 🩷 Sponsoring it: https://github.com/sponsors/mauvilsa
+
+Even small donations are greatly appreciated and help sustain the project.
 -->
 
 ## 🔧 Code refactor

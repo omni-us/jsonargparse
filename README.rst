@@ -102,12 +102,13 @@ high-quality code**. It encompasses numerous powerful features, some unique to
   <https://pypi.org/project/simple-parsing/>`__ and `Tyro
   <https://pypi.org/project/tyro/>`__.
 
+
 Other notable features include:
 
 - **Extensive type hint support:** nested types (union, optional), containers
-  (list, dict, etc.), user-defined generics, restricted types (regex, numbers),
-  paths, URLs, types from stubs (``*.pyi``), future annotations (PEP `563
-  <https://peps.python.org/pep-0563/>`__), and backports (PEP `604
+  (list, dict, etc.), protocols, user-defined generics, restricted types (regex,
+  numbers), paths, URLs, types from stubs (``*.pyi``), future annotations (PEP
+  `563 <https://peps.python.org/pep-0563/>`__), and backports (PEP `604
   <https://peps.python.org/pep-0604>`__).
 
 - **Keyword arguments introspection:** resolving of parameters used via
@@ -121,13 +122,20 @@ Other notable features include:
 
 - **Config file formats:** `json <https://www.json.org/>`__, `yaml
   <https://yaml.org/>`__, `toml <https://toml.io/>`__, `jsonnet
-  <https://jsonnet.org/>`__ and extendable to more formats.
+  <https://jsonnet.org/>`__ and extensible to more formats.
 
 - **Relative paths:** within config files and parsing of config paths referenced
   inside other configs.
 
 - **Argument linking:** directing parsed values to multiple parameters,
   preventing unnecessary interpolation in configs.
+
+- **Variable interpolation:** powered by `OmegaConf
+  <https://omegaconf.readthedocs.io/en/latest/usage.html#variable-interpolation>`__.
+
+- **Tab completion:** powered by `shtab
+  <https://pypi.org/project/shtab/>`__ or `argcomplete
+  <https://pypi.org/project/argcomplete/>`__.
 
 
 Design principles
@@ -171,15 +179,22 @@ You can install using `pip <https://pypi.org/project/jsonargparse/>`__ as:
 
     pip install jsonargparse
 
-By default the only dependency that jsonargparse installs is `PyYAML
+By default, the only dependency installed with ``jsonargparse`` is `PyYAML
 <https://pypi.org/project/PyYAML/>`__. However, several optional features can be
-enabled by specifying any of the following extras requires: ``signatures``,
-``jsonschema``, ``jsonnet``, ``urls``, ``fsspec``, ``toml``, ``ruyaml``,
-``omegaconf``, ``shtab`` and ``argcomplete``. There is also the ``all`` extras
-require to enable all optional features (excluding tab completion ones).
-Installing jsonargparse with extras require is as follows:
+enabled by specifying one or more of the following extras (optional
+dependencies): ``signatures``, ``jsonschema``, ``jsonnet``, ``urls``,
+``fsspec``, ``toml``, ``ruyaml``, ``omegaconf``, ``shtab``, and ``argcomplete``.
+Additionally, the ``all`` extras can be used to enable all optional features
+(excluding tab completion ones). To install ``jsonargparse`` with extras, use
+the following syntax:
 
 .. code-block:: bash
 
     pip install "jsonargparse[signatures,urls]"  # Enable signatures and URLs features
     pip install "jsonargparse[all]"              # Enable all optional features
+
+To install the latest development version, use the following command:
+
+.. code-block:: bash
+
+    pip install "jsonargparse[signatures] @ git+https://github.com/omni-us/jsonargparse.git@main"

@@ -46,8 +46,8 @@ tool. In a shell you could see the help and run a command as follows:
 .. note::
 
     Parsing of docstrings is an optional feature. For this example to work as
-    shown, jsonargparse needs to be installed with the ``signatures`` extras
-    require as explained in section :ref:`installation`.
+    shown, jsonargparse needs to be installed with the ``signatures`` extra
+    as explained in section :ref:`installation`.
 
 When :func:`.auto_cli` receives a single class, the first arguments are for
 parameters to instantiate the class, then a method name is expected (i.e.
@@ -91,7 +91,7 @@ Then in a shell you could run:
     >>> auto_cli(Main, args=["--max_prize=1000", "person", "Lucky"])  # doctest: +ELLIPSIS
     'Lucky won ...€!'
 
-If the class given does not have any methods, there will be no sub-commands and
+If the given class does not have any methods, there will be no sub-commands and
 :func:`.auto_cli` will return an instance of the class. For example:
 
 .. testcode::
@@ -121,7 +121,7 @@ Then in a shell you could run:
     >>> auto_cli(Settings, as_positional=False, args=["--name=Lucky"])  # doctest: +ELLIPSIS
     Settings(name='Lucky', prize=100)
 
-Note the use of ``as_positional=False`` to make required arguments as
+Note the use of ``as_positional=False`` to make required arguments
 non-positional.
 
 If more than one function is given to :func:`.auto_cli`, then any of them can be
@@ -188,15 +188,14 @@ Writing configuration files
 
 All tools implemented with the :func:`.auto_cli` function have the ``--config``
 option to provide settings in a config file (more details in
-:ref:`configuration-files`). This becomes very useful when the number of
-configurable parameters is large. To ease the writing of config files, there is
-also the option ``--print_config`` which prints to standard output all settings
-that the tool supports with their default values. Users of the tool can be
-advised to follow the following steps:
+:ref:`configuration-files`). This is particularly useful when there are many
+configurable parameters. To ease the writing of config files, there is also the
+option ``--print_config`` which prints to standard output all settings that the
+tool supports with their default values. Users can follow these steps:
 
 .. code-block:: bash
 
-    # Dump default configuration to have as reference
+    # Dump default config to have as reference
     python example.py --print_config > config.yaml
     # Modify the config as needed (all default settings can be removed)
     nano config.yaml
@@ -208,7 +207,7 @@ Comparison to Fire
 
 The :func:`.auto_cli` feature is similar to and inspired by `Fire
 <https://pypi.org/project/fire/>`__. However, there are fundamental differences.
-First, the purpose is not allowing to call any python object from the command
+First, the purpose is not to allow calling any Python object from the command
 line. It is only intended for running functions and classes specifically written
 for this purpose. Second, the arguments are expected to have type hints, and the
 given values will be validated according to these. Third, the return values of
@@ -234,7 +233,7 @@ Tutorials
 Parsers
 =======
 
-An argument parser is created just like it is done with python's `argparse
+An argument parser is created just like it is done with Python's `argparse
 <https://docs.python.org/3/library/argparse.html>`__. You import the module,
 create a parser object and then add arguments to it. A simple example would be:
 
@@ -377,7 +376,7 @@ will work as expected. Additionally, the following cases are also valid:
     that if a value is provided both as a positional and as an optional
     argument, the value from the positional argument will be used, regardless of
     the order. For example, with the parser above, the command ``val1 val2a
-    --o2=val2b`` would result in ``o2=val1a``.
+    --o2=val2b`` would result in ``o2=val2a``.
 
 
 Functions as type
@@ -434,7 +433,7 @@ configured error message.
 Type hints
 ==========
 
-An important feature of jsonargparse is a wide support the argument types and
+An important feature of jsonargparse is its wide support for argument types and
 respective validation. This extended support makes use of Python's type hint
 syntax. For example, an argument that can be ``None`` or a float in the range
 ``(0, 1)`` or a positive int could be added using a type hint as follows:
@@ -448,7 +447,7 @@ syntax. For example, an argument that can be ``None`` or a float in the range
 
 The types in :py:mod:`jsonargparse.typing` are included for convenience since
 they are useful in argument parsing use cases and not available in standard
-python. However, there is no need to use jsonargparse specific types.
+Python. However, there is no need to use jsonargparse specific types.
 
 A wide range of type hints are supported and with arbitrary complexity/nesting.
 Some notes about this support are:
@@ -485,14 +484,14 @@ Some notes about this support are:
   For more details see :ref:`dict-items`.
 
 - ``Tuple``, ``Set`` and ``MutableSet`` are supported even though they can't be
-  represented in json distinguishable from a list. Each ``Tuple`` element
+  represented in JSON distinguishable from a list. Each ``Tuple`` element
   position can have its own type and will be validated as such. ``Tuple`` with
   ellipsis (``Tuple[type, ...]``) is also supported. In command line arguments,
   config files and environment variables, tuples and sets are represented as an
   array.
 
 - To set a value to ``None`` it is required to use ``null`` since this is how
-  json/yaml defines it. To avoid confusion in the help, ``NoneType`` is
+  JSON/YAML defines it. To avoid confusion in the help, ``NoneType`` is
   displayed as ``null``. For example a function argument with type and default
   ``Optional[str] = None`` would be shown in the help as ``type: Union[str,
   null], default: null``.
@@ -593,9 +592,9 @@ without having to consider the location of the config file. To help in these
 situations jsonargparse includes a type generator :func:`.path_type`, some
 predefined types (e.g. :class:`.Path_fr`).
 
-For example suppose you have a directory with a configuration file
-``app/config.yaml`` and some data ``app/data/info.db``. The contents of the yaml
-file is the following:
+For example suppose you have a directory with a config file ``app/config.yaml``
+and some data ``app/data/info.db``. The contents of the YAML file is the
+following:
 
 .. code-block:: yaml
 
@@ -635,7 +634,7 @@ that exists and is readable, the following could be done:
 The ``fr`` in the type are flags that stand for file and readable. After
 parsing, the value of ``databases.info`` will be an instance of the
 :class:`.Path_fr` class that allows to get both the original relative path as
-included in the yaml file, or the corresponding absolute path:
+included in the YAML file, or the corresponding absolute path:
 
 .. doctest:: paths
     :skipif: os.name != "posix"
@@ -706,7 +705,7 @@ If ``nargs='+'`` is given to ``add_argument`` with ``List[<path_type>]`` and
 
 .. note::
 
-    No all features of the :class:`.Path` class are supported in windows.
+    Not all features of the :class:`.Path` class are supported on Windows.
 
 
 .. _parsing-urls:
@@ -717,10 +716,10 @@ Parsing URLs
 The :func:`.path_type` function also supports URLs which after parsing, the
 :py:meth:`.Path.get_content` method can be used to perform a GET request to the
 corresponding URL and retrieve its content. For this to work the *requests*
-python package is required. Alternatively, :func:`.path_type` can also be used
+Python package is required. Alternatively, :func:`.path_type` can also be used
 for `fsspec <https://filesystem-spec.readthedocs.io>`__ supported file systems.
 The respective optional package(s) will be installed along with jsonargparse if
-installed with the ``urls`` or ``fsspec`` extras require as explained in section
+installed with the ``urls`` or ``fsspec`` extras as explained in section
 :ref:`installation`.
 
 The ``'u'`` flag is used to parse URLs using requests and the flag ``'s'`` to
@@ -729,7 +728,7 @@ either a readable file or URL, the type would be created as ``Path_fur =
 path_type('fur')``. If the value appears to be a URL, a HEAD request would be
 triggered to check if it is accessible. To get the content of the parsed path,
 without needing to care if it is a local file or a URL, the
-:py:meth:`.Path.get_content` method Scan be used.
+:py:meth:`.Path.get_content` method can be used.
 
 If you import ``from jsonargparse import set_parsing_settings`` and then run
 ``set_parsing_settings(config_read_mode_urls_enabled=True)`` or
@@ -738,9 +737,9 @@ functions and classes will also support loading from URLs:
 :py:meth:`.ArgumentParser.parse_path`, :py:meth:`.ArgumentParser.get_defaults`
 (``default_config_files`` argument), `action="config"`,
 :class:`.ActionJsonSchema`, :class:`.ActionJsonnet` and :class:`.ActionParser`.
-This means that a tool that can receive a configuration file via
-`action="config"` is able to get the content from a URL, thus something like the
-following would work:
+This means that a tool that can receive a config file via `action="config"` is
+able to get the content from a URL, thus something like the following would
+work:
 
 .. code-block:: bash
 
@@ -901,7 +900,7 @@ arguments set as follows:
       ...
 
 Once a new class has been appended to the list, it is not possible to modify the
-arguments of a previous class. This limitation is by intention since it forces
+arguments of a previous class. This limitation is intentional since it forces
 classes and its arguments to be defined in order, making the command line call
 intuitive to write and understand.
 
@@ -911,7 +910,7 @@ intuitive to write and understand.
 Dict items
 ----------
 
-When an argument has ``Dict`` as type, the value can be set using json format,
+When an argument has ``Dict`` as type, the value can be set using JSON format,
 e.g.:
 
 .. testsetup:: dict_items
@@ -924,7 +923,7 @@ e.g.:
     >>> parser.parse_args(['--dict={"key1": "val1", "key2": "val2"}'])
     Namespace(dict={'key1': 'val1', 'key2': 'val2'})
 
-Similar to lists, providing a second argument with value a json dict completely
+Similar to lists, providing a second argument with value a JSON dict completely
 replaces the previous value. Setting individual dict items without replacing can
 be achieved as follows:
 
@@ -946,7 +945,7 @@ the behavior for standard ``dataclasses``, ``final`` classes, attrs' ``define``
 decorator, and pydantic's ``dataclass`` decorator and ``BaseModel`` classes.
 
 As an example, take a class that is decorated with :func:`.final`, meaning that
-it shouldn't be subclassed. The code below would accept the corresponding yaml
+it shouldn't be subclassed. The code below would accept the corresponding YAML
 structure.
 
 .. testsetup:: final_classes
@@ -1236,30 +1235,30 @@ is useful for example for class instantiation.
 Configuration files
 ===================
 
-An important feature of jsonargparse is its ability to parse configuration
-files. The dot notation hierarchy of the arguments (see
+An important feature of jsonargparse is its ability to parse configuration files
+(config files). The dot notation hierarchy of the arguments (see
 :ref:`nested-namespaces`) defines the expected structure in these files. By
-default, the configuration format is ``yaml``. To change the format, use the
+default, the configuration format is YAML. To change the format, use the
 ``parser_mode`` parameter when instantiating the parser, e.g.,
 ``ArgumentParser(parser_mode="toml")``.
 
 The :py:attr:`.ArgumentParser.default_config_files` property can be set when
-creating a parser to specify patterns for searching configuration files. For
-example, if a parser is created as
+creating a parser to specify patterns for searching config files. For example,
+if a parser is created as
 ``ArgumentParser(default_config_files=['~/.myapp.yaml', '/etc/myapp.yaml'])``,
 it will search for and parse any of these files if they exist, using them to
-override the defaults. All matched configuration files are parsed and applied in
-the given order. The default configuration files are always parsed first,
-meaning any command line argument will override their values.
+override the defaults. All matched config files are parsed and applied in the
+given order. The default config files are always parsed first, meaning any
+command line argument will override their values.
 
-You can also add an argument to explicitly provide a configuration file path.
-Providing a configuration file as an argument does not disable the parsing of
-``default_config_files``. The configuration argument will be parsed in the
-specific position among the command line arguments, so arguments found afterward
-will override the values from that configuration file. The configuration
-argument can be given multiple times, each instance overriding the values of the
-previous one. Using the example parser from the :ref:`nested-namespaces` section
-above, we could have the following configuration file in yaml format:
+You can also add an argument to explicitly provide a config file path. Providing
+a config file as an argument does not disable the parsing of
+``default_config_files``. The config argument will be parsed in the specific
+position among the command line arguments, so arguments found afterward will
+override the values from that config file. The config argument can be given
+multiple times, each instance overriding the values of the previous one. Using
+the example parser from the :ref:`nested-namespaces` section above, we could
+have the following config file in YAML format:
 
 .. code-block:: yaml
 
@@ -1268,7 +1267,7 @@ above, we could have the following configuration file in yaml format:
       opt1: from yaml 1
       opt2: from yaml 2
 
-Then in python adding a config file argument and parsing some dummy arguments,
+Then in Python adding a config file argument and parsing some dummy arguments,
 the following would be observed:
 
 .. testsetup:: config
@@ -1297,8 +1296,8 @@ the following would be observed:
     >>> cfg.lev1.opt2
     'from arg 2'
 
-Instead of providing a path to a configuration file, a string with the
-configuration content can also be provided.
+Instead of providing a path to a config file, a string with the config content
+can also be provided.
 
 .. doctest:: config
 
@@ -1307,11 +1306,11 @@ configuration content can also be provided.
     'from string 1'
 
 The config file can also be provided as an environment variable as explained in
-section :ref:`environment-variables`. The configuration file environment
-variable is the first one to be parsed. Any other argument provided through an
-environment variable would override the config file one.
+section :ref:`environment-variables`. The config file environment variable is
+the first one to be parsed. Any other argument provided through an environment
+variable would override the config file one.
 
-A configuration file or string can also be parsed without parsing command line
+A config file or string can also be parsed without parsing command line
 arguments. The methods for this are :py:meth:`.ArgumentParser.parse_path` and
 :py:meth:`.ArgumentParser.parse_string` to parse a config file or a config
 string respectively.
@@ -1324,10 +1323,10 @@ Parsers that have an `action="config"` argument also include a
 with a large set of options to create an initial config file including all
 default values. If the `ruyaml <https://ruyaml.readthedocs.io>`__ package is
 installed, the config can be printed having the help descriptions content as
-yaml comments by using ``--print_config=comments``. Another option is
+YAML comments by using ``--print_config=comments``. Another option is
 ``--print_config=skip_null`` which skips entries whose value is ``null``.
 
-From within python it is also possible to serialize a config object by using
+From within Python it is also possible to serialize a config object by using
 either the :py:meth:`.ArgumentParser.dump` or :py:meth:`.ArgumentParser.save`
 methods. Several formats with a particular style are supported: ``yaml``,
 ``toml``, ``json_compact`` and ``json_indented``. It is possible to add more
@@ -1359,9 +1358,9 @@ modifications. First, it supports float's scientific notation, e.g. ``'1e-3' =>
 text within curly braces is considered a string, e.g. ``'{text}' (unlike default
 PyYAML which parses this as ``{'text': None}``).
 
-It is possible to replace the yaml loader or add a loader as a new parser mode
-via the :func:`.set_loader` function. For example if you need a custom PyYAML
-loader it can be registered and used as follows:
+It is possible to replace the ``yaml`` loader or add a loader as a new parser
+mode via the :func:`.set_loader` function. For example if you need a custom
+PyYAML loader it can be registered and used as follows:
 
 .. testcode::
 
@@ -1390,7 +1389,7 @@ that it raises when there are failures should be given to :func:`.set_loader`.
 Classes, methods and functions
 ==============================
 
-It is good practice to write python code in which parameters have type hints and
+It is good practice to write Python code in which parameters have type hints and
 these are described in the docstrings. To make this well written code
 configurable, it wouldn't make sense to duplicate information of types and
 parameter descriptions. To avoid this duplication, jsonargparse includes methods
@@ -1463,9 +1462,9 @@ done more simply for an entire config object using
 containing an instance of ``MyClass`` initialized with whatever command line
 arguments were parsed.
 
-When parsing from a configuration file (see :ref:`configuration-files`) all the
-values can be given in a single config file. For convenience it is also possible
-that the values for each of the argument groups created by the calls to add
+When parsing from a config file (see :ref:`configuration-files`) all the values
+can be given in a single config file. For convenience it is also possible that
+the values for each of the argument groups created by the calls to add
 signatures methods can be parsed from independent files. This means that for the
 example above there could be one general config file with contents:
 
@@ -1507,8 +1506,8 @@ Docstring parsing
 
 To get parameter docstrings in the parser help, the `docstring-parser
 <https://pypi.org/project/docstring-parser/>`__ package is required. This
-package is included when installing jsonargparse with the ``signatures`` extras
-require as explained in section :ref:`installation`.
+package is included when installing jsonargparse with the ``signatures`` extra
+as explained in section :ref:`installation`.
 
 A couple of options can be configured, both related to docstring parsing speed.
 By default docstrings are parsed used with
@@ -1624,7 +1623,7 @@ Parameter resolvers
 -------------------
 
 Three techniques are implemented for resolving signature parameters. One makes
-use of python's `Abstract Syntax Trees (AST)
+use of Python's `Abstract Syntax Trees (AST)
 <https://docs.python.org/3/library/ast.html>`__ library and the second is based
 on assumptions of class inheritance. The AST resolver is used first and only
 when AST fails, the assumptions resolver is run as fallback. The third resolver
@@ -1878,14 +1877,14 @@ Stubs resolver
 The stubs resolver makes use of the `typeshed-client
 <https://pypi.org/project/typeshed-client/>`__ package to identify parameters
 and their type hints from stub files ``*.pyi``. To enable this resolver, install
-jsonargparse with the ``signatures`` extras require as explained in section
+jsonargparse with the ``signatures`` extra as explained in section
 :ref:`installation`.
 
 Many of the types defined in stub files use the latest syntax for type hints,
 that is, bitwise or operator ``|`` for unions and generics, e.g.
 ``list[<type>]`` instead of ``typing.List[<type>]``, see PEP `604
-<https://peps.python.org/pep-0604>`__. On python>=3.10 these are fully
-supported. On python<=3.9 backporting these types is attempted and in some cases
+<https://peps.python.org/pep-0604>`__. On ``python>=3.10`` these are fully
+supported. On ``python<=3.9`` backporting these types is attempted and in some cases
 it can fail. On failure the type annotation is set to ``Any``.
 
 Most of the types in the Python standard library have their types in stubs. An
@@ -1924,7 +1923,7 @@ coupled programs, see the `wikipedia article
 benefits, support for dependency injection has been a design goal of
 jsonargparse.
 
-In python, dependency injection is achieved by:
+In Python, dependency injection is achieved by:
 
 - Using as type hint a class, such that the parameter accepts an instance of
   this class or any subclass, e.g. ``module: ModuleBaseClass``.
@@ -1969,7 +1968,7 @@ expects an injected class instance, would be having some config file
         init_args:
           firstweekday: 1
 
-Then in python:
+Then in Python:
 
 .. testsetup:: subclasses
 
@@ -2288,7 +2287,7 @@ to :ref:`instance-factories`.
 
 .. note::
 
-    In python there can be some classes or functions for which it is not
+    In Python there can be some classes or functions for which it is not
     possible to determine its import path from the object alone. When using one
     of these as a default would cause a failure when serializing because what
     gets saved in the config file is the import path. To overcome this problem
@@ -2402,12 +2401,12 @@ OmegaConf variable interpolation
 ================================
 
 One of the possible reasons to add a parser mode (see :ref:`custom-loaders`) can
-be to have support for variable interpolation in yaml files. Any library could
+be to have support for variable interpolation in YAML files. Any library could
 be used to implement a loader and configure a mode for it. Without needing to
 implement a loader function, an ``omegaconf`` parser mode is available out of
 the box when this package is installed.
 
-Take for example a yaml file as:
+Take for example a YAML file as:
 
 .. code-block:: yaml
 
@@ -2437,7 +2436,7 @@ Take for example a yaml file as:
     os.chdir(cwd)
     shutil.rmtree(tmpdir)
 
-This yaml could be parsed as follows:
+This YAML could be parsed as follows:
 
 .. doctest:: omegaconf
 
@@ -2464,21 +2463,23 @@ This yaml could be parsed as follows:
 .. note::
 
     The ``parser_mode="omegaconf"`` provides support for `OmegaConf's resolvers
-    <https://omegaconf.readthedocs.io/en/latest/custom_resolvers.html/>`__ in a
-    single YAML file. It is not possible to do interpolation across multiple
-    YAML files or in an isolated individual command line argument.
+    <https://omegaconf.readthedocs.io/en/latest/usage.html#variable-interpolation>`__
+    in a single YAML file. It is not possible to do interpolation across
+    multiple YAML files or in an isolated individual command line argument.
 
 Experimental ``omegaconf+`` mode
 --------------------------------
 
-There is a new experimental ``omegaconf+`` parser mode that doesn't suffer from
-the limitations of ``omegaconf`` mentioned above. Instead of applying OmegaConf
-resolvers for each YAML config, the resolving is applied once at the end of
-parsing. Because of this, in nested subconfigs, references to config nodes need
-to be relative to work correctly.
+An experimental ``omegaconf+`` parser mode is available, which addresses the
+limitations of the ``omegaconf`` mode mentioned earlier. Instead of applying
+OmegaConf resolvers to each YAML config individually, the resolving is performed
+once at the end of the parsing process. As a result, in nested sub-configs,
+references to nodes must be either relative or parser-level absolute to function
+correctly.
 
-Depending on feedback from the community, this mode might become the default
-``omegaconf`` mode in v5.0.0.
+Based on community feedback, this mode may become the default ``omegaconf`` mode
+in version 5.0.0. This change would introduce a breaking modification, as
+absolute node references would no longer work in nested sub-configs.
 
 
 .. _environment-variables:
@@ -2499,7 +2500,7 @@ would set the environment variables as:
     export APP_LEV1__OPT1='from env 1'
     export APP_LEV1__OPT2='from env 2'
 
-Then in python the parser would use these variables, unless overridden by the
+Then in Python the parser would use these variables, unless overridden by the
 command line arguments, that is:
 
 .. testsetup:: env
@@ -2577,7 +2578,7 @@ Then some examples of parsing are the following:
 Parsing config files with :py:meth:`.ArgumentParser.parse_path` or
 :py:meth:`.ArgumentParser.parse_string` is also possible. The config file is not
 required to specify a value for ``subcommand``. For the example parser above a
-valid yaml would be:
+valid YAML would be:
 
 .. code-block:: yaml
 
@@ -2605,16 +2606,16 @@ Json schemas
 ============
 
 The :class:`.ActionJsonSchema` class is provided to allow parsing and validation
-of values using a json schema. This class requires the `jsonschema
-<https://pypi.org/project/jsonschema/>`__ python package. Though note that
+of values using a JSON Schema. This class requires the `jsonschema
+<https://pypi.org/project/jsonschema/>`__ Python package. Though note that
 jsonschema is not a requirement of the minimal jsonargparse install. To enable
-this functionality install with the ``jsonschema`` extras require as explained
-in section :ref:`installation`.
+this functionality install with the ``jsonschema`` extra as explained in section
+:ref:`installation`.
 
 Check out the `jsonschema documentation
 <https://python-jsonschema.readthedocs.io/>`__ to learn how to write a schema.
 The current version of jsonargparse uses Draft7Validator. Parsing an argument
-using a json schema is done like in the following example:
+using a JSON Schema is done like in the following example:
 
 .. doctest::
 
@@ -2634,8 +2635,8 @@ using a json schema is done like in the following example:
     >>> parser.parse_args(["--json", '{"price": 1.5, "name": "cookie"}'])
     Namespace(json={'price': 1.5, 'name': 'cookie'})
 
-Instead of giving a json string as argument value, it is also possible to
-provide a path to a json/yaml file, which would be loaded and validated against
+Instead of giving a JSON string as argument value, it is also possible to
+provide a path to a JSON/YAML file, which would be loaded and validated against
 the schema. If the schema defines default values, these will be used by the
 parser to initialize the config values that are not specified. When adding an
 argument with the :class:`.ActionJsonSchema` action, you can use "%s" in the
@@ -2649,15 +2650,15 @@ Jsonnet files
 
 The Jsonnet support requires `jsonschema
 <https://pypi.org/project/jsonschema/>`__ and `jsonnet
-<https://pypi.org/project/jsonnet/>`__ python packages which are not included
+<https://pypi.org/project/jsonnet/>`__ Python packages which are not included
 with minimal jsonargparse install. To enable this functionality install
-jsonargparse with the ``jsonnet`` extras require as explained in section
+jsonargparse with the ``jsonnet`` extra as explained in section
 :ref:`installation`.
 
-By default an :class:`.ArgumentParser` parses configuration files as yaml.
-However, if instantiated giving ``parser_mode='jsonnet'``, then
-:func:`parse_args`, :func:`parse_path` and :func:`parse_string` will expect
-config files to be in jsonnet format instead. Example:
+By default an :class:`.ArgumentParser` parses config files as YAML. However, if
+instantiated giving ``parser_mode='jsonnet'``, then :func:`parse_args`,
+:func:`parse_path` and :func:`parse_string` will expect config files to be in
+Jsonnet format instead. Example:
 
 .. testsetup:: jsonnet
 
@@ -2681,12 +2682,12 @@ config files to be in jsonnet format instead. Example:
     cfg = parser.parse_args(["--config", "example.jsonnet"])
 
 Jsonnet files are commonly parametrized, thus requiring external variables for
-parsing. For these cases, instead of changing the parser mode away from yaml,
-the :class:`.ActionJsonnet` class can be used. This action allows to define an
-argument which would be a jsonnet string or a path to a jsonnet file. Moreover,
-another argument can be specified as the source for any external variables
-required, which would be either a path to or a string containing a json
-dictionary of variables. Its use would be as follows:
+parsing. For these cases, instead of changing the parser mode away from
+``yaml``, the :class:`.ActionJsonnet` class can be used. This action allows to
+define an argument which would be a Jsonnet string or a path to a Jsonnet file.
+Moreover, another argument can be specified as the source for any external
+variables required, which would be either a path to or a string containing a
+JSON dictionary of variables. Its use would be as follows:
 
 .. testcode:: jsonnet
 
@@ -2696,18 +2697,18 @@ dictionary of variables. Its use would be as follows:
     parser.add_argument("--in_ext_vars", type=dict)
     parser.add_argument("--in_jsonnet", action=ActionJsonnet(ext_vars="in_ext_vars"))
 
-For example, if a jsonnet file required some external variable ``param``, then
-the jsonnet and the external variable could be given as:
+For example, if a Jsonnet file required some external variable ``param``, then
+the Jsonnet and the external variable could be given as:
 
 .. testcode:: jsonnet
 
     cfg = parser.parse_args(["--in_ext_vars", '{"param": 123}', "--in_jsonnet", "example.jsonnet"])
 
-Note that the external variables argument must be provided before the jsonnet
-path so that this dictionary already exists when parsing the jsonnet.
+Note that the external variables argument must be provided before the Jsonnet
+path so that this dictionary already exists when parsing the Jsonnet.
 
-The :class:`.ActionJsonnet` class also accepts as argument a json schema, in
-which case the jsonnet would be validated against this schema right after
+The :class:`.ActionJsonnet` class also accepts as argument a JSON Schema, in
+which case the Jsonnet would be validated against this schema right after
 parsing.
 
 
@@ -2773,7 +2774,7 @@ For ``shtab`` to work, there is no need to set ``complete``/``choices`` to the
 parser actions, and no need to call :func:`shtab.add_argument_to`. This is done
 automatically by :py:meth:`.ArgumentParser.parse_args`. The only requirement is
 to install shtab either directly or by installing jsonargparse with the
-``shtab`` extras require as explained in section :ref:`installation`.
+``shtab`` extra as explained in section :ref:`installation`.
 
 .. note::
 
@@ -2849,7 +2850,7 @@ For ``argcompete`` to work, there is no need to implement completer functions or
 to call :func:`argcomplete.autocomplete` since this is done automatically by
 :py:meth:`.ArgumentParser.parse_args`. The only requirement to enable tab
 completion is to install argcomplete either directly or by installing
-jsonargparse with the ``argcomplete`` extras require as explained in section
+jsonargparse with the ``argcomplete`` extra as explained in section
 :ref:`installation`.
 
 The tab completion can be enabled `globally

@@ -71,8 +71,7 @@ follows:
     ``.pre-commit-config.yaml`` is configured to run the hooks using Python
     3.12. Ensure you have Python 3.12 installed and available in your
     environment for ``pre-commit`` to function correctly. For development, other
-    Python versions will work, but for convenience, Python 3.12 can also be
-    used.
+    Python versions will work, but for convenience, Python 3.12 is recommended.
 
 The ``pre-push`` stage runs several hooks, including tests, doctests, mypy, and
 coverage. These hooks are designed to inform developers of issues that must be
