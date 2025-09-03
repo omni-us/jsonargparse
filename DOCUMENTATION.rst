@@ -1321,9 +1321,9 @@ Serialization
 Parsers that have an `action="config"` argument also include a
 ``--print_config`` option. This is useful particularly for command line tools
 with a large set of options to create an initial config file including all
-default values. If the `ruyaml <https://ruyaml.readthedocs.io>`__ package is
-installed, the config can be printed having the help descriptions content as
-YAML comments by using ``--print_config=comments``. Another option is
+default values. If the `ruamel.yaml <https://pypi.org/project/ruamel.yaml>`__
+package is installed, the config can be printed having the help descriptions
+content as YAML comments by using ``--print_config=comments``. Another option is
 ``--print_config=skip_null`` which skips entries whose value is ``null``.
 
 From within Python it is also possible to serialize a config object by using

@@ -33,8 +33,8 @@ from ._completions import ShtabAction
 from ._deprecated import HelpFormatterDeprecations
 from ._link_arguments import ActionLink
 from ._namespace import Namespace, NSKeyError
-from ._optionals import import_ruyaml
-from ._type_checking import ArgumentParser, ruyamlCommentedMap
+from ._optionals import import_ruamel
+from ._type_checking import ArgumentParser, ruamelCommentedMap
 from ._typehints import ActionTypeHint, type_to_str
 
 __all__ = ["DefaultHelpFormatter"]
@@ -63,7 +63,7 @@ class YAMLCommentFormatter:
 
     def add_yaml_comments(self, cfg: str) -> str:
         """Adds help text as yaml comments."""
-        ruyaml = import_ruyaml("add_yaml_comments")
+        ruyaml = import_ruamel("add_yaml_comments")
         yaml = ruyaml.YAML()
         cfg = yaml.load(cfg)
 
@@ -119,28 +119,28 @@ class YAMLCommentFormatter:
     def set_yaml_start_comment(
         self,
         text: str,
-        cfg: ruyamlCommentedMap,
+        cfg: ruamelCommentedMap,
     ):
-        """Sets the start comment to a ruyaml object.
+        """Sets the start comment to a ruamel.yaml object.
 
         Args:
             text: The content to use for the comment.
-            cfg: The ruyaml object.
+            cfg: The ruamel.yaml object.
         """
         cfg.yaml_set_start_comment(text)
 
     def set_yaml_group_comment(
         self,
         text: str,
-        cfg: ruyamlCommentedMap,
+        cfg: ruamelCommentedMap,
         key: str,
         depth: int,
     ):
-        """Sets the comment for a group to a ruyaml object.
+        """Sets the comment for a group to a ruamel.yaml object.
 
         Args:
             text: The content to use for the comment.
-            cfg: The parent ruyaml object.
+            cfg: The parent ruamel.yaml object.
             key: The key of the group.
             depth: The nested level of the group.
         """
@@ -149,15 +149,15 @@ class YAMLCommentFormatter:
     def set_yaml_argument_comment(
         self,
         text: str,
-        cfg: ruyamlCommentedMap,
+        cfg: ruamelCommentedMap,
         key: str,
         depth: int,
     ):
-        """Sets the comment for an argument to a ruyaml object.
+        """Sets the comment for an argument to a ruamel.yaml object.
 
         Args:
             text: The content to use for the comment.
-            cfg: The parent ruyaml object.
+            cfg: The parent ruamel.yaml object.
             key: The key of the argument.
             depth: The nested level of the argument.
         """

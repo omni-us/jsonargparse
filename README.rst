@@ -183,7 +183,7 @@ By default, the only dependency installed with ``jsonargparse`` is `PyYAML
 <https://pypi.org/project/PyYAML/>`__. However, several optional features can be
 enabled by specifying one or more of the following extras (optional
 dependencies): ``signatures``, ``jsonschema``, ``jsonnet``, ``urls``,
-``fsspec``, ``toml``, ``ruyaml``, ``omegaconf``, ``shtab``, and ``argcomplete``.
+``fsspec``, ``toml``, ``ruamel``, ``omegaconf``, ``shtab``, and ``argcomplete``.
 Additionally, the ``all`` extras can be used to enable all optional features
 (excluding tab completion ones). To install ``jsonargparse`` with extras, use
 the following syntax:

@@ -41,10 +41,10 @@ from jsonargparse._formatters import DefaultHelpFormatter
 from jsonargparse._optionals import (
     docstring_parser_support,
     get_docstring_parse_options,
-    import_ruyaml,
+    import_ruamel,
     jsonnet_support,
     pyyaml_available,
-    ruyaml_support,
+    ruamel_support,
     url_support,
 )
 from jsonargparse._util import argument_error
@@ -743,14 +743,14 @@ def test_namespace_to_dict():
     )
 
 
-@pytest.mark.skipif(not ruyaml_support, reason="ruyaml package is required")
+@pytest.mark.skipif(not ruamel_support, reason="ruamel.yaml package is required")
 def test_DefaultHelpFormatter_yaml_comments(parser):
     parser.add_argument("--arg", type=int, help="Description")
     formatter = DefaultHelpFormatter(prog="test")
     from jsonargparse._common import parent_parser
 
     parent_parser.set(parser)
-    ruyaml = import_ruyaml("test_DefaultHelpFormatter_yaml_comments")
+    ruyaml = import_ruamel("test_DefaultHelpFormatter_yaml_comments")
     yaml = ruyaml.YAML()
     cfg = yaml.load("arg: 1")
 
