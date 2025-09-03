@@ -13,7 +13,7 @@ from ._optionals import (
     import_toml_loads,
     omegaconf_support,
     pyyaml_available,
-    ruyaml_support,
+    ruamel_support,
 )
 from ._type_checking import ArgumentParser
 
@@ -263,7 +263,7 @@ dumpers: Dict[str, Callable] = {
     "toml": toml_dump,
     "jsonnet": json_indented_dump,
 }
-if ruyaml_support:
+if ruamel_support:
     dumpers["yaml_comments"] = yaml_comments_dump
 
 comment_prefix: Dict[str, str] = {

@@ -49,6 +49,8 @@ Changed
 - ``YAML`` comments feature is now implemented in a separate class to allow
   better support for custom help formatters without breaking the comments (`#754
   <https://github.com/omni-us/jsonargparse/pull/754>`__).
+- Replaced unmaintained optional dependency ``ruyaml`` with ``ruamel.yaml``
+  (`#768 <https://github.com/omni-us/jsonargparse/pull/768>`__).
 
 Deprecated
 ^^^^^^^^^^
@@ -56,6 +58,9 @@ Deprecated
   removed in v5.0.0. This logic has been moved to a new private class
   ``YAMLCommentFormatter``. If deemed necessary, this class might be made public
   in the future (`#754 <https://github.com/omni-us/jsonargparse/pull/754>`__).
+- The ``ruyaml`` optional dependency is deprecated and will be removed in
+  v5.0.0. Instead use the ``ruamel`` optional dependency (`#768
+  <https://github.com/omni-us/jsonargparse/pull/768>`__).
 
 
 v4.40.2 (2025-08-06)

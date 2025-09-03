@@ -16,10 +16,10 @@ from jsonargparse._optionals import (
     import_jsonnet,
     import_jsonschema,
     import_requests,
-    import_ruyaml,
+    import_ruamel,
     jsonnet_support,
     jsonschema_support,
-    ruyaml_support,
+    ruamel_support,
     url_support,
 )
 from jsonargparse.typing import is_final_class
@@ -126,19 +126,19 @@ def test_fsspec_support_false():
     ctx.match("test_fsspec_support_false")
 
 
-# ruyaml support
+# ruamel.yaml support
 
 
-@pytest.mark.skipif(not ruyaml_support, reason="ruyaml package is required")
-def test_ruyaml_support_true():
-    import_ruyaml("test_ruyaml_support_true")
+@pytest.mark.skipif(not ruamel_support, reason="ruamel.yaml package is required")
+def test_ruamel_support_true():
+    import_ruamel("test_ruamel_support_true")
 
 
-@pytest.mark.skipif(ruyaml_support, reason="ruyaml package should not be installed")
-def test_ruyaml_support_false():
+@pytest.mark.skipif(ruamel_support, reason="ruamel.yaml package should not be installed")
+def test_ruamel_support_false():
     with pytest.raises(ImportError) as ctx:
-        import_ruyaml("test_ruyaml_support_false")
-    ctx.match("test_ruyaml_support_false")
+        import_ruamel("test_ruamel_support_false")
+    ctx.match("test_ruamel_support_false")
 
 
 # config read mode tests

@@ -44,7 +44,7 @@ all = [
     "jsonargparse[toml]",
     "jsonargparse[urls]",
     "jsonargparse[fsspec]",
-    "jsonargparse[ruyaml]",
+    "jsonargparse[ruamel]",
     "jsonargparse[omegaconf]",
     "jsonargparse[typing-extensions]",
     "jsonargparse[reconplogger]",
@@ -75,8 +75,11 @@ shtab = [
 argcomplete = [
     "argcomplete>=3.5.1",
 ]
+ruamel = [
+    "ruamel.yaml>=0.18.15",
+]
 ruyaml = [
-    "ruyaml>=0.20.0",
+    "jsonargparse[ruamel]",
 ]
 omegaconf = [
     "omegaconf>=2.1.1",
@@ -235,7 +238,7 @@ commands =
 [testenv:without-pyyaml]
 extras = test,coverage,all
 commands =
-    pip uninstall -y argcomplete omegaconf pyyaml reconplogger responses ruyaml types-PyYAML
+    pip uninstall -y argcomplete omegaconf pyyaml reconplogger responses ruamel.yaml ruamel.yaml.clib types-PyYAML
     python -m pytest {posargs}
 
 [testenv:without-future-annotations]

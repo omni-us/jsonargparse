@@ -27,7 +27,7 @@ from jsonargparse import (
 )
 from jsonargparse._formatters import get_env_var
 from jsonargparse._namespace import NSKeyError
-from jsonargparse._optionals import jsonnet_support, jsonschema_support, pyyaml_available, ruyaml_support
+from jsonargparse._optionals import jsonnet_support, jsonschema_support, pyyaml_available, ruamel_support
 from jsonargparse.typing import Path_fc, Path_fr, path_type
 from jsonargparse_tests.conftest import (
     capture_logs,
@@ -779,7 +779,7 @@ def test_print_config_skip_null(print_parser):
     assert json_or_yaml_load(out) == {"g1": {"v2": "2"}, "g2": {}, "v1": 1}
 
 
-@pytest.mark.skipif(not ruyaml_support, reason="ruyaml package is required")
+@pytest.mark.skipif(not ruamel_support, reason="ruamel.yaml package is required")
 @skip_if_docstring_parser_unavailable
 def test_print_config_comments(print_parser):
     help_str = get_parser_help(print_parser)
@@ -790,7 +790,7 @@ def test_print_config_comments(print_parser):
     assert "# Option v2. (default: 2)" in out
 
 
-@pytest.mark.skipif(ruyaml_support, reason="ruyaml package should not be installed")
+@pytest.mark.skipif(ruamel_support, reason="ruamel.yaml package should not be installed")
 def test_print_config_comments_unavailable(print_parser):
     help_str = get_parser_help(print_parser)
     assert "comments," not in help_str
