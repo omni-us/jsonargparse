@@ -217,23 +217,22 @@ commands =
         from pathlib import Path; \
         from shutil import copy; \
         copy('conftest.py', Path(r'{envtmpdir}', 'conftest.py')); \
-        copy('test_dataclass_like.py', Path(r'{envtmpdir}', 'test_dataclass_like.py'))\
+        copy('test_pydantic.py', Path(r'{envtmpdir}', 'test_pydantic.py'))\
     "
     pip install "pydantic<2"
-    python -m pytest {posargs} {envtmpdir}/test_dataclass_like.py
+    python -m pytest {posargs} {envtmpdir}/test_pydantic.py
 
     # Test with pydantic>=2 importing from pydantic.v1
     python -c "\
         import re, pathlib; \
-        path = pathlib.Path(r'{envtmpdir}', 'test_dataclass_like.py'); \
+        path = pathlib.Path(r'{envtmpdir}', 'test_pydantic.py'); \
         content = path.read_text(); \
         content = re.sub(r'import pydantic', 'import pydantic.v1 as pydantic', content); \
-        content = re.sub(r'test_pydantic_types', '_test_pydantic_types', content); \
         content = re.sub(r'^annotated = [^\\n]*', 'annotated = False', content, flags=re.MULTILINE); \
         path.write_text(content)\
     "
     pip install "pydantic>=2"
-    python -m pytest {posargs} {envtmpdir}/test_dataclass_like.py
+    python -m pytest {posargs} {envtmpdir}/test_pydantic.py
 
 [testenv:without-pyyaml]
 extras = test,coverage,all

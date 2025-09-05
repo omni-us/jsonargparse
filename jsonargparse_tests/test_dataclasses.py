@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import sys
-from typing import Any, Dict, Generic, List, Literal, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 from unittest.mock import patch
 
 import pytest
@@ -13,18 +13,15 @@ from jsonargparse import (
     ArgumentParser,
     Namespace,
     compose_dataclasses,
-    lazy_instance,
     set_parsing_settings,
 )
 from jsonargparse._namespace import NSKeyError
 from jsonargparse._optionals import (
-    attrs_support,
     docstring_parser_support,
-    pydantic_support,
-    pydantic_supports_field_init,
+    type_alias_type,
     typing_extensions_import,
 )
-from jsonargparse.typing import PositiveFloat, PositiveInt, final
+from jsonargparse.typing import PositiveFloat, PositiveInt
 from jsonargparse_tests.conftest import (
     get_parser_help,
     json_or_yaml_load,
@@ -32,9 +29,6 @@ from jsonargparse_tests.conftest import (
 )
 
 annotated = typing_extensions_import("Annotated")
-type_alias_type = typing_extensions_import("TypeAliasType")
-
-# dataclass tests
 
 
 @dataclasses.dataclass(frozen=True)
@@ -87,7 +81,8 @@ def test_add_class_arguments(parser, subtests):
 
     with subtests.test("parse_args"):
         assert 5 == parser.parse_args(["--b.b2.a1=5"]).b.b2.a1
-        pytest.raises(ArgumentError, lambda: parser.parse_args(["--b.b2.a1=x"]))
+        with pytest.raises(ArgumentError, match="Not of type PositiveInt"):
+            parser.parse_args(["--b.b2.a1=x"])
 
     with subtests.test("docstrings in help"):
         help_str = get_parser_help(parser)
@@ -97,9 +92,9 @@ def test_add_class_arguments(parser, subtests):
             assert "b2 help:" in help_str
 
     with subtests.test("add failures"):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Expected 'theclass' parameter to be a class type"):
             parser.add_class_arguments(1, "c")
-        with pytest.raises(NSKeyError):
+        with pytest.raises(NSKeyError, match='No action for key "c.b2.b1" to set its default'):
             parser.add_class_arguments(DataClassB, "c", default=DataClassB(b2=DataClassB()))
         with pytest.raises(ValueError):
             parser.add_class_arguments(MixedClass, "c")
@@ -116,6 +111,12 @@ class NestedDefaultsB:
     a: List[NestedDefaultsA]
 
 
+def test_add_dataclass_nested_defaults(parser):
+    parser.add_class_arguments(NestedDefaultsB, "data")
+    cfg = parser.parse_args(["--data.a=[{}]"])
+    assert cfg.data == Namespace(a=[Namespace(x=[], v=1)])
+
+
 @dataclasses.dataclass
 class NestedDefaultsC:
     field_with_dash: int = 5
@@ -126,10 +127,17 @@ class NestedDefaultsD:
     c_with_dash: NestedDefaultsC = dataclasses.field(default_factory=NestedDefaultsC)
 
 
-def test_add_dataclass_nested_defaults(parser):
-    parser.add_class_arguments(NestedDefaultsB, "data")
-    cfg = parser.parse_args(["--data.a=[{}]"])
-    assert cfg.data == Namespace(a=[Namespace(x=[], v=1)])
+def test_dashes_in_nested_dataclass():
+    class UnderscoresToDashesParser(ArgumentParser):
+        def add_argument(self, *args, **kwargs):
+            args = [arg.replace("_", "-") for arg in args]
+            return super().add_argument(*args, **kwargs)
+
+    parser = UnderscoresToDashesParser(default_env=True)
+    parser.add_class_arguments(NestedDefaultsD)
+    ns = parser.parse_args([])
+    cfg = parser.instantiate_classes(ns)
+    assert cfg.c_with_dash.field_with_dash == 5
 
 
 class ClassDataAttributes:
@@ -241,9 +249,8 @@ def test_add_argument_dataclass_unexpected_keys(parser):
     invalid = {
         "class_path": f"{__name__}.DataClassB",
     }
-    with pytest.raises(ArgumentError) as ctx:
+    with pytest.raises(ArgumentError, match="Group 'b' does not accept nested key 'class_path'"):
         parser.parse_args([f"--b={json.dumps(invalid)}"])
-    ctx.match("Group 'b' does not accept nested key 'class_path'")
 
 
 @dataclasses.dataclass
@@ -255,9 +262,8 @@ class DataRequiredAttr:
 def test_add_argument_dataclass_type_required_attr(parser):
     parser.add_argument("--b", type=DataRequiredAttr)
     assert Namespace(a1="v", a2=1.2) == parser.parse_args(["--b.a1=v"]).b
-    with pytest.raises(ArgumentError) as ctx:
+    with pytest.raises(ArgumentError, match='Key "b.a1" is required'):
         parser.parse_args([])
-    ctx.match('"b.a1" is required')
 
 
 @dataclasses.dataclass
@@ -366,6 +372,7 @@ class MainClass:
 def test_instantiate_dataclass_within_classes(parser):
     parser.add_class_arguments(MainClass, "class")
     cfg = parser.parse_args([])
+    assert cfg["class.data.name"] == "name"
     init = parser.instantiate_classes(cfg)
     assert isinstance(init["class"], MainClass)
     assert isinstance(init["class"].data, NestedData)
@@ -429,7 +436,7 @@ def test_optional_dataclass_type_single_field():
 
 
 def test_optional_dataclass_type_invalid_field():
-    with pytest.raises(ArgumentError):
+    with pytest.raises(ArgumentError, match="Expected a <class 'str'>. Got value: 1"):
         parser_optional_data.parse_args(['--data={"p1": 1}'])
 
 
@@ -632,39 +639,6 @@ def test_class_path_union_mixture_dataclass_and_class(parser, union_type):
     assert json_or_yaml_load(parser.dump(cfg))["union"] == value
 
 
-# final classes tests
-
-
-@final
-class FinalClass:
-    def __init__(self, a1: int = 1, a2: float = 2.3):
-        self.a1 = a1
-        self.a2 = a2
-
-
-class NotFinalClass:
-    def __init__(self, b1: str = "4", b2: FinalClass = lazy_instance(FinalClass, a2=-3.2)):
-        self.b1 = b1
-        self.b2 = b2
-
-
-def test_add_class_final(parser):
-    parser.add_class_arguments(NotFinalClass, "b")
-
-    assert parser.get_defaults().b.b2 == Namespace(a1=1, a2=-3.2)
-    cfg = parser.parse_args(['--b.b2={"a2": 6.7}'])
-    assert cfg.b.b2 == Namespace(a1=1, a2=6.7)
-    assert cfg == parser.parse_string(parser.dump(cfg))
-    cfg = parser.instantiate_classes(cfg)
-    assert isinstance(cfg["b"], NotFinalClass)
-    assert isinstance(cfg["b"].b2, FinalClass)
-
-    pytest.raises(ArgumentError, lambda: parser.parse_args(['--b.b2={"bad": "value"}']))
-    pytest.raises(ArgumentError, lambda: parser.parse_args(['--b.b2="bad"']))
-    pytest.raises(ValueError, lambda: parser.add_subclass_arguments(FinalClass, "a"))
-    pytest.raises(ValueError, lambda: parser.add_class_arguments(FinalClass, "a", default=FinalClass()))
-
-
 if type_alias_type:
     IntOrString = type_alias_type("IntOrString", Union[int, str])
 
@@ -724,388 +698,3 @@ if type_alias_type:
         assert cfg.data.p1 == "MyString"
         cfg = parser.parse_args(["--data.p1=3"])
         assert cfg.data.p1 == 3
-
-
-# pydantic tests
-if annotated and pydantic_support > 1:
-    import pydantic
-
-    @pydantic.dataclasses.dataclass(frozen=True)
-    class InnerDataClass:
-        a2: int = 1
-
-    @pydantic.dataclasses.dataclass(frozen=True)
-    class NestedAnnotatedDataClass:
-        a1: annotated[InnerDataClass, 1]  # type: ignore[valid-type]
-
-    @pydantic.dataclasses.dataclass(frozen=True)
-    class NestedAnnotatedDataClassWithDefault:
-        a1: annotated[InnerDataClass, 1] = pydantic.fields.Field(default=InnerDataClass())  # type: ignore[valid-type]
-
-    @pydantic.dataclasses.dataclass(frozen=True)
-    class NestedAnnotatedDataClassWithDefaultFactory:
-        a1: annotated[InnerDataClass, 1] = pydantic.fields.Field(default_factory=InnerDataClass)  # type: ignore[valid-type]
-
-    def test_pydantic_nested_annotated_dataclass(parser: ArgumentParser):
-        parser.add_class_arguments(NestedAnnotatedDataClass, "n")
-        cfg = parser.parse_args(["--n", "{}"])
-        assert cfg.n == Namespace(a1=Namespace(a2=1))
-
-    def test_pydantic_annotated_nested_annotated_dataclass(parser: ArgumentParser):
-        parser.add_class_arguments(annotated[NestedAnnotatedDataClass, 1], "n")
-        cfg = parser.parse_args(["--n", "{}"])
-        assert cfg.n == Namespace(a1=Namespace(a2=1))
-
-    def test_pydantic_annotated_nested_annotated_dataclass_with_default(parser: ArgumentParser):
-        parser.add_class_arguments(annotated[NestedAnnotatedDataClassWithDefault, 1], "n")
-        cfg = parser.parse_args(["--n", "{}"])
-        assert cfg.n == Namespace(a1=Namespace(a2=1))
-
-    def test_pydantic_annotated_nested_annotated_dataclass_with_default_factory(parser: ArgumentParser):
-        parser.add_class_arguments(annotated[NestedAnnotatedDataClassWithDefaultFactory, 1], "n")
-        cfg = parser.parse_args(["--n", "{}"])
-        assert cfg.n == Namespace(a1=Namespace(a2=1))
-
-    class PingTask(pydantic.BaseModel):
-        type: Literal["ping"] = "ping"
-        attr: str = ""
-
-    class PongTask(pydantic.BaseModel):
-        type: Literal["pong"] = "pong"
-
-    PingPongTask = annotated[
-        Union[PingTask, PongTask],
-        pydantic.Field(discriminator="type"),
-    ]
-
-
-length = "length"
-if pydantic_support:
-    import pydantic
-
-    @pydantic.dataclasses.dataclass
-    class PydanticData:
-        p1: float = 0.1
-        p2: str = "-"
-
-    @pydantic.dataclasses.dataclass
-    class PydanticDataNested:
-        p3: PydanticData
-
-    if pydantic_supports_field_init:
-        from pydantic.dataclasses import dataclass as pydantic_v2_dataclass
-        from pydantic.fields import Field as PydanticV2Field
-
-        @pydantic_v2_dataclass
-        class PydanticDataFieldInitFalse:
-            p1: str = PydanticV2Field("-", init=False)
-
-    @pydantic.dataclasses.dataclass
-    class PydanticDataStdlibField:
-        p1: str = dataclasses.field(default="-")
-
-    @pydantic.dataclasses.dataclass
-    class PydanticDataStdlibFieldWithFactory:
-        p1: str = dataclasses.field(default_factory=lambda: "-")
-
-    class PydanticModel(pydantic.BaseModel):
-        p1: str
-        p2: int = 3
-
-    class PydanticSubModel(PydanticModel):
-        p3: float = 0.1
-
-    class PydanticFieldFactory(pydantic.BaseModel):
-        p1: List[int] = pydantic.Field(default_factory=lambda: [1, 2])
-
-    class PydanticHelp(pydantic.BaseModel):
-        """
-        Args:
-            p1: p1 help
-        """
-
-        p1: str
-        p2: int = pydantic.Field(2, description="p2 help")
-
-    if pydantic_support == 1:
-        length = "items"
-
-    if annotated and pydantic_support > 1:
-
-        class PydanticAnnotatedField(pydantic.BaseModel):
-            p1: annotated[int, pydantic.Field(default=2, ge=1, le=8)]  # type: ignore[valid-type]
-
-    class OptionalPydantic:
-        def __init__(self, a: Optional[PydanticModel] = None):
-            self.a = a
-
-    class NestedModel(pydantic.BaseModel):
-        inputs: List[str]
-        outputs: List[str]
-
-    class PydanticNestedDict(pydantic.BaseModel):
-        nested: Optional[Dict[str, NestedModel]] = None
-
-
-def none(x):
-    return x
-
-
-@pytest.mark.skipif(not pydantic_support, reason="pydantic package is required")
-class TestPydantic:
-    num_models = 0
-
-    def test_dataclass(self, parser):
-        parser.add_argument("--data", type=PydanticData)
-        defaults = parser.get_defaults()
-        assert Namespace(p1=0.1, p2="-") == defaults.data
-        cfg = parser.parse_args(["--data.p1=0.2", "--data.p2=x"])
-        assert Namespace(p1=0.2, p2="x") == cfg.data
-
-    def test_basemodel(self, parser):
-        parser.add_argument("--model", type=PydanticModel, default=PydanticModel(p1="a"))
-        cfg = parser.parse_args(["--model.p2=5"])
-        assert Namespace(p1="a", p2=5) == cfg.model
-
-    def test_subclass(self, parser):
-        parser.add_argument("--model", type=PydanticSubModel, default=PydanticSubModel(p1="a"))
-        cfg = parser.parse_args(["--model.p3=0.2"])
-        assert Namespace(p1="a", p2=3, p3=0.2) == cfg.model
-        init = parser.instantiate_classes(cfg)
-        assert isinstance(init.model, PydanticSubModel)
-
-    def test_field_default_factory(self, parser):
-        parser.add_argument("--model", type=PydanticFieldFactory)
-        cfg1 = parser.parse_args([])
-        cfg2 = parser.parse_args([])
-        assert cfg1.model.p1 == [1, 2]
-        assert cfg1.model.p1 == cfg2.model.p1
-        assert cfg1.model.p1 is not cfg2.model.p1
-
-    def test_field_description(self, parser):
-        parser.add_argument("--model", type=PydanticHelp)
-        help_str = get_parser_help(parser)
-        if docstring_parser_support:
-            assert "p1 help (required, type: str)" in help_str
-        assert "p2 help (type: int, default: 2)" in help_str
-
-    @pytest.mark.skipif(not (annotated and pydantic_support > 1), reason="Annotated is required")
-    def test_annotated_field(self, parser):
-        parser.add_argument("--model", type=PydanticAnnotatedField)
-        cfg = parser.parse_args([])
-        assert cfg.model.p1 == 2
-        with pytest.raises(ArgumentError) as ctx:
-            parser.parse_args(["--model.p1=0"])
-        ctx.match("model.p1")
-
-    @pytest.mark.skipif(not (annotated and pydantic_support > 1), reason="Annotated is required")
-    def test_field_union_discriminator_dot_syntax(self, parser):
-        parser.add_argument("--model", type=PingPongTask)
-        cfg = parser.parse_args(["--model.type=pong"])
-        assert cfg.model == Namespace(type="pong")
-        init = parser.instantiate_classes(cfg)
-        assert isinstance(init.model, PongTask)
-        cfg = parser.parse_args(["--model.type=ping", "--model.attr=abc"])
-        assert cfg.model == Namespace(type="ping", attr="abc")
-        init = parser.instantiate_classes(cfg)
-        assert isinstance(init.model, PingTask)
-
-    @pytest.mark.parametrize(
-        ["valid_value", "invalid_value", "cast", "type_str"],
-        [
-            ("abc", "a", none, "constr(min_length=2, max_length=4)"),
-            (2, 0, none, "conint(ge=1)"),
-            (-1.0, 1.0, none, "confloat(lt=0.0)"),
-            ([1], [], none, f"conlist(int, min_{length}=1)"),
-            ([], [3, 4], none, f"conlist(int, max_{length}=1)"),
-            ([1], "x", list, f"conset(int, min_{length}=1)"),
-            ("http://abc.es/", "-", str, "HttpUrl"),
-            ("127.0.0.1", "0", str, "IPvAnyAddress"),
-        ],
-    )
-    def test_pydantic_types(self, valid_value, invalid_value, cast, type_str, monkeypatch):
-        pydantic_type = eval(f"pydantic.{type_str}")
-        self.num_models += 1
-        Model = pydantic.create_model(f"Model{self.num_models}", param=(pydantic_type, ...))
-        if pydantic_support == 1:
-            monkeypatch.setitem(Model.__init__.__globals__, "pydantic_type", pydantic_type)
-
-        parser = ArgumentParser(exit_on_error=False)
-        parser.add_argument("--model", type=Model)
-        cfg = parser.parse_args([f"--model.param={valid_value}"])
-        assert cast(cfg.model.param) == valid_value
-        dump = json_or_yaml_load(parser.dump(cfg))
-        assert dump == {"model": {"param": valid_value}}
-        with pytest.raises(ArgumentError) as ctx:
-            parser.parse_args([f"--model.param={invalid_value}"])
-        ctx.match("model.param")
-
-    @pytest.mark.skipif(not pydantic_supports_field_init, reason="Field.init is required")
-    def test_dataclass_field_init_false(self, parser):
-        # Prior to PR #480, this test would produce the following error:
-        #
-        # TypeError: Parser key "data.p1":
-        # Expected a <class 'str'>. Got value: annotation=str
-        # required=False default='-' init=False
-        parser.add_argument("--data", type=PydanticDataFieldInitFalse)
-        help_str = get_parser_help(parser)
-        assert "--data.p1" not in help_str
-        cfg = parser.parse_args([])
-        assert cfg == Namespace()
-
-        init = parser.instantiate_classes(cfg)
-        assert init.data.p1 == "-"
-
-    def test_dataclass_stdlib_field(self, parser):
-        parser.add_argument("--data", type=PydanticDataStdlibField)
-        cfg = parser.parse_args(["--data", "{}"])
-        assert cfg.data == Namespace(p1="-")
-
-    def test_dataclass_stdlib_field_init_with_factory(self, parser):
-        parser.add_argument("--data", type=PydanticDataStdlibFieldWithFactory)
-        cfg = parser.parse_args(["--data", "{}"])
-        assert cfg.data == Namespace(p1="-")
-
-    def test_dataclass_nested(self, parser):
-        # Prior to PR #480, this test would produce the following error:
-        #
-        # ValueError: Expected "default" argument to be an instance of
-        # "PydanticData" or its kwargs dict, given
-        # <dataclasses._MISSING_TYPE object at 0x105624c50>
-
-        parser.add_argument("--data", type=PydanticDataNested)
-        cfg = parser.parse_args(["--data", '{"p3": {"p1": 1.0}}'])
-        assert cfg.data == Namespace(p3=Namespace(p1=1.0, p2="-"))
-
-    def test_optional_pydantic_model(self, parser):
-        parser.add_argument("--b", type=OptionalPydantic)
-        parser.add_argument("--cfg", action="config")
-        cfg = parser.parse_args([f"--b={__name__}.OptionalPydantic"])
-        assert cfg.b.class_path == f"{__name__}.OptionalPydantic"
-        assert cfg.b.init_args == Namespace(a=None)
-        config = {
-            "b": {
-                "class_path": f"{__name__}.OptionalPydantic",
-                "init_args": {"a": {"p1": "x"}},
-            }
-        }
-        cfg = parser.parse_args([f"--cfg={json.dumps(config)}"])
-        assert cfg.b.class_path == f"{__name__}.OptionalPydantic"
-        assert cfg.b.init_args == Namespace(a=Namespace(p1="x", p2=3))
-
-    def test_nested_dict(self, parser):
-        parser.add_argument("--config", action="config")
-        parser.add_argument("--model", type=PydanticNestedDict)
-        model = {
-            "nested": {
-                "key": {
-                    "inputs": ["a", "b"],
-                    "outputs": ["x", "y"],
-                }
-            }
-        }
-        cfg = parser.parse_args(["--model", json.dumps(model)])
-        assert cfg.model.nested["key"] == Namespace(inputs=["a", "b"], outputs=["x", "y"])
-        init = parser.instantiate_classes(cfg)
-        assert isinstance(init.model, PydanticNestedDict)
-        assert isinstance(init.model.nested["key"], NestedModel)
-
-    def test_dashes_in_nested_dataclass(self):
-        class UnderscoresToDashesParser(ArgumentParser):
-            def add_argument(self, *args, **kwargs):
-                args = [arg.replace("_", "-") for arg in args]
-                return super().add_argument(*args, **kwargs)
-
-        parser = UnderscoresToDashesParser(parse_as_dict=False, default_env=True)
-        parser.add_class_arguments(NestedDefaultsD)
-        ns = parser.parse_args([])
-        cfg = parser.instantiate_classes(ns)
-        assert cfg.c_with_dash.field_with_dash == 5
-
-
-# attrs tests
-
-if attrs_support:
-    import attrs
-
-    @attrs.define
-    class AttrsData:
-        p1: float
-        p2: str = "-"
-
-    @attrs.define
-    class AttrsSubData(AttrsData):
-        p3: int = 3
-
-    @attrs.define
-    class AttrsFieldFactory:
-        p1: List[str] = attrs.field(factory=lambda: ["one", "two"])
-
-    @attrs.define
-    class AttrsFieldInitFalse:
-        p1: dict = attrs.field(init=False)
-
-        def __attrs_post_init__(self):
-            self.p1 = {}
-
-    @attrs.define
-    class AttrsSubField:
-        p1: str = "-"
-        p2: int = 0
-
-    @attrs.define
-    class AttrsWithNestedDefaultDataclass:
-        p1: float
-        subfield: AttrsSubField = attrs.field(factory=AttrsSubField)
-
-    @attrs.define
-    class AttrsWithNestedDataclassNoDefault:
-        p1: float
-        subfield: AttrsSubField
-
-
-@pytest.mark.skipif(not attrs_support, reason="attrs package is required")
-class TestAttrs:
-    def test_define(self, parser):
-        parser.add_argument("--data", type=AttrsData)
-        defaults = parser.get_defaults()
-        assert Namespace(p1=None, p2="-") == defaults.data
-        cfg = parser.parse_args(["--data.p1=0.2", "--data.p2=x"])
-        assert Namespace(p1=0.2, p2="x") == cfg.data
-
-    def test_subclass(self, parser):
-        parser.add_argument("--data", type=AttrsSubData)
-        defaults = parser.get_defaults()
-        assert Namespace(p1=None, p2="-", p3=3) == defaults.data
-
-    def test_field_factory(self, parser):
-        parser.add_argument("--data", type=AttrsFieldFactory)
-        cfg1 = parser.parse_args([])
-        cfg2 = parser.parse_args([])
-        assert cfg1.data.p1 == ["one", "two"]
-        assert cfg1.data.p1 == cfg2.data.p1
-        assert cfg1.data.p1 is not cfg2.data.p1
-
-    def test_field_init_false(self, parser):
-        # Prior to PR #480, this test would produce the following error:
-        #
-        # TypeError('Validation failed: Key "data.p1" is required but
-        # not included in config object or its value is None.')
-
-        parser.add_argument("--data", type=AttrsFieldInitFalse)
-        cfg = parser.parse_args([])
-        help_str = get_parser_help(parser)
-        assert "--data.p1" not in help_str
-        assert cfg == Namespace()
-        init = parser.instantiate_classes(cfg)
-        assert init.data.p1 == {}
-
-    def test_nested_with_default(self, parser):
-        parser.add_argument("--data", type=AttrsWithNestedDefaultDataclass)
-        cfg = parser.parse_args(["--data.p1=1.23"])
-        assert cfg.data == Namespace(p1=1.23, subfield=Namespace(p1="-", p2=0))
-
-    def test_nested_without_default(self, parser):
-        parser.add_argument("--data", type=AttrsWithNestedDataclassNoDefault)
-        cfg = parser.parse_args(["--data.p1=1.23"])
-        assert cfg.data == Namespace(p1=1.23, subfield=Namespace(p1="-", p2=0))

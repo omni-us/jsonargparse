@@ -11,7 +11,6 @@ from typing import List, Optional, Union
 import pytest
 
 from jsonargparse import ArgumentError
-from jsonargparse._optionals import pydantic_support
 from jsonargparse.typing import (
     ClosedUnitInterval,
     Email,
@@ -417,17 +416,6 @@ def test_secret_str_methods():
 
 
 def test_secret_str_parsing(parser):
-    parser.add_argument("--password", type=SecretStr)
-    cfg = parser.parse_args(["--password=secret"])
-    assert isinstance(cfg.password, SecretStr)
-    assert cfg.password.get_secret_value() == "secret"
-    assert "secret" not in parser.dump(cfg)
-
-
-@pytest.mark.skipif(not pydantic_support, reason="pydantic package is required")
-def test_pydantic_secret_str(parser):
-    from pydantic import SecretStr
-
     parser.add_argument("--password", type=SecretStr)
     cfg = parser.parse_args(["--password=secret"])
     assert isinstance(cfg.password, SecretStr)

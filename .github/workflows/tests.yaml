@@ -107,16 +107,15 @@ jobs:
         run: |
           pip install .[coverage]
           pip install "pydantic<2"
-          pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml jsonargparse_tests/test_dataclass_like.py
+          pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml jsonargparse_tests/test_pydantic.py
           mv coverage.xml coverage_pydantic1.xml
           mv junit.xml junit_pydantic1.xml
       - name: with pydantic>=2
         run: |
-          sed -i "s|import pydantic|import pydantic.v1 as pydantic|" jsonargparse_tests/test_dataclass_like.py
-          sed -i "s|^annotated = .*|annotated = False|" jsonargparse_tests/test_dataclass_like.py
-          sed -i "s|test_pydantic_types|_test_pydantic_types|" jsonargparse_tests/test_dataclass_like.py
+          sed -i "s|import pydantic|import pydantic.v1 as pydantic|" jsonargparse_tests/test_pydantic.py
+          sed -i "s|^annotated = .*|annotated = False|" jsonargparse_tests/test_pydantic.py
           pip install "pydantic>=2"
-          pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml jsonargparse_tests/test_dataclass_like.py
+          pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml jsonargparse_tests/test_pydantic.py
           mv coverage.xml coverage_pydantic2.xml
           mv junit.xml junit_pydantic2.xml
       - uses: actions/upload-artifact@v4
