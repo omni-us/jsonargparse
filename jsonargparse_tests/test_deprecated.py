@@ -55,7 +55,7 @@ from jsonargparse_tests.conftest import (
     skip_if_fsspec_unavailable,
     skip_if_requests_unavailable,
 )
-from jsonargparse_tests.test_dataclass_like import DataClassA
+from jsonargparse_tests.test_dataclasses import DataClassA
 from jsonargparse_tests.test_jsonnet import example_2_jsonnet
 
 

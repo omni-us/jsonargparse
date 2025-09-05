@@ -191,7 +191,7 @@ def test_parse_object_simple(parser):
     pytest.raises(ArgumentError, lambda: parser.parse_object({"undefined": True}))
 
 
-def test_parse_object_config(parser):
+def test_parse_object_config(parser, tmp_cwd):
     parser.add_argument("--cfg", action="config")
     parser.add_argument("--a", type=int)
     parser.add_argument("--b", type=int)
