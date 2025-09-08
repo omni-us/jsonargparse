@@ -96,6 +96,7 @@ def parser_context(**kwargs):
 parsing_settings = {
     "validate_defaults": False,
     "parse_optionals_as_positionals": False,
+    "stubs_resolver_allow_py_files": False,
 }
 
 
@@ -107,6 +108,7 @@ def set_parsing_settings(
     docstring_parse_style: Optional["docstring_parser.DocstringStyle"] = None,
     docstring_parse_attribute_docstrings: Optional[bool] = None,
     parse_optionals_as_positionals: Optional[bool] = None,
+    stubs_resolver_allow_py_files: Optional[bool] = None,
 ) -> None:
     """
     Modify settings that affect the parsing behavior.
@@ -129,6 +131,8 @@ def set_parsing_settings(
             --key=value as usual, but also as positional. The extra positionals
             are applied to optionals in the order that they were added to the
             parser. By default, this is False.
+        stubs_resolver_allow_py_files: Whether the stubs resolver should search
+            in ``.py`` files in addition to ``.pyi`` files.
     """
     # validate_defaults
     if isinstance(validate_defaults, bool):
@@ -150,6 +154,11 @@ def set_parsing_settings(
         parsing_settings["parse_optionals_as_positionals"] = parse_optionals_as_positionals
     elif parse_optionals_as_positionals is not None:
         raise ValueError(f"parse_optionals_as_positionals must be a boolean, but got {parse_optionals_as_positionals}.")
+    # stubs resolver
+    if isinstance(stubs_resolver_allow_py_files, bool):
+        parsing_settings["stubs_resolver_allow_py_files"] = stubs_resolver_allow_py_files
+    elif stubs_resolver_allow_py_files is not None:
+        raise ValueError(f"stubs_resolver_allow_py_files must be a boolean, but got {stubs_resolver_allow_py_files}.")
 
 
 def get_parsing_setting(name: str):

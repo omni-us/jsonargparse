@@ -6,6 +6,7 @@ from copy import deepcopy
 from importlib import import_module
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
+from ._common import get_parsing_setting
 from ._optionals import import_typeshed_client, typeshed_client_support
 from ._postponed_annotations import NamesVisitor, get_arg_type
 
@@ -103,7 +104,9 @@ stubs_resolver = None
 def get_stubs_resolver():
     global stubs_resolver
     if not stubs_resolver:
-        stubs_resolver = StubsResolver()
+        allow_py_files = get_parsing_setting("stubs_resolver_allow_py_files")
+        search_context = tc.get_search_context(allow_py_files=allow_py_files)
+        stubs_resolver = StubsResolver(search_context=search_context)
     return stubs_resolver
 
 
@@ -195,10 +198,10 @@ class StubsResolver(tc.Resolver):
             self.add_module_aliases(aliases, module_path, module, stub_ast)
         return module_path, stub_import.info.ast
 
-    def add_module_aliases(self, aliases, module_path, module, node):
+    def add_module_aliases(self, aliases, module_path, module, node, skip=set()):
         names = NamesVisitor().find(node) if node else []
         for name in names:
-            if alias_already_added(aliases, name, module_path):
+            if alias_already_added(aliases, name, module_path) or name in skip:
                 continue
             source = module_path
             if name in __builtins__:
@@ -208,7 +211,7 @@ class StubsResolver(tc.Resolver):
                 value = getattr(module, name)
             elif name in self.get_module_stub_assigns(module_path):
                 value = self.get_module_stub_assigns(module_path)[name]
-                self.add_module_aliases(aliases, module_path, module, value.value)
+                self.add_module_aliases(aliases, module_path, module, value.value, skip={name})
             elif name in self.get_module_stub_imports(module_path):
                 imported_module_path, imported_name = self.get_module_stub_imports(module_path)[name]
                 imported_module = import_module_or_none(imported_module_path)
