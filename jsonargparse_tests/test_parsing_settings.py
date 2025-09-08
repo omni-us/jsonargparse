@@ -175,3 +175,11 @@ def test_optionals_as_positionals_unsupported_arguments(parser):
 
     help_str = get_parse_args_stdout(parser, ["--o1.help=Adam"])
     assert "extra positionals are parsed as optionals in the order shown above" not in help_str
+
+
+# stubs_resolver_allow_py_files
+
+
+def test_set_stubs_resolver_allow_py_files_failure():
+    with pytest.raises(ValueError, match="stubs_resolver_allow_py_files must be a boolean"):
+        set_parsing_settings(stubs_resolver_allow_py_files="invalid")

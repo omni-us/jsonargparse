@@ -51,6 +51,14 @@ def allow_py_files():
         yield
 
 
+@pytest.fixture(params=["allow-py-files-true", "allow-py-files-false"])
+def parametrize_allow_py_files(request):
+    allow_py_files = request.param == "allow-py-files-true"
+    with patch.dict("jsonargparse._common.parsing_settings"):
+        set_parsing_settings(stubs_resolver_allow_py_files=allow_py_files)
+        yield
+
+
 @contextmanager
 def mock_stubs_missing_types():
     with patch("jsonargparse._parameter_resolvers.add_stub_types"):
@@ -130,7 +138,7 @@ def test_get_params_class_with_inheritance():
     assert [("firstweekday", inspect._empty)] == get_param_types(params)
 
 
-def test_get_params_method():
+def test_get_params_method(parametrize_allow_py_files):
     params = get_params(Random, "randint")
     assert [("a", int), ("b", int)] == get_param_types(params)
     with mock_stubs_missing_types():
@@ -166,7 +174,7 @@ def test_get_params_exec_failure(mock_get_stub_types):
     assert [("a", inspect._empty), ("version", inspect._empty)] == get_param_types(params)
 
 
-def test_get_params_classmethod():
+def test_get_params_classmethod(parametrize_allow_py_files):
     params = get_params(TarFile, "open")
     expected = [
         "name",
@@ -208,7 +216,7 @@ def test_get_params_staticmethod():
     assert [("value", inspect._empty)] == get_param_types(params)
 
 
-def test_get_params_function():
+def test_get_params_function(parametrize_allow_py_files):
     params = get_params(ip_network)
     assert ["address", "strict"] == get_param_names(params)
     if sys.version_info >= (3, 10):
