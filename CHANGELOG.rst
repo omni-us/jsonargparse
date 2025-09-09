@@ -12,6 +12,21 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.42.0 (unreleased)
+--------------------
+
+Added
+^^^^^
+- ``set_parsing_settings`` now supports setting ``allow_py_files`` to enable
+  stubs resolver searching in ``.py`` files in addition to ``.pyi`` (`#770
+  <https://github.com/omni-us/jsonargparse/pull/770>`__).
+
+Fixed
+^^^^^
+- Stubs resolver in some cases failing with maximum recursion error (`#770
+  <https://github.com/omni-us/jsonargparse/pull/770>`__).
+
+
 v4.41.0 (2025-09-04)
 --------------------
 
