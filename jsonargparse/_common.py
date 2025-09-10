@@ -171,6 +171,10 @@ def validate_default(container: ActionsContainer, action: argparse.Action):
     if action.default is None or not get_parsing_setting("validate_defaults") or not hasattr(action, "_check_type"):
         return
     try:
+        from ._core import ArgumentGroup
+
+        if isinstance(container, ArgumentGroup):
+            container = container.parser  # type: ignore[assignment]
         with parser_context(parent_parser=container):
             default = action.default
             action.default = None

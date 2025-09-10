@@ -45,6 +45,18 @@ def test_validate_defaults_failure(parser):
         parser.add_argument("--num", type=int, default="x")
 
 
+@dataclass
+class DataWithDefault:
+    param: str = "foo"
+
+
+def test_validate_defaults_dataclass(parser):
+    set_parsing_settings(validate_defaults=True)
+
+    added_args = parser.add_class_arguments(DataWithDefault)
+    assert added_args == ["param"]
+
+
 # parse_optionals_as_positionals
 
 
