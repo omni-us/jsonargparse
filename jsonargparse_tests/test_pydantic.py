@@ -249,9 +249,8 @@ class TestPydanticBasics:
         assert cast(cfg.model.param) == valid_value
         dump = json_or_yaml_load(parser.dump(cfg))
         assert dump == {"model": {"param": valid_value}}
-        with pytest.raises(ArgumentError) as ctx:
+        with pytest.raises(ArgumentError, match='Parser key "model.param"'):
             parser.parse_args([f"--model.param={invalid_value}"])
-        ctx.match("model.param")
 
     @pytest.mark.skipif(not pydantic_supports_field_init, reason="Field.init is required")
     def test_dataclass_field_init_false(self, parser):

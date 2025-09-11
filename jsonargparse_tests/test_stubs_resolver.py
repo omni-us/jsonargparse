@@ -291,6 +291,7 @@ def test_get_params_complex_function_requests_get(parser):
     assert ["url", "params"] == list(parser.get_defaults().keys())
     help_str = get_parser_help(parser)
     assert "default: Unknown<stubs-resolver>" in help_str
+    assert "--cookies.help CLASS_PATH_OR_NAME" in help_str
 
 
 # stubs only resolver tests

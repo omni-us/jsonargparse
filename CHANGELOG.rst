@@ -27,6 +27,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/770>`__).
 - ``dataclass`` with default failing when ``validate_defaults=True`` (`#771
   <https://github.com/omni-us/jsonargparse/pull/771>`__).
+- Misleading error message when a namespace is used in a list comprehension
+  (`#772 <https://github.com/omni-us/jsonargparse/pull/772>`__).
 
 
 v4.41.0 (2025-09-04)

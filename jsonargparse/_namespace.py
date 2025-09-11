@@ -126,6 +126,8 @@ class Namespace(argparse.Namespace):
         Raises:
             KeyError: When given invalid key.
         """
+        if not isinstance(key, str):
+            raise NSKeyError(f"Key must be a string, got: {key!r}.")
         if " " in key:
             raise NSKeyError(f'Spaces not allowed in keys: "{key}".')
         key_split = split_key(key)
@@ -292,9 +294,9 @@ class Namespace(argparse.Namespace):
                 self[key] = value
         else:
             prefix = key + "." if key else ""
-            for key, val in value.items():
-                if not only_unset or prefix + key not in self:
-                    self[prefix + key] = val
+            for subkey, subval in value.items():
+                if not only_unset or prefix + subkey not in self:
+                    self[prefix + subkey] = subval
         return self
 
     def get(self, key: str, default: Any = None) -> Any:

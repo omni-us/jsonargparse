@@ -154,17 +154,16 @@ example:
 
 .. code-block::
 
-    v4.28.0 (2024-03-??)
+    v4.28.0 (unreleased)
     --------------------
 
     Added
     ^^^^^
     -
 
-If no such section exists, just add it. New sections should include ``-??`` in
-the date to illustrate that the release date is not known yet. Have a look at
-previous releases to decide under which subsection the new entry should go. If
-you are unsure, ask in the pull request.
+If no such section exists, just add it with "(unreleased)" instead of a date.
+Have a look at previous releases to decide under which subsection the new entry
+should go. If you are unsure, ask in the pull request.
 
 Please don't open pull requests with breaking changes unless this has been
 discussed and agreed upon in an issue.
