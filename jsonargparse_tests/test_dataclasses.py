@@ -646,7 +646,16 @@ if type_alias_type:
     class DataClassWithAliasType:
         p1: IntOrString  # type: ignore[valid-type]
 
-    def test_bare_alias_type(parser):
+    if annotated:
+
+        @dataclasses.dataclass
+        class DataClassWithAnnotatedAliasType:
+            p1: annotated[IntOrString, 1]  # type: ignore[valid-type]
+
+
+@pytest.mark.skipif(not type_alias_type, reason="TypeAliasType is required")
+class TestTypeAliasType:
+    def test_bare_alias_type(self, parser):
         parser.add_argument("--data", type=IntOrString)
         help_str = get_parser_help(parser)
         help_str_lines = [line for line in help_str.split("\n") if "type: IntOrString" in line]
@@ -657,7 +666,7 @@ if type_alias_type:
         cfg = parser.parse_args(["--data=3"])
         assert cfg.data == 3
 
-    def test_dataclass_with_alias_type(parser):
+    def test_dataclass_with_alias_type(self, parser):
         parser.add_argument("--data", type=DataClassWithAliasType)
         help_str = get_parser_help(parser)
         help_str_lines = [line for line in help_str.split("\n") if "type: IntOrString" in line]
@@ -669,7 +678,7 @@ if type_alias_type:
         assert cfg.data.p1 == 3
 
     @pytest.mark.skipif(not annotated, reason="Annotated is required")
-    def test_annotated_alias_type(parser):
+    def test_annotated_alias_type(self, parser):
         parser.add_argument("--data", type=annotated[IntOrString, 1])
         help_str = get_parser_help(parser)
         help_str_lines = [line for line in help_str.split("\n") if "type: Annotated[IntOrString, 1]" in line]
@@ -680,14 +689,8 @@ if type_alias_type:
         cfg = parser.parse_args(["--data=3"])
         assert cfg.data == 3
 
-    if annotated:
-
-        @dataclasses.dataclass
-        class DataClassWithAnnotatedAliasType:
-            p1: annotated[IntOrString, 1]  # type: ignore[valid-type]
-
     @pytest.mark.skipif(not annotated, reason="Annotated is required")
-    def test_dataclass_with_annotated_alias_type(parser):
+    def test_dataclass_with_annotated_alias_type(self, parser):
         parser.add_argument("--data", type=DataClassWithAnnotatedAliasType)
         help_str = get_parser_help(parser)
         # The printable field datatype is not uniform across versions.

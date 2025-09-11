@@ -720,7 +720,7 @@ def test_valid_unpack_typeddict(parser, init_args):
     if test_config["test"]["init_args"].get("b") is None:
         # parser.dump does not dump null b
         test_config["test"]["init_args"].pop("b", None)
-    assert json.dumps({"testclass": test_config}).replace(" ", "") == parser.dump(cfg, format="json")
+    assert test_config == json.loads(parser.dump(cfg, format="json"))["testclass"]
 
 
 @pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")
@@ -743,7 +743,7 @@ def test_valid_inherited_unpack_typeddict(parser, init_args):
     if test_config["init_args"].get("b") is None:
         # parser.dump does not dump null b
         test_config["init_args"].pop("b", None)
-    assert json.dumps({"testclass": test_config}).replace(" ", "") == parser.dump(cfg, format="json")
+    assert test_config == json.loads(parser.dump(cfg, format="json"))["testclass"]
 
 
 @pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")

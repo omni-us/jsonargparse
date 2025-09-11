@@ -6,7 +6,7 @@ import platform
 import pytest
 
 from jsonargparse import Namespace, dict_to_namespace
-from jsonargparse._namespace import meta_keys
+from jsonargparse._namespace import NSKeyError, meta_keys
 
 skip_if_no_setattr_insertion_order = pytest.mark.skipif(
     platform.python_implementation() != "CPython",
@@ -149,6 +149,12 @@ def test_values_generator():
     ns["p.q.r"] = {"x": 4, "y": 5}
     values = list(ns.values())
     assert values == [1, 2, 3, {"x": 4, "y": 5}]
+
+
+def test_non_str_keys():
+    ns = Namespace(a=Namespace(b=Namespace(c=1)))
+    with pytest.raises(NSKeyError, match="Key must be a string, got: 0"):
+        [x for x in ns.a.b]
 
 
 def test_namespace_from_dict():

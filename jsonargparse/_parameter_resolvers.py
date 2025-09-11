@@ -710,19 +710,19 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 subclass_types = get_subclass_types(param.annotation, callable_return=True)
                 if not (class_type and subclass_types and is_subclass(class_type, subclass_types)):
                     continue
-                subclass_spec: dict = {"class_path": get_import_path(class_type), "init_args": {}}
+                default: dict = {"class_path": get_import_path(class_type), "init_args": {}}
                 for kwarg in node.keywords:
                     if kwarg.arg and ast_is_constant(kwarg.value):
-                        subclass_spec["init_args"][kwarg.arg] = ast_get_constant_value(kwarg.value)
+                        default["init_args"][kwarg.arg] = ast_get_constant_value(kwarg.value)
                     else:
-                        subclass_spec.clear()
+                        default.clear()
                         break
-                if not subclass_spec or len(node.args) - num_positionals > 0:
+                if not default or len(node.args) - num_positionals > 0:
                     self.log_debug(f"unsupported class instance default: {ast_str(default_node)}")
-                elif subclass_spec:
-                    if not subclass_spec["init_args"]:
-                        del subclass_spec["init_args"]
-                    param.default = subclass_spec
+                elif default:
+                    if not default["init_args"]:
+                        del default["init_args"]
+                    param.default = default
 
     def get_call_class_type(self, node) -> Optional[type]:
         names = ast_get_name_and_attrs(getattr(node, "func", None))
