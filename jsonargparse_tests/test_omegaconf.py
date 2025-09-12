@@ -176,3 +176,20 @@ def test_omegaconf_global_path_preserve_relative(parser, tmp_cwd):
     with parser_context(path_dump_preserve_relative=True):
         dump = yaml.safe_load(parser.dump(cfg))["nested"]["path"]
     assert dump == {"relative": "file", "cwd": str(tmp_cwd / subdir)}
+
+
+@skip_if_omegaconf_unavailable
+def test_omegaconf_inf_nan(parser):
+    parser.parser_mode = "omegaconf+"
+    parser.add_argument("--a", type=float, default=0.0)
+    parser.add_argument("--b", type=float, default=1.0)
+    parser.add_argument("--c", type=float, default=float("nan"))
+    parser.add_argument("--d", type=float, default=float("inf"))
+    parser.add_argument("--e", type=float, default=float("-inf"))
+
+    cfg = parser.parse_args(["--a=2.5", "--b=${a}"])
+    assert cfg.a == 2.5
+    assert cfg.b == 2.5
+    assert math.isnan(cfg.c)
+    assert cfg.d == float("inf")
+    assert cfg.e == float("-inf")
