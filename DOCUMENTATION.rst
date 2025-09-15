@@ -2475,7 +2475,10 @@ limitations of the ``omegaconf`` mode mentioned earlier. Instead of applying
 OmegaConf resolvers to each YAML config individually, the resolving is performed
 once at the end of the parsing process. As a result, in nested sub-configs,
 references to nodes must be either relative or parser-level absolute to function
-correctly.
+correctly. Alternatively, you can
+``set_parsing_settings(omegaconf_absolute_to_relative_paths=True)`` to enable
+automatic conversion of absolute paths to relative ones during parsing. However,
+this automatic conversion does not work for every possible case.
 
 Based on community feedback, this mode may become the default ``omegaconf`` mode
 in version 5.0.0. This change would introduce a breaking modification, as

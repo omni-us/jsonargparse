@@ -2,10 +2,12 @@
 
 import inspect
 import os
+import re
 from contextlib import contextmanager
+from copy import deepcopy
 from importlib.metadata import version
 from importlib.util import find_spec
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 __all__ = [
     "_get_config_read_mode",
@@ -266,7 +268,7 @@ def get_doc_short_description(function_or_class, method_name=None, logger=None):
     return None
 
 
-def get_omegaconf_loader():
+def get_omegaconf_loader(mode):
     """Returns a yaml loader function based on OmegaConf which supports variable interpolation."""
     import io
 
@@ -274,6 +276,22 @@ def get_omegaconf_loader():
 
     with missing_package_raise("omegaconf", "get_omegaconf_loader"):
         from omegaconf import OmegaConf
+
+    assert mode in {"omegaconf", "omegaconf+"}
+
+    if mode == "omegaconf+":
+        from ._common import get_parsing_setting
+
+        if not get_parsing_setting("omegaconf_absolute_to_relative_paths"):
+            return yaml_load
+
+        def omegaconf_plus_load(value):
+            value = yaml_load(value)
+            if isinstance(value, dict):
+                value = omegaconf_absolute_to_relative_paths(value)
+            return value
+
+        return omegaconf_plus_load
 
     def omegaconf_load(value):
         value_pyyaml = yaml_load(value)
@@ -300,6 +318,57 @@ def omegaconf_apply(parser, cfg):
     cfg_omegaconf = OmegaConf.create(cfg_dict)
     cfg_dict = OmegaConf.to_container(cfg_omegaconf, resolve=True)
     return parser._apply_actions(cfg_dict)
+
+
+def omegaconf_tokenize(path: str) -> List[str]:
+    """Very small tokenizer: 'a.b[0].c' -> ['a','b','0','c']."""
+    return [t for t in path.replace("]", "").replace("[", ".").split(".") if t]
+
+
+def omegaconf_tokens_to_path(tokens: List[str]) -> str:
+    """Render tokens back to a normalized path: ['a','0','b'] -> 'a[0].b'."""
+    s = ""
+    for t in tokens:
+        if t.isdigit():
+            s += f"[{t}]"
+        else:
+            s += ("" if s == "" else ".") + t
+    return s
+
+
+def omegaconf_absolute_to_relative_paths(data: dict) -> dict:
+    """
+    Return a new nested dict/list where absolute ${...} interpolations
+    are rewritten to relative form from the node where they appear.
+    """
+    data = deepcopy(data)
+
+    regex_absolute_path = re.compile(r"\$\{([a-zA-Z][a-zA-Z0-9[\]_.]*)\}")
+
+    def _walk(node, current_path: List[Union[str, int]]):
+        if isinstance(node, dict):
+            return {k: _walk(v, current_path + [k]) for k, v in node.items()}
+        if isinstance(node, list):
+            return [_walk(v, current_path + [i]) for i, v in enumerate(node)]
+
+        if isinstance(node, str):
+
+            def _replace(m: re.Match) -> str:
+                dst_tokens = omegaconf_tokenize(m.group(1))
+                # compute common prefix length
+                i = 0
+                while i < len(current_path) and i < len(dst_tokens) and str(current_path[i]) == dst_tokens[i]:
+                    i += 1
+                up = max(1, len(current_path) - i)
+                dots = "." * up
+                down = omegaconf_tokens_to_path(dst_tokens[i:])
+                return "${" + dots + down + "}"
+
+            return regex_absolute_path.sub(_replace, node)
+
+        return node
+
+    return _walk(data, [])
 
 
 annotated_alias = typing_extensions_import("_AnnotatedAlias")
