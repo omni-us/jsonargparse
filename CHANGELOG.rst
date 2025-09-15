@@ -20,6 +20,10 @@ Added
 - ``set_parsing_settings`` now supports setting ``allow_py_files`` to enable
   stubs resolver searching in ``.py`` files in addition to ``.pyi`` (`#770
   <https://github.com/omni-us/jsonargparse/pull/770>`__).
+- ``set_parsing_settings`` now supports ``omegaconf_absolute_to_relative_paths``
+  to enable backward compatibility of ``omegaconf+`` parser mode by converting
+  absolute paths to relative in interpolations (`#774
+  <https://github.com/omni-us/jsonargparse/pull/774>`__).
 
 Fixed
 ^^^^^
