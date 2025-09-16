@@ -195,3 +195,11 @@ def test_optionals_as_positionals_unsupported_arguments(parser):
 def test_set_stubs_resolver_allow_py_files_failure():
     with pytest.raises(ValueError, match="stubs_resolver_allow_py_files must be a boolean"):
         set_parsing_settings(stubs_resolver_allow_py_files="invalid")
+
+
+# omegaconf_absolute_to_relative_paths
+
+
+def test_set_omegaconf_absolute_to_relative_paths_failure():
+    with pytest.raises(ValueError, match="omegaconf_absolute_to_relative_paths must be a boolean"):
+        set_parsing_settings(omegaconf_absolute_to_relative_paths="invalid")
