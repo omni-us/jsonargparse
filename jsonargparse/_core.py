@@ -43,7 +43,7 @@ from ._common import (
     class_instantiators,
     debug_mode_active,
     get_optionals_as_positionals_actions,
-    is_dataclass_like,
+    is_not_subclass_type,
     lenient_check,
     parser_context,
     supports_optionals_as_positionals,
@@ -132,7 +132,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
                 return ActionParser._move_parser_actions(parser, args, kwargs)
             ActionConfigFile._ensure_single_config_argument(self, kwargs["action"])
         if "type" in kwargs:
-            if is_dataclass_like(kwargs["type"]):
+            if is_not_subclass_type(kwargs["type"]):
                 nested_key = args[0].lstrip("-")
                 self.add_class_arguments(kwargs.pop("type"), nested_key, **kwargs)
                 return _find_action(parser, nested_key)
@@ -1236,9 +1236,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         """
         components: List[Union[ActionTypeHint, _ActionConfigLoad, ArgumentGroup]] = []
         for action in filter_default_actions(self._actions):
-            if isinstance(action, ActionTypeHint) or (
-                isinstance(action, _ActionConfigLoad) and is_dataclass_like(action.basetype)
-            ):
+            if isinstance(action, ActionTypeHint):
                 components.append(action)
 
         if instantiate_groups:

@@ -12,12 +12,12 @@ from ._common import (
     get_class_instantiator,
     get_generic_origin,
     get_unaliased_type,
-    is_dataclass_like,
     is_final_class,
+    is_not_subclass_type,
     is_subclass,
 )
 from ._namespace import Namespace
-from ._optionals import attrs_support, get_doc_short_description, is_pydantic_model, pydantic_support
+from ._optionals import attrs_support, get_doc_short_description, is_attrs_class, is_pydantic_model, pydantic_support
 from ._parameter_resolvers import ParamData, get_parameter_origins, get_signature_parameters
 from ._typehints import (
     ActionTypeHint,
@@ -25,6 +25,7 @@ from ._typehints import (
     callable_instances,
     get_subclass_names,
     is_optional,
+    is_subclass_spec,
     not_required_types,
 )
 from ._util import NoneType, get_private_kwargs, get_typehint_origin, iter_to_set_str
@@ -86,7 +87,7 @@ class SignatureArguments(LoggerProperty):
             or (isinstance(default, LazyInitBaseClass) and isinstance(default, unaliased_class_type))
             or (
                 not is_final_class(default.__class__)
-                and is_dataclass_like(default.__class__)
+                and is_not_subclass_type(default.__class__)
                 and isinstance(default, unaliased_class_type)
             )
         ):
@@ -120,15 +121,15 @@ class SignatureArguments(LoggerProperty):
             defaults = default
             if isinstance(default, LazyInitBaseClass):
                 defaults = default.lazy_get_init_args().as_dict()
-            elif is_dataclass_like(default.__class__):
-                defaults = dataclass_to_dict(default)
+            elif is_convertible_to_dict(default.__class__):
+                defaults = convert_to_dict(default)
                 args = {k[len(prefix) :] for k in added_args}
                 skip_not_added = [k for k in defaults if k not in args]
                 if skip_not_added:
                     skip.update(skip_not_added)  # skip init=False
-            elif isinstance(default, Namespace):
-                defaults = default.as_dict()
             if defaults:
+                if is_subclass_spec(defaults):
+                    defaults = defaults.get("init_args", {})
                 defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
                 self.set_defaults(**defaults)  # type: ignore[attr-defined]
 
@@ -389,7 +390,7 @@ class SignatureArguments(LoggerProperty):
         elif not as_positional or is_non_positional:
             kwargs["required"] = True
         is_subclass_typehint = False
-        is_dataclass_like_typehint = is_dataclass_like(annotation)
+        is_not_subclass_typehint = is_not_subclass_type(annotation)
         dest = (nested_key + "." if nested_key else "") + name
         args = [dest if is_required and as_positional and not is_non_positional else "--" + dest]
         if param.origin:
@@ -407,7 +408,7 @@ class SignatureArguments(LoggerProperty):
         if (
             annotation in {str, int, float, bool}
             or is_subclass(annotation, (str, int, float))
-            or is_dataclass_like_typehint
+            or is_not_subclass_typehint
         ):
             kwargs["type"] = annotation
             register_pydantic_type(annotation)
@@ -441,7 +442,7 @@ class SignatureArguments(LoggerProperty):
                 "sub_configs": sub_configs,
                 "instantiate": instantiate,
             }
-            if is_dataclass_like_typehint:
+            if is_not_subclass_typehint:
                 kwargs.update(sub_add_kwargs)
             with ActionTypeHint.allow_default_instance_context():
                 action = container.add_argument(*args, **kwargs)
@@ -492,8 +493,6 @@ class SignatureArguments(LoggerProperty):
         Raises:
             ValueError: When given an invalid base class.
         """
-        if is_dataclass_like(baseclass):
-            raise ValueError("Not allowed for dataclass-like classes.")
         if type(baseclass) is not tuple:
             baseclass = (baseclass,)  # type: ignore[assignment]
         if not baseclass or not all(ActionTypeHint.is_subclass_typehint(c, also_lists=True) for c in baseclass):
@@ -590,7 +589,11 @@ def is_factory_class(value):
     return value.__class__ == dataclasses._HAS_DEFAULT_FACTORY_CLASS
 
 
-def dataclass_to_dict(value) -> dict:
+def is_convertible_to_dict(value):
+    return dataclasses.is_dataclass(value) or is_attrs_class(value) or is_pydantic_model(value)
+
+
+def convert_to_dict(value) -> dict:
     if pydantic_support:
         pydantic_model = is_pydantic_model(type(value))
         if pydantic_model:
@@ -602,6 +605,7 @@ def dataclass_to_dict(value) -> dict:
         is_attrs_dataclass = attrs.has(type(value))
         if is_attrs_dataclass:
             return attrs.asdict(value)
+
     return dataclasses.asdict(value)
 
 

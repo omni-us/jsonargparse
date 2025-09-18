@@ -52,7 +52,9 @@ from ._actions import (
 from ._common import (
     get_class_instantiator,
     get_unaliased_type,
-    is_dataclass_like,
+    is_generic_class,
+    is_instance,
+    is_not_subclass_type,
     is_subclass,
     lenient_check,
     nested_links,
@@ -259,13 +261,13 @@ class ActionTypeHint(Action):
             self.default = self.normalize_default(self.default)
 
     def normalize_default(self, default):
+        from ._signatures import convert_to_dict, is_convertible_to_dict
+
         is_subclass_type = self.is_subclass_typehint(self._typehint, all_subtypes=False)
         if isinstance(default, LazyInitBaseClass):
-            default = default.lazy_get_init_data()
-        elif is_dataclass_like(default.__class__):
-            from ._signatures import dataclass_to_dict
-
-            default = dataclass_to_dict(default)
+            default = default.lazy_get_init_data().as_dict()
+        elif is_convertible_to_dict(default.__class__):
+            default = convert_to_dict(default)
         elif is_subclass_type and isinstance(default, dict) and "class_path" in default:
             default = subclass_spec_as_namespace(default)
             default.class_path = normalize_import_path(default.class_path, self._typehint)
@@ -313,7 +315,6 @@ class ActionTypeHint(Action):
             or get_typehint_origin(typehint) in root_types
             or get_registered_type(typehint) is not None
             or is_subclass(typehint, Enum)
-            or is_dataclass_like(typehint)
             or ActionTypeHint.is_subclass_typehint(typehint)
         )
         if full and supported:
@@ -475,7 +476,7 @@ class ActionTypeHint(Action):
             )
 
         with ActionTypeHint.sub_defaults_context(), parent_parsers_context(None, None):
-            parser._apply_actions(cfg, skip_fn=skip_sub_defaults_apply)
+            parser._apply_actions(cfg, skip_fn=skip_sub_defaults_apply, prev_cfg=cfg.clone())
 
     @staticmethod
     def supports_append(action):
@@ -641,8 +642,6 @@ class ActionTypeHint(Action):
         kwargs = dict(sub_add_kwargs) if sub_add_kwargs else {}
         if skip_args:
             kwargs.setdefault("skip", set()).update(skip_args)
-        if is_subclass_spec(kwargs.get("default")):
-            kwargs["default"] = kwargs["default"].get("init_args")
         parser = parent_parser.get()
         from ._core import ArgumentParser
 
@@ -749,7 +748,6 @@ def adapt_typehints(
     prev_val=None,
     orig_val=None,
     append=False,
-    list_item=False,
     enable_path=False,
     sub_add_kwargs=None,
     default=None,
@@ -845,7 +843,7 @@ def adapt_typehints(
     # Union
     elif typehint_origin == Union:
         vals = []
-        sorted_subtypes = sort_subtypes_for_union(subtypehints, val, append)
+        sorted_subtypes = sort_subtypes_for_union(subtypehints, val, prev_val, append)
         for subtype in sorted_subtypes:
             try:
                 vals.append(adapt_typehints(val, subtype, **adapt_kwargs))
@@ -909,7 +907,7 @@ def adapt_typehints(
                 else:
                     adapt_kwargs_n = deepcopy(adapt_kwargs)
                 with change_to_path_dir(list_path):
-                    val[n] = adapt_typehints(v, subtypehints[0], list_item=True, **adapt_kwargs_n)
+                    val[n] = adapt_typehints(v, subtypehints[0], **adapt_kwargs_n)
 
     # Dict, Mapping
     elif typehint_origin in mapping_origin_types:
@@ -1035,29 +1033,8 @@ def adapt_typehints(
             except (ImportError, AttributeError, ArgumentError) as ex:
                 raise_unexpected_value(f"Type {typehint} expects a function or a callable class: {ex}", val, ex)
 
-    # Dataclass-like
-    elif is_dataclass_like(typehint):
-        if isinstance(prev_val, (dict, Namespace)):
-            assert isinstance(sub_add_kwargs, dict)
-            sub_add_kwargs["default"] = prev_val
-        parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs=sub_add_kwargs)
-        if instantiate_classes:
-            init_args = parser.instantiate_classes(val)
-            return typehint(**init_args)
-        if serialize:
-            val = load_value(parser.dump(val, **dump_kwargs.get()))
-        elif isinstance(val, (dict, Namespace)):
-            if is_subclass_spec(val) and get_import_path(typehint) == val.get("class_path"):
-                val = val.get("init_args")
-            val = parser.parse_object(val, defaults=sub_defaults.get() or list_item)
-        elif isinstance(val, NestedArg):
-            prev_val = prev_val if isinstance(prev_val, Namespace) else None
-            val = parser.parse_args([f"--{val.key}={val.val}"], namespace=prev_val)
-        else:
-            raise_unexpected_value(f"Type {typehint} expects a dict or Namespace", val)
-
     # Subclass
-    elif not hasattr(typehint, "__origin__") and inspect.isclass(typehint):
+    elif inspect.isclass(typehint_origin):
         if is_instance_or_supports_protocol(val, typehint):
             if serialize:
                 val = serialize_class_instance(val)
@@ -1068,12 +1045,21 @@ def adapt_typehints(
         prev_implicit_defaults = False
         if prev_val is None and not inspect.isabstract(typehint) and not is_protocol(typehint):
             with suppress(ValueError):
-                prev_val = Namespace(class_path=get_import_path(typehint))  # implicit class_path
+                # implicit prev_val class_path
+                prev_val = Namespace(class_path=get_import_path(typehint))
                 if parse_kwargs.get().get("defaults") is True:
                     prev_implicit_defaults = True
 
+        if isinstance(prev_val, (dict, Namespace)) and "class_path" not in prev_val:
+            # implicit prev_val class_path and init_args
+            prev_val = Namespace(class_path=get_import_path(typehint), init_args=Namespace(prev_val))
+
         val_input = val
         val = subclass_spec_as_namespace(val, prev_val)
+        if val and not is_subclass_spec(val) and "init_args" not in val:
+            # implicit val class_path
+            val = Namespace(class_path=get_import_path(typehint), init_args=val)
+
         if not is_subclass_spec(val):
             msg = "Does not implement protocol" if is_protocol(typehint) else "Not a valid subclass of"
             raise_unexpected_value(
@@ -1081,7 +1067,8 @@ def adapt_typehints(
                 "Subclass types expect one of:\n"
                 "- a class path (str)\n"
                 "- a dict with class_path entry\n"
-                "- a dict without class_path but with init_args entry (class path given previously)"
+                "- a dict without class_path but with init_args entry (class path given previously)\n"
+                "- a dict with parameters accepted by the base class (implicit class_path)"
             )
 
         try:
@@ -1111,7 +1098,14 @@ def adapt_typehints(
                 msg = "implement protocol" if is_protocol(typehint) else "correspond to a subclass of"
                 raise_unexpected_value(f"Import path {val['class_path']} does not {msg} {typehint.__name__}")
             val["class_path"] = class_path
-            val = adapt_class_type(val, serialize, instantiate_classes, sub_add_kwargs, prev_val=prev_val)
+            val = adapt_class_type(
+                val,
+                serialize,
+                instantiate_classes,
+                sub_add_kwargs,
+                prev_val=prev_val,
+                typehint=typehint,
+            )
         except (ImportError, AttributeError, AssertionError, ArgumentError) as ex:
             class_path = val if isinstance(val, str) else val["class_path"]
             error = indent_text(str(ex))
@@ -1184,7 +1178,7 @@ def is_subclass_or_implements_protocol(value, class_type) -> bool:
 def is_instance_or_supports_protocol(value, class_type):
     if is_protocol(class_type):
         return is_subclass_or_implements_protocol(value.__class__, class_type)
-    return isinstance(value, class_type)
+    return is_instance(value, class_type)
 
 
 def is_instance_factory_protocol(class_type, logger=None):
@@ -1251,13 +1245,15 @@ def get_callable_return_type(typehint):
 
 def is_single_subclass_typehint(typehint, typehint_origin):
     return (
-        inspect.isclass(typehint)
+        (
+            (inspect.isclass(typehint) and typehint_origin is None)
+            or (is_generic_class(typehint) and inspect.isclass(typehint.__origin__))
+        )
         and typehint not in leaf_or_root_types
         and not get_registered_type(typehint)
         and not is_pydantic_type(typehint)
-        and not is_dataclass_like(typehint)
-        and typehint_origin is None
         and not is_subclass(typehint, (Path, Enum))
+        and getattr(typehint_origin, "__module__", "") != "builtins"
     )
 
 
@@ -1417,10 +1413,21 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
             )
 
 
-def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev_val=None, partial_skip_args=None):
+def adapt_class_type(
+    value,
+    serialize,
+    instantiate_classes,
+    sub_add_kwargs,
+    prev_val=None,
+    partial_skip_args=None,
+    typehint=None,
+):
     prev_val = subclass_spec_as_namespace(prev_val)
     value = subclass_spec_as_namespace(value)
-    val_class = import_object(value.class_path)
+    if is_generic_class(typehint):
+        val_class = typehint
+    else:
+        val_class = import_object(value.class_path)
     parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs, skip_args=partial_skip_args)
 
     # No need to re-create the linked arg but just "inform" the corresponding parser actions that it exists upstream.
@@ -1495,6 +1502,10 @@ def adapt_class_type(value, serialize, instantiate_classes, sub_add_kwargs, prev
                 with suppress(get_loader_exceptions()):
                     val = load_value(val, simple_types=True)
             value["dict_kwargs"][key] = val
+
+    if is_not_subclass_type(typehint) and value.class_path == get_import_path(typehint):
+        value = Namespace({**value.get("init_args", {}), **value.get("dict_kwargs", {})})
+
     return value
 
 
@@ -1520,7 +1531,7 @@ def adapt_classes_any(val, serialize, instantiate_classes, sub_add_kwargs):
     return val
 
 
-def sort_subtypes_for_union(subtypes, val, append):
+def sort_subtypes_for_union(subtypes, val, prev_val, append):
     if len(subtypes) > 1:
         if isinstance(val, str):
             key_fn = lambda x: (
@@ -1530,8 +1541,12 @@ def sort_subtypes_for_union(subtypes, val, append):
         else:
             key_fn = lambda x: x != NoneType
         subtypes = sorted(subtypes, key=key_fn)
-        if append:
-            subtypes = sorted(subtypes, key=lambda x: get_typehint_origin(x) not in sequence_origin_types)
+        if append or (isinstance(prev_val, list) and isinstance(val, NestedArg)):
+            key_fn = lambda x: (
+                x != NoneType,
+                get_typehint_origin(x) not in sequence_origin_types,
+            )
+            subtypes = sorted(subtypes, key=key_fn)
     return subtypes
 
 

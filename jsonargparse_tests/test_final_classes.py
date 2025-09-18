@@ -32,5 +32,4 @@ def test_add_class_final(parser):
 
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--b.b2={"bad": "value"}']))
     pytest.raises(ArgumentError, lambda: parser.parse_args(['--b.b2="bad"']))
-    pytest.raises(ValueError, lambda: parser.add_subclass_arguments(FinalClass, "a"))
     pytest.raises(ValueError, lambda: parser.add_class_arguments(FinalClass, "a", default=FinalClass()))

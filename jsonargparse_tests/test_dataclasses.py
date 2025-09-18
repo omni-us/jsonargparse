@@ -23,6 +23,7 @@ from jsonargparse._optionals import (
 )
 from jsonargparse.typing import PositiveFloat, PositiveInt
 from jsonargparse_tests.conftest import (
+    get_parse_args_stdout,
     get_parser_help,
     json_or_yaml_load,
     skip_if_docstring_parser_unavailable,
@@ -55,10 +56,6 @@ class DataClassB:
 
     b1: PositiveFloat = PositiveFloat(3.0)
     b2: DataClassA = DataClassA(a2="x")
-
-
-class MixedClass(int, DataClassA):
-    """MixedClass description"""
 
 
 def test_add_class_arguments(parser, subtests):
@@ -96,8 +93,6 @@ def test_add_class_arguments(parser, subtests):
             parser.add_class_arguments(1, "c")
         with pytest.raises(NSKeyError, match='No action for key "c.b2.b1" to set its default'):
             parser.add_class_arguments(DataClassB, "c", default=DataClassB(b2=DataClassB()))
-        with pytest.raises(ValueError):
-            parser.add_class_arguments(MixedClass, "c")
 
 
 @dataclasses.dataclass
@@ -238,7 +233,7 @@ def test_list_append_defaults(parser):
 def test_add_argument_dataclass_type(parser):
     parser.add_argument("--b", type=DataClassB, default=DataClassB(b1=7.0))
     cfg = parser.get_defaults()
-    assert {"b1": 7.0, "b2": {"a1": 1, "a2": "x"}} == cfg.b.as_dict()
+    assert Namespace(b1=7.0, b2=Namespace(a1=1, a2="x")) == cfg.b
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.b, DataClassB)
     assert isinstance(init.b.b2, DataClassA)
@@ -599,9 +594,6 @@ def test_generic_dataclass_subclass(parser):
     assert isinstance(init.x.children[1], GenericChild)
 
 
-# union mixture tests
-
-
 @dataclasses.dataclass
 class UnionData:
     data_a: int = 1
@@ -637,6 +629,31 @@ def test_class_path_union_mixture_dataclass_and_class(parser, union_type):
     assert isinstance(init.union, UnionClass)
     assert init.union.prm_1 == 1.2
     assert json_or_yaml_load(parser.dump(cfg))["union"] == value
+
+
+def test_class_path_union_dataclasses(parser):
+    parser.add_argument("--union", type=Union[Data, SingleParamChange, UnionData])
+
+    value = {"class_path": f"{__name__}.UnionData", "init_args": {"data_a": 2, "data_b": "x"}}
+    cfg = parser.parse_args([f"--union={json.dumps(value)}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.union, UnionData)
+    assert dataclasses.asdict(init.union) == {"data_a": 2, "data_b": "x"}
+    assert json_or_yaml_load(parser.dump(cfg))["union"] == value["init_args"]
+
+    value = {"class_path": f"{__name__}.SingleParamChange", "init_args": {"p1": 2}}
+    cfg = parser.parse_args([f"--union={json.dumps(value)}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.union, SingleParamChange)
+    assert dataclasses.asdict(init.union) == {"p1": 2, "p2": 0}
+    assert json_or_yaml_load(parser.dump(cfg))["union"] == {"p1": 2, "p2": 0}
+
+    value = {"class_path": f"{__name__}.Data", "init_args": {"p1": "x"}}
+    cfg = parser.parse_args([f"--union={json.dumps(value)}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.union, Data)
+    assert dataclasses.asdict(init.union) == {"p1": "x", "p2": 0}
+    assert json_or_yaml_load(parser.dump(cfg))["union"] == {"p1": "x", "p2": 0}
 
 
 if type_alias_type:
@@ -701,3 +718,137 @@ class TestTypeAliasType:
         assert cfg.data.p1 == "MyString"
         cfg = parser.parse_args(["--data.p1=3"])
         assert cfg.data.p1 == 3
+
+
+@dataclasses.dataclass
+class DataMain:
+    p1: int = 1
+
+
+@dataclasses.dataclass
+class DataSub(DataMain):
+    p2: str = "-"
+
+
+def test_dataclass_not_subclass(parser):
+    parser.add_argument("--data", type=DataMain, default=DataMain(p1=2))
+
+    help_str = get_parser_help(parser)
+    assert "--data.help [CLASS_PATH_OR_NAME]" not in help_str
+
+    config = {"class_path": f"{__name__}.DataSub", "init_args": {"p2": "y"}}
+    with pytest.raises(ArgumentError, match="Group 'data' does not accept nested key 'init_args.p2'"):
+        parser.parse_args([f"--data={json.dumps(config)}"])
+
+
+@pytest.fixture
+def subclass_behavior():
+    with patch.dict("jsonargparse._common.not_subclass_type_selectors") as not_subclass_type_selectors:
+        not_subclass_type_selectors.pop("dataclass")
+        yield
+
+
+def test_dataclass_argument_as_subclass(parser, subtests, subclass_behavior):
+    parser.add_argument("--data", type=DataMain, default=DataMain(p1=2))
+
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        assert "--data.help [CLASS_PATH_OR_NAME]" in help_str
+        assert f"{__name__}.DataMain" in help_str
+        assert f"{__name__}.DataSub" in help_str
+
+    with subtests.test("defaults"):
+        defaults = parser.get_defaults()
+        dump = json_or_yaml_load(parser.dump(defaults))["data"]
+        assert dump == {"class_path": f"{__name__}.DataMain", "init_args": {"p1": 2}}
+
+    with subtests.test("sub-param"):
+        config = {"class_path": f"{__name__}.DataSub", "init_args": {"p2": "y"}}
+        cfg = parser.parse_args([f"--data={json.dumps(config)}"])
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.data, DataSub)
+        assert dataclasses.asdict(init.data) == {"p1": 2, "p2": "y"}
+        dump = json_or_yaml_load(parser.dump(cfg))["data"]
+        assert dump == {"class_path": f"{__name__}.DataSub", "init_args": {"p1": 2, "p2": "y"}}
+
+    with subtests.test("sub-default"):
+        config = {"class_path": "DataSub", "init_args": {"p1": 4}}
+        cfg = parser.parse_args([f"--data={json.dumps(config)}"])
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.data, DataSub)
+        assert dataclasses.asdict(init.data) == {"p1": 4, "p2": "-"}
+
+    with subtests.test("mixed params"):
+        config = {"class_path": f"{__name__}.DataSub", "init_args": {"p1": 3, "p2": "x"}}
+        cfg = parser.parse_args([f"--data={json.dumps(config)}"])
+        assert cfg.data == Namespace(class_path=f"{__name__}.DataSub", init_args=Namespace(p1=3, p2="x"))
+        assert cfg.data.init_args.p1 == 3
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.data, DataSub)
+        assert dataclasses.asdict(init.data) == {"p1": 3, "p2": "x"}
+
+    with subtests.test("empty init_args"):
+        config = {"class_path": f"{__name__}.DataSub", "init_args": {}}
+        cfg = parser.parse_args([f"--data={json.dumps(config)}"])
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.data, DataSub)
+        assert dataclasses.asdict(init.data) == {"p1": 2, "p2": "-"}
+
+    with subtests.test("class_path"):
+        cfg = parser.parse_args(["--data=DataSub"])
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.data, DataSub)
+        assert dataclasses.asdict(init.data) == {"p1": 2, "p2": "-"}
+
+
+class ParentData:
+    def __init__(self, data: DataMain = DataMain(p1=2)):
+        self.data = data
+
+
+def test_dataclass_nested_not_subclass(parser):
+    parser.add_argument("--parent", type=ParentData)
+
+    help_str = get_parse_args_stdout(parser, ["--parent.help"])
+    assert "--parent.data.help [CLASS_PATH_OR_NAME]" not in help_str
+
+    config = {
+        "class_path": f"{__name__}.ParentData",
+        "init_args": {
+            "data": {
+                "class_path": f"{__name__}.DataSub",
+                "init_args": {"p1": 3, "p2": "x"},
+            }
+        },
+    }
+    with pytest.raises(ArgumentError, match="Group 'data' does not accept nested key 'init_args.p1'"):
+        parser.parse_args([f"--parent={json.dumps(config)}"])
+
+
+def test_dataclass_nested_as_subclass(parser, subclass_behavior):
+    parser.add_argument("--parent", type=ParentData)
+
+    help_str = get_parse_args_stdout(parser, ["--parent.help"])
+    assert "--parent.data.help [CLASS_PATH_OR_NAME]" in help_str
+
+    config = {
+        "class_path": f"{__name__}.ParentData",
+        "init_args": {
+            "data": {
+                "class_path": f"{__name__}.DataSub",
+                "init_args": {"p1": 3, "p2": "x"},
+            }
+        },
+    }
+
+    cfg = parser.parse_args([f"--parent={json.dumps(config)}"])
+    assert cfg.parent.init_args.data == Namespace(class_path=f"{__name__}.DataSub", init_args=Namespace(p1=3, p2="x"))
+
+    dump = json_or_yaml_load(parser.dump(cfg))["parent"]
+    assert dump["class_path"] == f"{__name__}.ParentData"
+    assert dump["init_args"]["data"] == {"class_path": f"{__name__}.DataSub", "init_args": {"p1": 3, "p2": "x"}}
+
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.parent, ParentData)
+    assert isinstance(init.parent.data, DataSub)
+    assert dataclasses.asdict(init.parent.data) == {"p1": 3, "p2": "x"}
