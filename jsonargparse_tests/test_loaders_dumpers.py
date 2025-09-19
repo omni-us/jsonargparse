@@ -113,7 +113,7 @@ def custom_loader(data):
     else:
         data = json.loads(data)
     if isinstance(data, dict) and "fn" in data:
-        data["fn"] = {k: custom_loader for k in data["fn"]}
+        data["fn"] = {k: f"custom loaded {v}" for k, v in data["fn"].items()}
     return data
 
 
@@ -129,7 +129,7 @@ def test_nested_parser_mode(parser):
     parser.parser_mode = "custom"
     parser.add_argument("--custom", type=CustomContainer)
     cfg = parser.parse_args(['--custom.data={"fn": {"key": "value"}}'])
-    assert cfg.custom.init_args.data["fn"]["key"] is custom_loader
+    assert cfg.custom.init_args.data["fn"]["key"] == "custom loaded value"
     dump = json_or_yaml_load(parser.dump(cfg))
     assert dump["custom"]["init_args"]["data"] == {"fn": {"key": "dumped"}}
 

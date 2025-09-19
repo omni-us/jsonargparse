@@ -6,6 +6,7 @@ import os
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (  # type: ignore[attr-defined]
+    Callable,
     Dict,
     Generic,
     List,
@@ -28,6 +29,8 @@ from ._optionals import (
     import_reconplogger,
     is_alias_type,
     is_annotated,
+    is_attrs_class,
+    is_pydantic_model,
     reconplogger_support,
     typing_extensions_import,
 )
@@ -212,11 +215,22 @@ def supports_optionals_as_positionals(parser):
 
 
 def is_subclass(cls, class_or_tuple) -> bool:
-    """Extension of issubclass that supports non-class arguments."""
+    """Extension of issubclass that supports non-class arguments and generics."""
     try:
-        return inspect.isclass(cls) and issubclass(cls, class_or_tuple)
+        class_or_tuple = get_generic_origins(class_or_tuple)
+        if inspect.isclass(cls):
+            return issubclass(cls, class_or_tuple)
+        elif is_generic_class(cls):
+            return issubclass(cls.__origin__, class_or_tuple)
     except TypeError:
-        return False
+        pass  # TypeError means that cls is not a class
+    return False
+
+
+def is_instance(obj, class_or_tuple) -> bool:
+    """Extension of isinstance that supports generics."""
+    class_or_tuple = get_generic_origins(class_or_tuple)
+    return isinstance(obj, class_or_tuple)
 
 
 def is_final_class(cls) -> bool:
@@ -236,6 +250,12 @@ def get_generic_origin(cls):
     return cls.__origin__ if is_generic_class(cls) else cls
 
 
+def get_generic_origins(class_or_tuple):
+    if isinstance(class_or_tuple, tuple):
+        return tuple(get_generic_origin(cls) for cls in class_or_tuple)
+    return get_generic_origin(class_or_tuple)
+
+
 def get_unaliased_type(cls):
     new_cls = cls
     while True:
@@ -249,29 +269,25 @@ def get_unaliased_type(cls):
     return cur_cls
 
 
-def is_dataclass_like(cls) -> bool:
-    if is_generic_class(cls):
-        return is_dataclass_like(cls.__origin__)
-    if not inspect.isclass(cls) or cls is object:
-        return False
-    if is_final_class(cls):
-        return True
+def is_pure_dataclass(cls) -> bool:
     classes = [c for c in inspect.getmro(cls) if c not in {object, Generic}]
-    all_dataclasses = all(dataclasses.is_dataclass(c) for c in classes)
+    return all(dataclasses.is_dataclass(c) for c in classes)
 
-    if not all_dataclasses:
-        from ._optionals import attrs_support, is_pydantic_model
 
-        if is_pydantic_model(cls):
-            return True
+not_subclass_type_selectors: Dict[str, Callable[[Type], Union[bool, int]]] = {
+    "final": is_final_class,
+    "dataclass": is_pure_dataclass,
+    "pydantic": is_pydantic_model,
+    "attrs": is_attrs_class,
+}
 
-        if attrs_support:
-            import attrs
 
-            if attrs.has(cls):
-                return True
-
-    return all_dataclasses
+def is_not_subclass_type(cls) -> bool:
+    if is_generic_class(cls):
+        return is_not_subclass_type(cls.__origin__)
+    if not inspect.isclass(cls):
+        return False
+    return any(validator(cls) for validator in not_subclass_type_selectors.values())
 
 
 def default_class_instantiator(class_type: Type[ClassType], *args, **kwargs) -> ClassType:

@@ -17,7 +17,6 @@ from ._common import (
     LoggerProperty,
     get_generic_origin,
     get_unaliased_type,
-    is_dataclass_like,
     is_generic_class,
     is_subclass,
     is_unpack_typehint,
@@ -372,8 +371,6 @@ ast_literals = {ast.dump(ast.parse(v, mode="eval").body): partial(ast.literal_ev
 
 
 def is_param_subclass_instance_default(param: ParamData) -> bool:
-    if is_dataclass_like(type(param.default)):
-        return False
     from ._typehints import ActionTypeHint, get_optional_arg, get_subclass_types
 
     annotation = get_optional_arg(param.annotation)

@@ -1547,7 +1547,7 @@ def test_parse_implements_protocol(parser):
     with pytest.raises(ArgumentError, match="does not implement protocol"):
         parser.parse_args([f"--cls={__name__}.NotImplementsInterface1"])
     with pytest.raises(ArgumentError, match="Does not implement protocol Interface"):
-        parser.parse_args(['--cls={"batch_size": 5}'])
+        parser.parse_args(["--cls=[1]"])
 
 
 # callable protocol tests
@@ -1613,7 +1613,7 @@ def test_parse_implements_callable_protocol(parser):
     with pytest.raises(ArgumentError, match="does not implement protocol"):
         parser.parse_args([f"--cls={__name__}.NotImplementsCallableInterface1"])
     with pytest.raises(ArgumentError, match="Does not implement protocol CallableInterface"):
-        parser.parse_args(['--cls={"batch_size": 7}'])
+        parser.parse_args(["--cls=[1]"])
 
 
 # parameter skip tests
@@ -1873,6 +1873,7 @@ def test_subclass_error_indentation_in_union_invalid_value(parser):
         - a class path (str)
         - a dict with class_path entry
         - a dict without class_path but with init_args entry (class path given previously)
+        - a dict with parameters accepted by the base class (implicit class_path)
     Given value type: <class 'list'>
     Given value: [{'class_path': 'ErrorIndentation2', 'init_args': {'val': 'x'}}]
     """

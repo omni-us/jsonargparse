@@ -293,6 +293,8 @@ class Namespace(argparse.Namespace):
             if not only_unset or key not in self:
                 self[key] = value
         else:
+            if key and not isinstance(self.get(key), Namespace):
+                self[key] = Namespace()
             prefix = key + "." if key else ""
             for subkey, subval in value.items():
                 if not only_unset or prefix + subkey not in self:

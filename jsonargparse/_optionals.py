@@ -346,16 +346,26 @@ pydantic_supports_field_init = get_pydantic_supports_field_init()
 
 
 def is_pydantic_model(class_type) -> int:
-    classes = inspect.getmro(class_type) if pydantic_support and inspect.isclass(class_type) else []
-    for cls in classes:
-        if getattr(cls, "__module__", "").startswith("pydantic") and getattr(cls, "__name__", "") == "BaseModel":
-            import pydantic
+    if pydantic_support:
+        classes = inspect.getmro(class_type) if pydantic_support and inspect.isclass(class_type) else []
+        for cls in classes:
+            if getattr(cls, "__module__", "").startswith("pydantic") and getattr(cls, "__name__", "") == "BaseModel":
+                import pydantic
 
-            if issubclass(cls, pydantic.BaseModel):
-                return pydantic_support
-            elif pydantic_support > 1 and issubclass(cls, pydantic.v1.BaseModel):
-                return 1
+                if issubclass(cls, pydantic.BaseModel):
+                    return pydantic_support
+                elif pydantic_support > 1 and issubclass(cls, pydantic.v1.BaseModel):
+                    return 1
     return 0
+
+
+def is_attrs_class(class_type) -> bool:
+    if attrs_support:
+        import attrs
+
+        if attrs.has(class_type):
+            return True
+    return False
 
 
 def get_module(value):
