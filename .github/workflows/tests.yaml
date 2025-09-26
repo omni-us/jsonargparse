@@ -238,7 +238,7 @@ jobs:
             VERSION="$(git describe --tags --abbrev=0 | sed 's/^v//')+$(git rev-parse --short HEAD)"
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-      - uses: SonarSource/sonarqube-scan-action@v5
+      - uses: SonarSource/sonarqube-scan-action@v6
         with:
           args: >
             -Dsonar.organization=omni-us
