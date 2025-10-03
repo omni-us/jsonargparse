@@ -699,6 +699,47 @@ def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):
             assert json_or_yaml_load(schema_yaml_out.read_text()) == {"a": 1, "b": 2}
 
 
+class ListItem:
+    def __init__(self, a: int, b: str):
+        self.a = a
+        self.b = b
+
+
+def test_save_multifile_list(parser, tmp_cwd):
+    in_dir = tmp_cwd / "input"
+    out_dir = tmp_cwd / "output"
+    in_dir.mkdir()
+    out_dir.mkdir()
+    main_file_in = in_dir / "main.yaml"
+    main_file_out = out_dir / "main.yaml"
+    item_1_file_in = in_dir / "item1.yaml"
+    item_1_file_out = out_dir / "item1.yaml"
+    item_2_file_in = in_dir / "item2.yaml"
+    item_2_file_out = out_dir / "item2.yaml"
+
+    main_content = {"items": ["item1.yaml", "item2.yaml"]}
+    main_file_in.write_text(json_or_yaml_dump(main_content))
+    item_1_file_in.write_text(json_or_yaml_dump({"a": 1, "b": "x"}))
+    item_2_file_in.write_text(json_or_yaml_dump({"a": 2, "b": "y"}))
+
+    parser.add_argument("--config", action="config")
+    parser.add_argument(
+        "--items",
+        nargs="+",
+        type=ListItem,
+        required=True,
+        enable_path=True,
+    )
+
+    cfg = parser.parse_args([f"--config={main_file_in}"])
+    parser.save(cfg, main_file_out)
+    assert json_or_yaml_load(main_file_out.read_text()) == main_content
+    item_1_expected = {"class_path": f"{__name__}.ListItem", "init_args": {"a": 1, "b": "x"}}
+    assert json_or_yaml_load(item_1_file_out.read_text()) == item_1_expected
+    item_2_expected = {"class_path": f"{__name__}.ListItem", "init_args": {"a": 2, "b": "y"}}
+    assert json_or_yaml_load(item_2_file_out.read_text()) == item_2_expected
+
+
 def test_save_overwrite(example_parser, tmp_cwd):
     cfg = example_parser.parse_args(["--nums.val1=7"])
     example_parser.save(cfg, "config.yaml")

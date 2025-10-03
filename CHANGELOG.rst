@@ -35,6 +35,8 @@ Fixed
   (`#772 <https://github.com/omni-us/jsonargparse/pull/772>`__).
 - ``omegaconf+`` parser mode failing when there are ``inf``, ``-inf`` or ``nan``
   values (`#773 <https://github.com/omni-us/jsonargparse/pull/773>`__).
+- ``save`` with ``multifile=True`` not saving separate subconfigs for items in a
+  list (`#779 <https://github.com/omni-us/jsonargparse/pull/779>`__).
 
 
 v4.41.0 (2025-09-04)
