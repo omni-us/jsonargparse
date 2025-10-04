@@ -445,7 +445,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             ArgumentError: If the parsing fails error and exit_on_error=True.
         """
         skip_validation = get_private_kwargs(kwargs, _skip_validation=False)
-        skip_validation = True
         return_parser_if_captured(self)
         handle_completions(self)
 
@@ -1156,7 +1155,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                     if group_key:
                         subkey = key[len(group_key) + 1 :]
                         raise NSKeyError(f"Group '{group_key}' does not accept nested key '{subkey}'")
-                    raise NSKeyError(f"Key '{key}' is not expected")
+                    # raise NSKeyError(f"Key '{key}' is not expected")
 
         try:
             with parser_context(load_value_mode=self.parser_mode):
