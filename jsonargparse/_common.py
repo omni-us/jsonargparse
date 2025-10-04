@@ -291,7 +291,11 @@ def is_not_subclass_type(cls) -> bool:
 
 
 def default_class_instantiator(class_type: Type[ClassType], *args, **kwargs) -> ClassType:
-    return class_type(*args, **kwargs)
+    if is_pydantic_model(class_type) == 2:
+        # See [On not returning self](https://docs.pydantic.dev/2.9/concepts/validators/#model-validators)
+        return class_type.model_validate(kwargs)
+    res = class_type(*args, **kwargs)
+    return res
 
 
 class ClassInstantiator:

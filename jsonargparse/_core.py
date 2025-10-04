@@ -445,6 +445,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             ArgumentError: If the parsing fails error and exit_on_error=True.
         """
         skip_validation = get_private_kwargs(kwargs, _skip_validation=False)
+        skip_validation = True
         return_parser_if_captured(self)
         handle_completions(self)
 
