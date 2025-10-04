@@ -259,7 +259,12 @@ class _ActionPrintConfig(Action):
 
     def __call__(self, parser, namespace, value, option_string=None):
         kwargs = {"subparser": parser, "key": None, "skip_none": False, "skip_validation": False}
-        valid_flags = {"": None, "skip_default": "skip_default", "skip_null": "skip_none"}
+        valid_flags = {
+            "": None,
+            "skip_default": "skip_default",
+            "skip_null": "skip_none",
+            "skip_validation": "skip_validation",
+        }
         if ruamel_support:
             valid_flags["comments"] = "yaml_comments"
         if value is not None:
