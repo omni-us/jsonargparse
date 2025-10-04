@@ -1465,9 +1465,9 @@ def adapt_class_type(
             return partial(
                 instantiator_fn,
                 val_class,
-                **{**init_args, **dict_kwargs},
+                **{**init_args.as_dict(), **dict_kwargs},
             )
-        return instantiator_fn(val_class, **{**init_args, **dict_kwargs})
+        return instantiator_fn(val_class, **{**init_args.as_dict(), **dict_kwargs})
 
     prev_init_args = prev_val.get("init_args") if isinstance(prev_val, Namespace) else None
 
