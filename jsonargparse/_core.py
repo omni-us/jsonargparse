@@ -1155,7 +1155,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                     if group_key:
                         subkey = key[len(group_key) + 1 :]
                         raise NSKeyError(f"Group '{group_key}' does not accept nested key '{subkey}'")
-                    raise NSKeyError(f"Key '{key}' is not expected")
+                    # raise NSKeyError(f"Key '{key}' is not expected")
 
         try:
             with parser_context(load_value_mode=self.parser_mode):
