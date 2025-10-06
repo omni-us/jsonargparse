@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import json
 from typing import Dict, List, Literal, Optional, Union
+from unittest.mock import patch
 
 import pytest
 
@@ -13,6 +14,7 @@ from jsonargparse._optionals import (
     pydantic_supports_field_init,
     typing_extensions_import,
 )
+from jsonargparse._signatures import convert_to_dict
 from jsonargparse_tests.conftest import (
     get_parser_help,
     json_or_yaml_load,
@@ -33,6 +35,13 @@ skip_if_pydantic_v1_on_v2 = pytest.mark.skipif(
 def missing_pydantic():
     if not pydantic_support:
         pytest.skip("pydantic package is required")
+
+
+@pytest.fixture
+def subclass_behavior():
+    with patch.dict("jsonargparse._common.not_subclass_type_selectors") as not_subclass_type_selectors:
+        not_subclass_type_selectors.pop("pydantic")
+        yield
 
 
 @skip_if_pydantic_v1_on_v2
@@ -310,3 +319,67 @@ class TestPydanticBasics:
         init = parser.instantiate_classes(cfg)
         assert isinstance(init.model, PydanticNestedDict)
         assert isinstance(init.model.nested["key"], NestedModel)
+
+
+if pydantic_support:
+
+    class Pet(pydantic.BaseModel):
+        name: str
+
+    class Cat(Pet):
+        meows: int
+
+    class SpecialCat(Cat):
+        number_of_tails: int
+
+    class Dog(Pet):
+        barks: float
+        friend: Pet
+
+    class Person(Pet):
+        name: str
+        pets: list[Pet]
+
+    person = Person(
+        name="jt",
+        pets=[
+            SpecialCat(name="sc", number_of_tails=2, meows=3),
+            Dog(name="dog", barks=2, friend=Cat(name="cc", meows=2)),
+        ],
+    )
+
+
+def test_convert_to_dict_not_subclass():
+    person_dict = convert_to_dict(person)
+    assert person_dict == {
+        "name": "jt",
+        "pets": [
+            {"name": "sc", "meows": 3, "number_of_tails": 2},
+            {
+                "name": "dog",
+                "barks": 2.0,
+                "friend": {"name": "cc", "meows": 2},
+            },
+        ],
+    }
+
+
+def test_convert_to_dict_subclass(subclass_behavior):
+    person_dict = convert_to_dict(person)
+    assert person_dict == {
+        "class_path": f"{__name__}.Person",
+        "init_args": {
+            "name": "jt",
+            "pets": [
+                {"class_path": f"{__name__}.SpecialCat", "init_args": {"name": "sc", "meows": 3, "number_of_tails": 2}},
+                {
+                    "class_path": f"{__name__}.Dog",
+                    "init_args": {
+                        "name": "dog",
+                        "barks": 2.0,
+                        "friend": {"class_path": f"{__name__}.Cat", "init_args": {"name": "cc", "meows": 2}},
+                    },
+                },
+            ],
+        },
+    }

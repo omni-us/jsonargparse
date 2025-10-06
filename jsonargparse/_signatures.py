@@ -17,7 +17,7 @@ from ._common import (
     is_subclass,
 )
 from ._namespace import Namespace
-from ._optionals import attrs_support, get_doc_short_description, is_attrs_class, is_pydantic_model, pydantic_support
+from ._optionals import attrs_support, get_doc_short_description, is_attrs_class, is_pydantic_model
 from ._parameter_resolvers import ParamData, get_parameter_origins, get_signature_parameters
 from ._typehints import (
     ActionTypeHint,
@@ -27,8 +27,9 @@ from ._typehints import (
     is_optional,
     is_subclass_spec,
     not_required_types,
+    sequence_origin_types,
 )
-from ._util import NoneType, get_private_kwargs, get_typehint_origin, iter_to_set_str
+from ._util import NoneType, get_import_path, get_private_kwargs, get_typehint_origin, iter_to_set_str
 from .typing import register_pydantic_type
 
 __all__ = [
@@ -594,19 +595,28 @@ def is_convertible_to_dict(value):
 
 
 def convert_to_dict(value) -> dict:
-    if pydantic_support:
-        pydantic_model = is_pydantic_model(type(value))
-        if pydantic_model:
-            return value.dict() if pydantic_model == 1 else value.model_dump()
-
     if attrs_support:
         import attrs
 
-        is_attrs_dataclass = attrs.has(type(value))
-        if is_attrs_dataclass:
+        if attrs.has(type(value)):
             return attrs.asdict(value)
 
-    return dataclasses.asdict(value)
+    value_type = type(value)
+    init_args = {}
+    for name, attr in vars(value).items():
+        attr_type = type(attr)
+        if is_convertible_to_dict(attr_type):
+            attr = convert_to_dict(attr)
+        elif attr_type in sequence_origin_types:
+            attr = attr.copy()
+            for num, item in enumerate(attr):
+                if is_convertible_to_dict(type(item)):
+                    attr[num] = convert_to_dict(item)
+        init_args[name] = attr
+
+    if is_not_subclass_type(value_type):
+        return init_args
+    return {"class_path": get_import_path(value_type), "init_args": init_args}
 
 
 def compose_dataclasses(*args):

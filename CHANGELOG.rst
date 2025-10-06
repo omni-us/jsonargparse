@@ -20,8 +20,10 @@ Added
 - ``set_parsing_settings`` now supports setting ``allow_py_files`` to enable
   stubs resolver searching in ``.py`` files in addition to ``.pyi`` (`#770
   <https://github.com/omni-us/jsonargparse/pull/770>`__).
-- Experimental support for dataclass inheritance  (`#775
+- Experimental support for dataclass inheritance (`#775
   <https://github.com/omni-us/jsonargparse/pull/775>`__).
+- Experimental support for pydantic ``BaseModel`` subclasses (`#781
+  <https://github.com/omni-us/jsonargparse/pull/781>`__).
 
 Fixed
 ^^^^^
