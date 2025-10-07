@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+from copy import deepcopy
 from typing import Dict, List, Literal, Optional, Union
 from unittest.mock import patch
 
@@ -16,6 +17,7 @@ from jsonargparse._optionals import (
 )
 from jsonargparse._signatures import convert_to_dict
 from jsonargparse_tests.conftest import (
+    get_parse_args_stdout,
     get_parser_help,
     json_or_yaml_load,
 )
@@ -151,6 +153,10 @@ if pydantic_support:
         class PydanticDataFieldInitFalse:
             p1: str = PydanticV2Field("-", init=False)
 
+        @pydantic_v2_dataclass
+        class ParentPydanticDataFieldInitFalse:
+            y: PydanticDataFieldInitFalse = PydanticV2Field(default_factory=PydanticDataFieldInitFalse)
+
     @pydantic.dataclasses.dataclass
     class PydanticDataStdlibField:
         p1: str = dataclasses.field(default="-")
@@ -272,6 +278,17 @@ class TestPydanticBasics:
         init = parser.instantiate_classes(cfg)
         assert init.data.p1 == "-"
 
+    @pytest.mark.skipif(not pydantic_supports_field_init, reason="Field.init is required")
+    def test_nested_dataclass_field_init_false(self, parser):
+        parser.add_class_arguments(ParentPydanticDataFieldInitFalse, "data")
+        assert parser.get_defaults() == Namespace()
+        cfg = parser.parse_args([])
+        assert cfg == Namespace()
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.data, ParentPydanticDataFieldInitFalse)
+        assert isinstance(init.data.y, PydanticDataFieldInitFalse)
+        assert init.data.y.p1 == "-"
+
     def test_dataclass_stdlib_field(self, parser):
         parser.add_argument("--data", type=PydanticDataStdlibField)
         cfg = parser.parse_args(["--data", "{}"])
@@ -348,10 +365,7 @@ if pydantic_support:
         ],
     )
 
-
-def test_convert_to_dict_not_subclass():
-    person_dict = convert_to_dict(person)
-    assert person_dict == {
+    person_expected_dict = {
         "name": "jt",
         "pets": [
             {"name": "sc", "meows": 3, "number_of_tails": 2},
@@ -363,10 +377,7 @@ def test_convert_to_dict_not_subclass():
         ],
     }
 
-
-def test_convert_to_dict_subclass(subclass_behavior):
-    person_dict = convert_to_dict(person)
-    assert person_dict == {
+    person_expected_subclass_dict = {
         "class_path": f"{__name__}.Person",
         "init_args": {
             "name": "jt",
@@ -383,3 +394,41 @@ def test_convert_to_dict_subclass(subclass_behavior):
             ],
         },
     }
+
+
+def test_model_argument_as_subclass(parser, subtests, subclass_behavior):
+    parser.add_argument("--person", type=Person, default=person)
+
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        assert "--person.help [CLASS_PATH_OR_NAME]" in help_str
+        assert f"{__name__}.Person" in help_str
+        help_str = get_parse_args_stdout(parser, ["--person.help"])
+        assert f"Help for --person.help={__name__}.Person" in help_str
+
+    with subtests.test("defaults"):
+        defaults = parser.get_defaults()
+        dump = json_or_yaml_load(parser.dump(defaults))["person"]
+        assert dump == person_expected_subclass_dict
+
+    with subtests.test("sub-param"):
+        cfg = parser.parse_args(["--person.pets.name=lucky"])
+        init = parser.instantiate_classes(cfg)
+        assert isinstance(init.person, Person)
+        assert isinstance(init.person.pets[0], SpecialCat)
+        assert isinstance(init.person.pets[1], Dog)
+        assert init.person.pets[1].name == "lucky"
+        dump = json_or_yaml_load(parser.dump(cfg))["person"]
+        expected = deepcopy(person_expected_subclass_dict)
+        expected["init_args"]["pets"][1]["init_args"]["name"] = "lucky"
+        assert dump == expected
+
+
+def test_convert_to_dict_not_subclass():
+    converted = convert_to_dict(person)
+    assert converted == person_expected_dict
+
+
+def test_convert_to_dict_subclass(subclass_behavior):
+    converted = convert_to_dict(person)
+    assert converted == person_expected_subclass_dict
