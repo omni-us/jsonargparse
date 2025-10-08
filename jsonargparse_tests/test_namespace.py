@@ -296,3 +296,35 @@ def test_add_argument_meta_key_error(meta_key, parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_argument(meta_key)
     ctx.match(f'"{meta_key}" not allowed')
+
+
+def test_items_branches_nested():
+    ns = Namespace()
+    ns["a.b"] = 1
+    ns["a.c"] = 2
+    ns["d"] = 3
+
+    items = list(ns.items(branches=True))
+    assert items == [("a", Namespace(b=1, c=2)), ("a.b", 1), ("a.c", 2), ("d", 3)]
+
+    items = list(ns.items(branches=True, nested=False))
+    assert items == [("a", Namespace(b=1, c=2)), ("d", 3)]
+
+    items = list(ns.items(nested=False))
+    assert items == [("d", 3)]
+
+
+def test_keys_branches_nested():
+    ns = Namespace()
+    ns["a.b"] = 1
+    ns["a.c"] = 2
+    ns["d"] = 3
+
+    keys = list(ns.keys(branches=True))
+    assert keys == ["a", "a.b", "a.c", "d"]
+
+    keys = list(ns.keys(branches=True, nested=False))
+    assert keys == ["a", "d"]
+
+    keys = list(ns.keys(nested=False))
+    assert keys == ["d"]

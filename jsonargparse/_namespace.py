@@ -233,21 +233,23 @@ class Namespace(argparse.Namespace):
             setattr(flat, key, val)
         return flat
 
-    def items(self, branches: bool = False) -> Iterator[Tuple[str, Any]]:
+    def items(self, branches: bool = False, nested: bool = True) -> Iterator[Tuple[str, Any]]:
         """Returns a generator of all leaf (key, value) items, optionally including branches."""
         for key, val in vars(self).items():
             key = del_clash_mark(key)
             if isinstance(val, Namespace):
                 if branches:
                     yield key, val
+                if not nested:
+                    continue
                 for subkey, subval in val.items(branches):
                     yield key + "." + del_clash_mark(subkey), subval
             else:
                 yield key, val
 
-    def keys(self, branches: bool = False) -> Iterator[str]:
+    def keys(self, branches: bool = False, nested: bool = True) -> Iterator[str]:
         """Returns a generator of all leaf keys, optionally including branches."""
-        for key, _ in self.items(branches):
+        for key, _ in self.items(branches=branches, nested=nested):
             yield key
 
     def values(self, branches: bool = False) -> Iterator[Any]:

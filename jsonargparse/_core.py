@@ -930,25 +930,36 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
             ActionLink.strip_link_target_keys(self, cfg)
 
+            def is_path_action(key):
+                action = _find_action(self, key)
+                return isinstance(action, (ActionJsonSchema, ActionJsonnet, ActionTypeHint, _ActionConfigLoad))
+
+            def save_path(val):
+                val_path = Path(os.path.basename(val["__path__"].absolute), mode="fc")
+                check_overwrite(val_path)
+                val_out = strip_meta(val)
+                if isinstance(val, Namespace):
+                    val_out = val_out.as_dict()
+                if "__orig__" in val:
+                    val_str = val["__orig__"]
+                else:
+                    is_json = str(val_path).lower().endswith(".json")
+                    val_str = dump_using_format(self, val_out, "json_indented" if is_json else format)
+                with open(val_path.absolute, "w") as f:
+                    f.write(val_str)
+                return os.path.basename(val_path)
+
             def save_paths(cfg):
                 for key in cfg.get_sorted_keys():
                     val = cfg[key]
                     if isinstance(val, (Namespace, dict)) and "__path__" in val:
-                        action = _find_action(self, key)
-                        if isinstance(action, (ActionJsonSchema, ActionJsonnet, ActionTypeHint, _ActionConfigLoad)):
-                            val_path = Path(os.path.basename(val["__path__"].absolute), mode="fc")
-                            check_overwrite(val_path)
-                            val_out = strip_meta(val)
-                            if isinstance(val, Namespace):
-                                val_out = val_out.as_dict()
-                            if "__orig__" in val:
-                                val_str = val["__orig__"]
-                            else:
-                                is_json = str(val_path).lower().endswith(".json")
-                                val_str = dump_using_format(self, val_out, "json_indented" if is_json else format)
-                            with open(val_path.absolute, "w") as f:
-                                f.write(val_str)
-                            cfg[key] = os.path.basename(val_path.absolute)
+                        if is_path_action(key):
+                            cfg[key] = save_path(val)
+                    elif isinstance(val, list):
+                        if is_path_action(key):
+                            for num, item in enumerate(val):
+                                if isinstance(item, (Namespace, dict)) and "__path__" in item:
+                                    val[num] = save_path(item)
                     elif isinstance(val, Path) and key in self.save_path_content and "r" in val.mode:
                         val_path = Path(os.path.basename(val.absolute), mode="fc")
                         check_overwrite(val_path)
@@ -1356,9 +1367,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             cfg_branch = cfg
             cfg = Namespace()
             cfg[parent_key] = cfg_branch
-            keys = [parent_key + "." + k for k in cfg_branch.__dict__]
+            keys = [parent_key + "." + k for k in cfg_branch.keys(branches=True, nested=False)]
         else:
-            keys = list(cfg.__dict__)
+            keys = list(cfg.keys(branches=True, nested=False))
 
         if prev_cfg:
             prev_cfg = prev_cfg.clone()
@@ -1385,7 +1396,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 if isinstance(value, dict):
                     value = Namespace(value)
                 if isinstance(value, Namespace):
-                    new_keys = value.__dict__.keys()
+                    new_keys = value.keys(branches=True, nested=False)
                     keys += [key + "." + k for k in new_keys if key + "." + k not in keys]
                 cfg[key] = value
                 continue

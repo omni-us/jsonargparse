@@ -1396,7 +1396,7 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
             parser = ActionTypeHint.get_class_parser(value["class_path"], sub_add_kwargs)
         del_args = {}
         prev_val = subclass_spec_as_namespace(prev_val)
-        for key, val in list(prev_val.init_args.__dict__.items()):
+        for key, val in list(prev_val.init_args.items(branches=True, nested=False)):
             action = _find_action(parser, key)
             if action:
                 with parser_context(lenient_check=False, load_value_mode=parser.parser_mode):
@@ -1515,7 +1515,7 @@ def adapt_classes_any(val, serialize, instantiate_classes, sub_add_kwargs):
         val = subclass_spec_as_namespace(val)
         init_args = val.get("init_args")
         if init_args and not instantiate_classes:
-            for subkey, subval in init_args.__dict__.items():
+            for subkey, subval in init_args.items(branches=True, nested=False):
                 init_args[subkey] = adapt_classes_any(subval, serialize, instantiate_classes, sub_add_kwargs)
             val["init_args"] = init_args
         try:
