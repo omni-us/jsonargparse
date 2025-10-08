@@ -236,12 +236,12 @@ class Namespace(argparse.Namespace):
     def items(self, branches: bool = False, nested: bool = True) -> Iterator[Tuple[str, Any]]:
         """Returns a generator of all leaf (key, value) items, optionally including branches."""
         for key, val in vars(self).items():
-            if not nested and "." in key:
-                continue
             key = del_clash_mark(key)
             if isinstance(val, Namespace):
                 if branches:
                     yield key, val
+                if not nested:
+                    continue
                 for subkey, subval in val.items(branches):
                     yield key + "." + del_clash_mark(subkey), subval
             else:
@@ -249,9 +249,7 @@ class Namespace(argparse.Namespace):
 
     def keys(self, branches: bool = False, nested: bool = True) -> Iterator[str]:
         """Returns a generator of all leaf keys, optionally including branches."""
-        for key, _ in self.items(branches):
-            if not nested and "." in key:
-                continue
+        for key, _ in self.items(branches=branches, nested=nested):
             yield key
 
     def values(self, branches: bool = False) -> Iterator[Any]:
