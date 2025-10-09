@@ -25,7 +25,6 @@ from ._typehints import (
     callable_instances,
     get_subclass_names,
     is_optional,
-    is_subclass_spec,
     not_required_types,
     sequence_origin_types,
 )
@@ -129,8 +128,6 @@ class SignatureArguments(LoggerProperty):
                 if skip_not_added:
                     skip.update(skip_not_added)  # skip init=False
             if defaults:
-                if is_subclass_spec(defaults):
-                    defaults = defaults.get("init_args", {})
                 defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
                 self.set_defaults(**defaults)  # type: ignore[attr-defined]
 
