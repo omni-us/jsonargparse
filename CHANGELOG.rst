@@ -24,6 +24,9 @@ Added
   <https://github.com/omni-us/jsonargparse/pull/775>`__).
 - Experimental support for pydantic ``BaseModel`` subclasses (`#781
   <https://github.com/omni-us/jsonargparse/pull/781>`__).
+- Argument to print help for dataclasses nested in types, e.g.
+  ``Optional[Data]``, ``Union[Data1, Data2]`` (`#783
+  <https://github.com/omni-us/jsonargparse/pull/783>`__).
 
 Fixed
 ^^^^^

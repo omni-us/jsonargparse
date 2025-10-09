@@ -292,9 +292,7 @@ class ActionTypeHint(Action):
         typehint = kwargs.pop("type")
         if args[0].startswith("--") and ActionTypeHint.supports_append(typehint):
             args = tuple(list(args) + [args[0] + "+"])
-        if ActionTypeHint.is_subclass_typehint(
-            typehint, all_subtypes=False
-        ) or ActionTypeHint.is_return_subclass_typehint(typehint):
+        if _ActionHelpClassPath.get_help_types(typehint):
             help_option = f"--{args[0]}.help" if args[0][0] != "-" else f"{args[0]}.help"
             help_action = container.add_argument(help_option, action=_ActionHelpClassPath(typehint=typehint))
             if sub_add_kwargs:
@@ -315,6 +313,7 @@ class ActionTypeHint(Action):
             or get_typehint_origin(typehint) in root_types
             or get_registered_type(typehint) is not None
             or is_subclass(typehint, Enum)
+            or is_not_subclass_type(typehint)
             or ActionTypeHint.is_subclass_typehint(typehint)
         )
         if full and supported:
@@ -349,7 +348,7 @@ class ActionTypeHint(Action):
             test = all if all_subtypes else any
             k = {"also_lists": also_lists}
             return test(ActionTypeHint.is_subclass_typehint(s, **k) for s in subtypes)
-        return is_single_subclass_typehint(typehint, typehint_origin)
+        return is_single_subclass_type(typehint, typehint_origin)
 
     @staticmethod
     def is_return_subclass_typehint(typehint):
@@ -1243,8 +1242,8 @@ def get_callable_return_type(typehint):
     return return_type
 
 
-def is_single_subclass_typehint(typehint, typehint_origin):
-    return (
+def is_single_class_type(typehint, typehint_origin, closed_class):
+    if not (
         (
             (inspect.isclass(typehint) and typehint_origin is None)
             or (is_generic_class(typehint) and inspect.isclass(typehint.__origin__))
@@ -1254,35 +1253,61 @@ def is_single_subclass_typehint(typehint, typehint_origin):
         and not is_pydantic_type(typehint)
         and not is_subclass(typehint, (Path, Enum))
         and getattr(typehint_origin, "__module__", "") != "builtins"
-    )
+    ):
+        return False
+    if not closed_class:
+        return not is_not_subclass_type(typehint)
+    return True
 
 
-def yield_subclass_types(typehint, also_lists=False, callable_return=False):
+is_single_subclass_type = partial(is_single_class_type, closed_class=False)
+is_single_subclass_or_closed_type = partial(is_single_class_type, closed_class=True)
+
+
+def yield_class_types(typehint, is_single, also_lists=False, callable_return=False):
     typehint = typehint_from_action(typehint)
     if typehint is None:
         return
     typehint = get_unaliased_type(get_optional_arg(get_unaliased_type(typehint)))
     typehint_origin = get_typehint_origin(typehint)
+    kwargs = {"is_single": is_single, "also_lists": also_lists, "callable_return": callable_return}
     if callable_return and (typehint_origin in callable_origin_types or is_instance_factory_protocol(typehint)):
         return_type = get_callable_return_type(typehint)
         if return_type:
-            k = {"also_lists": also_lists, "callable_return": callable_return}
-            yield from yield_subclass_types(return_type, **k)
+            yield from yield_class_types(return_type, **kwargs)
     elif typehint_origin == Union or (also_lists and typehint_origin in sequence_origin_types):
-        k = {"also_lists": also_lists, "callable_return": callable_return}
         for subtype in typehint.__args__:
-            yield from yield_subclass_types(subtype, **k)
-    if is_single_subclass_typehint(typehint, typehint_origin):
+            yield from yield_class_types(subtype, **kwargs)
+    if is_single(typehint, typehint_origin):
         yield typehint
 
 
 def get_subclass_types(typehint, also_lists=False, callable_return=False):
-    types = tuple(yield_subclass_types(typehint, also_lists=also_lists, callable_return=callable_return))
+    types = tuple(
+        yield_class_types(
+            typehint, is_single=is_single_subclass_type, also_lists=also_lists, callable_return=callable_return
+        )
+    )
+    return types or None
+
+
+def get_subclass_or_closed_types(typehint, also_lists=False, callable_return=False):
+    types = tuple(
+        yield_class_types(
+            typehint,
+            is_single=is_single_subclass_or_closed_type,
+            also_lists=also_lists,
+            callable_return=callable_return,
+        )
+    )
     return types or None
 
 
 def get_subclass_names(typehint, callable_return=False):
-    return tuple(t.__name__ for t in yield_subclass_types(typehint, callable_return=callable_return))
+    return tuple(
+        t.__name__
+        for t in yield_class_types(typehint, is_single=is_single_subclass_type, callable_return=callable_return)
+    )
 
 
 def adapt_partial_callable_class(callable_type, subclass_spec):
