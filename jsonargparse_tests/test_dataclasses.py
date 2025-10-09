@@ -417,26 +417,38 @@ class Data:
     p2: int = 0
 
 
-parser_optional_data = ArgumentParser(exit_on_error=False)
-parser_optional_data.add_argument("--data", type=Optional[Data])
+@pytest.fixture
+def parser_optional_data() -> ArgumentParser:
+    parser = ArgumentParser(exit_on_error=False)
+    parser.add_argument("--data", type=Optional[Data])
+    return parser
 
 
-def test_optional_dataclass_type_all_fields():
+def test_optional_dataclass_help(parser_optional_data):
+    help_str = get_parser_help(parser_optional_data)
+    assert "--data.help" in help_str
+    assert "CLASS_PATH_OR_NAME" not in help_str
+    help_str = get_parse_args_stdout(parser_optional_data, ["--data.help"])
+    assert "--data.p1" in help_str
+    assert "--data.p2" in help_str
+
+
+def test_optional_dataclass_type_all_fields(parser_optional_data):
     cfg = parser_optional_data.parse_args(['--data={"p1": "x", "p2": 1}'])
     assert cfg == Namespace(data=Namespace(p1="x", p2=1))
 
 
-def test_optional_dataclass_type_single_field():
+def test_optional_dataclass_type_single_field(parser_optional_data):
     cfg = parser_optional_data.parse_args(['--data={"p1": "y"}'])
     assert cfg == Namespace(data=Namespace(p1="y", p2=0))
 
 
-def test_optional_dataclass_type_invalid_field():
+def test_optional_dataclass_type_invalid_field(parser_optional_data):
     with pytest.raises(ArgumentError, match="Expected a <class 'str'>. Got value: 1"):
         parser_optional_data.parse_args(['--data={"p1": 1}'])
 
 
-def test_optional_dataclass_type_instantiate():
+def test_optional_dataclass_type_instantiate(parser_optional_data):
     cfg = parser_optional_data.parse_args(['--data={"p1": "y", "p2": 2}'])
     init = parser_optional_data.instantiate_classes(cfg)
     assert isinstance(init.data, Data)
@@ -444,17 +456,17 @@ def test_optional_dataclass_type_instantiate():
     assert init.data.p2 == 2
 
 
-def test_optional_dataclass_type_dump():
+def test_optional_dataclass_type_dump(parser_optional_data):
     cfg = parser_optional_data.parse_args(['--data={"p1": "z"}'])
     assert json_or_yaml_load(parser_optional_data.dump(cfg)) == {"data": {"p1": "z", "p2": 0}}
 
 
-def test_optional_dataclass_type_missing_required_field():
+def test_optional_dataclass_type_missing_required_field(parser_optional_data):
     with pytest.raises(ArgumentError):
         parser_optional_data.parse_args(['--data={"p2": 2}'])
 
 
-def test_optional_dataclass_type_null_value():
+def test_optional_dataclass_type_null_value(parser_optional_data):
     cfg = parser_optional_data.parse_args(["--data=null"])
     assert cfg == Namespace(data=None)
     assert cfg == parser_optional_data.instantiate_classes(cfg)
@@ -514,6 +526,10 @@ def test_dataclass_in_union_type(parser):
     cfg = parser.parse_args(["--union=1"])
     assert cfg == Namespace(union=1)
     assert cfg == parser.instantiate_classes(cfg)
+    help_str = get_parser_help(parser)
+    assert "--union.help" in help_str
+    help_str = get_parse_args_stdout(parser, ["--union.help"])
+    assert f"Help for --union.help={__name__}.Data" in help_str
 
 
 def test_dataclass_in_list_type(parser):
@@ -631,6 +647,16 @@ def test_class_path_union_mixture_dataclass_and_class(parser, union_type):
     assert init.union.prm_1 == 1.2
     assert json_or_yaml_load(parser.dump(cfg))["union"] == value
 
+    help_str = get_parser_help(parser)
+    assert "--union.help" in help_str
+    help_str = [x for x in help_str.split("\n") if "help for the given subclass" in x][0]
+    assert "UnionData" in help_str
+    assert "UnionClass" in help_str
+    help_str = get_parse_args_stdout(parser, ["--union.help=UnionData"])
+    assert f"Help for --union.help={__name__}.UnionData" in help_str
+    help_str = get_parse_args_stdout(parser, ["--union.help=UnionClass"])
+    assert f"Help for --union.help={__name__}.UnionClass" in help_str
+
 
 def test_class_path_union_dataclasses(parser):
     parser.add_argument("--union", type=Union[Data, SingleParamChange, UnionData])
@@ -735,11 +761,16 @@ def test_dataclass_not_subclass(parser):
     parser.add_argument("--data", type=DataMain, default=DataMain(p1=2))
 
     help_str = get_parser_help(parser)
-    assert "--data.help [CLASS_PATH_OR_NAME]" not in help_str
+    assert "--data.help" not in help_str
 
     config = {"class_path": f"{__name__}.DataSub", "init_args": {"p2": "y"}}
     with pytest.raises(ArgumentError, match="Group 'data' does not accept nested key 'init_args.p2'"):
         parser.parse_args([f"--data={json.dumps(config)}"])
+
+
+def test_add_subclass_dataclass_not_subclass(parser):
+    with pytest.raises(ValueError, match="Expected .* a subclass type or a tuple of subclass types"):
+        parser.add_subclass_arguments(DataMain, "data")
 
 
 @pytest.fixture
@@ -749,7 +780,28 @@ def subclass_behavior():
         yield
 
 
-def test_dataclass_argument_as_subclass(parser, subtests, subclass_behavior):
+@pytest.mark.parametrize("default", [None, DataMain()])
+def test_add_subclass_dataclass_as_subclass(parser, default, subclass_behavior):
+    parser.add_subclass_arguments(DataMain, "data", default=default)
+
+    config = {"class_path": f"{__name__}.DataMain", "init_args": {"p1": 2}}
+    cfg = parser.parse_args([f"--data={json.dumps(config)}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.data, DataMain)
+    assert dataclasses.asdict(init.data) == {"p1": 2}
+    dump = json_or_yaml_load(parser.dump(cfg))["data"]
+    assert dump == {"class_path": f"{__name__}.DataMain", "init_args": {"p1": 2}}
+
+    config = {"class_path": f"{__name__}.DataSub", "init_args": {"p2": "y"}}
+    cfg = parser.parse_args([f"--data={json.dumps(config)}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.data, DataSub)
+    assert dataclasses.asdict(init.data) == {"p1": 1, "p2": "y"}
+    dump = json_or_yaml_load(parser.dump(cfg))["data"]
+    assert dump == {"class_path": f"{__name__}.DataSub", "init_args": {"p1": 1, "p2": "y"}}
+
+
+def test_add_argument_dataclass_as_subclass(parser, subtests, subclass_behavior):
     parser.add_argument("--data", type=DataMain, default=DataMain(p1=2))
 
     with subtests.test("help"):

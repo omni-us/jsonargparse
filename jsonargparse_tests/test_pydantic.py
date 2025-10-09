@@ -405,6 +405,7 @@ def test_model_argument_as_subclass(parser, subtests, subclass_behavior):
         assert f"{__name__}.Person" in help_str
         help_str = get_parse_args_stdout(parser, ["--person.help"])
         assert f"Help for --person.help={__name__}.Person" in help_str
+        assert "--person.pets.help [CLASS_PATH_OR_NAME]" in help_str
 
     with subtests.test("defaults"):
         defaults = parser.get_defaults()
