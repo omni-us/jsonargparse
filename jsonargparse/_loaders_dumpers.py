@@ -339,7 +339,7 @@ def set_omegaconf_loader(mode="omegaconf"):
     if omegaconf_support and mode not in loaders:
         from ._optionals import get_omegaconf_loader
 
-        loader = yaml_load if mode == "omegaconf+" else get_omegaconf_loader()
+        loader = get_omegaconf_loader(mode)
         set_loader(mode, loader, get_loader_exceptions("yaml"))
 
 

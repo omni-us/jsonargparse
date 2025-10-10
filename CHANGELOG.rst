@@ -27,6 +27,10 @@ Added
 - Argument to print help for dataclasses nested in types, e.g.
   ``Optional[Data]``, ``Union[Data1, Data2]`` (`#783
   <https://github.com/omni-us/jsonargparse/pull/783>`__).
+- ``set_parsing_settings`` now supports ``omegaconf_absolute_to_relative_paths``
+  to enable backward compatibility of ``omegaconf+`` parser mode by converting
+  absolute paths to relative in interpolations (`#774
+  <https://github.com/omni-us/jsonargparse/pull/774>`__).
 
 Fixed
 ^^^^^
