@@ -64,7 +64,6 @@ from ._loaders_dumpers import (
     get_loader_exceptions,
     load_value,
     loaders,
-    set_omegaconf_loader,
 )
 from ._namespace import (
     Namespace,
@@ -1613,10 +1612,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     @parser_mode.setter
     def parser_mode(self, parser_mode: str):
-        if parser_mode in {"omegaconf", "omegaconf+"}:
-            set_omegaconf_loader(parser_mode)
-        if parser_mode not in loaders:
-            raise ValueError(f"The only accepted values for parser_mode are {set(loaders)}.")
+        accepted = set(loaders).union({"omegaconf", "omegaconf+"})
+        if parser_mode not in accepted:
+            raise ValueError(f"The only accepted values for parser_mode are {accepted}.")
         if parser_mode == "jsonnet":
             import_jsonnet("parser_mode=jsonnet")
         self._parser_mode = parser_mode

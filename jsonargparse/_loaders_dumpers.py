@@ -196,10 +196,12 @@ def load_value(value: str, simple_types: bool = False, **kwargs):
     loaded_value = load_basic(value)
 
     mode = get_load_value_mode()
-    if loaded_value is not_loaded and not loader_json_superset[mode]:
+    if loaded_value is not_loaded and not loader_json_superset.get(mode, True):
         loaded_value = load_list_or_dict(value)
 
     if loaded_value is not_loaded:
+        if mode not in loaders and mode in {"omegaconf", "omegaconf+"}:
+            set_omegaconf_loader(mode)
         loader = loaders[mode]
         load_kwargs = {}
         if kwargs and mode in loader_params:

@@ -44,6 +44,8 @@ Fixed
   values (`#773 <https://github.com/omni-us/jsonargparse/pull/773>`__).
 - ``save`` with ``multifile=True`` not saving separate subconfigs for items in a
   list (`#779 <https://github.com/omni-us/jsonargparse/pull/779>`__).
+- ``omegaconf`` parser mode failing on spawned processes (`#784
+  <https://github.com/omni-us/jsonargparse/pull/784>`__).
 
 
 v4.41.0 (2025-09-04)
