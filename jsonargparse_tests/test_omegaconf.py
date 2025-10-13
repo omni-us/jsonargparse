@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import multiprocessing
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -224,3 +225,27 @@ def test_omegaconf_absolute_to_relative_paths():
         "h": "${.f[0]}",
     }
     assert omegaconf_absolute_to_relative_paths(data) == expected
+
+
+def parse_in_spawned_process(queue, parser, args):
+    try:
+        cfg = parser.parse_args(args)
+        queue.put(cfg)
+    except Exception as ex:
+        queue.put(ex)
+
+
+@skip_if_omegaconf_unavailable
+def test_omegaconf_in_spawned_process(parser):
+    parser.parser_mode = "omegaconf"
+    parser.add_argument("--dict", type=dict)
+    assert parser.parse_args(['--dict={"x":1}']).dict == {"x": 1}
+
+    ctx = multiprocessing.get_context("spawn")
+    queue = ctx.Queue()
+    process = ctx.Process(target=parse_in_spawned_process, args=(queue, parser, ['--dict={"x":2}']))
+    process.start()
+    process.join()
+
+    cfg = queue.get()
+    assert cfg.dict == {"x": 2}
