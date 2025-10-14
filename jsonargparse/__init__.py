@@ -70,4 +70,4 @@ __all__ += _util.__all__
 __all__ += _deprecated.__all__
 
 
-__version__ = "4.41.0"
+__version__ = "4.42.0"
