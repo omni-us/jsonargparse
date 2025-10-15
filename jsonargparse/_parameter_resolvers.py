@@ -47,7 +47,7 @@ class ParamData:
 
 
 ParamList = List[ParamData]
-parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]  # type: ignore[attr-defined]
+parameter_attributes = [s[1:] for s in inspect.Parameter.__slots__]
 kinds = inspect._ParameterKind
 ast_assign_type: Tuple[Type[ast.AST], ...] = (ast.AnnAssign, ast.Assign)
 param_kwargs_pop_or_get = "**.pop|get():"
