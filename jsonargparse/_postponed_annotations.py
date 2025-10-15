@@ -254,7 +254,7 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
         if isinstance(types, Exception):
             if logger:
                 logger.debug(f"Failed to parse the source code for {obj}", exc_info=ex2)
-            raise type(types)(f"{repr(types)} + {repr(ex2)}") from ex2  # type: ignore[arg-type]
+            raise type(types)(f"{repr(types)} + {repr(ex2)}") from ex2
         return types
 
     aliases = __builtins__.copy()  # type: ignore[attr-defined]
