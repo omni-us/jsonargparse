@@ -8,6 +8,8 @@ from argparse import (
     Action,
     HelpFormatter,
     _HelpAction,
+    _SubParsersAction,
+    _VersionAction,
 )
 from io import StringIO
 from string import Template
@@ -249,8 +251,11 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
             return value
         if not parser.default_env:
             return super()._format_action_invocation(action)
+        # Subcommand choices (individual subcommands in the list) don't get ARG: prefix or ENV: line
+        if isinstance(action, _SubParsersAction._ChoicesPseudoAction):
+            return super()._format_action_invocation(action)
         extr = ""
-        if not isinstance(action, (_ActionHelpClassPath, _ActionPrintConfig, ShtabAction, _HelpAction)):
+        if not isinstance(action, (_ActionHelpClassPath, _ActionPrintConfig, ShtabAction, _HelpAction, _VersionAction)):
             extr += "\n  ENV:   " + get_env_var(self, action)
         return "ARG:   " + super()._format_action_invocation(action) + extr
 

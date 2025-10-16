@@ -22,6 +22,14 @@ def test_help_basics(parser):
     assert "APP_HELP" not in help_str
 
 
+def test_help_action_version(parser):
+    parser.add_argument("--version", action="version", version="1.0.0")
+    help_str = get_parser_help(parser)
+    assert "ARG:   --version" in help_str
+    assert "APP_VERSION" not in help_str
+    assert "show program's version number and exit" in help_str
+
+
 def test_help_action_config_file(parser):
     parser.add_argument("-c", "--cfg", help="Config in yaml/json.", action="config")
     help_str = get_parser_help(parser)
@@ -138,6 +146,25 @@ def test_help_default_config_files_with_required(tmp_path, parser):
     help_str = get_parser_help(parser)
     assert "req description" in help_str
     assert "from config" in help_str
+
+
+def test_help_subcommands_with_default_env(parser):
+    subcommands = parser.add_subcommands()
+    subparser1 = ArgumentParser()
+    subparser2 = ArgumentParser()
+    subcommands.add_subcommand("greet", subparser1, help="Greet someone")
+    subcommands.add_subcommand("farewell", subparser2, help="Say goodbye")
+    help_str = get_parser_help(parser)
+    # Individual subcommands should NOT have ARG: prefix or ENV: lines
+    assert "ARG:   greet" not in help_str
+    assert "ARG:   farewell" not in help_str
+    assert "ENV:   APP_GREET" not in help_str
+    assert "ENV:   APP_FAREWELL" not in help_str
+    # But the subcommand names and help should still be present
+    assert "greet" in help_str
+    assert "Greet someone" in help_str
+    assert "farewell" in help_str
+    assert "Say goodbye" in help_str
 
 
 def test_format_usage(parser):
