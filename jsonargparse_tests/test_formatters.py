@@ -22,6 +22,14 @@ def test_help_basics(parser):
     assert "APP_HELP" not in help_str
 
 
+def test_help_action_version(parser):
+    parser.add_argument("--version", action="version", version="1.0.0")
+    help_str = get_parser_help(parser)
+    assert "ARG:   --version" in help_str
+    assert "APP_VERSION" not in help_str
+    assert "show program's version number and exit" in help_str
+
+
 def test_help_action_config_file(parser):
     parser.add_argument("-c", "--cfg", help="Config in yaml/json.", action="config")
     help_str = get_parser_help(parser)
