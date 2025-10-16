@@ -148,6 +148,25 @@ def test_help_default_config_files_with_required(tmp_path, parser):
     assert "from config" in help_str
 
 
+def test_help_subcommands_with_default_env(parser):
+    subcommands = parser.add_subcommands()
+    subparser1 = ArgumentParser()
+    subparser2 = ArgumentParser()
+    subcommands.add_subcommand("greet", subparser1, help="Greet someone")
+    subcommands.add_subcommand("farewell", subparser2, help="Say goodbye")
+    help_str = get_parser_help(parser)
+    # Individual subcommands should NOT have ARG: prefix or ENV: lines
+    assert "ARG:   greet" not in help_str
+    assert "ARG:   farewell" not in help_str
+    assert "ENV:   APP_GREET" not in help_str
+    assert "ENV:   APP_FAREWELL" not in help_str
+    # But the subcommand names and help should still be present
+    assert "greet" in help_str
+    assert "Greet someone" in help_str
+    assert "farewell" in help_str
+    assert "Say goodbye" in help_str
+
+
 def test_format_usage(parser):
     parser.add_argument("--v1")
     with patch.dict(os.environ, {"COLUMNS": "200"}):
