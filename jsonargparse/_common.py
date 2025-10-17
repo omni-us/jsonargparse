@@ -130,12 +130,12 @@ def set_parsing_settings(
             DocstringStyle.AUTO.
         docstring_parse_attribute_docstrings: Whether to parse attribute
             docstrings (slower). Default is False.
-        parse_optionals_as_positionals: [EXPERIMENTAL] If True, the parser will
-            take extra positional command line arguments as values for optional
-            arguments. This means that optional arguments can be given by name
-            --key=value as usual, but also as positional. The extra positionals
-            are applied to optionals in the order that they were added to the
-            parser. By default, this is False.
+        parse_optionals_as_positionals: If True, the parser will take extra
+            positional command line arguments as values for optional arguments.
+            This means that optional arguments can be given by name --key=value
+            as usual, but also as positional. The extra positionals are applied
+            to optionals in the order that they were added to the parser. By
+            default, this is False.
         stubs_resolver_allow_py_files: Whether the stubs resolver should search
             in ``.py`` files in addition to ``.pyi`` files.
         omegaconf_absolute_to_relative_paths: If True, when loading configs
