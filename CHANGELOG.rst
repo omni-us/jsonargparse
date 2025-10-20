@@ -11,14 +11,18 @@ The semantic versioning only considers the public API as described in
 :ref:`api-ref`. Components not mentioned in :ref:`api-ref` or different import
 paths are considered internals and can change in minor and patch releases.
 
+
 v4.42.1 (unreleased)
 --------------------
 
 Fixed
 ^^^^^
 - Prevent extra environment variables in helptext when default_env=True, for
-  version actions and subcommands(`#787
+  version actions and subcommands (`#787
   <https://github.com/omni-us/jsonargparse/pull/787>`__).
+- ``Union`` with path type and non-path value incorrectly dumped as string
+  (`#789 <https://github.com/omni-us/jsonargparse/pull/789>`__).
+
 
 v4.42.0 (2025-10-14)
 --------------------
