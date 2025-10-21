@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.42.1 (unreleased)
+v4.43.0 (unreleased)
 --------------------
 
 Fixed
@@ -24,6 +24,12 @@ Fixed
   (`#789 <https://github.com/omni-us/jsonargparse/pull/789>`__).
 - Misleading error message for invalid value for ``Literal`` strings (`#790
   <https://github.com/omni-us/jsonargparse/pull/790>`__).
+
+Changed
+^^^^^^^
+- ``parse_optionals_as_positionals`` and ``applied_instantiation_links`` no
+  longer marked as experimental (`#788
+  <https://github.com/omni-us/jsonargparse/pull/788>`__).
 
 
 v4.42.0 (2025-10-14)

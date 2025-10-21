@@ -775,8 +775,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         Args:
             cfg: The configuration object to dump.
-            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via
-                :func:`.set_dumper`.
+            format: The output format: ``'yaml'``, ``'json'``,
+                ``'json_indented'``, ``'toml'``, ``'parser_mode'`` or ones added
+                via :func:`.set_dumper`.
             skip_none: Whether to exclude entries whose value is None.
             skip_default: Whether to exclude entries whose value is the same as the default.
             skip_validation: Whether to skip parser checking.
@@ -1199,8 +1200,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         have an additional keyword parameter ``applied_instantiation_links:
         dict``. This parameter will be populated with a dictionary having as
         keys the targets of the instantiation links and corresponding values
-        that were applied. Support for ``applied_instantiation_links`` parameter
-        is EXPERIMENTAL and subject to change or removal in future versions.
+        that were applied.
 
         Args:
             instantiator: Function that instantiates a class.
