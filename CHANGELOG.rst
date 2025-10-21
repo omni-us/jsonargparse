@@ -22,6 +22,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/787>`__).
 - ``Union`` with path type and non-path value incorrectly dumped as string
   (`#789 <https://github.com/omni-us/jsonargparse/pull/789>`__).
+- Misleading error message for invalid value for ``Literal`` strings (`#790
+  <https://github.com/omni-us/jsonargparse/pull/790>`__).
 
 
 v4.42.0 (2025-10-14)

@@ -183,6 +183,8 @@ def test_union_of_literals(parser):
     parser.add_argument("--literal", type=Union[Literal[1, 2], Literal["a", "b"]])
     assert "a" == parser.parse_args(["--literal=a"]).literal
     assert 2 == parser.parse_args(["--literal=2"]).literal
+    with pytest.raises(ArgumentError, match=r"Expected a typing.Literal\['a', 'b']"):
+        parser.parse_args(["--literal=x"])
 
 
 @parser_modes
