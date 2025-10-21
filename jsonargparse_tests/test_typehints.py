@@ -183,6 +183,8 @@ def test_union_of_literals(parser):
     parser.add_argument("--literal", type=Union[Literal[1, 2], Literal["a", "b"]])
     assert "a" == parser.parse_args(["--literal=a"]).literal
     assert 2 == parser.parse_args(["--literal=2"]).literal
+    with pytest.raises(ArgumentError, match=r"Expected a typing.Literal\['a', 'b']"):
+        parser.parse_args(["--literal=x"])
 
 
 @parser_modes
@@ -1590,3 +1592,9 @@ def test_get_all_subclass_paths_import_error():
             subclass_paths = get_all_subclass_paths(ImportClass)
     assert "Failed to import ImportClass" in str(w[0].message)
     assert subclass_paths == []
+
+
+def test_non_path_dump(parser):
+    parser.add_argument("--data", type=Union[Path_fr, Dict[str, List[str]]])
+    cfg = parser.parse_args(['--data={"key": ["value"]}'])
+    assert json_or_yaml_load(parser.dump(cfg)) == {"data": {"key": ["value"]}}

@@ -20,6 +20,10 @@ Fixed
 - Prevent extra environment variables in helptext when default_env=True, for
   version actions and subcommands (`#787
   <https://github.com/omni-us/jsonargparse/pull/787>`__).
+- ``Union`` with path type and non-path value incorrectly dumped as string
+  (`#789 <https://github.com/omni-us/jsonargparse/pull/789>`__).
+- Misleading error message for invalid value for ``Literal`` strings (`#790
+  <https://github.com/omni-us/jsonargparse/pull/790>`__).
 
 Changed
 ^^^^^^^

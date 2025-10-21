@@ -220,6 +220,8 @@ def _is_path_type(value, type_class):
 
 
 def _serialize_path(path: Path):
+    if not isinstance(path, Path):
+        raise ValueError("Expected a Path instance.")
     if path_dump_preserve_relative.get() and path.relative != path.absolute:
         return {
             "relative": path._relative,
