@@ -18,7 +18,6 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     Namespace,
-    Path,
     get_config_read_mode,
     set_config_read_mode,
     set_docstring_parse_options,
@@ -48,6 +47,7 @@ from jsonargparse._optionals import (
     url_support,
 )
 from jsonargparse._util import argument_error
+from jsonargparse.typing import Path
 from jsonargparse_tests.conftest import (
     get_parser_help,
     is_posix,

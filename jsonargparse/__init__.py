@@ -20,6 +20,7 @@ from ._link_arguments import *  # noqa: F403
 from ._loaders_dumpers import *  # noqa: F403
 from ._namespace import *  # noqa: F403
 from ._optionals import *  # noqa: F403
+from ._paths import Path  # noqa: F401
 from ._signatures import *  # noqa: F403
 from ._typehints import *  # noqa: F403
 from ._util import *  # noqa: F403

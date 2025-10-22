@@ -30,6 +30,9 @@ Changed
 - ``parse_optionals_as_positionals`` and ``applied_instantiation_links`` no
   longer marked as experimental (`#788
   <https://github.com/omni-us/jsonargparse/pull/788>`__).
+- Moved location of ``Path`` class from ``jsonargparse`` to
+  ``jsonargparse.typing`` (`#792
+  <https://github.com/omni-us/jsonargparse/pull/792>`__).
 
 
 v4.42.0 (2025-10-14)

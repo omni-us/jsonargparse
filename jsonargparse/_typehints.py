@@ -77,13 +77,11 @@ from ._optionals import (
     typing_extensions_import,
     validate_annotated,
 )
+from ._paths import Path, PathError, change_to_path_dir
 from ._util import (
     ClassType,
     NestedArg,
     NoneType,
-    Path,
-    PathError,
-    change_to_path_dir,
     get_import_path,
     get_typehint_origin,
     import_object,

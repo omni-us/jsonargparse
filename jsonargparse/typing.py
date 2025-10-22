@@ -15,7 +15,8 @@ else:
 
 from ._common import is_final_class, path_dump_preserve_relative
 from ._optionals import final, pydantic_support
-from ._util import Path, change_to_path_dir, get_import_path, get_private_kwargs, import_object
+from ._paths import Path, change_to_path_dir
+from ._util import get_import_path, get_private_kwargs, import_object
 
 __all__ = [
     "final",
@@ -33,6 +34,7 @@ __all__ = [
     "OpenUnitInterval",
     "NotEmptyStr",
     "Email",
+    "Path",
     "Path_fr",
     "Path_fc",
     "Path_dw",
