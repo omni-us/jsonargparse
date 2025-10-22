@@ -13,11 +13,11 @@ from ._common import Action, is_not_subclass_type, is_subclass, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._optionals import _get_config_read_mode, ruamel_support
+from ._paths import change_to_path_dir
 from ._type_checking import ActionsContainer, ArgumentParser
 from ._util import (
     Path,
     argument_error,
-    change_to_path_dir,
     default_config_option_help,
     get_import_path,
     import_object,

@@ -85,13 +85,13 @@ from ._optionals import (
     pyyaml_available,
 )
 from ._parameter_resolvers import UnknownDefault
+from ._paths import change_to_path_dir
 from ._signatures import SignatureArguments
 from ._typehints import ActionTypeHint, is_subclass_spec
 from ._util import (
     ClassType,
     Path,
     argument_error,
-    change_to_path_dir,
     get_argument_group_class,
     get_private_kwargs,
     identity,
