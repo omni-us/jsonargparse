@@ -32,7 +32,7 @@ from ._actions import (
     _find_parent_action_and_subcommand,
     _is_action_value_list,
     _is_branch_key,
-    filter_default_actions,
+    filter_non_parsing_actions,
     parent_parsers,
     previous_config,
 )
@@ -531,7 +531,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     def _load_env_vars(self, env: Union[Dict[str, str], os._Environ], defaults: bool) -> Namespace:
         cfg = Namespace()
-        actions = filter_default_actions(self._actions)
+        actions = filter_non_parsing_actions(self._actions)
         for action in actions:
             env_var = get_env_var(self, action)
             if env_var in env and isinstance(action, ActionConfigFile):
@@ -818,7 +818,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     def _dump_cleanup_actions(self, cfg, actions, dump_kwargs, prefix=""):
         skip_none = dump_kwargs["skip_none"]
-        for action in filter_default_actions(actions):
+        for action in filter_non_parsing_actions(actions):
             action_dest = prefix + action.dest
             if (
                 (action.help == argparse.SUPPRESS and not isinstance(action, _ActionConfigLoad))
@@ -1032,7 +1032,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         """
         skip_validation = deprecated_skip_check(ArgumentParser.get_defaults, kwargs, skip_validation)
         cfg = Namespace()
-        for action in filter_default_actions(self._actions):
+        for action in filter_non_parsing_actions(self._actions):
             if (
                 action.default != argparse.SUPPRESS
                 and action.dest != argparse.SUPPRESS
@@ -1245,7 +1245,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             A configuration object with all subclasses and class groups instantiated.
         """
         components: List[Union[ActionTypeHint, _ActionConfigLoad, ArgumentGroup]] = []
-        for action in filter_default_actions(self._actions):
+        for action in filter_non_parsing_actions(self._actions):
             if isinstance(action, ActionTypeHint):
                 components.append(action)
 
@@ -1324,7 +1324,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         cfg_files = []
         if "__default_config__" in cfg:
             cfg_files.append(cfg["__default_config__"])
-        for action in filter_default_actions(self._actions):
+        for action in filter_non_parsing_actions(self._actions):
             if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not None:
                 cfg_files.extend(p for p in cfg[action.dest] if p is not None)
         return cfg_files

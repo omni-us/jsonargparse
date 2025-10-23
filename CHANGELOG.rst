@@ -33,6 +33,8 @@ Changed
 - Moved location of ``Path`` class from ``jsonargparse`` to
   ``jsonargparse.typing`` (`#792
   <https://github.com/omni-us/jsonargparse/pull/792>`__).
+- Non-parsing actions now have a common base class to ease identification
+  (`#793 <https://github.com/omni-us/jsonargparse/pull/793>`__).
 
 
 v4.42.0 (2025-10-14)

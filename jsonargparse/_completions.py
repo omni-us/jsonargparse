@@ -13,7 +13,7 @@ from subprocess import PIPE, Popen
 from typing import List, Literal, Union
 
 from ._actions import ActionConfigFile, _ActionConfigLoad, _ActionHelpClassPath, remove_actions
-from ._common import get_optionals_as_positionals_actions, get_parsing_setting
+from ._common import NonParsingAction, get_optionals_as_positionals_actions, get_parsing_setting
 from ._parameter_resolvers import get_signature_parameters
 from ._typehints import (
     ActionTypeHint,
@@ -78,7 +78,7 @@ shtab_prog: ContextVar = ContextVar("shtab_prog")
 shtab_preambles: ContextVar = ContextVar("shtab_preambles")
 
 
-class ShtabAction(argparse.Action):
+class ShtabAction(NonParsingAction):
     def __init__(
         self,
         option_strings,

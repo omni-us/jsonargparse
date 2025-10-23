@@ -9,7 +9,6 @@ from argparse import (
     HelpFormatter,
     _HelpAction,
     _SubParsersAction,
-    _VersionAction,
 )
 from io import StringIO
 from string import Template
@@ -19,11 +18,10 @@ from ._actions import (
     ActionConfigFile,
     ActionYesNo,
     _ActionConfigLoad,
-    _ActionHelpClassPath,
-    _ActionPrintConfig,
     _ActionSubCommands,
     _find_action,
-    filter_default_actions,
+    filter_non_parsing_actions,
+    non_parsing_actions,
 )
 from ._common import (
     defaults_cache,
@@ -31,7 +29,6 @@ from ._common import (
     parent_parser,
     supports_optionals_as_positionals,
 )
-from ._completions import ShtabAction
 from ._deprecated import HelpFormatterDeprecations
 from ._link_arguments import ActionLink
 from ._namespace import Namespace, NSKeyError
@@ -87,7 +84,7 @@ class YAMLCommentFormatter:
             group_titles[parser_key] = parser.description
             prefix = "" if parser_key is None else parser_key + "."
             for group in parser._action_groups:
-                actions = filter_default_actions(group._group_actions)
+                actions = filter_non_parsing_actions(group._group_actions)
                 actions = [
                     a for a in actions if not isinstance(a, (_ActionConfigLoad, ActionConfigFile, _ActionSubCommands))
                 ]
@@ -255,7 +252,7 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
         if isinstance(action, _SubParsersAction._ChoicesPseudoAction):
             return super()._format_action_invocation(action)
         extr = ""
-        if not isinstance(action, (_ActionHelpClassPath, _ActionPrintConfig, ShtabAction, _HelpAction, _VersionAction)):
+        if not isinstance(action, non_parsing_actions):
             extr += "\n  ENV:   " + get_env_var(self, action)
         return "ARG:   " + super()._format_action_invocation(action) + extr
 
