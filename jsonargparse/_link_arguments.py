@@ -17,7 +17,7 @@ from ._actions import (
     _ActionSubCommands,
     _find_parent_action,
     _find_parent_action_and_subcommand,
-    filter_default_actions,
+    filter_non_parsing_actions,
 )
 from ._namespace import Namespace, split_key, split_key_leaf
 from ._parameter_resolvers import get_signature_parameters
@@ -36,7 +36,7 @@ def find_parent_or_child_actions(
     if action is not None:
         found = [action]
     else:
-        actions = filter_default_actions(parser._actions)
+        actions = filter_non_parsing_actions(parser._actions)
         if exclude is not None:
             actions = [a for a in actions if not isinstance(a, exclude)]
         prefix = key + "."

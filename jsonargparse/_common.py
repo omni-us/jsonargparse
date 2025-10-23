@@ -200,12 +200,12 @@ def validate_default(container: ActionsContainer, action: argparse.Action):
 
 
 def get_optionals_as_positionals_actions(parser, include_positionals=False):
-    from jsonargparse._actions import ActionConfigFile, _ActionConfigLoad, filter_default_actions
+    from jsonargparse._actions import ActionConfigFile, _ActionConfigLoad, filter_non_parsing_actions
     from jsonargparse._completions import ShtabAction
     from jsonargparse._typehints import ActionTypeHint
 
     actions = []
-    for action in filter_default_actions(parser._actions):
+    for action in filter_non_parsing_actions(parser._actions):
         if isinstance(action, (_ActionConfigLoad, ActionConfigFile, ShtabAction)):
             continue
         if ActionTypeHint.is_subclass_typehint(action, all_subtypes=False):
@@ -431,3 +431,7 @@ class Action(LoggerProperty, argparse.Action):
             self._check_type_kwargs = set(inspect.signature(self._check_type).parameters)
         kwargs = {k: v for k, v in kwargs.items() if k in self._check_type_kwargs}
         return self._check_type(value, **kwargs)
+
+
+class NonParsingAction(Action):
+    """Base for jsonargparse utility Action classes."""
