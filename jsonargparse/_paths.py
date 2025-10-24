@@ -85,7 +85,7 @@ class PathError(TypeError):
 
 
 class Path(PathDeprecations):
-    """Stores a (possibly relative) path and the corresponding absolute path.
+    """Base class for Path types. Stores a (possibly relative) path and the corresponding absolute path.
 
     The absolute path can be obtained without having to remember the working
     directory (or parent remote path) from when the object was created.
@@ -282,14 +282,6 @@ class Path(PathDeprecations):
         elif isinstance(other, str):
             return str(self) == other
         return False
-
-    def __call__(self, absolute: bool = True) -> str:
-        """Returns the path as a string.
-
-        Args:
-            absolute: If false returns the original path given, otherwise the corresponding absolute path.
-        """
-        return self._absolute if absolute else self._relative
 
     def get_content(self, mode: str = "r") -> str:
         """Returns the contents of the file or the remote path."""

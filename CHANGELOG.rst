@@ -36,6 +36,12 @@ Changed
 - Non-parsing actions now have a common base class to ease identification
   (`#793 <https://github.com/omni-us/jsonargparse/pull/793>`__).
 
+Deprecated
+^^^^^^^^^^
+- ``Path.__call__`` is deprecated and will be removed in v5.0.0. Use the
+  ``absolute`` or ``relative`` properties instead (`#794
+  <https://github.com/omni-us/jsonargparse/pull/794>`__).
+
 
 v4.42.0 (2025-10-14)
 --------------------

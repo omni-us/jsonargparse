@@ -439,6 +439,11 @@ path_immutable_attrs_message = """
     -> ``absolute``, ``cwd`` no name change, ``skip_check`` will be removed.
 """
 
+path_call_message = """
+    Calling Path objects is deprecated and will be removed in v5.0.0. Use the
+    ``absolute`` or ``relative`` properties instead.
+"""
+
 
 class PathDeprecations:
     """Deprecated methods for Path."""
@@ -492,6 +497,10 @@ class PathDeprecations:
     def skip_check(self, skip_check):
         deprecation_warning("Path attr set", path_immutable_attrs_message)
         self._skip_check = skip_check
+
+    def __call__(self, absolute: bool = True) -> str:
+        deprecation_warning("Path.__call__", path_call_message)
+        return self._absolute if absolute else self._relative
 
 
 class DebugException(Exception):
