@@ -115,7 +115,7 @@ def test_path_cwd(paths):
 
 def test_path_empty_mode(paths):
     path = Path("does_not_exist", "")
-    assert path() == str(paths.tmp_path / "does_not_exist")
+    assert path.absolute == str(paths.tmp_path / "does_not_exist")
 
 
 def test_path_pathlike(paths):
@@ -198,9 +198,6 @@ def test_path_invalid_modes(paths):
 
 def test_path_class_hidden_methods(paths):
     path = Path(paths.file_rw, "frw")
-    assert path(False) == str(paths.file_rw)
-    assert path(True) == str(paths.tmp_path / paths.file_rw)
-    assert path() == str(paths.tmp_path / paths.file_rw)
     assert str(path) == str(paths.file_rw)
     assert path.__repr__().startswith("Path_frw(")
 
@@ -212,8 +209,8 @@ def test_path_tilde_home(paths):
         path = Path(os.path.join("~", paths.file_rw), "frw")
         assert str(home) == "~"
         assert str(path) == os.path.join("~", paths.file_rw)
-        assert home() == str(paths.tmp_path)
-        assert path() == os.path.join(paths.tmp_path, paths.file_rw)
+        assert home.absolute == str(paths.tmp_path)
+        assert path.absolute == os.path.join(paths.tmp_path, paths.file_rw)
 
 
 def test_std_input_path():
@@ -396,7 +393,7 @@ def test_path_relative_path_context_url():
     with path1.relative_path_context() as dir:
         assert "http://example.com/nested/path" == dir
         path2 = Path("../file2.txt", mode="u")
-        assert path2() == "http://example.com/nested/file2.txt"
+        assert path2.absolute == "http://example.com/nested/file2.txt"
 
 
 @skip_if_fsspec_unavailable
@@ -421,18 +418,18 @@ def test_relative_path_context_fsspec(tmp_cwd, subtests):
             path1 = Path("../file1.txt", mode="fsr")
             assert "one" == path1.get_content()
             assert str(path1) == "../file1.txt"
-            assert path1() == "memory://one/two/file1.txt"
+            assert path1.absolute == "memory://one/two/file1.txt"
             assert path1._url_data is not None
 
         with subtests.test("nested fsspec dir"):
             with path1.relative_path_context() as dir2:
                 assert "memory://one/two" == dir2
                 path2 = Path("four/five/six/../file2.txt", mode="fsc")
-                assert path2() == "memory://one/two/four/five/file2.txt"
+                assert path2.absolute == "memory://one/two/four/five/file2.txt"
 
         with subtests.test("non-fsspec path"):
             path3 = Path("file3.txt", mode="fc")
-            assert path3() == str(tmp_cwd / "file3.txt")
+            assert path3.absolute == str(tmp_cwd / "file3.txt")
 
     with subtests.test("current path dir unset"):
         assert _current_path_dir.get() is None
@@ -444,13 +441,13 @@ def test_relative_path_context_fsspec(tmp_cwd, subtests):
 def test_path_fr(file_r):
     path = Path_fr(file_r)
     assert path == file_r
-    assert path() == os.path.realpath(file_r)
+    assert path.absolute == os.path.realpath(file_r)
     pytest.raises(TypeError, lambda: Path_fr("does_not_exist"))
 
 
 def test_path_fc_with_kwargs(tmpdir):
     path = Path_fc("some-file.txt", cwd=tmpdir)
-    assert path() == os.path.join(tmpdir, "some-file.txt")
+    assert path.absolute == os.path.join(tmpdir, "some-file.txt")
 
 
 def test_path_fr_already_registered():
