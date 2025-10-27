@@ -32,7 +32,6 @@ from ._util import NoneType, get_import_path, get_private_kwargs, get_typehint_o
 from .typing import register_pydantic_type
 
 __all__ = [
-    "compose_dataclasses",
     "SignatureArguments",
 ]
 
@@ -614,16 +613,3 @@ def convert_to_dict(value) -> dict:
     if is_not_subclass_type(value_type):
         return init_args
     return {"class_path": get_import_path(value_type), "init_args": init_args}
-
-
-def compose_dataclasses(*args):
-    """Returns a dataclass inheriting all given dataclasses and properly handling __post_init__."""
-
-    @dataclasses.dataclass
-    class ComposedDataclass(*args):
-        def __post_init__(self):
-            for arg in args:
-                if hasattr(arg, "__post_init__"):
-                    arg.__post_init__(self)
-
-    return ComposedDataclass

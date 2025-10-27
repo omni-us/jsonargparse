@@ -18,6 +18,7 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     Namespace,
+    compose_dataclasses,
     get_config_read_mode,
     set_config_read_mode,
     set_docstring_parse_options,
@@ -681,7 +682,6 @@ def test_import_from_deprecated():
         ("link_arguments", "ArgumentLinking"),
         ("loaders_dumpers", "set_loader"),
         ("namespace", "Namespace"),
-        ("signatures", "compose_dataclasses"),
         ("typehints", "lazy_instance"),
         ("util", "Path"),
         ("parameter_resolvers", "ParamData"),
@@ -802,3 +802,28 @@ def test_DefaultHelpFormatter_yaml_comments(parser):
         formatter.set_yaml_argument_comment("arg", cfg, "arg", 0)
     assert "set_yaml_argument_comment method is deprecated and will be removed in v5.0.0" in str(w[-1].message)
     assert "formatter.set_yaml_argument_comment(" in source[w[-1].lineno - 1]
+
+
+@dataclasses.dataclass
+class ComposeA:
+    a: int = 1
+
+    def __post_init__(self):
+        self.a += 1
+
+
+@dataclasses.dataclass
+class ComposeB:
+    b: str = "1"
+
+
+def test_compose_dataclasses():
+    with catch_warnings(record=True) as w:
+        ComposeAB = compose_dataclasses(ComposeA, ComposeB)
+    assert_deprecation_warn(
+        w,
+        message="compose_dataclasses is deprecated",
+        code="ComposeAB = compose_dataclasses(ComposeA, ComposeB)",
+    )
+    assert 2 == len(dataclasses.fields(ComposeAB))
+    assert {"a": 3, "b": "2"} == dataclasses.asdict(ComposeAB(a=2, b="2"))  # pylint: disable=unexpected-keyword-arg

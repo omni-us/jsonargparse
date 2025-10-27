@@ -44,6 +44,9 @@ Deprecated
 - ``strip_meta`` is deprecated and will be removed in v5.0.0. Instead use
   ``.clone(with_meta=False)`` (`#795
   <https://github.com/omni-us/jsonargparse/pull/795>`__).
+- ``compose_dataclasses`` is deprecated and will be removed in v5.0.0. There is
+  no direct replacement, whoever is interested can copy the code (`#796
+  <https://github.com/omni-us/jsonargparse/pull/796>`__).
 
 
 v4.42.0 (2025-10-14)
