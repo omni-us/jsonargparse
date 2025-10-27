@@ -19,7 +19,8 @@ Added
 - Support for Pydantic models with ``extra`` field configuration (``allow``,
   ``forbid``, ``ignore``). Models with ``extra="allow"`` now accept additional
   fields, while ``extra="forbid"`` properly rejects them and ``extra="ignore"``
-  accepts but ignores extra fields during instantiation.
+  accepts but ignores extra fields during instantiation (`#732
+  <https://github.com/omni-us/jsonargparse/pull/732>`__).
 
 Fixed
 ^^^^^
