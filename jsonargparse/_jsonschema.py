@@ -6,7 +6,7 @@ from typing import Dict, Optional, Union
 from ._actions import _is_action_value_list
 from ._common import Action, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
-from ._namespace import strip_meta
+from ._namespace import remove_meta
 from ._optionals import (
     get_jsonschema_exceptions,
     import_jsonschema,
@@ -73,7 +73,7 @@ class ActionJsonSchema(Action):
             return class_type(**kwargs)
         val = self._check_type(args[2])
         if not self._with_meta:
-            val = strip_meta(val)
+            val = remove_meta(val)
         setattr(args[1], self.dest, val)
         return None
 

@@ -9,7 +9,7 @@ from enum import Enum
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set, overload
 
 from ._common import Action, null_logger
 from ._common import LoggerProperty as InternalLoggerProperty
@@ -32,6 +32,7 @@ __all__ = [
     "set_docstring_parse_options",
     "set_config_read_mode",
     "set_url_support",
+    "strip_meta",
     "usage_and_exit_error_handler",
 ]
 
@@ -703,6 +704,27 @@ class LoggerProperty(InternalLoggerProperty):
 def namespace_to_dict(namespace: Namespace) -> Dict[str, Any]:
     """Returns a copy of a nested namespace converted into a nested dictionary."""
     return namespace.clone().as_dict()
+
+
+@overload
+def strip_meta(cfg: "Namespace") -> "Namespace": ...  # pragma: no cover
+
+
+@overload
+def strip_meta(cfg: Dict[str, Any]) -> Dict[str, Any]: ...  # pragma: no cover
+
+
+@deprecated(
+    """
+    strip_meta was deprecated in v4.43.0 and will be removed in v5.0.0.
+    Instead use ``.clone(with_meta=False)``.
+"""
+)
+def strip_meta(cfg):
+    """Removes all metadata keys from a configuration object."""
+    from ._namespace import remove_meta
+
+    return remove_meta(cfg)
 
 
 class HelpFormatterDeprecations:

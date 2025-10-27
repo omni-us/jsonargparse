@@ -71,10 +71,10 @@ from ._namespace import (
     is_meta_key,
     patch_namespace,
     recreate_branches,
+    remove_meta,
     split_key,
     split_key_leaf,
     split_key_root,
-    strip_meta,
 )
 from ._optionals import (
     _get_config_read_mode,
@@ -393,7 +393,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 self.validate(cfg, skip_required=skip_required)
 
         if not (with_meta or (with_meta is None and self._default_meta)):
-            cfg = strip_meta(cfg)
+            cfg = cfg.clone(with_meta=False)
 
         return cfg
 
@@ -793,7 +793,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         skip_validation = deprecated_skip_check(ArgumentParser.dump, kwargs, skip_validation)
         check_valid_dump_format(format)
 
-        cfg = strip_meta(cfg)
+        cfg = cfg.clone(with_meta=False)
 
         with parser_context(load_value_mode=self.parser_mode):
             if not skip_validation:
@@ -926,7 +926,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
             if not skip_validation:
                 with parser_context(load_value_mode=self.parser_mode):
-                    self.validate(strip_meta(cfg), branch=branch)
+                    self.validate(cfg.clone(with_meta=False), branch=branch)
 
             ActionLink.strip_link_target_keys(self, cfg)
 
@@ -937,7 +937,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             def save_path(val):
                 val_path = Path(os.path.basename(val["__path__"].absolute), mode="fc")
                 check_overwrite(val_path)
-                val_out = strip_meta(val)
+                val_out = remove_meta(val)
                 if isinstance(val, Namespace):
                     val_out = val_out.as_dict()
                 if "__orig__" in val:
@@ -1258,7 +1258,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         order = ActionLink.instantiation_order(self)
         components = ActionLink.reorder(order, components)
 
-        cfg = strip_meta(cfg)
+        cfg = cfg.clone(with_meta=False)
         for component in components:
             ActionLink.apply_instantiation_links(self, cfg, target=component.dest)
             if isinstance(component, ActionTypeHint):
