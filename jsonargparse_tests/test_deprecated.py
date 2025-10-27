@@ -34,6 +34,7 @@ from jsonargparse._deprecated import (
     deprecation_warning,
     namespace_to_dict,
     shown_deprecation_warnings,
+    strip_meta,
     usage_and_exit_error_handler,
 )
 from jsonargparse._formatters import DefaultHelpFormatter
@@ -755,6 +756,20 @@ def test_namespace_to_dict():
         message="namespace_to_dict was deprecated",
         code="dic1 = namespace_to_dict(ns)",
     )
+
+
+def test_strip_meta():
+    ns = Namespace(x=1, __path__="path")
+    with catch_warnings(record=True) as w:
+        result = strip_meta(ns)
+    assert result == Namespace(x=1)
+    assert_deprecation_warn(
+        w,
+        message="strip_meta was deprecated",
+        code="result = strip_meta(ns)",
+    )
+    result = strip_meta(ns.as_dict())
+    assert result == {"x": 1}
 
 
 @pytest.mark.skipif(not ruamel_support, reason="ruamel.yaml package is required")

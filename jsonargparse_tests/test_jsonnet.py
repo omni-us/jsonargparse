@@ -11,7 +11,6 @@ from jsonargparse import (
     ActionJsonSchema,
     ArgumentError,
     ArgumentParser,
-    strip_meta,
 )
 from jsonargparse._optionals import jsonnet_support, pyyaml_available
 from jsonargparse_tests.conftest import (
@@ -188,19 +187,19 @@ def test_action_jsonnet_save_config_metadata(parser, tmp_path):
     # parse using saved config and verify result is the same
     cfg2 = parser.parse_args([f"--cfg={output_config}"])
     cfg2.cfg = None
-    assert strip_meta(cfg) == strip_meta(cfg2)
+    assert cfg.clone(with_meta=False) == cfg2.clone(with_meta=False)
 
     # save the config without metadata and verify it is saved as a single file
     output_config.unlink()
     output_jsonnet.unlink()
-    parser.save(strip_meta(cfg), output_config)
+    parser.save(cfg.clone(with_meta=False), output_config)
     assert output_config.is_file()
     assert not output_jsonnet.is_file()
 
     # parse using saved config and verify result is the same
     cfg3 = parser.parse_args([f"--cfg={output_config}"])
     cfg3.cfg = None
-    assert strip_meta(cfg) == strip_meta(cfg3)
+    assert cfg.clone(with_meta=False) == cfg3.clone(with_meta=False)
 
 
 @skip_if_jsonschema_unavailable

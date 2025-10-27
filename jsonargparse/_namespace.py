@@ -13,13 +13,11 @@ from typing import (
     Set,
     Tuple,
     Union,
-    overload,
 )
 
 __all__ = [
     "Namespace",
     "dict_to_namespace",
-    "strip_meta",
 ]
 
 
@@ -48,23 +46,7 @@ def is_meta_key(key: str) -> bool:
     return leaf_key in meta_keys
 
 
-@overload
-def strip_meta(cfg: "Namespace") -> "Namespace": ...  # pragma: no cover
-
-
-@overload
-def strip_meta(cfg: Dict[str, Any]) -> Dict[str, Any]: ...  # pragma: no cover
-
-
-def strip_meta(cfg):
-    """Removes all metadata keys from a configuration object.
-
-    Args:
-        cfg: The configuration object to strip.
-
-    Returns:
-        A copy of the configuration object excluding all metadata keys.
-    """
+def remove_meta(cfg: Union["Namespace", dict]):
     if cfg:
         cfg = recreate_branches(cfg, skip_keys=meta_keys)
     return cfg
@@ -275,9 +257,13 @@ class Namespace(argparse.Namespace):
         keys.sort(key=lambda x: -len(split_key(x)))
         return keys
 
-    def clone(self) -> "Namespace":
-        """Creates an new identical nested namespace."""
-        return recreate_branches(self)
+    def clone(self, with_meta: bool = True) -> "Namespace":
+        """Creates an new copy of the nested namespace.
+
+        Args:
+            with_meta: Whether to include metadata keys in the copy.
+        """
+        return recreate_branches(self, skip_keys=None if with_meta else meta_keys)
 
     def update(
         self, value: Union["Namespace", Any], key: Optional[str] = None, only_unset: bool = False

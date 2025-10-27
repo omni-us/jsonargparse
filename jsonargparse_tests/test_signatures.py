@@ -13,7 +13,6 @@ from jsonargparse import (
     ArgumentError,
     Namespace,
     lazy_instance,
-    strip_meta,
 )
 from jsonargparse._actions import _find_action
 from jsonargparse._optionals import docstring_parser_support
@@ -685,7 +684,7 @@ def test_add_function_group_config_within_config(parser, tmp_cwd):
 
     cfg = parser.parse_args([f"--cfg={cfg_path}"])
     assert str(cfg.func.__path__) == str(subcfg_path)
-    assert strip_meta(cfg.func) == Namespace(a1="one", a2=2.0, a3=True, a4=None)
+    assert cfg.func.clone(with_meta=False) == Namespace(a1="one", a2=2.0, a3=True, a4=None)
 
 
 def func_param_conflict(p1: int, cfg: dict):

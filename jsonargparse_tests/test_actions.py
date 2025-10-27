@@ -12,7 +12,6 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     Namespace,
-    strip_meta,
 )
 from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_dump
 
@@ -238,7 +237,7 @@ def test_action_parser_parse_path(composed_parsers):
     cfg = parser.parse_path(yaml_main)
     assert "inner2.yaml" == str(cfg.inner2.__path__)
     assert "inner3.yaml" == str(cfg.inner2.inner3.__path__)
-    assert expected == strip_meta(cfg).as_dict()
+    assert expected == cfg.clone(with_meta=False).as_dict()
 
     yaml_main2 = yaml_main.parent / "main2.yaml"
     yaml_main2.write_text(parser.dump(cfg))

@@ -12,7 +12,6 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     Namespace,
-    strip_meta,
 )
 from jsonargparse_tests.conftest import (
     get_parse_args_stderr,
@@ -258,7 +257,7 @@ def test_subcommand_required_arg_in_default_config(parser, subparser, tmp_cwd):
     subcommands.add_subcommand("prepare", subparser)
     cfg = parser.parse_args([])
     assert str(cfg.__default_config__) == "config.yaml"
-    assert strip_meta(cfg) == Namespace(output="test", prepare=Namespace(media="test"), subcommand="prepare")
+    assert cfg.clone(with_meta=False) == Namespace(output="test", prepare=Namespace(media="test"), subcommand="prepare")
 
 
 class SubModel:

@@ -23,7 +23,6 @@ from jsonargparse import (
     ArgumentParser,
     Namespace,
     set_parsing_settings,
-    strip_meta,
 )
 from jsonargparse._formatters import get_env_var
 from jsonargparse._namespace import NSKeyError
@@ -667,7 +666,7 @@ def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):
 
     with subtests.test("parse_path with metadata"):
         cfg1 = parser.parse_path(main_file_in, with_meta=True)
-        assert expected == strip_meta(cfg1)
+        assert expected == cfg1.clone(with_meta=False)
         assert str(cfg1.subparser["__path__"]) == "subparser.yaml"
         if jsonschema_support:
             assert str(cfg1.schema["__path__"]) == "schema.json"
