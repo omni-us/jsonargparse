@@ -1150,7 +1150,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                         # Check if this is a Pydantic model with extra configuration
                         group = self.groups[group_key]
                         should_raise_error = True
-                        if hasattr(group, "group_class") and group.group_class:
+                        if getattr(group, "group_class", None):
                             from ._optionals import get_pydantic_extra_config
 
                             extra_config = get_pydantic_extra_config(group.group_class)
