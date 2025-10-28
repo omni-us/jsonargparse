@@ -26,6 +26,7 @@ __all__ = [
     "LoggerProperty",
     "ParserDeprecations",
     "ParserError",
+    "compose_dataclasses",
     "get_config_read_mode",
     "namespace_to_dict",
     "null_logger",
@@ -774,3 +775,25 @@ class HelpFormatterDeprecations:
             depth: The nested level of the argument.
         """
         self._yaml_formatter.set_yaml_argument_comment(text, cfg, key, depth)
+
+
+@deprecated(
+    """
+    compose_dataclasses is deprecated and will be removed in v5.0.0. There is
+    no direct replacement, whoever is interested can copy the code from an old
+    release.
+"""
+)
+def compose_dataclasses(*args):
+    """Returns a dataclass inheriting all given dataclasses and properly handling __post_init__."""
+
+    import dataclasses
+
+    @dataclasses.dataclass
+    class ComposedDataclass(*args):
+        def __post_init__(self):
+            for arg in args:
+                if hasattr(arg, "__post_init__"):
+                    arg.__post_init__(self)
+
+    return ComposedDataclass

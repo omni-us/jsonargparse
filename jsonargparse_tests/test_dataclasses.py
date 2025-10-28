@@ -12,7 +12,6 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     Namespace,
-    compose_dataclasses,
     set_parsing_settings,
 )
 from jsonargparse._namespace import NSKeyError
@@ -334,25 +333,6 @@ def test_dataclass_fail_untyped_false(parser):
     assert isinstance(init.data.a1, UntypedClass)
     assert isinstance(init.data.a2, str)
     assert isinstance(init.data.a3, str)
-
-
-@dataclasses.dataclass
-class ComposeA:
-    a: int = 1
-
-    def __post_init__(self):
-        self.a += 1
-
-
-@dataclasses.dataclass
-class ComposeB:
-    b: str = "1"
-
-
-def test_compose_dataclasses():
-    ComposeAB = compose_dataclasses(ComposeA, ComposeB)
-    assert 2 == len(dataclasses.fields(ComposeAB))
-    assert {"a": 3, "b": "2"} == dataclasses.asdict(ComposeAB(a=2, b="2"))  # pylint: disable=unexpected-keyword-arg
 
 
 @dataclasses.dataclass
