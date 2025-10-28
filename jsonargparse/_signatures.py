@@ -31,9 +31,7 @@ from ._typehints import (
 from ._util import NoneType, get_import_path, get_private_kwargs, get_typehint_origin, iter_to_set_str
 from .typing import register_pydantic_type
 
-__all__ = [
-    "SignatureArguments",
-]
+__all__ = ["SignatureArguments"]
 
 
 kinds = inspect._ParameterKind

@@ -777,7 +777,13 @@ class HelpFormatterDeprecations:
         self._yaml_formatter.set_yaml_argument_comment(text, cfg, key, depth)
 
 
-@deprecated("compose_dataclasses is deprecated and will be removed in v5.0.0.")
+@deprecated(
+    """
+    compose_dataclasses is deprecated and will be removed in v5.0.0. There is
+    no direct replacement, whoever is interested can copy the code from an old
+    release.
+"""
+)
 def compose_dataclasses(*args):
     """Returns a dataclass inheriting all given dataclasses and properly handling __post_init__."""
 
