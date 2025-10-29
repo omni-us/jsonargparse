@@ -5,7 +5,7 @@ import platform
 
 import pytest
 
-from jsonargparse import Namespace, dict_to_namespace
+from jsonargparse import Namespace
 from jsonargparse._namespace import NSKeyError, meta_keys
 
 skip_if_no_setattr_insertion_order = pytest.mark.skipif(
@@ -221,13 +221,6 @@ def test_init_invalid():
         Namespace(1)
     with pytest.raises(ValueError):
         Namespace(argparse.Namespace(), x=1)
-
-
-def test_dict_to_namespace():
-    ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
-    dic = {"a": 1, "b": {"c": 2}, "d": [{"e": 3}]}
-    ns2 = dict_to_namespace(dic)
-    assert ns1 == ns2
 
 
 def test_use_for_kwargs():

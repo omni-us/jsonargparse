@@ -15,10 +15,7 @@ from typing import (
     Union,
 )
 
-__all__ = [
-    "Namespace",
-    "dict_to_namespace",
-]
+__all__ = ["Namespace"]
 
 
 meta_keys = {"__default_config__", "__path__", "__orig__"}
@@ -322,27 +319,20 @@ def del_clash_mark(key: str) -> str:
     return key
 
 
-def expand_dict(cfg):
-    for k, v in cfg.items():
+def expand_dict(data: dict) -> Namespace:
+    for k, v in data.items():
         if isinstance(v, dict) and all(isinstance(k, str) for k in v):
-            cfg[k] = expand_dict(v)
+            data[k] = expand_dict(v)
         elif isinstance(v, list):
             for nn, vv in enumerate(v):
                 if isinstance(vv, dict) and all(isinstance(k, str) for k in vv):
-                    cfg[k][nn] = expand_dict(vv)
-    return Namespace(**cfg)
+                    data[k][nn] = expand_dict(vv)
+    return Namespace(**data)
 
 
-def dict_to_namespace(cfg_dict: Union[Dict[str, Any], Namespace]) -> Namespace:
-    """Converts a nested dictionary into a nested namespace.
-
-    Note: Using this function is generally discouraged because it may not
-          produce the same results as a parser would. However, it remains part
-          of the public API to support valid use cases and ensure backward
-          compatibility.
-    """
-    cfg_dict = recreate_branches(cfg_dict)
-    return expand_dict(cfg_dict)
+def dict_to_namespace(data: dict[str, Any]) -> Namespace:
+    data = recreate_branches(data)
+    return expand_dict(data)
 
 
 # Temporal to provide backward compatibility in pytorch-lightning
