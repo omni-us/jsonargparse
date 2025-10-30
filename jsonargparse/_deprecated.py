@@ -9,7 +9,7 @@ from enum import Enum
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, Optional, Set, overload
+from typing import Any, Callable, Dict, Optional, Set, Union, overload
 
 from ._common import Action, null_logger
 from ._common import LoggerProperty as InternalLoggerProperty
@@ -28,6 +28,7 @@ __all__ = [
     "ParserError",
     "compose_dataclasses",
     "get_config_read_mode",
+    "dict_to_namespace",
     "namespace_to_dict",
     "null_logger",
     "set_docstring_parse_options",
@@ -122,8 +123,6 @@ def parse_as_dict_patch():
 
     ArgumentParser._unpatched_init = ArgumentParser.__init__
     ArgumentParser.__init__ = patched_init
-
-    from typing import Union
 
     # Patch parse methods
     def patch_parse_method(method_name):
@@ -705,6 +704,21 @@ class LoggerProperty(InternalLoggerProperty):
 def namespace_to_dict(namespace: Namespace) -> Dict[str, Any]:
     """Returns a copy of a nested namespace converted into a nested dictionary."""
     return namespace.clone().as_dict()
+
+
+@deprecated(
+    """
+    dict_to_namespace was deprecated in v4.43.0 and will be removed in v5.0.0.
+    No replacement is provided because blindly converting a dictionary to a
+    namespace may not yield the same results as using a parser, which could lead
+    to confusion.
+"""
+)
+def dict_to_namespace(cfg_dict: dict[str, Any]) -> Namespace:
+    """Converts a nested dictionary into a nested namespace."""
+    from ._namespace import dict_to_namespace as _dict_to_namespace
+
+    return _dict_to_namespace(cfg_dict)
 
 
 @overload

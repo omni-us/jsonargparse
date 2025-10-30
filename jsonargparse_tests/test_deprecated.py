@@ -33,6 +33,7 @@ from jsonargparse._deprecated import (
     LoggerProperty,
     ParserError,
     deprecation_warning,
+    dict_to_namespace,
     namespace_to_dict,
     shown_deprecation_warnings,
     strip_meta,
@@ -739,6 +740,19 @@ def test_add_dataclass_arguments(parser, subtests):
         help_str = get_parser_help(parser)
         if docstring_parser_support:
             assert "CustomA title:" in help_str
+
+
+def test_dict_to_namespace():
+    ns1 = Namespace(a=1, b=Namespace(c=2), d=[Namespace(e=3)])
+    dic = {"a": 1, "b": {"c": 2}, "d": [{"e": 3}]}
+    with catch_warnings(record=True) as w:
+        ns2 = dict_to_namespace(dic)
+    assert ns1 == ns2
+    assert_deprecation_warn(
+        w,
+        message="dict_to_namespace was deprecated",
+        code="ns2 = dict_to_namespace(dic)",
+    )
 
 
 def test_namespace_to_dict():

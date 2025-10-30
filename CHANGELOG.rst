@@ -47,6 +47,10 @@ Deprecated
 - ``compose_dataclasses`` is deprecated and will be removed in v5.0.0. There is
   no direct replacement, whoever is interested can copy the code (`#796
   <https://github.com/omni-us/jsonargparse/pull/796>`__).
+- ``dict_to_namespace`` is deprecated and will be removed in v5.0.0. No
+  replacement is provided because blindly converting a dictionary to a namespace
+  may not yield the same results as using a parser, which could lead to
+  confusion. (`#797 <https://github.com/omni-us/jsonargparse/pull/797>`__).
 
 
 v4.42.0 (2025-10-14)
