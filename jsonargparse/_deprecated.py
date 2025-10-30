@@ -13,8 +13,7 @@ from typing import Any, Callable, Dict, Optional, Set, Union, overload
 
 from ._common import Action, null_logger
 from ._common import LoggerProperty as InternalLoggerProperty
-from ._namespace import Namespace, recreate_branches
-from ._namespace import dict_to_namespace as _dict_to_namespace
+from ._namespace import Namespace
 from ._type_checking import ArgumentParser, ruamelCommentedMap
 
 __all__ = [
@@ -717,7 +716,8 @@ def namespace_to_dict(namespace: Namespace) -> Dict[str, Any]:
 )
 def dict_to_namespace(cfg_dict: dict[str, Any]) -> Namespace:
     """Converts a nested dictionary into a nested namespace."""
-    cfg_dict = recreate_branches(cfg_dict)
+    from ._namespace import dict_to_namespace as _dict_to_namespace
+
     return _dict_to_namespace(cfg_dict)
 
 
