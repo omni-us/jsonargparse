@@ -35,6 +35,8 @@ Changed
   <https://github.com/omni-us/jsonargparse/pull/792>`__).
 - Non-parsing actions now have a common base class to ease identification
   (`#793 <https://github.com/omni-us/jsonargparse/pull/793>`__).
+- ``jsonargparse.*`` modules now use Python 3.9+ syntax (`#798
+  <https://github.com/omni-us/jsonargparse/pull/798>`__).
 
 Deprecated
 ^^^^^^^^^^

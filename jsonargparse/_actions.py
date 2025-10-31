@@ -7,7 +7,7 @@ from argparse import SUPPRESS, _HelpAction, _SubParsersAction, _VersionAction
 from argparse import Action as ArgparseAction
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Optional, Union
 
 from ._common import Action, NonParsingAction, is_not_subclass_type, is_subclass, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
@@ -48,8 +48,8 @@ def _is_branch_key(parser, key: str) -> bool:
 def _find_action_and_subcommand(
     parser: Union[ArgumentParser, ActionsContainer],
     dest: str,
-    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
-) -> Tuple[Optional[ArgparseAction], Optional[str]]:
+    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
+) -> tuple[Optional[ArgparseAction], Optional[str]]:
     """Finds an action in a parser given its destination key.
 
     Args:
@@ -85,7 +85,7 @@ def _find_action_and_subcommand(
 def _find_action(
     parser: Union[ArgumentParser, ActionsContainer],
     dest: str,
-    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
 ) -> Optional[ArgparseAction]:
     return _find_action_and_subcommand(parser, dest, exclude=exclude)[0]
 
@@ -93,8 +93,8 @@ def _find_action(
 def _find_parent_action_and_subcommand(
     parser: ArgumentParser,
     key: str,
-    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
-) -> Tuple[Optional[ArgparseAction], Optional[str]]:
+    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
+) -> tuple[Optional[ArgparseAction], Optional[str]]:
     action, subcommand = _find_action_and_subcommand(parser, key, exclude=exclude)
     if action is None and "." in key:
         parts = split_key(key)
@@ -108,7 +108,7 @@ def _find_parent_action_and_subcommand(
 def _find_parent_action(
     parser: ArgumentParser,
     key: str,
-    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
 ) -> Optional[ArgparseAction]:
     return _find_parent_action_and_subcommand(parser, key, exclude=exclude)[0]
 
@@ -304,7 +304,7 @@ class _ActionPrintConfig(NonParsingAction):
 
 
 class _ActionConfigLoad(Action):
-    def __init__(self, basetype: Optional[Type] = None, **kwargs):
+    def __init__(self, basetype: Optional[type] = None, **kwargs):
         if len(kwargs) == 0:
             self._basetype = basetype
         else:
@@ -344,7 +344,7 @@ class _ActionConfigLoad(Action):
 
 
 class _ActionHelpClassPath(NonParsingAction):
-    sub_add_kwargs: Dict[str, Any] = {}
+    sub_add_kwargs: dict[str, Any] = {}
 
     @classmethod
     def get_help_types(cls, typehint) -> Optional[tuple]:
@@ -727,7 +727,7 @@ class _ActionSubCommands(_SubParsersAction):
         cfg: Namespace,
         prefix: str = "",
         fail_no_subcommand: bool = True,
-    ) -> Tuple[Optional[List[str]], Optional[List[ArgumentParser]]]:
+    ) -> tuple[Optional[list[str]], Optional[list[ArgumentParser]]]:
         """Returns subcommand names and corresponding subparsers."""
         if parser._subcommands_action is None:
             return None, None
@@ -783,7 +783,7 @@ class _ActionSubCommands(_SubParsersAction):
         cfg: Namespace,
         prefix: str = "",
         fail_no_subcommand: bool = True,
-    ) -> Tuple[Optional[str], Optional[ArgumentParser]]:
+    ) -> tuple[Optional[str], Optional[ArgumentParser]]:
         """Returns a single subcommand name and corresponding subparser."""
         subcommands, subparsers = _ActionSubCommands.get_subcommands(
             parser,

@@ -10,9 +10,10 @@ from argparse import (
     _HelpAction,
     _SubParsersAction,
 )
+from collections.abc import Iterable
 from io import StringIO
 from string import Template
-from typing import Iterable, Optional, Union
+from typing import Optional, Union
 
 from ._actions import (
     ActionConfigFile,

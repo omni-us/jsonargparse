@@ -7,13 +7,9 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (  # type: ignore[attr-defined]
     Callable,
-    Dict,
     Generic,
-    List,
     Optional,
     Protocol,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     _GenericAlias,
@@ -51,11 +47,11 @@ capture_typing_extension_shadows(_UnpackGenericAlias, "_UnpackGenericAlias", unp
 
 
 class InstantiatorCallable(Protocol):
-    def __call__(self, class_type: Type[ClassType], *args, **kwargs) -> ClassType:
+    def __call__(self, class_type: type[ClassType], *args, **kwargs) -> ClassType:
         pass  # pragma: no cover
 
 
-InstantiatorsDictType = Dict[Tuple[type, bool], InstantiatorCallable]
+InstantiatorsDictType = dict[tuple[type, bool], InstantiatorCallable]
 
 
 parent_parser: ContextVar[Optional[ArgumentParser]] = ContextVar("parent_parser", default=None)
@@ -64,7 +60,7 @@ defaults_cache: ContextVar[Optional[Namespace]] = ContextVar("defaults_cache", d
 lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", default=False)
 load_value_mode: ContextVar[Optional[str]] = ContextVar("load_value_mode", default=None)
 class_instantiators: ContextVar[Optional[InstantiatorsDictType]] = ContextVar("class_instantiators", default=None)
-nested_links: ContextVar[List[dict]] = ContextVar("nested_links", default=[])
+nested_links: ContextVar[list[dict]] = ContextVar("nested_links", default=[])
 applied_instantiation_links: ContextVar[Optional[set]] = ContextVar("applied_instantiation_links", default=None)
 path_dump_preserve_relative: ContextVar[bool] = ContextVar("path_dump_preserve_relative", default=False)
 
@@ -287,7 +283,7 @@ def is_pure_dataclass(cls) -> bool:
     return all(dataclasses.is_dataclass(c) for c in classes)
 
 
-not_subclass_type_selectors: Dict[str, Callable[[Type], Union[bool, int]]] = {
+not_subclass_type_selectors: dict[str, Callable[[type], Union[bool, int]]] = {
     "final": is_final_class,
     "dataclass": is_pure_dataclass,
     "pydantic": is_pydantic_model,
@@ -303,7 +299,7 @@ def is_not_subclass_type(cls) -> bool:
     return any(validator(cls) for validator in not_subclass_type_selectors.values())
 
 
-def default_class_instantiator(class_type: Type[ClassType], *args, **kwargs) -> ClassType:
+def default_class_instantiator(class_type: type[ClassType], *args, **kwargs) -> ClassType:
     return class_type(*args, **kwargs)
 
 
@@ -311,7 +307,7 @@ class ClassInstantiator:
     def __init__(self, instantiators: InstantiatorsDictType) -> None:
         self.instantiators = instantiators
 
-    def __call__(self, class_type: Type[ClassType], *args, **kwargs) -> ClassType:
+    def __call__(self, class_type: type[ClassType], *args, **kwargs) -> ClassType:
         for (cls, subclasses), instantiator in self.instantiators.items():
             if class_type is cls or (subclasses and is_subclass(class_type, cls)):
                 param_names = set(inspect.signature(instantiator).parameters)

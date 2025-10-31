@@ -10,7 +10,7 @@ from copy import copy
 from enum import Enum
 from importlib.util import find_spec
 from subprocess import PIPE, Popen
-from typing import List, Literal, Union
+from typing import Literal, Union
 
 from ._actions import ActionConfigFile, _ActionConfigLoad, _ActionHelpClassPath, remove_actions
 from ._common import NonParsingAction, get_optionals_as_positionals_actions, get_parsing_setting
@@ -153,10 +153,12 @@ def shtab_prepare_action(action, parser) -> None:
     elif isinstance(action, ActionTypeHint):
         typehint = action._typehint
         if get_typehint_origin(typehint) == Union:
+            assert hasattr(typehint, "__args__")
             subtypes = [s for s in typehint.__args__ if s not in {NoneType, str, dict, list, tuple, bytes}]
             if len(subtypes) == 1:
                 typehint = subtypes[0]
         if is_subclass(typehint, Path):
+            assert hasattr(typehint, "_mode")
             if "f" in typehint._mode:
                 complete = shtab.FILE
             elif "d" in typehint._mode:
@@ -230,7 +232,7 @@ def add_bash_typehint_completion(parser, action, message, choices) -> None:
     action.complete = {"bash": fn_name}
 
 
-def get_typehint_choices(typehint, prefix, parser, skip, choices=None, added_subclasses=None) -> List[str]:
+def get_typehint_choices(typehint, prefix, parser, skip, choices=None, added_subclasses=None) -> list[str]:
     if choices is None:
         choices = []
     if not added_subclasses:
@@ -265,7 +267,7 @@ def get_typehint_choices(typehint, prefix, parser, skip, choices=None, added_sub
     return [] if choices == ["null"] else choices
 
 
-def add_subactions_and_get_subclass_choices(typehint, prefix, parser, skip, added_subclasses) -> List[str]:
+def add_subactions_and_get_subclass_choices(typehint, prefix, parser, skip, added_subclasses) -> list[str]:
     choices = []
     paths = get_all_subclass_paths(typehint)
     init_args = defaultdict(list)
@@ -303,7 +305,7 @@ def add_subactions_and_get_subclass_choices(typehint, prefix, parser, skip, adde
     return choices
 
 
-def get_help_class_choices(typehint) -> List[str]:
+def get_help_class_choices(typehint) -> list[str]:
     choices = []
     if get_typehint_origin(typehint) == Union:
         for subtype in typehint.__args__:

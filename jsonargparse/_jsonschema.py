@@ -1,7 +1,7 @@
 """Action to support jsonschemas."""
 
 import os
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from ._actions import _is_action_value_list
 from ._common import Action, parser_context
@@ -21,7 +21,7 @@ class ActionJsonSchema(Action):
     """Action to parse option as json validated by a jsonschema."""
 
     def __init__(
-        self, schema: Optional[Union[str, Dict]] = None, enable_path: bool = True, with_meta: bool = True, **kwargs
+        self, schema: Optional[Union[str, dict]] = None, enable_path: bool = True, with_meta: bool = True, **kwargs
     ):
         """Initializer for ActionJsonSchema instance.
 

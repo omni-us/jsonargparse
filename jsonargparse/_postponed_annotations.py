@@ -7,7 +7,7 @@ from collections import namedtuple
 from copy import deepcopy
 from dataclasses import is_dataclass
 from importlib import import_module
-from typing import Any, ForwardRef, List, Optional, Union, get_type_hints
+from typing import Any, ForwardRef, Optional, Union, get_type_hints
 
 from ._optionals import typing_extensions_import
 from ._typehints import mapping_origin_types, sequence_origin_types, tuple_set_origin_types
@@ -70,14 +70,14 @@ class NamesVisitor(ast.NodeVisitor):
     def find(self, node: ast.AST) -> list:
         from ._util import unique
 
-        self.names_found: List[str] = []
+        self.names_found: list[str] = []
         self.visit(node)
         self.names_found = unique(self.names_found)
         return self.names_found
 
 
 class TypeCheckingVisitor(ast.NodeVisitor):
-    type_checking_names: List[str] = []
+    type_checking_names: list[str] = []
 
     def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:

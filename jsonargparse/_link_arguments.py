@@ -7,7 +7,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
 from importlib import import_module
-from typing import Any, Callable, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Optional, Union
 
 from ._actions import (
     Action,
@@ -29,9 +29,9 @@ __all__ = ["ArgumentLinking"]
 def find_parent_or_child_actions(
     parser: ArgumentParser,
     key: str,
-    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
-) -> Optional[List[ArgparseAction]]:
-    found: List[ArgparseAction] = []
+    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
+) -> Optional[list[ArgparseAction]]:
+    found: list[ArgparseAction] = []
     action = _find_parent_action(parser, key, exclude=exclude)
     if action is not None:
         found = [action]
@@ -47,7 +47,7 @@ def find_parent_or_child_actions(
 def find_subclass_action_or_class_group(
     parser: ArgumentParser,
     key: str,
-    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
 ) -> Optional[Union[ArgparseAction, ArgumentGroup]]:
     from ._typehints import ActionTypeHint
 
@@ -114,7 +114,7 @@ class ActionLink(Action):
     def __init__(
         self,
         parser,
-        source: Union[str, Tuple[str, ...]],
+        source: Union[str, tuple[str, ...]],
         target: str,
         compute_fn: Optional[Callable] = None,
         apply_on: str = "parse",
@@ -493,7 +493,7 @@ class ActionLink(Action):
 def find_parent_action_or_group(
     parser: ArgumentParser,
     key: str,
-    exclude: Optional[Union[Type[ArgparseAction], Tuple[Type[ArgparseAction], ...]]] = None,
+    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
 ) -> Optional[Union[ArgparseAction, ArgumentGroup]]:
     action_or_group = _find_parent_action_and_subcommand(parser, key, exclude=exclude)[0]
     if not action_or_group and parser.groups and key in parser.groups:
@@ -501,7 +501,7 @@ def find_parent_action_or_group(
     return action_or_group
 
 
-def get_link_actions(parser: ArgumentParser, apply_on: str, skip=set()) -> List[ActionLink]:
+def get_link_actions(parser: ArgumentParser, apply_on: str, skip=set()) -> list[ActionLink]:
     if not hasattr(parser, "_links_group"):
         return []
     return [a for a in parser._links_group._group_actions if a.apply_on == apply_on and a not in skip]
@@ -525,7 +525,7 @@ class ArgumentLinking:
 
     def link_arguments(
         self,
-        source: Union[str, Tuple[str, ...]],
+        source: Union[str, tuple[str, ...]],
         target: str,
         compute_fn: Optional[Callable] = None,
         apply_on: str = "parse",

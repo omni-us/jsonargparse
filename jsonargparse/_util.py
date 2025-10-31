@@ -13,7 +13,6 @@ from typing import (
     Any,
     Callable,
     Optional,
-    Tuple,
     Type,
     Union,
     get_type_hints,
@@ -103,7 +102,7 @@ NestedArg = namedtuple("NestedArg", "key val")
 
 def parse_value_or_config(
     value: Any, enable_path: bool = True, simple_types: bool = False
-) -> Tuple[Any, Optional[Path]]:
+) -> tuple[Any, Optional[Path]]:
     """Parses yaml/json config in a string or a path"""
     nested_arg: Union[bool, NestedArg] = False
     if isinstance(value, NestedArg):
@@ -159,7 +158,7 @@ def register_unresolvable_import_paths(*modules: ModuleType):
             if (
                 getattr(val, "__module__", None) is None
                 and getattr(val, "__name__", None)
-                and type(val) in {BuiltinFunctionType, FunctionType, Type}
+                and type(val) in {BuiltinFunctionType, FunctionType, Type, type}
             ):
                 unresolvable_import_paths[val] = f"{module.__name__}.{val.__name__}"
 
@@ -289,9 +288,9 @@ class ClassFromFunctionBase:
 
 def class_from_function(
     func: Callable[..., ClassType],
-    func_return: Optional[Type[ClassType]] = None,
+    func_return: Optional[type[ClassType]] = None,
     name: Optional[str] = None,
-) -> Type[ClassType]:
+) -> type[ClassType]:
     """Creates a dynamic class which if instantiated is equivalent to calling func.
 
     Args:

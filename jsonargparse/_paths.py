@@ -3,11 +3,12 @@ import re
 import stat
 import sys
 from collections import Counter
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from io import StringIO
-from typing import IO, Any, Iterator, Optional, Union
+from typing import IO, Any, Optional, Union
 
 from ._deprecated import PathDeprecations
 from ._optionals import (

@@ -221,7 +221,7 @@ parse_optional_num_return = get_parse_optional_num_return()
 class ActionTypeHint(Action):
     """Action to parse a type hint."""
 
-    def __init__(self, typehint: Optional[Type] = None, enable_path: bool = False, **kwargs):
+    def __init__(self, typehint: Optional[type] = None, enable_path: bool = False, **kwargs):
         """Initializer for ActionTypeHint instance.
 
         Args:
@@ -235,6 +235,7 @@ class ActionTypeHint(Action):
             if not self.is_supported_typehint(typehint, full=True):
                 raise ValueError(f"Unsupported type hint {typehint}.")
             if get_typehint_origin(typehint) == Union:
+                assert hasattr(typehint, "__args__")
                 subtype_supported = [
                     subtype is NoneType or self.is_supported_typehint(subtype, full=True)
                     for subtype in typehint.__args__
@@ -718,7 +719,7 @@ def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: O
     raise ValueError(message) from exception
 
 
-def raise_union_unexpected_value(subtypes, val: Any, exceptions: List[Exception]) -> NoReturn:
+def raise_union_unexpected_value(subtypes, val: Any, exceptions: list[Exception]) -> NoReturn:
     str_exceptions = [indent_text(str(e), first_line=False) for e in exceptions]
     errors = indent_text("- " + "\n- ".join(str_exceptions))
     errors = errors.replace(f". Got value: {val}", "").replace(f" {val} ", " ")
@@ -779,7 +780,7 @@ def adapt_typehints(
     # Literal
     elif typehint_origin in literal_types:
         if val not in subtypehints and isinstance(val, str):
-            subtypes = tuple((type(v) for v in subtypehints if type(v) is not str))
+            subtypes = tuple(type(v) for v in subtypehints if type(v) is not str)
             if subtypes:
                 val = adapt_typehints(val, Union[subtypes], **adapt_kwargs)
         if val not in subtypehints:
@@ -1332,7 +1333,7 @@ def adapt_partial_callable_class(callable_type, subclass_spec):
     return subclass_spec, partial_skip_args
 
 
-def get_all_subclass_paths(cls: Type) -> List[str]:
+def get_all_subclass_paths(cls: type) -> list[str]:
     subclass_list = []
 
     def is_local(cl):
@@ -1361,10 +1362,10 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
             add_subclasses(subclass)
 
     if get_typehint_origin(cls) in callable_origin_types:
-        cls = cls.__args__[-1]
+        cls = cls.__args__[-1]  # type: ignore[attr-defined]
 
     if get_typehint_origin(cls) in {Union, Type, type}:
-        for arg in cls.__args__:
+        for arg in cls.__args__:  # type: ignore[attr-defined]
             if ActionTypeHint.is_subclass_typehint(arg, also_lists=True) and arg not in {object, type}:
                 add_subclasses(arg)
     else:
@@ -1373,7 +1374,7 @@ def get_all_subclass_paths(cls: Type) -> List[str]:
     return subclass_list
 
 
-def resolve_class_path_by_name(cls: Union[Type, Tuple[Type]], name: str) -> str:
+def resolve_class_path_by_name(cls: Union[type, tuple[type]], name: str) -> str:
     class_path = name
     if "." not in class_path:
         if isinstance(cls, tuple):
@@ -1575,7 +1576,7 @@ def sort_subtypes_for_union(subtypes, val, prev_val, append):
 
 
 def is_ellipsis_tuple(typehint):
-    return typehint.__origin__ in {Tuple, tuple} and len(typehint.__args__) > 1 and typehint.__args__[1] == Ellipsis
+    return typehint.__origin__ in {tuple, tuple} and len(typehint.__args__) > 1 and typehint.__args__[1] == Ellipsis
 
 
 def is_optional(annotation, ref_type=None):
@@ -1657,12 +1658,12 @@ def serialize_class_instance(val):
     return val
 
 
-def callable_instances(cls: Type):
+def callable_instances(cls: type):
     # https://stackoverflow.com/a/71568161/2732151
     return isinstance(getattr(cls, "__call__", None), FunctionType)
 
 
-def check_lazy_kwargs(class_type: Type, lazy_kwargs: dict):
+def check_lazy_kwargs(class_type: type, lazy_kwargs: dict):
     if lazy_kwargs:
         from ._core import ArgumentParser
 
@@ -1675,7 +1676,7 @@ def check_lazy_kwargs(class_type: Type, lazy_kwargs: dict):
 
 
 class LazyInitBaseClass:
-    def __init__(self, class_type: Type, lazy_kwargs: dict):
+    def __init__(self, class_type: type, lazy_kwargs: dict):
         assert not issubclass(class_type, LazyInitBaseClass)
         check_lazy_kwargs(class_type, lazy_kwargs)
         self._lazy = type(self)
@@ -1721,7 +1722,7 @@ class LazyInitBaseClass:
         return init
 
 
-def lazy_instance(class_type: Type[ClassType], **kwargs) -> ClassType:
+def lazy_instance(class_type: type[ClassType], **kwargs) -> ClassType:
     """Instantiates a lazy instance of the given type.
 
     By lazy it is meant that the __init__ is delayed unit the first time that a

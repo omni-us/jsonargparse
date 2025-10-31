@@ -40,7 +40,7 @@ def test_public_api():
         n
         for n, v in vars(jsonargparse.typing).items()
         if n[0] != "_"
-        and getattr(v, "__module__", "").split(".")[0] not in {"jsonargparse", "typing"}
+        and getattr(v, "__module__", "").split(".")[0] not in {"jsonargparse", "typing", "re"}
         and (inspect.isclass(v) or inspect.isfunction(v))
     }
     assert set() == names - set(jsonargparse.typing.__all__)
@@ -337,7 +337,7 @@ def test_pickle_module_type(type_class):
 
 
 def test_module_name_clash():
-    pytest.raises(ValueError, lambda: restricted_string_type("List", "^clash$"))
+    pytest.raises(ValueError, lambda: restricted_string_type("Callable", "^clash$"))
 
 
 def test_register_non_bool_cast_type(parser):
