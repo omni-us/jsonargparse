@@ -2,16 +2,12 @@
 
 import argparse
 from collections import OrderedDict
+from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Set,
-    Tuple,
     Union,
 )
 
@@ -26,15 +22,15 @@ class NSKeyError(KeyError):
         return str(self.args[0])
 
 
-def split_key(key: str) -> List[str]:
+def split_key(key: str) -> list[str]:
     return key.split(".")
 
 
-def split_key_root(key: str) -> List[str]:
+def split_key_root(key: str) -> list[str]:
     return key.split(".", 1)
 
 
-def split_key_leaf(key: str) -> List[str]:
+def split_key_leaf(key: str) -> list[str]:
     return key.rsplit(".", 1)
 
 
@@ -90,7 +86,7 @@ class Namespace(argparse.Namespace):
             for key, val in args[0].items() if isinstance(args[0], dict) else vars(args[0]).items():
                 self[key] = val
 
-    def _parse_key(self, key: str) -> Tuple[str, Optional["Namespace"], str]:
+    def _parse_key(self, key: str) -> tuple[str, Optional["Namespace"], str]:
         """Parses a key for the nested namespace.
 
         Args:
@@ -127,7 +123,7 @@ class Namespace(argparse.Namespace):
                     return leaf_key, None, parent_key
         return leaf_key, parent_ns, parent_key
 
-    def _parse_required_key(self, key: str) -> Tuple[str, "Namespace", str]:
+    def _parse_required_key(self, key: str) -> tuple[str, "Namespace", str]:
         """Same as _parse_key but raises KeyError if key not found."""
         leaf_key, parent_ns, parent_key = self._parse_key(key)
         if parent_ns is None or not hasattr(parent_ns, leaf_key):
@@ -192,7 +188,7 @@ class Namespace(argparse.Namespace):
         """Returns False if namespace is empty, otherwise True."""
         return bool(self.__dict__)
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """Converts the nested namespaces into nested dictionaries."""
         dic = {}
         for key, val in vars(self).items():
@@ -212,7 +208,7 @@ class Namespace(argparse.Namespace):
             setattr(flat, key, val)
         return flat
 
-    def items(self, branches: bool = False, nested: bool = True) -> Iterator[Tuple[str, Any]]:
+    def items(self, branches: bool = False, nested: bool = True) -> Iterator[tuple[str, Any]]:
         """Returns a generator of all leaf (key, value) items, optionally including branches."""
         for key, val in vars(self).items():
             key = del_clash_mark(key)
@@ -236,7 +232,7 @@ class Namespace(argparse.Namespace):
         for _, val in self.items(branches):
             yield val
 
-    def get_sorted_keys(self, branches: bool = True, key_filter: Callable = is_meta_key) -> List[str]:
+    def get_sorted_keys(self, branches: bool = True, key_filter: Callable = is_meta_key) -> list[str]:
         """Returns a list of keys sorted by descending depth.
 
         Args:
@@ -292,7 +288,7 @@ class Namespace(argparse.Namespace):
         except (KeyError, TypeError):
             return default
 
-    def get_value_and_parent(self, key: str) -> Tuple[Any, "Namespace", str]:
+    def get_value_and_parent(self, key: str) -> tuple[Any, "Namespace", str]:
         leaf_key, parent_ns, _ = self._parse_required_key(key)
         return parent_ns[leaf_key], parent_ns, leaf_key
 
@@ -303,7 +299,7 @@ class Namespace(argparse.Namespace):
         return parent_ns.__dict__.pop(leaf_key, default)
 
 
-clash_names: Set[str] = set(dir(Namespace))
+clash_names: set[str] = set(dir(Namespace))
 clash_mark = "\u200b"
 
 

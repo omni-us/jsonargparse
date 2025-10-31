@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from importlib.metadata import version
 from importlib.util import find_spec
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 __all__ = [
     "_get_config_read_mode",
@@ -320,12 +320,12 @@ def omegaconf_apply(parser, cfg):
     return parser._apply_actions(cfg_dict)
 
 
-def omegaconf_tokenize(path: str) -> List[str]:
+def omegaconf_tokenize(path: str) -> list[str]:
     """Very small tokenizer: 'a.b[0].c' -> ['a','b','0','c']."""
     return [t for t in path.replace("]", "").replace("[", ".").split(".") if t]
 
 
-def omegaconf_tokens_to_path(tokens: List[str]) -> str:
+def omegaconf_tokens_to_path(tokens: list[str]) -> str:
     """Render tokens back to a normalized path: ['a','0','b'] -> 'a[0].b'."""
     s = ""
     for t in tokens:
@@ -345,7 +345,7 @@ def omegaconf_absolute_to_relative_paths(data: dict) -> dict:
 
     regex_absolute_path = re.compile(r"\$\{([a-zA-Z][a-zA-Z0-9[\]_.]*)\}")
 
-    def _walk(node, current_path: List[Union[str, int]]):
+    def _walk(node, current_path: list[Union[str, int]]):
         if isinstance(node, dict):
             return {k: _walk(v, current_path + [k]) for k, v in node.items()}
         if isinstance(node, list):

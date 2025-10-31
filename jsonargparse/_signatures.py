@@ -4,7 +4,7 @@ import dataclasses
 import inspect
 import re
 from argparse import SUPPRESS, ArgumentParser
-from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Optional, Union
 
 from ._actions import _ActionConfigLoad
 from ._common import (
@@ -43,17 +43,17 @@ class SignatureArguments(LoggerProperty):
 
     def add_class_arguments(
         self,
-        theclass: Type,
+        theclass: type,
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        default: Optional[Union[dict, Namespace, LazyInitBaseClass, Type]] = None,
-        skip: Optional[Set[Union[str, int]]] = None,
+        default: Optional[Union[dict, Namespace, LazyInitBaseClass, type]] = None,
+        skip: Optional[set[Union[str, int]]] = None,
         instantiate: bool = True,
         fail_untyped: bool = True,
         sub_configs: bool = False,
         **kwargs,
-    ) -> List[str]:
+    ) -> list[str]:
         """Adds arguments from a class based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
@@ -132,15 +132,15 @@ class SignatureArguments(LoggerProperty):
 
     def add_method_arguments(
         self,
-        theclass: Type,
+        theclass: type,
         themethod: str,
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[Set[Union[str, int]]] = None,
+        skip: Optional[set[Union[str, int]]] = None,
         fail_untyped: bool = True,
         sub_configs: bool = False,
-    ) -> List[str]:
+    ) -> list[str]:
         """Adds arguments from a class based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
@@ -185,10 +185,10 @@ class SignatureArguments(LoggerProperty):
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[Set[Union[str, int]]] = None,
+        skip: Optional[set[Union[str, int]]] = None,
         fail_untyped: bool = True,
         sub_configs: bool = False,
-    ) -> List[str]:
+    ) -> list[str]:
         """Adds arguments from a function based on its type hints and docstrings.
 
         Note: Keyword arguments without at least one valid type are ignored.
@@ -235,13 +235,13 @@ class SignatureArguments(LoggerProperty):
         nested_key: Optional[str],
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[Set[Union[str, int]]] = None,
+        skip: Optional[set[Union[str, int]]] = None,
         fail_untyped: bool = True,
         sub_configs: bool = False,
         instantiate: bool = True,
-        linked_targets: Optional[Set[str]] = None,
+        linked_targets: Optional[set[str]] = None,
         help: Optional[str] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Adds arguments from parameters of objects based on signatures and docstrings.
 
         Args:
@@ -299,7 +299,7 @@ class SignatureArguments(LoggerProperty):
         )
 
         ## Add parameter arguments ##
-        added_args: List[str] = []
+        added_args: list[str] = []
         for param in params:
             self._add_signature_parameter(
                 container,
@@ -320,13 +320,13 @@ class SignatureArguments(LoggerProperty):
         container,
         nested_key: Optional[str],
         param,
-        added_args: List[str],
-        skip: Optional[Set[str]] = None,
+        added_args: list[str],
+        skip: Optional[set[str]] = None,
         fail_untyped: bool = True,
         as_positional: bool = False,
         sub_configs: bool = False,
         instantiate: bool = True,
-        linked_targets: Optional[Set[str]] = None,
+        linked_targets: Optional[set[str]] = None,
         default: Any = inspect_empty,
         **kwargs,
     ):
@@ -454,10 +454,10 @@ class SignatureArguments(LoggerProperty):
 
     def add_subclass_arguments(
         self,
-        baseclass: Union[Type, Tuple[Type, ...]],
+        baseclass: Union[type, tuple[type, ...]],
         nested_key: str,
         as_group: bool = True,
-        skip: Optional[Set[str]] = None,
+        skip: Optional[set[str]] = None,
         instantiate: bool = True,
         required: bool = False,
         metavar: str = "CONFIG | CLASS_PATH_OR_NAME | .INIT_ARG_NAME VALUE",
@@ -490,11 +490,12 @@ class SignatureArguments(LoggerProperty):
         """
         if type(baseclass) is not tuple:
             baseclass = (baseclass,)  # type: ignore[assignment]
+        assert isinstance(baseclass, tuple)
         if not baseclass or not all(ActionTypeHint.is_subclass_typehint(c, also_lists=True) for c in baseclass):
             raise ValueError(f"Expected 'baseclass' to be a subclass type or a tuple of subclass types: {baseclass}")
 
         doc_group = None
-        if len(baseclass) == 1:  # type: ignore[arg-type]
+        if len(baseclass) == 1:
             doc_group = get_doc_short_description(baseclass[0], logger=self.logger)
         group = self._create_group_if_requested(
             baseclass,
@@ -506,7 +507,7 @@ class SignatureArguments(LoggerProperty):
             instantiate=False,
         )
 
-        added_args: List[str] = []
+        added_args: list[str] = []
         if skip is not None:
             skip = {f"{nested_key}.init_args." + s for s in skip}
         param = ParamData(name=nested_key, annotation=Union[baseclass], component=baseclass)

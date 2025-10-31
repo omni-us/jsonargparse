@@ -4,7 +4,7 @@ import inspect
 import re
 from argparse import HelpFormatter
 from contextlib import suppress
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Type
+from typing import Any, Callable, Optional
 
 from ._common import load_value_mode, parent_parser
 from ._optionals import (
@@ -130,18 +130,18 @@ def jsonnet_load(stream, path="", ext_vars=None):
     return json_or_yaml_load(val)
 
 
-loaders: Dict[str, Callable] = {
+loaders: dict[str, Callable] = {
     "yaml": yaml_load,
     "json": json_load,
     "toml": toml_load,
 }
-loader_exceptions: Dict[str, Tuple[Type[Exception], ...]] = {}
-loader_json_superset: Dict[str, bool] = {
+loader_exceptions: dict[str, tuple[type[Exception], ...]] = {}
+loader_json_superset: dict[str, bool] = {
     "yaml": True,
     "json": True,
     "toml": False,
 }
-loader_params: Dict[str, Set[str]] = {}
+loader_params: dict[str, set[str]] = {}
 
 
 def get_load_value_mode() -> str:
@@ -153,7 +153,7 @@ def get_load_value_mode() -> str:
     return mode
 
 
-def get_loader_exceptions(mode: Optional[str] = None) -> Tuple[Type[Exception], ...]:
+def get_loader_exceptions(mode: Optional[str] = None) -> tuple[type[Exception], ...]:
     if mode is None:
         mode = get_load_value_mode()
     if mode not in loader_exceptions:
@@ -257,7 +257,7 @@ def toml_dump(data):
     return toml_dumps(data)
 
 
-dumpers: Dict[str, Callable] = {
+dumpers: dict[str, Callable] = {
     "yaml": yaml_dump,
     "json": json_compact_dump,
     "json_compact": json_compact_dump,
@@ -268,7 +268,7 @@ dumpers: Dict[str, Callable] = {
 if ruamel_support:
     dumpers["yaml_comments"] = yaml_comments_dump
 
-comment_prefix: Dict[str, str] = {
+comment_prefix: dict[str, str] = {
     "yaml": "# ",
     "yaml_comments": "# ",
     "jsonnet": "// ",
@@ -296,7 +296,7 @@ def dump_using_format(parser: ArgumentParser, data: dict, dump_format: str) -> s
 def set_loader(
     mode: str,
     loader_fn: Callable[[str], Any],
-    exceptions: Tuple[Type[Exception], ...] = (),
+    exceptions: tuple[type[Exception], ...] = (),
     json_superset: bool = True,
 ):
     """Sets the value loader function to be used when parsing with a certain mode.
@@ -348,7 +348,7 @@ def set_omegaconf_loader(mode="omegaconf"):
 set_loader("jsonnet", jsonnet_load, get_loader_exceptions("jsonnet"))
 
 
-def create_help_formatter_with_comments(formatter_class: Type[HelpFormatter]) -> Type[HelpFormatter]:
+def create_help_formatter_with_comments(formatter_class: type[HelpFormatter]) -> type[HelpFormatter]:
     """Creates a dynamic class that combines a formatter with YAML comment functionality.
 
     Args:
