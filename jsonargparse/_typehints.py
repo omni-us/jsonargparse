@@ -1576,7 +1576,7 @@ def sort_subtypes_for_union(subtypes, val, prev_val, append):
 
 
 def is_ellipsis_tuple(typehint):
-    return typehint.__origin__ in {tuple, tuple} and len(typehint.__args__) > 1 and typehint.__args__[1] == Ellipsis
+    return typehint.__origin__ in {Tuple, tuple} and len(typehint.__args__) > 1 and typehint.__args__[1] == Ellipsis
 
 
 def is_optional(annotation, ref_type=None):
