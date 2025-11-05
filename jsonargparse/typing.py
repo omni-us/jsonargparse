@@ -6,7 +6,6 @@ import os
 import pathlib
 import re
 import sys
-from re import Pattern
 from typing import Any, Callable, Optional, Union
 
 if sys.version_info >= (3, 10):
@@ -181,7 +180,7 @@ def restricted_number_type(
 
 def restricted_string_type(
     name: str,
-    regex: Union[str, Pattern],
+    regex: Union[str, re.Pattern],
     docstring: Optional[str] = None,
 ) -> _TypeAlias:
     """Creates or returns an already registered restricted string type class.
