@@ -298,7 +298,7 @@ def get_omegaconf_loader(mode):
         if isinstance(value_pyyaml, (str, int, float, bool)) or value_pyyaml is None:
             return value_pyyaml
         value_omegaconf = OmegaConf.to_object(OmegaConf.load(io.StringIO(value)))
-        str_ref = {k: None for k in [value]}
+        str_ref = dict.fromkeys([value], None)
         return value_pyyaml if value_omegaconf == str_ref else value_omegaconf
 
     return omegaconf_load
