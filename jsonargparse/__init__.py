@@ -14,6 +14,7 @@ from ._common import *  # noqa: F403
 from ._core import *  # noqa: F403
 from ._deprecated import *  # noqa: F403
 from ._formatters import *  # noqa: F403
+from ._from_config import *  # noqa: F403
 from ._jsonnet import *  # noqa: F403
 from ._jsonschema import *  # noqa: F403
 from ._link_arguments import *  # noqa: F403
