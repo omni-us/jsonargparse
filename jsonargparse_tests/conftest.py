@@ -83,6 +83,12 @@ skip_if_responses_unavailable = pytest.mark.skipif(
     reason="responses package is required",
 )
 
+skip_if_omegaconf_unavailable = pytest.mark.skipif(
+    not omegaconf_support,
+    reason="omegaconf package is required",
+)
+
+
 skip_if_running_as_root = pytest.mark.skipif(
     is_posix and os.geteuid() == 0,
     reason="User is root, permission tests will not work",
