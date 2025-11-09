@@ -118,7 +118,7 @@ def test_init_defaults_override_parser_kwargs(tmp_cwd):
         __from_config_init_defaults__ = config_path
         __from_config_parser_kwargs__ = {"parser_mode": "omegaconf+"}
 
-        def __init__(self, param1: str, param2: str):
+        def __init__(self, param1: str = "", param2: str = ""):
             self.param1 = param1
             self.param2 = param2
 

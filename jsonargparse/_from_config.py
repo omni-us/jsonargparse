@@ -96,16 +96,16 @@ def _override_init_defaults_parent_classes(cls: Type[T], defaults: dict) -> None
             break
 
         params = inspect.signature(base.__init__).parameters  # type: ignore[misc]
-        for name, default in defaults.copy().items():
-            if name in params:
-                defaults.pop(name)
-                new_param = inspect.Parameter(
-                    name=name,
-                    kind=inspect.Parameter.KEYWORD_ONLY,
-                    default=default,
-                    annotation=params[name].annotation,
-                )
-                override_parent_params.append(new_param)
+        names = [name for name in defaults if name in params]
+        for name in names:
+            default = defaults.pop(name)
+            new_param = inspect.Parameter(
+                name=name,
+                kind=inspect.Parameter.KEYWORD_ONLY,
+                default=default,
+                annotation=params[name].annotation,
+            )
+            override_parent_params.append(new_param)
 
     if not override_parent_params:
         return
