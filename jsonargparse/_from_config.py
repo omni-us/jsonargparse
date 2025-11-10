@@ -12,22 +12,23 @@ T = TypeVar("T")
 
 
 class FromConfigMixin:
-    """Mixin class that adds config support to a base class.
+    """Mixin class that adds from config support to classes.
 
     This mixin does two things:
 
-        1. Adds support for overriding __init__ defaults by defining a
-           `__from_config_init_defaults__` class attribute pointing to a config
-           file path. The overriding of defaults happens on subclass creation
-           time. Inspecting the signature will give the overridden defaults.
+        1. Adds support for overriding ``__init__`` defaults by defining a
+           ``__from_config_init_defaults__`` class attribute pointing to a
+           config file path. The overriding of defaults happens on subclass
+           creation time. Inspecting the signature will give the overridden
+           defaults.
 
-        2. Adds a `from_config` @classmethod, that instantiates the class based
-           on a config file or dict.
+        2. Adds a ``from_config`` ``@classmethod``, that instantiates the class
+           based on a config file or dict.
 
     Attributes:
-        __from_config_init_defaults__: Optional path to a config file for
-            overriding __init__ defaults.
-        __from_config_parser_kwargs__: Additional kwargs to pass to the
+        ``__from_config_init_defaults__``: Optional path to a config file for
+            overriding ``__init__`` defaults.
+        ``__from_config_parser_kwargs__``: Additional kwargs to pass to the
             ArgumentParser used for parsing configs.
     """
 
@@ -35,7 +36,7 @@ class FromConfigMixin:
     __from_config_parser_kwargs__: dict = {}
 
     def __init_subclass__(cls, **kwargs) -> None:
-        """Override __init__ defaults for the subclass based on a config file."""
+        """Override ``__init__`` defaults for the subclass based on a config file."""
         super().__init_subclass__(**kwargs)
         _override_init_defaults(cls, cls.__from_config_parser_kwargs__)
 
@@ -62,7 +63,7 @@ def _parse_class_kwargs_from_config(cls: Type[T], config: Union[str, PathLike, d
 
 
 def _override_init_defaults(cls: Type[T], parser_kwargs: dict) -> None:
-    """Override __init__ defaults for `cls` based on __from_config_init_defaults__."""
+    """Override ``__init__`` defaults for ``cls`` based on ``__from_config_init_defaults__``."""
     config = getattr(cls, "__from_config_init_defaults__", None)
     if not isinstance(config, (str, PathLike, type(None))):
         raise TypeError("__from_config_init_defaults__ must be str, PathLike, or None")
@@ -98,11 +99,10 @@ def _override_init_defaults_parent_classes(cls: Type[T], defaults: dict) -> None
         params = inspect.signature(base.__init__).parameters  # type: ignore[misc]
         names = [name for name in defaults if name in params]
         for name in names:
-            default = defaults.pop(name)
             new_param = inspect.Parameter(
                 name=name,
                 kind=inspect.Parameter.KEYWORD_ONLY,
-                default=default,
+                default=defaults.pop(name),
                 annotation=params[name].annotation,
             )
             override_parent_params.append(new_param)

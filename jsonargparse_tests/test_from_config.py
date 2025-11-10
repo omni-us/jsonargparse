@@ -169,14 +169,17 @@ def test_from_config_method_dict():
 
 def test_from_config_method_default():
     from os import PathLike
-    from typing import Type, TypeVar, Union
+    from typing import Literal, Type, TypeVar, Union
 
     T = TypeVar("T")
+    default_config = {"param1": "method_default_value"}
 
     class FromConfigMethodDefault(FromConfigMixin):
 
         @classmethod
-        def from_config(cls: Type[T], config: Union[str, PathLike, dict] = {"param1": "method_default_value"}) -> T:
+        def from_config(cls: Type[T], config: Union[str, PathLike, dict, Literal["default"]] = "default") -> T:
+            if config == "default":
+                config = default_config
             return super().from_config(config)
 
         def __init__(self, param1: str = "default_value", param2: int = 1):
