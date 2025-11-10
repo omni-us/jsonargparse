@@ -24,6 +24,7 @@ __all__ = [
     "ActionPathList",
     "HelpFormatterDeprecations",
     "LoggerProperty",
+    "PathDeprecations",
     "ParserDeprecations",
     "ParserError",
     "compose_dataclasses",
@@ -499,8 +500,8 @@ class PathDeprecations:
         deprecation_warning("Path attr set", path_immutable_attrs_message)
         self._skip_check = skip_check
 
+    @deprecated(path_call_message)
     def __call__(self, absolute: bool = True) -> str:
-        deprecation_warning("Path.__call__", path_call_message)
         return self._absolute if absolute else self._relative
 
 
