@@ -1,0 +1,223 @@
+import inspect
+
+import pytest
+
+from jsonargparse import FromConfigMixin
+from jsonargparse_tests.conftest import json_or_yaml_dump, skip_if_omegaconf_unavailable
+
+# __init__ defaults override tests
+
+
+class DefaultsOverrideParent(FromConfigMixin):
+    def __init__(self, parent2: int = 1, parent1: str = "parent_default_value"):
+        self.parent1 = parent1
+        self.parent2 = parent2
+
+
+def test_init_defaults_override_subclass(tmp_cwd, subtests):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text(json_or_yaml_dump({"parent1": "overridden_parent", "child1": "overridden_child"}))
+
+    class DefaultsOverrideChild(DefaultsOverrideParent):
+        __from_config_init_defaults__ = config_path
+
+        def __init__(self, child2: int = 2, child1: str = "child_default_value", **kwargs):
+            super().__init__(**kwargs)
+            self.child1 = child1
+            self.child2 = child2
+
+    with subtests.test("overridden subclass defaults"):
+        params = inspect.signature(DefaultsOverrideChild.__init__).parameters
+        assert params["parent1"].default == "overridden_parent"
+        assert params["child1"].default == "overridden_child"
+
+        instance = DefaultsOverrideChild()
+        assert instance.parent1 == "overridden_parent"
+        assert instance.parent2 == 1
+        assert instance.child1 == "overridden_child"
+        assert instance.child2 == 2
+
+    with subtests.test("shadow override"):
+        instance = DefaultsOverrideChild(child1="shadowed_child", parent1="shadowed_parent", child2=3)
+        assert instance.parent1 == "shadowed_parent"
+        assert instance.parent2 == 1
+        assert instance.child1 == "shadowed_child"
+        assert instance.child2 == 3
+
+    with subtests.test("parent class unaffected"):
+        params = inspect.signature(DefaultsOverrideParent.__init__).parameters
+        assert params["parent1"].default == "parent_default_value"
+
+        parent = DefaultsOverrideParent()
+        assert parent.parent1 == "parent_default_value"
+
+
+def test_init_defaults_override_keyword_only_parameters(tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text(json_or_yaml_dump({"parent1": "overridden_parent", "child1": "overridden_child"}))
+
+    class DefaultsOverrideKeywordOnlyParent(FromConfigMixin):
+        def __init__(self, *, parent1: str = "parent_default_value", parent2: int = 1):
+            self.parent1 = parent1
+            self.parent2 = parent2
+
+    class DefaultsOverrideKeywordOnlyChild(DefaultsOverrideKeywordOnlyParent):
+        __from_config_init_defaults__ = config_path
+
+        def __init__(self, *, child2: int = 2, child1: str = "child_default_value", **kwargs):
+            super().__init__(**kwargs)
+            self.child1 = child1
+            self.child2 = child2
+
+    params = inspect.signature(DefaultsOverrideKeywordOnlyChild.__init__).parameters
+    assert params["parent1"].default == "overridden_parent"
+    assert params["child1"].default == "overridden_child"
+
+    instance = DefaultsOverrideKeywordOnlyChild()
+    assert instance.parent1 == "overridden_parent"
+    assert instance.parent2 == 1
+    assert instance.child1 == "overridden_child"
+    assert instance.child2 == 2
+
+
+def test_init_defaults_override_class_with_init_subclass(tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text(json_or_yaml_dump({"parent": "overridden_parent", "child": "overridden_child"}))
+
+    class DefaultsOverrideBase(FromConfigMixin):
+        def __init_subclass__(cls, **kwargs):
+            super().__init_subclass__(**kwargs)
+            cls.original_init_subclass_ran = True
+
+        def __init__(self, parent: str = "default_value"):
+            self.parent = parent
+
+    class DefaultsOverrideDerived(DefaultsOverrideBase):
+        __from_config_init_defaults__ = config_path
+
+        def __init__(self, child: str = "default_value", **kwargs):
+            super().__init__(**kwargs)
+            self.child = child
+
+    params = inspect.signature(DefaultsOverrideDerived.__init__).parameters
+    assert params["parent"].default == "overridden_parent"
+    assert params["child"].default == "overridden_child"
+
+    instance = DefaultsOverrideDerived()
+    assert instance.parent == "overridden_parent"
+    assert instance.child == "overridden_child"
+    assert instance.original_init_subclass_ran
+
+
+@skip_if_omegaconf_unavailable
+def test_init_defaults_override_parser_kwargs(tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text(json_or_yaml_dump({"param1": "there", "param2": "hi ${.param1}"}))
+
+    class DefaultsOverrideParserKwargs(FromConfigMixin):
+        __from_config_init_defaults__ = config_path
+        __from_config_parser_kwargs__ = {"parser_mode": "omegaconf+"}
+
+        def __init__(self, param1: str = "", param2: str = ""):
+            self.param1 = param1
+            self.param2 = param2
+
+    instance = DefaultsOverrideParserKwargs()
+    assert instance.param1 == "there"
+    assert instance.param2 == "hi there"
+
+
+def test_init_defaults_override_file_not_found():
+    class DefaultsOverrideFileNotFound(DefaultsOverrideParent):
+        __from_config_init_defaults__ = "non_existent_file.yaml"
+
+    instance = DefaultsOverrideFileNotFound()
+    assert instance.parent1 == "parent_default_value"
+    assert instance.parent2 == 1
+
+
+def test_init_defaults_override_invalid():
+    with pytest.raises(TypeError, match="__from_config_init_defaults__ must be str, PathLike, or None"):
+
+        class DefaultsOverrideInvalid(DefaultsOverrideParent):
+            __from_config_init_defaults__ = 123  # Invalid type
+
+
+# from_config method tests
+
+
+def test_from_config_method_path(tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text(json_or_yaml_dump({"param": "value_from_file"}))
+
+    class FromConfigMethodPath(FromConfigMixin):
+        def __init__(self, param: str = "default_value"):
+            self.param = param
+
+    instance = FromConfigMethodPath.from_config(config_path)
+    assert instance.param == "value_from_file"
+
+
+def test_from_config_method_dict():
+    class FromConfigMethodDict(FromConfigMixin):
+        def __init__(self, param: str = "default_value"):
+            self.param = param
+
+    instance = FromConfigMethodDict.from_config({"param": "value_from_dict"})
+    assert instance.param == "value_from_dict"
+
+
+def test_from_config_method_default():
+    from os import PathLike
+    from typing import Literal, Type, TypeVar, Union
+
+    T = TypeVar("T")
+    default_config = {"param1": "method_default_value"}
+
+    class FromConfigMethodDefault(FromConfigMixin):
+
+        @classmethod
+        def from_config(cls: Type[T], config: Union[str, PathLike, dict, Literal["default"]] = "default") -> T:
+            if config == "default":
+                config = default_config
+            return super().from_config(config)
+
+        def __init__(self, param1: str = "default_value", param2: int = 1):
+            self.param1 = param1
+            self.param2 = param2
+
+    instance = FromConfigMethodDefault.from_config()
+    assert instance.param1 == "method_default_value"
+    assert instance.param2 == 1
+
+
+def test_from_config_method_subclass():
+    class FromConfigMethodParent(FromConfigMixin):
+        def __init__(self, parent_param: str = "parent_default"):
+            self.parent_param = parent_param
+
+    class FromConfigMethodChild(FromConfigMethodParent):
+        def __init__(self, child_param: str = "child_default", **kwargs):
+            super().__init__(**kwargs)
+            self.child_param = child_param
+
+    instance = FromConfigMethodChild.from_config(
+        {"parent_param": "overridden_parent", "child_param": "overridden_child"}
+    )
+    assert isinstance(instance, FromConfigMethodChild)
+    assert instance.parent_param == "overridden_parent"
+    assert instance.child_param == "overridden_child"
+
+
+@skip_if_omegaconf_unavailable
+def test_from_config_method_parser_kwargs():
+    class FromConfigMethodParserKwargs(FromConfigMixin):
+        __from_config_parser_kwargs__ = {"parser_mode": "omegaconf+"}
+
+        def __init__(self, param1: str, param2: str):
+            self.param1 = param1
+            self.param2 = param2
+
+    instance = FromConfigMethodParserKwargs.from_config({"param1": "there", "param2": "hi ${.param1}"})
+    assert instance.param1 == "there"
+    assert instance.param2 == "hi there"

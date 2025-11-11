@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.43.0 (unreleased)
 --------------------
 
+Added
+^^^^^
+- Non-public experimental mixin class to override init defaults and instantiate
+  from config (`#800 <https://github.com/omni-us/jsonargparse/pull/800>`__).
+
 Fixed
 ^^^^^
 - Prevent extra environment variables in helptext when default_env=True, for

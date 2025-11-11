@@ -282,12 +282,9 @@ def get_omegaconf_loader(mode):
     if mode == "omegaconf+":
         from ._common import get_parsing_setting
 
-        if not get_parsing_setting("omegaconf_absolute_to_relative_paths"):
-            return yaml_load
-
         def omegaconf_plus_load(value):
             value = yaml_load(value)
-            if isinstance(value, dict):
+            if isinstance(value, dict) and get_parsing_setting("omegaconf_absolute_to_relative_paths"):
                 value = omegaconf_absolute_to_relative_paths(value)
             return value
 

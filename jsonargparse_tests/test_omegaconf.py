@@ -15,15 +15,10 @@ from jsonargparse._common import parser_context, set_parsing_settings
 from jsonargparse._loaders_dumpers import loaders, yaml_dump
 from jsonargparse._optionals import omegaconf_absolute_to_relative_paths, omegaconf_support
 from jsonargparse.typing import Path_fr
-from jsonargparse_tests.conftest import get_parser_help
+from jsonargparse_tests.conftest import get_parser_help, skip_if_omegaconf_unavailable
 
 if omegaconf_support:
     from omegaconf import OmegaConf
-
-skip_if_omegaconf_unavailable = pytest.mark.skipif(
-    not omegaconf_support,
-    reason="omegaconf package is required",
-)
 
 
 @pytest.fixture(autouse=True)
