@@ -57,7 +57,7 @@ Deprecated
 - ``dict_to_namespace`` is deprecated and will be removed in v5.0.0. No
   replacement is provided because blindly converting a dictionary to a namespace
   may not yield the same results as using a parser, which could lead to
-  confusion. (`#797 <https://github.com/omni-us/jsonargparse/pull/797>`__).
+  confusion (`#797 <https://github.com/omni-us/jsonargparse/pull/797>`__).
 
 
 v4.42.0 (2025-10-14)
@@ -477,11 +477,11 @@ Fixed
 - Callable type with subclass return not showing the ``--*.help`` option (`#567
   <https://github.com/omni-us/jsonargparse/pull/567>`__).
 - Forward referenced types not compatible with ``Type`` typehint (`#576
-  <https://github.com/omni-us/jsonargparse/pull/576/>`__).
+  <https://github.com/omni-us/jsonargparse/pull/576>`__).
 - Subclass nested in ``Iterable`` makes help fail (`#578
   <https://github.com/omni-us/jsonargparse/pull/578>`__).
 - ``Literal`` mixing enum values and strings failing to parse (`#580
-  <https://github.com/omni-us/jsonargparse/pull/580/>`__).
+  <https://github.com/omni-us/jsonargparse/pull/580>`__).
 
 Changed
 ^^^^^^^
@@ -825,18 +825,18 @@ Added
   <https://github.com/omni-us/jsonargparse/issues/366>`__).
 - New function ``extend_base_type`` for easy creation and registering of custom
   types that extend a base type (`#195
-  <https://github.com/omni-us/jsonargparse/issue/195>`__).
+  <https://github.com/omni-us/jsonargparse/issues/195>`__).
 - Support for ``Annotated`` types either ignoring the metadata or using it for
   validation in case of `pydantic types
   <https://docs.pydantic.dev/latest/api/types/>`__ (`#384
-  <https://github.com/omni-us/jsonargparse/issue/384>`__).
+  <https://github.com/omni-us/jsonargparse/issues/384>`__).
 - Support for Python 3.12.
 
 Fixed
 ^^^^^
 - ``--print_config`` fails when parser has shallow links.
 - Argument links unnecessarily applied when ``--print_config`` used and parser
-  has subcommands (`#311 <https://github.com/omni-us/jsonargparse/issue/311>`__).
+  has subcommands (`#311 <https://github.com/omni-us/jsonargparse/issues/311>`__).
 - Parsing fails when data type is a ``Callable`` with multiple input arguments
   (`#372 <https://github.com/omni-us/jsonargparse/issues/372>`__).
 - Postponed annotations not working for dataclasses.
@@ -844,7 +844,7 @@ Fixed
   (`lightning#18616
   <https://github.com/Lightning-AI/lightning/issues/18616>`__).
 - Pydantic models and dataclasses not working for ``pydantic>=2.0.0`` (`#361
-  <https://github.com/omni-us/jsonargparse/issue/361>`__).
+  <https://github.com/omni-us/jsonargparse/issues/361>`__).
 
 Changed
 ^^^^^^^
@@ -852,12 +852,12 @@ Changed
   and provide a subcommand when a subcommand is required but not
   given (`#371 <https://github.com/omni-us/jsonargparse/pull/371>`__).
 - Now when an argument link ``compute_fn`` fails, the error message will say
-  this (`#311 <https://github.com/omni-us/jsonargparse/issue/311>`__).
+  this (`#311 <https://github.com/omni-us/jsonargparse/issues/311>`__).
 - ``add_subclass_arguments`` now shows a better error message when an empty
   tuple is given (`lightning#18546
   <https://github.com/Lightning-AI/lightning/issues/18546>`__).
 - Document the requirements for creating and using custom types (`#195
-  <https://github.com/omni-us/jsonargparse/issue/195>`__).
+  <https://github.com/omni-us/jsonargparse/issues/195>`__).
 - Parameters with default and without type, now get as type
   ``Union[type(default), Any]``.
 - Removed support for python 3.6.
@@ -2009,7 +2009,7 @@ v3.16.0 (2021-07-05)
 --------------------
 
 Added
------
+^^^^^
 - ``lazy_instance`` function for serializable class type defaults.
 - Support for parsing multiple matched default config files (`#58
   <https://github.com/omni-us/jsonargparse/issues/58>`__).

@@ -52,7 +52,7 @@ class FromConfigMixin:
 
 
 def _parse_class_kwargs_from_config(cls: Type[T], config: Union[str, PathLike, dict], **kwargs) -> dict:
-    """Parse the init kwargs for `cls` from a config file or dict."""
+    """Parse the init kwargs for ``cls`` from a config file or dict."""
     parser = ArgumentParser(exit_on_error=False, **kwargs)
     parser.add_class_arguments(cls)
     if isinstance(config, dict):
@@ -121,7 +121,7 @@ def _override_init_defaults_parent_classes(cls: Type[T], defaults: dict) -> None
         kwargs_param = parameters.pop()
 
     # Add new parameters
-    for param in reversed(override_parent_params):
+    for param in override_parent_params:
         parameters.append(param)
 
     # Add **kwargs back at the end
