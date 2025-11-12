@@ -4,14 +4,14 @@ Contributing
 Contributions to jsonargparse are very welcome. There are multiple ways for
 people to help and contribute, among them:
 
-- Star ⭐ the github project `<https://github.com/omni-us/jsonargparse/>`__.
+- Star ⭐ the GitHub project `<https://github.com/omni-us/jsonargparse/>`__.
 - `Sponsor 🩷 <https://github.com/sponsors/mauvilsa>`__ its maintenance and
   development.
 - Spread the word in your community about the features you like from
   jsonargparse.
 - Help others to learn how to use jsonargparse by creating tutorials, such as
   blog posts and videos.
-- Become active in existing github issues and pull requests.
+- Become active in existing GitHub issues and pull requests.
 - Create `issues <https://github.com/omni-us/jsonargparse/issues>`__ for
   reporting bugs and proposing improvements.
 - Create `pull requests <https://github.com/omni-us/jsonargparse/pulls>`__ with
@@ -80,8 +80,8 @@ some time to complete. If you wish to push without running these hooks, use the
 command ``git push --no-verify``.
 
 Formatting of the code is done automatically by pre-commit. If some pre-commit
-hooks fail and you decide to skip them, the formatting will be automatically
-applied by a github action in pull requests.
+hooks fail and you decide to skip them, formatting will be automatically applied
+by a GitHub action in pull requests.
 
 Documentation
 -------------
@@ -101,8 +101,8 @@ Tests
 Running the unit tests can be done either using `pytest
 <https://docs.pytest.org/>`__ or `tox
 <https://tox.readthedocs.io/en/stable/>`__. The tests are also installed with
-the package, thus can be run in a production system. Also pre-commit runs some
-additional tests.
+the package and can be run in a non-development environment. Also pre-commit
+runs some additional tests.
 
 .. code-block:: bash
 
@@ -138,8 +138,8 @@ Then open the file ``jsonargparse_tests/htmlcov/index.html`` in a browser.
 Pull requests
 -------------
 
-When creating a pull request, it is recommended that in your fork, create a
-specific branch for the changes you want to contribute, instead of using the
+When creating a pull request, it is recommended that you create a specific
+branch in your fork for the changes you want to contribute, instead of using the
 ``main`` branch.
 
 The required tasks to do for a pull request, are listed in

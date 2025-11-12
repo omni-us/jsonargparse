@@ -36,8 +36,8 @@ CLI with minimal boilerplate:
 
     from jsonargparse import auto_cli
 
-    def main_function(...):  # your main parameters and logic here
-        ...
+    def main_function(...):  # your main parameters with type hints here
+        ...  # your main code here
 
     if __name__ == "__main__":
         auto_cli(main_function)  # parses arguments and runs main_function
@@ -197,4 +197,4 @@ To install the latest development version, use the following command:
 
 .. code-block:: bash
 
-    pip install "jsonargparse[signatures] @ git+https://github.com/omni-us/jsonargparse.git@main"
+    pip install "jsonargparse[signatures] @ https://github.com/omni-us/jsonargparse/zipball/main"
