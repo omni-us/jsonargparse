@@ -705,8 +705,8 @@ Example:
 If ``nargs='+'`` is given to ``add_argument`` with ``List[<path_type>]`` and
 ``enable_path=True`` then for each argument a list of paths is generated.
 
-Path list arguments can also be specified using the 
-:py:meth:`.ArgumentParser.add_class_arguments` method. To do so, specify 
+Path list arguments can also be specified using the
+:py:meth:`.ArgumentParser.add_class_arguments` method. To do so, specify
 ``List[<path_type>]`` as your class member's type.
 
 .. note::
