@@ -18,7 +18,7 @@ from jsonargparse.typing import Path_fr
 from jsonargparse_tests.conftest import get_parser_help, skip_if_omegaconf_unavailable
 
 if omegaconf_support:
-    from omegaconf import OmegaConf
+    from omegaconf import OmegaConf, errors
 
 
 @pytest.fixture(autouse=True)
@@ -66,9 +66,6 @@ def test_omegaconf_interpolation_in_subcommands(mode, parser, subparser):
     subparser.add_argument("--source", type=str)
     subparser.add_argument("--target", type=str)
 
-    if mode == "omegaconf+absolute":
-        set_parsing_settings(omegaconf_absolute_to_relative_paths=True)
-
     parser.parser_mode = mode.replace("absolute", "")
     subcommands = parser.add_subcommands()
     subcommands.add_subcommand("sub", subparser)
@@ -77,6 +74,12 @@ def test_omegaconf_interpolation_in_subcommands(mode, parser, subparser):
         "source": "hello",
         "target": "${.source}" if mode == "omegaconf+" else "${source}",
     }
+
+    if mode == "omegaconf+absolute":
+        with pytest.raises(errors.InterpolationKeyError):
+            parser.parse_args(["sub", f"--config={yaml_dump(config)}"])
+        set_parsing_settings(omegaconf_absolute_to_relative_paths=True)
+
     cfg = parser.parse_args(["sub", f"--config={yaml_dump(config)}"])
     assert cfg.sub.target == "hello"
 
