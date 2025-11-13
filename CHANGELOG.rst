@@ -29,6 +29,8 @@ Fixed
   (`#789 <https://github.com/omni-us/jsonargparse/pull/789>`__).
 - Misleading error message for invalid value for ``Literal`` strings (`#790
   <https://github.com/omni-us/jsonargparse/pull/790>`__).
+- Changing ``omegaconf_absolute_to_relative_paths`` not taking effect after
+  parsing once (`#805 <https://github.com/omni-us/jsonargparse/pull/805>`__).
 
 Changed
 ^^^^^^^
