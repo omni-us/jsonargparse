@@ -669,6 +669,8 @@ using the :py:meth:`.Path.get_content` method. For the previous example would be
 ``info_db = cfg.databases.info.get_content()``.
 
 An argument with a path type can be given ``nargs='+'`` to parse multiple paths.
+The CLI syntax for a list of paths is ``[/path/a,/path/b]`` for the default yaml
+loader and ``["/path/a","/path/b"]`` for the json loader.
 But it might also be wanted to parse a list of paths found in a plain text file
 or from stdin. For this add the argument with type ``List[<path_type>]`` and
 ``enable_path=True``. To read from stdin give the special string ``'-'``.
@@ -702,6 +704,10 @@ Example:
 
 If ``nargs='+'`` is given to ``add_argument`` with ``List[<path_type>]`` and
 ``enable_path=True`` then for each argument a list of paths is generated.
+
+Path list arguments can also be specified using the
+:py:meth:`.ArgumentParser.add_class_arguments` method. To do so, specify
+``List[<path_type>]`` as your class member's type.
 
 .. note::
 
