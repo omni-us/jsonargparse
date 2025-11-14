@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "jsonargparse"
 dynamic = ["version"]
-description = "Implement minimal boilerplate CLIs derived from type hints and parse from command line, config files and environment variables."
+description = "Minimal effort CLIs derived from type hints and parse from command line, config files and environment variables."
 authors = [
     {name = "Mauricio Villegas", email = "mauricio@omnius.com"},
 ]
