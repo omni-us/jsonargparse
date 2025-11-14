@@ -453,7 +453,7 @@ A wide range of type hints are supported and with arbitrary complexity/nesting.
 Some notes about this support are:
 
 - Nested types are supported as long as at least one child type is supported. By
-  nesting it is meant child types inside ``List``, ``Dict``, etc. There is no
+  nesting it is meant child types inside ``list``, ``dict``, etc. There is no
   limit in nesting depth.
 
 - Postponed evaluation of types PEP `563 <https://peps.python.org/pep-0563/>`__
@@ -468,14 +468,14 @@ Some notes about this support are:
 
 - Fully supported types are: ``str``, ``bool`` (more details in
   :ref:`boolean-arguments`), ``int``, ``float``, ``Decimal``, ``complex``,
-  ``bytes``/``bytearray`` (Base64 encoding), ``range``, ``List`` (more details
+  ``bytes``/``bytearray`` (Base64 encoding), ``range``, ``list`` (more details
   in :ref:`list-append`), ``Iterable``, ``Sequence``, ``Any``, ``Union``,
   ``Optional``, ``Type``, ``Enum``, ``PathLike``, ``UUID``, ``timedelta``,
   restricted types as explained in sections :ref:`restricted-numbers` and
   :ref:`restricted-strings` and paths and URLs as explained in sections
   :ref:`parsing-paths` and :ref:`parsing-urls`.
 
-- ``Dict``, ``Mapping``, ``MutableMapping``, ``MappingProxyType``,
+- ``dict``, ``Mapping``, ``MutableMapping``, ``MappingProxyType``,
   ``OrderedDict``, and ``TypedDict`` are supported but only with ``str`` or
   ``int`` keys. ``Required`` and ``NotRequired`` are also supported for
   fine-grained specification of required/optional ``TypedDict`` keys.
@@ -483,10 +483,10 @@ Some notes about this support are:
   typing as described in PEP `692 <https://peps.python.org/pep-0692/>`__.
   For more details see :ref:`dict-items`.
 
-- ``Tuple``, ``Set`` and ``MutableSet`` are supported even though they can't be
-  represented in JSON distinguishable from a list. Each ``Tuple`` element
-  position can have its own type and will be validated as such. ``Tuple`` with
-  ellipsis (``Tuple[type, ...]``) is also supported. In command line arguments,
+- ``tuple``, ``set`` and ``MutableSet`` are supported even though they can't be
+  represented in JSON distinguishable from a list. Each ``tuple`` element
+  position can have its own type and will be validated as such. ``tuple`` with
+  ellipsis (``tuple[type, ...]``) is also supported. In command line arguments,
   config files and environment variables, tuples and sets are represented as an
   array.
 
@@ -664,16 +664,15 @@ actual path, thus for the previous example:
     >>> os.fspath(cfg.databases.info)  # doctest: +ELLIPSIS
     '/.../app/data/info.db'
 
-The content of a file that a :class:`.Path` instance references can be read by
-using the :py:meth:`.Path.get_content` method. For the previous example would be
+The content of a file referenced by a :class:`.Path` instance can be read using
+the :py:meth:`.Path.get_content` method. For the previous example, this would be
 ``info_db = cfg.databases.info.get_content()``.
 
 An argument with a path type can be given ``nargs='+'`` to parse multiple paths.
-The CLI syntax for a list of paths is ``[/path/a,/path/b]`` for the default yaml
-loader and ``["/path/a","/path/b"]`` for the json loader.
-But it might also be wanted to parse a list of paths found in a plain text file
-or from stdin. For this add the argument with type ``List[<path_type>]`` and
-``enable_path=True``. To read from stdin give the special string ``'-'``.
+Thus, from command line you could do ``--files file1 file2``, separated by
+space. It might also be desired to parse a list of paths found in a plain text
+file or from stdin. For this add the argument with type ``list[<path_type>]``
+and ``enable_path=True``. To read from stdin give the special string ``'-'``.
 Example:
 
 .. testsetup:: path_list
@@ -682,6 +681,8 @@ Example:
     tmpdir = tempfile.mkdtemp(prefix="_jsonargparse_doctest_")
     os.chdir(tmpdir)
     pathlib.Path("paths.lst").write_text("paths.lst\n")
+    pathlib.Path("file1").touch()
+    pathlib.Path("file2").touch()
 
     parser = ArgumentParser()
 
@@ -698,16 +699,29 @@ Example:
 
     from jsonargparse.typing import Path_fr
 
-    parser.add_argument("--list", type=List[Path_fr], enable_path=True)
+    parser.add_argument("--list", type=list[Path_fr], enable_path=True)
     cfg = parser.parse_args(["--list", "paths.lst"])  # File with list of paths
     cfg = parser.parse_args(["--list", "-"])  # List of paths from stdin
 
-If ``nargs='+'`` is given to ``add_argument`` with ``List[<path_type>]`` and
-``enable_path=True`` then for each argument a list of paths is generated.
+In this case since there is no ``nargs``, the argument expects a single value.
+That is why to provide multiple paths directly from command line, a more
+cumbersome YAML/JSON array syntax is required, i.e. ``--list "[file1,file2]".
+However, the simpler syntax described in :ref:`list-append` can also be used,
+which would be like ``--list+ file1 --list+ file2``. Not as simple as with
+``nargs='+'`` but with tab completion enabled the effort is minimal.
 
-Path list arguments can also be specified using the
-:py:meth:`.ArgumentParser.add_class_arguments` method. To do so, specify
-``List[<path_type>]`` as your class member's type.
+The same ``list[<path_type>]`` behavior described here will work for arguments
+automatically created from type hints in signatures, that is with
+:func:`.auto_cli`, :py:meth:`.ArgumentParser.add_function_arguments`,
+:py:meth:`.ArgumentParser.add_class_arguments`,
+:py:meth:`.ArgumentParser.add_method_arguments` and
+:py:meth:`.ArgumentParser.add_subclass_arguments`.
+
+.. note::
+
+    If ``nargs='+'`` and ``enable_path=True`` are set for an argument of type
+    ``list[<path_type>]``, each argument will produce a list of paths. This
+    behavior may not be what you expect.
 
 .. note::
 
@@ -838,7 +852,7 @@ desired values. For example:
 List append
 -----------
 
-As detailed before, arguments with ``List`` type are supported. By default when
+As detailed before, arguments with ``list`` type are supported. By default when
 specifying an argument value, the previous value is replaced, and this also
 holds for lists. Thus, a parse such as ``parser.parse_args(['--list=[1]',
 '--list=[2, 3]'])`` would result in a final value of ``[2, 3]``. However, in
@@ -855,7 +869,7 @@ can be achieved by adding ``+`` as suffix to the argument key, for example:
 
 .. doctest:: append
 
-    >>> parser.add_argument("--list", type=List[int])  # doctest: +IGNORE_RESULT
+    >>> parser.add_argument("--list", type=list[int])  # doctest: +IGNORE_RESULT
     >>> parser.parse_args(["--list=[1]", "--list+=[2, 3]"])
     Namespace(list=[1, 2, 3])
     >>> parser.parse_args(["--list=[4]", "--list+=5"])
@@ -886,7 +900,7 @@ added to a parser as:
 
 .. testcode:: append
 
-    parser.add_argument("--list_of_instances", type=List[MyBaseClass])
+    parser.add_argument("--list_of_instances", type=list[MyBaseClass])
 
 Thanks to the short notation, command line arguments don't require to specify
 ``class_path`` and ``init_args``. Thus, multiple classes can be appended and its
@@ -916,7 +930,7 @@ intuitive to write and understand.
 Dict items
 ----------
 
-When an argument has ``Dict`` as type, the value can be set using JSON format,
+When an argument has ``dict`` as type, the value can be set using JSON format,
 e.g.:
 
 .. testsetup:: dict_items
@@ -1414,11 +1428,11 @@ Take for example a class with its init and a method with docstrings as follows:
 
 .. testcode:: class_method
 
-    from typing import Dict, Union, List
+    from typing import Union
 
 
     class MyClass(MyBaseClass):
-        def __init__(self, foo: Dict[str, Union[int, List[int]]], **kwargs):
+        def __init__(self, foo: dict[str, Union[int, list[int]]], **kwargs):
             """Initializer for MyClass.
 
             Args:
@@ -1887,11 +1901,10 @@ jsonargparse with the ``signatures`` extra as explained in section
 :ref:`installation`.
 
 Many of the types defined in stub files use the latest syntax for type hints,
-that is, bitwise or operator ``|`` for unions and generics, e.g.
-``list[<type>]`` instead of ``typing.List[<type>]``, see PEP `604
+that is, bitwise or operator ``|`` for unions, see PEP `604
 <https://peps.python.org/pep-0604>`__. On ``python>=3.10`` these are fully
-supported. On ``python<=3.9`` backporting these types is attempted and in some cases
-it can fail. On failure the type annotation is set to ``Any``.
+supported. On ``python<=3.9`` backporting these types is attempted and in some
+cases it can fail. On failure the type annotation is set to ``Any``.
 
 Most of the types in the Python standard library have their types in stubs. An
 example from the standard library would be:
@@ -2357,7 +2370,7 @@ An example of a target being in a subclass is:
         def __init__(
             self,
             save_dir: Optional[str] = None,
-            logger: Union[bool, Logger, List[Logger]] = False,
+            logger: Union[bool, Logger, list[Logger]] = False,
         ):
             self.logger = logger
 
