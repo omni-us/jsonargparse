@@ -97,7 +97,7 @@ test = [
     "types-PyYAML>=6.0.11",
     "types-requests>=2.28.9",
     "responses>=0.12.0",
-    "pydantic>=2.3.0; python_version < '3.14'",  # restricted until pydantic installs correctly in 3.14
+    "pydantic>=2.3.0",
     "attrs>=22.2.0",
 ]
 test-no-urls = [
