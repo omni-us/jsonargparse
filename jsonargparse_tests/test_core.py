@@ -125,7 +125,7 @@ def test_parse_args_positional_nargs_questionmark(parser):
     parser.add_argument("pos2", nargs="?")
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([])
-    ctx.match('"pos1" is required')
+    ctx.match("'pos1' is required")
     assert parser.parse_args(["v1"]) == Namespace(pos1="v1", pos2=None)
     assert parser.parse_args(["v1", "v2"]) == Namespace(pos1="v1", pos2="v2")
 
@@ -135,7 +135,7 @@ def test_parse_args_positional_nargs_plus(parser):
     parser.add_argument("pos2", nargs="+")
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["v1"])
-    ctx.match('"pos2" is required')
+    ctx.match("'pos2' is required")
     assert parser.parse_args(["v1", "v2", "v3"]) == Namespace(pos1="v1", pos2=["v2", "v3"])
 
 
@@ -448,7 +448,7 @@ def test_non_positional_required(parser, subtests):
 
     with subtests.test("help"):
         help_str = get_parser_help(parser)
-        assert "[-h] --req1 REQ1 --lev1.req2 REQ2" in help_str
+        assert "--req1 REQ1 --lev1.req2 REQ2" in help_str
         assert "--lev1.req2 REQ2  (required)" in help_str
 
     with subtests.test("parse_env"):

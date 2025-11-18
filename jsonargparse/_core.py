@@ -1084,7 +1084,15 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         elif debug_mode_active():
             self._logger.debug("Debug enabled, thus raising exception instead of exit.")
             raise argument_error(message) from ex
-        self.print_usage(sys.stderr)
+
+        parser = getattr(ex, "subcommand_parser", None) or self
+        parser.print_usage(sys.stderr)
+
+        help_action = next((a for a in parser._actions if isinstance(a, argparse._HelpAction)), None)
+        if help_action:
+            prog = parser.prog.replace(" [options]", "")
+            sys.stderr.write(f"tip: For details of accepted options run: {prog} {help_action.option_strings[-1]}\n")
+
         sys.stderr.write(f"error: {message}\n")
         self.exit(2)
 
@@ -1123,7 +1131,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                         raise TypeError
                 except (KeyError, TypeError) as ex:
                     raise TypeError(
-                        f'Key "{prefix}{reqkey}" is required but not included in config object or its value is None.'
+                        f"Option '{prefix}{reqkey}' is required but not provided or its value is None."
                     ) from ex
             subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
             if subcommand is not None and subparser is not None:
@@ -1156,24 +1164,25 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 else:
                     if isinstance(parent_action, _ActionSubCommands) and "." in key:
                         subcommand, subkey = split_key_root(key)
-                        raise NSKeyError(f"Subcommand '{subcommand}' does not accept nested key '{subkey}'")
+                        ex = NSKeyError(f"Subcommand '{subcommand}' does not accept option '{subkey}'")
+                        ex.subcommand_parser = parent_action._name_parser_map[subcommand]
+                        raise ex
                     group_key = next((g for g in self.groups if key.startswith(g + ".")), None)
                     if group_key:
                         subkey = key[len(group_key) + 1 :]
-                        raise NSKeyError(f"Group '{group_key}' does not accept nested key '{subkey}'")
-                    raise NSKeyError(f"Key '{key}' is not expected")
+                        raise NSKeyError(f"Group '{group_key}' does not accept option '{subkey}'")
+                    if self._subcommands_action:
+                        if cfg.get(self._subcommands_action.dest):
+                            subcommand = f"'{cfg[self._subcommands_action.dest]}'"
+                        else:
+                            subcommand = f"{{{list(self._subcommands_action.choices)[0]},...}}"
+                        raise NSKeyError(f"Option '{key}' is not accepted before subcommand {subcommand}")
+                    raise NSKeyError(f"Option '{key}' is not accepted")
 
-        try:
-            with parser_context(load_value_mode=self.parser_mode):
-                check_values(cfg)
-            if not skip_required and not lenient_check.get():
-                check_required(cfg, self, prefix)
-        except (TypeError, KeyError) as ex:
-            prefix = "Validation failed: "
-            message = ex.args[0]
-            if prefix not in message:
-                message = prefix + message
-            raise type(ex)(message) from ex
+        with parser_context(load_value_mode=self.parser_mode):
+            check_values(cfg)
+        if not skip_required and not lenient_check.get():
+            check_required(cfg, self, prefix)
 
     def add_instantiator(
         self,

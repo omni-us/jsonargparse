@@ -223,7 +223,7 @@ def get_parse_args_stdout(parser: ArgumentParser, args: List[str]) -> str:
 def get_parse_args_stderr(parser: ArgumentParser, args: List[str]) -> str:
     err = StringIO()
     with patch.object(parser, "exit_on_error", return_value=True):
-        with redirect_stderr(err), pytest.raises(SystemExit):
+        with patch.dict(os.environ, {"COLUMNS": columns}), redirect_stderr(err), pytest.raises(SystemExit):
             parser.parse_args(args)
     return err.getvalue()
 

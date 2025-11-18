@@ -364,10 +364,10 @@ def test_class_method_instantiator(parser):
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--cls={__name__}.ClassMethodInstantiator.from_p1"])
-    ctx.match('Key "p1" is required')
+    ctx.match("Option 'p1' is required")
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--cls={__name__}.ClassMethodInstantiator.from_p1", "--cls.p1=2", "--cls.p3=-"])
-    ctx.match("Key 'p3' is not expected")
+    ctx.match("Option 'p3' is not accepted")
 
 
 class FunctionInstantiator:
@@ -392,7 +392,7 @@ def test_function_instantiator(parser):
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--cls={__name__}.function_instantiator", "--cls.p2=y", "--cls.p3=x"])
-    ctx.match("Key 'p3' is not expected")
+    ctx.match("Option 'p3' is not accepted")
 
 
 def function_undefined_return(p1: int) -> "Undefined":  # type: ignore[name-defined]  # noqa: F821
@@ -663,7 +663,7 @@ def test_subclass_class_name_then_invalid_init_args(parser):
     parser.add_argument("--op", type=Union[Calendar, GzipFile])
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--op=TextCalendar", "--op=GzipFile", "--op.firstweekday=2"])
-    ctx.match("Key 'firstweekday' is not expected")
+    ctx.match("Option 'firstweekday' is not accepted")
 
 
 # dict parameter tests
@@ -1378,7 +1378,8 @@ def test_add_subclass_required_group(parser):
     parser.add_subclass_arguments(Calendar, "cal", required=True)
     pytest.raises(ArgumentError, lambda: parser.parse_args([]))
     help_str = get_parser_help(parser)
-    assert "[-h] [--cal.help [CLASS_PATH_OR_NAME]] --cal " in help_str
+    assert "--cal.help [CLASS_PATH_OR_NAME]" in help_str
+    assert "--cal CONFIG | CLASS_PATH_OR_NAME | .INIT_ARG_NAME VALUE" in help_str
 
 
 def test_add_subclass_not_required_group(parser):
@@ -1676,7 +1677,7 @@ def test_subclass_print_config(parser):
     assert obtained == {"a1": {"class_path": "calendar.Calendar", "init_args": {"firstweekday": 0}}, "a2": 7}
 
     err = get_parse_args_stderr(parser, ["--g.a1=calendar.Calendar", "--g.a1.invalid=1", "--print_config"])
-    assert "Key 'invalid' is not expected" in err
+    assert "Option 'invalid' is not accepted" in err
 
 
 class PrintConfigRequired:
@@ -1754,7 +1755,7 @@ def test_subclass_error_unexpected_init_arg(parser):
     init_args = '"init_args": {"unexpected_arg": true}'
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--op={" + class_path + ", " + init_args + "}"])
-    ctx.match("Key 'unexpected_arg' is not expected")
+    ctx.match("Option 'unexpected_arg' is not accepted")
 
 
 def test_subclass_invalid_class_path_value(parser):
@@ -1823,7 +1824,7 @@ def test_subclass_implicit_class_path(parser):
     assert cfg.implicit.init_args == Namespace(a=3, b="")
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(['--implicit={"c": null}'])
-    ctx.match("Key 'c' is not expected")
+    ctx.match("Option 'c' is not accepted")
 
 
 # error messages tests

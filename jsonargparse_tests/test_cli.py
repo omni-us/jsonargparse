@@ -188,7 +188,7 @@ def test_single_class_missing_required_init():
     err = StringIO()
     with redirect_stderr(err), pytest.raises(SystemExit):
         auto_cli(Class1, args=['--config={"method1": {"m1": 2}}'])
-    assert '"i1" is required' in err.getvalue()
+    assert "'i1' is required" in err.getvalue()
 
 
 def test_single_class_invalid_method_parameter():

@@ -303,7 +303,7 @@ def test_action_parser_required_argument(parser, subparser):
     assert "1" == parser.parse_args(["--op2.op1=1"]).op2.op1
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([])
-    ctx.match('"op2.op1" is required')
+    ctx.match("'op2.op1' is required")
 
 
 def test_action_parser_init_failures(parser, subparser):
