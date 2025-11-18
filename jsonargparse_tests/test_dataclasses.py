@@ -244,7 +244,7 @@ def test_add_argument_dataclass_unexpected_keys(parser):
     invalid = {
         "class_path": f"{__name__}.DataClassB",
     }
-    with pytest.raises(ArgumentError, match="Group 'b' does not accept nested key 'class_path'"):
+    with pytest.raises(ArgumentError, match="Group 'b' does not accept option 'class_path'"):
         parser.parse_args([f"--b={json.dumps(invalid)}"])
 
 
@@ -257,7 +257,7 @@ class DataRequiredAttr:
 def test_add_argument_dataclass_type_required_attr(parser):
     parser.add_argument("--b", type=DataRequiredAttr)
     assert Namespace(a1="v", a2=1.2) == parser.parse_args(["--b.a1=v"]).b
-    with pytest.raises(ArgumentError, match='Key "b.a1" is required'):
+    with pytest.raises(ArgumentError, match="Option 'b.a1' is required"):
         parser.parse_args([])
 
 
@@ -744,7 +744,7 @@ def test_dataclass_not_subclass(parser):
     assert "--data.help" not in help_str
 
     config = {"class_path": f"{__name__}.DataSub", "init_args": {"p2": "y"}}
-    with pytest.raises(ArgumentError, match="Group 'data' does not accept nested key 'init_args.p2'"):
+    with pytest.raises(ArgumentError, match="Group 'data' does not accept option 'init_args.p2'"):
         parser.parse_args([f"--data={json.dumps(config)}"])
 
 
@@ -854,7 +854,7 @@ def test_dataclass_nested_not_subclass(parser):
             }
         },
     }
-    with pytest.raises(ArgumentError, match="Group 'data' does not accept nested key 'init_args.p1'"):
+    with pytest.raises(ArgumentError, match="Group 'data' does not accept option 'init_args.p1'"):
         parser.parse_args([f"--parent={json.dumps(config)}"])
 
 

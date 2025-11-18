@@ -124,7 +124,7 @@ def test_add_class_without_nesting(parser):
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([])
-    ctx.match('"c3_a0" is required')
+    ctx.match("Option 'c3_a0' is required")
 
     if docstring_parser_support:
         assert "Class3 short description" == parser.groups["Class3"].title
@@ -196,7 +196,7 @@ def test_add_class_without_parameters(parser):
     config = {"no_params": {"class_path": f"{__name__}.NoParams"}}
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--cfg={json.dumps(config)}"])
-    ctx.match("Group 'no_params' does not accept nested key 'class_path'")
+    ctx.match("Group 'no_params' does not accept option 'class_path'")
 
 
 class NestedWithParams:
@@ -710,5 +710,5 @@ def test_add_function_positional_and_keyword_only_parameters(parser):
     assert cfg == Namespace(a=1, b=2, c=3, d=4)
     with pytest.raises(ArgumentError, match="Unrecognized arguments: --b=2"):
         parser.parse_args(["1", "--b=2", "--c=3", "--d=4"])
-    with pytest.raises(ArgumentError, match='Key "c" is required'):
+    with pytest.raises(ArgumentError, match="Option 'c' is required"):
         parser.parse_args(["1", "2", "--d=4"])

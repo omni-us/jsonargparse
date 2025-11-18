@@ -71,7 +71,7 @@ def test_subcommands_not_given_when_many_subcommands(parser, subparser):
 
 
 def test_subcommands_missing_required_subargument(subcommands_parser):
-    with pytest.raises(ArgumentError, match='Key "a.ap1" is required'):
+    with pytest.raises(ArgumentError, match="Option 'a.ap1' is required"):
         subcommands_parser.parse_args(["a"])
 
 
@@ -118,13 +118,42 @@ def test_subcommands_parse_args_config(subcommands_parser):
     }
 
 
+def test_subcommands_parse_args_error_config_before_subcommand(parser, subparser):
+    subparser.add_argument("--sp1")
+    subcommands = parser.add_subcommands(required=False)
+    subcommands.add_subcommand("a", subparser)
+    parser.add_argument("--cfg", action="config")
+    parser.prog = "app"
+    parser.exit_on_error = True
+    err = get_parse_args_stderr(parser, ['--cfg={"sp1": "x"}', "a"])
+    assert "Option 'sp1' is not accepted before subcommand 'a'" in err
+    assert "For details of accepted options run: app --help" in err
+    err = get_parse_args_stderr(parser, ['--cfg={"sp1": "x"}'])
+    assert "Option 'sp1' is not accepted before subcommand {a,...}" in err
+    assert "For details of accepted options run: app --help" in err
+    assert "usage: app [--cfg CFG] {a} ..." in err
+
+
+def test_subcommands_parse_args_error_config_after_subcommand(parser, subparser):
+    parser.prog = "app"
+    parser.exit_on_error = True
+    subparser.add_argument("--sp1")
+    subcommands = parser.add_subcommands(required=False)
+    subcommands.add_subcommand("a", subparser)
+    parser.add_argument("--cfg", action="config")
+    err = get_parse_args_stderr(parser, ['--cfg={"a": {"sp2": "x"}}'])
+    assert "Subcommand 'a' does not accept option 'sp2'" in err
+    assert "For details of accepted options run: app a --help" in err
+    assert "usage: app [options] a [--sp1 SP1]" in err
+
+
 def test_subcommands_parse_string_implicit_subcommand(subcommands_parser):
     cfg = subcommands_parser.parse_string('{"a": {"ap1": "ap1_cfg"}}').as_dict()
     assert cfg["subcommand"] == "a"
     assert cfg["a"] == {"ap1": "ap1_cfg", "ao1": "ao1_def"}
     with pytest.raises(ArgumentError) as ctx:
         subcommands_parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}')
-    ctx.match("Subcommand 'a' does not accept nested key 'unk'")
+    ctx.match("Subcommand 'a' does not accept option 'unk'")
 
 
 def test_subcommands_parse_string_first_implicit_subcommand(subcommands_parser):

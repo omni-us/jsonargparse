@@ -170,4 +170,4 @@ def test_help_subcommands_with_default_env(parser):
 def test_format_usage(parser):
     parser.add_argument("--v1")
     with patch.dict(os.environ, {"COLUMNS": "200"}):
-        assert parser.format_usage() == "usage: app [-h] [--v1 V1]\n"
+        assert parser.format_usage() == "usage: app [--v1 V1]\n"

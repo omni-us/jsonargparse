@@ -201,8 +201,9 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
             help_str += action.extra_help()
         return action_help + (" (" + help_str + ")" if help_str else "")
 
-    def _format_usage(self, *args, **kwargs) -> str:
-        usage = super()._format_usage(*args, **kwargs)
+    def _format_usage(self, usage, actions, *args, **kwargs) -> str:
+        actions = filter_non_parsing_actions(actions)
+        usage = super()._format_usage(usage, actions, *args, **kwargs)
 
         parser = parent_parser.get()
         if not parser:
