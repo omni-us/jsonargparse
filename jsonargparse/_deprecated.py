@@ -107,19 +107,24 @@ def parse_as_dict_patch():
 
     assert not hasattr(ArgumentParser, "_unpatched_init")
 
-    message = """
+    message_parse_as_dict = """
     ``parse_as_dict`` parameter was deprecated in v4.0.0 and will be removed in
     v5.0.0. After removal, the parse_*, dump, save and instantiate_classes
     methods will only return Namespace and/or accept Namespace objects. If
     needed for some use case, config objects can be converted to a nested dict
     using the Namespace.as_dict method.
     """
+    message_with_meta = """
+    ``with_meta`` parameter was deprecated in v4.44.0 and will be removed in
+    v5.0.0. After removal, config objects will always include metadata. To
+    remove metadata from a config object, do ``.clone(with_meta=False)``.
+    """
 
     # Patch __init__
     def patched_init(self, *args, parse_as_dict: bool = False, **kwargs):
         self._parse_as_dict = parse_as_dict
         if parse_as_dict:
-            deprecation_warning(patched_init, message)
+            deprecation_warning(patched_init, message_parse_as_dict)
         self._unpatched_init(*args, **kwargs)
 
     ArgumentParser._unpatched_init = ArgumentParser.__init__
@@ -129,9 +134,21 @@ def parse_as_dict_patch():
     def patch_parse_method(method_name):
         unpatched_method_name = "_unpatched_" + method_name
 
-        def patched_parse(self, *args, _skip_validation: bool = False, **kwargs) -> Union[Namespace, Dict[str, Any]]:
+        def patched_parse(
+            self,
+            *args,
+            with_meta: Optional[bool] = None,
+            _skip_validation: bool = False,
+            **kwargs,
+        ) -> Union[Namespace, Dict[str, Any]]:
             parse_method = getattr(self, unpatched_method_name)
             cfg = parse_method(*args, _skip_validation=_skip_validation, **kwargs)
+
+            if isinstance(with_meta, bool):
+                deprecation_warning(patched_parse, message_with_meta)
+            if not (with_meta or (with_meta is None and self._default_meta)):
+                cfg = cfg.clone(with_meta=False)
+
             return cfg.as_dict() if self._parse_as_dict and not _skip_validation else cfg
 
         setattr(ArgumentParser, unpatched_method_name, getattr(ArgumentParser, method_name))
@@ -539,12 +556,23 @@ def deprecation_warning_error_handler(stacklevel):
     deprecation_warning("ArgumentParser.error_handler", error_handler_message, stacklevel=stacklevel)
 
 
+default_meta_message = """
+    ``default_meta`` property was deprecated in v4.44.0 and will be removed in
+    v5.0.0. After removal, config objects will always include metadata. To
+    remove metadata from a config object, do ``.clone(with_meta=False)``.
+"""
+
+
 class ParserDeprecations:
     """Helper class for ArgumentParser deprecations. Will be removed in v5.0.0."""
 
-    def __init__(self, *args, error_handler=False, **kwargs):
+    def __init__(self, *args, error_handler=False, default_meta=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.error_handler = error_handler
+        if default_meta is None:
+            self._default_meta = True
+        else:
+            self.default_meta = default_meta
 
     @property
     @deprecated("error_handler property is deprecated and will be removed in v5.0.0.")
@@ -571,6 +599,27 @@ class ParserDeprecations:
             self._error_handler = error_handler
         else:
             raise ValueError("error_handler can be either a Callable or None.")
+
+    @property
+    @deprecated(default_meta_message)
+    def default_meta(self) -> bool:
+        """Whether by default metadata is included in config objects.
+
+        :getter: Returns the current default metadata setting.
+        :setter: Sets the default metadata setting.
+
+        Raises:
+            ValueError: If an invalid value is given.
+        """
+        return self._default_meta
+
+    @default_meta.setter
+    def default_meta(self, default_meta: bool):
+        if isinstance(default_meta, bool):
+            deprecation_warning("ArgumentParser.default_meta", default_meta_message)
+            self._default_meta = default_meta
+        else:
+            raise ValueError("default_meta expects a boolean.")
 
     @deprecated(
         """

@@ -621,7 +621,7 @@ def test_parse_args_url_config(parser_schema_jsonnet):
         responses.add(responses.GET, base_url + name, status=200, body=body)
         responses.add(responses.HEAD, base_url + name, status=200)
 
-    cfg = parser.parse_args([f"--cfg={base_url}main.yaml"], with_meta=False)
+    cfg = parser.parse_args([f"--cfg={base_url}main.yaml"]).clone(with_meta=False)
     assert expected.subparser == cfg.subparser
     if jsonschema_support:
         assert expected.schema == cfg.schema
@@ -665,7 +665,7 @@ def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):
                 file.unlink()
 
     with subtests.test("parse_path with metadata"):
-        cfg1 = parser.parse_path(main_file_in, with_meta=True)
+        cfg1 = parser.parse_path(main_file_in).clone(with_meta=True)
         assert expected == cfg1.clone(with_meta=False)
         assert str(cfg1.subparser["__path__"]) == "subparser.yaml"
         if jsonschema_support:
@@ -680,13 +680,13 @@ def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):
             assert schema_file_out.is_file()
         if jsonnet_support:
             assert jsonnet_file_out.read_text() == '{"c": 3, "d": 4}'
-        cfg2 = parser.parse_path(main_file_out, with_meta=False)
+        cfg2 = parser.parse_path(main_file_out).clone(with_meta=False)
         assert expected == cfg2
 
     with subtests.test("save without metadata (single-file)"):
         rm_out_files()
         parser.save(cfg1, main_file_out, multifile=False)
-        cfg3 = parser.parse_path(main_file_out, with_meta=False)
+        cfg3 = parser.parse_path(main_file_out).clone(with_meta=False)
         assert expected == cfg3
 
     if jsonschema_support:
@@ -1128,20 +1128,6 @@ def test_parse_known_args_not_implemented_without_caller_module(parser):
     """
     with patch("inspect.getmodule", return_value=None):
         pytest.raises(NotImplementedError, lambda: parser.parse_known_args([]))
-
-
-def test_default_meta_property():
-    parser = ArgumentParser()
-    assert True is parser.default_meta
-    parser.default_meta = False
-    assert False is parser.default_meta
-    parser = ArgumentParser(default_meta=False)
-    assert False is parser.default_meta
-    parser.default_meta = True
-    assert True is parser.default_meta
-    with pytest.raises(ValueError) as ctx:
-        parser.default_meta = "invalid"
-    ctx.match("default_meta expects a boolean")
 
 
 def test_pickle_parser(example_parser):

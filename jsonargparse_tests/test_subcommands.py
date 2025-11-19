@@ -252,9 +252,9 @@ def test_subcommand_default_config_repeated_keys(parser, subparser, tmp_cwd):
     subcommands = parser.add_subcommands()
     subcommands.add_subcommand("test", subparser)
 
-    cfg = parser.parse_args([], with_meta=False)
+    cfg = parser.parse_args([]).clone(with_meta=False)
     assert cfg == Namespace(subcommand="test", test=Namespace(test="value"))
-    cfg = parser.parse_args(["test", "--test=x"], with_meta=False)
+    cfg = parser.parse_args(["test", "--test=x"]).clone(with_meta=False)
     assert cfg == Namespace(subcommand="test", test=Namespace(test="x"))
 
 
@@ -269,9 +269,9 @@ def test_subsubcommand_default_config_repeated_keys(parser, subparser, tmp_cwd):
     subcommands2 = subparser.add_subcommands()
     subcommands2.add_subcommand("test", subsubparser)
 
-    cfg = parser.parse_args([], with_meta=False)
+    cfg = parser.parse_args([]).clone(with_meta=False)
     assert cfg.as_dict() == {"subcommand": "test", "test": {"subcommand": "test", "test": {"test": "value"}}}
-    cfg = parser.parse_args(["test", "test", "--test=x"], with_meta=False)
+    cfg = parser.parse_args(["test", "test", "--test=x"]).clone(with_meta=False)
     assert cfg.as_dict() == {"subcommand": "test", "test": {"subcommand": "test", "test": {"test": "x"}}}
 
 
@@ -336,7 +336,7 @@ def test_subsubcommands_parse_args(subtests):
     parser_s2_b = ArgumentParser(exit_on_error=False)
     parser_s2_b.add_argument("--os2b", default="os2b_def")
 
-    parser = ArgumentParser(prog="app", exit_on_error=False, default_meta=False)
+    parser = ArgumentParser(prog="app", exit_on_error=False)
     subcommands1 = parser.add_subcommands()
     subcommands1.add_subcommand("a", parser_s1_a)
 

@@ -128,7 +128,7 @@ def test_ActionEnum():
     for val in ["X", "b", 2]:
         pytest.raises(ArgumentError, lambda: parser.parse_args(["--enum=" + str(val)]))
 
-    cfg = parser.parse_args(["--enum=C"], with_meta=False)
+    cfg = parser.parse_args(["--enum=C"]).clone(with_meta=False)
     assert "enum: C\n" == parser.dump(cfg)
 
     help_str = get_parser_help(parser)
@@ -398,11 +398,11 @@ def test_parse_as_dict(tmp_cwd):
     with open("config.json", "w") as f:
         f.write("{}")
     with catch_warnings(record=True) as w:
-        parser = ArgumentParser(parse_as_dict=True, default_meta=False)
+        parser = ArgumentParser(parse_as_dict=True)
     assert_deprecation_warn(
         w,
         message="``parse_as_dict`` parameter was deprecated",
-        code="ArgumentParser(parse_as_dict=True,",
+        code="ArgumentParser(parse_as_dict=True)",
     )
     assert {} == parser.parse_args([])
     assert {} == parser.parse_env([])
@@ -414,6 +414,31 @@ def test_parse_as_dict(tmp_cwd):
     parser.save({}, "config.yaml")
     with open("config.yaml") as f:
         assert "{}\n" == f.read()
+
+
+def test_default_meta_property(parser):
+    with catch_warnings(record=True) as w:
+        assert True is parser.default_meta
+    assert_deprecation_warn(
+        w,
+        message="``default_meta`` property was deprecated",
+        code="True is parser.default_meta",
+    )
+    with catch_warnings(record=True) as w:
+        parser.default_meta = False
+    assert_deprecation_warn(
+        w,
+        message="``default_meta`` property was deprecated",
+        code="parser.default_meta = False",
+    )
+    assert False is parser.default_meta
+    parser = ArgumentParser(default_meta=False)
+    assert False is parser.default_meta
+    parser.default_meta = True
+    assert True is parser.default_meta
+    with pytest.raises(ValueError) as ctx:
+        parser.default_meta = "invalid"
+    ctx.match("default_meta expects a boolean")
 
 
 def test_deprecated_skip_check_method(parser):

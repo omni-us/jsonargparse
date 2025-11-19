@@ -101,7 +101,7 @@ def test_add_class_without_nesting(parser):
     for key in ["c2_a0", "c1_a1", "c0_a0"]:
         assert _find_action(parser, key) is None, f"{key} should not be in parser but is"
 
-    cfg = parser.parse_args(["--c3_a0=0", "--c3_a3=true", "--c3_a4=a"], with_meta=False)
+    cfg = parser.parse_args(["--c3_a0=0", "--c3_a3=true", "--c3_a4=a"]).clone(with_meta=False)
     assert cfg.as_dict() == {
         "c1_a2": 2.0,
         "c1_a3": None,
@@ -512,7 +512,7 @@ def test_add_method_normal_and_static(parser):
         assert _find_action(parser, key) is not None, f"{key} should be in parser but is not"
     assert _find_action(parser, "s._a3") is None, "s._a3 should not be in parser but is"
 
-    cfg = parser.parse_args(["--m.a1=x", "--s.a1=y"], with_meta=False).as_dict()
+    cfg = parser.parse_args(["--m.a1=x", "--s.a1=y"]).clone(with_meta=False).as_dict()
     assert cfg == {"m": {"a1": "x", "a2": 2.0, "a3": False}, "s": {"a1": "y", "a2": 2.0}}
     assert "x" == WithMethods().normal_method(**cfg["m"])
     assert "y" == WithMethods.static_method(**cfg["s"])
@@ -566,7 +566,7 @@ def test_add_function_arguments(parser):
     for key in ["a1", "a2", "a3", "a4"]:
         assert _find_action(parser, key) is not None, f"{key} should be in parser but is not"
 
-    cfg = parser.parse_args(["--a1=x"], with_meta=False).as_dict()
+    cfg = parser.parse_args(["--a1=x"]).clone(with_meta=False).as_dict()
     assert cfg == {"a1": "x", "a2": 2.0, "a3": False, "a4": None}
     assert "x" == func(**cfg)
 
@@ -655,16 +655,15 @@ def func_config(a1="1", a2: float = 2.0, a3: bool = False):
 
 
 def test_add_function_group_config(parser, tmp_cwd):
-    parser.default_meta = False
     parser.add_function_arguments(func, "func")
 
     cfg_path = Path("config.yaml")
     cfg_path.write_text(json_or_yaml_dump({"a1": "one", "a3": True}))
 
-    cfg = parser.parse_args([f"--func={cfg_path}"])
+    cfg = parser.parse_args([f"--func={cfg_path}"]).clone(with_meta=False)
     assert cfg.func == Namespace(a1="one", a2=2.0, a3=True, a4=None)
 
-    cfg = parser.parse_args(['--func={"a1": "ONE"}'])
+    cfg = parser.parse_args(['--func={"a1": "ONE"}']).clone(with_meta=False)
     assert cfg.func == Namespace(a1="ONE", a2=2.0, a3=False, a4=None)
 
     with pytest.raises(ArgumentError) as ctx:
