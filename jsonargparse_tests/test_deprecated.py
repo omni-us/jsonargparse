@@ -441,6 +441,16 @@ def test_default_meta_property(parser):
     ctx.match("default_meta expects a boolean")
 
 
+def test_parse_with_meta_parameter(parser):
+    with catch_warnings(record=True) as w:
+        parser.parse_args([], with_meta=False)
+    assert_deprecation_warn(
+        w,
+        message="``with_meta`` parameter was deprecated in v4.44.0 and will be removed in v5.0.0",
+        code="parser.parse_args([], with_meta=False)",
+    )
+
+
 def test_deprecated_skip_check_method(parser):
     parser.add_argument("--key", type=int)
     cfg = Namespace(key=1)
