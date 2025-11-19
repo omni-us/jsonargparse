@@ -91,7 +91,7 @@ def auto_cli(
     if unexpected:
         raise ValueError(f"Unexpected components, not class or function: {unexpected}")
 
-    parser = parser_class(default_meta=False, **kwargs)
+    parser = parser_class(**kwargs)
     parser.add_argument("--config", action=ActionConfigFile, help=config_help)
 
     if not isinstance(components, (list, dict)):

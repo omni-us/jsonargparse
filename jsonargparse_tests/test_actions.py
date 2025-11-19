@@ -241,7 +241,7 @@ def test_action_parser_parse_path(composed_parsers):
 
     yaml_main2 = yaml_main.parent / "main2.yaml"
     yaml_main2.write_text(parser.dump(cfg))
-    cfg2 = parser.parse_path(yaml_main2, with_meta=False)
+    cfg2 = parser.parse_path(yaml_main2).clone(with_meta=False)
     assert expected == cfg2.as_dict()
 
 
@@ -250,7 +250,7 @@ def test_action_parser_parse_env_inner(composed_parsers):
     assert "opt2_env" == parser.parse_env({"LV1_INNER2__OPT2": "opt2_env"}).inner2.opt2
     assert "opt3_env" == parser.parse_env({"LV1_INNER2__INNER3__OPT3": "opt3_env"}).inner2.inner3.opt3
     expected = {"opt1": "opt1_def", "inner2": {"opt2": "opt2_def", "inner3": {"opt3": "opt3_yaml"}}}
-    cfg = parser.parse_env({"LV1_INNER2__INNER3": str(yaml_inner3)}, with_meta=False)
+    cfg = parser.parse_env({"LV1_INNER2__INNER3": str(yaml_inner3)}).clone(with_meta=False)
     assert expected == cfg.as_dict()
     assert "opt2_yaml" == parser.parse_env({"LV1_INNER2": str(yaml_inner2)}).inner2.opt2
 
@@ -259,15 +259,17 @@ def test_action_parser_parse_args_subconfig_path(composed_parsers):
     parser, _, yaml_inner2, yaml_inner3 = composed_parsers
 
     expected = {"opt1": "opt1_arg", "inner2": {"opt2": "opt2_yaml", "inner3": {"opt3": "opt3_yaml"}}}
-    cfg = parser.parse_args(["--opt1", "opt1_arg", f"--inner2={yaml_inner2}"], with_meta=False)
+    cfg = parser.parse_args(["--opt1", "opt1_arg", f"--inner2={yaml_inner2}"]).clone(with_meta=False)
     assert expected == cfg.as_dict()
 
     expected = {"opt1": "opt1_def", "inner2": {"opt2": "opt2_arg", "inner3": {"opt3": "opt3_yaml"}}}
-    cfg = parser.parse_args(["--inner2.opt2", "opt2_arg", f"--inner2.inner3={yaml_inner3}"], with_meta=False)
+    cfg = parser.parse_args(["--inner2.opt2", "opt2_arg", f"--inner2.inner3={yaml_inner3}"]).clone(with_meta=False)
     assert expected == cfg.as_dict()
 
     expected = {"opt1": "opt1_def", "inner2": {"opt2": "opt2_def", "inner3": {"opt3": "opt3_arg"}}}
-    cfg = parser.parse_args([f"--inner2.inner3={yaml_inner3}", "--inner2.inner3.opt3", "opt3_arg"], with_meta=False)
+    cfg = parser.parse_args([f"--inner2.inner3={yaml_inner3}", "--inner2.inner3.opt3", "opt3_arg"]).clone(
+        with_meta=False
+    )
     assert expected == cfg.as_dict()
 
 
@@ -275,11 +277,11 @@ def test_action_parser_parse_args_subconfig_string(composed_parsers):
     parser = composed_parsers[0]
 
     expected = {"opt2": "opt2_str", "inner3": {"opt3": "opt3_str"}}
-    cfg = parser.parse_args([f"--inner2={json_or_yaml_dump(expected)}"], with_meta=False)
+    cfg = parser.parse_args([f"--inner2={json_or_yaml_dump(expected)}"]).clone(with_meta=False)
     assert expected == cfg.inner2.as_dict()
 
     expected = {"opt3": "opt3_str"}
-    cfg = parser.parse_args([f"--inner2.inner3={json_or_yaml_dump(expected)}"], with_meta=False)
+    cfg = parser.parse_args([f"--inner2.inner3={json_or_yaml_dump(expected)}"]).clone(with_meta=False)
     assert expected == cfg.inner2.inner3.as_dict()
 
 
@@ -288,7 +290,7 @@ def test_action_parser_parse_args_global_config(composed_parsers):
     parser.add_argument("--cfg", action="config")
 
     expected = {"opt1": "opt1_yaml", "inner2": {"opt2": "opt2_yaml", "inner3": {"opt3": "opt3_yaml"}}}
-    cfg = parser.parse_args([f"--cfg={yaml_main}"], with_meta=False)
+    cfg = parser.parse_args([f"--cfg={yaml_main}"]).clone(with_meta=False)
     delattr(cfg, "cfg")
     assert expected == cfg.as_dict()
 

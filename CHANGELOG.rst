@@ -22,6 +22,13 @@ Changed
   for the corresponding parser/subcommand (`#809
   <https://github.com/omni-us/jsonargparse/pull/809>`__).
 
+Deprecated
+^^^^^^^^^^
+- ``ArgumentParser.default_meta`` property and ``with_meta`` parameter of
+  ``ArgumentParser.parse_*`` are deprecated and will be removed in v5.0.0.
+  Instead use ``.clone(with_meta=...)`` (`#810
+  <https://github.com/omni-us/jsonargparse/pull/810>`__).
+
 
 v4.43.0 (2025-11-11)
 --------------------
