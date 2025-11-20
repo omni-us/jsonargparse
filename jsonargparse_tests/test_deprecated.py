@@ -853,6 +853,19 @@ def test_DefaultHelpFormatter_yaml_comments(parser):
     assert "formatter.set_yaml_argument_comment(" in source[w[-1].lineno - 1]
 
 
+@pytest.mark.skipif(not ruamel_support, reason="ruamel.yaml package is required")
+def test_deprecated_dump_yaml_comments_parameter(parser):
+    parser.add_argument("--arg", type=int, default=1, help="Description")
+    cfg = parser.get_defaults()
+    with catch_warnings(record=True) as w:
+        parser.dump(cfg, yaml_comments=True)
+    assert_deprecation_warn(
+        w,
+        message="yaml_comments parameter was deprecated in v4.44.0 and will be removed in v5.0.0",
+        code="parser.dump(cfg, yaml_comments=True)",
+    )
+
+
 @dataclasses.dataclass
 class ComposeA:
     a: int = 1

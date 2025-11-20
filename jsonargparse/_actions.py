@@ -260,7 +260,7 @@ class _ActionPrintConfig(NonParsingAction):
         kwargs = {"subparser": parser, "key": None, "skip_none": False, "skip_validation": False}
         valid_flags = {"": None, "skip_default": "skip_default", "skip_null": "skip_none"}
         if ruamel_support:
-            valid_flags["comments"] = "yaml_comments"
+            valid_flags["comments"] = "with_comments"
         if value is not None:
             flags = value[0].split(",")
             invalid_flags = [f for f in flags if f not in valid_flags]
