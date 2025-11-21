@@ -21,6 +21,9 @@ Changed
   parser/subcommand the option was given to. Also suggests running ``--help``
   for the corresponding parser/subcommand (`#809
   <https://github.com/omni-us/jsonargparse/pull/809>`__).
+- The ``yaml_comments`` parameter of ``ArgumentParser.dump`` has been renamed to
+  ``with_comments`` to allow future comments support of other formats (`#811
+  <https://github.com/omni-us/jsonargparse/pull/811>`__).
 
 Deprecated
 ^^^^^^^^^^
@@ -28,6 +31,9 @@ Deprecated
   ``ArgumentParser.parse_*`` are deprecated and will be removed in v5.0.0.
   Instead use ``.clone(with_meta=...)`` (`#810
   <https://github.com/omni-us/jsonargparse/pull/810>`__).
+- The ``yaml_comments`` parameter of ``ArgumentParser.dump`` is deprecated and
+  will be removed in v5.0.0. Use ``with_comments`` instead (`#811
+  <https://github.com/omni-us/jsonargparse/pull/811>`__).
 
 
 v4.43.0 (2025-11-11)

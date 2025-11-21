@@ -668,6 +668,21 @@ def deprecated_skip_check(component, kwargs: dict, skip_validation: bool) -> boo
     return skip_validation
 
 
+def deprecated_yaml_comments(kwargs: dict, with_comments: bool) -> bool:
+    yaml_comments = kwargs.pop("yaml_comments", None)
+    if yaml_comments is not None:
+        deprecation_warning(
+            deprecated_yaml_comments,
+            (
+                "yaml_comments parameter was deprecated in v4.44.0 and will be removed in "
+                "v5.0.0. Instead use with_comments."
+            ),
+            stacklevel=3,
+        )
+        return yaml_comments
+    return with_comments
+
+
 ParserError = ArgumentError
 
 

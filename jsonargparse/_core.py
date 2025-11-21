@@ -48,7 +48,7 @@ from ._completions import (
     argcomplete_namespace,
     handle_completions,
 )
-from ._deprecated import ParserDeprecations, deprecated_skip_check
+from ._deprecated import ParserDeprecations, deprecated_skip_check, deprecated_yaml_comments
 from ._formatters import DefaultHelpFormatter, empty_help, get_env_var
 from ._jsonnet import ActionJsonnet
 from ._jsonschema import ActionJsonSchema
@@ -739,7 +739,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         skip_none: bool = True,
         skip_default: bool = False,
         skip_validation: bool = False,
-        yaml_comments: bool = False,
+        with_comments: bool = False,
         skip_link_targets: bool = True,
         **kwargs,
     ) -> str:
@@ -753,7 +753,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             skip_none: Whether to exclude entries whose value is None.
             skip_default: Whether to exclude entries whose value is the same as the default.
             skip_validation: Whether to skip parser checking.
-            yaml_comments: Whether to add help content as comments. ``yaml_comments=True`` implies ``format='yaml'``.
+            with_comments: Whether to add help content as comments. Currently only supported for ``format='yaml'``.
             skip_link_targets: Whether to exclude link targets.
 
         Returns:
@@ -762,7 +762,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
+        with_comments = deprecated_yaml_comments(kwargs, with_comments)
         skip_validation = deprecated_skip_check(ArgumentParser.dump, kwargs, skip_validation)
+
         check_valid_dump_format(format)
 
         cfg = cfg.clone(with_meta=False)
@@ -786,7 +788,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 self._dump_delete_default_entries(cfg_dict, defaults.as_dict())
 
         with parser_context(parent_parser=self):
-            return dump_using_format(self, cfg_dict, "yaml_comments" if yaml_comments else format)
+            return dump_using_format(self, cfg_dict, dump_format=format, with_comments=with_comments)
 
     def _dump_cleanup_actions(self, cfg, actions, dump_kwargs, prefix=""):
         skip_none = dump_kwargs["skip_none"]

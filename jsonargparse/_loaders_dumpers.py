@@ -281,10 +281,16 @@ def check_valid_dump_format(dump_format: str):
         raise ValueError(f'Unknown output format "{dump_format}".')
 
 
-def dump_using_format(parser: ArgumentParser, data: dict, dump_format: str) -> str:
+def dump_using_format(parser: ArgumentParser, data: dict, dump_format: str, with_comments: bool = False) -> str:
     if dump_format == "parser_mode":
         dump_format = parser.parser_mode if parser.parser_mode in dumpers else "yaml"
-    args = (data, parser) if dump_format == "yaml_comments" else (data,)
+    if with_comments:
+        if f"{dump_format}_comments" not in dumpers:
+            if dump_format == "yaml":
+                raise ValueError("ruamel.yaml is required for dumping YAML with comments.")
+            raise ValueError(f"Dumping with comments is not supported for format '{dump_format}'.")
+        dump_format = f"{dump_format}_comments"
+    args = (data, parser) if dump_format.endswith("_comments") else (data,)
     dump = dumpers[dump_format](*args)
     if parser.dump_header and comment_prefix.get(dump_format):
         prefix = comment_prefix[dump_format]

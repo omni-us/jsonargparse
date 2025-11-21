@@ -566,6 +566,24 @@ def test_dump_order(parser, subtests):
         assert dump == "\n".join(v + ": " + str(n) for n, v in args.items()) + "\n"
 
 
+def test_dump_comments_not_supported(parser):
+    parser.parser_mode = "json"
+    parser.add_argument("--op", type=int, default=1)
+    cfg = parser.get_defaults()
+    with pytest.raises(ValueError, match="Dumping with comments is not supported for format 'json'"):
+        parser.dump(cfg, with_comments=True)
+
+
+@skip_if_no_pyyaml
+def test_dump_comments_missing_ruamel(parser):
+    parser.add_argument("--op", type=int, default=1)
+    cfg = parser.get_defaults()
+    with patch.dict("jsonargparse._loaders_dumpers.dumpers") as dumpers:
+        dumpers.pop("yaml_comments", None)
+        with pytest.raises(ValueError, match="ruamel.yaml is required for dumping YAML with comments"):
+            parser.dump(cfg, with_comments=True)
+
+
 @pytest.fixture
 def parser_schema_jsonnet(parser, example_parser):
     parser.add_argument("--cfg", action="config")

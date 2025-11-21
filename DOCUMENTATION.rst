@@ -284,7 +284,7 @@ Depending on the parse method used (see :class:`.ArgumentParser`) and how the
 parser was built, some of the options above might not apply. Parsing of
 environment variables must be explicitly enabled, except if using
 :py:meth:`.ArgumentParser.parse_env`. If the parser does not have an
-`action="config"` argument, then there is no parsing of a full config
+``action="config"`` argument, then there is no parsing of a full config
 environment variable or a way to provide a config file from command line.
 
 
@@ -755,9 +755,9 @@ If you import ``from jsonargparse import set_parsing_settings`` and then run
 ``set_parsing_settings(config_read_mode_fsspec_enabled=True)``, the following
 functions and classes will also support loading from URLs:
 :py:meth:`.ArgumentParser.parse_path`, :py:meth:`.ArgumentParser.get_defaults`
-(``default_config_files`` argument), `action="config"`,
+(``default_config_files`` argument), ``action="config"``,
 :class:`.ActionJsonSchema`, :class:`.ActionJsonnet` and :class:`.ActionParser`.
-This means that a tool that can receive a config file via `action="config"` is
+This means that a tool that can receive a config file via ``action="config"`` is
 able to get the content from a URL, thus something like the following would
 work:
 
@@ -1338,7 +1338,7 @@ string respectively.
 Serialization
 -------------
 
-Parsers that have an `action="config"` argument also include a
+Parsers that have an ``action="config"`` argument also include a
 ``--print_config`` option. This is useful particularly for command line tools
 with a large set of options to create an initial config file including all
 default values. If the `ruamel.yaml <https://pypi.org/project/ruamel.yaml>`__
@@ -2550,7 +2550,7 @@ There is also the :py:meth:`.ArgumentParser.parse_env` function to only parse
 environment variables, which might be useful for some use cases in which there
 is no command line call involved.
 
-If a parser includes an `action="config"` argument, then the environment
+If a parser includes an ``action="config"`` argument, then the environment
 variable for this config file will be parsed before all the other environment
 variables.
 
@@ -2758,7 +2758,7 @@ following:
 When using the :class:`.ActionParser` class, the value of the node in a config
 file can be either the complex node itself, or the path to a file which will be
 loaded and parsed with the corresponding inner parser. Naturally using
-`action="config"` to parse a complete config file will parse the inner
+``action="config"`` to parse a complete config file will parse the inner
 nodes correctly.
 
 Note that when adding ``inner_parser`` a title was given. In the help, the added
