@@ -574,13 +574,14 @@ def test_dump_comments_not_supported(parser):
         parser.dump(cfg, with_comments=True)
 
 
-@pytest.mark.skipif(ruamel_support, reason="ruamel.yaml package should not be installed")
 @skip_if_no_pyyaml
 def test_dump_comments_missing_ruamel(parser):
     parser.add_argument("--op", type=int, default=1)
     cfg = parser.get_defaults()
-    with pytest.raises(ValueError, match="ruamel.yaml is required for dumping YAML with comments"):
-        parser.dump(cfg, with_comments=True)
+    with patch.dict("jsonargparse._loaders_dumpers.dumpers") as dumpers:
+        dumpers.pop("yaml_comments", None)
+        with pytest.raises(ValueError, match="ruamel.yaml is required for dumping YAML with comments"):
+            parser.dump(cfg, with_comments=True)
 
 
 @pytest.fixture
