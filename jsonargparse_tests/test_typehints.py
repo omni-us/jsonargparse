@@ -125,6 +125,12 @@ def test_str_edge_cases(parser):
     assert parser.parse_args([f"--val={val}"]).val == val
 
 
+def test_str_union_default_comment_like(parser):
+    parser.add_argument("--val", type=Union[str, int], default="#default")
+    assert "#default" == parser.get_defaults().val
+    assert "#default" == parser.parse_args([]).val
+
+
 def test_bool_parse(parser):
     parser.add_argument("--val", type=bool)
     assert None is parser.get_defaults().val

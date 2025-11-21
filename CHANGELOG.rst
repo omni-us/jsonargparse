@@ -15,6 +15,12 @@ paths are considered internals and can change in minor and patch releases.
 v4.44.0 (unreleased)
 --------------------
 
+Fixed
+^^^^^
+- Union types with str and default comment-like string incorrectly parsed as a
+  stringified exception of an other subtype (`#812
+  <https://github.com/omni-us/jsonargparse/pull/812>`__).
+
 Changed
 ^^^^^^^
 - Improved error messages when not accepted options are given, referencing which

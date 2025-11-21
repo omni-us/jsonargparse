@@ -854,7 +854,7 @@ def adapt_typehints(
                 vals.append(ex)
         if all(isinstance(v, Exception) for v in vals):
             raise_union_unexpected_value(sorted_subtypes, val, vals)
-        val = vals[-1]
+        val = next((v for v in reversed(vals) if not isinstance(v, Exception)))
 
     # Tuple or Set
     elif typehint_origin in tuple_set_origin_types:
