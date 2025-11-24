@@ -20,6 +20,8 @@ Fixed
 - Union types with str and default comment-like string incorrectly parsed as a
   stringified exception of an other subtype (`#812
   <https://github.com/omni-us/jsonargparse/pull/812>`__).
+- ``FromConfig`` not handling correctly required parameters (`#813
+  <https://github.com/omni-us/jsonargparse/pull/813>`__).
 
 Changed
 ^^^^^^^

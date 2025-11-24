@@ -9,6 +9,7 @@ from ._core import ArgumentParser
 __all__ = ["FromConfigMixin"]
 
 T = TypeVar("T")
+OVERRIDE_KINDS = {inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD}
 
 
 class FromConfigMixin:
@@ -55,6 +56,10 @@ def _parse_class_kwargs_from_config(cls: Type[T], config: Union[str, PathLike, d
     """Parse the init kwargs for ``cls`` from a config file or dict."""
     parser = ArgumentParser(exit_on_error=False, **kwargs)
     parser.add_class_arguments(cls)
+    for required in parser.required_args:
+        action = next((a for a in parser._actions if a.dest == required), None)
+        action._required = False  # type: ignore[union-attr]
+    parser.required_args.clear()
     if isinstance(config, dict):
         cfg = parser.parse_object(config, defaults=False)
     else:
@@ -79,12 +84,15 @@ def _override_init_defaults_this_class(cls: Type[T], defaults: dict) -> None:
     params = inspect.signature(cls.__init__).parameters
     for name, default in defaults.copy().items():
         param = params.get(name)
-        if param and param.kind in {inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD}:
+        if param and param.kind in OVERRIDE_KINDS:
+            if param.default == inspect._empty:
+                raise TypeError(f"Overriding of required parameters not allowed: '{param.name}'")
             defaults.pop(name)
             if param.kind == inspect.Parameter.KEYWORD_ONLY:
                 cls.__init__.__kwdefaults__[name] = default  # type: ignore[index]
             else:
-                index = list(params).index(name) - 1
+                required = [p for p in params.values() if p.kind in OVERRIDE_KINDS and p.default == inspect._empty]
+                index = list(params).index(name) - len(required)
                 aux = cls.__init__.__defaults__ or ()
                 cls.__init__.__defaults__ = aux[:index] + (default,) + aux[index + 1 :]
 
