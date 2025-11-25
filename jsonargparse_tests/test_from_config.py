@@ -80,6 +80,38 @@ def test_init_defaults_override_keyword_only_parameters(tmp_cwd):
     assert instance.child2 == 2
 
 
+def test_init_defaults_override_preserve_required(tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text(json_or_yaml_dump({"param2": 2}))
+
+    class DefaultsOverrideRequiredParameters(FromConfigMixin):
+        __from_config_init_defaults__ = config_path
+
+        def __init__(self, param1: str, param2: int = 1):
+            self.param1 = param1
+            self.param2 = param2
+
+    with pytest.raises(TypeError, match="missing 1 required positional argument: 'param1'"):
+        DefaultsOverrideRequiredParameters()
+
+    instance = DefaultsOverrideRequiredParameters(param1="required")
+    assert instance.param1 == "required"
+    assert instance.param2 == 2
+
+
+def test_init_defaults_override_required_not_allowed(tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text(json_or_yaml_dump({"param1": 2}))
+
+    with pytest.raises(TypeError, match="Overriding of required parameters not allowed: 'param1'"):
+
+        class DefaultsOverrideRequiredNotAllowed(FromConfigMixin):
+            __from_config_init_defaults__ = config_path
+
+            def __init__(self, param1: int):
+                self.param1 = param1
+
+
 def test_init_defaults_override_class_with_init_subclass(tmp_cwd):
     config_path = tmp_cwd / "config.yaml"
     config_path.write_text(json_or_yaml_dump({"parent": "overridden_parent", "child": "overridden_child"}))
