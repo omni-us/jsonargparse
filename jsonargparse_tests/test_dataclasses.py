@@ -21,7 +21,7 @@ from jsonargparse._optionals import (
     typing_extensions_import,
 )
 from jsonargparse._signatures import convert_to_dict
-from jsonargparse.typing import PositiveFloat, PositiveInt
+from jsonargparse.typing import PositiveFloat, PositiveInt, restricted_number_type
 from jsonargparse_tests.conftest import (
     get_parse_args_stdout,
     get_parser_help,
@@ -30,6 +30,15 @@ from jsonargparse_tests.conftest import (
 )
 
 annotated = typing_extensions_import("Annotated")
+
+BetweenThreeAndNine = restricted_number_type("BetweenThreeAndNine", float, [(">=", 3), ("<=", 9)])
+ListPositiveInt = List[PositiveInt]
+
+
+@dataclasses.dataclass
+class DifferentModuleBaseData:
+    count: Optional[BetweenThreeAndNine] = None  # type: ignore[valid-type]
+    numbers: ListPositiveInt = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass(frozen=True)

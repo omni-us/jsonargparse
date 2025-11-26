@@ -221,7 +221,11 @@ def type_requires_eval(typehint):
 
 
 def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
-    global_vars = obj.__globals__.copy() if hasattr(obj, "__globals__") else {}
+    global_vars = getattr(obj, "__globals__", {}).copy()
+    if is_dataclass(obj):
+        next_mro = inspect.getmro(obj)[1]  # type: ignore[arg-type]
+        if is_dataclass(next_mro):
+            global_vars.update(get_global_vars(next_mro, logger))
     for key, value in vars(import_module(obj.__module__)).items():  # needed for pydantic-v1
         if key not in global_vars:
             global_vars[key] = value
@@ -284,11 +288,7 @@ def evaluate_postponed_annotations(params, component, parent, logger):
     if not (params and any(type_requires_eval(p.annotation) for p in params)):
         return
     try:
-        if (
-            is_dataclass(parent)
-            and component.__name__ == "__init__"
-            and not component.__qualname__.startswith(parent.__name__ + ".")
-        ):
+        if is_dataclass(parent) and component.__name__ == "__init__":
             types = get_types(parent, logger)
         else:
             types = get_types(component, logger)

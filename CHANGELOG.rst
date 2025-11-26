@@ -12,6 +12,16 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.44.1 (unreleased)
+--------------------
+
+Fixed
+^^^^^
+- Evaluation of postponed annotations for dataclass inheritance across modules
+  not working correctly (`#814
+  <https://github.com/omni-us/jsonargparse/pull/814>`__).
+
+
 v4.44.0 (2025-11-25)
 --------------------
 
