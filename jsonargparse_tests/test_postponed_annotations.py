@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
 import pytest
 
 from jsonargparse import Namespace
+from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._postponed_annotations import (
     TypeCheckingVisitor,
@@ -329,6 +330,11 @@ def test_add_dataclass_with_init_pep585(parser, tmp_cwd):
 
 @dataclasses.dataclass
 class InheritDifferentModule(DifferentModuleBaseData):
+    """
+    Args:
+        extra: an extra string
+    """
+
     extra: str = "default"
 
 
@@ -339,6 +345,8 @@ def test_get_params_dataclass_inherit_different_module():
     params = get_params(InheritDifferentModule)
 
     assert [p.name for p in params] == ["count", "numbers", "extra"]
+    if docstring_parser_support:
+        assert [p.doc for p in params] == ["between 3 and 9", "list of positive ints", "an extra string"]
     assert all(not isinstance(p.annotation, str) for p in params)
     assert not isinstance(params[0].annotation.__args__[0], str)
     assert "BetweenThreeAndNine" in str(params[0].annotation)

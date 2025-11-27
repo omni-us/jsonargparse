@@ -20,6 +20,8 @@ Fixed
 - Evaluation of postponed annotations for dataclass inheritance across modules
   not working correctly (`#814
   <https://github.com/omni-us/jsonargparse/pull/814>`__).
+- Getting parameter descriptions from docstrings not working for dataclass
+  inheritance (`#815 <https://github.com/omni-us/jsonargparse/pull/815>`__).
 
 
 v4.44.0 (2025-11-25)

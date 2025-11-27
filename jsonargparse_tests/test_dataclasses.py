@@ -37,6 +37,12 @@ ListPositiveInt = List[PositiveInt]
 
 @dataclasses.dataclass
 class DifferentModuleBaseData:
+    """
+    Args:
+        count: between 3 and 9
+        numbers: list of positive ints
+    """
+
     count: Optional[BetweenThreeAndNine] = None  # type: ignore[valid-type]
     numbers: ListPositiveInt = dataclasses.field(default_factory=list)
 
