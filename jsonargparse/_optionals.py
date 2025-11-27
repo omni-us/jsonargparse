@@ -5,6 +5,7 @@ import os
 import re
 from contextlib import contextmanager
 from copy import deepcopy
+from dataclasses import is_dataclass
 from importlib.metadata import version
 from importlib.util import find_spec
 from typing import Optional, Union
@@ -242,6 +243,10 @@ def parse_docstring(component, params=False, logger=None):
 def parse_docs(component, parent, logger):
     docs = {}
     if docstring_parser_support:
+        if is_dataclass(parent) and component.__name__ == "__init__":
+            next_mro = inspect.getmro(parent)[1]
+            if is_dataclass(next_mro):
+                docs.update(parse_docs(next_mro, next_mro.__init__, logger))
         doc_sources = [component]
         if inspect.isclass(parent) and component.__name__ == "__init__":
             doc_sources += [parent]
