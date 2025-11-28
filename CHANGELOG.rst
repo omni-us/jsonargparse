@@ -12,8 +12,14 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.44.1 (unreleased)
+v4.45.0 (unreleased)
 --------------------
+
+Added
+^^^^^
+- Signature methods now when given ``sub_configs=True``, list of paths types can
+  now receive a file containing a list of paths (`#816
+  <https://github.com/omni-us/jsonargparse/pull/816>`__).
 
 Fixed
 ^^^^^
@@ -22,6 +28,12 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/814>`__).
 - Getting parameter descriptions from docstrings not working for dataclass
   inheritance (`#815 <https://github.com/omni-us/jsonargparse/pull/815>`__).
+
+Changed
+^^^^^^^
+- List of paths types now show in the help the supported options for providing
+  paths like ``'["PATH1",...]' | LIST_OF_PATHS_FILE | -`` (`#816
+  <https://github.com/omni-us/jsonargparse/pull/816>`__).
 
 
 v4.44.0 (2025-11-25)

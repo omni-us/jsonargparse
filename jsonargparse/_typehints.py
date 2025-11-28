@@ -592,7 +592,7 @@ class ActionTypeHint(Action):
                         ):
                             ex = None
                         elif self._enable_path and config_path is None and isinstance(orig_val, str):
-                            msg = f"\n- Expected a config path but {orig_val} either not accessible or invalid\n- "
+                            msg = f"\n- Expected a path but {orig_val} either not accessible or invalid\n- "
                             raise type(ex)(msg + str(ex)) from ex
                     if ex:
                         raise ex
@@ -711,6 +711,14 @@ def is_pathlike(typehint) -> bool:
     if get_typehint_origin(typehint) == Union:
         return any(is_pathlike(t) for t in typehint.__args__)
     return is_subclass(typehint, os.PathLike)
+
+
+def is_list_pathlike(typehint) -> bool:
+    typehint_origin = get_typehint_origin(typehint)
+    if typehint_origin in sequence_origin_types:
+        subtype = typehint.__args__[0]
+        return is_pathlike(subtype)
+    return False
 
 
 def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: Optional[Exception] = None) -> NoReturn:
@@ -1643,7 +1651,9 @@ def typehint_metavar(typehint):
     elif is_optional(typehint, Enum):
         enum = typehint.__args__[0]
         metavar = iter_to_set_str(list(enum.__members__) + ["null"])
-    elif typehint_origin in tuple_set_origin_types:
+    elif is_list_pathlike(typehint):
+        metavar = "'[\"PATH1\",...]' | LIST_OF_PATHS_FILE | -"
+    elif typehint_origin in tuple_set_origin_types or typehint_origin in sequence_origin_types:
         metavar = "[ITEM,...]"
     return metavar
 

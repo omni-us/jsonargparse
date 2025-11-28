@@ -537,7 +537,7 @@ def test_enable_path_dict(parser, tmp_cwd):
     assert data == cfg["data"]
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--data=does-not-exist.yaml"])
-    ctx.match("does-not-exist.yaml either not accessible or invalid")
+    ctx.match("Expected a path but does-not-exist.yaml either not accessible or invalid")
 
 
 def test_enable_path_subclass(parser, tmp_cwd):
@@ -616,8 +616,10 @@ def test_enable_path_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
     with subtests.test("paths list nargs='+' path not exist"):
         pytest.raises(ArgumentError, lambda: parser.parse_args(["--lists", str(list_file4)]))
 
-    with subtests.test("paths list nargs='+' list not exist"):
-        pytest.raises(ArgumentError, lambda: parser.parse_args(["--lists", "no-such-file"]))
+    with subtests.test("paths list nargs='+' list not exist"):  # TODO: check error message
+        with pytest.raises(ArgumentError) as ctx:
+            parser.parse_args(["--lists", "no-such-file"])
+        ctx.match("Expected a path but no-such-file either not accessible or invalid")
 
 
 def test_enable_path_list_path_fr_default_stdin(parser, tmp_cwd, mock_stdin, subtests):
@@ -642,6 +644,31 @@ def test_enable_path_list_path_fr_default_stdin(parser, tmp_cwd, mock_stdin, sub
             cfg = parser.parse_args(["--list=-"])
         assert all(isinstance(x, Path_fr) for x in cfg.list)
         assert ["file1", "file2"] == [str(x) for x in cfg.list]
+
+    with subtests.test("help"):
+        help_str = get_parser_help(parser)
+        assert "'[\"PATH1\",...]' | LIST_OF_PATHS_FILE | -" in help_str
+
+
+class ClassListPath:
+    def __init__(self, files: list[Path_fr]):
+        self.files = files
+
+
+def test_add_class_list_path(parser, tmp_cwd):
+    (tmp_cwd / "file1").touch()
+    (tmp_cwd / "file2").touch()
+    list_file1 = tmp_cwd / "files.lst"
+    list_file1.write_text("file1\nfile2\n")
+
+    parser.add_class_arguments(ClassListPath, "cls", sub_configs=True)
+
+    cfg = parser.parse_args([f"--cls.files={list_file1}"])
+    assert all(isinstance(x, Path_fr) for x in cfg.cls.files)
+    assert ["file1", "file2"] == [str(x) for x in cfg.cls.files]
+
+    help_str = get_parser_help(parser)
+    assert "'[\"PATH1\",...]' | LIST_OF_PATHS_FILE | -" in help_str
 
 
 class DataOptionalPath:
