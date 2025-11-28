@@ -626,7 +626,7 @@ class UnionClass:
     ],
 )
 def test_class_path_union_mixture_dataclass_and_class(parser, union_type):
-    parser.add_argument("--union", type=union_type, enable_path=True)
+    parser.add_argument("--union", type=union_type)
 
     value = {"class_path": f"{__name__}.UnionData", "init_args": {"data_a": 2, "data_b": "x"}}
     cfg = parser.parse_args([f"--union={json.dumps(value)}"])

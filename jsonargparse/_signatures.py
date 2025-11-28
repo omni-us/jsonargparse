@@ -24,6 +24,7 @@ from ._typehints import (
     LazyInitBaseClass,
     callable_instances,
     get_subclass_names,
+    is_list_pathlike,
     is_optional,
     not_required_types,
     sequence_origin_types,
@@ -419,7 +420,9 @@ class SignatureArguments(LoggerProperty):
                 else:
                     register_pydantic_type(annotation)
                 enable_path = sub_configs and (
-                    is_subclass_typehint or ActionTypeHint.is_return_subclass_typehint(annotation)
+                    is_subclass_typehint
+                    or ActionTypeHint.is_return_subclass_typehint(annotation)
+                    or is_list_pathlike(annotation)
                 )
                 args = ActionTypeHint.prepare_add_argument(
                     args=args,
