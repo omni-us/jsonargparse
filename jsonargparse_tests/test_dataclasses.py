@@ -14,6 +14,7 @@ from jsonargparse import (
     Namespace,
     set_parsing_settings,
 )
+from jsonargparse._common import subclasses_disabled_selectors
 from jsonargparse._namespace import NSKeyError
 from jsonargparse._optionals import (
     docstring_parser_support,
@@ -30,6 +31,13 @@ from jsonargparse_tests.conftest import (
 )
 
 annotated = typing_extensions_import("Annotated")
+
+
+@pytest.fixture
+def enable_subclasses(subclass_behavior):
+    set_parsing_settings(subclasses_enabled=["is_pure_dataclass"])
+    yield
+
 
 BetweenThreeAndNine = restricted_number_type("BetweenThreeAndNine", float, [(">=", 3), ("<=", 9)])
 ListPositiveInt = List[PositiveInt]
@@ -768,13 +776,6 @@ def test_add_subclass_dataclass_subclasses_disabled(parser):
         parser.add_subclass_arguments(DataMain, "data")
 
 
-@pytest.fixture
-def enable_subclasses():
-    with patch.dict("jsonargparse._common.subclasses_disabled_selectors"):
-        set_parsing_settings(subclasses_enabled=["is_pure_dataclass"])
-        yield
-
-
 @pytest.mark.parametrize("default", [None, DataMain()])
 def test_add_subclass_dataclass_subclasses_enabled(parser, default, enable_subclasses):
     parser.add_subclass_arguments(DataMain, "data", default=default)
@@ -847,6 +848,46 @@ def test_add_argument_dataclass_subclasses_enabled(parser, subtests, enable_subc
         init = parser.instantiate_classes(cfg)
         assert isinstance(init.data, DataSub)
         assert dataclasses.asdict(init.data) == {"p1": 2, "p2": "-"}
+
+
+def test_add_argument_dataclass_single_type_subclasses_enabled(parser, subclass_behavior):
+    set_parsing_settings(subclasses_enabled=[DataMain])
+    assert "is_pure_dataclass" in subclasses_disabled_selectors
+
+    parser.add_argument("--data", type=DataMain, default=DataMain(p1=2))
+
+    config = {"class_path": f"{__name__}.DataSub", "init_args": {"p2": "y"}}
+    cfg = parser.parse_args([f"--data={json.dumps(config)}"])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.data, DataSub)
+    assert dataclasses.asdict(init.data) == {"p1": 2, "p2": "y"}
+    dump = json_or_yaml_load(parser.dump(cfg))["data"]
+    assert dump == {"class_path": f"{__name__}.DataSub", "init_args": {"p1": 2, "p2": "y"}}
+
+
+def test_add_argument_dataclass_single_type_subclasses_disabled(parser, enable_subclasses):
+    set_parsing_settings(subclasses_disabled=[DataMain])
+    assert "is_pure_dataclass" not in subclasses_disabled_selectors
+
+    parser.add_argument("--data", type=DataMain, default=DataMain(p1=2))
+
+    config = {"class_path": f"{__name__}.DataSub", "init_args": {"p2": "y"}}
+    with pytest.raises(ArgumentError, match="Group 'data' does not accept option 'init_args.p2'"):
+        parser.parse_args([f"--data={json.dumps(config)}"])
+
+
+def test_add_argument_dataclass_subclasses_disabled_function(parser, enable_subclasses):
+    def is_data_main(obj):
+        return obj is DataMain
+
+    set_parsing_settings(subclasses_disabled=[is_data_main])
+    assert "is_pure_dataclass" not in subclasses_disabled_selectors
+
+    parser.add_argument("--data", type=DataMain, default=DataMain(p1=2))
+
+    config = {"class_path": f"{__name__}.DataSub", "init_args": {"p2": "y"}}
+    with pytest.raises(ArgumentError, match="Group 'data' does not accept option 'init_args.p2'"):
+        parser.parse_args([f"--data={json.dumps(config)}"])
 
 
 class ParentData:
