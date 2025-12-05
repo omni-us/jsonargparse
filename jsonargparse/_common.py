@@ -142,17 +142,16 @@ def set_parsing_settings(
             with ``omegaconf+`` parser mode, absolute interpolation paths are
             converted to relative. This is only intended for backward
             compatibility with ``omegaconf`` parser mode.
-        subclasses_disabled: List of types or functions, to configure that
-            when parsing only the exact type hints (not their subclasses) are
-            accepted. Descendants of the configured types are also disabled.
-            Functions should return True for types to disable.
-        subclasses_enabled: List of types or disable function names, to
-            configure that subclasses are accepted. Types given here have
-            precedence over those in ``subclasses_disabled``. Giving a function
-            name removes the corresponding function from
-            ``subclasses_disabled``. By default, the following disable functions
-            are registered: ``is_pure_dataclass``, ``is_pydantic_model``,
-            ``is_attrs_class`` and ``is_final_class``.
+        subclasses_disabled: List of types or functions, so that when parsing
+            only the exact type hints (not their subclasses) are accepted.
+            Descendants of the configured types are also disabled. Functions
+            should return ``True`` for types to disable.
+        subclasses_enabled: List of types or disable function names, so that
+            subclasses are accepted. Types given here have precedence over those
+            in ``subclasses_disabled``. Giving a function name removes the
+            corresponding function from ``subclasses_disabled``. By default, the
+            following disable functions are registered: ``is_pure_dataclass``,
+            ``is_pydantic_model``, ``is_attrs_class`` and ``is_final_class``.
     """
     # validate_defaults
     if isinstance(validate_defaults, bool):
@@ -189,8 +188,8 @@ def set_parsing_settings(
     # subclass behavior
     if subclasses_disabled or subclasses_enabled:
         subclass_type_behavior(
-            subclasses_disabled=subclasses_disabled or [],
-            subclasses_enabled=subclasses_enabled or [],
+            subclasses_disabled=subclasses_disabled,
+            subclasses_enabled=subclasses_enabled,
         )
 
 
@@ -328,11 +327,11 @@ def is_subclasses_disabled(cls) -> bool:
 
 
 def subclass_type_behavior(
-    subclasses_disabled: list[Union[type, Callable[[type], bool]]] = [],
-    subclasses_enabled: list[Union[type, str]] = [],
+    subclasses_disabled: Optional[list[Union[type, Callable[[type], bool]]]] = None,
+    subclasses_enabled: Optional[list[Union[type, str]]] = None,
 ) -> None:
     """Configures whether class types accept or not subclasses."""
-    for enable_item in subclasses_enabled:
+    for enable_item in subclasses_enabled or []:
         if isinstance(enable_item, str):
             if enable_item not in subclasses_disabled_selectors:
                 raise ValueError(f"There is no function '{enable_item}' registered in subclasses_disabled")
@@ -344,7 +343,7 @@ def subclass_type_behavior(
                 f"Expected 'subclasses_enabled' list items to be types or strings, but got {enable_item!r}"
             )
 
-    for disable_item in subclasses_disabled:
+    for disable_item in subclasses_disabled or []:
         if inspect.isclass(disable_item):
             subclasses_disabled_types.add(disable_item)
         elif inspect.isfunction(disable_item):

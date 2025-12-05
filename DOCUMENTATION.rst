@@ -505,11 +505,11 @@ Some notes about this support are:
   are not required to be ``runtime_checkable``. But the accepted classes must
   match exactly the signature of the protocol's public methods.
 
-- ``dataclasses`` are supported even when nested. Final classes, attrs'
-  ``define`` decorator, and pydantic's ``dataclass`` decorator and ``BaseModel``
-  classes are supported and behave like standard dataclasses. For more details
-  see :ref:`subclasses-disabled`. If a dataclass is mixed inheriting from a normal
-  class, it is considered a subclass type instead of a dataclass.
+- ``dataclasses`` are supported even when nested and by default don't accept
+  subclasses. Final classes, attrs' ``define``, pydantic's ``dataclass`` and
+  pydantic's ``BaseModel`` classes are supported and behave like standard
+  dataclasses. For more details see :ref:`subclasses-disabled`. If a dataclass
+  is mixed inheriting from a normal class, by default it will accept subclasses.
 
 - User-defined ``Generic`` types are supported. For more details see
   :ref:`generic-types`.
@@ -2373,6 +2373,13 @@ specific dataclass, the following can be done:
         subclasses_enabled=["is_pure_dataclass"],
         subclasses_disabled=[DataClassBaseType],
     )
+
+.. note::
+
+    Enabling subclass support for types is currently experimental. While the
+    interface and behavior is expected to be stable, fundamental issues may
+    arise that require changes to the design, which could result in breaking
+    changes in future releases.
 
 
 .. _argument-linking:
