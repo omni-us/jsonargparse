@@ -4,7 +4,6 @@ import dataclasses
 import json
 from copy import deepcopy
 from typing import Dict, List, Literal, Optional, Union
-from unittest.mock import patch
 
 import pytest
 
@@ -40,10 +39,9 @@ def missing_pydantic():
 
 
 @pytest.fixture
-def enable_subclasses():
-    with patch.dict("jsonargparse._common.subclasses_disabled_selectors"):
-        set_parsing_settings(subclasses_enabled=["is_pydantic_model"])
-        yield
+def enable_subclasses(subclass_behavior):
+    set_parsing_settings(subclasses_enabled=["is_pydantic_model"])
+    yield
 
 
 @skip_if_pydantic_v1_on_v2

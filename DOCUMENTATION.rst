@@ -2335,9 +2335,9 @@ in ``subclasses_disabled``; in this case, the effect is to unregister it. By
 default, the following disable functions are registered: ``is_pure_dataclass``,
 ``is_pydantic_model``, ``is_attrs_class``, and ``is_final_class``.
 
-Since ``subclasses_enabled`` takes precedence, it is possible to keep subclass
-support disabled for dataclasses, but enable enable it for a specific dataclass
-as follows:
+Some examples. Since ``subclasses_enabled`` takes precedence, it is possible to
+keep subclass support disabled for dataclasses, but enable enable it for a
+specific dataclass as follows:
 
 .. testsetup:: enable_disable_subclasses
 
@@ -2358,12 +2358,21 @@ as follows:
 
     set_parsing_settings(subclasses_enabled=[DataClassBaseType])
 
-To enable subclass support for all dataclasses and pydantic models, the
-following can be done:
+To enable subclass support for all pydantic models, the following can be done:
 
 .. testcode:: enable_disable_subclasses
 
-    set_parsing_settings(subclasses_enabled=["is_pure_dataclass", "is_pydantic_model"])
+    set_parsing_settings(subclasses_enabled=["is_pydantic_model"])
+
+To enable subclass support for all dataclasses, but have it disabled for a
+specific dataclass, the following can be done:
+
+.. testcode:: enable_disable_subclasses
+
+    set_parsing_settings(
+        subclasses_enabled=["is_pure_dataclass"],
+        subclasses_disabled=[DataClassBaseType],
+    )
 
 
 .. _argument-linking:

@@ -152,6 +152,14 @@ def example_parser() -> ArgumentParser:
 
 
 @pytest.fixture
+def subclass_behavior(monkeypatch) -> Iterator[None]:
+    monkeypatch.setattr("jsonargparse._common.subclasses_enabled_types", set())
+    monkeypatch.setattr("jsonargparse._common.subclasses_disabled_types", set())
+    with patch.dict("jsonargparse._common.subclasses_disabled_selectors"):
+        yield
+
+
+@pytest.fixture
 def tmp_cwd(tmpdir) -> Iterator[Path]:
     with tmpdir.as_cwd():
         yield Path(tmpdir)

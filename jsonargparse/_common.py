@@ -321,9 +321,9 @@ def is_subclasses_disabled(cls) -> bool:
         return False
     subclass_disabled = any(selector(cls) for selector in subclasses_disabled_selectors.values())
     if not subclass_disabled:
-        subclass_disabled = any(issubclass(cls, disabled_type) for disabled_type in subclasses_disabled_types)
+        subclass_disabled = any(issubclass(cls, disable_type) for disable_type in subclasses_disabled_types)
     if subclass_disabled:
-        subclass_disabled = not any(issubclass(cls, enabled_type) for enabled_type in subclasses_enabled_types)
+        subclass_disabled = not any(issubclass(cls, enable_type) for enable_type in subclasses_enabled_types)
     return subclass_disabled
 
 
@@ -351,7 +351,7 @@ def subclass_type_behavior(
             subclasses_disabled_selectors[disable_item.__name__] = disable_item
         else:
             raise ValueError(
-                f"Expected 'subclasses_disabled' list items to be types or callables, but got {disable_item!r}"
+                f"Expected 'subclasses_disabled' list items to be types or functions, but got {disable_item!r}"
             )
 
 
