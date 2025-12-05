@@ -20,6 +20,8 @@ Added
 - Signature methods now when given ``sub_configs=True``, list of paths types can
   now receive a file containing a list of paths (`#816
   <https://github.com/omni-us/jsonargparse/pull/816>`__).
+- Public interface for enabling/disabling support of type subclasses (`#817
+  <https://github.com/omni-us/jsonargparse/pull/817>`__).
 
 Fixed
 ^^^^^

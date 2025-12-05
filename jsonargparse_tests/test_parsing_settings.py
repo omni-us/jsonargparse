@@ -203,3 +203,30 @@ def test_set_stubs_resolver_allow_py_files_failure():
 def test_set_omegaconf_absolute_to_relative_paths_failure():
     with pytest.raises(ValueError, match="omegaconf_absolute_to_relative_paths must be a boolean"):
         set_parsing_settings(omegaconf_absolute_to_relative_paths="invalid")
+
+
+# enable/disable-subclasses
+
+
+def test_default_subclass_disable_functions(subclass_behavior):
+    from jsonargparse._common import subclasses_disabled_selectors
+
+    set_parsing_settings(
+        subclasses_enabled=["is_pure_dataclass", "is_pydantic_model", "is_attrs_class", "is_final_class"]
+    )
+    assert not subclasses_disabled_selectors
+
+
+def test_unknown_subclass_disable_function():
+    with pytest.raises(ValueError, match="no function 'unknown_selector'"):
+        set_parsing_settings(subclasses_enabled=["unknown_selector"])
+
+
+def test_invalid_item_type_subclass_enable():
+    with pytest.raises(ValueError, match="Expected 'subclasses_enabled' list items to be types or strings"):
+        set_parsing_settings(subclasses_enabled=[123])
+
+
+def test_invalid_item_type_subclass_disable():
+    with pytest.raises(ValueError, match="Expected 'subclasses_disabled' list items to be types or functions"):
+        set_parsing_settings(subclasses_disabled=[123])
