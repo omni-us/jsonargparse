@@ -752,7 +752,7 @@ class DataSub(DataMain):
     p2: str = "-"
 
 
-def test_dataclass_not_subclass(parser):
+def test_dataclass_subclasses_disabled(parser):
     parser.add_argument("--data", type=DataMain, default=DataMain(p1=2))
 
     help_str = get_parser_help(parser)
@@ -763,20 +763,20 @@ def test_dataclass_not_subclass(parser):
         parser.parse_args([f"--data={json.dumps(config)}"])
 
 
-def test_add_subclass_dataclass_not_subclass(parser):
+def test_add_subclass_dataclass_subclasses_disabled(parser):
     with pytest.raises(ValueError, match="Expected .* a subclass type or a tuple of subclass types"):
         parser.add_subclass_arguments(DataMain, "data")
 
 
 @pytest.fixture
-def subclass_behavior():
-    with patch.dict("jsonargparse._common.not_subclass_type_selectors") as not_subclass_type_selectors:
-        not_subclass_type_selectors.pop("dataclass")
+def enable_subclasses():
+    with patch.dict("jsonargparse._common.subclasses_disabled_selectors"):
+        set_parsing_settings(subclasses_enabled=["is_pure_dataclass"])
         yield
 
 
 @pytest.mark.parametrize("default", [None, DataMain()])
-def test_add_subclass_dataclass_as_subclass(parser, default, subclass_behavior):
+def test_add_subclass_dataclass_subclasses_enabled(parser, default, enable_subclasses):
     parser.add_subclass_arguments(DataMain, "data", default=default)
 
     config = {"class_path": f"{__name__}.DataMain", "init_args": {"p1": 2}}
@@ -796,7 +796,7 @@ def test_add_subclass_dataclass_as_subclass(parser, default, subclass_behavior):
     assert dump == {"class_path": f"{__name__}.DataSub", "init_args": {"p1": 1, "p2": "y"}}
 
 
-def test_add_argument_dataclass_as_subclass(parser, subtests, subclass_behavior):
+def test_add_argument_dataclass_subclasses_enabled(parser, subtests, enable_subclasses):
     parser.add_argument("--data", type=DataMain, default=DataMain(p1=2))
 
     with subtests.test("help"):
@@ -854,7 +854,7 @@ class ParentData:
         self.data = data
 
 
-def test_dataclass_nested_not_subclass(parser):
+def test_dataclass_nested_subclasses_disabled(parser):
     parser.add_argument("--parent", type=ParentData)
 
     help_str = get_parse_args_stdout(parser, ["--parent.help"])
@@ -873,7 +873,7 @@ def test_dataclass_nested_not_subclass(parser):
         parser.parse_args([f"--parent={json.dumps(config)}"])
 
 
-def test_dataclass_nested_as_subclass(parser, subclass_behavior):
+def test_dataclass_nested_subclasses_enabled(parser, enable_subclasses):
     parser.add_argument("--parent", type=ParentData)
 
     help_str = get_parse_args_stdout(parser, ["--parent.help"])
@@ -938,7 +938,7 @@ person = Person(
 )
 
 
-def test_convert_to_dict_not_subclass():
+def test_convert_to_dict_subclasses_disabled():
     person_dict = convert_to_dict(person)
     assert person_dict == {
         "name": "jt",
@@ -953,7 +953,7 @@ def test_convert_to_dict_not_subclass():
     }
 
 
-def test_convert_to_dict_subclass(subclass_behavior):
+def test_convert_to_dict_subclasses_enabled(enable_subclasses):
     person_dict = convert_to_dict(person)
     assert person_dict == {
         "class_path": f"{__name__}.Person",

@@ -12,8 +12,13 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.45.1 (unreleased)
+v4.46.0 (unreleased)
 --------------------
+
+Added
+^^^^^
+- Public interface for enabling/disabling support of type subclasses (`#817
+  <https://github.com/omni-us/jsonargparse/pull/817>`__).
 
 Fixed
 ^^^^^

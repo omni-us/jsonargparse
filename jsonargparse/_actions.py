@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Optional, Union
 
-from ._common import Action, NonParsingAction, is_not_subclass_type, is_subclass, parser_context, parsing_defaults
+from ._common import Action, NonParsingAction, is_subclass, is_subclasses_disabled, parser_context, parsing_defaults
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._optionals import _get_config_read_mode, ruamel_support
@@ -365,13 +365,13 @@ class _ActionHelpClassPath(NonParsingAction):
         self._typehint = kwargs.pop("_typehint")
         self._help_types = self.get_help_types(self._typehint)
         assert self._help_types and all(isinstance(b, type) for b in self._help_types)
-        self._not_subclass = len(self._help_types) == 1 and is_not_subclass_type(self._help_types[0])
+        self._single_class = len(self._help_types) == 1 and is_subclasses_disabled(self._help_types[0])
         self._basename = iter_to_set_str(t.__name__ for t in self._help_types)
 
         if len(self._help_types) == 1:
-            kwargs["nargs"] = 0 if self._not_subclass else "?"
+            kwargs["nargs"] = 0 if self._single_class else "?"
 
-        if self._not_subclass:
+        if self._single_class:
             msg = ""
         else:
             kwargs["metavar"] = "CLASS_PATH_OR_NAME"

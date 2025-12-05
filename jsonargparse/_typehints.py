@@ -53,8 +53,8 @@ from ._common import (
     get_unaliased_type,
     is_generic_class,
     is_instance,
-    is_not_subclass_type,
     is_subclass,
+    is_subclasses_disabled,
     lenient_check,
     nested_links,
     parent_parser,
@@ -313,7 +313,7 @@ class ActionTypeHint(Action):
             or get_typehint_origin(typehint) in root_types
             or get_registered_type(typehint) is not None
             or is_subclass(typehint, Enum)
-            or is_not_subclass_type(typehint)
+            or is_subclasses_disabled(typehint)
             or ActionTypeHint.is_subclass_typehint(typehint)
         )
         if full and supported:
@@ -1090,15 +1090,15 @@ def adapt_typehints(
                 return val_class  # importable instance
             if is_protocol(val_class):
                 raise_unexpected_value(f"Expected an instantiatable class, but {val['class_path']} is a protocol")
-            not_subclass = False
+            subclass = True
             if not is_subclass_or_implements_protocol(val_class, typehint):
-                not_subclass = True
+                subclass = False
                 if not inspect.isclass(val_class) and callable(val_class):
                     from ._postponed_annotations import get_return_type
 
                     return_type = get_return_type(val_class, logger)
                     if is_subclass_or_implements_protocol(return_type, typehint):
-                        not_subclass = False
+                        subclass = True
             elif prev_implicit_defaults:
                 inner_parser = ActionTypeHint.get_class_parser(typehint, sub_add_kwargs)
                 prev_val.init_args = inner_parser.get_defaults()
@@ -1106,7 +1106,7 @@ def adapt_typehints(
                     inner_parser = ActionTypeHint.get_class_parser(val_class, sub_add_kwargs)
                     for key in inner_parser.get_defaults().keys():
                         prev_val.init_args.pop(key, None)
-            if not_subclass:
+            if not subclass:
                 msg = "implement protocol" if is_protocol(typehint) else "correspond to a subclass of"
                 raise_unexpected_value(f"Import path {val['class_path']} does not {msg} {typehint.__name__}")
             val["class_path"] = class_path
@@ -1269,7 +1269,7 @@ def is_single_class_type(typehint, typehint_origin, closed_class):
     ):
         return False
     if not closed_class:
-        return not is_not_subclass_type(typehint)
+        return not is_subclasses_disabled(typehint)
     return True
 
 
@@ -1541,7 +1541,7 @@ def adapt_class_type(
                     val = load_value(val, simple_types=True)
             value["dict_kwargs"][key] = val
 
-    if is_not_subclass_type(typehint) and value.class_path == get_import_path(typehint):
+    if is_subclasses_disabled(typehint) and value.class_path == get_import_path(typehint):
         value = Namespace({**value.get("init_args", {}), **value.get("dict_kwargs", {})})
 
     return value
