@@ -203,3 +203,18 @@ def test_set_stubs_resolver_allow_py_files_failure():
 def test_set_omegaconf_absolute_to_relative_paths_failure():
     with pytest.raises(ValueError, match="omegaconf_absolute_to_relative_paths must be a boolean"):
         set_parsing_settings(omegaconf_absolute_to_relative_paths="invalid")
+
+
+# enable/disable-subclasses
+
+
+def test_default_subclass_disable_functions():
+    from jsonargparse._common import subclasses_disabled_selectors
+
+    for name in [
+        "is_pure_dataclass",
+        "is_pydantic_model",
+        "is_attrs_class",
+        "is_final_class",
+    ]:
+        assert name in subclasses_disabled_selectors

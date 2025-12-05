@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from jsonargparse import ArgumentError, ArgumentParser, Namespace
+from jsonargparse import ArgumentError, ArgumentParser, Namespace, set_parsing_settings
 from jsonargparse._optionals import (
     docstring_parser_support,
     pydantic_support,
@@ -40,9 +40,9 @@ def missing_pydantic():
 
 
 @pytest.fixture
-def subclass_behavior():
-    with patch.dict("jsonargparse._common.not_subclass_type_selectors") as not_subclass_type_selectors:
-        not_subclass_type_selectors.pop("pydantic")
+def enable_subclasses():
+    with patch.dict("jsonargparse._common.subclasses_disabled_selectors"):
+        set_parsing_settings(subclasses_enabled=["is_pydantic_model"])
         yield
 
 
@@ -396,7 +396,7 @@ if pydantic_support:
     }
 
 
-def test_model_argument_as_subclass(parser, subtests, subclass_behavior):
+def test_model_argument_subclasses_enabled(parser, subtests, enable_subclasses):
     parser.add_argument("--person", type=Person, default=person)
 
     with subtests.test("help"):
@@ -425,11 +425,11 @@ def test_model_argument_as_subclass(parser, subtests, subclass_behavior):
         assert dump == expected
 
 
-def test_convert_to_dict_not_subclass():
+def test_convert_to_dict_closed_to_subclasses():
     converted = convert_to_dict(person)
     assert converted == person_expected_dict
 
 
-def test_convert_to_dict_subclass(subclass_behavior):
+def test_convert_to_dict_subclasses_enabled(enable_subclasses):
     converted = convert_to_dict(person)
     assert converted == person_expected_subclass_dict
