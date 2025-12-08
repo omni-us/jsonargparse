@@ -37,7 +37,7 @@ from ._common import (
     class_instantiators,
     debug_mode_active,
     get_optionals_as_positionals_actions,
-    is_not_subclass_type,
+    is_subclasses_disabled,
     lenient_check,
     parser_context,
     supports_optionals_as_positionals,
@@ -125,7 +125,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
                 return ActionParser._move_parser_actions(parser, args, kwargs)
             ActionConfigFile._ensure_single_config_argument(self, kwargs["action"])
         if "type" in kwargs:
-            if is_not_subclass_type(kwargs["type"]):
+            if is_subclasses_disabled(kwargs["type"]):
                 nested_key = args[0].lstrip("-")
                 self.add_class_arguments(kwargs.pop("type"), nested_key, **kwargs)
                 return _find_action(parser, nested_key)
