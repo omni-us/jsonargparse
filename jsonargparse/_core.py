@@ -952,8 +952,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         default_config_files = []
 
         for pattern in self.default_config_files:
-            files = sorted(glob.glob(os.path.expanduser(pattern)))
-            default_config_files += list(files)
+            default_config_files += sorted(glob.glob(os.path.expanduser(pattern)))
 
         if len(default_config_files) > 0:
             with suppress(TypeError):
