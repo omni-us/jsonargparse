@@ -335,8 +335,7 @@ def test_action_parser_conflict_subparser_key(parser, subparser):
     pytest.raises(ValueError, lambda: parser.add_argument("--inner", action=ActionParser(subparser)))
 
 
-def test_action_parser_nested_dash_names(parser, subparser):
-    subsubparser = ArgumentParser()
+def test_action_parser_nested_dash_names(parser, subparser, subsubparser):
     subsubparser.add_argument("--op1-like")
     subparser.add_argument("--op2-like", action=ActionParser(parser=subsubparser))
     assert "a" == subparser.parse_args(["--op2-like.op1-like=a"]).op2_like.op1_like

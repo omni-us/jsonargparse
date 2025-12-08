@@ -136,6 +136,11 @@ def subparser() -> ArgumentParser:
 
 
 @pytest.fixture
+def subsubparser() -> ArgumentParser:
+    return ArgumentParser(exit_on_error=False)
+
+
+@pytest.fixture
 def example_parser() -> ArgumentParser:
     parser = ArgumentParser(prog="app", exit_on_error=False)
     group_1 = parser.add_argument_group("Group 1", name="group1")

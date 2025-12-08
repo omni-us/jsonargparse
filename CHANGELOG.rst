@@ -28,6 +28,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/814>`__).
 - Getting parameter descriptions from docstrings not working for dataclass
   inheritance (`#815 <https://github.com/omni-us/jsonargparse/pull/815>`__).
+- ``default_env=True`` conflicting with ``default_config_files`` (`#818
+  <https://github.com/omni-us/jsonargparse/pull/818>`__).
 
 Changed
 ^^^^^^^
