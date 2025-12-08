@@ -402,10 +402,9 @@ def test_subcommands_custom_instantiator(parser, subparser, subtests):
         assert init.cmd.cls.call == "subparser"
 
 
-def test_subsubcommand_default_env_true(parser, subparser):
+def test_subsubcommand_default_env_true(parser, subparser, subsubparser):
     parser.default_env = True
     parser.env_prefix = "APP"
-    subsubparser = ArgumentParser()
     subsubparser.add_argument("--v", type=int, default=1)
     subcommands1 = parser.add_subcommands()
     subcommands1.add_subcommand("s1", subparser)
@@ -417,3 +416,23 @@ def test_subsubcommand_default_env_true(parser, subparser):
     with patch.dict(os.environ, {"APP_SUBCOMMAND": "s1", "APP_S1__SUBCOMMAND": "s2"}):
         cfg = parser.parse_args([])
     assert cfg == Namespace(subcommand="s1", s1=Namespace(subcommand="s2", s2=Namespace(v=1)))
+
+
+@pytest.mark.parametrize("default_env", [True, False])
+def test_subsubcommand_default_config_files(parser, subparser, subsubparser, default_env, tmp_cwd):
+    config = {"val0": 123, "cmd1": {"val1": 456, "cmd2": {"val2": 789}}}
+    Path("config.json").write_text(json.dumps(config))
+    parser.default_env = default_env
+    parser.default_config_files = ["config.json"]
+    parser.add_argument("--val0")
+    subparser.add_argument("--val1")
+    subsubparser.add_argument("--val2")
+    subcommands = parser.add_subcommands()
+    subcommands.add_subcommand("cmd1", subparser)
+    subsubcommands = subparser.add_subcommands()
+    subsubcommands.add_subcommand("cmd2", subsubparser)
+
+    cfg = parser.parse_args([])
+    assert cfg.clone(with_meta=False) == Namespace(
+        val0=123, subcommand="cmd1", cmd1=Namespace(val1=456, subcommand="cmd2", cmd2=Namespace(val2=789))
+    )

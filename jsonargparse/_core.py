@@ -28,7 +28,6 @@ from ._actions import (
     _is_action_value_list,
     _is_branch_key,
     filter_non_parsing_actions,
-    parent_parsers,
     previous_config,
 )
 from ._common import (
@@ -673,7 +672,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         cfg_path: Union[str, os.PathLike] = "",
         ext_vars: Optional[dict] = None,
         prev_cfg: Optional[Namespace] = None,
-        key: Optional[str] = None,
     ) -> Namespace:
         """Loads a configuration string into a namespace.
 
@@ -689,8 +687,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             cfg_dict = load_value(cfg_str, path=cfg_path, ext_vars=ext_vars)
         except get_loader_exceptions() as ex:
             raise TypeError(f"Problems parsing config: {ex}") from ex
-        if key and isinstance(cfg_dict, dict):
-            cfg_dict = cfg_dict.get(key, {})
         if not isinstance(cfg_dict, dict):
             raise TypeError(f"Unexpected config: {cfg_str}")
         return self._apply_actions(cfg_dict, prev_cfg=prev_cfg)
@@ -949,24 +945,18 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     ## Methods related to defaults ##
 
-    def _get_default_config_files(self) -> list[tuple[Optional[str], Path]]:
+    def _get_default_config_files(self) -> list[Path]:
         if getattr(self, "_inner_parser", False):
             return []
 
         default_config_files = []
 
-        for key, parser in parent_parsers.get():
-            for pattern in parser.default_config_files:
-                files = sorted(glob.glob(os.path.expanduser(pattern)))
-                default_config_files += [(key, v) for v in files]
-
         for pattern in self.default_config_files:
-            files = sorted(glob.glob(os.path.expanduser(pattern)))
-            default_config_files += [(None, x) for x in files]
+            default_config_files += sorted(glob.glob(os.path.expanduser(pattern)))
 
         if len(default_config_files) > 0:
             with suppress(TypeError):
-                return [(k, Path(v, mode=_get_config_read_mode())) for k, v in default_config_files]
+                return [Path(v, mode=_get_config_read_mode()) for v in default_config_files]
         return []
 
     def get_default(self, dest: str) -> Any:
@@ -1017,12 +1007,12 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         self._logger.debug("Loaded parser defaults: %s", cfg)
 
         default_config_files = self._get_default_config_files()
-        for key, default_config_file in default_config_files:
+        for default_config_file in default_config_files:
             default_config_file_content = default_config_file.get_content()
             if not default_config_file_content.strip():
                 continue
             with change_to_path_dir(default_config_file), parser_context(parent_parser=self):
-                cfg_file = self._load_config_parser_mode(default_config_file_content, key=key, prev_cfg=cfg)
+                cfg_file = self._load_config_parser_mode(default_config_file_content, prev_cfg=cfg)
                 cfg = self.merge_config(cfg_file, cfg)
                 try:
                     with _ActionPrintConfig.skip_print_config():

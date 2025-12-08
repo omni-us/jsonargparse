@@ -629,19 +629,7 @@ class ActionParser:
 
 
 single_subcommand: ContextVar = ContextVar("single_subcommand", default=True)
-parent_parsers: ContextVar = ContextVar("parent_parsers", default=[])
 parse_kwargs: ContextVar = ContextVar("parse_kwargs", default={})
-
-
-@contextmanager
-def parent_parsers_context(key, parser):
-    prev = parent_parsers.get()
-    curr = [] if parser is None else prev + [(key, parser)]
-    token = parent_parsers.set(curr)
-    try:
-        yield
-    finally:
-        parent_parsers.reset(token)
 
 
 class _ActionSubCommands(_SubParsersAction):
@@ -814,11 +802,10 @@ class _ActionSubCommands(_SubParsersAction):
             # Merge environment variable values and default values
             subnamespace = None
             key = prefix + subcommand
-            with parent_parsers_context(key, parser):
-                if env:
-                    subnamespace = subparser.parse_env(defaults=defaults, _skip_validation=True)
-                elif defaults:
-                    subnamespace = subparser.get_defaults(skip_validation=True)
+            if env:
+                subnamespace = subparser.parse_env(defaults=defaults, _skip_validation=True)
+            elif defaults:
+                subnamespace = subparser.get_defaults(skip_validation=True)
 
             # Update all subcommand settings
             if subnamespace is not None:
