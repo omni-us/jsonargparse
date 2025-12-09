@@ -309,7 +309,7 @@ class RegisteredType:
 
 
 def register_type(
-    type_class: Any,
+    type_class: type,
     serializer: Callable = str,
     deserializer: Optional[Callable] = None,
     deserializer_exceptions: Union[type[Exception], tuple[type[Exception], ...]] = (
@@ -324,7 +324,7 @@ def register_type(
     """Registers a new type for use in jsonargparse parsers.
 
     Args:
-        type_class: The type object to be registered.
+        type_class: The class to be registered.
         serializer: Function that converts an instance of the class to a basic type.
         deserializer: Function that converts a basic type to an instance of the class. Default instantiates type_class.
         deserializer_exceptions: Exceptions that deserializer raises when it fails.
@@ -332,6 +332,8 @@ def register_type(
         fail_already_registered: Whether to fail if type has already been registered.
         uniqueness_key: Key to determine uniqueness of type.
     """
+    if not inspect.isclass(type_class):
+        raise ValueError(f"Expected type_class to be a class, got {type_class!r}")
     type_handler = RegisteredType(type_class, serializer, deserializer, deserializer_exceptions, type_check)
     fail_already_registered = globals().get("_fail_already_registered", fail_already_registered)
     if not uniqueness_key and fail_already_registered and get_registered_type(type_class):
