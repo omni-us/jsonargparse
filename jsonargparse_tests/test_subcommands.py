@@ -160,7 +160,7 @@ def test_subcommands_parse_string_first_implicit_subcommand(subcommands_parser):
     with warnings.catch_warnings(record=True) as w:
         cfg = subcommands_parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
     assert len(w) == 1
-    assert 'Subcommand "a" will be used' in str(w[0].message)
+    assert "Subcommand 'a' will be used" in str(w[0].message)
     assert cfg.subcommand == "a"
     assert "b" not in cfg
 
@@ -436,3 +436,47 @@ def test_subsubcommand_default_config_files(parser, subparser, subsubparser, def
     assert cfg.clone(with_meta=False) == Namespace(
         val0=123, subcommand="cmd1", cmd1=Namespace(val1=456, subcommand="cmd2", cmd2=Namespace(val2=789))
     )
+
+
+def test_subcommands_in_default_config_files(parser, subtests, tmp_cwd):
+    parser.default_config_files = ["defaults.json"]
+    subs = parser.add_subcommands(required=True, dest="sub")
+    sub1 = ArgumentParser()
+    sub1.add_argument("--sub1val")
+    subs.add_subcommand("sub1", sub1)
+    sub2 = ArgumentParser()
+    sub2.add_argument("--sub2val")
+    subs.add_subcommand("sub2", sub2)
+
+    defaults: dict = {
+        "sub1": {"sub1val": 2},
+        "sub2": {"sub2val": 3},
+    }
+    Path("defaults.json").write_text(json.dumps(defaults))
+
+    with subtests.test("choose subcommand defaults"):
+        cfg = parser.parse_args(["sub1"])
+        assert cfg.sub == "sub1"
+        assert cfg.sub1 == Namespace(sub1val=2)
+        assert "sub2" not in cfg
+        cfg = parser.parse_args(["sub2"])
+        assert cfg.sub == "sub2"
+        assert cfg.sub2 == Namespace(sub2val=3)
+        assert "sub1" not in cfg
+
+    with subtests.test("implicit subcommand defaults"):
+        with warnings.catch_warnings(record=True) as w:
+            cfg = parser.parse_args([])
+        assert "Subcommand 'sub1' will be used" in str(w[0].message)
+        assert cfg.sub == "sub1"
+        assert cfg.sub1 == Namespace(sub1val=2)
+        assert "sub2" not in cfg
+
+    with subtests.test("no subcommand in defaults"):
+        defaults["sub"] = "sub2"
+        Path("defaults.json").write_text(json.dumps(defaults))
+        err = get_parse_args_stderr(parser, [])
+        assert (
+            "Problem in default config file 'defaults.json': A specific "
+            "subcommand can't be provided in defaults, got 'sub2'"
+        ) in err

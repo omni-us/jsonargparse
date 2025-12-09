@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Optional, Union
 
-from ._common import Action, NonParsingAction, is_not_subclass_type, is_subclass, parser_context
+from ._common import Action, NonParsingAction, is_not_subclass_type, is_subclass, parser_context, parsing_defaults
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._optionals import _get_config_read_mode, ruamel_support
@@ -721,7 +721,7 @@ class _ActionSubCommands(_SubParsersAction):
             return None, None
         action = parser._subcommands_action
 
-        require_single = single_subcommand.get()
+        require_single = single_subcommand.get() and not parsing_defaults.get()
 
         # Get subcommand settings keys
         subcommand_keys = [k for k in action.choices if isinstance(cfg.get(prefix + k), Namespace)]
@@ -731,12 +731,14 @@ class _ActionSubCommands(_SubParsersAction):
         dest = prefix + action.dest
         if dest in cfg and cfg.get(dest) is not None:
             subcommand = cfg[dest]
+            if parsing_defaults.get():
+                raise NSKeyError(f"A specific subcommand can't be provided in defaults, got '{subcommand}'")
         elif len(subcommand_keys) > 0 and (fail_no_subcommand or require_single):
             cfg[dest] = subcommand = subcommand_keys[0]
             if len(subcommand_keys) > 1:
                 warnings.warn(
-                    f'Multiple subcommand settings provided ({", ".join(subcommand_keys)}) without an '
-                    f'explicit "{dest}" key. Subcommand "{subcommand}" will be used.'
+                    f"Multiple subcommand settings provided ({', '.join(subcommand_keys)}) without an "
+                    f"explicit '{dest}' key. Subcommand '{subcommand}' will be used."
                 )
 
         # Remove extra subcommand settings
