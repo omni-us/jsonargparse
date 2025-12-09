@@ -376,6 +376,14 @@ def test_register_type_datetime(parser):
     pytest.raises(ValueError, lambda: register_type(datetime))  # different registration not okay
 
 
+def test_register_not_a_class_type_failure():
+    class SomeClass:
+        pass
+
+    with pytest.raises(ValueError, match="Expected type_class to be a class"):
+        register_type(Union[SomeClass, int])
+
+
 class RegisterOnFirstUse:
     pass
 

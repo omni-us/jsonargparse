@@ -32,6 +32,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/818>`__).
 - ``default_config_files`` with settings for multiple subcommands not working
   correctly (`#819 <https://github.com/omni-us/jsonargparse/pull/819>`__).
+- ``register_type`` not checking that the given type is a class (`#820
+  <https://github.com/omni-us/jsonargparse/pull/820>`__).
 
 Changed
 ^^^^^^^
