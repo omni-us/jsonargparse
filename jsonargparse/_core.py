@@ -457,7 +457,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 skip_validation=skip_validation,
             )
 
-        except (TypeError, KeyError) as ex:
+        except (TypeError, KeyError, argparse.ArgumentError) as ex:
             self.error(str(ex), ex)
 
         self._logger.debug("Parsed command line arguments: %s", args)
@@ -1011,7 +1011,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             default_config_file_content = default_config_file.get_content()
             if not default_config_file_content.strip():
                 continue
-            with change_to_path_dir(default_config_file), parser_context(parent_parser=self):
+            with change_to_path_dir(default_config_file), parser_context(parent_parser=self, parsing_defaults=True):
                 cfg_file = self._load_config_parser_mode(default_config_file_content, prev_cfg=cfg)
                 cfg = self.merge_config(cfg_file, cfg)
                 try:
@@ -1022,10 +1022,12 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                             defaults=False,
                             skip_validation=skip_validation,
                             skip_required=True,
+                            fail_no_subcommand=False,
                         )
                 except (TypeError, KeyError, argparse.ArgumentError) as ex:
                     raise argument_error(
-                        f'Problem in default config file "{default_config_file}": {ex.args[0]}'
+                        f"Problem in default config file '{default_config_file}': {ex.args[0]}",
+                        default_config_file=str(default_config_file),
                     ) from ex
             meta = cfg.get("__default_config__")
             if isinstance(meta, list):
@@ -1054,6 +1056,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             raise argument_error(message) from ex
 
         parser = getattr(ex, "subcommand_parser", None) or self
+        if getattr(ex, "default_config_file", None):
+            parser.default_config_files = []
         parser.print_usage(sys.stderr)
 
         help_action = next((a for a in parser._actions if isinstance(a, argparse._HelpAction)), None)

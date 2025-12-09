@@ -30,12 +30,16 @@ Fixed
   inheritance (`#815 <https://github.com/omni-us/jsonargparse/pull/815>`__).
 - ``default_env=True`` conflicting with ``default_config_files`` (`#818
   <https://github.com/omni-us/jsonargparse/pull/818>`__).
+- ``default_config_files`` with settings for multiple subcommands not working
+  correctly (`#819 <https://github.com/omni-us/jsonargparse/pull/819>`__).
 
 Changed
 ^^^^^^^
 - List of paths types now show in the help the supported options for providing
   paths like ``'["PATH1",...]' | LIST_OF_PATHS_FILE | -`` (`#816
   <https://github.com/omni-us/jsonargparse/pull/816>`__).
+- Providing a choice of subcommand in ``default_config_files`` is now an error
+  (`#819 <https://github.com/omni-us/jsonargparse/pull/819>`__).
 
 
 v4.44.0 (2025-11-25)

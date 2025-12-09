@@ -43,8 +43,11 @@ NoneType = type(None)
 default_config_option_help = "Path to a configuration file."
 
 
-def argument_error(message: str) -> ArgumentError:
-    return ArgumentError(None, message)
+def argument_error(message: str, default_config_file: Optional[str] = None) -> ArgumentError:
+    ex = ArgumentError(None, message)
+    if default_config_file:
+        ex.default_config_file = default_config_file  # type: ignore[attr-defined]
+    return ex
 
 
 class JsonargparseWarning(UserWarning):

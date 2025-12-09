@@ -58,6 +58,7 @@ parent_parser: ContextVar[Optional[ArgumentParser]] = ContextVar("parent_parser"
 parser_capture: ContextVar[bool] = ContextVar("parser_capture", default=False)
 defaults_cache: ContextVar[Optional[Namespace]] = ContextVar("defaults_cache", default=None)
 lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", default=False)
+parsing_defaults: ContextVar[bool] = ContextVar("parsing_defaults", default=False)
 load_value_mode: ContextVar[Optional[str]] = ContextVar("load_value_mode", default=None)
 class_instantiators: ContextVar[Optional[InstantiatorsDictType]] = ContextVar("class_instantiators", default=None)
 nested_links: ContextVar[list[dict]] = ContextVar("nested_links", default=[])
@@ -70,6 +71,7 @@ parser_context_vars = {
     "parser_capture": parser_capture,
     "defaults_cache": defaults_cache,
     "lenient_check": lenient_check,
+    "parsing_defaults": parsing_defaults,
     "load_value_mode": load_value_mode,
     "class_instantiators": class_instantiators,
     "nested_links": nested_links,
