@@ -4,7 +4,12 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional, Type, TypeVar, Union
 
+from ._common import parser_context
 from ._core import ArgumentParser
+from ._loaders_dumpers import get_loader_exceptions, load_value
+from ._optionals import _get_config_read_mode
+from ._typehints import is_subclass_spec, resolve_class_path_by_name
+from ._util import import_object
 
 __all__ = ["FromConfigMixin"]
 
@@ -48,23 +53,42 @@ class FromConfigMixin:
         Args:
             config: Path to a config file or a dict with config values.
         """
-        kwargs = _parse_class_kwargs_from_config(cls, config, **cls.__from_config_parser_kwargs__)  # type: ignore[attr-defined]
+        kwargs, cls = _parse_class_kwargs_from_config(cls, config, **cls.__from_config_parser_kwargs__)  # type: ignore[attr-defined]
         return cls(**kwargs)
 
 
-def _parse_class_kwargs_from_config(cls: Type[T], config: Union[str, PathLike, dict], **kwargs) -> dict:
+def _parse_class_kwargs_from_config(cls: Type[T], config: Union[str, PathLike, dict], **kwargs) -> tuple[dict, Type[T]]:
     """Parse the init kwargs for ``cls`` from a config file or dict."""
     parser = ArgumentParser(exit_on_error=False, **kwargs)
+    if not isinstance(config, dict):
+        from .typing import Path
+
+        cfg_path = Path(config, mode=_get_config_read_mode())
+        cfg_str = cfg_path.get_content()
+        with parser_context(load_value_mode=parser.parser_mode):
+            try:
+                config = load_value(cfg_str, path=str(config))
+            except get_loader_exceptions() as ex:
+                raise TypeError(f"Problems parsing config '{config}': {ex}") from ex
+
+    if not isinstance(config, dict):
+        raise TypeError(f"Expected config to be a dict or parse into a dict: {config}")
+
+    if is_subclass_spec(config):
+        class_path = resolve_class_path_by_name(cls, config["class_path"])
+        obj = import_object(class_path)
+        if not issubclass(obj, cls):
+            raise TypeError(f"Class '{class_path}' is not a subclass of '{cls.__name__}'")
+        cls = obj
+        config = {**config.get("init_args", {}), **config.get("dict_kwargs", {})}
+
     parser.add_class_arguments(cls)
     for required in parser.required_args:
         action = next((a for a in parser._actions if a.dest == required), None)
         action._required = False  # type: ignore[union-attr]
     parser.required_args.clear()
-    if isinstance(config, dict):
-        cfg = parser.parse_object(config, defaults=False)
-    else:
-        cfg = parser.parse_path(config, defaults=False)
-    return parser.instantiate_classes(cfg).as_dict()
+    cfg = parser.parse_object(config, defaults=False)
+    return parser.instantiate_classes(cfg).as_dict(), cls
 
 
 def _override_init_defaults(cls: Type[T], parser_kwargs: dict) -> None:
@@ -75,7 +99,7 @@ def _override_init_defaults(cls: Type[T], parser_kwargs: dict) -> None:
     if not (isinstance(config, (str, PathLike)) and Path(config).is_file()):
         return
 
-    defaults = _parse_class_kwargs_from_config(cls, config, **parser_kwargs)
+    defaults, cls = _parse_class_kwargs_from_config(cls, config, **parser_kwargs)
     _override_init_defaults_this_class(cls, defaults)
     _override_init_defaults_parent_classes(cls, defaults)
 
