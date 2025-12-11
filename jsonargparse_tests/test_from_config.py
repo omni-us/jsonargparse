@@ -3,7 +3,8 @@ import inspect
 import pytest
 
 from jsonargparse import FromConfigMixin
-from jsonargparse_tests.conftest import json_or_yaml_dump, skip_if_omegaconf_unavailable
+from jsonargparse._paths import PathError
+from jsonargparse_tests.conftest import json_or_yaml_dump, skip_if_no_pyyaml, skip_if_omegaconf_unavailable
 
 # __init__ defaults override tests
 
@@ -178,16 +179,47 @@ def test_init_defaults_override_invalid():
 # from_config method tests
 
 
+class FromConfigMethodParent(FromConfigMixin):
+    def __init__(self, parent_param: str = "parent_default"):
+        self.parent_param = parent_param
+
+
+class FromConfigMethodChild(FromConfigMethodParent):
+    def __init__(self, child_param: str = "child_default", **kwargs):
+        super().__init__(**kwargs)
+        self.child_param = child_param
+
+
 def test_from_config_method_path(tmp_cwd):
     config_path = tmp_cwd / "config.yaml"
-    config_path.write_text(json_or_yaml_dump({"param": "value_from_file"}))
+    config_path.write_text(json_or_yaml_dump({"parent_param": "value_from_file"}))
 
-    class FromConfigMethodPath(FromConfigMixin):
-        def __init__(self, param: str = "default_value"):
-            self.param = param
+    instance = FromConfigMethodParent.from_config(config_path)
+    assert instance.parent_param == "value_from_file"
 
-    instance = FromConfigMethodPath.from_config(config_path)
-    assert instance.param == "value_from_file"
+
+def test_from_config_method_path_does_not_exist(tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+
+    with pytest.raises(PathError, match="File does not exist:"):
+        FromConfigMethodParent.from_config(config_path)
+
+
+@skip_if_no_pyyaml
+def test_from_config_method_path_invalid_yaml(tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text("::: invalid content :::")
+
+    with pytest.raises(TypeError, match="Problems parsing config"):
+        FromConfigMethodParent.from_config(config_path)
+
+
+def test_from_config_method_path_not_dict(tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text("[1, 2]")
+
+    with pytest.raises(TypeError, match="Expected config to be a dict or parse into a dict"):
+        FromConfigMethodParent.from_config(config_path)
 
 
 def test_from_config_method_dict():
@@ -224,21 +256,33 @@ def test_from_config_method_default():
 
 
 def test_from_config_method_subclass():
-    class FromConfigMethodParent(FromConfigMixin):
-        def __init__(self, parent_param: str = "parent_default"):
-            self.parent_param = parent_param
-
-    class FromConfigMethodChild(FromConfigMethodParent):
-        def __init__(self, child_param: str = "child_default", **kwargs):
-            super().__init__(**kwargs)
-            self.child_param = child_param
-
     instance = FromConfigMethodChild.from_config(
         {"parent_param": "overridden_parent", "child_param": "overridden_child"}
     )
     assert isinstance(instance, FromConfigMethodChild)
     assert instance.parent_param == "overridden_parent"
     assert instance.child_param == "overridden_child"
+
+
+def test_from_config_method_class_path_subclass():
+    instance = FromConfigMethodParent.from_config(
+        {
+            "class_path": f"{__name__}.FromConfigMethodChild",
+            "init_args": {"parent_param": "overridden_parent", "child_param": "overridden_child"},
+        }
+    )
+    assert isinstance(instance, FromConfigMethodChild)
+    assert instance.parent_param == "overridden_parent"
+    assert instance.child_param == "overridden_child"
+
+
+class SomeOtherClass:
+    pass
+
+
+def test_from_config_method_class_path_not_subclass():
+    with pytest.raises(TypeError, match="SomeOtherClass' is not a subclass of 'FromConfigMethodParent'"):
+        FromConfigMethodParent.from_config({"class_path": f"{__name__}.SomeOtherClass"})
 
 
 @skip_if_omegaconf_unavailable

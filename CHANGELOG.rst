@@ -20,6 +20,8 @@ Added
 - Signature methods now when given ``sub_configs=True``, list of paths types can
   now receive a file containing a list of paths (`#816
   <https://github.com/omni-us/jsonargparse/pull/816>`__).
+- ``FromConfigMixin.from_config`` now supports subclasses (`#822
+  <https://github.com/omni-us/jsonargparse/pull/822>`__).
 
 Fixed
 ^^^^^
@@ -52,7 +54,7 @@ Fixed
 - Union types with str and default comment-like string incorrectly parsed as a
   stringified exception of an other subtype (`#812
   <https://github.com/omni-us/jsonargparse/pull/812>`__).
-- ``FromConfig`` not handling correctly required parameters (`#813
+- ``FromConfigMixin`` not handling correctly required parameters (`#813
   <https://github.com/omni-us/jsonargparse/pull/813>`__).
 
 Changed
