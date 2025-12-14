@@ -919,7 +919,7 @@ def adapt_typehints(
     elif typehint_origin in mapping_origin_types:
         if isinstance(val, NestedArg):
             if isinstance(prev_val, dict):
-                if "." in val.key:
+                if isinstance(val.key, str) and "." in val.key:
                     key_prefix, key_suffix = val.key.split(".", 1)
                     val = {**prev_val, key_prefix: {key_suffix: val.val}}
                 else:
