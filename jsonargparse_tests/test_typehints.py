@@ -1604,3 +1604,9 @@ def test_non_path_dump(parser):
     parser.add_argument("--data", type=Union[Path_fr, Dict[str, List[str]]])
     cfg = parser.parse_args(['--data={"key": ["value"]}'])
     assert json_or_yaml_load(parser.dump(cfg)) == {"data": {"key": ["value"]}}
+
+
+def test_dict_key_val_override(parser):
+    parser.add_argument("--data", type=dict[str, int])
+    data = parser.parse_args(["--data", '{"a": 0, "b": 1}', "--data.a", "100"]).data
+    assert (data["a"], data["b"]) == (100, 1)

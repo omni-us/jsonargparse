@@ -15,13 +15,6 @@ paths are considered internals and can change in minor and patch releases.
 v4.45.0 (unreleased)
 --------------------
 
-Fixed
-^^^^^
-- Overrides for nested keys in dict. Issue (`#823
-  <https://github.com/omni-us/jsonargparse/issues/823>`__).
-- ``Issue-823`` (`#824
-  <https://github.com/omni-us/jsonargparse/pull/824>`__).
-
 Added
 ^^^^^
 - Signature methods now when given ``sub_configs=True``, list of paths types can
@@ -32,6 +25,8 @@ Added
 
 Fixed
 ^^^^^
+- Dict override syntax to allow standard form: --cfg.dict.key val (`#824
+  <https://github.com/omni-us/jsonargparse/pull/824>`__).
 - Evaluation of postponed annotations for dataclass inheritance across modules
   not working correctly (`#814
   <https://github.com/omni-us/jsonargparse/pull/814>`__).
