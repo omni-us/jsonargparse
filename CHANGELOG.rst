@@ -25,6 +25,8 @@ Added
 
 Fixed
 ^^^^^
+- Dict override syntax to allow standard form: --cfg.dict.key val (`#824
+  <https://github.com/omni-us/jsonargparse/pull/824>`__).
 - Evaluation of postponed annotations for dataclass inheritance across modules
   not working correctly (`#814
   <https://github.com/omni-us/jsonargparse/pull/814>`__).
