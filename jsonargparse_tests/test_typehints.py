@@ -581,13 +581,14 @@ def test_dict_command_line_set_items(parser):
 
 
 @dataclass
+class _Vals:
+    val_0: int = 0
+    val_1: int = 0
+
+
+@dataclass
 class _Cfg:
     """Needs to be defined outside of test_nested_dict_command_line_set_items"""
-
-    @dataclass
-    class _Vals:
-        val_0: int = 0
-        val_1: int = 0
 
     vals: dict[str, _Vals] = field(default_factory=dict)
 
@@ -598,11 +599,11 @@ def test_nested_dict_command_line_set_items(parser):
     # works before #824
     args = ["--cfg", '{"vals": {"a": {"val_0": 0, "val_1": 1}}}', "--cfg.vals.a", '{"val_0": 100}']
     cfg = parser.parse_args(args).cfg
+    assert (cfg.vals["a"].val_0, cfg.vals["a"].val_1) == (100, 1)
 
     # does not work before #824
     args = ["--cfg", '{"vals": {"a": {"val_0": 0, "val_1": 1}}}', "--cfg.vals.a.val_0", "100"]
     cfg = parser.parse_args(args).cfg
-
     assert (cfg.vals["a"].val_0, cfg.vals["a"].val_1) == (100, 1)
 
 
