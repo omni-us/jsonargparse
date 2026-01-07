@@ -296,6 +296,8 @@ class ActionTypeHint(Action):
             if sub_add_kwargs:
                 help_action.sub_add_kwargs = sub_add_kwargs
         kwargs["action"] = ActionTypeHint(typehint=typehint, enable_path=enable_path, logger=logger)
+        if kwargs.get("choices"):
+            kwargs["type"] = lambda v: adapt_typehints(v, typehint)
         return args
 
     @staticmethod

@@ -9,6 +9,7 @@ from contextlib import redirect_stderr
 from io import StringIO
 from pathlib import Path
 from random import randint, shuffle
+from typing import Union
 from unittest.mock import patch
 
 import pytest
@@ -181,6 +182,17 @@ def test_parse_args_choices_nargs_plus(parser):
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args(["--ch", "B", "X"])
     ctx.match("invalid choice")
+
+
+def test_parse_args_choices_type_int(parser):
+    parser.add_argument("--ch", type=int, choices=[0, 1])
+    assert 0 == parser.parse_args(["--ch=0"]).ch
+
+
+def test_parse_args_choices_type_union(parser):
+    parser.add_argument("--ch", type=Union[int, str], choices=[0, 1, "x", "y"])
+    assert 0 == parser.parse_args(["--ch=0"]).ch
+    assert "x" == parser.parse_args(["--ch=x"]).ch
 
 
 def test_parse_object_simple(parser):

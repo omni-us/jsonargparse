@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.45.1 (unreleased)
+--------------------
+
+Fixed
+^^^^^
+- Choices with an int type not working correctly (`#827
+  <https://github.com/omni-us/jsonargparse/pull/827>`__).
+
+
 v4.45.0 (2025-12-26)
 --------------------
 
