@@ -501,15 +501,15 @@ Some notes about this support are:
   :py:meth:`.ArgumentParser.instantiate_classes` can be used to instantiate all
   classes in a config object. For more details see :ref:`sub-classes`.
 
-- ``Protocol`` types are also supported the same as sub-classes. The protocols
+- ``Protocol`` types are also supported the same as subclasses. The protocols
   are not required to be ``runtime_checkable``. But the accepted classes must
   match exactly the signature of the protocol's public methods.
 
-- ``dataclasses`` are supported even when nested. Final classes, attrs'
-  ``define`` decorator, and pydantic's ``dataclass`` decorator and ``BaseModel``
-  classes are supported and behave like standard dataclasses. For more details
-  see :ref:`dataclass-like`. If a dataclass is mixed inheriting from a normal
-  class, it is considered a subclass type instead of a dataclass.
+- ``dataclasses``, final classes, attrs' ``define``, pydantic's ``dataclass``
+  and pydantic's ``BaseModel`` are supported even when nested. By default they
+  don't accept subclasses. For more details see :ref:`subclasses-disabled` and
+  for enabling subclasses see :ref:`enable-disable-subclasses`. If a dataclass
+  is mixed inheriting from a normal class, by default subclasses are accepted.
 
 - User-defined ``Generic`` types are supported. For more details see
   :ref:`generic-types`.
@@ -953,55 +953,6 @@ be achieved as follows:
     Namespace(dict={'key1': 'val1', 'key2': 'val2'})
 
 
-.. _dataclass-like:
-
-Dataclass-like classes
-----------------------
-
-In contrast to subclasses, which requires the user to provide a ``class_path``,
-in some cases it is not expected to have subclasses. In this case the init args
-are given directly in a dictionary without specifying a ``class_path``. This is
-the behavior for standard ``dataclasses``, ``final`` classes, attrs' ``define``
-decorator, and pydantic's ``dataclass`` decorator and ``BaseModel`` classes.
-
-As an example, take a class that is decorated with :func:`.final`, meaning that
-it shouldn't be subclassed. The code below would accept the corresponding YAML
-structure.
-
-.. testsetup:: final_classes
-
-    cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp(prefix="_jsonargparse_doctest_")
-    os.chdir(tmpdir)
-    with open("config.yaml", "w") as f:
-        f.write("data:\n  number: 8\n  accepted: true\n")
-
-.. testcleanup:: final_classes
-
-    os.chdir(cwd)
-    shutil.rmtree(tmpdir)
-
-.. testcode:: final_classes
-
-    from jsonargparse.typing import final
-
-
-    @final
-    class FinalClass:
-        def __init__(self, number: int = 0, accepted: bool = False):
-            ...
-
-
-    parser = ArgumentParser()
-    parser.add_argument("--data", type=FinalClass)
-    cfg = parser.parse_path("config.yaml")
-
-.. code-block:: yaml
-
-    data:
-      number: 8
-      accepted: true
-
 .. _generic-types:
 
 Generic types
@@ -1132,9 +1083,9 @@ requires to give both a serializer and a deserializer as seen below.
 .. note::
 
     The registering of types is only intended for simple types. By default any
-    class used as a type hint is considered a sub-class (see :ref:`sub-classes`)
+    class used as a type hint is considered a subclass (see :ref:`sub-classes`)
     which might be good for many use cases. If a class is registered with
-    :func:`.register_type` then the sub-class option is no longer available.
+    :func:`.register_type` then the subclass option is no longer available.
 
 
 .. _custom-types:
@@ -1953,8 +1904,8 @@ In Python, dependency injection is achieved by:
 
 .. _sub-classes:
 
-Class type and sub-classes
---------------------------
+Class type and subclasses
+-------------------------
 
 When a class is used as a type hint, jsonargparse expects in config files a
 dictionary with a ``class_path`` entry indicating the dot notation expression to
@@ -1963,7 +1914,7 @@ instantiate it. When parsing, it will be checked that the class can be imported,
 that it is a subclass of the given type and that ``init_args`` values correspond
 to valid arguments to instantiate it. After parsing, the config object will
 include the ``class_path`` and ``init_args`` entries. To get a config object
-with all nested sub-classes instantiated, the
+with all nested subclasses instantiated, the
 :py:meth:`.ArgumentParser.instantiate_classes` method is used.
 
 Additional to using a class as type hint in signatures, for low level
@@ -2312,6 +2263,123 @@ to :ref:`instance-factories`.
     gets saved in the config file is the import path. To overcome this problem
     use the :func:`.register_unresolvable_import_paths` function giving it the
     module from where the respective object can be imported.
+
+
+.. _subclasses-disabled:
+
+Class types with subclasses disabled
+------------------------------------
+
+In certain situations, it is preferable to use a class as a type hint with no
+intention to receive subclasses. From a parser perspective, this means that
+providing a subclass is not permitted, and when serializing, the instantiation
+arguments are stored directly, without including ``class_path`` and
+``init_args``. The standard Python approach for this scenario is to decorate
+classes with :func:`.final`, which explicitly indicates that subclassing is not
+intended. A parsing example would be:
+
+.. testcode:: final_classes
+
+    from jsonargparse.typing import final
+
+
+    @final
+    class FinalClass:
+        def __init__(self, number: int = 0, accepted: bool = False):
+            ...
+
+
+    parser = ArgumentParser()
+    parser.add_argument("--data", type=FinalClass)
+    cfg = parser.parse_args(["--data.number=8", "--data.accepted=true"])
+
+for which a dump would give as output:
+
+.. doctest:: final_classes
+
+    >>> print(parser.dump(cfg))  # doctest: +NORMALIZE_WHITESPACE
+    data:
+      number: 8
+      accepted: true
+
+In some cases, subclasses are not intended, but the :func:`.final` decorator is
+not applied. For example, having ``class_path`` for a simple ``x, y``
+coordinates dataclass would be unnecessarily cumbersome. For this reason,
+``jsonargparse`` early on, implemented the same behavior for pure (not mixed
+with normal classes) ``dataclasses``, attrs' ``define``, pydantic's
+``dataclass``, and pydantic's ``BaseModel`` classes.  However, since these
+classes technically support subclassing, subclass support can be enabled as
+described below. Subclass support has been kept disabled for these types by
+default to avoid introducing breaking changes.
+
+
+.. _enable-disable-subclasses:
+
+Enable/disable subclasses
+-------------------------
+
+The :func:`.set_parsing_settings` function provides the ``subclasses_disabled``
+and ``subclasses_enabled`` parameters, which, as their names suggest, control
+which class types support subclasses. The ``subclasses_disabled`` parameter
+accepts a list of class types and functions. When a type is provided, that type
+and its descendants will have subclass support disabled. Functions in the list
+should accept a type and return ``True`` if subclasses should be disabled for
+that type.
+
+The ``subclasses_enabled`` parameter accepts a list of class types and function
+names. When a type is provided, both the type and its descendants will have
+subclass support enabled. Types specified in ``subclasses_enabled`` take
+precedence over those in ``subclasses_disabled``. If a function name is given to
+``subclasses_enabled``, it must correspond to a function previously registered
+in ``subclasses_disabled``; in this case, the effect is to unregister it. By
+default, the following disable functions are registered: ``is_pure_dataclass``,
+``is_pydantic_model``, ``is_attrs_class``, and ``is_final_class``.
+
+Some examples. Since ``subclasses_enabled`` takes precedence, it is possible to
+keep subclass support disabled for dataclasses, but enable enable it for a
+specific dataclass as follows:
+
+.. testsetup:: enable_disable_subclasses
+
+    selectors = _common.subclasses_disabled_selectors
+    _common.subclasses_disabled_selectors = selectors.copy()
+
+    @dataclass
+    class DataClassBaseType:
+        pass
+
+.. testcleanup:: enable_disable_subclasses
+
+    _common.subclasses_disabled_selectors = selectors
+
+.. testcode:: enable_disable_subclasses
+
+    from jsonargparse import set_parsing_settings
+
+    set_parsing_settings(subclasses_enabled=[DataClassBaseType])
+
+To enable subclass support for all pydantic models, the following can be done:
+
+.. testcode:: enable_disable_subclasses
+
+    set_parsing_settings(subclasses_enabled=["is_pydantic_model"])
+
+To enable subclass support for all dataclasses, but have it disabled for a
+specific dataclass, the following can be done:
+
+.. testcode:: enable_disable_subclasses
+
+    set_parsing_settings(
+        subclasses_enabled=["is_pure_dataclass"],
+        subclasses_disabled=[DataClassBaseType],
+    )
+
+.. note::
+
+    Enabling subclass support for types is currently experimental. While the
+    interface and behavior is expected to be stable, fundamental issues may
+    arise that require changes to the design, which could result in breaking
+    changes in future releases.
 
 
 .. _argument-linking:

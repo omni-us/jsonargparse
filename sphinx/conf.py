@@ -85,6 +85,7 @@ from io import StringIO
 from typing import Callable, Iterable, List, Protocol
 import jsonargparse_tests
 from jsonargparse import *
+from jsonargparse import _common
 from jsonargparse.typing import *
 from jsonargparse._util import unresolvable_import_paths
 

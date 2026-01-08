@@ -112,6 +112,8 @@ def set_parsing_settings(
     parse_optionals_as_positionals: Optional[bool] = None,
     stubs_resolver_allow_py_files: Optional[bool] = None,
     omegaconf_absolute_to_relative_paths: Optional[bool] = None,
+    subclasses_disabled: Optional[list[Union[type, Callable[[type], bool]]]] = None,
+    subclasses_enabled: Optional[list[Union[type, str]]] = None,
 ) -> None:
     """
     Modify settings that affect the parsing behavior.
@@ -140,6 +142,16 @@ def set_parsing_settings(
             with ``omegaconf+`` parser mode, absolute interpolation paths are
             converted to relative. This is only intended for backward
             compatibility with ``omegaconf`` parser mode.
+        subclasses_disabled: List of types or functions, so that when parsing
+            only the exact type hints (not their subclasses) are accepted.
+            Descendants of the configured types are also disabled. Functions
+            should return ``True`` for types to disable.
+        subclasses_enabled: List of types or disable function names, so that
+            subclasses are accepted. Types given here have precedence over those
+            in ``subclasses_disabled``. Giving a function name removes the
+            corresponding function from ``subclasses_disabled``. By default, the
+            following disable functions are registered: ``is_pure_dataclass``,
+            ``is_pydantic_model``, ``is_attrs_class`` and ``is_final_class``.
     """
     # validate_defaults
     if isinstance(validate_defaults, bool):
@@ -172,6 +184,12 @@ def set_parsing_settings(
     elif omegaconf_absolute_to_relative_paths is not None:
         raise ValueError(
             f"omegaconf_absolute_to_relative_paths must be a boolean, but got {omegaconf_absolute_to_relative_paths}."
+        )
+    # subclass behavior
+    if subclasses_disabled or subclasses_enabled:
+        subclass_type_behavior(
+            subclasses_disabled=subclasses_disabled,
+            subclasses_enabled=subclasses_enabled,
         )
 
 
@@ -285,20 +303,55 @@ def is_pure_dataclass(cls) -> bool:
     return all(dataclasses.is_dataclass(c) for c in classes)
 
 
-not_subclass_type_selectors: dict[str, Callable[[type], Union[bool, int]]] = {
-    "final": is_final_class,
-    "dataclass": is_pure_dataclass,
-    "pydantic": is_pydantic_model,
-    "attrs": is_attrs_class,
+subclasses_enabled_types: set[type] = set()
+subclasses_disabled_types: set[type] = set()
+subclasses_disabled_selectors: dict[str, Callable[[type], Union[bool, int]]] = {
+    "is_pure_dataclass": is_pure_dataclass,
+    "is_pydantic_model": is_pydantic_model,
+    "is_attrs_class": is_attrs_class,
+    "is_final_class": is_final_class,
 }
 
 
-def is_not_subclass_type(cls) -> bool:
+def is_subclasses_disabled(cls) -> bool:
     if is_generic_class(cls):
-        return is_not_subclass_type(cls.__origin__)
+        return is_subclasses_disabled(cls.__origin__)
     if not inspect.isclass(cls):
         return False
-    return any(validator(cls) for validator in not_subclass_type_selectors.values())
+    subclass_disabled = any(selector(cls) for selector in subclasses_disabled_selectors.values())
+    if not subclass_disabled:
+        subclass_disabled = any(issubclass(cls, disable_type) for disable_type in subclasses_disabled_types)
+    if subclass_disabled:
+        subclass_disabled = not any(issubclass(cls, enable_type) for enable_type in subclasses_enabled_types)
+    return subclass_disabled
+
+
+def subclass_type_behavior(
+    subclasses_disabled: Optional[list[Union[type, Callable[[type], bool]]]] = None,
+    subclasses_enabled: Optional[list[Union[type, str]]] = None,
+) -> None:
+    """Configures whether class types accept or not subclasses."""
+    for enable_item in subclasses_enabled or []:
+        if isinstance(enable_item, str):
+            if enable_item not in subclasses_disabled_selectors:
+                raise ValueError(f"There is no function '{enable_item}' registered in subclasses_disabled")
+            subclasses_disabled_selectors.pop(enable_item)
+        elif inspect.isclass(enable_item):
+            subclasses_enabled_types.add(enable_item)
+        else:
+            raise ValueError(
+                f"Expected 'subclasses_enabled' list items to be types or strings, but got {enable_item!r}"
+            )
+
+    for disable_item in subclasses_disabled or []:
+        if inspect.isclass(disable_item):
+            subclasses_disabled_types.add(disable_item)
+        elif inspect.isfunction(disable_item):
+            subclasses_disabled_selectors[disable_item.__name__] = disable_item
+        else:
+            raise ValueError(
+                f"Expected 'subclasses_disabled' list items to be types or functions, but got {disable_item!r}"
+            )
 
 
 def default_class_instantiator(class_type: type[ClassType], *args, **kwargs) -> ClassType:
