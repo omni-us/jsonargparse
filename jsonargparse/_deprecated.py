@@ -190,12 +190,10 @@ def parse_as_dict_patch():
     ArgumentParser.save = patched_save
 
 
-@deprecated(
-    """
+@deprecated("""
     ActionEnum was deprecated in v3.9.0 and will be removed in v5.0.0. Enums now
     should be given directly as a type as explained in :ref:`enums`.
-"""
-)
+""")
 class ActionEnum:
     """An action based on an Enum that maps to-from strings and enum values."""
 
@@ -215,12 +213,10 @@ class ActionEnum:
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
-@deprecated(
-    """
+@deprecated("""
     ActionOperators was deprecated in v3.0.0 and will be removed in v5.0.0. Now
     types should be used as explained in :ref:`restricted-numbers`.
-"""
-)
+""")
 class ActionOperators:
     """Action to restrict a value with comparison operators."""
 
@@ -245,12 +241,10 @@ class ActionOperators:
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
-@deprecated(
-    """
+@deprecated("""
     ActionPath was deprecated in v3.11.0 and will be removed in v5.0.0. Paths
     now should be given directly as a type as explained in :ref:`parsing-paths`.
-"""
-)
+""")
 class ActionPath:
     """Action to check and store a path."""
 
@@ -269,12 +263,10 @@ class ActionPath:
         return ActionTypeHint(typehint=self._type)(**kwargs)
 
 
-@deprecated(
-    """
+@deprecated("""
     ActionPathList was deprecated in v4.20.0 and will be removed in v5.0.0. Instead
     use as type ``List[<path_type>]`` with ``enable_path=True``.
-"""
-)
+""")
 class ActionPathList(Action):
     """Action to check and store a list of file paths read from a plain text file or stream."""
 
@@ -351,13 +343,11 @@ class ActionPathList(Action):
         return value
 
 
-@deprecated(
-    """
+@deprecated("""
     set_url_support was deprecated in v3.12.0 and will be removed in v5.0.0.
     Optional config read modes should now be set using function
     set_parsing_settings.
-"""
-)
+""")
 def set_url_support(enabled: bool):
     """Enables/disables URL support for config read mode."""
     from ._optionals import _get_config_read_mode, _set_config_read_mode
@@ -368,13 +358,11 @@ def set_url_support(enabled: bool):
     )
 
 
-@deprecated(
-    """
+@deprecated("""
     set_config_read_mode was deprecated in v4.39.0 and will be removed in
     v5.0.0. Optional config read modes should now be set using function
     set_parsing_settings.
-"""
-)
+""")
 def set_config_read_mode(
     urls_enabled: bool = False,
     fsspec_enabled: bool = False,
@@ -388,12 +376,10 @@ def set_config_read_mode(
     )
 
 
-@deprecated(
-    """
+@deprecated("""
     get_config_read_mode was deprecated in v4.39.0 and will be removed in
     v5.0.0. The config read mode is internal and thus shouldn't be used.
-"""
-)
+""")
 def get_config_read_mode() -> str:
     """Returns the current config reading mode."""
     from ._optionals import _get_config_read_mode
@@ -401,13 +387,11 @@ def get_config_read_mode() -> str:
     return _get_config_read_mode()
 
 
-@deprecated(
-    """
+@deprecated("""
     set_docstring_parse_options was deprecated in v4.39.0 and will be removed in
     v5.0.0. Docstring parse options should now be set using function
     set_parsing_settings.
-"""
-)
+""")
 def set_docstring_parse_options(style=None, attribute_docstrings: Optional[bool] = None):
     """Sets options for docstring parsing."""
     from ._optionals import _set_docstring_parse_options
@@ -526,13 +510,11 @@ class DebugException(Exception):
     pass
 
 
-@deprecated(
-    """
+@deprecated("""
     usage_and_exit_error_handler was deprecated in v4.20.0 and will be removed
     in v5.0.0. With the removal of error_handler, there is no longer a need for
     this function.
-"""
-)
+""")
 def usage_and_exit_error_handler(parser: ArgumentParser, message: str) -> None:
     """Prints the usage and exits with error code 2 (same behavior as argparse).
 
@@ -621,32 +603,26 @@ class ParserDeprecations:
         else:
             raise ValueError("default_meta expects a boolean.")
 
-    @deprecated(
-        """
+    @deprecated("""
         instantiate_subclasses was deprecated in v4.0.0 and will be removed in v5.0.0.
         Instead use instantiate_classes.
-    """
-    )
+    """)
     def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
         return self.instantiate_classes(cfg, instantiate_groups=False)  # type: ignore[attr-defined]
 
-    @deprecated(
-        """
+    @deprecated("""
         add_dataclass_arguments was deprecated in v4.35.0 and will be removed in
         v5.0.0. Instead use add_class_arguments.
-    """
-    )
+    """)
     def add_dataclass_arguments(self, *args, **kwargs):
         if "title" in kwargs:
             kwargs["help"] = kwargs.pop("title")
         return self.add_class_arguments(*args, **kwargs)
 
-    @deprecated(
-        """
+    @deprecated("""
         ArgumentParser.check_config was deprecated in v4.35.0 and will be removed in
         v5.0.0. Instead use validate.
-    """
-    )
+    """)
     def check_config(self, *args, **kwargs):
         return self.validate(*args, **kwargs)
 
@@ -691,14 +667,12 @@ def deprecated_module(module_name, mappings=None):
     module = ModuleType(module_path, f"deprecated {module_path}")
     sys.modules[module_path] = module
 
-    @deprecated(
-        f"""
+    @deprecated(f"""
         Only use the public API as described in
         https://jsonargparse.readthedocs.io/en/stable/#api-reference. Importing
         from {module_path} is kept only to avoid breaking code that does not
         correctly use the public API. It will no longer be available from v5.0.0.
-    """
-    )
+    """)
     def __getattr__(name):
         new_module = f"_{module_name}"
         if mappings and name in mappings:
@@ -732,12 +706,10 @@ deprecated_module(
 )
 
 
-@deprecated(
-    """
+@deprecated("""
     ActionJsonnetExtVars was deprecated in v4.24.0 and will be removed in
     v5.0.0. Instead use ``type=dict``.
-"""
-)
+""")
 class ActionJsonnetExtVars:
     """Action to add argument to provide ext_vars for jsonnet parsing."""
 
@@ -749,36 +721,30 @@ class ActionJsonnetExtVars:
         return action
 
 
-@deprecated(
-    """
+@deprecated("""
     LoggerProperty was deprecated in v4.40.0 and will be removed from the public
     API in v5.0.0. There is no replacement since jsonargparse is not a logging
     library. A similar class can be found in reconplogger package.
-"""
-)
+""")
 class LoggerProperty(InternalLoggerProperty):
     """Adds a logger property, intended for internal use."""
 
 
-@deprecated(
-    """
+@deprecated("""
     namespace_to_dict was deprecated in v4.40.0 and will be removed in v5.0.0.
     Instead you can use ``.clone().as_dict()`` or ``.as_dict()``.
-"""
-)
+""")
 def namespace_to_dict(namespace: Namespace) -> Dict[str, Any]:
     """Returns a copy of a nested namespace converted into a nested dictionary."""
     return namespace.clone().as_dict()
 
 
-@deprecated(
-    """
+@deprecated("""
     dict_to_namespace was deprecated in v4.43.0 and will be removed in v5.0.0.
     No replacement is provided because blindly converting a dictionary to a
     namespace may not yield the same results as using a parser, which could lead
     to confusion.
-"""
-)
+""")
 def dict_to_namespace(cfg_dict: dict[str, Any]) -> Namespace:
     """Converts a nested dictionary into a nested namespace."""
     from ._namespace import dict_to_namespace as _dict_to_namespace
@@ -794,12 +760,10 @@ def strip_meta(cfg: "Namespace") -> "Namespace": ...  # pragma: no cover
 def strip_meta(cfg: Dict[str, Any]) -> Dict[str, Any]: ...  # pragma: no cover
 
 
-@deprecated(
-    """
+@deprecated("""
     strip_meta was deprecated in v4.43.0 and will be removed in v5.0.0.
     Instead use ``.clone(with_meta=False)``.
-"""
-)
+""")
 def strip_meta(cfg):
     """Removes all metadata keys from a configuration object."""
     from ._namespace import remove_meta
@@ -856,13 +820,11 @@ class HelpFormatterDeprecations:
         self._yaml_formatter.set_yaml_argument_comment(text, cfg, key, depth)
 
 
-@deprecated(
-    """
+@deprecated("""
     compose_dataclasses is deprecated and will be removed in v5.0.0. There is
     no direct replacement, whoever is interested can copy the code from an old
     release.
-"""
-)
+""")
 def compose_dataclasses(*args):
     """Returns a dataclass inheriting all given dataclasses and properly handling __post_init__."""
 
