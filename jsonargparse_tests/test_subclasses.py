@@ -1838,8 +1838,7 @@ class ErrorIndentation1:
 def test_subclass_error_indentation_invalid_init_arg(parser):
     parser.add_subclass_arguments(ErrorIndentation1, "cls")
     err = get_parse_args_stderr(parser, ["--cls=ErrorIndentation1", "--cls.init_args.val=abc"])
-    expected = textwrap.dedent(
-        """
+    expected = textwrap.dedent("""
     Parser key "val":
       Does not validate against any of the Union subtypes
       Subtypes: [<class 'NoneType'>, <class 'int'>, <class 'dict'>]
@@ -1849,8 +1848,7 @@ def test_subclass_error_indentation_invalid_init_arg(parser):
         - Expected a <class 'dict'>
       Given value type: <class 'str'>
       Given value: abc
-    """
-    ).strip()
+    """).strip()
     expected = textwrap.indent(expected, "        ")
     assert "\n".join(expected.splitlines()) in "\n".join(err.splitlines())
 
@@ -1865,8 +1863,7 @@ def test_subclass_error_indentation_in_union_invalid_value(parser):
     parser.add_argument("--cfg", action="config")
     config = {"union": [{"class_path": "ErrorIndentation2", "init_args": {"val": "x"}}]}
     err = get_parse_args_stderr(parser, [f"--cfg={json.dumps(config)}"])
-    expected = textwrap.dedent(
-        """
+    expected = textwrap.dedent("""
     Errors:
       - Expected a <class 'str'>
       - Not a valid subclass of ErrorIndentation2
@@ -1877,7 +1874,6 @@ def test_subclass_error_indentation_in_union_invalid_value(parser):
         - a dict with parameters accepted by the base class (implicit class_path)
     Given value type: <class 'list'>
     Given value: [{'class_path': 'ErrorIndentation2', 'init_args': {'val': 'x'}}]
-    """
-    ).strip()
+    """).strip()
     expected = textwrap.indent(expected, "  ")
     assert "\n".join(expected.splitlines()) in "\n".join(err.splitlines())
