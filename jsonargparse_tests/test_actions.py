@@ -309,7 +309,7 @@ def test_action_parser_required_argument(parser, subparser):
 
 
 def test_action_parser_init_failures(parser, subparser):
-    pytest.raises(ValueError, ActionParser)
+    pytest.raises(TypeError, ActionParser)
     pytest.raises(ValueError, lambda: ActionParser(parser=object))
     pytest.raises(Exception, lambda: parser.add_argument("--missing-subparser", action=ActionParser))
     pytest.raises(

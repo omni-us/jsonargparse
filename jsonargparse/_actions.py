@@ -442,7 +442,7 @@ class ActionFail(Action):
         """Initializer for ActionFail instance.
 
         Args:
-            message: Text for the error to show. Use `%(option)s`/`%(value)s` to include the option and/or value.
+            message: Text for the error to show. Use ``%(option)s``/``%(value)s`` to include the option and/or value.
         """
         if len(kwargs) == 0:
             self._message = message
@@ -464,7 +464,7 @@ class ActionFail(Action):
 
 
 class ActionYesNo(Action):
-    """Paired options --[yes_prefix]opt, --[no_prefix]opt to set True or False respectively."""
+    """Paired options ``--[yes_prefix]opt``, ``--[no_prefix]opt`` to set ``True`` or ``False`` respectively."""
 
     def __init__(self, yes_prefix: str = "", no_prefix: str = "no_", **kwargs):
         """Initializer for ActionYesNo instance.
@@ -547,12 +547,12 @@ class ActionParser:
 
     def __init__(
         self,
-        parser: Optional[ArgumentParser] = None,
+        parser: ArgumentParser,
     ):
         """Initializer for ActionParser instance.
 
         Args:
-            parser (Optional[ArgumentParser]): A parser to parse the option with.
+            parser: A parser to parse the option with.
 
         Raises:
             ValueError: If the parser parameter is invalid.
@@ -643,7 +643,7 @@ class _ActionSubCommands(_SubParsersAction):
         raise NotImplementedError("In jsonargparse subcommands are added using the add_subcommand method.")
 
     def add_subcommand(self, name, parser, **kwargs):
-        """Adds a parser as a sub-command parser.
+        """Adds a parser as a subcommand parser.
 
         In contrast to `argparse.ArgumentParser.add_subparsers
         <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers>`_
@@ -680,7 +680,7 @@ class _ActionSubCommands(_SubParsersAction):
         return parser
 
     def __call__(self, parser, namespace, values, option_string=None):
-        """Adds sub-command dest and parses sub-command arguments."""
+        """Adds subcommand dest and parses subcommand arguments."""
         subcommand = values[0]
         arg_strings = values[1:]
 

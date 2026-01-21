@@ -91,7 +91,7 @@ Then in a shell you could run:
     >>> auto_cli(Main, args=["--max_prize=1000", "person", "Lucky"])  # doctest: +ELLIPSIS
     'Lucky won ...€!'
 
-If the given class does not have any methods, there will be no sub-commands and
+If the given class does not have any methods, there will be no subcommands and
 :func:`.auto_cli` will return an instance of the class. For example:
 
 .. testcode::
@@ -129,11 +129,11 @@ run via :ref:`sub-commands` similar to the single class example above, i.e.
 ``example.py function [arguments]`` where ``function`` is the name of the
 function to execute. If multiple classes or a mixture of functions and classes
 is given to :func:`.auto_cli`, to execute a method of a class, two levels of
-:ref:`sub-commands` are required. The first sub-command would be the name of the
+:ref:`sub-commands` are required. The first subcommand would be the name of the
 class and the second the name of the method, i.e. ``example.py class
 [init_arguments] method [arguments]``.
 
-Arbitrary levels of sub-commands with custom names can be defined by providing a
+Arbitrary levels of subcommands with custom names can be defined by providing a
 ``dict``. For example:
 
 .. testcode::
@@ -2560,7 +2560,7 @@ Experimental ``omegaconf+`` mode
 An experimental ``omegaconf+`` parser mode is available, which addresses the
 limitations of the ``omegaconf`` mode mentioned earlier. Instead of applying
 OmegaConf resolvers to each YAML config individually, the resolving is performed
-once at the end of the parsing process. As a result, in nested sub-configs,
+once at the end of the parsing process. As a result, in nested subconfigs,
 references to nodes must be either relative or parser-level absolute to function
 correctly. Alternatively, you can
 ``set_parsing_settings(omegaconf_absolute_to_relative_paths=True)`` to enable
@@ -2569,7 +2569,7 @@ that this automatic conversion does not work for every possible case.
 
 Based on community feedback, this mode may become the default ``omegaconf`` mode
 in version 5.0.0. This change would introduce a breaking modification, as
-absolute node references would no longer work in nested sub-configs.
+absolute node references would no longer work in nested subconfigs.
 
 
 .. _environment-variables:
@@ -2625,19 +2625,19 @@ variables.
 
 .. _sub-commands:
 
-Sub-commands
-============
+Subcommands
+===========
 
 A way to define parsers in a modular way is what in argparse is known as
-`sub-commands <https://docs.python.org/3/library/argparse.html#sub-commands>`__.
-However, to promote modularity, in jsonargparse sub-commands work a bit
-different than in argparse. To add sub-commands to a parser, the
+`subcommands <https://docs.python.org/3/library/argparse.html#subcommands>`__.
+However, to promote modularity, in jsonargparse subcommands work a bit
+different than in argparse. To add subcommands to a parser, the
 :py:meth:`.ArgumentParser.add_subcommands` method is used. Then an existing
-parser is added as a sub-command using :func:`.add_subcommand`. In a parsed
-config object the sub-command will be stored in the ``subcommand`` entry (or
-whatever ``dest`` was set to), and the values of the sub-command will be in an
-entry with the same name as the respective sub-command. An example of defining a
-parser with sub-commands is the following:
+parser is added as a subcommand using :func:`.add_subcommand`. In a parsed
+config object the subcommand will be stored in the ``subcommand`` entry (or
+whatever ``dest`` was set to), and the values of the subcommand will be in an
+entry with the same name as the respective subcommand. An example of defining a
+parser with subcommands is the following:
 
 .. testcode::
 
@@ -2680,11 +2680,11 @@ valid YAML would be:
 Parsing of environment variables works similar to :class:`.ActionParser`. For
 the example parser above, all environment variables for ``subcomm1`` would have
 as prefix ``APP_SUBCOMM1_`` and likewise for ``subcomm2`` as prefix
-``APP_SUBCOMM2_``. The sub-command to use could be chosen by setting environment
+``APP_SUBCOMM2_``. The subcommand to use could be chosen by setting environment
 variable ``APP_SUBCOMMAND``.
 
-It is possible to have multiple levels of sub-commands. With multiple levels
-there is one basic requirement: the sub-commands must be added in the order of
+It is possible to have multiple levels of subcommands. With multiple levels
+there is one basic requirement: the subcommands must be added in the order of
 the levels. This is, first call :func:`add_subcommands` and
 :func:`add_subcommand` for the first level. Only after do the same for the
 second level, and so on.
@@ -2692,17 +2692,17 @@ second level, and so on.
 
 .. _json-schemas:
 
-Json schemas
+JSON Schemas
 ============
 
 The :class:`.ActionJsonSchema` class is provided to allow parsing and validation
 of values using a JSON Schema. This class requires the `jsonschema
 <https://pypi.org/project/jsonschema/>`__ Python package. Though note that
-jsonschema is not a requirement of the minimal jsonargparse install. To enable
-this functionality install with the ``jsonschema`` extra as explained in section
-:ref:`installation`.
+``jsonschema`` is not a requirement of the minimal jsonargparse install. To
+enable this functionality install with the ``jsonschema`` extra as explained in
+section :ref:`installation`.
 
-Check out the `jsonschema documentation
+Check out the `JSON Schema documentation
 <https://python-jsonschema.readthedocs.io/>`__ to learn how to write a schema.
 The current version of jsonargparse uses Draft7Validator. Parsing an argument
 using a JSON Schema is done like in the following example:

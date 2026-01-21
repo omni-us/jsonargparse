@@ -40,7 +40,7 @@ inspect_empty = inspect._empty
 
 
 class SignatureArguments(LoggerProperty):
-    """Methods to add arguments based on signatures to an ArgumentParser instance."""
+    """Methods to add arguments based on signatures to an :class:`ArgumentParser` instance."""
 
     def add_class_arguments(
         self,
@@ -467,9 +467,9 @@ class SignatureArguments(LoggerProperty):
     ):
         """Adds arguments to allow specifying any subclass of the given base class.
 
-        This adds an argument that requires a dictionary with a "class_path"
+        This adds an argument that requires a dictionary with a ``class_path``
         entry which must be a import dot notation expression. Optionally any
-        init arguments for the class can be given in the "init_args" entry.
+        init arguments for the class can be given in the ``init_args`` entry.
         Since subclasses can have different init arguments, the help does not
         show the details of the arguments of the base class. Instead a help
         argument is added that will print the details for a given class path.
@@ -482,7 +482,7 @@ class SignatureArguments(LoggerProperty):
             required: Whether the argument group is required.
             metavar: Variable string to show in the argument's help.
             help: Description of argument to show in the help.
-            **kwargs: Additional parameters like in add_class_arguments.
+            **kwargs: Additional parameters like in :meth:`add_class_arguments`.
 
         Raises:
             ValueError: When given an invalid base class.

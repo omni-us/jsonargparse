@@ -32,6 +32,7 @@ __all__ = [
     "NonNegativeFloat",
     "ClosedUnitInterval",
     "OpenUnitInterval",
+    "SecretStr",
     "NotEmptyStr",
     "Email",
     "Path",
@@ -40,7 +41,6 @@ __all__ = [
     "Path_dw",
     "Path_dc",
     "Path_drw",
-    "SecretStr",
 ]
 
 
@@ -72,10 +72,10 @@ def extend_base_type(
     Args:
         name: How the new type will be called.
         base_type: The type from which the created type is extended.
-        validation_fn: Function that validates the value on instantiation/casting. Gets two arguments: type_class and
-            value.
-        docstring: The __doc__ attribute value for the created type.
-        extra_attrs: Attributes set to the type class that the validation_fn can access.
+        validation_fn: Function that validates the value on instantiation/casting. Gets two arguments: ``type_class``
+            and ``value``.
+        docstring: The ``__doc__`` attribute value for the created type.
+        extra_attrs: Attributes set to the type class that the ``validation_fn`` can access.
         register_key: Used to determine the uniqueness of registered types.
 
     Raises:
@@ -115,10 +115,10 @@ def restricted_number_type(
     """Creates or returns an already registered restricted number type class.
 
     Args:
-        name: Name for the type or None for an automatic name.
-        base_type: One of {int, float}.
-        restrictions: Tuples of pairs (comparison, reference), e.g. ('>', 0).
-        join: How to combine multiple comparisons, one of {'or', 'and'}.
+        name: Name for the type or ``None`` for an automatic name.
+        base_type: One of ``{int, float}``.
+        restrictions: Tuples of pairs (comparison, reference), e.g. ``('>', 0)``.
+        join: How to combine multiple comparisons, one of ``{'or', 'and'}``.
         docstring: Docstring for the type class.
 
     Returns:
@@ -186,7 +186,7 @@ def restricted_string_type(
     """Creates or returns an already registered restricted string type class.
 
     Args:
-        name: Name for the type or None for an automatic name.
+        name: Name for the type or ``None`` for an automatic name.
         regex: Regular expression that the string must match.
         docstring: Docstring for the type class.
 
@@ -236,7 +236,7 @@ def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlia
     """Creates or returns an already registered path type class.
 
     Args:
-        mode: The required type and access permissions among [fdrwxcuFDRWX].
+        mode: The required type and access permissions among ``[fdrwxcuFDRWX]``.
         docstring: Docstring for the type class.
 
     Returns:
@@ -326,9 +326,10 @@ def register_type(
     Args:
         type_class: The class to be registered.
         serializer: Function that converts an instance of the class to a basic type.
-        deserializer: Function that converts a basic type to an instance of the class. Default instantiates type_class.
+        deserializer: Function that converts a basic type to an instance of the
+            class. Default instantiates ``type_class``.
         deserializer_exceptions: Exceptions that deserializer raises when it fails.
-        type_check: Function to check if a value is of type_class. Gets as arguments the value and type_class.
+        type_check: Function to check if a value is of ``type_class``. Gets as arguments the value and ``type_class``.
         fail_already_registered: Whether to fail if type has already been registered.
         uniqueness_key: Key to determine uniqueness of type.
     """
@@ -389,10 +390,10 @@ OpenUnitInterval = restricted_number_type(
 )
 
 NotEmptyStr = restricted_string_type(
-    "NotEmptyStr", r"^.*[^ ].*$", docstring=r"str restricted to not-empty pattern ^.*[^ ].*$"
+    "NotEmptyStr", r"^.*[^ ].*$", docstring=r"str restricted to not-empty pattern ``^.*[^ ].*$``"
 )
 Email = restricted_string_type(
-    "Email", r"^[^@ ]+@[^@ ]+\.[^@ ]+$", docstring=r"str restricted to the email pattern ^[^@ ]+@[^@ ]+\.[^@ ]+$"
+    "Email", r"^[^@ ]+@[^@ ]+\.[^@ ]+$", docstring=r"str restricted to the email pattern ``^[^@ ]+@[^@ ]+\.[^@ ]+$``"
 )
 
 Path_fr = path_type("fr", docstring="path to a file that exists and is readable")
@@ -486,7 +487,7 @@ register_type(range, serializer=range_serializer, deserializer=range_deserialize
 
 
 class SecretStr:
-    """Holds a secret string that serializes to **********."""
+    """Holds a secret string that serializes to ``**********``."""
 
     def __init__(self, value: str):
         self._value = value

@@ -1740,7 +1740,7 @@ class LazyInitBaseClass:
 def lazy_instance(class_type: type[ClassType], **kwargs) -> ClassType:
     """Instantiates a lazy instance of the given type.
 
-    By lazy it is meant that the __init__ is delayed unit the first time that a
+    By lazy it is meant that the ``__init__`` is delayed until the first time that a
     method of the instance is called. It also provides a `lazy_get_init_data` method
     useful for serializing.
 

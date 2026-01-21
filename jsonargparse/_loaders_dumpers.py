@@ -337,7 +337,7 @@ def set_dumper(format_name: str, dumper_fn: Callable[[Any], str]):
     """Sets the dumping function for a given format name.
 
     Args:
-        format_name: Name to use for dumping with this function. Example: "yaml_custom".
+        format_name: Name to use for dumping with this function. Example: ``yaml_custom``.
         dumper_fn: The dumper function to set. Example: ``yaml.safe_dump``.
     """
     dumpers[format_name] = dumper_fn
