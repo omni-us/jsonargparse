@@ -72,16 +72,18 @@ class CaptureParserException(Exception):
 def capture_parser(function: Callable, *args, **kwargs) -> ArgumentParser:
     """Returns the parser object used within the execution of a function.
 
-    The function execution is stopped on the start of the call to parse_args. No
-    parsing is done or execution of instructions after the parse_args.
+    The function execution is stopped on the start of the call to
+    :meth:`parse_args <.ArgumentParser.parse_args>`. No parsing is done or
+    execution of instructions after the :meth:`parse_args
+    <.ArgumentParser.parse_args>`.
 
     Args:
-        function: A callable that internally creates a parser and calls parse_args.
+        function: A callable that internally creates a parser and calls :meth:`parse_args <.ArgumentParser.parse_args>`.
         *args: Positional arguments used to run the function.
         **kwargs: Keyword arguments used to run the function.
 
     Raises:
-        CaptureParserException: If the function does not call parse_args.
+        CaptureParserException: If the function does not call :meth:`parse_args <.ArgumentParser.parse_args>`.
     """
     try:
         with parser_context(parser_capture=True):
@@ -154,7 +156,7 @@ unresolvable_import_paths = {}
 def register_unresolvable_import_paths(*modules: ModuleType):
     """Saves import paths of module objects for which its import path is unresolvable from the object alone.
 
-    Objects with unresolvable import paths have the __module__ attribute set to None.
+    Objects with unresolvable import paths have the ``__module__`` attribute set to ``None``.
     """
     for module in modules:
         for val in vars(module).values():
@@ -299,7 +301,7 @@ def class_from_function(
     Args:
         func: A function that returns an instance of a class.
         func_return: The return type of the function. Required if func does not have a return type annotation.
-        name: The name of the class. Defaults to function name suffixed with "_class".
+        name: The name of the class. Defaults to function name suffixed with ``_class``.
     """
     if func_return is None:
         func_return = inspect.signature(func).return_annotation

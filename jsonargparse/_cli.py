@@ -39,22 +39,22 @@ def auto_cli(
 ):
     """Simple creation of command line interfaces.
 
-    Previously CLI, renamed to follow the standard of functions in lowercase.
+    Previously called ``jsonargparse.CLI``, renamed to follow the standard of functions in lowercase.
 
     Creates an argument parser from one or more functions/classes, parses
     arguments and runs one of the functions or class methods depending on what
-    was parsed. If the 'components' parameter is not given, then the components
+    was parsed. If the ``components`` parameter is not given, then the components
     will be all the locals in the context and defined in the same module as from
-    where auto_cli is called.
+    where ``auto_cli`` is called.
 
     Args:
         components: One or more functions/classes to include in the command line interface.
-        args: List of arguments to parse or None to use sys.argv.
+        args: List of arguments to parse or ``None`` to use ``sys.argv``.
         config_help: Help string for config file option in help.
         set_defaults: Dictionary of values to override components defaults.
         as_positional: Whether to add required parameters as positional arguments.
         fail_untyped: Whether to raise exception if a required parameter does not have a type.
-        parser_class: The ArgumentParser class to use.
+        parser_class: The :class:`ArgumentParser` subclass to use.
         **kwargs: Used to instantiate :class:`.ArgumentParser`.
 
     Returns:
@@ -130,7 +130,7 @@ def auto_cli(
 
 
 def auto_parser(*args, **kwargs) -> ArgumentParser:
-    """Same as auto_cli, but returns the parser, so doesn't parse arguments or run.
+    """Same as :func:`.auto_cli`, but returns the parser, doesn't parse arguments or run.
 
     This is a shorthand for ``capture_parser(lambda: auto_cli(*args, **kwargs))``.
     """

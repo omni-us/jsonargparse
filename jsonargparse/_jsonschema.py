@@ -18,7 +18,7 @@ __all__ = ["ActionJsonSchema"]
 
 
 class ActionJsonSchema(Action):
-    """Action to parse option as json validated by a jsonschema."""
+    """Action to parse option as JSON validated by a JSON Schema."""
 
     def __init__(
         self, schema: Optional[Union[str, dict]] = None, enable_path: bool = True, with_meta: bool = True, **kwargs
@@ -27,8 +27,8 @@ class ActionJsonSchema(Action):
 
         Args:
             schema: Schema to validate values against.
-            enable_path: Whether to try to load json from path (def.=True).
-            with_meta: Whether to include metadata (def.=True).
+            enable_path: Whether to try to load JSON from path.
+            with_meta: Whether to include metadata.
 
         Raises:
             ValueError: If a parameter is invalid.
@@ -56,7 +56,7 @@ class ActionJsonSchema(Action):
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
-        """Parses an argument validating against the corresponding jsonschema.
+        """Parses an argument validating against the corresponding JSON Schema.
 
         Raises:
             TypeError: If the argument is not valid.

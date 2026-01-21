@@ -88,8 +88,9 @@ class PathError(TypeError):
 class Path(PathDeprecations):
     """Base class for Path types. Stores a (possibly relative) path and the corresponding absolute path.
 
-    The absolute path can be obtained without having to remember the working
-    directory (or parent remote path) from when the object was created.
+    From the object the absolute path can be obtained without having to remember
+    the working directory (or parent remote path) from when the object was
+    created.
 
     When a Path instance is created, it is checked that: the path exists,
     whether it is a file or directory and whether it has the required access
@@ -97,7 +98,7 @@ class Path(PathDeprecations):
     c=creatable, u=url, s=fsspec or in uppercase meaning not, i.e., F=not-file,
     D=not-directory, R=not-readable, W=not-writeable and X=not-executable).
 
-    The creatable flag "c" can be given one or two times. If give once, the
+    The creatable flag "c" can be given one or two times. If given once, the
     parent directory must exist and be writeable. If given twice, the parent
     directory does not have to exist, but should be allowed to create.
 
@@ -121,8 +122,8 @@ class Path(PathDeprecations):
 
         Args:
             path: The path to check and store.
-            mode: The required type and access permissions among [fdrwxcuFDRWX].
-            cwd: Working directory for relative paths. If None, os.getcwd() is used.
+            mode: The required type and access permissions among ``[fdrwxcuFDRWX]``.
+            cwd: Working directory for relative paths. If ``None`` then ``os.getcwd()`` is used.
 
         Raises:
             ValueError: If the provided mode is invalid.

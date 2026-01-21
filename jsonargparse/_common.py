@@ -120,25 +120,25 @@ def set_parsing_settings(
 
     Args:
         validate_defaults: Whether default values must be valid according to the
-            argument type. The default is False, meaning no default validation,
-            like in argparse.
+            argument type. The default is ``False``, meaning no default
+            validation, like in argparse.
         config_read_mode_urls_enabled: Whether to read config files from URLs
-            using requests package. Default is False.
+            using requests package. Default is ``False``.
         config_read_mode_fsspec_enabled: Whether to read config files from
-            fsspec supported file systems. Default is False.
+            fsspec supported file systems. Default is ``False``.
         docstring_parse_style: The docstring style to expect. Default is
-            DocstringStyle.AUTO.
+            ``DocstringStyle.AUTO``.
         docstring_parse_attribute_docstrings: Whether to parse attribute
-            docstrings (slower). Default is False.
-        parse_optionals_as_positionals: If True, the parser will take extra
+            docstrings (slower). Default is ``False``.
+        parse_optionals_as_positionals: If ``True``, the parser will take extra
             positional command line arguments as values for optional arguments.
-            This means that optional arguments can be given by name --key=value
-            as usual, but also as positional. The extra positionals are applied
-            to optionals in the order that they were added to the parser. By
-            default, this is False.
+            This means that optional arguments can be given by name
+            ``--key=value`` as usual, but also as positional. The extra
+            positionals are applied to optionals in the order that they were
+            added to the parser. By default, this is ``False``.
         stubs_resolver_allow_py_files: Whether the stubs resolver should search
             in ``.py`` files in addition to ``.pyi`` files.
-        omegaconf_absolute_to_relative_paths: If True, when loading configs
+        omegaconf_absolute_to_relative_paths: If ``True``, when loading configs
             with ``omegaconf+`` parser mode, absolute interpolation paths are
             converted to relative. This is only intended for backward
             compatibility with ``omegaconf`` parser mode.
@@ -433,7 +433,6 @@ class LoggerProperty:
     """Class designed to be inherited by other classes to add a logger property."""
 
     def __init__(self, *args, logger: Union[bool, str, dict, logging.Logger] = False, **kwargs):
-        """Initializer for LoggerProperty class."""
         self.logger = logger
         super().__init__(*args, **kwargs)
 

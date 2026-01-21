@@ -14,4 +14,5 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from ._core import ActionsContainer, ArgumentGroup, ArgumentParser
 else:
-    globals().update(dict.fromkeys(__all__, None))
+    for name in __all__:
+        globals()[name] = type(name, (), {})

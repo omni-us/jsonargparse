@@ -20,7 +20,7 @@ __all__ = ["ActionJsonnet"]
 
 
 class ActionJsonnet(Action):
-    """Action to parse a jsonnet, optionally validating against a jsonschema."""
+    """Action to parse a Jsonnet, optionally validating against a JSON Schema."""
 
     def __init__(
         self,
@@ -31,7 +31,7 @@ class ActionJsonnet(Action):
         """Initializer for ActionJsonnet instance.
 
         Args:
-            ext_vars: Key where to find the external variables required to parse the jsonnet.
+            ext_vars: Key where to find the external variables required to parse the Jsonnet.
             schema: Schema to validate values against.
 
         Raises:
@@ -62,7 +62,7 @@ class ActionJsonnet(Action):
             super().__init__(**kwargs)
 
     def __call__(self, *args, **kwargs):
-        """Parses an argument as jsonnet using ext_vars if defined.
+        """Parses an argument as Jsonnet using ``ext_vars`` if defined.
 
         Raises:
             TypeError: If the argument is not valid.
@@ -119,7 +119,7 @@ class ActionJsonnet(Action):
 
     @staticmethod
     def split_ext_vars(ext_vars: Optional[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
-        """Splits an ext_vars dict into the ext_codes and ext_vars required by jsonnet.
+        """Splits an ``ext_vars`` dict into the ``ext_codes`` and ``ext_vars`` required by Jsonnet.
 
         Args:
             ext_vars: External variables. Values can be strings or any other basic type.
@@ -138,18 +138,18 @@ class ActionJsonnet(Action):
         ext_vars: Optional[dict[str, Any]] = None,
         with_meta: bool = False,
     ) -> dict:
-        """Method that can be used to parse jsonnet independent from an ArgumentParser.
+        """Method that can be used to parse Jsonnet independent from an :class:`.ArgumentParser`.
 
         Args:
-            jsonnet: Either a path to a jsonnet file or the jsonnet content.
+            jsonnet: Either a path to a Jsonnet file or the Jsonnet content.
             ext_vars: External variables. Values can be strings or any other basic type.
             with_meta: Whether to include metadata in config object.
 
         Returns:
-            The parsed jsonnet object.
+            The parsed Jsonnet object.
 
         Raises:
-            TypeError: If the input is neither a path to an existent file nor a jsonnet.
+            TypeError: If the input is neither a path to an existent file nor a Jsonnet.
         """
         _jsonnet = import_jsonnet("ActionJsonnet")
         ext_vars, ext_codes = self.split_ext_vars(ext_vars)
@@ -167,7 +167,7 @@ class ActionJsonnet(Action):
             with parser_context(load_value_mode="yaml" if pyyaml_available else "json"):
                 values = load_value(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))
         except RuntimeError as ex:
-            raise argument_error(f'Problems evaluating jsonnet "{fname}": {ex}') from ex
+            raise argument_error(f"Problems evaluating Jsonnet '{fname}': {ex}") from ex
         if self._validator is not None:
             self._validator.validate(values)
         if with_meta:

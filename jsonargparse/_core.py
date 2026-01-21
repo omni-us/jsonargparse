@@ -99,11 +99,12 @@ _parse_known_has_intermixed = "intermixed" in inspect.signature(argparse.Argumen
 
 
 class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
-    """Extension of argparse._ActionsContainer to support additional functionalities."""
+    """Extension of ``argparse._ActionsContainer`` to support additional functionalities."""
 
     _action_groups: Sequence["ArgumentGroup"]  # type: ignore[assignment]
 
     def __init__(self, *args, **kwargs) -> None:
+        """Initializer for ActionsContainer instance."""
         super().__init__(*args, **kwargs)
         self.register("type", None, identity)
         self.register("action", "parsers", _ActionSubCommands)
@@ -164,13 +165,13 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         are supported. Additionally it accepts:
 
         Args:
-            name: Name of the group. If set, the group object will be included in the parser.groups dict.
+            name: Name of the group. If set, the group object will be included in the ``parser.groups`` dict.
 
         Returns:
             The group object.
 
         Raises:
-            ValueError: If group with the same name already exists.
+            ValueError: If a group with the same name already exists.
         """
         parser = self.parser if hasattr(self, "parser") else self
         if name is not None and name in parser.groups:  # type: ignore[union-attr]
@@ -234,7 +235,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         env_prefix: Union[bool, str] = True,
         formatter_class: type[DefaultHelpFormatter] = DefaultHelpFormatter,
         exit_on_error: bool = True,
-        logger: Union[bool, str, dict, logging.Logger] = False,
+        logger: Union[logging.Logger, bool, str, dict] = False,
         version: Optional[str] = None,
         print_config: Optional[str] = "--print_config",
         parser_mode: str = "yaml" if pyyaml_available else "json",
@@ -253,8 +254,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             env_prefix: Prefix for environment variables. ``True`` to derive from ``prog``.
             formatter_class: Class for printing help messages.
             logger: Logger to use or configuration for logger.
-            version: Program version which will be printed by the --version argument.
-            print_config: Name for print config argument, ``%s`` is replaced by config dest, set None to disable.
+            version: Program version which will be printed by the ``--version`` argument.
+            print_config: Name for print config argument, ``%s`` is replaced by config dest, set ``None`` to disable.
             parser_mode: Mode for parsing values: ``yaml``, ``json``, ``jsonnet`` or added via :func:`.set_loader`.
             dump_header: Header to include as comment when dumping a config object.
             default_config_files: Default config file locations, e.g. ``['~/.config/myapp/*.yaml']``.
@@ -281,13 +282,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
     ## Parsing methods ##
 
     def parse_known_args(self, args=None, namespace=None):
-        """Raises NotImplementedError to dissuade its use, since typos in configs would go unnoticed."""
+        """Raises ``NotImplementedError``, not supported since typos in configs would go unnoticed."""
         caller_mod = inspect.getmodule(inspect.stack()[1][0])
         caller = None if caller_mod is None else caller_mod.__package__
         if caller not in {"jsonargparse", "argcomplete"}:
-            raise NotImplementedError(
-                "parse_known_args not implemented to dissuade its use, since typos in configs would go unnoticed."
-            )
+            raise NotImplementedError("parse_known_args not supported because typos in configs would go unnoticed.")
 
         namespace = argcomplete_namespace(caller, self, namespace)
 
@@ -345,7 +344,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         Args:
             cfg: The configuration object.
-            env: Whether to merge with the parsed environment, None to use parser's default.
+            env: Whether to merge with the parsed environment, ``None`` to use the parser's default.
             defaults: Whether to merge with the parser's defaults.
             skip_validation: Whether to skip validation of configuration.
             skip_required: Whether to skip check of required arguments.
@@ -417,15 +416,15 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         are supported. Additionally it accepts:
 
         Args:
-            args: List of arguments to parse or None to use sys.argv.
-            env: Whether to merge with the parsed environment, None to use parser's default.
+            args: List of arguments to parse or ``None`` to use ``sys.argv``.
+            env: Whether to merge with the parsed environment, ``None`` to use the parser's default.
             defaults: Whether to merge with the parser's defaults.
 
         Returns:
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails error and exit_on_error=True.
+            ArgumentError: If the parsing fails and ``exit_on_error=True``.
         """
         skip_validation = get_private_kwargs(kwargs, _skip_validation=False)
         return_parser_if_captured(self)
@@ -475,14 +474,14 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         Args:
             cfg_obj: The configuration object.
-            env: Whether to merge with the parsed environment, None to use parser's default.
+            env: Whether to merge with the parsed environment, ``None`` to use the parser's default.
             defaults: Whether to merge with the parser's defaults.
 
         Returns:
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails error and exit_on_error=True.
+            ArgumentError: If the parsing fails and ``exit_on_error=True``.
         """
         skip_validation, skip_required = get_private_kwargs(kwargs, _skip_validation=False, _skip_required=False)
 
@@ -548,14 +547,14 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         """Parses environment variables.
 
         Args:
-            env: The environment object to use, if None `os.environ` is used.
+            env: The environment object to use, if ``None`` then ``os.environ`` is used.
             defaults: Whether to merge with the parser's defaults.
 
         Returns:
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails error and exit_on_error=True.
+            ArgumentError: If the parsing fails and ``exit_on_error=True``.
         """
         skip_validation, skip_subcommands = get_private_kwargs(kwargs, _skip_validation=False, _skip_subcommands=False)
 
@@ -592,14 +591,14 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         Args:
             cfg_path: Path to the configuration file to parse.
             ext_vars: Optional external variables used for parsing jsonnet.
-            env: Whether to merge with the parsed environment, None to use parser's default.
+            env: Whether to merge with the parsed environment, ``None`` to use the parser's default.
             defaults: Whether to merge with the parser's defaults.
 
         Returns:
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails error and exit_on_error=True.
+            ArgumentError: If the parsing fails and ``exit_on_error=True``.
         """
         fpath = Path(cfg_path, mode=_get_config_read_mode())
         with change_to_path_dir(fpath):
@@ -631,14 +630,14 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             cfg_str: The configuration content.
             cfg_path: Optional path to original config path, just for error printing.
             ext_vars: Optional external variables used for parsing jsonnet.
-            env: Whether to merge with the parsed environment, None to use parser's default.
+            env: Whether to merge with the parsed environment, ``None`` to use the parser's default.
             defaults: Whether to merge with the parser's defaults.
 
         Returns:
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails error and exit_on_error=True.
+            ArgumentError: If the parsing fails and ``exit_on_error=True``.
         """
         skip_validation, fail_no_subcommand = get_private_kwargs(
             kwargs, _skip_validation=False, _fail_no_subcommand=True
@@ -694,22 +693,23 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
     ## Methods for adding to the parser ##
 
     def add_subparsers(self, **kwargs) -> NoReturn:
-        """Raises a NotImplementedError since jsonargparse uses add_subcommands."""
-        raise NotImplementedError("In jsonargparse sub-commands are added using the add_subcommands method.")
+        """Raises a ``NotImplementedError`` since jsonargparse uses ``add_subcommands``."""
+        raise NotImplementedError("In jsonargparse subcommands are added using the add_subcommands method.")
 
     def add_subcommands(self, required: bool = True, dest: str = "subcommand", **kwargs) -> _ActionSubCommands:
-        """Adds sub-command parsers to the ArgumentParser.
+        """Adds subcommand parsers to the ArgumentParser.
 
         The aim is the same as `argparse.ArgumentParser.add_subparsers
         <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers>`_
-        the difference being that dest by default is 'subcommand' and the parsed
-        values of the sub-command are stored in a nested namespace using the
-        sub-command's name as base key.
+        the difference being that dest by default is ``subcommand`` and the parsed
+        values of the subcommand are stored in a nested namespace using the
+        subcommand's name as base key.
 
         Args:
             required: Whether the subcommand must be provided.
             dest: Destination key where the chosen subcommand name is stored.
-            **kwargs: All options that `argparse.ArgumentParser.add_subparsers` accepts.
+            **kwargs: All options that `argparse.ArgumentParser.add_subparsers
+                <https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers>`_ accepts.
         """
         if "description" not in kwargs:
             kwargs["description"] = "For more details of each subcommand, add it as an argument followed by --help."
@@ -739,21 +739,20 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         skip_link_targets: bool = True,
         **kwargs,
     ) -> str:
-        """Generates a yaml or json string for the given configuration object.
+        """Generates a serialized string for the given configuration object.
 
         Args:
             cfg: The configuration object to dump.
-            format: The output format: ``'yaml'``, ``'json'``,
-                ``'json_indented'``, ``'toml'``, ``'parser_mode'`` or ones added
+            format: The output format: ``yaml``, ``json``, ``json_indented``, ``toml``, ``parser_mode`` or ones added
                 via :func:`.set_dumper`.
-            skip_none: Whether to exclude entries whose value is None.
+            skip_none: Whether to exclude entries whose value is ``None``.
             skip_default: Whether to exclude entries whose value is the same as the default.
             skip_validation: Whether to skip parser checking.
-            with_comments: Whether to add help content as comments. Currently only supported for ``format='yaml'``.
+            with_comments: Whether to add help content as comments. Currently only supported for ``format="yaml"``.
             skip_link_targets: Whether to exclude link targets.
 
         Returns:
-            The configuration in yaml or json format.
+            The configuration in the chosen format.
 
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
@@ -846,17 +845,17 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         branch: Optional[str] = None,
         **kwargs,
     ) -> None:
-        """Writes to file(s) the yaml or json for the given configuration object.
+        """Writes to file(s) the given configuration object using the chosen format.
 
         Args:
             cfg: The configuration object to save.
             path: Path to the location where to save config.
-            format: The output format: ``'yaml'``, ``'json'``, ``'json_indented'``, ``'parser_mode'`` or ones added via
+            format: The output format: ``yaml``, ``json``, ``json_indented``, ``parser_mode`` or ones added via
                 :func:`.set_dumper`.
-            skip_none: Whether to exclude entries whose value is None.
+            skip_none: Whether to exclude entries whose value is ``None``.
             skip_validation: Whether to skip parser checking.
             overwrite: Whether to overwrite existing files.
-            multifile: Whether to save multiple config files by using the __path__ metas.
+            multifile: Whether to save multiple config files by using the ``__path__`` metas.
 
         Raises:
             TypeError: If any of the values of cfg is invalid according to the parser.
@@ -1045,7 +1044,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
     ## Other methods ##
 
     def error(self, message: str, ex: Optional[Exception] = None) -> NoReturn:
-        """Logs error message if a logger is set and exits or raises an ArgumentError."""
+        """Logs error message if a logger is set and exits or raises an :class:`ArgumentError`."""
         self._logger.error(message)
         if callable(self._error_handler):
             self._error_handler(self, message)
@@ -1080,7 +1079,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         Args:
             cfg: The configuration object to check.
-            skip_none: Whether to skip checking of values that are None.
+            skip_none: Whether to skip checking of values that are ``None``.
             skip_required: Whether to skip checking required arguments.
             branch: Base key in case cfg corresponds only to a branch.
 
@@ -1211,7 +1210,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         cfg: Namespace,
         instantiate_groups: bool = True,
     ) -> Namespace:
-        """Recursively instantiates all subclasses defined by 'class_path' and 'init_args' and class groups.
+        """Recursively instantiates all subclasses defined by ``class_path``+``init_args`` and class groups.
 
         Args:
             cfg: The configuration object to use.
@@ -1503,7 +1502,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
     def default_env(self) -> bool:
         """Whether by default environment variables parsing is enabled.
 
-        If the JSONARGPARSE_DEFAULT_ENV environment variable is set to true or
+        If the ``JSONARGPARSE_DEFAULT_ENV`` environment variable is set to true or
         false, that value will take precedence.
 
         :getter: Returns the current default environment variables parsing setting.
@@ -1557,7 +1556,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     @property
     def parser_mode(self) -> str:
-        """Mode for parsing configuration files: ``'yaml'``, ``'jsonnet'`` or ones added via :func:`.set_loader`.
+        """Mode for parsing configuration files: ``yaml``, ``json``, ``jsonnet`` or ones added via
+        :func:`.set_loader`.
 
         :getter: Returns the current parser mode.
         :setter: Sets the parser mode.
