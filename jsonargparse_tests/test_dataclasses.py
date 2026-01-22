@@ -686,6 +686,36 @@ def test_class_path_union_dataclasses(parser):
     assert json_or_yaml_load(parser.dump(cfg))["union"] == {"p1": "x", "p2": 0}
 
 
+@dataclasses.dataclass
+class SubA:
+    a: int = 2
+
+
+@dataclasses.dataclass
+class SubB:
+    b: float = 3.4
+
+
+@dataclasses.dataclass
+class SubAorB:
+    a_or_b: Union[SubA, SubB] = dataclasses.field(default_factory=SubA)
+
+
+def test_union_dataclasses(parser):
+    parser.add_class_arguments(SubAorB, "data")
+
+    cfg = parser.parse_args([])
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.data, SubAorB)
+    assert isinstance(init.data.a_or_b, SubA)
+
+    cfg = parser.parse_args(["--data.a_or_b.b=4"])
+    assert cfg.data.a_or_b == Namespace(b=4.0)
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.data, SubAorB)
+    assert isinstance(init.data.a_or_b, SubB)
+
+
 if type_alias_type:
     IntOrString = type_alias_type("IntOrString", Union[int, str])
 

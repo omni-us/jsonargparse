@@ -1063,11 +1063,15 @@ def adapt_typehints(
                     prev_implicit_defaults = True
 
         if isinstance(prev_val, (dict, Namespace)) and "class_path" not in prev_val:
-            # implicit prev_val class_path and init_args
-            prev_val = Namespace(class_path=get_import_path(typehint), init_args=Namespace(prev_val))
+            # implicit prev_val init_args
+            prev_val = Namespace(class_path=None, init_args=Namespace(prev_val))
 
         val_input = val
-        val = subclass_spec_as_namespace(val, prev_val)
+        if isinstance(prev_val, (dict, Namespace)) and prev_val["class_path"] is None:
+            type_class_path = Namespace(class_path=get_import_path(typehint))
+            val = subclass_spec_as_namespace(val, type_class_path)
+        else:
+            val = subclass_spec_as_namespace(val, prev_val)
         if val and not is_subclass_spec(val) and "init_args" not in val:
             # implicit val class_path
             val = Namespace(class_path=get_import_path(typehint), init_args=val)
