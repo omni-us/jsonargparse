@@ -492,6 +492,47 @@ def test_on_parse_type_skip_link_targets_dump(parser):
     assert dump["t2"] == f"{__name__}.Model"
 
 
+class Field:
+    def __init__(self, name: str):
+        self.name = name
+
+
+class Data:
+    def __init__(self, param: int = 0, fields: List[Field] = []):
+        self.fields = fields
+
+
+def test_on_parse_list_of_instances_target(parser):
+    parser.add_class_arguments(Model, "model")
+    parser.add_class_arguments(Data, "data")
+
+    def link_model_to_data_fields(model):
+        return [
+            {
+                "class_path": f"{__name__}.Field",
+                "init_args": {"name": "f1"},
+            },
+            {
+                "class_path": f"{__name__}.Field",
+                "init_args": {"name": "f2"},
+            },
+        ]
+
+    parser.link_arguments("model", "data.fields", compute_fn=link_model_to_data_fields, apply_on="parse")
+
+    cfg = parser.parse_args(["--model.label=test"])
+    assert cfg.data.fields == [
+        Namespace(class_path=f"{__name__}.Field", init_args=Namespace(name="f1")),
+        Namespace(class_path=f"{__name__}.Field", init_args=Namespace(name="f2")),
+    ]
+
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.data.fields, list)
+    assert len(init.data.fields) == 2
+    assert all(isinstance(f, Field) for f in init.data.fields)
+    assert [f.name for f in init.data.fields] == ["f1", "f2"]
+
+
 # tests for links applied on instantiate
 
 
