@@ -1223,6 +1223,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         for action in filter_non_parsing_actions(self._actions):
             if isinstance(action, ActionTypeHint):
                 components.append(action)
+            elif isinstance(action, ActionLink) and isinstance(action.target[1], ActionTypeHint):
+                components.append(action.target[1])
 
         if instantiate_groups:
             skip = {c.dest for c in components}

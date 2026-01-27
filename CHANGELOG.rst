@@ -26,6 +26,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/827>`__).
 - Union of dataclasses not discarding parameters on class change (`#833
   <https://github.com/omni-us/jsonargparse/pull/833>`__).
+- Targets of links applied on parse not being instantiated (`#834
+  <https://github.com/omni-us/jsonargparse/pull/834>`__).
 
 
 v4.45.0 (2025-12-26)
