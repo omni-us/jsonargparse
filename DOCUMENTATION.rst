@@ -247,11 +247,11 @@ create a parser object and then add arguments to it. A simple example would be:
 
 
 After creating the parser, you can use it to parse command line arguments with
-the :py:meth:`.ArgumentParser.parse_args` function, after which you get
-an object with the parsed values or defaults available as attributes. For
-illustrative purposes giving to :func:`parse_args` a list of arguments (instead
-of automatically getting them from the command line arguments), with the parser
-shown above you would observe:
+the :meth:`parse_args <.ArgumentParser.parse_args>` function, after which you
+get an object with the parsed values or defaults available as attributes. For
+illustrative purposes giving to :meth:`parse_args <.ArgumentParser.parse_args>`
+a list of arguments (instead of automatically getting them from the command line
+arguments), with the parser shown above you would observe:
 
 .. doctest::
 
@@ -283,7 +283,7 @@ Values are overridden based on the following precedence:
 Depending on the parse method used (see :class:`.ArgumentParser`) and how the
 parser was built, some of the options above might not apply. Parsing of
 environment variables must be explicitly enabled, except if using
-:py:meth:`.ArgumentParser.parse_env`. If the parser does not have an
+:meth:`parse_env <.ArgumentParser.parse_env>`. If the parser does not have an
 ``action="config"`` argument, then there is no parsing of a full config
 environment variable or a way to provide a config file from command line.
 
@@ -498,8 +498,9 @@ Some notes about this support are:
 
 - Normal classes can be used as a type, which are specified with a dict
   containing ``class_path`` and optionally ``init_args``.
-  :py:meth:`.ArgumentParser.instantiate_classes` can be used to instantiate all
-  classes in a config object. For more details see :ref:`sub-classes`.
+  :meth:`instantiate_classes <.ArgumentParser.instantiate_classes>` can be used
+  to instantiate all classes in a config object. For more details see
+  :ref:`sub-classes`.
 
 - ``Protocol`` types are also supported the same as subclasses. The protocols
   are not required to be ``runtime_checkable``. But the accepted classes must
@@ -526,10 +527,10 @@ Some notes about this support are:
   object or by giving a dict with a ``class_path`` and optionally ``init_args``
   entries. The specified class must either instantiate into a callable or be a
   subclass of the return type of the callable. For these cases running
-  :py:meth:`.ArgumentParser.instantiate_classes` will instantiate the class or
-  provide a function that returns the instance of the class. For more details
-  see :ref:`callable-type`. Currently the callable's argument and return types
-  are not validated.
+  :meth:`instantiate_classes <.ArgumentParser.instantiate_classes>` will
+  instantiate the class or provide a function that returns the instance of the
+  class. For more details see :ref:`callable-type`. Currently the callable's
+  argument and return types are not validated.
 
 - ``TypeAliasType`` is supported with values parsed as the aliased type and the
   alias shown as the argument type in help.
@@ -705,17 +706,18 @@ Example:
 
 In this case since there is no ``nargs``, the argument expects a single value.
 That is why to provide multiple paths directly from command line, a more
-cumbersome YAML/JSON array syntax is required, i.e. ``--list "[file1,file2]".
+cumbersome YAML/JSON array syntax is required, i.e. ``--list "[file1,file2]"``.
 However, the simpler syntax described in :ref:`list-append` can also be used,
 which would be like ``--list+ file1 --list+ file2``. Not as simple as with
 ``nargs='+'`` but with tab completion enabled the effort is minimal.
 
 The same ``list[<path_type>]`` behavior described here will work for arguments
 automatically created from type hints in signatures, that is with
-:func:`.auto_cli`, :py:meth:`.ArgumentParser.add_function_arguments`,
-:py:meth:`.ArgumentParser.add_class_arguments`,
-:py:meth:`.ArgumentParser.add_method_arguments` and
-:py:meth:`.ArgumentParser.add_subclass_arguments`.
+:func:`.auto_cli`, :meth:`add_function_arguments
+<.SignatureArguments.add_function_arguments>`, :meth:`add_class_arguments
+<.SignatureArguments.add_class_arguments>`, :meth:`add_method_arguments
+<.SignatureArguments.add_method_arguments>` and :meth:`add_subclass_arguments
+<.SignatureArguments.add_subclass_arguments>`.
 
 .. note::
 
@@ -753,13 +755,13 @@ without needing to care if it is a local file or a URL, the
 If you import ``from jsonargparse import set_parsing_settings`` and then run
 ``set_parsing_settings(config_read_mode_urls_enabled=True)`` or
 ``set_parsing_settings(config_read_mode_fsspec_enabled=True)``, the following
-functions and classes will also support loading from URLs:
-:py:meth:`.ArgumentParser.parse_path`, :py:meth:`.ArgumentParser.get_defaults`
-(``default_config_files`` argument), ``action="config"``,
-:class:`.ActionJsonSchema`, :class:`.ActionJsonnet` and :class:`.ActionParser`.
-This means that a tool that can receive a config file via ``action="config"`` is
-able to get the content from a URL, thus something like the following would
-work:
+functions and classes will also support loading from URLs: :meth:`parse_path
+<.ArgumentParser.parse_path>`, :meth:`get_defaults
+<.ArgumentParser.get_defaults>` (``default_config_files`` argument),
+``action="config"``, :class:`.ActionJsonSchema`, :class:`.ActionJsonnet` and
+:class:`.ActionParser`. This means that a tool that can receive a config file
+via ``action="config"`` is able to get the content from a URL, thus something
+like the following would work:
 
 .. code-block:: bash
 
@@ -1282,9 +1284,10 @@ the first one to be parsed. Any other argument provided through an environment
 variable would override the config file one.
 
 A config file or string can also be parsed without parsing command line
-arguments. The methods for this are :py:meth:`.ArgumentParser.parse_path` and
-:py:meth:`.ArgumentParser.parse_string` to parse a config file or a config
-string respectively.
+arguments. The methods for this are :meth:`parse_path
+<.ArgumentParser.parse_path>` and :meth:`parse_string
+<.ArgumentParser.parse_string>` to parse a config file or a config string
+respectively.
 
 Serialization
 -------------
@@ -1298,11 +1301,12 @@ content as YAML comments by using ``--print_config=comments``. Another option is
 ``--print_config=skip_null`` which skips entries whose value is ``null``.
 
 From within Python it is also possible to serialize a config object by using
-either the :py:meth:`.ArgumentParser.dump` or :py:meth:`.ArgumentParser.save`
-methods. Several formats with a particular style are supported: ``yaml``,
-``toml``, ``json_compact`` and ``json_indented``. It is possible to add more
-dumping formats by using the :func:`.set_dumper` function. For example to allow
-dumping using PyYAML's ``default_flow_style`` do the following:
+either the :meth:`dump <.ArgumentParser.dump>` or :meth:`save
+<.ArgumentParser.save>` parser methods. Several formats with a particular style
+are supported: ``yaml``, ``toml``, ``json_compact`` and ``json_indented``. It is
+possible to add more dumping formats by using the :func:`.set_dumper` function.
+For example to allow dumping using PyYAML's ``default_flow_style`` do the
+following:
 
 .. testcode::
 
@@ -1323,11 +1327,11 @@ Custom loaders
 
 The ``yaml`` parser mode (see :py:meth:`.ArgumentParser.__init__`) uses for
 loading a subclass of `yaml.SafeLoader
-<https://pyyaml.docsforge.com/master/api/yaml/loader/SafeLoader/>`__ with two
-modifications. First, it supports float's scientific notation, e.g. ``'1e-3' =>
-0.001`` (unlike default PyYAML which considers ``'1e-3'`` a string). Second,
-text within curly braces is considered a string, e.g. ``'{text}' (unlike default
-PyYAML which parses this as ``{'text': None}``).
+<https://pyyaml.org/wiki/PyYAMLDocumentation#loader>`__ with two modifications.
+First, it supports float's scientific notation, e.g. ``'1e-3' => 0.001`` (unlike
+default PyYAML which considers ``'1e-3'`` a string). Second, text within curly
+braces is considered a string, e.g. ``'{text}' (unlike default PyYAML which
+parses this as ``{'text': None}``).
 
 It is possible to replace the ``yaml`` loader or add a loader as a new parser
 mode via the :func:`.set_loader` function. For example if you need a custom
@@ -1417,19 +1421,22 @@ initialized and the method executed as follows:
     myclass.mymethod(**cfg.myclass.method.as_dict())
 
 
-The :func:`add_class_arguments` call adds to the ``myclass.init`` key the
-``items`` argument with description as in the docstring, sets it as required
-since it lacks a default value. When parsed, it is validated according to the
-type hint, i.e., a dict with values ints or list of ints. Also since the init
-has the ``**kwargs`` argument, the keyword arguments from ``MyBaseClass`` are
-also added to the parser. Similarly, the :func:`add_method_arguments` call adds
-to the ``myclass.method`` key, the arguments ``value`` as a required float and
-``flag`` as an optional boolean with default value false.
+The :meth:`add_class_arguments <.SignatureArguments.add_class_arguments>` call
+adds to the ``myclass.init`` key the ``items`` argument with description as in
+the docstring, sets it as required since it lacks a default value. When parsed,
+it is validated according to the type hint, i.e., a dict with values ints or
+list of ints. Also since the init has the ``**kwargs`` argument, the keyword
+arguments from ``MyBaseClass`` are also added to the parser. Similarly, the
+:meth:`add_method_arguments <.SignatureArguments.add_method_arguments>` call
+adds to the ``myclass.method`` key, the arguments ``value`` as a required float
+and ``flag`` as an optional boolean with default value false.
 
-Instantiation of several classes added with :func:`add_class_arguments` can be
-done more simply for an entire config object using
-:py:meth:`.ArgumentParser.instantiate_classes`. For the example above running
-``cfg = parser.instantiate_classes(cfg)`` would result in ``cfg.myclass.init``
+
+Instantiation of several classes added with :meth:`add_class_arguments
+<.SignatureArguments.add_class_arguments>` can be done more simply for an entire
+config object using :meth:`instantiate_classes
+<.ArgumentParser.instantiate_classes>`. For the example above running ``cfg =
+parser.instantiate_classes(cfg)`` would result in ``cfg.myclass.init``
 containing an instance of ``MyClass`` initialized with whatever command line
 arguments were parsed.
 
@@ -1527,11 +1534,11 @@ Customization of arguments
 
 Since the arguments are added automatically based on the function signatures,
 the developer has limited control over their behavior. To customize some of the
-arguments, you can create a subclass and override the
-:py:meth:`.ArgumentParser.add_argument` method. For example, by default,
-``bool`` arguments require a ``true|false`` value from the command line. To
-change this behavior and use :class:`.ActionYesNo` instead, through a CLI based
-on :func:`.auto_cli`, you can:
+arguments, you can create a subclass and override the :meth:`add_argument
+<.ActionsContainer.add_argument>` method. For example, by default, ``bool``
+arguments require a ``true|false`` value from the command line. To change this
+behavior and use :class:`.ActionYesNo` instead, through a CLI based on
+:func:`.auto_cli`, you can:
 
 .. testcode::
 
@@ -1554,8 +1561,9 @@ Classes from functions
 ----------------------
 
 In some cases there are functions which return an instance of a class. To add
-this to a parser such that :py:meth:`.ArgumentParser.instantiate_classes` calls
-this function, the example above would change to:
+this to a parser such that :meth:`instantiate_classes
+<.ArgumentParser.instantiate_classes>` calls this function, the example above
+would change to:
 
 .. testsetup:: class_from_function
 
@@ -1825,10 +1833,11 @@ The resolved parameters that have the same type hint and default across all
 calls are supported normally. When there is a discrepancy between the calls, the
 parameters behave differently and are shown in the help with the default like
 ``Conditional<ast-resolver> {DEFAULT_1, ...}``. The main difference is that
-these parameters are not included in :py:meth:`.ArgumentParser.get_defaults` or
-the output of ``--print_config``. This is necessary because the parser does not
-know which of the calls will be used at runtime, and adding them would cause
-:py:meth:`.ArgumentParser.instantiate_classes` to fail due to unexpected keyword
+these parameters are not included in :meth:`get_defaults
+<.ArgumentParser.get_defaults>` or the output of ``--print_config``. This is
+necessary because the parser does not know which of the calls will be used at
+runtime, and adding them would cause :meth:`instantiate_classes
+<.ArgumentParser.instantiate_classes>` to fail due to unexpected keyword
 arguments.
 
 .. note::
@@ -1869,16 +1878,16 @@ example from the standard library would be:
     >>> parser.parse_args(["--uniform.a=0.7", "--uniform.b=3.4"])
     Namespace(uniform=Namespace(a=0.7, b=3.4))
 
-Without the stubs resolver, the
-:py:meth:`.SignatureArguments.add_function_arguments` call requires the
+Without the stubs resolver, the :meth:`add_function_arguments
+<.SignatureArguments.add_function_arguments>` call requires the
 ``fail_untyped=False`` option. This has the disadvantage that type ``Any`` is
 given to the ``a`` and ``b`` arguments, instead of ``float``. And this means
 that the parser would not fail if given an invalid value, for instance a string.
 
 It is not possible to know the defaults of parameters discovered only because of
 the stubs. In these cases in the parser help the default is shown as
-``Unknown<stubs-resolver>`` and not included in
-:py:meth:`.ArgumentParser.get_defaults` or the output of ``--print_config``.
+``Unknown<stubs-resolver>`` and not included in :meth:`get_defaults
+<.ArgumentParser.get_defaults>` or the output of ``--print_config``.
 
 
 .. _dependency-injection:
@@ -1914,17 +1923,17 @@ instantiate it. When parsing, it will be checked that the class can be imported,
 that it is a subclass of the given type and that ``init_args`` values correspond
 to valid arguments to instantiate it. After parsing, the config object will
 include the ``class_path`` and ``init_args`` entries. To get a config object
-with all nested subclasses instantiated, the
-:py:meth:`.ArgumentParser.instantiate_classes` method is used.
+with all nested subclasses instantiated, the :meth:`instantiate_classes
+<.ArgumentParser.instantiate_classes>` method is used.
 
 Additional to using a class as type hint in signatures, for low level
-construction of parsers, there are also the methods
-:py:meth:`.SignatureArguments.add_class_arguments` and
-:py:meth:`.SignatureArguments.add_subclass_arguments`. These methods accept a
-``skip`` argument that can be used to exclude parameters within subclasses. This
-is done by giving its relative destination key, i.e. as
-``param.init_args.subparam``. An individual argument can also be added having as
-type a class, i.e. ``parser.add_argument("--module", type=ModuleBase)``.
+construction of parsers, there are also the methods :meth:`add_class_arguments
+<.SignatureArguments.add_class_arguments>` and :meth:`add_subclass_arguments
+<.SignatureArguments.add_subclass_arguments>`. These methods accept a ``skip``
+argument that can be used to exclude parameters within subclasses. This is done
+by giving its relative destination key, i.e. as ``param.init_args.subparam``. An
+individual argument can also be added having as type a class, i.e.
+``parser.add_argument("--module", type=ModuleBase)``.
 
 A simple example with a top-level class to instantiate, with a parameter that
 expects an injected class instance, would be having some config file
@@ -1981,10 +1990,11 @@ In this example the ``class_path`` points to the same class used for the type.
 But a subclass of ``Calendar`` with an extended set of init parameters would
 also work.
 
-If the previous example were changed to use
-:py:meth:`.SignatureArguments.add_subclass_arguments` instead of
-:py:meth:`.SignatureArguments.add_class_arguments`, then subclasses ``MyClass``
-would also be accepted. In this case the config would be like:
+If the previous example were changed to use :meth:`add_subclass_arguments
+<.SignatureArguments.add_subclass_arguments>` instead of
+:meth:`add_class_arguments <.SignatureArguments.add_class_arguments>`, then
+subclasses ``MyClass`` would also be accepted. In this case the config would be
+like:
 
 .. code-block:: yaml
 
@@ -2017,11 +2027,11 @@ As explained at the beginning of section :ref:`dependency-injection`, callables
 that return instances of classes, referred to as instance factories, represent
 an alternative approach to dependency injection. This is useful to support
 dependency injection of classes that require parameters that are only available
-after injection. For this case, when
-:py:meth:`.ArgumentParser.instantiate_classes` is run, a partial function is
-provided, which might accept parameters and returns the instance of the class.
-Two options are possible, either using ``Callable`` or ``Protocol``. First to
-illustrate the ``Callable`` option, take for example the classes:
+after injection. For this case, when :meth:`instantiate_classes
+<.ArgumentParser.instantiate_classes>` is run, a partial function is provided,
+which might accept parameters and returns the instance of the class. Two options
+are possible, either using ``Callable`` or ``Protocol``. First to illustrate the
+``Callable`` option, take for example the classes:
 
 .. testcode:: callable
 
@@ -2094,9 +2104,10 @@ Then a parser and behavior could be:
     ([1, 2, 3], 0.05)
 
 See :ref:`ast-resolver` for limitations of lambda defaults in signatures.
-Providing a lambda default to :py:meth:`.ActionsContainer.add_argument` does not
-work since there is no AST resolving. In this case, a dict with ``class_path``
-and ``init_args`` can be used as default.
+Providing a lambda default to :meth:`add_argument
+<.ActionsContainer.add_argument>` does not work since there is no AST resolving.
+In this case, a dict with ``class_path`` and ``init_args`` can be used as
+default.
 
 Multiple arguments required after injection is also supported and can be
 specified the same way with a ``Callable``. For example, for two
@@ -2224,10 +2235,9 @@ are supported with a particular behavior and recommendations. An example is:
 Adding this class to a parser will work without issues. The :ref:`ast-resolver`
 in limited cases determines how to instantiate the original default. The parsing
 methods would provide a dict with ``class_path`` and ``init_args`` instead of
-the class instance. Furthermore, if
-:py:meth:`.ArgumentParser.instantiate_classes` is used, a new instance of the
-class is created, thereby avoiding issues related to the mutability of the
-default.
+the class instance. Furthermore, if :meth:`instantiate_classes
+<.ArgumentParser.instantiate_classes>` is used, a new instance of the class is
+created, thereby avoiding issues related to the mutability of the default.
 
 Since the :ref:`ast-resolver` only supports limited cases, or when the source
 code is not available, a second approach is to use the special function
@@ -2389,13 +2399,13 @@ Argument linking
 
 Some use cases could require adding arguments from multiple classes and some
 parameters get a value automatically computed from other arguments. This
-behavior can be obtained by using the :py:meth:`.ArgumentLinking.link_arguments`
-method.
+behavior can be obtained by using the :meth:`link_arguments
+<.ArgumentLinking.link_arguments>` parser method.
 
 There are two types of links, defined with ``apply_on='parse'`` or
 ``apply_on='instantiate'``. As the names suggest, the former are set when
 calling one of the parse methods and the latter are set when calling
-:py:meth:`.ArgumentParser.instantiate_classes`.
+:meth:`instantiate_classes <.ArgumentParser.instantiate_classes>`.
 
 Applied on parse
 ----------------
@@ -2454,13 +2464,14 @@ Applied on instantiate
 ----------------------
 
 For instantiation links, sources can be class groups (added with
-:py:meth:`.SignatureArguments.add_class_arguments`) or subclass arguments (see
-:ref:`sub-classes`). The source key can be the entire instantiated object or an
-attribute of the object. The target key has to be a single argument and can be
-inside init_args of a subclass. The order of instantiation used by
-:py:meth:`.ArgumentParser.instantiate_classes` is automatically determined based
-on the links. The set of all instantiation links must be a directed acyclic
-graph. An example would be the following:
+:meth:`add_class_arguments <.SignatureArguments.add_class_arguments>`) or
+subclass arguments (see :ref:`sub-classes`). The source key can be the entire
+instantiated object or an attribute of the object. The target key has to be a
+single argument and can be inside init_args of a subclass. The order of
+instantiation used by :meth:`instantiate_classes
+<.ArgumentParser.instantiate_classes>` is automatically determined based on the
+links. The set of all instantiation links must be a directed acyclic graph. An
+example would be the following:
 
 .. testcode::
 
@@ -2479,9 +2490,9 @@ graph. An example would be the following:
     parser.add_class_arguments(Data, "data")
     parser.link_arguments("data.num_classes", "model.num_classes", apply_on="instantiate")
 
-This link would imply that :py:meth:`.ArgumentParser.instantiate_classes`
-instantiates :class:`Data` first, then use the ``num_classes`` attribute to
-instantiate :class:`Model`.
+This link would imply that :meth:`instantiate_classes
+<.ArgumentParser.instantiate_classes>` instantiates ``Data`` first, then use the
+``num_classes`` attribute to instantiate ``Model``.
 
 
 OmegaConf variable interpolation
@@ -2610,13 +2621,13 @@ command line arguments, that is:
     'from env 2'
 
 Note that when creating the parser, ``default_env=True`` was given. By default
-:py:meth:`.ArgumentParser.parse_args` does not parse environment variables. If
-``default_env`` is left unset, environment variable parsing can also be enabled
-by setting in your shell ``JSONARGPARSE_DEFAULT_ENV=true``.
+:meth:`parse_args <.ArgumentParser.parse_args>` does not parse environment
+variables. If ``default_env`` is left unset, environment variable parsing can
+also be enabled by setting in your shell ``JSONARGPARSE_DEFAULT_ENV=true``.
 
-There is also the :py:meth:`.ArgumentParser.parse_env` function to only parse
-environment variables, which might be useful for some use cases in which there
-is no command line call involved.
+There is also the :meth:`parse_env <.ArgumentParser.parse_env>` function to only
+parse environment variables, which might be useful for some use cases in which
+there is no command line call involved.
 
 If a parser includes an ``action="config"`` argument, then the environment
 variable for this config file will be parsed before all the other environment
@@ -2632,7 +2643,7 @@ A way to define parsers in a modular way is what in argparse is known as
 `subcommands <https://docs.python.org/3/library/argparse.html#subcommands>`__.
 However, to promote modularity, in jsonargparse subcommands work a bit
 different than in argparse. To add subcommands to a parser, the
-:py:meth:`.ArgumentParser.add_subcommands` method is used. Then an existing
+:meth:`add_subcommands <.ArgumentParser.add_subcommands>` method is used. Then an existing
 parser is added as a subcommand using :func:`.add_subcommand`. In a parsed
 config object the subcommand will be stored in the ``subcommand`` entry (or
 whatever ``dest`` was set to), and the values of the subcommand will be in an
@@ -2665,10 +2676,10 @@ Then some examples of parsing are the following:
     >>> parser.parse_args(["--op0", "val0", "subcomm2", "--op2", "val2"])  # doctest: +IGNORE_RESULT
     Namespace(op0='val0', subcommand='subcomm2', subcomm2=Namespace(op2='val2'))
 
-Parsing config files with :py:meth:`.ArgumentParser.parse_path` or
-:py:meth:`.ArgumentParser.parse_string` is also possible. The config file is not
-required to specify a value for ``subcommand``. For the example parser above a
-valid YAML would be:
+Parsing config files with :meth:`parse_path <.ArgumentParser.parse_path>` or
+:meth:`parse_string <.ArgumentParser.parse_string>` is also possible. The config
+file is not required to specify a value for ``subcommand``. For the example
+parser above a valid YAML would be:
 
 .. code-block:: yaml
 
@@ -2685,9 +2696,9 @@ variable ``APP_SUBCOMMAND``.
 
 It is possible to have multiple levels of subcommands. With multiple levels
 there is one basic requirement: the subcommands must be added in the order of
-the levels. This is, first call :func:`add_subcommands` and
-:func:`add_subcommand` for the first level. Only after do the same for the
-second level, and so on.
+the levels. This is, first call :meth:`add_subcommands
+<.ArgumentParser.add_subcommands>` and :func:`add_subcommand` for the first
+level. Only after do the same for the second level, and so on.
 
 
 .. _json-schemas:
@@ -2746,9 +2757,10 @@ jsonargparse with the ``jsonnet`` extra as explained in section
 :ref:`installation`.
 
 By default an :class:`.ArgumentParser` parses config files as YAML. However, if
-instantiated giving ``parser_mode='jsonnet'``, then :func:`parse_args`,
-:func:`parse_path` and :func:`parse_string` will expect config files to be in
-Jsonnet format instead. Example:
+instantiated giving ``parser_mode='jsonnet'``, then :meth:`parse_args
+<.ArgumentParser.parse_args>`, :meth:`parse_path <.ArgumentParser.parse_path>`
+and :meth:`parse_string <.ArgumentParser.parse_string>` will expect config files
+to be in Jsonnet format instead. Example:
 
 .. testsetup:: jsonnet
 
@@ -2861,10 +2873,11 @@ shtab
 -----
 
 For ``shtab`` to work, there is no need to set ``complete``/``choices`` to the
-parser actions, and no need to call :func:`shtab.add_argument_to`. This is done
-automatically by :py:meth:`.ArgumentParser.parse_args`. The only requirement is
-to install shtab either directly or by installing jsonargparse with the
-``shtab`` extra as explained in section :ref:`installation`.
+parser actions, and no need to call `shtab.add_argument_to
+<https://docs.iterative.ai/shtab/ref/#add_argument_to>`__. This is done
+automatically by :meth:`parse_args <.ArgumentParser.parse_args>`. The only
+requirement is to install shtab either directly or by installing jsonargparse
+with the ``shtab`` extra as explained in section :ref:`installation`.
 
 .. note::
 
@@ -2938,8 +2951,8 @@ argcomplete
 
 For ``argcompete`` to work, there is no need to implement completer functions or
 to call :func:`argcomplete.autocomplete` since this is done automatically by
-:py:meth:`.ArgumentParser.parse_args`. The only requirement to enable tab
-completion is to install argcomplete either directly or by installing
+:meth:`parse_args <.ArgumentParser.parse_args>`. The only requirement to enable
+tab completion is to install argcomplete either directly or by installing
 jsonargparse with the ``argcomplete`` extra as explained in section
 :ref:`installation`.
 
