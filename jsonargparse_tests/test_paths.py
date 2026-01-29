@@ -714,5 +714,21 @@ def test_sub_configs_union_subclass_and_pathlike(parser, tmp_cwd):
     assert cfg.data.path == str(data_path)
 
 
+def test_union_path_or_dict(parser, tmp_cwd):
+    arg_path = pathlib.Path("arg.json")
+    arg_path.touch()
+
+    parser.add_argument("--arg", type=Union[Path_fr, dict])
+
+    cfg = parser.parse_args([f"--arg={arg_path}"])
+    assert isinstance(cfg.arg, Path_fr)
+    assert str(arg_path) == str(cfg.arg)
+
+    cfg = parser.parse_args(['--arg={"key": "value"}'])
+    assert cfg.arg == {"key": "value"}
+
+
 def test_import_old_path_location():
-    from jsonargparse import Path  # noqa: F401
+    from jsonargparse import Path as path_old
+
+    assert path_old is Path
