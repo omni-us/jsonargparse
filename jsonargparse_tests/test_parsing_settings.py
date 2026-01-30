@@ -12,7 +12,7 @@ from jsonargparse_tests.test_typehints import Optimizer
 
 
 @pytest.fixture(autouse=True)
-def patch_parsing_settings():
+def auto_patch_parsing_settings():
     with patch.dict("jsonargparse._common.parsing_settings"):
         yield
 

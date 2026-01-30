@@ -1037,7 +1037,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 cfg["__default_config__"] = default_config_file
             self._logger.debug("Parsed default configuration from path: %s", default_config_file)
 
-        ActionTypeHint.add_sub_defaults(self, cfg)
+        with parser_context(validating_defaults=True):
+            ActionTypeHint.add_sub_defaults(self, cfg)
 
         return cfg
 
