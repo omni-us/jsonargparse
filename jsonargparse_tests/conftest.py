@@ -193,6 +193,15 @@ def logger() -> logging.Logger:
     return logger
 
 
+def patch_parsing_settings(fn):
+    @wraps(fn)
+    def _patch_parsing_settings(*args, **kwargs):
+        with patch.dict("jsonargparse._common.parsing_settings"):
+            return fn(*args, **kwargs)
+
+    return _patch_parsing_settings
+
+
 @contextmanager
 def capture_logs(logger: logging.Logger) -> Iterator[StringIO]:
     with ExitStack() as stack:

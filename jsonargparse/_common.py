@@ -59,6 +59,7 @@ parser_capture: ContextVar[bool] = ContextVar("parser_capture", default=False)
 defaults_cache: ContextVar[Optional[Namespace]] = ContextVar("defaults_cache", default=None)
 lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", default=False)
 parsing_defaults: ContextVar[bool] = ContextVar("parsing_defaults", default=False)
+validating_defaults: ContextVar[bool] = ContextVar("validating_defaults", default=False)
 load_value_mode: ContextVar[Optional[str]] = ContextVar("load_value_mode", default=None)
 class_instantiators: ContextVar[Optional[InstantiatorsDictType]] = ContextVar("class_instantiators", default=None)
 nested_links: ContextVar[list[dict]] = ContextVar("nested_links", default=[])
@@ -72,6 +73,7 @@ parser_context_vars = {
     "defaults_cache": defaults_cache,
     "lenient_check": lenient_check,
     "parsing_defaults": parsing_defaults,
+    "validating_defaults": validating_defaults,
     "load_value_mode": load_value_mode,
     "class_instantiators": class_instantiators,
     "nested_links": nested_links,
@@ -207,7 +209,7 @@ def validate_default(container: ActionsContainer, action: argparse.Action):
 
         if isinstance(container, ArgumentGroup):
             container = container.parser  # type: ignore[assignment]
-        with parser_context(parent_parser=container):
+        with parser_context(parent_parser=container, validating_defaults=True):
             default = action.default
             action.default = None
             action.default = action._check_type_(default)  # type: ignore[attr-defined]

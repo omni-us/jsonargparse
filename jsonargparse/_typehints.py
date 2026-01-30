@@ -59,6 +59,7 @@ from ._common import (
     nested_links,
     parent_parser,
     parser_context,
+    validating_defaults,
 )
 from ._loaders_dumpers import (
     get_loader_exceptions,
@@ -897,6 +898,8 @@ def adapt_typehints(
             prev_val = prev_val + [None] * (len(val) - len(prev_val) if val_is_list else 1)
         list_path = None
         if enable_path and type(val) is str:
+            if validating_defaults.get():
+                return val
             with suppress(TypeError):
                 from ._optionals import _get_config_read_mode
 
