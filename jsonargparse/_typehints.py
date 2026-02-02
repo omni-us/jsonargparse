@@ -1522,7 +1522,7 @@ def adapt_class_type(
             namespace=prev_init_args,
             defaults=sub_defaults.get(),
         )
-        return value
+        return _subclasses_disabled_remove_class_path(value, typehint)
 
     if serialize:
         if init_args:
@@ -1548,9 +1548,12 @@ def adapt_class_type(
                     val = load_value(val, simple_types=True)
             value["dict_kwargs"][key] = val
 
+    return _subclasses_disabled_remove_class_path(value, typehint)
+
+
+def _subclasses_disabled_remove_class_path(value, typehint):
     if is_subclasses_disabled(typehint) and value.class_path == get_import_path(typehint):
         value = Namespace({**value.get("init_args", {}), **value.get("dict_kwargs", {})})
-
     return value
 
 

@@ -716,6 +716,28 @@ def test_union_dataclasses(parser):
     assert isinstance(init.data.a_or_b, SubB)
 
 
+@dataclasses.dataclass
+class File:
+    name: str
+
+
+@dataclasses.dataclass
+class FilePath:
+    folder: str
+    file: File
+
+
+@dataclasses.dataclass
+class PathParent:
+    path: Union[FilePath, bool]
+
+
+def test_deeply_nested_dataclass_in_union(parser):
+    parser.add_class_arguments(PathParent, "parent")
+    cfg = parser.parse_args(["--parent.path.folder=/tmp", "--parent.path.file.name=data.txt"])
+    assert cfg.parent.path == Namespace(folder="/tmp", file=Namespace(name="data.txt"))
+
+
 if type_alias_type:
     IntOrString = type_alias_type("IntOrString", Union[int, str])
 
