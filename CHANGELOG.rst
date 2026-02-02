@@ -30,6 +30,8 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/834>`__).
 - Validation of defaults getting stuck for path with ``-`` (stdin) default
   (`#837 <https://github.com/omni-us/jsonargparse/pull/837>`__).
+- Failure when parsing deeply nested dataclass with a union parent (`#839
+  <https://github.com/omni-us/jsonargparse/pull/839>`__).
 
 
 v4.45.0 (2025-12-26)
