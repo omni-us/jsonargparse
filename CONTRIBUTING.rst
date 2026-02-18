@@ -109,8 +109,18 @@ runs some additional tests.
     tox                                      # Run tests using tox on available python versions
     pytest                                   # Run tests using pytest on the python of the environment
     pytest --cov                             # Run tests and generate coverage report
-    python -m jsonargparse_tests             # Run tests on installed package (requires pytest and pytest-subtests)
     pre-commit run -a --hook-stage pre-push  # Run pre-push git hooks (tests, doctests, mypy, coverage)
+
+Tests can be run in any environment without the source code. Before v4.47.0, the
+tests were included in the main package. Since v4.47.0, they are provided in a
+separate package. Prefer installing the tests package with the same version as
+the main package. For example, for v4.47.0 run:
+
+.. code-block:: bash
+
+    pip install jsonargparse_tests==4.47.0
+    python -m jsonargparse_tests
+
 
 Coverage
 --------
