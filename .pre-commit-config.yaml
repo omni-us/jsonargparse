@@ -73,6 +73,9 @@ repos:
       else
         python3 -m build --wheel;
         twine check dist/*.whl;
+        cd jsonargparse_tests;
+        python3 -m build --wheel;
+        twine check dist/*.whl;
       fi'
     language: system
     pass_filenames: false

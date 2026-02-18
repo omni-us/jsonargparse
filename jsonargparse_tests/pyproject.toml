@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "jsonargparse-tests"
+dynamic = ["version"]
+description = "Tests for jsonargparse package."
+authors = [
+    {name = "Mauricio Villegas", email = "mauricio@omnius.com"},
+]
+license = "MIT"
+license-files = ["LICENSE.rst"]
+
+dependencies = [
+    "jsonargparse[test-no-urls]",
+]
+
+[project.urls]
+GitHub = "https://github.com/omni-us/jsonargparse"
+
+
+[tool.setuptools]
+packages = ["jsonargparse_tests"]
+
+[tool.setuptools.package-dir]
+"jsonargparse_tests" = "."
+
+[tool.setuptools.dynamic]
+version = {attr = "jsonargparse_tests.__version__"}
