@@ -4,6 +4,7 @@ import json
 import math
 import multiprocessing
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import patch
@@ -234,6 +235,7 @@ def parse_in_spawned_process(queue, parser, args):
 
 
 @skip_if_omegaconf_unavailable
+@pytest.mark.skipif(sys.version_info[:3] == (3, 14, 3), reason="not pickleable in Python 3.14.3")
 def test_omegaconf_in_spawned_process(parser):
     parser.parser_mode = "omegaconf"
     parser.add_argument("--dict", type=dict)
