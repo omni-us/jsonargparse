@@ -1160,6 +1160,7 @@ def test_parse_known_args_not_implemented_without_caller_module(parser):
         pytest.raises(NotImplementedError, lambda: parser.parse_known_args([]))
 
 
+@pytest.mark.skipif(sys.version_info[:3] == (3, 14, 3), reason="not pickleable in Python 3.14.3")
 def test_pickle_parser(example_parser):
     parser = pickle.loads(pickle.dumps(example_parser))
     assert example_parser.get_defaults() == parser.get_defaults()
@@ -1181,6 +1182,7 @@ def test_get_argument_group_class_failure(logger):
     assert "Failed to create ArgumentGroup subclass based on" in logs.getvalue()
 
 
+@pytest.mark.skipif(sys.version_info[:3] == (3, 14, 3), reason="not pickleable in Python 3.14.3")
 def test_get_argument_group_class_underscores_to_dashes():
     parser = UnderscoresToDashesParser()
     parser.add_argument("--int_value", type=int, default=1)
