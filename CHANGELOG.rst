@@ -18,8 +18,10 @@ v4.47.0 (unreleased)
 Changed
 ^^^^^^^
 - Tests are no longer installed by default, there is a separate
-  ``jsonargparse_tests`` wheel file for that  (`#843
+  ``jsonargparse_tests`` wheel file for that (`#843
   <https://github.com/omni-us/jsonargparse/pull/843>`__).
+- Adding argument giving both ``type`` and ``action`` is now allowed
+  (`#845 <https://github.com/omni-us/jsonargparse/pull/845>`__).
 
 
 v4.46.0 (2026-02-02)
