@@ -146,7 +146,12 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         ActionJsonnet._check_ext_vars_action(parser, action)
         if is_meta_key(action.dest):
             raise ValueError(f'Argument with destination name "{action.dest}" not allowed.')
-        if action.option_strings == [] and "default" in kwargs and kwargs["default"] is not argparse.SUPPRESS:
+        if (
+            action.option_strings == []
+            and "default" in kwargs
+            and kwargs["default"] is not argparse.SUPPRESS
+            and action.nargs not in ("*", "?")
+        ):
             raise ValueError("Positional arguments not allowed to have a default value.")
         validate_default(self, action)
         if action.help is None:

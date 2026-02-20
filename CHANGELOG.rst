@@ -15,6 +15,12 @@ paths are considered internals and can change in minor and patch releases.
 v4.47.0 (unreleased)
 --------------------
 
+Fixed
+^^^^^
+- Positional arguments with ``nargs="*"`` or ``nargs="?"`` now correctly allow
+  default values, matching standard argparse behavior (`#846
+  <https://github.com/omni-us/jsonargparse/pull/846>`__).
+
 Changed
 ^^^^^^^
 - Tests are no longer installed by default, there is a separate

@@ -53,6 +53,19 @@ def test_add_argument_positional_with_default(parser):
         parser.add_argument("pos", default="abc")
 
 
+def test_add_argument_positional_with_default_nargs_star(parser):
+    parser.add_argument("pos", nargs="*", default=["abc"])
+    assert parser.parse_args([]) == Namespace(pos=["abc"])
+    assert parser.parse_args(["x"]) == Namespace(pos=["x"])
+    assert parser.parse_args(["x", "y"]) == Namespace(pos=["x", "y"])
+
+
+def test_add_argument_positional_with_default_nargs_question(parser):
+    parser.add_argument("pos", nargs="?", default="abc")
+    assert parser.parse_args([]) == Namespace(pos="abc")
+    assert parser.parse_args(["x"]) == Namespace(pos="x")
+
+
 def test_parse_args_simple(parser):
     parser.add_argument("--op", type=int)
     assert parser.parse_args(["--op=1"]) == Namespace(op=1)
