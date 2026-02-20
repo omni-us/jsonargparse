@@ -63,12 +63,6 @@ from jsonargparse_tests.conftest import (
 )
 
 
-def test_add_argument_failure_given_type_and_action(parser):
-    with pytest.raises(ValueError) as ctx:
-        parser.add_argument("--op1", type=Optional[bool], action=True)
-    ctx.match("Providing both type and action not allowed")
-
-
 def test_add_argument_given_type_and_null_action(parser):
     parser.add_argument("--op1", type=Optional[bool], action=None)
     assert parser.get_defaults().op1 is None

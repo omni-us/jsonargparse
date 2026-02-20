@@ -287,7 +287,7 @@ class ActionTypeHint(Action):
     @staticmethod
     def prepare_add_argument(args, kwargs, enable_path, container, logger, sub_add_kwargs=None):
         if kwargs.get("action") is not None:
-            raise ValueError("Providing both type and action not allowed.")
+            return args
         typehint = kwargs.pop("type")
         if args[0].startswith("--") and ActionTypeHint.supports_append(typehint):
             args = tuple(list(args) + [args[0] + "+"])
