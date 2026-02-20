@@ -138,6 +138,9 @@ jobs:
         run: |
           pip install -U build
           python -m build
+          cd jsonargparse_tests
+          python -m build --wheel
+          mv dist/*.whl ../dist/
       - uses: actions/upload-artifact@v4
         with:
           name: package
@@ -159,13 +162,13 @@ jobs:
       - name: Test without optional dependencies and without pyyaml
         run: |
           cd dist
-          pip install $(ls *.whl)[test-no-urls]
+          pip install $(ls jsonargparse-*.whl)[test-no-urls] $(ls jsonargparse_tests-*.whl)
           pip uninstall -y pyyaml
           python -m jsonargparse_tests
       - name: Test with all optional dependencies
         run: |
           cd dist
-          pip install $(ls *.whl)[test,all]
+          pip install $(ls jsonargparse-*.whl)[test,all]
           python -m jsonargparse_tests
 
   doctest:

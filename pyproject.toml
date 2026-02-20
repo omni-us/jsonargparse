@@ -139,7 +139,7 @@ Codecov = "https://codecov.io/gh/omni-us/jsonargparse"
 
 [tool.setuptools]
 platforms = ["Any"]
-packages = ["jsonargparse", "jsonargparse_tests"]
+packages = ["jsonargparse"]
 
 [tool.setuptools.dynamic]
 version = {attr = "jsonargparse.__version__"}
@@ -211,6 +211,7 @@ setenv =
 
 [testenv:pydantic-v1]
 extras = coverage
+deps = ./jsonargparse_tests
 commands =
     # Test with pydantic<2
     python -c "\
@@ -242,6 +243,7 @@ commands =
 
 [testenv:without-future-annotations]
 extras = test,coverage,all
+deps = ./jsonargparse_tests
 allowlist_externals = sh
 commands =
     sh -c "\
