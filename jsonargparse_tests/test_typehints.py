@@ -1549,12 +1549,11 @@ def test_lazy_instance_callable():
         Tuple[int, "unsupported"],  # noqa: F821
         Union["unsupported1", "unsupported2"],  # noqa: F821
     ],
-    ids=str,
+    ids=lambda x: "lambda" if getattr(x, "__name__", "") == "<lambda>" else str(x),
 )
 def test_action_typehint_unsupported_type(typehint):
-    with pytest.raises(ValueError) as ctx:
+    with pytest.raises(ValueError, match="Unsupported type hint"):
         ActionTypeHint(typehint=typehint)
-    ctx.match("Unsupported type hint")
 
 
 def test_action_typehint_none_type_error():
