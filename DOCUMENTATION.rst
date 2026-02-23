@@ -472,7 +472,7 @@ Some notes about this support are:
   in :ref:`list-append`), ``Iterable``, ``Sequence``, ``Any``, ``Union``,
   ``Optional``, ``Type``, ``Enum``, ``PathLike``, ``UUID``, ``timedelta``,
   restricted types as explained in sections :ref:`restricted-numbers` and
-  :ref:`restricted-strings` and paths and URLs as explained in sections
+  :ref:`restricted-strings` and path and URL types as explained in sections
   :ref:`parsing-paths` and :ref:`parsing-urls`.
 
 - ``dict``, ``Mapping``, ``MutableMapping``, ``MappingProxyType``,
@@ -1504,7 +1504,7 @@ The second option that can be configured is the support for `attribute
 docstrings <https://peps.python.org/pep-0257/#what-is-a-docstring>`__ (i.e.
 literal strings in the line after an attribute is defined). By default this
 feature is disabled and enabling it makes the parsing slower even for classes
-that don't have attribute docstrings. To enable, do as follows:
+that don't have attribute docstrings. To enable this, do as follows:
 
 .. testcode:: docstrings
 
@@ -1926,17 +1926,17 @@ include the ``class_path`` and ``init_args`` entries. To get a config object
 with all nested subclasses instantiated, the :meth:`instantiate_classes
 <.ArgumentParser.instantiate_classes>` method is used.
 
-Additional to using a class as type hint in signatures, for low level
+In addition to using a class as type hint in signatures, for low level
 construction of parsers, there are also the methods :meth:`add_class_arguments
 <.SignatureArguments.add_class_arguments>` and :meth:`add_subclass_arguments
 <.SignatureArguments.add_subclass_arguments>`. These methods accept a ``skip``
 argument that can be used to exclude parameters within subclasses. This is done
 by giving its relative destination key, i.e. as ``param.init_args.subparam``. An
-individual argument can also be added having as type a class, i.e.
+individual argument can also be added using a class as type, i.e.
 ``parser.add_argument("--module", type=ModuleBase)``.
 
 A simple example with a top-level class to instantiate, with a parameter that
-expects an injected class instance, would be having some config file
+expects an injected class instance, would use a config file
 ``config.yaml`` as:
 
 .. code-block:: yaml
@@ -2029,8 +2029,8 @@ an alternative approach to dependency injection. This is useful to support
 dependency injection of classes that require parameters that are only available
 after injection. For this case, when :meth:`instantiate_classes
 <.ArgumentParser.instantiate_classes>` is run, a partial function is provided,
-which might accept parameters and returns the instance of the class. Two options
-are possible, either using ``Callable`` or ``Protocol``. First to illustrate the
+which might accept parameters and return the instance of the class. Two options
+are possible: using ``Callable`` or ``Protocol``. To illustrate the
 ``Callable`` option, take for example the classes:
 
 .. testcode:: callable
@@ -2342,12 +2342,12 @@ subclass support enabled. Types specified in ``subclasses_enabled`` take
 precedence over those in ``subclasses_disabled``. If a function name is given to
 ``subclasses_enabled``, it must correspond to a function previously registered
 in ``subclasses_disabled``; in this case, the effect is to unregister it. By
-default, the following disable functions are registered: ``is_pure_dataclass``,
+default, the following disabling functions are registered: ``is_pure_dataclass``,
 ``is_pydantic_model``, ``is_attrs_class``, and ``is_final_class``.
 
 Some examples. Since ``subclasses_enabled`` takes precedence, it is possible to
-keep subclass support disabled for dataclasses, but enable enable it for a
-specific dataclass as follows:
+keep subclass support disabled for dataclasses, but enable it for a specific
+dataclass as follows:
 
 .. testsetup:: enable_disable_subclasses
 
@@ -2588,7 +2588,7 @@ absolute node references would no longer work in nested subconfigs.
 Environment variables
 =====================
 
-The jsonargparse parsers can also get values from environment variables. The
+jsonargparse parsers can also get values from environment variables. The
 parser checks existing environment variables whose name is of the form
 ``[PREFIX_][LEV__]*OPT``, that is, all in upper case, first a prefix (set by
 ``env_prefix``, or if unset the ``prog`` without extension or none if set to False)
@@ -2639,10 +2639,10 @@ variables.
 Subcommands
 ===========
 
-A way to define parsers in a modular way is what in argparse is known as
+One way to define parsers modularly is what in argparse is known as
 `subcommands <https://docs.python.org/3/library/argparse.html#subcommands>`__.
 However, to promote modularity, in jsonargparse subcommands work a bit
-different than in argparse. To add subcommands to a parser, the
+different from argparse. To add subcommands to a parser, the
 :meth:`add_subcommands <.ArgumentParser.add_subcommands>` method is used. Then an existing
 parser is added as a subcommand using :func:`.add_subcommand`. In a parsed
 config object the subcommand will be stored in the ``subcommand`` entry (or
@@ -2696,7 +2696,7 @@ variable ``APP_SUBCOMMAND``.
 
 It is possible to have multiple levels of subcommands. With multiple levels
 there is one basic requirement: the subcommands must be added in the order of
-the levels. This is, first call :meth:`add_subcommands
+the levels. That is, first call :meth:`add_subcommands
 <.ArgumentParser.add_subcommands>` and :func:`add_subcommand` for the first
 level. Only after do the same for the second level, and so on.
 
@@ -2949,12 +2949,13 @@ giving as guidance which of the subclasses accepts it. An example would be:
 argcomplete
 -----------
 
-For ``argcompete`` to work, there is no need to implement completer functions or
-to call :func:`argcomplete.autocomplete` since this is done automatically by
-:meth:`parse_args <.ArgumentParser.parse_args>`. The only requirement to enable
-tab completion is to install argcomplete either directly or by installing
-jsonargparse with the ``argcomplete`` extra as explained in section
-:ref:`installation`.
+For ``argcomplete`` to work, there is no need to implement completer functions
+or to call `argcomplete.autocomplete
+<https://kislyuk.github.io/argcomplete/#argcomplete.autocomplete>`__ since this
+is done automatically by :meth:`parse_args <.ArgumentParser.parse_args>`. The
+only requirement to enable tab completion is to install argcomplete either
+directly or by installing jsonargparse with the ``argcomplete`` extra as
+explained in section :ref:`installation`.
 
 The tab completion can be enabled `globally
 <https://kislyuk.github.io/argcomplete/#global-completion>`__ for all
@@ -2989,9 +2990,9 @@ raised and the full stack trace is printed. This is done by setting the
 
 The parsers from jsonargparse log some basic events, though by default this is
 disabled. To enable, the ``logger`` argument should be set when creating an
-:class:`.ArgumentParser` object. The intended use is to give as value an already
+:class:`.ArgumentParser` object. The intended use is to provide an already
 existing logger object which is used for the whole application. For convenience,
-to enable a default logger the ``logger`` argument can also receive ``True`` or
+to enable a default logger the ``logger`` argument can also be ``True`` or
 a string which sets the name of the logger or a dictionary that can include the
 name and the level, e.g. ``{"name": "myapp", "level": "ERROR"}``. If
 `reconplogger <https://pypi.org/project/reconplogger/>`__ is installed, setting
