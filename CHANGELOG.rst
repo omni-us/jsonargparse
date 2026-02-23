@@ -20,6 +20,8 @@ Fixed
 - Positional arguments with ``nargs="*"`` or ``nargs="?"`` now correctly allow
   default values, matching standard argparse behavior (`#846
   <https://github.com/omni-us/jsonargparse/pull/846>`__).
+- Parsing of floats with implicit leading zero (e.g. ``-.5``) not working (`#847
+  <https://github.com/omni-us/jsonargparse/pull/847>`__).
 
 Changed
 ^^^^^^^
