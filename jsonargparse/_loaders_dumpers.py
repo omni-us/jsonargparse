@@ -176,6 +176,13 @@ def json_or_yaml_load(value):
     return json_load(value)
 
 
+def basic_json_or_yaml_load(value):
+    loaded_value = load_basic(value)
+    if loaded_value is not not_loaded:
+        return loaded_value
+    return json_or_yaml_load(value)
+
+
 json_or_yaml_loader_exceptions = get_loader_exceptions("yaml" if pyyaml_available else "json")
 
 

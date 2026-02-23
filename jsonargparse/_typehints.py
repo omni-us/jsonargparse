@@ -62,8 +62,8 @@ from ._common import (
     validating_defaults,
 )
 from ._loaders_dumpers import (
+    basic_json_or_yaml_load,
     get_loader_exceptions,
-    json_or_yaml_load,
     json_or_yaml_loader_exceptions,
     load_value,
 )
@@ -800,7 +800,7 @@ def adapt_typehints(
     elif typehint in leaf_types:
         if isinstance(val, str) and typehint is not str:
             with suppress(*json_or_yaml_loader_exceptions):
-                val = json_or_yaml_load(val)
+                val = basic_json_or_yaml_load(val)
         if typehint is float and isinstance(val, int) and not isinstance(val, bool):
             val = float(val)
         if not isinstance(val, typehint) or (typehint in (int, float) and isinstance(val, bool)):

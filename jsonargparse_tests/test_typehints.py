@@ -151,6 +151,14 @@ def test_float_scientific_notation(parser):
     assert 1e-3 == parser.parse_args(["--num=1e-3"]).num
 
 
+@parser_modes
+def test_float_implicit_leading_zero(parser):
+    parser.parser_mode = "yaml"
+    parser.add_argument("--num", type=float)
+    assert 0.5 == parser.parse_args(["--num=.5"]).num
+    assert -0.5 == parser.parse_args(["--num=-.5"]).num
+
+
 def test_complex_number(parser):
     parser.add_argument("--complex", type=complex)
     cfg = parser.parse_args(["--complex=(2+3j)"])
