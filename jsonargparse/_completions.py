@@ -84,6 +84,7 @@ class ShtabAction(NonParsingAction):
         option_strings,
         dest=argparse.SUPPRESS,
         default=argparse.SUPPRESS,
+        **kwargs,
     ):
         import shtab
 
