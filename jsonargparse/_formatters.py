@@ -40,9 +40,6 @@ from ._typehints import ActionTypeHint, type_to_str
 __all__ = ["DefaultHelpFormatter"]
 
 
-empty_help: str = "_EMPTY_HELP_"
-
-
 class PercentTemplate(Template):
     delimiter = "%"
     pattern = r"""
@@ -100,7 +97,7 @@ class YAMLCommentFormatter:
                 text = None
                 if full_key in group_titles and isinstance(cfg[key], dict):
                     text = group_titles[full_key]
-                elif action is not None and action.help not in {None, SUPPRESS}:
+                elif action is not None and action.help != SUPPRESS:
                     text = self.help_formatter._expand_help(action)
                 if isinstance(cfg[key], dict):
                     if text:
@@ -175,8 +172,9 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
     """
 
     def _get_help_string(self, action: Action) -> str:
-        action_help = " " if action.help == empty_help else action.help
-        assert isinstance(action_help, str)
+        if getattr(action, "_jsonargparse_preexpanded_help", False):
+            return action.help or ""
+        action_help = action.help or ""
         if isinstance(action, ActionConfigFile):
             return action_help
         if isinstance(action, _HelpAction):
@@ -200,6 +198,19 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
         if isinstance(action, ActionTypeHint):
             help_str += action.extra_help()
         return action_help + (" (" + help_str + ")" if help_str else "")
+
+    def _format_action(self, action: Action) -> str:
+        if action.help is None and action.help != SUPPRESS:
+            help_text = self._expand_help(action)
+            if help_text and help_text.strip():
+                action.help = help_text
+                action._jsonargparse_preexpanded_help = True  # type: ignore[attr-defined]
+                try:
+                    return super()._format_action(action)
+                finally:
+                    del action._jsonargparse_preexpanded_help  # type: ignore[attr-defined]
+                    action.help = None
+        return super()._format_action(action)
 
     def _format_usage(self, usage, actions, *args, **kwargs) -> str:
         actions = filter_non_parsing_actions(actions)

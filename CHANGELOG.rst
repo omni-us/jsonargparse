@@ -32,6 +32,9 @@ Fixed
 - Subcommand names now correctly take precedence over top-level option strings
   with the same name, fixing a failure during typed sub-default processing
   (`#853 <https://github.com/omni-us/jsonargparse/pull/853>`__).
+- ``--help`` no longer fails with ``IndexError`` for options without explicit
+  help text while keeping ``argparse`` compatibility for ``help=None`` (`#854
+  <https://github.com/omni-us/jsonargparse/pull/854>`__).
 
 Changed
 ^^^^^^^
