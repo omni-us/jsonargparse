@@ -414,6 +414,19 @@ def test_bash_callable_return_class(parser, subtests):
     )
 
 
+def test_bash_callable_return_int(parser, subtests):
+    typehint = Callable[[int], int]
+    parser.add_argument("--num", type=typehint)
+    assert_bash_typehint_completions(
+        subtests,
+        parser,
+        [
+            ("num", typehint, "", [], None),
+            ("num", typehint, "1", [], None),
+        ],
+    )
+
+
 def test_bash_subcommands(parser, subparser, subtests):
     subparser.add_argument("--enum", type=AXEnum)
     subparser2 = ArgumentParser()
