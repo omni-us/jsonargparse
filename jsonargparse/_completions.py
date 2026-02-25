@@ -174,12 +174,18 @@ def shtab_prepare_action(action, parser) -> None:
     if isinstance(action, ActionTypeHint):
         skip = getattr(action, "sub_add_kwargs", {}).get("skip", set())
         prefix = action.option_strings[0] if action.option_strings else None
-        choices = get_typehint_choices(action._typehint, prefix, parser, skip)
+        choices, require_prefix = get_typehint_choices(action._typehint, prefix, parser, skip)
         if shtab_shell.get() == "bash":
             message = f"Expected type: {type_to_str(action._typehint)}"
             if action.option_strings == []:
                 message = f"Argument: {action.dest}; " + message
-            add_bash_typehint_completion(parser, action, message, choices)
+            add_bash_typehint_completion(
+                parser,
+                action,
+                message,
+                choices,
+                require_prefix=require_prefix,
+            )
             choices = None
     elif isinstance(action, _ActionHelpClassPath):
         choices = get_help_class_choices(action._typehint)
@@ -197,7 +203,13 @@ _jsonargparse_%%s_matched_choices() {
   fi
 }
 %(name)s() {
-  local MATCH=( $(IFS=" " compgen -W "$1" "$2") )
+  local REQUIRE_PREFIX="$4"
+  local MATCH=()
+  if [ "$REQUIRE_PREFIX" = 1 ] && [ -z "$2" ]; then
+    MATCH=()
+  else
+    MATCH=( $(IFS=" " compgen -W "$1" "$2") )
+  fi
   if [ ${#MATCH[@]} = 0 ]; then
     if [ "$COMP_TYPE" = 63 ]; then
       MATCHED=$(_jsonargparse_%%s_matched_choices "$1" "${MATCH[*]}")
@@ -205,7 +217,9 @@ _jsonargparse_%%s_matched_choices() {
       kill -WINCH $$
     fi
   else
-    IFS=" " compgen -W "$1" "$2"
+    for match in "${MATCH[@]}"; do
+      echo "$match"
+    done
     if [ "$COMP_TYPE" = 63 ]; then
       MATCHED=$(_jsonargparse_%%s_matched_choices "$1" "${MATCH[*]}")
       printf "%(b)s\\n$3$MATCHED%(n)s" >&2
@@ -219,53 +233,77 @@ _jsonargparse_%%s_matched_choices() {
 }
 
 
-def add_bash_typehint_completion(parser, action, message, choices) -> None:
+def add_bash_typehint_completion(parser, action, message, choices, require_prefix=False) -> None:
     fn_typehint = norm_name(bash_compgen_typehint_name % shtab_prog.get())
     fn_name = parser.prog.replace(" [options] ", "_")
     fn_name = norm_name(f"_jsonargparse_{fn_name}_{action.dest}_typehint")
-    fn = '{fn_name}(){{ {fn_typehint} "{choices}" "$1" "{message}"; }}'.format(
+    fn = '{fn_name}(){{ {fn_typehint} "{choices}" "$1" "{message}" {require_prefix}; }}'.format(
         fn_name=fn_name,
         fn_typehint=fn_typehint,
         choices=" ".join(choices),
         message=message,
+        require_prefix=1 if require_prefix else 0,
     )
     shtab_preambles.get().append(fn)
     action.complete = {"bash": fn_name}
 
 
-def get_typehint_choices(typehint, prefix, parser, skip, choices=None, added_subclasses=None) -> list[str]:
-    if choices is None:
-        choices = []
+def get_typehint_choices(typehint, prefix, parser, skip, added_subclasses=None) -> tuple[list[str], bool]:
     if not added_subclasses:
         added_subclasses = set()
-    if typehint is bool:
-        choices.extend(["true", "false"])
-    elif typehint is NoneType:
-        choices.append("null")
-    elif is_subclass(typehint, Enum):
-        choices.extend(list(typehint.__members__))
-    else:
+
+    def get_choices_state(typehint) -> tuple[list[str], bool, bool]:
+        if typehint is bool:
+            return ["true", "false"], True, False
+        if typehint is NoneType:
+            return ["null"], True, False
+        if is_subclass(typehint, Enum):
+            return list(typehint.__members__), True, False
+
         origin = get_typehint_origin(typehint)
         if origin == Literal:
-            choices.extend([str(a) for a in typehint.__args__ if isinstance(a, (str, int, float))])
-        elif origin == Union:
+            choices = []
+            for arg in typehint.__args__:
+                if isinstance(arg, bool):
+                    choices.append(str(arg).lower())
+                elif arg is None:
+                    choices.append("null")
+                elif isinstance(arg, (str, int, float)):
+                    choices.append(str(arg))
+            return choices, True, False
+
+        if origin == Union:
+            choices = []
+            has_explicit_choices = False
+            has_open_values = False
             for subtype in typehint.__args__:
                 if subtype in added_subclasses or subtype is object:
                     continue
-                get_typehint_choices(subtype, prefix, parser, skip, choices, added_subclasses)
-        elif ActionTypeHint.is_subclass_typehint(typehint):
+                subchoices, subexplicit, subopen = get_choices_state(subtype)
+                choices.extend(subchoices)
+                has_explicit_choices = has_explicit_choices or subexplicit
+                has_open_values = has_open_values or subopen
+            return choices, has_explicit_choices, has_open_values
+
+        if ActionTypeHint.is_subclass_typehint(typehint):
             added_subclasses.add(typehint)
-            choices.extend(add_subactions_and_get_subclass_choices(typehint, prefix, parser, skip, added_subclasses))
-        elif origin in callable_origin_types:
+            choices = add_subactions_and_get_subclass_choices(typehint, prefix, parser, skip, added_subclasses)
+            return choices, True, False
+
+        if origin in callable_origin_types:
             return_type = get_callable_return_type(typehint)
             if return_type and ActionTypeHint.is_subclass_typehint(return_type):
                 num_args = len(typehint.__args__) - 1
                 skip.add(num_args)
-                choices.extend(
-                    add_subactions_and_get_subclass_choices(return_type, prefix, parser, skip, added_subclasses)
-                )
+                choices = add_subactions_and_get_subclass_choices(return_type, prefix, parser, skip, added_subclasses)
+                return choices, True, False
+            return [], False, return_type is None
 
-    return [] if choices == ["null"] else choices
+        return [], False, True
+
+    choices, has_explicit_choices, has_open_values = get_choices_state(typehint)
+    require_prefix = get_typehint_origin(typehint) == Union and has_explicit_choices and has_open_values
+    return choices, require_prefix
 
 
 def add_subactions_and_get_subclass_choices(typehint, prefix, parser, skip, added_subclasses) -> list[str]:
@@ -295,11 +333,19 @@ def add_subactions_and_get_subclass_choices(typehint, prefix, parser, skip, adde
             if option_string not in parser._option_string_actions:
                 action = parser.add_argument(option_string)
                 for subtype in unique(subtypes):
-                    subchoices = get_typehint_choices(subtype, option_string, parser, skip, None, added_subclasses)
+                    subchoices, require_prefix = get_typehint_choices(
+                        subtype, option_string, parser, skip, added_subclasses
+                    )
                     if shtab_shell.get() == "bash":
                         message = f"Expected type: {type_to_str(subtype)}; "
                         message += f"Accepted by subclasses: {', '.join(subclasses[name])}"
-                        add_bash_typehint_completion(parser, action, message, subchoices)
+                        add_bash_typehint_completion(
+                            parser,
+                            action,
+                            message,
+                            subchoices,
+                            require_prefix=require_prefix,
+                        )
                     elif subchoices:
                         action.choices = subchoices
 

@@ -15,6 +15,13 @@ paths are considered internals and can change in minor and patch releases.
 v4.47.0 (unreleased)
 --------------------
 
+Added
+^^^^^
+- Improved ``shtab`` bash typehint completions for ``Union`` and ``Literal``:
+  choices for unions that also accept open values now require a prefix to be
+  completed, and literal booleans/``None`` now complete as ``false``/``true``
+  and ``null`` (`#851 <https://github.com/omni-us/jsonargparse/pull/851>`__).
+
 Fixed
 ^^^^^
 - Positional arguments with ``nargs="*"`` or ``nargs="?"`` now correctly allow

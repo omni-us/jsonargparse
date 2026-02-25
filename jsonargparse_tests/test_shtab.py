@@ -115,6 +115,18 @@ def test_bash_optional_bool(parser, subtests):
     )
 
 
+def test_bash_optional_int(parser, subtests):
+    parser.add_argument("--num", type=Optional[int])
+    assert_bash_typehint_completions(
+        subtests,
+        parser,
+        [
+            ("num", Optional[int], "", [], "0/1"),
+            ("num", Optional[int], "n", ["null"], "1/1"),
+        ],
+    )
+
+
 def test_bash_argument_group(parser, subtests):
     group = parser.add_argument_group("Group1")
     group.add_argument("--bool", type=bool)
@@ -170,6 +182,19 @@ def test_bash_literal(parser, subtests):
     )
 
 
+def test_bash_literal_none(parser, subtests):
+    typehint = Literal[None]
+    parser.add_argument("--literal", type=typehint)
+    assert_bash_typehint_completions(
+        subtests,
+        parser,
+        [
+            ("literal", typehint, "", ["null"], "1/1"),
+            ("literal", typehint, "n", ["null"], "1/1"),
+        ],
+    )
+
+
 def test_bash_union(parser, subtests):
     typehint = Optional[Union[bool, AXEnum]]
     parser.add_argument("--union", type=typehint)
@@ -179,6 +204,32 @@ def test_bash_union(parser, subtests):
         [
             ("union", typehint, "", ["true", "false", "ABC", "XY", "XZ", "null"], "6/6"),
             ("union", typehint, "z", [], "0/6"),
+        ],
+    )
+
+
+def test_bash_union_literal_and_int(parser, subtests):
+    typehint = Union[Literal[False], int]
+    parser.add_argument("--union", type=typehint)
+    assert_bash_typehint_completions(
+        subtests,
+        parser,
+        [
+            ("union", typehint, "", [], "0/1"),
+            ("union", typehint, "f", ["false"], "1/1"),
+        ],
+    )
+
+
+def test_bash_union_float_and_enum(parser, subtests):
+    typehint = Union[float, AXEnum]
+    parser.add_argument("--union", type=typehint)
+    assert_bash_typehint_completions(
+        subtests,
+        parser,
+        [
+            ("union", typehint, "", [], "0/3"),
+            ("union", typehint, "X", ["XY", "XZ"], "2/3"),
         ],
     )
 
@@ -359,6 +410,19 @@ def test_bash_callable_return_class(parser, subtests):
         [
             ("cls", Callable[[int], Base], "", classes, "3/3"),
             ("cls.p2", AXEnum, "z", [], "SubA"),
+        ],
+    )
+
+
+def test_bash_callable_return_int(parser, subtests):
+    typehint = Callable[[int], int]
+    parser.add_argument("--num", type=typehint)
+    assert_bash_typehint_completions(
+        subtests,
+        parser,
+        [
+            ("num", typehint, "", [], None),
+            ("num", typehint, "1", [], None),
         ],
     )
 
