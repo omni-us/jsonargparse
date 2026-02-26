@@ -29,6 +29,9 @@ Fixed
   <https://github.com/omni-us/jsonargparse/pull/846>`__).
 - Parsing of floats with implicit leading zero (e.g. ``-.5``) not working (`#847
   <https://github.com/omni-us/jsonargparse/pull/847>`__).
+- Subcommand names now correctly take precedence over top-level option strings
+  with the same name, fixing a failure during typed sub-default processing
+  (`#853 <https://github.com/omni-us/jsonargparse/pull/853>`__).
 
 Changed
 ^^^^^^^

@@ -62,6 +62,23 @@ def _find_action_and_subcommand(
     actions = filter_non_parsing_actions(parser._actions)
     if exclude is not None:
         actions = [a for a in actions if not isinstance(a, exclude)]
+
+    # Subcommand names should take precedence over option-string fallback
+    # (e.g. subcommand "info" vs option "--info").
+    for action in actions:
+        if not isinstance(action, _ActionSubCommands):
+            continue
+        if dest in action._name_parser_map:
+            return action, None
+        root_dest = split_key_root(dest)[0]
+        if root_dest in action._name_parser_map:
+            subcommand, subdest = split_key_root(dest)
+            subparser = action._name_parser_map[subcommand]
+            subaction, subsubcommand = _find_action_and_subcommand(subparser, subdest, exclude=exclude)
+            if subsubcommand is not None:
+                subcommand += "." + subsubcommand
+            return subaction, subcommand
+
     fallback_action = None
     for action in actions:
         if action.dest == dest or f"--{dest}" in action.option_strings:
@@ -69,16 +86,6 @@ def _find_action_and_subcommand(
                 fallback_action = action
             else:
                 return action, None
-        elif isinstance(action, _ActionSubCommands):
-            if dest in action._name_parser_map:
-                return action, None
-            elif split_key_root(dest)[0] in action._name_parser_map:
-                subcommand, subdest = split_key_root(dest)
-                subparser = action._name_parser_map[subcommand]
-                subaction, subsubcommand = _find_action_and_subcommand(subparser, subdest, exclude=exclude)
-                if subsubcommand is not None:
-                    subcommand += "." + subsubcommand
-                return subaction, subcommand
     return fallback_action, None
 
 

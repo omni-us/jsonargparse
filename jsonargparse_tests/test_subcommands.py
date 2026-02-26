@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from jsonargparse import (
+    SUPPRESS,
     ArgumentError,
     ArgumentParser,
     Namespace,
@@ -327,6 +328,19 @@ def test_subcommand_default_config_add_subdefaults(parser, subparser, tmp_cwd):
     init = parser.instantiate_classes(cfg)
     assert isinstance(init.fit.model, Model)
     assert isinstance(init.fit.model.submodel, SubModel)
+
+
+def test_subcommand_name_collision_with_option_string(parser, subparser):
+    parser.add_argument("--typed", type=int, default=1)
+    parser.add_argument("--info", dest="log_level", action="store_true", default=SUPPRESS)
+    subcommands = parser.add_subcommands()
+    subparser.add_argument("--info", dest="log_level", action="store_true", default=SUPPRESS)
+    subcommands.add_subcommand("info", subparser)
+
+    cfg = parser.parse_args(["info"])
+    assert cfg.subcommand == "info"
+    assert cfg.info == Namespace()
+    assert "log_level" not in cfg
 
 
 def test_subsubcommands_parse_args(subtests):
