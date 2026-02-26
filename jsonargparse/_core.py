@@ -48,7 +48,7 @@ from ._completions import (
     handle_completions,
 )
 from ._deprecated import ParserDeprecations, deprecated_skip_check, deprecated_yaml_comments
-from ._formatters import DefaultHelpFormatter, empty_help, get_env_var
+from ._formatters import DefaultHelpFormatter, get_env_var
 from ._jsonnet import ActionJsonnet
 from ._jsonschema import ActionJsonSchema
 from ._link_arguments import ActionLink, ArgumentLinking
@@ -154,8 +154,6 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         ):
             raise ValueError("Positional arguments not allowed to have a default value.")
         validate_default(self, action)
-        if action.help is None:
-            action.help = empty_help
         if action.required:
             parser.required_args.add(action.dest)  # type: ignore[union-attr]
             action._required = True  # type: ignore[attr-defined]

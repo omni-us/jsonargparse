@@ -6,7 +6,6 @@ from argparse import Action as ArgparseAction
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
-from importlib import import_module
 from typing import Any, Callable, Optional, Union
 
 from ._actions import (
@@ -227,7 +226,7 @@ class ActionLink(Action):
                 assert isinstance(self.target[1], ArgparseAction)
                 type_attr = getattr(self.target[1], "_typehint", self.target[1].type)
                 help_str = self.target[1].help
-            if help_str == import_module("jsonargparse._formatters").empty_help:
+            if help_str is None:
                 help_str = f"Target '{self.target[1].dest}' lacks type and help"
 
         super().__init__(
