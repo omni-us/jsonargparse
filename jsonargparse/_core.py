@@ -226,7 +226,7 @@ class ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
 class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, LoggerProperty, argparse.ArgumentParser):
     """Parser for command line, configuration files and environment variables."""
 
-    formatter_class: type[DefaultHelpFormatter]
+    formatter_class: type[argparse.HelpFormatter]
     groups: Optional[dict[str, ArgumentGroup]] = None
     _group_class: type[ArgumentGroup]
     _subcommands_action: Optional[_ActionSubCommands] = None
@@ -236,7 +236,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         self,
         *args,
         env_prefix: Union[bool, str] = True,
-        formatter_class: type[DefaultHelpFormatter] = DefaultHelpFormatter,
+        formatter_class: type[argparse.HelpFormatter] = DefaultHelpFormatter,
         exit_on_error: bool = True,
         logger: Union[logging.Logger, bool, str, dict] = False,
         version: Optional[str] = None,
