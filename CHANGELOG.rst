@@ -21,6 +21,11 @@ Added
   choices for unions that also accept open values now require a prefix to be
   completed, and literal booleans/``None`` now complete as ``false``/``true``
   and ``null`` (`#851 <https://github.com/omni-us/jsonargparse/pull/851>`__).
+- New ``ArgumentParser.get_completions_script(completion_type)`` public method
+  to generate completion scripts programmatically, and new
+  ``set_parsing_settings(add_print_completions_argument=...)`` setting to opt-in
+  automatic addition of ``--print_completions`` when ``shtab`` is installed
+  (`#859 <https://github.com/omni-us/jsonargparse/pull/859>`__).
 
 Fixed
 ^^^^^
@@ -49,6 +54,10 @@ Changed
   <https://github.com/omni-us/jsonargparse/pull/843>`__).
 - Adding argument giving both ``type`` and ``action`` is now allowed
   (`#845 <https://github.com/omni-us/jsonargparse/pull/845>`__).
+- Parsers no longer auto-add ``--print_shtab`` by default. Completion script
+  generation now uses ``shtab-*`` completion types, and when
+  ``get_completions_script`` is used the parser instance is invalidated for
+  further use (`#859 <https://github.com/omni-us/jsonargparse/pull/859>`__).
 
 
 v4.46.0 (2026-02-02)

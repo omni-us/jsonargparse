@@ -152,6 +152,12 @@ def example_parser() -> ArgumentParser:
 
 
 @pytest.fixture
+def parsing_settings_patch():
+    with patch.dict("jsonargparse._common.parsing_settings"):
+        yield
+
+
+@pytest.fixture
 def subclass_behavior(monkeypatch) -> Iterator[None]:
     monkeypatch.setattr("jsonargparse._common.subclasses_enabled_types", set())
     monkeypatch.setattr("jsonargparse._common.subclasses_disabled_types", set())
