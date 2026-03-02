@@ -281,6 +281,22 @@ def test_parse_env_positional_nargs_plus(parser):
     assert parser.parse_env({"APP_REQ": '[""","""]'}).req == ['[""","""]']
 
 
+def test_parse_env_store_true_false(parser):
+    parser.env_prefix = "app"
+    parser.add_argument("--flag_true", action="store_true")
+    parser.add_argument("--flag_false", action="store_false")
+    assert parser.parse_args([]) == Namespace(flag_true=False, flag_false=True)
+    assert parser.get_defaults() == Namespace(flag_true=False, flag_false=True)
+    assert parser.parse_env({"APP_FLAG_TRUE": "true"}).flag_true is True
+    assert parser.parse_env({"APP_FLAG_TRUE": "false"}).flag_true is False
+    assert parser.parse_env({"APP_FLAG_FALSE": "false"}).flag_false is False
+    assert parser.parse_env({"APP_FLAG_FALSE": "true"}).flag_false is True
+    with pytest.raises(ArgumentError, match="Invalid boolean value for environment variable APP_FLAG_TRUE: not_bool"):
+        parser.parse_env({"APP_FLAG_TRUE": "not_bool"})
+    with pytest.raises(ArgumentError, match="Invalid boolean value for environment variable APP_FLAG_FALSE: not_bool"):
+        parser.parse_env({"APP_FLAG_FALSE": "not_bool"})
+
+
 def test_default_env_property():
     parser = ArgumentParser()
     assert False is parser.default_env
