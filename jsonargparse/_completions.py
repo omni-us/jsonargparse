@@ -43,9 +43,11 @@ def handle_argcomplete_autocomplete(parser):
 
 
 def add_print_completions_argument(parser):
-    if not get_parsing_setting("add_print_completions_argument") or getattr(parser, "parent_parser", None):
-        return
-    if not find_spec("shtab"):
+    if (
+        getattr(parser, "parent_parser", None)
+        or not get_parsing_setting("add_print_completions_argument")
+        or not find_spec("shtab")
+    ):
         return
     if not any(isinstance(action, PrintCompletionsAction) for action in parser._actions):
         parser.add_argument("--print_completions", action=PrintCompletionsAction)

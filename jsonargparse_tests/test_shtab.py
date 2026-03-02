@@ -480,6 +480,11 @@ def test_get_completions_script_requires_shtab(parser):
             parser.get_completions_script("shtab-bash")
 
 
+def test_get_completions_script_unsupported_shtab_shell(parser):
+    with pytest.raises(ValueError, match="Unsupported completion_type: shtab-unsupported"):
+        parser.get_completions_script("shtab-unsupported")
+
+
 def test_get_completions_script_invalidates_parser(parser):
     parser.get_completions_script("shtab-bash")
     with pytest.raises(ValueError, match="invalidated by get_completions_script"):
