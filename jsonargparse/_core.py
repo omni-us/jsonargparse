@@ -531,7 +531,16 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             env_var = get_env_var(self, action)
             if env_var in env and not isinstance(action, (ActionConfigFile, _ActionSubCommands)):
                 env_val = env[env_var]
-                if _is_action_value_list(action):
+                if isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
+                    if env_val == "true":
+                        env_val = True
+                    elif env_val == "false":
+                        env_val = False
+                    else:
+                        raise argparse.ArgumentError(
+                            action, f"Invalid boolean value for environment variable {env_var}: {env_val}"
+                        )
+                elif _is_action_value_list(action):
                     try:
                         list_env_val = load_value(env_val)
                         env_val = list_env_val if isinstance(list_env_val, list) else [env_val]
