@@ -38,6 +38,9 @@ Fixed
 - ``store_true`` and ``store_false`` arguments now parse boolean environment
   variable values as ``true``/``false`` and raise a clear error for invalid
   values (`#858 <https://github.com/omni-us/jsonargparse/pull/858>`__).
+- Environment variable overrides now correctly take precedence over
+  ``default_config_files`` values for subcommands and nested subsubcommands
+  (`#862 <https://github.com/omni-us/jsonargparse/pull/862>`__).
 
 Changed
 ^^^^^^^
