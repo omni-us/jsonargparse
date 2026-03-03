@@ -13,13 +13,18 @@ from ._actions import (
     ActionConfigFile,
     _ActionConfigLoad,
     _ActionPrintConfig,
-    _ActionSubCommands,
-    _find_parent_action,
-    _find_parent_action_and_subcommand,
     filter_non_parsing_actions,
 )
+from ._common import parser_context
 from ._namespace import Namespace, split_key, split_key_leaf
 from ._parameter_resolvers import get_signature_parameters
+from ._subcommands import (
+    ActionSubCommands,
+    _find_parent_action,
+    _find_parent_action_and_subcommand,
+    get_subcommand,
+    get_subcommands,
+)
 from ._type_checking import ArgumentGroup, ArgumentParser
 
 __all__ = ["ArgumentLinking"]
@@ -128,7 +133,7 @@ class ActionLink(Action):
         self._initial_input_checks(source, target)
 
         # Set and check source actions or group
-        exclude = (ActionLink, _ActionConfigLoad, _ActionSubCommands, ActionConfigFile)
+        exclude = (ActionLink, _ActionConfigLoad, ActionSubCommands, ActionConfigFile)
         if apply_on == "instantiate":
             self.source = [(s, find_subclass_action_or_class_group(parser, s, exclude=exclude)) for s in source]
             for key, action in self.source:
@@ -290,7 +295,7 @@ class ActionLink(Action):
         if apply_config_skip.get() or _ActionPrintConfig.is_print_config_requested(parser):
             return
 
-        subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
+        subcommand, subparser = get_subcommand(parser, cfg, fail_no_subcommand=False)
         if subcommand and subcommand in cfg:
             ActionLink.apply_parsing_links(subparser, cfg[subcommand])  # type: ignore[arg-type]
         if not hasattr(parser, "_links_group"):
@@ -481,8 +486,8 @@ class ActionLink(Action):
             for key in action.sub_add_kwargs.get("linked_targets", []):
                 del_target_key(f"{action.dest}.init_args.{key}")
 
-        with _ActionSubCommands.not_single_subcommand():
-            subcommands, subparsers = _ActionSubCommands.get_subcommands(parser, cfg)
+        with parser_context(single_subcommand=False):
+            subcommands, subparsers = get_subcommands(parser, cfg)
         if subcommands is not None:
             for num, subcommand in enumerate(subcommands):
                 if subcommand in cfg:

@@ -2647,8 +2647,9 @@ One way to define parsers modularly is what in argparse is known as
 `subcommands <https://docs.python.org/3/library/argparse.html#subcommands>`__.
 However, to promote modularity, in jsonargparse subcommands work a bit
 different from argparse. To add subcommands to a parser, the
-:meth:`add_subcommands <.ArgumentParser.add_subcommands>` method is used. Then an existing
-parser is added as a subcommand using :func:`.add_subcommand`. In a parsed
+:meth:`add_subcommands <.ArgumentParser.add_subcommands>` method is used. Then
+an existing parser is added as a subcommand using :meth:`add_subcommand
+<.ActionSubCommands.add_subcommand>`. In a parsed
 config object the subcommand will be stored in the ``subcommand`` entry (or
 whatever ``dest`` was set to), and the values of the subcommand will be in an
 entry with the same name as the respective subcommand. An example of defining a
@@ -2701,8 +2702,9 @@ variable ``APP_SUBCOMMAND``.
 It is possible to have multiple levels of subcommands. With multiple levels
 there is one basic requirement: the subcommands must be added in the order of
 the levels. That is, first call :meth:`add_subcommands
-<.ArgumentParser.add_subcommands>` and :func:`add_subcommand` for the first
-level. Only after do the same for the second level, and so on.
+<.ArgumentParser.add_subcommands>` and :meth:`add_subcommand
+<.ActionSubCommands.add_subcommand>` for the first level. Only after do the
+same for the second level, and so on.
 
 
 .. _json-schemas:

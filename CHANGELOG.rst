@@ -52,6 +52,8 @@ Fixed
   (`#862 <https://github.com/omni-us/jsonargparse/pull/862>`__).
 - ``omegaconf+`` incorrectly applied for ``default_config_files`` (`#865
   <https://github.com/omni-us/jsonargparse/pull/865>`__).
+- ``ActionSubCommands.add_subcommand()`` missing from API reference
+  (`#863 <https://github.com/omni-us/jsonargparse/pull/863>`__).
 
 Changed
 ^^^^^^^

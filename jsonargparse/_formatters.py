@@ -19,8 +19,6 @@ from ._actions import (
     ActionConfigFile,
     ActionYesNo,
     _ActionConfigLoad,
-    _ActionSubCommands,
-    _find_action,
     filter_non_parsing_actions,
     non_parsing_actions,
 )
@@ -34,6 +32,7 @@ from ._deprecated import HelpFormatterDeprecations
 from ._link_arguments import ActionLink
 from ._namespace import Namespace, NSKeyError
 from ._optionals import import_ruamel
+from ._subcommands import ActionSubCommands, _find_action
 from ._type_checking import ArgumentParser, ruamelCommentedMap
 from ._typehints import ActionTypeHint, type_to_str
 
@@ -84,7 +83,7 @@ class YAMLCommentFormatter:
             for group in parser._action_groups:
                 actions = filter_non_parsing_actions(group._group_actions)
                 actions = [
-                    a for a in actions if not isinstance(a, (_ActionConfigLoad, ActionConfigFile, _ActionSubCommands))
+                    a for a in actions if not isinstance(a, (_ActionConfigLoad, ActionConfigFile, ActionSubCommands))
                 ]
                 keys = {re.sub(r"\.?[^.]+$", "", a.dest) for a in actions if "." in a.dest}
                 for key in keys:
@@ -254,7 +253,7 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
     def _format_action_invocation(self, action: Action) -> str:
         parser = parent_parser.get()
         assert parser is not None
-        if isinstance(action, _ActionSubCommands):
+        if isinstance(action, ActionSubCommands):
             value = "Available subcommands:"
             if parser.default_env:
                 value = f"ENV:   {get_env_var(self, action)}\n\n  {value}"

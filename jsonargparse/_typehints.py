@@ -42,10 +42,7 @@ from ._actions import (
     ActionFail,
     _ActionHelpClassPath,
     _ActionPrintConfig,
-    _find_action,
-    _find_parent_action,
     _is_action_value_list,
-    parse_kwargs,
     remove_actions,
 )
 from ._common import (
@@ -78,6 +75,7 @@ from ._optionals import (
     validate_annotated,
 )
 from ._paths import Path, PathError, change_to_path_dir
+from ._subcommands import _find_action, _find_parent_action, parse_kwargs
 from ._util import (
     ClassType,
     NestedArg,

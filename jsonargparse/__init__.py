@@ -9,7 +9,6 @@ from argparse import (
 )
 
 from ._actions import *  # noqa: F403
-from ._actions import _ActionSubCommands as ActionSubCommands  # noqa: F401
 from ._cli import *  # noqa: F403
 from ._common import *  # noqa: F403
 from ._core import *  # noqa: F403
@@ -24,6 +23,7 @@ from ._namespace import *  # noqa: F403
 from ._optionals import *  # noqa: F403
 from ._paths import Path  # noqa: F401
 from ._signatures import *  # noqa: F403
+from ._subcommands import *  # noqa: F403
 from ._typehints import *  # noqa: F403
 from ._util import *  # noqa: F403
 
@@ -52,6 +52,7 @@ from . import (
     _namespace,
     _optionals,
     _signatures,
+    _subcommands,
     _typehints,
     _util,
 )
@@ -59,6 +60,7 @@ from . import (
 __all__ += _cli.__all__
 __all__ += _core.__all__
 __all__ += _signatures.__all__
+__all__ += _subcommands.__all__
 __all__ += _typehints.__all__
 __all__ += _link_arguments.__all__
 __all__ += _jsonschema.__all__
