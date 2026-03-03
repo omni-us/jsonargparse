@@ -14,8 +14,8 @@ from jsonargparse import (
     Namespace,
     lazy_instance,
 )
-from jsonargparse._actions import _find_action
 from jsonargparse._optionals import docstring_parser_support
+from jsonargparse._subcommands import _find_action
 from jsonargparse_tests.conftest import (
     capture_logs,
     get_parse_args_stdout,
