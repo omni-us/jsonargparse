@@ -99,7 +99,7 @@ def parser_context(**kwargs):
 parsing_settings = {
     "validate_defaults": False,
     "parse_optionals_as_positionals": False,
-    "add_print_completions_argument": False,
+    "add_print_completion_argument": False,
     "stubs_resolver_allow_py_files": False,
     "omegaconf_absolute_to_relative_paths": False,
 }
@@ -113,7 +113,7 @@ def set_parsing_settings(
     docstring_parse_style: Optional["docstring_parser.DocstringStyle"] = None,
     docstring_parse_attribute_docstrings: Optional[bool] = None,
     parse_optionals_as_positionals: Optional[bool] = None,
-    add_print_completions_argument: Optional[bool] = None,
+    add_print_completion_argument: Optional[bool] = None,
     stubs_resolver_allow_py_files: Optional[bool] = None,
     omegaconf_absolute_to_relative_paths: Optional[bool] = None,
     subclasses_disabled: Optional[list[Union[type, Callable[[type], bool]]]] = None,
@@ -140,8 +140,8 @@ def set_parsing_settings(
             ``--key=value`` as usual, but also as positional. The extra
             positionals are applied to optionals in the order that they were
             added to the parser. By default, this is ``False``.
-        add_print_completions_argument: If ``True``, top-level parsers
-            automatically include ``--print_completions`` argument when
+        add_print_completion_argument: If ``True``, top-level parsers
+            automatically include ``--print_completion`` argument when
             ``shtab`` is installed.
         stubs_resolver_allow_py_files: Whether the stubs resolver should search
             in ``.py`` files in addition to ``.pyi`` files.
@@ -180,11 +180,11 @@ def set_parsing_settings(
         parsing_settings["parse_optionals_as_positionals"] = parse_optionals_as_positionals
     elif parse_optionals_as_positionals is not None:
         raise ValueError(f"parse_optionals_as_positionals must be a boolean, but got {parse_optionals_as_positionals}.")
-    # add_print_completions_argument
-    if isinstance(add_print_completions_argument, bool):
-        parsing_settings["add_print_completions_argument"] = add_print_completions_argument
-    elif add_print_completions_argument is not None:
-        raise ValueError(f"add_print_completions_argument must be a boolean, but got {add_print_completions_argument}.")
+    # add_print_completion_argument
+    if isinstance(add_print_completion_argument, bool):
+        parsing_settings["add_print_completion_argument"] = add_print_completion_argument
+    elif add_print_completion_argument is not None:
+        raise ValueError(f"add_print_completion_argument must be a boolean, but got {add_print_completion_argument}.")
     # stubs resolver
     if isinstance(stubs_resolver_allow_py_files, bool):
         parsing_settings["stubs_resolver_allow_py_files"] = stubs_resolver_allow_py_files
@@ -229,12 +229,12 @@ def validate_default(container: ActionsContainer, action: argparse.Action):
 
 def get_optionals_as_positionals_actions(parser, include_positionals=False):
     from jsonargparse._actions import ActionConfigFile, _ActionConfigLoad, filter_non_parsing_actions
-    from jsonargparse._completions import PrintCompletionsAction
+    from jsonargparse._completions import PrintCompletionAction
     from jsonargparse._typehints import ActionTypeHint
 
     actions = []
     for action in filter_non_parsing_actions(parser._actions):
-        if isinstance(action, (_ActionConfigLoad, ActionConfigFile, PrintCompletionsAction)):
+        if isinstance(action, (_ActionConfigLoad, ActionConfigFile, PrintCompletionAction)):
             continue
         if ActionTypeHint.is_subclass_typehint(action, all_subtypes=False):
             continue

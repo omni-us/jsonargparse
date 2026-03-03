@@ -431,9 +431,9 @@ def test_bash_subcommands(parser, subparser, subtests):
     subcommands.add_subcommand("s2", subparser2)
 
     help_str = get_parse_args_stdout(parser, ["--help"])
-    assert "--print_completions" not in help_str
+    assert "--print_completion" not in help_str
     help_str = get_parse_args_stdout(parser, ["s1", "--help"])
-    assert "--print_completions" not in help_str
+    assert "--print_completion" not in help_str
 
     shtab_script = get_shtab_script(parser, "bash")
     assert "_subparsers=('s1' 's2')" in shtab_script
@@ -453,48 +453,48 @@ def test_bash_subcommands(parser, subparser, subtests):
     )
 
 
-def test_add_print_completions_argument_opt_in(parser, parsing_settings_patch):
-    set_parsing_settings(add_print_completions_argument=True)
+def test_add_print_completion_argument_opt_in(parser, parsing_settings_patch):
+    set_parsing_settings(add_print_completion_argument=True)
     help_str = get_parse_args_stdout(parser, ["--help"])
-    assert "--print_completions" in help_str
-    script = get_parse_args_stdout(parser, ["--print_completions=shtab-bash"])
+    assert "--print_completion" in help_str
+    script = get_parse_args_stdout(parser, ["--print_completion=shtab-bash"])
     assert "_jsonargparse_" in script
 
 
-def test_add_print_completions_argument_only_top_level(parser, subparser, parsing_settings_patch):
-    set_parsing_settings(add_print_completions_argument=True)
+def test_add_print_completion_argument_only_top_level(parser, subparser, parsing_settings_patch):
+    set_parsing_settings(add_print_completion_argument=True)
     subcommands = parser.add_subcommands()
     subcommands.add_subcommand("s1", subparser)
-    assert "--print_completions" in get_parse_args_stdout(parser, ["--help"])
-    assert "--print_completions" not in get_parse_args_stdout(parser, ["s1", "--help"])
+    assert "--print_completion" in get_parse_args_stdout(parser, ["--help"])
+    assert "--print_completion" not in get_parse_args_stdout(parser, ["s1", "--help"])
 
 
-def test_get_completions_script_invalid_completion_type(parser):
+def test_get_completion_script_invalid_completion_type(parser):
     with pytest.raises(ValueError, match="Unsupported completion_type"):
-        parser.get_completions_script("unknown")
+        parser.get_completion_script("unknown")
 
 
-def test_get_completions_script_requires_shtab(parser):
+def test_get_completion_script_requires_shtab(parser):
     with patch("jsonargparse._completions.find_spec", return_value=None):
         with pytest.raises(ValueError, match="shtab package is required"):
-            parser.get_completions_script("shtab-bash")
+            parser.get_completion_script("shtab-bash")
 
 
-def test_get_completions_script_unsupported_shtab_shell(parser):
+def test_get_completion_script_unsupported_shtab_shell(parser):
     with pytest.raises(ValueError, match="Unsupported completion_type: shtab-unsupported"):
-        parser.get_completions_script("shtab-unsupported")
+        parser.get_completion_script("shtab-unsupported")
 
 
-def test_get_completions_script_invalidates_parser(parser):
-    parser.get_completions_script("shtab-bash")
-    with pytest.raises(ValueError, match="invalidated by get_completions_script"):
+def test_get_completion_script_invalidates_parser(parser):
+    parser.get_completion_script("shtab-bash")
+    with pytest.raises(ValueError, match="invalidated by get_completion_script"):
         parser.parse_args([])
 
 
-def test_add_print_completions_argument_invalidates_parser(parser, parsing_settings_patch):
-    set_parsing_settings(add_print_completions_argument=True)
-    _ = get_parse_args_stdout(parser, ["--print_completions=shtab-bash"])
-    with pytest.raises(ValueError, match="invalidated by get_completions_script"):
+def test_add_print_completion_argument_invalidates_parser(parser, parsing_settings_patch):
+    set_parsing_settings(add_print_completion_argument=True)
+    _ = get_parse_args_stdout(parser, ["--print_completion=shtab-bash"])
+    with pytest.raises(ValueError, match="invalidated by get_completion_script"):
         parser.parse_args([])
 
 

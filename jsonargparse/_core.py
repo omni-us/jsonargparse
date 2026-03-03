@@ -48,7 +48,7 @@ from ._completions import (
     handle_completions,
 )
 from ._completions import (
-    get_completions_script as get_completions_script_internal,
+    get_completion_script as get_completion_script_internal,
 )
 from ._deprecated import ParserDeprecations, deprecated_skip_check, deprecated_yaml_comments
 from ._formatters import DefaultHelpFormatter, get_env_var
@@ -1067,15 +1067,15 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         return cfg
 
-    ## Completions script methods ##
+    ## Completion script methods ##
 
-    def _raise_invalidated_by_completions_script(self, *args, **kwargs) -> NoReturn:
+    def _raise_invalidated_by_completion_script(self, *args, **kwargs) -> NoReturn:
         raise ValueError(
-            "Parser instance was invalidated by get_completions_script() and cannot be reused. "
+            "Parser instance was invalidated by get_completion_script() and cannot be reused. "
             "Create a new parser instance."
         )
 
-    def _invalidate_by_completions_script(self) -> None:
+    def _invalidate_by_completion_script(self) -> None:
         for name in dir(self):
             if name.startswith("_"):
                 continue
@@ -1083,13 +1083,13 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             if inspect.isroutine(static_attr):
                 attr = getattr(self, name, None)
                 if inspect.ismethod(attr):
-                    setattr(self, name, self._raise_invalidated_by_completions_script)
+                    setattr(self, name, self._raise_invalidated_by_completion_script)
 
-    def get_completions_script(self, completion_type: str, **kwargs) -> str:
+    def get_completion_script(self, completion_type: str, **kwargs) -> str:
         """Returns shell completion script for a completion type."""
-        completions_script = get_completions_script_internal(self, completion_type, **kwargs)
-        self._invalidate_by_completions_script()
-        return completions_script
+        completion_script = get_completion_script_internal(self, completion_type, **kwargs)
+        self._invalidate_by_completion_script()
+        return completion_script
 
     ## Other methods ##
 

@@ -29,7 +29,7 @@ from ._util import NoneType, Path, import_object, unique
 
 def handle_completions(parser):
     handle_argcomplete_autocomplete(parser)
-    add_print_completions_argument(parser)
+    add_print_completion_argument(parser)
 
 
 def handle_argcomplete_autocomplete(parser):
@@ -42,15 +42,15 @@ def handle_argcomplete_autocomplete(parser):
             argcomplete.autocomplete(parser)
 
 
-def add_print_completions_argument(parser):
+def add_print_completion_argument(parser):
     if (
         getattr(parser, "parent_parser", None)
-        or not get_parsing_setting("add_print_completions_argument")
+        or not get_parsing_setting("add_print_completion_argument")
         or not find_spec("shtab")
     ):
         return
-    if not any(isinstance(action, PrintCompletionsAction) for action in parser._actions):
-        parser.add_argument("--print_completions", action=PrintCompletionsAction)
+    if not any(isinstance(action, PrintCompletionAction) for action in parser._actions):
+        parser.add_argument("--print_completion", action=PrintCompletionAction)
 
 
 # argcomplete
@@ -90,7 +90,7 @@ shtab_prog: ContextVar = ContextVar("shtab_prog")
 shtab_preambles: ContextVar = ContextVar("shtab_preambles")
 
 
-class PrintCompletionsAction(NonParsingAction):
+class PrintCompletionAction(NonParsingAction):
     def __init__(
         self,
         option_strings,
@@ -109,11 +109,11 @@ class PrintCompletionsAction(NonParsingAction):
         )
 
     def __call__(self, parser, namespace, completion_type, option_string=None):
-        print(parser.get_completions_script(completion_type))
+        print(parser.get_completion_script(completion_type))
         argparse.ArgumentParser.exit(parser, 0)
 
 
-def get_completions_script(parser, completion_type: str, **kwargs) -> str:
+def get_completion_script(parser, completion_type: str, **kwargs) -> str:
     if not completion_type.startswith("shtab-"):
         raise ValueError(f"Unsupported completion_type: {completion_type}.")
     if not find_spec("shtab"):
@@ -156,7 +156,7 @@ def norm_name(name: str) -> str:
 
 
 def shtab_prepare_actions(parser) -> None:
-    remove_actions(parser, (PrintCompletionsAction,))
+    remove_actions(parser, (PrintCompletionAction,))
     if parser._subcommands_action:
         for subparser in parser._subcommands_action._name_parser_map.values():
             shtab_prepare_actions(subparser)

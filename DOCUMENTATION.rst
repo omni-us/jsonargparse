@@ -2884,13 +2884,13 @@ with the ``shtab`` extra as explained in section :ref:`installation`.
     Automatic shtab support is currently experimental and subject to change.
 
 There are two ways to generate shell completion scripts when ``shtab`` is
-installed: via the :meth:`.ArgumentParser.get_completions_script` method or by
+installed: via the :meth:`.ArgumentParser.get_completion_script` method or by
 enabling a command-line argument.
 
 Programmatic generation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The :meth:`.ArgumentParser.get_completions_script` method can be used to
+The :meth:`.ArgumentParser.get_completion_script` method can be used to
 generate completion scripts programmatically. The method accepts a
 ``completion_type`` parameter that specifies the shell. For shtab, use
 ``shtab-`` followed by the shell name (e.g., ``shtab-bash``, ``shtab-zsh``).
@@ -2902,12 +2902,12 @@ generate completion scripts programmatically. The method accepts a
     parser = ArgumentParser(prog="example")
     parser.add_argument("--bool", type=bool)
 
-    script = parser.get_completions_script("shtab-bash")
+    script = parser.get_completion_script("shtab-bash", preambles=[])
     # script now contains the bash completion script
 
 .. warning::
 
-    After calling :meth:`.get_completions_script`, the parser instance is
+    After calling :meth:`.get_completion_script`, the parser instance is
     invalidated and cannot be used for parsing arguments. Create a new parser
     instance if you need to parse arguments afterward.
 
@@ -2915,28 +2915,28 @@ Command-line argument
 ^^^^^^^^^^^^^^^^^^^^^
 
 To enable generation of completion scripts via a command-line argument, use
-:func:`.set_parsing_settings` with ``add_print_completions_argument=True``. This
-adds a ``--print_completions`` argument to top-level parsers (not subparsers).
+:func:`.set_parsing_settings` with ``add_print_completion_argument=True``. This
+adds a ``--print_completion`` argument to top-level parsers (not subparsers).
 
 .. testcode::
 
     from jsonargparse import set_parsing_settings
 
-    set_parsing_settings(add_print_completions_argument=True)
+    set_parsing_settings(add_print_completion_argument=True)
 
 With this setting enabled, completion scripts can be generated from the command
 line. For example, in Linux to enable bash completions for all users, as root:
 
 .. code-block:: bash
 
-    # example.py --print_completions=shtab-bash > /etc/bash_completion.d/example
+    # example.py --print_completion=shtab-bash > /etc/bash_completion.d/example
 
 Without installing, completion scripts can be tested by sourcing or evaluating
 them:
 
 .. code-block:: bash
 
-    $ eval "$(example.py --print_completions=shtab-bash)"
+    $ eval "$(example.py --print_completion=shtab-bash)"
 
 Completion behavior
 ^^^^^^^^^^^^^^^^^^^
