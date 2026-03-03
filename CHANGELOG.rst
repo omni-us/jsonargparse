@@ -41,6 +41,8 @@ Fixed
 - Environment variable overrides now correctly take precedence over
   ``default_config_files`` values for subcommands and nested subsubcommands
   (`#862 <https://github.com/omni-us/jsonargparse/pull/862>`__).
+- ``ActionSubCommands.add_subcommand()`` missing from API reference
+  (`#863 <https://github.com/omni-us/jsonargparse/pull/863>`__).
 
 Changed
 ^^^^^^^

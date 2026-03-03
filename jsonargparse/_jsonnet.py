@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional, Union
 
-from ._actions import _find_action, _is_action_value_list
+from ._actions import _is_action_value_list
 from ._common import Action, parser_context
 from ._jsonschema import ActionJsonSchema
 from ._loaders_dumpers import get_loader_exceptions, load_value
@@ -13,6 +13,7 @@ from ._optionals import (
     import_jsonschema,
     pyyaml_available,
 )
+from ._subcommands import _find_action
 from ._typehints import ActionTypeHint
 from ._util import NoneType, Path, argument_error
 
