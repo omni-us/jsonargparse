@@ -429,7 +429,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         Raises:
             ArgumentError: If the parsing fails and ``exit_on_error=True``.
         """
-        skip_validation = get_private_kwargs(kwargs, _skip_validation=False)
+        skip_validation, namespace_as_config = get_private_kwargs(
+            kwargs, _skip_validation=False, _namespace_as_config=False
+        )
         return_parser_if_captured(self)
         handle_completions(self)
 
@@ -444,7 +446,15 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         try:
             cfg = self._parse_defaults_and_environ(defaults, env)
             if namespace:
-                cfg = self.merge_config(namespace, cfg)
+                if namespace_as_config:
+                    cfg = self._parse_defaults_and_environ(defaults, env=False)
+                    cfg = self.merge_config(namespace, cfg)
+                    if env or (env is None and self._default_env):
+                        with parser_context(load_value_mode=self.parser_mode):
+                            cfg_env = self._load_env_vars(env=os.environ, defaults=defaults)
+                        cfg = self.merge_config(cfg_env, cfg)
+                else:
+                    cfg = self.merge_config(namespace, cfg)
 
             with _ActionSubCommands.parse_kwargs_context({"env": env, "defaults": defaults}):
                 cfg, unk = self.parse_known_args(args=args, namespace=cfg)

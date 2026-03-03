@@ -698,7 +698,7 @@ class _ActionSubCommands(_SubParsersAction):
         if subcommand in self._name_parser_map:
             subparser = self._name_parser_map[subcommand]
             subnamespace = namespace.get(subcommand).clone() if subcommand in namespace else None
-            kwargs = dict(_skip_validation=True, **parse_kwargs.get())
+            kwargs = dict(_skip_validation=True, _namespace_as_config=True, **parse_kwargs.get())
             namespace[subcommand] = subparser.parse_args(arg_strings, namespace=subnamespace, **kwargs)
 
     @staticmethod
