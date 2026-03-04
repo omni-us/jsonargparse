@@ -41,6 +41,8 @@ Fixed
 - Environment variable overrides now correctly take precedence over
   ``default_config_files`` values for subcommands and nested subsubcommands
   (`#862 <https://github.com/omni-us/jsonargparse/pull/862>`__).
+- ``omegaconf+`` incorrectly applied for ``default_config_files`` (`#865
+  <https://github.com/omni-us/jsonargparse/pull/865>`__).
 
 Changed
 ^^^^^^^

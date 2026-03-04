@@ -393,7 +393,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
     ):
         cfg = Namespace()
         if defaults:
-            cfg = self.get_defaults(skip_validation=True)
+            with parser_context(lenient_check=True):  # required for omegaconf+
+                cfg = self.get_defaults(skip_validation=True)
 
         if env or (env is None and self._default_env):
             if environ is None:
