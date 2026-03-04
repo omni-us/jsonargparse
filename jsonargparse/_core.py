@@ -226,7 +226,7 @@ class ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
 class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, LoggerProperty, argparse.ArgumentParser):
     """Parser for command line, configuration files and environment variables."""
 
-    formatter_class: type[DefaultHelpFormatter]
+    formatter_class: type[argparse.HelpFormatter]
     groups: Optional[dict[str, ArgumentGroup]] = None
     _group_class: type[ArgumentGroup]
     _subcommands_action: Optional[_ActionSubCommands] = None
@@ -236,7 +236,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         self,
         *args,
         env_prefix: Union[bool, str] = True,
-        formatter_class: type[DefaultHelpFormatter] = DefaultHelpFormatter,
+        formatter_class: type[argparse.HelpFormatter] = DefaultHelpFormatter,
         exit_on_error: bool = True,
         logger: Union[logging.Logger, bool, str, dict] = False,
         version: Optional[str] = None,
@@ -393,7 +393,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
     ):
         cfg = Namespace()
         if defaults:
-            cfg = self.get_defaults(skip_validation=True)
+            with parser_context(lenient_check=True):  # required for omegaconf+
+                cfg = self.get_defaults(skip_validation=True)
 
         if env or (env is None and self._default_env):
             if environ is None:
@@ -429,7 +430,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         Raises:
             ArgumentError: If the parsing fails and ``exit_on_error=True``.
         """
-        skip_validation = get_private_kwargs(kwargs, _skip_validation=False)
+        skip_validation, namespace_as_config = get_private_kwargs(
+            kwargs, _skip_validation=False, _namespace_as_config=False
+        )
         return_parser_if_captured(self)
         handle_completions(self)
 
@@ -444,7 +447,15 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         try:
             cfg = self._parse_defaults_and_environ(defaults, env)
             if namespace:
-                cfg = self.merge_config(namespace, cfg)
+                if namespace_as_config:
+                    cfg = self._parse_defaults_and_environ(defaults, env=False)
+                    cfg = self.merge_config(namespace, cfg)
+                    if env or (env is None and self._default_env):
+                        with parser_context(load_value_mode=self.parser_mode):
+                            cfg_env = self._load_env_vars(env=os.environ, defaults=defaults)
+                        cfg = self.merge_config(cfg_env, cfg)
+                else:
+                    cfg = self.merge_config(namespace, cfg)
 
             with _ActionSubCommands.parse_kwargs_context({"env": env, "defaults": defaults}):
                 cfg, unk = self.parse_known_args(args=args, namespace=cfg)
@@ -531,7 +542,16 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             env_var = get_env_var(self, action)
             if env_var in env and not isinstance(action, (ActionConfigFile, _ActionSubCommands)):
                 env_val = env[env_var]
-                if _is_action_value_list(action):
+                if isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
+                    if env_val == "true":
+                        env_val = True
+                    elif env_val == "false":
+                        env_val = False
+                    else:
+                        raise argparse.ArgumentError(
+                            action, f"Invalid boolean value for environment variable {env_var}: {env_val}"
+                        )
+                elif _is_action_value_list(action):
                     try:
                         list_env_val = load_value(env_val)
                         env_val = list_env_val if isinstance(list_env_val, list) else [env_val]

@@ -38,6 +38,14 @@ Fixed
 - ``--help`` no longer fails with ``IndexError`` for options without explicit
   help text while keeping ``argparse`` compatibility for ``help=None`` (`#854
   <https://github.com/omni-us/jsonargparse/pull/854>`__).
+- ``store_true`` and ``store_false`` arguments now parse boolean environment
+  variable values as ``true``/``false`` and raise a clear error for invalid
+  values (`#858 <https://github.com/omni-us/jsonargparse/pull/858>`__).
+- Environment variable overrides now correctly take precedence over
+  ``default_config_files`` values for subcommands and nested subsubcommands
+  (`#862 <https://github.com/omni-us/jsonargparse/pull/862>`__).
+- ``omegaconf+`` incorrectly applied for ``default_config_files`` (`#865
+  <https://github.com/omni-us/jsonargparse/pull/865>`__).
 
 Changed
 ^^^^^^^

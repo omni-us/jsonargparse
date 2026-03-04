@@ -219,6 +219,24 @@ def test_subcommands_help_default_env_true(subcommands_parser):
     assert "ENV:   APP_SUBCOMMAND" in help_str
 
 
+def test_subcommand_env_overrides_default_config(parser, subparser, tmp_cwd):
+    Path("config.json").write_text(json.dumps({"create": {"stats": True}}))
+    parser.env_prefix = "APP"
+    parser.default_env = True
+    parser.default_config_files = ["config.json"]
+
+    subparser.add_argument("--stats", action="store_true")
+    subcommands = parser.add_subcommands(required=False)
+    subcommands.add_subcommand("create", subparser)
+
+    cfg = parser.parse_args(["create"])
+    assert cfg.create.stats is True
+
+    with patch.dict(os.environ, {"APP_CREATE__STATS": "false"}):
+        cfg = parser.parse_args(["create"])
+    assert cfg.create.stats is False
+
+
 def test_subcommand_required_false(parser, subparser):
     subcommands = parser.add_subcommands(required=False)
     subcommands.add_subcommand("foo", subparser)
@@ -450,6 +468,30 @@ def test_subsubcommand_default_config_files(parser, subparser, subsubparser, def
     assert cfg.clone(with_meta=False) == Namespace(
         val0=123, subcommand="cmd1", cmd1=Namespace(val1=456, subcommand="cmd2", cmd2=Namespace(val2=789))
     )
+
+
+def test_subsubcommand_env_overrides_default_config(parser, subparser, subsubparser, tmp_cwd):
+    config = {"cmd1": {"cmd2": {"flag": True}}}
+    Path("config.json").write_text(json.dumps(config))
+    parser.env_prefix = "APP"
+    parser.default_env = True
+    parser.default_config_files = ["config.json"]
+    subsubparser.add_argument("--flag", action="store_true")
+
+    subcommands = parser.add_subcommands(required=False)
+    subcommands.add_subcommand("cmd1", subparser)
+    subsubcommands = subparser.add_subcommands(required=False)
+    subsubcommands.add_subcommand("cmd2", subsubparser)
+
+    cfg = parser.parse_args(["cmd1", "cmd2"])
+    assert cfg.cmd1.cmd2.flag is True
+
+    with patch.dict(
+        os.environ,
+        {"APP_SUBCOMMAND": "cmd1", "APP_CMD1__SUBCOMMAND": "cmd2", "APP_CMD1__CMD2__FLAG": "false"},
+    ):
+        cfg = parser.parse_args([])
+    assert cfg.cmd1.cmd2.flag is False
 
 
 def test_subcommands_in_default_config_files(parser, subtests, tmp_cwd):
