@@ -21,6 +21,9 @@ Added
   choices for unions that also accept open values now require a prefix to be
   completed, and literal booleans/``None`` now complete as ``false``/``true``
   and ``null`` (`#851 <https://github.com/omni-us/jsonargparse/pull/851>`__).
+- ``auto_cli`` now supports a ``return_instance`` parameter to instantiate class
+  components directly instead of exposing methods as subcommands (`#855
+  <https://github.com/omni-us/jsonargparse/pull/855>`__).
 
 Fixed
 ^^^^^

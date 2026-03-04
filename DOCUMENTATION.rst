@@ -124,6 +124,10 @@ Then in a shell you could run:
 Note the use of ``as_positional=False`` to make required arguments
 non-positional.
 
+To force class instantiation even when the class has public methods, use
+``return_instance=True``. This makes :func:`.auto_cli` parse only the class init
+arguments and return the class instance, without adding method subcommands.
+
 If more than one function is given to :func:`.auto_cli`, then any of them can be
 run via :ref:`sub-commands` similar to the single class example above, i.e.
 ``example.py function [arguments]`` where ``function`` is the name of the
