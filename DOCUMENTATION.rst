@@ -2887,21 +2887,63 @@ with the ``shtab`` extra as explained in section :ref:`installation`.
 
     Automatic shtab support is currently experimental and subject to change.
 
-Once ``shtab`` is installed, parsers will automatically have the
-``--print_shtab`` option that can be used to print the completion script for the
-supported shells. For example in linux to enable bash completions for all users,
-as root it would be used as:
+There are two ways to generate shell completion scripts when ``shtab`` is
+installed: via the :meth:`.ArgumentParser.get_completion_script` method or by
+enabling a command-line argument.
+
+Programmatic generation
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The :meth:`.ArgumentParser.get_completion_script` method can be used to
+generate completion scripts programmatically. The method accepts a
+``completion_type`` parameter that specifies the shell. For shtab, use
+``shtab-`` followed by the shell name (e.g., ``shtab-bash``, ``shtab-zsh``).
+
+.. testcode::
+
+    from jsonargparse import ArgumentParser
+
+    parser = ArgumentParser(prog="example")
+    parser.add_argument("--bool", type=bool)
+
+    script = parser.get_completion_script("shtab-bash", preambles=[])
+    # script now contains the bash completion script
+
+.. warning::
+
+    After calling :meth:`.get_completion_script`, the parser instance is
+    invalidated and cannot be used for parsing arguments. Create a new parser
+    instance if you need to parse arguments afterward.
+
+Command-line argument
+^^^^^^^^^^^^^^^^^^^^^
+
+To enable generation of completion scripts via a command-line argument, use
+:func:`.set_parsing_settings` with ``add_print_completion_argument=True``. This
+adds a ``--print_completion`` argument to top-level parsers (not subparsers).
+
+.. testcode::
+
+    from jsonargparse import set_parsing_settings
+
+    set_parsing_settings(add_print_completion_argument=True)
+
+With this setting enabled, completion scripts can be generated from the command
+line. For example, in Linux to enable bash completions for all users, as root:
 
 .. code-block:: bash
 
-    # example.py --print_shtab=bash > /etc/bash_completion.d/example
+    # example.py --print_completion=shtab-bash > /etc/bash_completion.d/example
 
 Without installing, completion scripts can be tested by sourcing or evaluating
-them, for instance:
+them:
 
 .. code-block:: bash
 
-    $ eval "$(example.py --print_shtab=bash)"
+    $ eval "$(example.py --print_completion=shtab-bash)"
+
+Completion behavior
+^^^^^^^^^^^^^^^^^^^
 
 The scripts work both to complete when there are choices, but also gives
 instructions to the user for guidance. Take for example the parser:

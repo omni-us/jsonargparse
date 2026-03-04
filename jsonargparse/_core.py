@@ -47,6 +47,9 @@ from ._completions import (
     argcomplete_namespace,
     handle_completions,
 )
+from ._completions import (
+    get_completion_script as get_completion_script_internal,
+)
 from ._deprecated import ParserDeprecations, deprecated_skip_check, deprecated_yaml_comments
 from ._formatters import DefaultHelpFormatter, get_env_var
 from ._jsonnet import ActionJsonnet
@@ -1064,6 +1067,30 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             ActionTypeHint.add_sub_defaults(self, cfg)
 
         return cfg
+
+    ## Completion script methods ##
+
+    def _raise_invalidated_by_completion_script(self, *args, **kwargs) -> NoReturn:
+        raise ValueError(
+            "Parser instance was invalidated by get_completion_script() and cannot be reused. "
+            "Create a new parser instance."
+        )
+
+    def _invalidate_by_completion_script(self) -> None:
+        for name in dir(self):
+            if name.startswith("_"):
+                continue
+            static_attr = inspect.getattr_static(self, name, None)
+            if inspect.isroutine(static_attr):
+                attr = getattr(self, name, None)
+                if inspect.ismethod(attr):
+                    setattr(self, name, self._raise_invalidated_by_completion_script)
+
+    def get_completion_script(self, completion_type: str, **kwargs) -> str:
+        """Returns shell completion script for a completion type."""
+        completion_script = get_completion_script_internal(self, completion_type, **kwargs)
+        self._invalidate_by_completion_script()
+        return completion_script
 
     ## Other methods ##
 
