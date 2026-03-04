@@ -111,6 +111,25 @@ def test_omegaconf_global_interpolation(parser):
 
 
 @skip_if_omegaconf_unavailable
+def test_omegaconf_global_default_config_files_interpolation(parser, tmp_cwd):
+    config_path = tmp_cwd / "config.yaml"
+    config_path.write_text(yaml_dump({"complex": {"a": 3, "b": 4}, "simple": "${complex.b}"}))
+
+    parser.parser_mode = "omegaconf+"
+    parser.add_argument("--config", action="config")
+    parser.add_argument("--complex.a", type=int)
+    parser.add_argument("--complex.b", type=int)
+    parser.add_argument("--simple", type=int)
+
+    cfg = parser.parse_args([f"--config={config_path}", "--complex.b=5"])
+    assert cfg.simple == 5
+
+    parser.default_config_files = [str(config_path)]
+    cfg = parser.parse_args(["--complex.b=5"])
+    assert cfg.simple == 5
+
+
+@skip_if_omegaconf_unavailable
 def test_omegaconf_global_resolver_config(parser):
     OmegaConf.register_new_resolver("increment", lambda x: x + 1)
 
