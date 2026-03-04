@@ -33,6 +33,7 @@ def auto_cli(
     config_help: str = default_config_option_help,
     set_defaults: Optional[dict[str, Any]] = None,
     as_positional: bool = True,
+    return_instance: bool = False,
     fail_untyped: bool = True,
     parser_class: type[ArgumentParser] = ArgumentParser,
     **kwargs,
@@ -53,6 +54,8 @@ def auto_cli(
         config_help: Help string for config file option in help.
         set_defaults: Dictionary of values to override components defaults.
         as_positional: Whether to add required parameters as positional arguments.
+        return_instance: Whether class components should be instantiated directly and returned,
+            i.e. without exposing class methods as subcommands.
         fail_untyped: Whether to raise exception if a required parameter does not have a type.
         parser_class: The :class:`ArgumentParser` subclass to use.
         **kwargs: Used to instantiate :class:`.ArgumentParser`.
@@ -95,7 +98,7 @@ def auto_cli(
     parser.add_argument("--config", action=ActionConfigFile, help=config_help)
 
     if not isinstance(components, (list, dict)):
-        _add_component_to_parser(components, parser, as_positional, fail_untyped, config_help)
+        _add_component_to_parser(components, parser, as_positional, return_instance, fail_untyped, config_help)
         if set_defaults is not None:
             parser.set_defaults(set_defaults)
         if return_parser:
@@ -108,7 +111,7 @@ def auto_cli(
     elif isinstance(components, list):
         components = {c.__name__: c for c in components}
 
-    _add_subcommands(components, parser, config_help, as_positional, fail_untyped)
+    _add_subcommands(components, parser, config_help, as_positional, return_instance, fail_untyped)
 
     if set_defaults is not None:
         parser.set_defaults(set_defaults)
@@ -151,6 +154,7 @@ def _add_subcommands(
     parser: ArgumentParser,
     config_help: str,
     as_positional: bool,
+    return_instance: bool,
     fail_untyped: bool,
 ) -> None:
     subcommands = parser.add_subcommands(required=True)
@@ -162,9 +166,11 @@ def _add_subcommands(
         subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
         subcommands.add_subcommand(name, subparser, help=description)
         if isinstance(component, dict):
-            _add_subcommands(component, subparser, config_help, as_positional, fail_untyped)
+            _add_subcommands(component, subparser, config_help, as_positional, return_instance, fail_untyped)
         else:
-            added_args = _add_component_to_parser(component, subparser, as_positional, fail_untyped, config_help)
+            added_args = _add_component_to_parser(
+                component, subparser, as_positional, return_instance, fail_untyped, config_help
+            )
             if not added_args:
                 remove_actions(subparser, (ActionConfigFile, _ActionPrintConfig))
 
@@ -177,6 +183,7 @@ def _add_component_to_parser(
     component,
     parser: ArgumentParser,
     as_positional: bool,
+    return_instance: bool,
     fail_untyped: bool,
     config_help: str,
 ):
@@ -185,7 +192,7 @@ def _add_component_to_parser(
         class_methods = [
             k for k, v in inspect.getmembers(component) if (callable(v) or isinstance(v, property)) and k[0] != "_"
         ]
-        if not class_methods:
+        if return_instance or not class_methods:
             added_args = parser.add_class_arguments(component, as_group=False, **kwargs)
             if not parser.description:
                 parser.description = get_help_str(component, parser.logger)

@@ -184,6 +184,15 @@ def test_single_class_return():
     assert ("5", 6) == auto_cli(Class1, args=["5", "method1", '--config={"m1": 6}'])
 
 
+def test_single_class_return_instance():
+    result = auto_cli(Class1, return_instance=True, args=["0"])
+    assert isinstance(result, Class1)
+    assert result.i1 == "0"
+    result = auto_cli(Class1, return_instance=True, args=['--config={"i1": "3"}'])
+    assert isinstance(result, Class1)
+    assert result.i1 == "3"
+
+
 def test_single_class_missing_required_init():
     err = StringIO()
     with redirect_stderr(err), pytest.raises(SystemExit):
@@ -213,6 +222,12 @@ def test_single_class_subcommand_help():
     assert " m1" in out
     if docstring_parser_support:
         assert "Description of method1" in out
+
+
+def test_single_class_main_help_return_instance():
+    out = get_cli_stdout(Class1, args=["--help"], return_instance=True)
+    assert " i1" in out
+    assert "method1" not in out
 
 
 @skip_if_docstring_parser_unavailable
@@ -525,6 +540,13 @@ def test_named_components_deep():
     assert 5.6 == auto_cli(components, args=["lv1_a", "lv2_x", "--a1=5.6"], **kw)
     assert 7 == auto_cli(components, args=["lv1_a", "lv2_y", "lv3_p", "--x=7"], **kw)
     assert ("w", 9) == auto_cli(components, args=["lv1_b", "lv2_z", "lv3_q", "--i1=w", "method1", "--m1=9"], **kw)
+
+
+def test_named_components_deep_return_instance():
+    components = {"lv1_b": {"lv2_z": {"lv3_q": Class1}}}
+    result = auto_cli(components, args=["lv1_b", "lv2_z", "lv3_q", "--i1=w"], as_positional=False, return_instance=True)
+    assert isinstance(result, Class1)
+    assert result.i1 == "w"
 
 
 # config file tests

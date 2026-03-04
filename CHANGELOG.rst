@@ -21,6 +21,9 @@ Added
   choices for unions that also accept open values now require a prefix to be
   completed, and literal booleans/``None`` now complete as ``false``/``true``
   and ``null`` (`#851 <https://github.com/omni-us/jsonargparse/pull/851>`__).
+- ``auto_cli`` now supports a ``return_instance`` parameter to instantiate class
+  components directly instead of exposing methods as subcommands (`#855
+  <https://github.com/omni-us/jsonargparse/pull/855>`__).
 - New ``ArgumentParser.get_completion_script(completion_type)`` public method
   to generate completion scripts programmatically, and new
   ``set_parsing_settings(add_print_completion_argument=...)`` setting to opt-in
@@ -46,6 +49,8 @@ Fixed
 - Environment variable overrides now correctly take precedence over
   ``default_config_files`` values for subcommands and nested subsubcommands
   (`#862 <https://github.com/omni-us/jsonargparse/pull/862>`__).
+- ``omegaconf+`` incorrectly applied for ``default_config_files`` (`#865
+  <https://github.com/omni-us/jsonargparse/pull/865>`__).
 
 Changed
 ^^^^^^^
