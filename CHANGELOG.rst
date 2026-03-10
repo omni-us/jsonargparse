@@ -26,7 +26,8 @@ Added
   <https://github.com/omni-us/jsonargparse/pull/855>`__).
 - New ``ArgumentParser.get_completion_script(completion_type)`` public method
   to generate completion scripts programmatically, and new
-  ``set_parsing_settings(add_print_completion_argument=...)`` setting to opt-in
+  ``set_parsing_settings(add_print_completion_argument=...)`` setting and
+  ``JSONARGPARSE_ADD_PRINT_COMPLETION_ARGUMENT`` environment variable to opt-in
   automatic addition of ``--print_completion`` when ``shtab`` is installed
   (`#859 <https://github.com/omni-us/jsonargparse/pull/859>`__).
 
@@ -62,7 +63,9 @@ Changed
 - Parsers no longer auto-add ``--print_shtab`` by default. Completion script
   generation now uses ``shtab-*`` completion types, and when
   ``get_completion_script`` is used the parser instance is invalidated for
-  further use (`#859 <https://github.com/omni-us/jsonargparse/pull/859>`__).
+  further use. A hidden ``--print_shtab`` argument remains to guide users to
+  the new opt-in completion setting (`#859
+  <https://github.com/omni-us/jsonargparse/pull/859>`__).
 
 
 v4.46.0 (2026-02-02)

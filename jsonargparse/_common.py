@@ -105,6 +105,10 @@ parsing_settings = {
 }
 
 
+def get_env_var_bool(name: str) -> bool:
+    return os.getenv(name, "").lower() not in {"", "false", "no", "0"}
+
+
 def set_parsing_settings(
     *,
     validate_defaults: Optional[bool] = None,
@@ -208,6 +212,10 @@ def set_parsing_settings(
 def get_parsing_setting(name: str):
     if name not in parsing_settings:
         raise ValueError(f"Unknown parsing setting {name}.")
+    if name == "add_print_completion_argument":
+        var_name = "JSONARGPARSE_ADD_PRINT_COMPLETION_ARGUMENT"
+        if var_name in os.environ:
+            return get_env_var_bool(var_name)
     return parsing_settings[name]
 
 
@@ -228,13 +236,13 @@ def validate_default(container: ActionsContainer, action: argparse.Action):
 
 
 def get_optionals_as_positionals_actions(parser, include_positionals=False):
-    from jsonargparse._actions import ActionConfigFile, _ActionConfigLoad, filter_non_parsing_actions
+    from jsonargparse._actions import ActionConfigFile, ActionFail, _ActionConfigLoad, filter_non_parsing_actions
     from jsonargparse._completions import PrintCompletionAction
     from jsonargparse._typehints import ActionTypeHint
 
     actions = []
     for action in filter_non_parsing_actions(parser._actions):
-        if isinstance(action, (_ActionConfigLoad, ActionConfigFile, PrintCompletionAction)):
+        if isinstance(action, (_ActionConfigLoad, ActionConfigFile, ActionFail, PrintCompletionAction)):
             continue
         if ActionTypeHint.is_subclass_typehint(action, all_subtypes=False):
             continue
@@ -475,7 +483,7 @@ class LoggerProperty:
 
 
 def debug_mode_active() -> bool:
-    return os.getenv("JSONARGPARSE_DEBUG", "").lower() not in {"", "false", "no", "0"}
+    return get_env_var_bool("JSONARGPARSE_DEBUG")
 
 
 if debug_mode_active():

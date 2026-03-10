@@ -2883,10 +2883,6 @@ automatically by :meth:`parse_args <.ArgumentParser.parse_args>`. The only
 requirement is to install shtab either directly or by installing jsonargparse
 with the ``shtab`` extra as explained in section :ref:`installation`.
 
-.. note::
-
-    Automatic shtab support is currently experimental and subject to change.
-
 There are two ways to generate shell completion scripts when ``shtab`` is
 installed: via the :meth:`.ArgumentParser.get_completion_script` method or by
 enabling a command-line argument.
@@ -2941,6 +2937,10 @@ them:
 .. code-block:: bash
 
     $ eval "$(example.py --print_completion=shtab-bash)"
+
+Without changing python code, it is also possible to add the ``--print_completion``
+argument by setting the environment variable
+``JSONARGPARSE_ADD_PRINT_COMPLETION_ARGUMENT=true``.
 
 Completion behavior
 ^^^^^^^^^^^^^^^^^^^
