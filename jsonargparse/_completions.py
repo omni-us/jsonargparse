@@ -10,9 +10,9 @@ from copy import copy
 from enum import Enum
 from importlib.util import find_spec
 from subprocess import PIPE, Popen
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 
-from ._actions import ActionConfigFile, _ActionConfigLoad, _ActionHelpClassPath, remove_actions
+from ._actions import ActionConfigFile, ActionFail, _ActionConfigLoad, _ActionHelpClassPath, remove_actions
 from ._common import NonParsingAction, get_optionals_as_positionals_actions, get_parsing_setting
 from ._parameter_resolvers import get_signature_parameters
 from ._typehints import (
@@ -28,6 +28,11 @@ from ._util import NoneType, Path, import_object, unique
 
 
 def handle_completions(parser):
+    handle_argcomplete_autocomplete(parser)
+    add_print_completion_argument(parser)
+
+
+def handle_argcomplete_autocomplete(parser):
     if find_spec("argcomplete") and "_ARGCOMPLETE" in os.environ:
         import argcomplete
 
@@ -36,9 +41,23 @@ def handle_completions(parser):
         with parser_context(load_value_mode=parser.parser_mode):
             argcomplete.autocomplete(parser)
 
-    if find_spec("shtab") and not getattr(parser, "parent_parser", None):
-        if not any(isinstance(action, ShtabAction) for action in parser._actions):
-            parser.add_argument("--print_shtab", action=ShtabAction)
+
+def add_print_completion_argument(parser):
+    if getattr(parser, "parent_parser", None) or not find_spec("shtab"):
+        return
+    print_completion_argument = get_parsing_setting("add_print_completion_argument")
+    if not print_completion_argument and "--print_shtab" not in parser._option_string_actions:
+        parser.add_argument(
+            "--print_shtab",
+            action=ActionFail(
+                message="%(option)s is no longer supported. Use set_parsing_settings("
+                "add_print_completion_argument=True) or "
+                "JSONARGPARSE_ADD_PRINT_COMPLETION_ARGUMENT=true to add --print_completion."
+            ),
+            help=argparse.SUPPRESS,
+        )
+    elif print_completion_argument and "--print_completion" not in parser._option_string_actions:
+        parser.add_argument("--print_completion", action=PrintCompletionAction)
 
 
 # argcomplete
@@ -78,7 +97,7 @@ shtab_prog: ContextVar = ContextVar("shtab_prog")
 shtab_preambles: ContextVar = ContextVar("shtab_preambles")
 
 
-class ShtabAction(NonParsingAction):
+class PrintCompletionAction(NonParsingAction):
     def __init__(
         self,
         option_strings,
@@ -92,22 +111,38 @@ class ShtabAction(NonParsingAction):
             option_strings=option_strings,
             dest=dest,
             default=default,
-            choices=shtab.SUPPORTED_SHELLS,
-            help="Print shtab shell completion script.",
+            choices=[f"shtab-{shell}" for shell in shtab.SUPPORTED_SHELLS],
+            help="Print shell completion script.",
         )
 
-    def __call__(self, parser, namespace, shell, option_string=None):
-        import shtab
+    def __call__(self, parser, namespace, completion_type, option_string=None):
+        print(parser.get_completion_script(completion_type))
+        argparse.ArgumentParser.exit(parser, 0)
 
-        prog = norm_name(parser.prog)
-        assert prog
+
+def get_completion_script(parser, completion_type: str, **kwargs) -> str:
+    if not completion_type.startswith("shtab-"):
+        raise ValueError(f"Unsupported completion_type: {completion_type}.")
+    if not find_spec("shtab"):
+        raise ValueError(f"shtab package is required for completion type '{completion_type}'.")
+    return get_shtab_script(parser, completion_type[len("shtab-") :], **kwargs)
+
+
+def get_shtab_script(parser, shell: str, preambles: Optional[list[str]] = None) -> str:
+    import shtab
+
+    if shell not in shtab.SUPPORTED_SHELLS:
+        raise ValueError(f"Unsupported completion_type: shtab-{shell}.")
+
+    prog = norm_name(parser.prog)
+    assert prog
+    if not preambles:
         preambles = []
-        if shell == "bash":
-            preambles = [bash_compgen_typehint.strip().replace("%s", prog)]
-        with prepare_actions_context(shell, prog, preambles):
-            shtab_prepare_actions(parser)
-        print(shtab.complete(parser, shell, preamble="\n".join(preambles)))
-        parser.exit(0)
+    if shell == "bash":
+        preambles += [bash_compgen_typehint.strip().replace("%s", prog)]
+    with prepare_actions_context(shell, prog, preambles):
+        shtab_prepare_actions(parser)
+    return shtab.complete(parser, shell, preamble="\n".join(preambles))
 
 
 @contextmanager
@@ -128,7 +163,10 @@ def norm_name(name: str) -> str:
 
 
 def shtab_prepare_actions(parser) -> None:
-    remove_actions(parser, (ShtabAction,))
+    remove_actions(parser, (PrintCompletionAction,))
+    legacy_action = parser._option_string_actions.get("--print_shtab")
+    if legacy_action and legacy_action in parser._actions:
+        parser._actions.remove(legacy_action)
     if parser._subcommands_action:
         for subparser in parser._subcommands_action._name_parser_map.values():
             shtab_prepare_actions(subparser)

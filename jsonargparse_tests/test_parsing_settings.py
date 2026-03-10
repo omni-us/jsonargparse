@@ -192,6 +192,16 @@ def test_optionals_as_positionals_unsupported_arguments(parser):
 # stubs_resolver_allow_py_files
 
 
+def test_set_print_completion_argument_failure():
+    with pytest.raises(ValueError, match="add_print_completion_argument must be a boolean"):
+        set_parsing_settings(add_print_completion_argument="invalid")
+
+
+def test_set_print_completion_argument_success():
+    set_parsing_settings(add_print_completion_argument=True)
+    assert get_parsing_setting("add_print_completion_argument")
+
+
 def test_set_stubs_resolver_allow_py_files_failure():
     with pytest.raises(ValueError, match="stubs_resolver_allow_py_files must be a boolean"):
         set_parsing_settings(stubs_resolver_allow_py_files="invalid")
