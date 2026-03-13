@@ -10,6 +10,7 @@ import pytest
 
 from jsonargparse import (
     SUPPRESS,
+    ActionSubCommands,
     ArgumentError,
     ArgumentParser,
     Namespace,
@@ -40,6 +41,11 @@ def test_add_subparsers_not_implemented(parser):
     with pytest.raises(NotImplementedError) as ctx:
         parser.add_subparsers()
     ctx.match("add_subcommands method")
+
+
+def test_action_subcommands_public_api(parser):
+    subcommands = parser.add_subcommands()
+    assert isinstance(subcommands, ActionSubCommands)
 
 
 def test_add_parser_not_implemented(parser):

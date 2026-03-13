@@ -21,12 +21,7 @@ from ._actions import (
     ActionParser,
     _ActionConfigLoad,
     _ActionPrintConfig,
-    _ActionSubCommands,
-    _find_action,
-    _find_action_and_subcommand,
-    _find_parent_action_and_subcommand,
     _is_action_value_list,
-    _is_branch_key,
     filter_non_parsing_actions,
     previous_config,
 )
@@ -84,6 +79,16 @@ from ._optionals import (
 from ._parameter_resolvers import UnknownDefault
 from ._paths import change_to_path_dir
 from ._signatures import SignatureArguments
+from ._subcommands import (
+    ActionSubCommands,
+    find_action,
+    find_action_and_subcommand,
+    find_parent_action_and_subcommand,
+    get_subcommand,
+    handle_subcommands,
+    is_branch_key,
+    parse_kwargs_context,
+)
 from ._typehints import ActionTypeHint, is_subclass_spec
 from ._util import (
     ClassType,
@@ -110,7 +115,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         """Initializer for ActionsContainer instance."""
         super().__init__(*args, **kwargs)
         self.register("type", None, identity)
-        self.register("action", "parsers", _ActionSubCommands)
+        self.register("action", "parsers", ActionSubCommands)
         self.register("action", "config", ActionConfigFile)
 
     def add_argument(self, *args, enable_path: bool = False, **kwargs):
@@ -132,7 +137,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             if is_subclasses_disabled(kwargs["type"]):
                 nested_key = args[0].lstrip("-")
                 self.add_class_arguments(kwargs.pop("type"), nested_key, **kwargs)
-                return _find_action(parser, nested_key)
+                return find_action(parser, nested_key)
             if ActionTypeHint.is_supported_typehint(kwargs["type"]):
                 args = ActionTypeHint.prepare_add_argument(
                     args=args,
@@ -203,7 +208,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         for arg in args:
             for dest, default in arg.items():
                 dest = dest.replace("-", "_")
-                action = _find_action(self, dest)
+                action = find_action(self, dest)
                 if action is None:
                     raise NSKeyError(f'No action for key "{dest}" to set its default.')
                 elif isinstance(action, ActionConfigFile):
@@ -232,7 +237,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
     formatter_class: type[argparse.HelpFormatter]
     groups: Optional[dict[str, ArgumentGroup]] = None
     _group_class: type[ArgumentGroup]
-    _subcommands_action: Optional[_ActionSubCommands] = None
+    _subcommands_action: Optional[ActionSubCommands] = None
     _instantiators: Optional[InstantiatorsDictType] = None
 
     def __init__(
@@ -364,9 +369,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             env = True
 
         if not skip_subcommands:
-            _ActionSubCommands.handle_subcommands(
-                self, cfg, env=env, defaults=defaults, fail_no_subcommand=fail_no_subcommand
-            )
+            handle_subcommands(self, cfg, env=env, defaults=defaults, fail_no_subcommand=fail_no_subcommand)
 
         if defaults:
             with parser_context(lenient_check=True):
@@ -460,7 +463,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 else:
                     cfg = self.merge_config(namespace, cfg)
 
-            with _ActionSubCommands.parse_kwargs_context({"env": env, "defaults": defaults}):
+            with parse_kwargs_context({"env": env, "defaults": defaults}):
                 cfg, unk = self.parse_known_args(args=args, namespace=cfg)
                 cfg, unk = self._positional_optionals(cfg, unk)
             if unk:
@@ -534,7 +537,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 ActionConfigFile.apply_config(self, cfg, action.dest, env[env_var])
         for action in actions:
             env_var = get_env_var(self, action)
-            if env_var in env and isinstance(action, _ActionSubCommands):
+            if env_var in env and isinstance(action, ActionSubCommands):
                 env_val = env[env_var]
                 if env_val in action.choices:
                     cfg[action.dest] = subcommand = self._check_value_key(action, env_val, action.dest, cfg)
@@ -543,7 +546,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                         cfg[subcommand + "." + k] = v
         for action in actions:
             env_var = get_env_var(self, action)
-            if env_var in env and not isinstance(action, (ActionConfigFile, _ActionSubCommands)):
+            if env_var in env and not isinstance(action, (ActionConfigFile, ActionSubCommands)):
                 env_val = env[env_var]
                 if isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
                     if env_val == "true":
@@ -722,7 +725,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         """Raises a ``NotImplementedError`` since jsonargparse uses ``add_subcommands``."""
         raise NotImplementedError("In jsonargparse subcommands are added using the add_subcommands method.")
 
-    def add_subcommands(self, required: bool = True, dest: str = "subcommand", **kwargs) -> _ActionSubCommands:
+    def add_subcommands(self, required: bool = True, dest: str = "subcommand", **kwargs) -> ActionSubCommands:
         """Adds subcommand parsers to the ArgumentParser.
 
         The aim is the same as `argparse.ArgumentParser.add_subparsers
@@ -741,7 +744,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             kwargs["description"] = "For more details of each subcommand, add it as an argument followed by --help."
         default_config_files = self.default_config_files
         self.default_config_files = []
-        subcommands: _ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore[assignment]
+        subcommands: ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore[assignment]
         self.default_config_files = default_config_files
         if required:
             self.required_args.add(dest)
@@ -821,7 +824,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 or (skip_none and action_dest in cfg and cfg[action_dest] is None)
             ):
                 cfg.pop(action_dest, None)
-            elif isinstance(action, _ActionSubCommands):
+            elif isinstance(action, ActionSubCommands):
                 cfg.pop(action_dest, None)
                 for key, subparser in action.choices.items():
                     self._dump_cleanup_actions(cfg, subparser._actions, dump_kwargs, prefix=prefix + key + ".")
@@ -926,7 +929,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             ActionLink.strip_link_target_keys(self, cfg)
 
             def is_path_action(key):
-                action = _find_action(self, key)
+                action = find_action(self, key)
                 return isinstance(action, (ActionJsonSchema, ActionJsonnet, ActionTypeHint, _ActionConfigLoad))
 
             def save_path(val):
@@ -993,7 +996,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         Raises:
             KeyError: If key or its default not defined in the parser.
         """
-        action, _ = _find_parent_action_and_subcommand(self, dest)
+        action, _ = find_parent_action_and_subcommand(self, dest)
         if action is None or dest != action.dest:
             raise NSKeyError(f'No action for key "{dest}" to get its default.')
 
@@ -1155,18 +1158,18 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                     raise TypeError(
                         f"Option '{prefix}{reqkey}' is required but not provided or its value is None."
                     ) from ex
-            subcommand, subparser = _ActionSubCommands.get_subcommand(parser, cfg, fail_no_subcommand=False)
+            subcommand, subparser = get_subcommand(parser, cfg, fail_no_subcommand=False)
             if subcommand is not None and subparser is not None:
                 check_required(cfg.get(subcommand), subparser, prefix + subcommand + ".")
 
         def check_values(cfg):
-            sorted_keys = {k: _find_action(self, k) for k in cfg.get_sorted_keys()}
+            sorted_keys = {k: find_action(self, k) for k in cfg.get_sorted_keys()}
             for key, action in sorted_keys.items():
                 parent_action = None
                 if action is None:
-                    if _is_branch_key(self, key):
+                    if is_branch_key(self, key):
                         continue
-                    parent_action, subcommand = _find_parent_action_and_subcommand(self, key, exclude=_ActionConfigLoad)
+                    parent_action, subcommand = find_parent_action_and_subcommand(self, key, exclude=_ActionConfigLoad)
                     if parent_action:
                         parent_key = subcommand + "." + parent_action.dest if subcommand else parent_action.dest
                         if key.startswith(parent_key + ".") and sorted_keys.get(parent_key) is parent_action:
@@ -1184,7 +1187,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                         ):
                             raise ex
                 else:
-                    if isinstance(parent_action, _ActionSubCommands) and "." in key:
+                    if isinstance(parent_action, ActionSubCommands) and "." in key:
                         subcommand, subkey = split_key_root(key)
                         ex = NSKeyError(f"Subcommand '{subcommand}' does not accept option '{subkey}'")
                         ex.subcommand_parser = parent_action._name_parser_map[subcommand]
@@ -1313,7 +1316,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         ActionLink.apply_instantiation_links(self, cfg, order=order)
 
-        subcommand, subparser = _ActionSubCommands.get_subcommand(self, cfg, fail_no_subcommand=False)
+        subcommand, subparser = get_subcommand(self, cfg, fail_no_subcommand=False)
         if subcommand is not None and subparser is not None:
             cfg[subcommand] = subparser.instantiate_classes(cfg[subcommand], instantiate_groups=instantiate_groups)
 
@@ -1332,7 +1335,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         del_keys = []
         for key in cfg.keys():
-            if _find_action(self, key) is None and not is_meta_key(key):
+            if find_action(self, key) is None and not is_meta_key(key):
                 del_keys.append(key)
 
         for key in del_keys:
@@ -1408,7 +1411,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         while num < len(keys):
             key = keys[num]
             exclude = _ActionConfigLoad if key in config_keys else None
-            action, subcommand = _find_action_and_subcommand(self, key, exclude=exclude)
+            action, subcommand = find_action_and_subcommand(self, key, exclude=exclude)
 
             if isinstance(action, ActionJsonnet):
                 ext_vars_key = action._ext_vars
@@ -1418,7 +1421,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
             num += 1
 
-            if action is None or isinstance(action, _ActionSubCommands):
+            if action is None or isinstance(action, ActionSubCommands):
                 value = cfg[key]
                 if isinstance(value, dict):
                     value = Namespace(value)
@@ -1485,7 +1488,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         """
         if value is None and lenient_check.get():
             return value
-        is_subcommand = isinstance(action, _ActionSubCommands)
+        is_subcommand = isinstance(action, ActionSubCommands)
         if is_subcommand and action.choices:
             leaf_key = split_key_leaf(key)[-1]
             if leaf_key == action.dest:
