@@ -81,12 +81,12 @@ from ._paths import change_to_path_dir
 from ._signatures import SignatureArguments
 from ._subcommands import (
     ActionSubCommands,
-    _find_action,
-    _find_action_and_subcommand,
-    _find_parent_action_and_subcommand,
-    _is_branch_key,
+    find_action,
+    find_action_and_subcommand,
+    find_parent_action_and_subcommand,
     get_subcommand,
     handle_subcommands,
+    is_branch_key,
     parse_kwargs_context,
 )
 from ._typehints import ActionTypeHint, is_subclass_spec
@@ -137,7 +137,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
             if is_subclasses_disabled(kwargs["type"]):
                 nested_key = args[0].lstrip("-")
                 self.add_class_arguments(kwargs.pop("type"), nested_key, **kwargs)
-                return _find_action(parser, nested_key)
+                return find_action(parser, nested_key)
             if ActionTypeHint.is_supported_typehint(kwargs["type"]):
                 args = ActionTypeHint.prepare_add_argument(
                     args=args,
@@ -208,7 +208,7 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         for arg in args:
             for dest, default in arg.items():
                 dest = dest.replace("-", "_")
-                action = _find_action(self, dest)
+                action = find_action(self, dest)
                 if action is None:
                     raise NSKeyError(f'No action for key "{dest}" to set its default.')
                 elif isinstance(action, ActionConfigFile):
@@ -929,7 +929,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             ActionLink.strip_link_target_keys(self, cfg)
 
             def is_path_action(key):
-                action = _find_action(self, key)
+                action = find_action(self, key)
                 return isinstance(action, (ActionJsonSchema, ActionJsonnet, ActionTypeHint, _ActionConfigLoad))
 
             def save_path(val):
@@ -996,7 +996,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         Raises:
             KeyError: If key or its default not defined in the parser.
         """
-        action, _ = _find_parent_action_and_subcommand(self, dest)
+        action, _ = find_parent_action_and_subcommand(self, dest)
         if action is None or dest != action.dest:
             raise NSKeyError(f'No action for key "{dest}" to get its default.')
 
@@ -1163,13 +1163,13 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 check_required(cfg.get(subcommand), subparser, prefix + subcommand + ".")
 
         def check_values(cfg):
-            sorted_keys = {k: _find_action(self, k) for k in cfg.get_sorted_keys()}
+            sorted_keys = {k: find_action(self, k) for k in cfg.get_sorted_keys()}
             for key, action in sorted_keys.items():
                 parent_action = None
                 if action is None:
-                    if _is_branch_key(self, key):
+                    if is_branch_key(self, key):
                         continue
-                    parent_action, subcommand = _find_parent_action_and_subcommand(self, key, exclude=_ActionConfigLoad)
+                    parent_action, subcommand = find_parent_action_and_subcommand(self, key, exclude=_ActionConfigLoad)
                     if parent_action:
                         parent_key = subcommand + "." + parent_action.dest if subcommand else parent_action.dest
                         if key.startswith(parent_key + ".") and sorted_keys.get(parent_key) is parent_action:
@@ -1335,7 +1335,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         del_keys = []
         for key in cfg.keys():
-            if _find_action(self, key) is None and not is_meta_key(key):
+            if find_action(self, key) is None and not is_meta_key(key):
                 del_keys.append(key)
 
         for key in del_keys:
@@ -1411,7 +1411,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         while num < len(keys):
             key = keys[num]
             exclude = _ActionConfigLoad if key in config_keys else None
-            action, subcommand = _find_action_and_subcommand(self, key, exclude=exclude)
+            action, subcommand = find_action_and_subcommand(self, key, exclude=exclude)
 
             if isinstance(action, ActionJsonnet):
                 ext_vars_key = action._ext_vars

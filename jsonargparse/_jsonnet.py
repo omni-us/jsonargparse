@@ -13,7 +13,7 @@ from ._optionals import (
     import_jsonschema,
     pyyaml_available,
 )
-from ._subcommands import _find_action
+from ._subcommands import find_action
 from ._typehints import ActionTypeHint
 from ._util import NoneType, Path, argument_error
 
@@ -101,7 +101,7 @@ class ActionJsonnet(Action):
     @staticmethod
     def _check_ext_vars_action(parser, action):
         if isinstance(action, ActionJsonnet) and action._ext_vars:
-            ext_vars_action = _find_action(parser, action._ext_vars)
+            ext_vars_action = find_action(parser, action._ext_vars)
             if not ext_vars_action:
                 raise ValueError(f"No argument found for ext_vars='{action._ext_vars}'")
             ext_vars_type = isinstance(ext_vars_action, ActionTypeHint) and ext_vars_action._typehint

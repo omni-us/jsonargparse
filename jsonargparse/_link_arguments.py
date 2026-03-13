@@ -20,8 +20,8 @@ from ._namespace import Namespace, split_key, split_key_leaf
 from ._parameter_resolvers import get_signature_parameters
 from ._subcommands import (
     ActionSubCommands,
-    _find_parent_action,
-    _find_parent_action_and_subcommand,
+    find_parent_action,
+    find_parent_action_and_subcommand,
     get_subcommand,
     get_subcommands,
 )
@@ -36,7 +36,7 @@ def find_parent_or_child_actions(
     exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
 ) -> Optional[list[ArgparseAction]]:
     found: list[ArgparseAction] = []
-    action = _find_parent_action(parser, key, exclude=exclude)
+    action = find_parent_action(parser, key, exclude=exclude)
     if action is not None:
         found = [action]
     else:
@@ -55,7 +55,7 @@ def find_subclass_action_or_class_group(
 ) -> Optional[Union[ArgparseAction, ArgumentGroup]]:
     from ._typehints import ActionTypeHint
 
-    action = _find_parent_action(parser, key, exclude=exclude)
+    action = find_parent_action(parser, key, exclude=exclude)
     if ActionTypeHint.is_subclass_typehint(action):
         return action
     key_set = {key, split_key_leaf(key)[0]}
@@ -499,7 +499,7 @@ def find_parent_action_or_group(
     key: str,
     exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
 ) -> Optional[Union[ArgparseAction, ArgumentGroup]]:
-    action_or_group = _find_parent_action_and_subcommand(parser, key, exclude=exclude)[0]
+    action_or_group = find_parent_action_and_subcommand(parser, key, exclude=exclude)[0]
     if not action_or_group and parser.groups and key in parser.groups:
         return parser.groups[key]
     return action_or_group

@@ -15,7 +15,7 @@ from jsonargparse import (
     lazy_instance,
 )
 from jsonargparse._optionals import docstring_parser_support
-from jsonargparse._subcommands import _find_action
+from jsonargparse._subcommands import find_action
 from jsonargparse_tests.conftest import (
     capture_logs,
     get_parse_args_stdout,
@@ -97,9 +97,9 @@ def test_add_class_without_nesting(parser):
 
     assert "Class3" in parser.groups
     for key in "c3_a0 c3_a1 c3_a2 c3_a3 c3_a4 c3_a5 c3_a6 c3_a7 c3_a8 c1_a2 c1_a3 c1_a4 c1_a5".split():
-        assert _find_action(parser, key) is not None, f"{key} should be in parser but is not"
+        assert find_action(parser, key) is not None, f"{key} should be in parser but is not"
     for key in ["c2_a0", "c1_a1", "c0_a0"]:
-        assert _find_action(parser, key) is None, f"{key} should not be in parser but is"
+        assert find_action(parser, key) is None, f"{key} should not be in parser but is"
 
     cfg = parser.parse_args(["--c3_a0=0", "--c3_a3=true", "--c3_a4=a"]).clone(with_meta=False)
     assert cfg.as_dict() == {
@@ -129,9 +129,9 @@ def test_add_class_without_nesting(parser):
     if docstring_parser_support:
         assert "Class3 short description" == parser.groups["Class3"].title
         for key in ["c3_a0", "c3_a1", "c3_a2", "c3_a4", "c3_a5", "c1_a2"]:
-            assert f"{key} description" == _find_action(parser, key).help
+            assert f"{key} description" == find_action(parser, key).help
         for key in ["c3_a3", "c3_a7", "c1_a4"]:
-            assert f"{key} description" != _find_action(parser, key).help
+            assert f"{key} description" != find_action(parser, key).help
 
 
 def test_add_class_nested_as_group_false(parser):
@@ -142,9 +142,9 @@ def test_add_class_nested_as_group_false(parser):
     assert all(a.startswith("g.") for a in added_args)
 
     for key in "c3_a0 c3_a1 c3_a2 c3_a3 c3_a4 c3_a5 c3_a6 c3_a7 c3_a8 c1_a2 c1_a3 c1_a4 c1_a5".split():
-        assert _find_action(parser, f"g.{key}") is not None, f"{key} should be in parser but is not"
+        assert find_action(parser, f"g.{key}") is not None, f"{key} should be in parser but is not"
     for key in ["c2_a0", "c1_a1", "c0_a0"]:
-        assert _find_action(parser, f"g.{key}") is None, f"{key} should not be in parser but is"
+        assert find_action(parser, f"g.{key}") is None, f"{key} should not be in parser but is"
 
     defaults = parser.get_defaults()
     assert defaults == parser.instantiate_classes(defaults)
@@ -509,8 +509,8 @@ def test_add_method_normal_and_static(parser):
     assert added_args2 == ["s.a1", "s.a2"]
 
     for key in ["m.a1", "m.a2", "m.a3", "s.a1", "s.a2"]:
-        assert _find_action(parser, key) is not None, f"{key} should be in parser but is not"
-    assert _find_action(parser, "s._a3") is None, "s._a3 should not be in parser but is"
+        assert find_action(parser, key) is not None, f"{key} should be in parser but is not"
+    assert find_action(parser, "s._a3") is None, "s._a3 should not be in parser but is"
 
     cfg = parser.parse_args(["--m.a1=x", "--s.a1=y"]).clone(with_meta=False).as_dict()
     assert cfg == {"m": {"a1": "x", "a2": 2.0, "a3": False}, "s": {"a1": "y", "a2": 2.0}}
@@ -521,9 +521,9 @@ def test_add_method_normal_and_static(parser):
         assert "normal_method short description" == parser.groups["m"].title
         assert str(WithMethods.static_method) == parser.groups["s"].title
         for key in ["m.a1", "m.a2"]:
-            assert f"{key.split('.')[1]} description" == _find_action(parser, key).help
+            assert f"{key.split('.')[1]} description" == find_action(parser, key).help
         for key in ["m.a3", "s.a1", "s.a2"]:
-            assert f"{key.split('.')[1]} description" != _find_action(parser, key).help
+            assert f"{key.split('.')[1]} description" != find_action(parser, key).help
 
 
 class SubWithMethod(WithMethods):
@@ -564,7 +564,7 @@ def test_add_function_arguments(parser):
     assert "func" in parser.groups
 
     for key in ["a1", "a2", "a3", "a4"]:
-        assert _find_action(parser, key) is not None, f"{key} should be in parser but is not"
+        assert find_action(parser, key) is not None, f"{key} should be in parser but is not"
 
     cfg = parser.parse_args(["--a1=x"]).clone(with_meta=False).as_dict()
     assert cfg == {"a1": "x", "a2": 2.0, "a3": False, "a4": None}
@@ -573,7 +573,7 @@ def test_add_function_arguments(parser):
     if docstring_parser_support:
         assert "func short description" == parser.groups["func"].title
         for key in ["a1", "a2", "a4"]:
-            assert f"{key} description" == _find_action(parser, key).help
+            assert f"{key} description" == find_action(parser, key).help
 
 
 def func_skip_params(a1="1", a2: float = 2.0, a3: bool = False, a4: int = 4):

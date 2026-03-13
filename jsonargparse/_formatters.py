@@ -32,7 +32,7 @@ from ._deprecated import HelpFormatterDeprecations
 from ._link_arguments import ActionLink
 from ._namespace import Namespace, NSKeyError
 from ._optionals import import_ruamel
-from ._subcommands import ActionSubCommands, _find_action
+from ._subcommands import ActionSubCommands, find_action
 from ._type_checking import ArgumentParser, ruamelCommentedMap
 from ._typehints import ActionTypeHint, type_to_str
 
@@ -92,7 +92,7 @@ class YAMLCommentFormatter:
         def set_comments(cfg, prefix="", depth=0):
             for key in cfg.keys():
                 full_key = (prefix + "." if prefix else "") + key
-                action = _find_action(parser, full_key)
+                action = find_action(parser, full_key)
                 text = None
                 if full_key in group_titles and isinstance(cfg[key], dict):
                     text = group_titles[full_key]

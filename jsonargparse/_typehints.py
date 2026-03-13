@@ -75,7 +75,7 @@ from ._optionals import (
     validate_annotated,
 )
 from ._paths import Path, PathError, change_to_path_dir
-from ._subcommands import _find_action, _find_parent_action, parse_kwargs
+from ._subcommands import find_action, find_parent_action, parse_kwargs
 from ._util import (
     ClassType,
     NestedArg,
@@ -389,7 +389,7 @@ class ActionTypeHint(Action):
             sub_add_kwargs.pop("linked_targets", None)
             parser = ActionTypeHint.get_class_parser(class_path, sub_add_kwargs=sub_add_kwargs)
             key = re.sub(f"^{self.dest}.init_args.", "", key)
-            typehint = getattr(_find_action(parser, key), "_typehint", None)
+            typehint = getattr(find_action(parser, key), "_typehint", None)
             result = self.is_mapping_typehint(typehint)
         return result
 
@@ -403,7 +403,7 @@ class ActionTypeHint(Action):
             if "=" in arg_string:
                 arg_base, sep, explicit_arg = arg_string.partition("=")
             if "." in arg_base and arg_base not in parser._option_string_actions:
-                action = _find_parent_action(parser, arg_base[2:])
+                action = find_parent_action(parser, arg_base[2:])
 
         typehint = typehint_from_action(action)
         if typehint or isinstance(action, ActionFail):
@@ -427,7 +427,7 @@ class ActionTypeHint(Action):
             if is_subclass_spec(prev_val) and is_subclass_spec(val):
                 action = parser_or_action
                 if not isinstance(parser_or_action, ActionTypeHint):
-                    action = _find_action(parser_or_action, key)
+                    action = find_action(parser_or_action, key)
                 if isinstance(action, ActionTypeHint):
                     discard_init_args_on_class_path_change(action, prev_val, val)
                     prev_sub_cfg = prev_val.get("init_args")
@@ -1440,7 +1440,7 @@ def discard_init_args_on_class_path_change(parser_or_action, prev_val, value):
         del_args = {}
         prev_val = subclass_spec_as_namespace(prev_val)
         for key, val in list(prev_val.init_args.items(branches=True, nested=False)):
-            action = _find_action(parser, key)
+            action = find_action(parser, key)
             if action:
                 with parser_context(lenient_check=False, load_value_mode=parser.parser_mode):
                     try:
@@ -1528,7 +1528,7 @@ def adapt_class_type(
     else:
         if isinstance(dict_kwargs, dict):
             for key in list(dict_kwargs):
-                if _find_action(parser, key):
+                if find_action(parser, key):
                     init_args[key] = dict_kwargs.pop(key)
         elif dict_kwargs:
             init_args["dict_kwargs"] = dict_kwargs
