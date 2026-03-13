@@ -549,9 +549,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             if env_var in env and not isinstance(action, (ActionConfigFile, ActionSubCommands)):
                 env_val = env[env_var]
                 if isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
-                    if env_val == "true":
+                    env_val_lower = env_val.lower()
+                    if env_val_lower == "true":
                         env_val = True
-                    elif env_val == "false":
+                    elif env_val_lower == "false":
                         env_val = False
                     else:
                         raise argparse.ArgumentError(

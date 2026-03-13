@@ -108,7 +108,11 @@ parsing_settings = {
 
 
 def get_env_var_bool(name: str) -> bool:
-    return os.getenv(name, "").lower() not in {"", "false", "no", "0"}
+    raw_value = os.getenv(name, "")
+    value = raw_value.lower()
+    if value not in {"true", "false", ""}:
+        raise ValueError(f"Invalid boolean value for environment variable {name}: {raw_value}")
+    return value == "true"
 
 
 def set_parsing_settings(
