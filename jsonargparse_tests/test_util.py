@@ -15,7 +15,7 @@ from jsonargparse import (
     capture_parser,
     class_from_function,
 )
-from jsonargparse._common import LoggerProperty, null_logger
+from jsonargparse._common import LoggerProperty, debug_mode_active, null_logger
 from jsonargparse._optionals import docstring_parser_support, reconplogger_support
 from jsonargparse._util import (
     CaptureParserException,
@@ -115,6 +115,13 @@ def test_logger_jsonargparse_debug():
         parser.logger.debug(log_message)
     assert "DEBUG" in logs.getvalue()
     assert log_message in logs.getvalue()
+
+
+@patch.dict(os.environ, {"JSONARGPARSE_DEBUG": "invalid"})
+def test_jsonargparse_debug_invalid_value():
+    with pytest.raises(ValueError) as ctx:
+        debug_mode_active()
+    ctx.match("Invalid boolean value for environment variable JSONARGPARSE_DEBUG: invalid")
 
 
 # import paths tests

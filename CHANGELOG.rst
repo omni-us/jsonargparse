@@ -68,6 +68,8 @@ Changed
   further use. A hidden ``--print_shtab`` argument remains to guide users to
   the new opt-in completion setting (`#859
   <https://github.com/omni-us/jsonargparse/pull/859>`__).
+- ``JSONARGPARSE_DEBUG`` can only be enabled with ``true`` (case-insensitive)
+  (`867 <https://github.com/omni-us/jsonargparse/pull/867>`__).
 
 
 v4.46.0 (2026-02-02)

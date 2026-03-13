@@ -479,7 +479,7 @@ def test_add_print_completion_argument_env_var_enables(parser, parsing_settings_
 
 def test_add_print_completion_argument_env_var_takes_precedence(parser, parsing_settings_patch):
     set_parsing_settings(add_print_completion_argument=True)
-    with patch.dict("os.environ", {"JSONARGPARSE_ADD_PRINT_COMPLETION_ARGUMENT": "No"}):
+    with patch.dict("os.environ", {"JSONARGPARSE_ADD_PRINT_COMPLETION_ARGUMENT": "FALSE"}):
         help_str = get_parse_args_stdout(parser, ["--help"])
     assert "--print_completion" not in help_str
 
