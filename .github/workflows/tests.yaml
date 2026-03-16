@@ -21,8 +21,8 @@ jobs:
       matrix:
         python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -45,11 +45,11 @@ jobs:
           pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml
           mv coverage.xml coverage_py${{ matrix.python }}_types.xml
           mv junit.xml junit_py${{ matrix.python }}_types.xml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: coverage_py${{ matrix.python }}
           path: ./coverage_py*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: junit_py${{ matrix.python }}
           path: ./junit_py*
@@ -61,8 +61,8 @@ jobs:
       matrix:
         python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -76,8 +76,8 @@ jobs:
       matrix:
         python: ["3.10", "3.12", "3.14"]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -87,8 +87,8 @@ jobs:
   omegaconf:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -98,8 +98,8 @@ jobs:
   pydantic-v1:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -118,11 +118,11 @@ jobs:
           pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml jsonargparse_tests/test_pydantic.py
           mv coverage.xml coverage_pydantic2.xml
           mv junit.xml junit_pydantic2.xml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: coverage_pydantic
           path: ./coverage_py*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: junit_pydantic
           path: ./junit_py*
@@ -130,8 +130,8 @@ jobs:
   build-package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Build package
@@ -141,7 +141,7 @@ jobs:
           cd jsonargparse_tests
           python -m build --wheel
           mv dist/*.whl ../dist/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: package
           path: ./dist/*
@@ -150,12 +150,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-package]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: package
           path: dist
@@ -174,8 +174,8 @@ jobs:
   doctest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -186,12 +186,12 @@ jobs:
   mypy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           key: pre-commit-cache
           path: ~/.cache/pre-commit
@@ -203,8 +203,8 @@ jobs:
     environment: codecov
     needs: [linux, pydantic-v1]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
       - uses: codecov/codecov-action@v5
@@ -212,9 +212,10 @@ jobs:
           fail_ci_if_error: true
           files: ./coverage_*.xml
           token: ${{ secrets.CODECOV_TOKEN }}
-      - uses: codecov/test-results-action@v1
+      - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
+          report_type: test_results
           files: ./junit_*.xml
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -226,10 +227,10 @@ jobs:
       (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork)
     needs: [linux, pydantic-v1]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Shallow clone disabled for a better relevancy of analysis
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
       - name: Get version
@@ -241,7 +242,7 @@ jobs:
             VERSION="$(git describe --tags --abbrev=0 | sed 's/^v//')+$(git rev-parse --short HEAD)"
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-      - uses: SonarSource/sonarqube-scan-action@v6
+      - uses: SonarSource/sonarqube-scan-action@v7
         with:
           args: >
             -Dsonar.organization=omni-us
@@ -266,7 +267,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: package
           path: dist
