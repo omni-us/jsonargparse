@@ -8,7 +8,7 @@ from collections import defaultdict
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from copy import deepcopy
-from functools import partial
+from functools import partial, partialmethod
 from importlib import import_module
 from types import MethodType
 from typing import Any, Callable, Optional, Union
@@ -99,6 +99,10 @@ def is_method(attr) -> bool:
     return (inspect.isfunction(attr) or attr.__class__.__name__ == "cython_function_or_method") and not is_staticmethod(
         attr
     )
+
+
+def is_partial_method(attr) -> bool:
+    return isinstance(attr, partialmethod)
 
 
 def is_property(attr) -> bool:
@@ -509,6 +513,8 @@ def get_component_and_parent(
             component = getattr(function_or_class, "__new__")
         elif is_method(attr):
             component = attr
+        elif is_partial_method(attr):
+            component = getattr(function_or_class, method_or_property)
         elif is_property(attr):
             component = attr.fget
         elif isinstance(attr, classmethod):
