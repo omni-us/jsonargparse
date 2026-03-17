@@ -238,14 +238,14 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict) -> None:
     """
     # Collect all string/ForwardRef names nested inside generic alias args
     needed: set[str] = set()
-    trigger_values: dict = {}
+    trigger_value_ids: set[int] = set()
     for key, value in global_vars.items():
         if not (hasattr(value, "__args__") or isinstance(value, (str, ForwardRef))):
             continue
         before = len(needed)
         _collect_string_fwd_ref_names(value, needed)
         if len(needed) > before:
-            trigger_values[key] = value
+            trigger_value_ids.add(id(value))
 
     missing = needed - set(global_vars.keys())
     if not missing:
@@ -253,14 +253,14 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict) -> None:
 
     # Find candidate modules: those that define the same trigger values (by identity).
     # This lets us trace generic aliases back to their origin module.
-    for mod in sys.modules.values():
+    for mod in list(sys.modules.values()):
         if mod is None or not missing:
             continue
         try:
             mod_vars = vars(mod)
         except TypeError:
             continue
-        if any(mod_vars.get(key) is value for key, value in trigger_values.items()):
+        if any(id(value) in trigger_value_ids for value in mod_vars.values()):
             for name in list(missing):
                 if name in mod_vars:
                     global_vars[name] = mod_vars[name]

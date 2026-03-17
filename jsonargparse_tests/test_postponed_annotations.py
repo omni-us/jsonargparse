@@ -366,19 +366,18 @@ def test_add_class_arguments_cross_module_forward_ref_708(parser, tmp_path):
     sys.modules["types_module_708"] = mod_a
     spec_a.loader.exec_module(mod_a)
 
-    # Module B: imports NamedType and ForwardReferenced (direct case — common path)
+    # Module B: imports NamedType and ForwardReferenced (direct case).
     module_b_path = tmp_path / "using_module_708.py"
     module_b_path.write_text(
         "from types_module_708 import NamedType, ForwardReferenced\n\n"
-        "class Direct:\n    def __init__(self, data_type: NamedType):\n        pass\n\n"
-        "class Indirect:\n    def __init__(self, data_type: NamedType):\n        pass\n"
+        "class Direct:\n    def __init__(self, data_type: NamedType):\n        pass\n"
     )
     spec_b = importlib.util.spec_from_file_location("using_module_708", module_b_path)
     mod_b = importlib.util.module_from_spec(spec_b)
     sys.modules["using_module_708"] = mod_b
     spec_b.loader.exec_module(mod_b)
 
-    # Module C: imports only NamedType (not ForwardReferenced) — simulates the issue
+    # Module C: imports only NamedType (not ForwardReferenced) to reproduce the issue.
     module_c_path = tmp_path / "using_module_708c.py"
     module_c_path.write_text(
         "from types_module_708 import NamedType\n\n"
@@ -389,19 +388,37 @@ def test_add_class_arguments_cross_module_forward_ref_708(parser, tmp_path):
     sys.modules["using_module_708c"] = mod_c
     spec_c.loader.exec_module(mod_c)
 
-    try:
-        # Direct: ForwardReferenced is in scope — must still work (no regression)
-        parser.add_class_arguments(mod_b.Direct, "direct")
-        # Indirect: ForwardReferenced is NOT in scope — the bug case
-        parser.add_class_arguments(mod_c.Indirect, "indirect")
+    # Module D: imports the alias under a different local name.
+    module_d_path = tmp_path / "using_module_708d.py"
+    module_d_path.write_text(
+        "from types_module_708 import NamedType as NT\n\n"
+        "class Aliased:\n    def __init__(self, data_type: NT):\n        pass\n"
+    )
+    spec_d = importlib.util.spec_from_file_location("using_module_708d", module_d_path)
+    mod_d = importlib.util.module_from_spec(spec_d)
+    sys.modules["using_module_708d"] = mod_d
+    spec_d.loader.exec_module(mod_d)
 
-        # Verify the type was fully resolved (no remaining string forward refs)
+    try:
+        # Direct: ForwardReferenced is in scope and must still work.
+        parser.add_class_arguments(mod_b.Direct, "direct")
+        # Indirect: ForwardReferenced is NOT in scope.
+        parser.add_class_arguments(mod_c.Indirect, "indirect")
+        # Aliased import: the alias local name differs from the defining module.
+        parser.add_class_arguments(mod_d.Aliased, "aliased")
+
+        # Verify the type was fully resolved (no remaining string forward refs).
         from jsonargparse._postponed_annotations import type_requires_eval
 
         types_indirect = get_types(mod_c.Indirect.__init__)
         assert not type_requires_eval(types_indirect["data_type"])
         assert "ForwardReferenced" in str(types_indirect["data_type"])
+
+        types_aliased = get_types(mod_d.Aliased.__init__)
+        assert not type_requires_eval(types_aliased["data_type"])
+        assert "ForwardReferenced" in str(types_aliased["data_type"])
     finally:
         sys.modules.pop("types_module_708", None)
         sys.modules.pop("using_module_708", None)
         sys.modules.pop("using_module_708c", None)
+        sys.modules.pop("using_module_708d", None)
