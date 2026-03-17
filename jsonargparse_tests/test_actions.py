@@ -337,6 +337,10 @@ def test_action_parser_required_argument(parser, subparser):
     ctx.match("'op2.op1' is required")
 
 
+def instantiate_action_parser(**kwargs):
+    return ActionParser(**kwargs)
+
+
 @pytest.mark.parametrize(
     ("case", "expected_exception"),
     [
@@ -349,9 +353,9 @@ def test_action_parser_required_argument(parser, subparser):
 def test_action_parser_init_failures(parser, subparser, case, expected_exception):
     with pytest.raises(expected_exception):
         if case == "missing_parser":
-            ActionParser()
+            instantiate_action_parser()
         elif case == "invalid_parser":
-            ActionParser(parser=object)
+            instantiate_action_parser(parser=object)
         elif case == "missing_subparser":
             parser.add_argument("--missing-subparser", action=ActionParser)
         else:

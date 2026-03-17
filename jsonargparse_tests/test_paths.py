@@ -646,7 +646,7 @@ def test_enable_path_list_path_fr(parser, path_list_inputs, mock_stdin, subtests
         assert path_list_inputs.stdin_expected == [str(x) for x in cfg.list]
 
     with subtests.test("paths list from stdin path not exist"):
-        with mock_stdin("file1\nfile2\n"):
+        with mock_stdin("missing-file1\nmissing-file2\n"):
             with pytest.raises(ArgumentError) as ctx:
                 parser.parse_args(["--list", "-"])
             ctx.match("File does not exist")
