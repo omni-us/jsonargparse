@@ -17,6 +17,9 @@ v4.47.1 (unreleased)
 
 Fixed
 ^^^^^
+- Fix resolving forward references in generic aliases (e.g. ``list["ForwardReferenced"]``)
+  when the forward-referenced type is not imported in the using module
+  (`#708 <https://github.com/omni-us/jsonargparse/issues/708>`__).
 - ``auto_cli`` no longer fails when a single function, a class ``__init__``, or
   a function/class in a list/dict of components has a parameter named
   ``config`` (`#873 <https://github.com/omni-us/jsonargparse/pull/873>`__).
