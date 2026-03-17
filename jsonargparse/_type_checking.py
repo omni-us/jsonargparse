@@ -16,3 +16,5 @@ if TYPE_CHECKING:  # pragma: no cover
 else:
     for name in __all__:
         globals()[name] = type(name, (), {})
+        if name == "docstring_parser":
+            globals()[name].DocstringStyle = type("DocstringStyle", (), {})
