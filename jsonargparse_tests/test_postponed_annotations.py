@@ -16,6 +16,7 @@ from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._postponed_annotations import (
     _TRIGGER_MODULE_CACHE,
+    _cache_trigger_module_name,
     TypeCheckingVisitor,
     _enrich_globals_for_string_forward_refs,
     evaluate_postponed_annotations,
@@ -422,6 +423,26 @@ class TestForwardReference:
 class TestEnrichGlobals:
     def setup_method(self):
         _TRIGGER_MODULE_CACHE.clear()
+
+    def test_cache_trigger_module_name_evicts_oldest_trigger(self, monkeypatch):
+        """Cache evicts the oldest trigger when inserting beyond the configured size."""
+        monkeypatch.setattr(postponed_annotations, "_TRIGGER_MODULE_CACHE_MAXSIZE", 2)
+
+        _cache_trigger_module_name(1, "module_a")
+        _cache_trigger_module_name(2, "module_b")
+        _cache_trigger_module_name(3, "module_c")
+
+        assert list(_TRIGGER_MODULE_CACHE) == [2, 3]
+        assert _TRIGGER_MODULE_CACHE[2] == ["module_b"]
+        assert _TRIGGER_MODULE_CACHE[3] == ["module_c"]
+
+    def test_cache_trigger_module_name_deduplicates_module_names(self):
+        """Repeated discoveries for the same trigger/module pair are stored once."""
+        _cache_trigger_module_name(1, "module_a")
+        _cache_trigger_module_name(1, "module_a")
+        _cache_trigger_module_name(1, "module_b")
+
+        assert _TRIGGER_MODULE_CACHE[1] == ["module_a", "module_b"]
 
     def test_resolves_missing_fwd_ref(self, fwdref_origin_mod):
         """Missing forward-ref name is injected from the alias origin module."""

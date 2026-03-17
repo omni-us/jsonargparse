@@ -16,6 +16,7 @@ from ._util import get_typehint_origin
 var_map = namedtuple("var_map", "name value")
 none_map = var_map(name="NoneType", value=type(None))
 union_map = var_map(name="Union", value=Union)
+_TRIGGER_MODULE_CACHE_MAXSIZE = 1024
 _TRIGGER_MODULE_CACHE: dict[int, list[str]] = {}
 
 
@@ -221,7 +222,7 @@ def type_requires_eval(typehint):
     return isinstance(typehint, (str, ForwardRef))
 
 
-def _collect_string_fwd_ref_names(typehint: Any, result: set) -> None:
+def _collect_string_fwd_ref_names(typehint: Any, result: set[str]) -> None:
     if isinstance(typehint, str):
         result.add(typehint.split(".")[0])
     elif isinstance(typehint, ForwardRef):
@@ -236,6 +237,17 @@ def _update_missing_from_module_vars(global_vars: dict, missing: set[str], mod_v
         if name in mod_vars:
             global_vars[name] = mod_vars[name]
             missing.discard(name)
+
+
+def _cache_trigger_module_name(trigger_id: int, module_name: str) -> None:
+    cached_modules = _TRIGGER_MODULE_CACHE.get(trigger_id)
+    if cached_modules is None:
+        if _TRIGGER_MODULE_CACHE_MAXSIZE > 0 and len(_TRIGGER_MODULE_CACHE) >= _TRIGGER_MODULE_CACHE_MAXSIZE:
+            del _TRIGGER_MODULE_CACHE[next(iter(_TRIGGER_MODULE_CACHE))]
+        cached_modules = []
+        _TRIGGER_MODULE_CACHE[trigger_id] = cached_modules
+    if module_name not in cached_modules:
+        cached_modules.append(module_name)
 
 
 def _enrich_globals_for_string_forward_refs(global_vars: dict) -> None:
@@ -294,9 +306,7 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict) -> None:
         if not matched_trigger_ids:
             continue
         for trigger_id in matched_trigger_ids:
-            cached_modules = _TRIGGER_MODULE_CACHE.setdefault(trigger_id, [])
-            if module_name not in cached_modules:
-                cached_modules.append(module_name)
+            _cache_trigger_module_name(trigger_id, module_name)
         _update_missing_from_module_vars(global_vars, missing, mod_vars)
 
 
