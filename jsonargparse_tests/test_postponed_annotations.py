@@ -4,15 +4,18 @@ import dataclasses
 import importlib.util
 import os
 import sys
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
 from unittest.mock import patch
 
 import pytest
 
 from jsonargparse import Namespace
+from jsonargparse import _postponed_annotations as postponed_annotations
 from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._postponed_annotations import (
+    _TRIGGER_MODULE_CACHE,
     TypeCheckingVisitor,
     _enrich_globals_for_string_forward_refs,
     evaluate_postponed_annotations,
@@ -417,6 +420,9 @@ class TestForwardReference:
 
 
 class TestEnrichGlobals:
+    def setup_method(self):
+        _TRIGGER_MODULE_CACHE.clear()
+
     def test_resolves_missing_fwd_ref(self, fwdref_origin_mod):
         """Missing forward-ref name is injected from the alias origin module."""
         global_vars = {"NT": fwdref_origin_mod.NamedType}
@@ -436,3 +442,34 @@ class TestEnrichGlobals:
             global_vars = {"NT": fwdref_origin_mod.NamedType}
             _enrich_globals_for_string_forward_refs(global_vars)
             assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_reuses_cached_modules_before_scanning_sys_modules(self, monkeypatch, fwdref_origin_mod):
+        """A warm cache avoids a second full sys.modules scan for the same trigger alias."""
+        _enrich_globals_for_string_forward_refs({"NT": fwdref_origin_mod.NamedType})
+
+        class NoScanModules(dict):
+            def items(self):
+                raise AssertionError("sys.modules should not be scanned when the trigger cache is warm")
+
+            def values(self):
+                raise AssertionError("sys.modules should not be scanned when the trigger cache is warm")
+
+        monkeypatch.setattr(
+            postponed_annotations,
+            "sys",
+            SimpleNamespace(modules=NoScanModules({"types_module_708": fwdref_origin_mod})),
+        )
+
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_ignores_non_module_cached_entries(self, fwdref_origin_mod):
+        """Cached entries that are not modules do not break fallback scanning."""
+        _TRIGGER_MODULE_CACHE[id(fwdref_origin_mod.NamedType)] = ["_obj_entry_708"]
+
+        with patch.dict(sys.modules, {"_obj_entry_708": object()}):
+            global_vars = {"NT": fwdref_origin_mod.NamedType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced

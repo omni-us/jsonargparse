@@ -16,6 +16,7 @@ from ._util import get_typehint_origin
 var_map = namedtuple("var_map", "name value")
 none_map = var_map(name="NoneType", value=type(None))
 union_map = var_map(name="Union", value=Union)
+_TRIGGER_MODULE_CACHE: dict[int, list[str]] = {}
 
 
 class BackportTypeHints(ast.NodeTransformer):
@@ -230,6 +231,13 @@ def _collect_string_fwd_ref_names(typehint: Any, result: set) -> None:
             _collect_string_fwd_ref_names(arg, result)
 
 
+def _update_missing_from_module_vars(global_vars: dict, missing: set[str], mod_vars: dict[str, Any]) -> None:
+    for name in list(missing):
+        if name in mod_vars:
+            global_vars[name] = mod_vars[name]
+            missing.discard(name)
+
+
 def _enrich_globals_for_string_forward_refs(global_vars: dict) -> None:
     """Add to global_vars types referenced as string forward refs in generic aliases but missing from it.
 
@@ -239,7 +247,7 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict) -> None:
     # Collect all string/ForwardRef names nested inside generic alias args
     needed: set[str] = set()
     trigger_value_ids: set[int] = set()
-    for key, value in global_vars.items():
+    for value in global_vars.values():
         if not (hasattr(value, "__args__") or isinstance(value, (str, ForwardRef))):
             continue
         before = len(needed)
@@ -251,20 +259,45 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict) -> None:
     if not missing:
         return
 
-    # Find candidate modules: those that define the same trigger values (by identity).
-    # This lets us trace generic aliases back to their origin module.
-    for mod in list(sys.modules.values()):
+    # Reuse the previously discovered candidate modules before scanning sys.modules again.
+    cached_module_names: list[str] = []
+    seen_module_names: set[str] = set()
+    for trigger_id in trigger_value_ids:
+        for module_name in _TRIGGER_MODULE_CACHE.get(trigger_id, []):
+            if module_name not in seen_module_names:
+                seen_module_names.add(module_name)
+                cached_module_names.append(module_name)
+
+    for module_name in cached_module_names:
+        mod = sys.modules.get(module_name)
         if mod is None or not missing:
             continue
         try:
             mod_vars = vars(mod)
         except TypeError:
             continue
-        if any(id(value) in trigger_value_ids for value in mod_vars.values()):
-            for name in list(missing):
-                if name in mod_vars:
-                    global_vars[name] = mod_vars[name]
-                    missing.discard(name)
+        _update_missing_from_module_vars(global_vars, missing, mod_vars)
+
+    if not missing:
+        return
+
+    # Find candidate modules: those that define the same trigger values (by identity).
+    # This lets us trace generic aliases back to their origin module.
+    for module_name, mod in list(sys.modules.items()):
+        if mod is None or not missing:
+            continue
+        try:
+            mod_vars = vars(mod)
+        except TypeError:
+            continue
+        matched_trigger_ids = {id(value) for value in mod_vars.values() if id(value) in trigger_value_ids}
+        if not matched_trigger_ids:
+            continue
+        for trigger_id in matched_trigger_ids:
+            cached_modules = _TRIGGER_MODULE_CACHE.setdefault(trigger_id, [])
+            if module_name not in cached_modules:
+                cached_modules.append(module_name)
+        _update_missing_from_module_vars(global_vars, missing, mod_vars)
 
 
 def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
