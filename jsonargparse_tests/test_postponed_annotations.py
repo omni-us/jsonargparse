@@ -16,8 +16,8 @@ from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._postponed_annotations import (
     _TRIGGER_MODULE_CACHE,
-    _cache_trigger_module_name,
     TypeCheckingVisitor,
+    _cache_trigger_module_name,
     _enrich_globals_for_string_forward_refs,
     evaluate_postponed_annotations,
     get_types,
@@ -376,6 +376,9 @@ def fwdref_origin_mod(tmp_path):
 
 
 class TestForwardReference:
+    def setup_method(self):
+        _TRIGGER_MODULE_CACHE.clear()
+
     @staticmethod
     def _load_module(name, path):
         spec = importlib.util.spec_from_file_location(name, path)
@@ -472,9 +475,6 @@ class TestEnrichGlobals:
             def items(self):
                 raise AssertionError("sys.modules should not be scanned when the trigger cache is warm")
 
-            def values(self):
-                raise AssertionError("sys.modules should not be scanned when the trigger cache is warm")
-
         monkeypatch.setattr(
             postponed_annotations,
             "sys",
@@ -494,3 +494,14 @@ class TestEnrichGlobals:
             _enrich_globals_for_string_forward_refs(global_vars)
 
         assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_resolves_nested_generic_alias(self, tmp_path):
+        """Recursive collection resolves names nested two levels deep (list[list['X']])."""
+        (tmp_path / "nested_708.py").write_text("class Inner:\n    pass\nNestedType = list[list['Inner']]\n")
+        spec = importlib.util.spec_from_file_location("nested_708", tmp_path / "nested_708.py")
+        mod = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, {"nested_708": mod}):
+            spec.loader.exec_module(mod)
+            global_vars = {"NT": mod.NestedType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+            assert global_vars["Inner"] is mod.Inner

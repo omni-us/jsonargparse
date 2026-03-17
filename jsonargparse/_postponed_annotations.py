@@ -250,7 +250,7 @@ def _cache_trigger_module_name(trigger_id: int, module_name: str) -> None:
         cached_modules.append(module_name)
 
 
-def _enrich_globals_for_string_forward_refs(global_vars: dict) -> None:
+def _enrich_globals_for_string_forward_refs(global_vars: dict[str, Any]) -> None:
     """Add to global_vars types referenced as string forward refs in generic aliases but missing from it.
 
     Handles the case where a generic alias such as ``list["ForwardReferenced"]`` was defined in
@@ -260,7 +260,9 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict) -> None:
     needed: set[str] = set()
     trigger_value_ids: set[int] = set()
     for value in global_vars.values():
-        if not (hasattr(value, "__args__") or isinstance(value, (str, ForwardRef))):
+        # Only consider generic/type-hint-like values (with subtypes) or ForwardRef.
+        # Avoid treating arbitrary string globals (e.g., __name__, __doc__) as forward refs.
+        if not (hasattr(value, "__args__") or isinstance(value, ForwardRef)):
             continue
         before = len(needed)
         _collect_string_fwd_ref_names(value, needed)
