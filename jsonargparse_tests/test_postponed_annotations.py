@@ -1,9 +1,11 @@
 from __future__ import annotations  # keep
 
 import dataclasses
+import importlib.util
 import os
 import sys
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
+from unittest.mock import patch
 
 import pytest
 
@@ -12,8 +14,10 @@ from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._postponed_annotations import (
     TypeCheckingVisitor,
+    _enrich_globals_for_string_forward_refs,
     evaluate_postponed_annotations,
     get_types,
+    type_requires_eval,
 )
 from jsonargparse.typing import Path_drw
 from jsonargparse_tests.conftest import capture_logs, source_unavailable
@@ -354,102 +358,81 @@ def test_get_params_dataclass_inherit_different_module():
     assert "PositiveInt" in str(params[1].annotation)
 
 
-def test_add_class_arguments_cross_module_forward_ref_708(parser, tmp_path):
-    """Regression test for #708: forward-ref in generic alias resolved from alias origin module."""
-    import importlib.util
-
-    # Module A: defines ForwardReferenced class and NamedType = list["ForwardReferenced"]
-    module_a_path = tmp_path / "types_module_708.py"
-    module_a_path.write_text("class ForwardReferenced:\n    pass\nNamedType = list['ForwardReferenced']\n")
-    spec_a = importlib.util.spec_from_file_location("types_module_708", module_a_path)
-    mod_a = importlib.util.module_from_spec(spec_a)
-    sys.modules["types_module_708"] = mod_a
-    spec_a.loader.exec_module(mod_a)
-
-    # Module B: imports NamedType and ForwardReferenced (direct case).
-    module_b_path = tmp_path / "using_module_708.py"
-    module_b_path.write_text(
-        "from types_module_708 import NamedType, ForwardReferenced\n\n"
-        "class Direct:\n    def __init__(self, data_type: NamedType):\n        pass\n"
+@pytest.fixture
+def fwdref_origin_mod(tmp_path):
+    """Module A: defines ForwardReferenced and NamedType = list['ForwardReferenced']."""
+    (tmp_path / "types_module_708.py").write_text(
+        "class ForwardReferenced:\n    pass\nNamedType = list['ForwardReferenced']\n"
     )
-    spec_b = importlib.util.spec_from_file_location("using_module_708", module_b_path)
-    mod_b = importlib.util.module_from_spec(spec_b)
-    sys.modules["using_module_708"] = mod_b
-    spec_b.loader.exec_module(mod_b)
-
-    # Module C: imports only NamedType (not ForwardReferenced) to reproduce the issue.
-    module_c_path = tmp_path / "using_module_708c.py"
-    module_c_path.write_text(
-        "from types_module_708 import NamedType\n\n"
-        "class Indirect:\n    def __init__(self, data_type: NamedType):\n        pass\n"
-    )
-    spec_c = importlib.util.spec_from_file_location("using_module_708c", module_c_path)
-    mod_c = importlib.util.module_from_spec(spec_c)
-    sys.modules["using_module_708c"] = mod_c
-    spec_c.loader.exec_module(mod_c)
-
-    # Module D: imports the alias under a different local name.
-    module_d_path = tmp_path / "using_module_708d.py"
-    module_d_path.write_text(
-        "from types_module_708 import NamedType as NT\n\n"
-        "class Aliased:\n    def __init__(self, data_type: NT):\n        pass\n"
-    )
-    spec_d = importlib.util.spec_from_file_location("using_module_708d", module_d_path)
-    mod_d = importlib.util.module_from_spec(spec_d)
-    sys.modules["using_module_708d"] = mod_d
-    spec_d.loader.exec_module(mod_d)
-
-    try:
-        # Direct: ForwardReferenced is in scope and must still work.
-        parser.add_class_arguments(mod_b.Direct, "direct")
-        # Indirect: ForwardReferenced is NOT in scope.
-        parser.add_class_arguments(mod_c.Indirect, "indirect")
-        # Aliased import: the alias local name differs from the defining module.
-        parser.add_class_arguments(mod_d.Aliased, "aliased")
-
-        # Verify the type was fully resolved (no remaining string forward refs).
-        from jsonargparse._postponed_annotations import type_requires_eval
-
-        types_indirect = get_types(mod_c.Indirect.__init__)
-        assert not type_requires_eval(types_indirect["data_type"])
-        assert "ForwardReferenced" in str(types_indirect["data_type"])
-
-        types_aliased = get_types(mod_d.Aliased.__init__)
-        assert not type_requires_eval(types_aliased["data_type"])
-        assert "ForwardReferenced" in str(types_aliased["data_type"])
-    finally:
-        sys.modules.pop("types_module_708", None)
-        sys.modules.pop("using_module_708", None)
-        sys.modules.pop("using_module_708c", None)
-        sys.modules.pop("using_module_708d", None)
+    spec = importlib.util.spec_from_file_location("types_module_708", tmp_path / "types_module_708.py")
+    mod = importlib.util.module_from_spec(spec)
+    with patch.dict(sys.modules, {"types_module_708": mod}):
+        spec.loader.exec_module(mod)
+        yield mod
 
 
-def test_enrich_globals_for_string_forward_refs_handles_non_modules(tmp_path):
-    import importlib.util
+class TestForwardReference:
+    @staticmethod
+    def _load_module(name, path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
 
-    from jsonargparse._postponed_annotations import _enrich_globals_for_string_forward_refs
+    def test_direct_case_708(self, parser, tmp_path, fwdref_origin_mod):
+        """Direct: ForwardReferenced IS imported alongside NamedType — add_class_arguments must not raise."""
+        (tmp_path / "direct_708.py").write_text(
+            "from types_module_708 import NamedType, ForwardReferenced\n\n"
+            "class Direct:\n    def __init__(self, data_type: NamedType):\n        pass\n"
+        )
+        mod = self._load_module("direct_708", tmp_path / "direct_708.py")
+        with patch.dict(sys.modules, {"direct_708": mod}):
+            parser.add_class_arguments(mod.Direct)  # must not raise
 
-    module_a_path = tmp_path / "types_module_708_extra.py"
-    module_a_path.write_text("class ForwardReferenced:\n    pass\nNamedType = list['ForwardReferenced']\n")
-    spec_a = importlib.util.spec_from_file_location("types_module_708_extra", module_a_path)
-    mod_a = importlib.util.module_from_spec(spec_a)
-    sys.modules["types_module_708_extra"] = mod_a
-    spec_a.loader.exec_module(mod_a)
+    def test_indirect_case_708(self, parser, tmp_path, fwdref_origin_mod):
+        """Indirect: ForwardReferenced NOT imported — resolved from alias origin module (#708)."""
+        (tmp_path / "indirect_708.py").write_text(
+            "from types_module_708 import NamedType\n\n"
+            "class Indirect:\n    def __init__(self, data_type: NamedType):\n        pass\n"
+        )
+        mod = self._load_module("indirect_708", tmp_path / "indirect_708.py")
+        with patch.dict(sys.modules, {"indirect_708": mod}):
+            parser.add_class_arguments(mod.Indirect)
+            types = get_types(mod.Indirect.__init__)
+            assert not type_requires_eval(types["data_type"])
+            assert "ForwardReferenced" in str(types["data_type"])
 
-    sys.modules["types_module_708_none"] = None
-    sys.modules["types_module_708_object"] = object()
-    sys.modules.pop("types_module_708_extra")
-    sys.modules["types_module_708_extra"] = mod_a
+    def test_aliased_import_708(self, parser, tmp_path, fwdref_origin_mod):
+        """Aliased: alias imported under a different local name — still resolved (#708)."""
+        (tmp_path / "aliased_708.py").write_text(
+            "from types_module_708 import NamedType as NT\n\n"
+            "class Aliased:\n    def __init__(self, data_type: NT):\n        pass\n"
+        )
+        mod = self._load_module("aliased_708", tmp_path / "aliased_708.py")
+        with patch.dict(sys.modules, {"aliased_708": mod}):
+            parser.add_class_arguments(mod.Aliased)
+            types = get_types(mod.Aliased.__init__)
+            assert not type_requires_eval(types["data_type"])
+            assert "ForwardReferenced" in str(types["data_type"])
 
-    try:
-        global_vars = {"NT": mod_a.NamedType}
+
+class TestEnrichGlobals:
+    def test_resolves_missing_fwd_ref(self, fwdref_origin_mod):
+        """Missing forward-ref name is injected from the alias origin module."""
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
         _enrich_globals_for_string_forward_refs(global_vars)
-        assert global_vars["ForwardReferenced"] is mod_a.ForwardReferenced
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
 
-        global_vars_complete = {"NT": mod_a.NamedType, "ForwardReferenced": mod_a.ForwardReferenced}
-        _enrich_globals_for_string_forward_refs(global_vars_complete)
-        assert global_vars_complete["ForwardReferenced"] is mod_a.ForwardReferenced
-    finally:
-        sys.modules.pop("types_module_708_extra", None)
-        sys.modules.pop("types_module_708_none", None)
-        sys.modules.pop("types_module_708_object", None)
+    def test_no_overwrite_existing(self, fwdref_origin_mod):
+        """Already-present binding is not overwritten by enrichment."""
+        sentinel = object()
+        global_vars = {"NT": fwdref_origin_mod.NamedType, "ForwardReferenced": sentinel}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is sentinel
+
+    def test_handles_non_module_sys_entries(self, fwdref_origin_mod):
+        """None and non-module entries in sys.modules do not cause errors."""
+        with patch.dict(sys.modules, {"_null_entry_708": None, "_obj_entry_708": object()}):
+            global_vars = {"NT": fwdref_origin_mod.NamedType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+            assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
