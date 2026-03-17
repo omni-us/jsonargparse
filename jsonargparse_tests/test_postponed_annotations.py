@@ -422,3 +422,34 @@ def test_add_class_arguments_cross_module_forward_ref_708(parser, tmp_path):
         sys.modules.pop("using_module_708", None)
         sys.modules.pop("using_module_708c", None)
         sys.modules.pop("using_module_708d", None)
+
+
+def test_enrich_globals_for_string_forward_refs_handles_non_modules(tmp_path):
+    import importlib.util
+
+    from jsonargparse._postponed_annotations import _enrich_globals_for_string_forward_refs
+
+    module_a_path = tmp_path / "types_module_708_extra.py"
+    module_a_path.write_text("class ForwardReferenced:\n    pass\nNamedType = list['ForwardReferenced']\n")
+    spec_a = importlib.util.spec_from_file_location("types_module_708_extra", module_a_path)
+    mod_a = importlib.util.module_from_spec(spec_a)
+    sys.modules["types_module_708_extra"] = mod_a
+    spec_a.loader.exec_module(mod_a)
+
+    sys.modules["types_module_708_none"] = None
+    sys.modules["types_module_708_object"] = object()
+    sys.modules.pop("types_module_708_extra")
+    sys.modules["types_module_708_extra"] = mod_a
+
+    try:
+        global_vars = {"NT": mod_a.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is mod_a.ForwardReferenced
+
+        global_vars_complete = {"NT": mod_a.NamedType, "ForwardReferenced": mod_a.ForwardReferenced}
+        _enrich_globals_for_string_forward_refs(global_vars_complete)
+        assert global_vars_complete["ForwardReferenced"] is mod_a.ForwardReferenced
+    finally:
+        sys.modules.pop("types_module_708_extra", None)
+        sys.modules.pop("types_module_708_none", None)
+        sys.modules.pop("types_module_708_object", None)
