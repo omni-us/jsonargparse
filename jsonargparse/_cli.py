@@ -11,7 +11,6 @@ from ._optionals import get_doc_short_description
 from ._util import capture_parser, default_config_option_help
 
 __all__ = [
-    "CLI",
     "auto_cli",
     "auto_parser",
 ]

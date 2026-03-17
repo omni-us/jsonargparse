@@ -9,7 +9,9 @@ from argparse import (
 )
 
 from ._actions import *  # noqa: F403
+from ._actions import ActionConfigFile  # noqa: F401
 from ._cli import *  # noqa: F403
+from ._cli import CLI  # noqa: F401
 from ._common import *  # noqa: F403
 from ._core import *  # noqa: F403
 from ._deprecated import *  # noqa: F403

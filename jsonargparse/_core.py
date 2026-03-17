@@ -100,7 +100,7 @@ from ._util import (
     return_parser_if_captured,
 )
 
-__all__ = ["ActionsContainer", "ArgumentParser"]
+__all__ = ["ArgumentParser", "ActionsContainer"]
 
 
 _parse_known_has_intermixed = "intermixed" in inspect.signature(argparse.ArgumentParser._parse_known_args).parameters
