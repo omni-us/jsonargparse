@@ -103,10 +103,21 @@ def test_path_init(paths):
     assert path1.is_url == path2.is_url
 
 
-def test_path_init_failures(paths):
-    pytest.raises(TypeError, lambda: Path(True))
-    pytest.raises(ValueError, lambda: Path(paths.file_rw, "-"))
-    pytest.raises(ValueError, lambda: Path(paths.file_rw, "frr"))
+@pytest.mark.parametrize(
+    ("path_value", "mode", "expected_exception"),
+    [
+        (True, None, TypeError),
+        ("file_rw", "-", ValueError),
+        ("file_rw", "frr", ValueError),
+    ],
+)
+def test_path_init_failures(paths, path_value, mode, expected_exception):
+    path_value = getattr(paths, path_value) if isinstance(path_value, str) else path_value
+    with pytest.raises(expected_exception):
+        if mode is None:
+            Path(path_value)
+        else:
+            Path(path_value, mode)
 
 
 def test_path_cwd(paths):
@@ -181,20 +192,33 @@ def test_path_create_mode(paths):
     pytest.raises(TypeError, lambda: Path(paths.dir_rwx / "ne" / "file_c", "fc"))
 
 
-def test_path_complement_modes(paths):
-    pytest.raises(TypeError, lambda: Path(paths.file_rw, "fW"))
-    pytest.raises(TypeError, lambda: Path(paths.file_rw, "fR"))
-    pytest.raises(TypeError, lambda: Path(paths.dir_rwx, "dX"))
-    pytest.raises(TypeError, lambda: Path(paths.file_rw, "F"))
-    pytest.raises(TypeError, lambda: Path(paths.dir_rwx, "D"))
+@pytest.mark.parametrize(
+    ("path_attr", "mode"),
+    [
+        ("file_rw", "fW"),
+        ("file_rw", "fR"),
+        ("dir_rwx", "dX"),
+        ("file_rw", "F"),
+        ("dir_rwx", "D"),
+    ],
+)
+def test_path_complement_modes(paths, path_attr, mode):
+    with pytest.raises(TypeError):
+        Path(getattr(paths, path_attr), mode)
 
 
-def test_path_invalid_modes(paths):
-    pytest.raises(ValueError, lambda: Path(paths.file_rw, True))
-    pytest.raises(ValueError, lambda: Path(paths.file_rw, "≠"))
-    pytest.raises(ValueError, lambda: Path(paths.file_rw, "fd"))
-    if url_support:
-        pytest.raises(ValueError, lambda: Path(paths.file_rw, "du"))
+@pytest.mark.parametrize(
+    "mode",
+    [
+        True,
+        "≠",
+        "fd",
+        pytest.param("du", marks=pytest.mark.skipif(not url_support, reason="requests package is required")),
+    ],
+)
+def test_path_invalid_modes(paths, mode):
+    with pytest.raises(ValueError):
+        Path(paths.file_rw, mode)
 
 
 def test_path_class_hidden_methods(paths):
@@ -214,18 +238,18 @@ def test_path_tilde_home(paths):
         assert path.absolute == os.path.join(paths.tmp_path, paths.file_rw)
 
 
-def test_std_input_path():
+@pytest.mark.parametrize("read_method", ["get_content", "open"])
+def test_std_input_path(read_method):
     input_text_to_test = "a text here\n"
 
     with patch("sys.stdin", StringIO(input_text_to_test)):
         path = Path("-", mode="fr")
         assert path == "-"
-        assert input_text_to_test == path.get_content("r")
-
-    with patch("sys.stdin", StringIO(input_text_to_test)):
-        path = Path("-", mode="fr")
-        with path.open("r") as std_input:
-            assert input_text_to_test == "".join([line for line in std_input])
+        if read_method == "get_content":
+            assert input_text_to_test == path.get_content("r")
+        else:
+            with path.open("r") as std_input:
+                assert input_text_to_test == "".join([line for line in std_input])
 
 
 def test_std_output_path():
@@ -538,6 +562,41 @@ def test_path_fr_default_stdin(parser):
 # enable_path tests
 
 
+@pytest.fixture
+def path_list_inputs(tmp_cwd) -> Namespace:
+    for name in ["file1", "file2"]:
+        (tmp_cwd / name).touch()
+
+    root_list_file = tmp_cwd / "files.lst"
+    root_list_file.write_text("file1\nfile2\n")
+
+    subdir = tmp_cwd / "subdir"
+    subdir.mkdir()
+    for name in ["file1", "file2", "file3", "file4", "file5"]:
+        (subdir / name).touch()
+
+    list_file1 = subdir / "files1.lst"
+    list_file2 = subdir / "files2.lst"
+    list_file3 = subdir / "files3.lst"
+    list_file4 = subdir / "files4.lst"
+    list_file1.write_text("file1\nfile2\nfile3\nfile4\n")
+    list_file2.write_text("file5\n")
+    list_file3.touch()
+    list_file4.write_text("file1\nfile2\nfile6\n")
+
+    return Namespace(
+        root_list_file=root_list_file,
+        stdin_expected=["file1", "file2"],
+        subdir=subdir,
+        list_file1=list_file1,
+        list_file2=list_file2,
+        list_file3=list_file3,
+        list_file4=list_file4,
+        list1_expected=["file1", "file2", "file3", "file4"],
+        list2_expected=["file5"],
+    )
+
+
 def test_enable_path_dict(parser, tmp_cwd):
     data = {"a": 1, "b": 2, "c": [3, 4]}
     pathlib.Path("data.yaml").write_text(json.dumps(data))
@@ -561,23 +620,7 @@ def test_enable_path_subclass(parser, tmp_cwd):
     assert isinstance(init["cal"], Calendar)
 
 
-def test_enable_path_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
-    tmpdir = tmp_cwd / "subdir"
-    tmpdir.mkdir()
-    (tmpdir / "file1").touch()
-    (tmpdir / "file2").touch()
-    (tmpdir / "file3").touch()
-    (tmpdir / "file4").touch()
-    (tmpdir / "file5").touch()
-    list_file1 = tmpdir / "files1.lst"
-    list_file2 = tmpdir / "files2.lst"
-    list_file3 = tmpdir / "files3.lst"
-    list_file4 = tmpdir / "files4.lst"
-    list_file1.write_text("file1\nfile2\nfile3\nfile4\n")
-    list_file2.write_text("file5\n")
-    list_file3.touch()
-    list_file4.write_text("file1\nfile2\nfile6\n")
-
+def test_enable_path_list_path_fr(parser, path_list_inputs, mock_stdin, subtests):
     parser.add_argument(
         "--list",
         type=List[Path_fr],
@@ -591,16 +634,16 @@ def test_enable_path_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
     )
 
     with subtests.test("paths list from file"):
-        cfg = parser.parse_args([f"--list={list_file1}"])
+        cfg = parser.parse_args([f"--list={path_list_inputs.list_file1}"])
         assert all(isinstance(x, Path_fr) for x in cfg.list)
-        assert ["file1", "file2", "file3", "file4"] == [str(x) for x in cfg.list]
+        assert path_list_inputs.list1_expected == [str(x) for x in cfg.list]
 
     with subtests.test("paths list from stdin"):
         with mock_stdin("file1\nfile2\n"):
             with Path_drw("subdir").relative_path_context():
                 cfg = parser.parse_args(["--list", "-"])
         assert all(isinstance(x, Path_fr) for x in cfg.list)
-        assert ["file1", "file2"] == [str(x) for x in cfg.list]
+        assert path_list_inputs.stdin_expected == [str(x) for x in cfg.list]
 
     with subtests.test("paths list from stdin path not exist"):
         with mock_stdin("file1\nfile2\n"):
@@ -609,23 +652,23 @@ def test_enable_path_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
             ctx.match("File does not exist")
 
     with subtests.test("paths list nargs='+' single"):
-        cfg = parser.parse_args(["--lists", str(list_file1)])
+        cfg = parser.parse_args(["--lists", str(path_list_inputs.list_file1)])
         assert 1 == len(cfg.lists)
-        assert ["file1", "file2", "file3", "file4"] == [str(x) for x in cfg.lists[0]]
+        assert path_list_inputs.list1_expected == [str(x) for x in cfg.lists[0]]
         assert all(isinstance(x, Path_fr) for x in cfg.lists[0])
 
     with subtests.test("paths list nargs='+' multiple"):
-        cfg = parser.parse_args(["--lists", str(list_file1), str(list_file2)])
+        cfg = parser.parse_args(["--lists", str(path_list_inputs.list_file1), str(path_list_inputs.list_file2)])
         assert 2 == len(cfg.lists)
-        assert ["file1", "file2", "file3", "file4"] == [str(x) for x in cfg.lists[0]]
-        assert ["file5"] == [str(x) for x in cfg.lists[1]]
+        assert path_list_inputs.list1_expected == [str(x) for x in cfg.lists[0]]
+        assert path_list_inputs.list2_expected == [str(x) for x in cfg.lists[1]]
 
     with subtests.test("paths list nargs='+' empty"):
-        cfg = parser.parse_args(["--lists", str(list_file3)])
+        cfg = parser.parse_args(["--lists", str(path_list_inputs.list_file3)])
         assert [[]] == cfg.lists
 
     with subtests.test("paths list nargs='+' path not exist"):
-        pytest.raises(ArgumentError, lambda: parser.parse_args(["--lists", str(list_file4)]))
+        pytest.raises(ArgumentError, lambda: parser.parse_args(["--lists", str(path_list_inputs.list_file4)]))
 
     with subtests.test("paths list nargs='+' list not exist"):  # TODO: check error message
         with pytest.raises(ArgumentError) as ctx:
@@ -635,10 +678,8 @@ def test_enable_path_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
 
 @pytest.mark.parametrize("validate_defaults", [False, True])
 @patch_parsing_settings
-def test_enable_path_list_path_fr_default_stdin(parser, tmp_cwd, validate_defaults, mock_stdin, subtests):
+def test_enable_path_list_path_fr_default_stdin(parser, path_list_inputs, validate_defaults, mock_stdin, subtests):
     set_parsing_settings(validate_defaults=validate_defaults)
-    (tmp_cwd / "file1").touch()
-    (tmp_cwd / "file2").touch()
 
     parser.add_argument(
         "--list",
@@ -655,13 +696,13 @@ def test_enable_path_list_path_fr_default_stdin(parser, tmp_cwd, validate_defaul
         with mock_stdin("file1\nfile2\n"):
             cfg = parser.parse_args([])
         assert all(isinstance(x, Path_fr) for x in cfg.list)
-        assert ["file1", "file2"] == [str(x) for x in cfg.list]
+        assert path_list_inputs.stdin_expected == [str(x) for x in cfg.list]
 
     with subtests.test("stdin arg"):
         with mock_stdin("file1\nfile2\n"):
             cfg = parser.parse_args(["--list=-"])
         assert all(isinstance(x, Path_fr) for x in cfg.list)
-        assert ["file1", "file2"] == [str(x) for x in cfg.list]
+        assert path_list_inputs.stdin_expected == [str(x) for x in cfg.list]
 
     with subtests.test("help"):
         help_str = get_parser_help(parser)
@@ -673,17 +714,12 @@ class ClassListPath:
         self.files = files
 
 
-def test_add_class_list_path(parser, tmp_cwd):
-    (tmp_cwd / "file1").touch()
-    (tmp_cwd / "file2").touch()
-    list_file1 = tmp_cwd / "files.lst"
-    list_file1.write_text("file1\nfile2\n")
-
+def test_add_class_list_path(parser, path_list_inputs):
     parser.add_class_arguments(ClassListPath, "cls", sub_configs=True)
 
-    cfg = parser.parse_args([f"--cls.files={list_file1}"])
+    cfg = parser.parse_args([f"--cls.files={path_list_inputs.root_list_file}"])
     assert all(isinstance(x, Path_fr) for x in cfg.cls.files)
-    assert ["file1", "file2"] == [str(x) for x in cfg.cls.files]
+    assert path_list_inputs.stdin_expected == [str(x) for x in cfg.cls.files]
 
     help_str = get_parser_help(parser)
     assert "'[\"PATH1\",...]' | LIST_OF_PATHS_FILE | -" in help_str

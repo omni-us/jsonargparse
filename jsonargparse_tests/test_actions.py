@@ -54,11 +54,18 @@ def test_action_config_file_nested_error(parser):
     ctx.match("ActionConfigFile must be a top level option")
 
 
-def test_action_config_file_argument_errors(parser, tmp_cwd):
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["--cfg", '"""'],
+        ["--cfg=not-exist"],
+        ["--cfg", '{"k":"v"}'],
+    ],
+)
+def test_action_config_file_argument_errors(parser, args):
     parser.add_argument("--cfg", action="config")
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", '"""']))
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg=not-exist"]))
-    pytest.raises(ArgumentError, lambda: parser.parse_args(["--cfg", '{"k":"v"}']))
+    with pytest.raises(ArgumentError):
+        parser.parse_args(args)
 
 
 # ActionFail tests
@@ -106,21 +113,33 @@ def test_yes_no_action_defaults(parser):
     assert True is defaults.default_true
 
 
-def test_yes_no_action_without_argument(parser):
+@pytest.mark.parametrize(
+    ("args", "key", "expected"),
+    [
+        (["--default_false"], "default_false", True),
+        (["--no_default_false"], "default_false", False),
+        (["--default_true"], "default_true", True),
+        (["--no_default_true"], "default_true", False),
+    ],
+)
+def test_yes_no_action_without_argument(parser, args, key, expected):
     parser.add_argument("--default_false", default=False, nargs=0, action=ActionYesNo)
     parser.add_argument("--default_true", default=True, nargs="?", action=ActionYesNo)
-    assert True is parser.parse_args(["--default_false"]).default_false
-    assert False is parser.parse_args(["--no_default_false"]).default_false
-    assert True is parser.parse_args(["--default_true"]).default_true
-    assert False is parser.parse_args(["--no_default_true"]).default_true
+    assert getattr(parser.parse_args(args), key) is expected
 
 
-def test_yes_no_action_with_argument(parser):
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        (["--default_false=true"], True),
+        (["--default_false=false"], False),
+        (["--default_false=yes"], True),
+        (["--default_false=no"], False),
+    ],
+)
+def test_yes_no_action_with_argument(parser, args, expected):
     parser.add_argument("--default_false", default=False, nargs="?", action=ActionYesNo)
-    assert True is parser.parse_args(["--default_false=true"]).default_false
-    assert False is parser.parse_args(["--default_false=false"]).default_false
-    assert True is parser.parse_args(["--default_false=yes"]).default_false
-    assert False is parser.parse_args(["--default_false=no"]).default_false
+    assert parser.parse_args(args).default_false is expected
 
 
 def test_yes_no_action_double_negative(parser):
@@ -172,15 +191,25 @@ def test_yes_no_action_invalid_positional(parser):
     ctx.match("not intended for positional")
 
 
-def test_yes_no_action_parse_env(parser):
+@pytest.mark.parametrize(
+    ("env", "key", "expected"),
+    [
+        ({"APP_G__DEFAULT_FALSE": "true"}, ("g", "default_false"), True),
+        ({"APP_G__DEFAULT_FALSE": "yes"}, ("g", "default_false"), True),
+        ({"APP_DEFAULT_TRUE": "false"}, ("default_true",), False),
+        ({"APP_DEFAULT_TRUE": "no"}, ("default_true",), False),
+    ],
+)
+def test_yes_no_action_parse_env(parser, env, key, expected):
     parser.default_env = True
     parser.env_prefix = "APP"
     parser.add_argument("--g.default_false", default=False, action=ActionYesNo)
     parser.add_argument("--default_true", default=True, nargs="?", action=ActionYesNo)
-    assert True is parser.parse_env({"APP_G__DEFAULT_FALSE": "true"}).g.default_false
-    assert True is parser.parse_env({"APP_G__DEFAULT_FALSE": "yes"}).g.default_false
-    assert False is parser.parse_env({"APP_DEFAULT_TRUE": "false"}).default_true
-    assert False is parser.parse_env({"APP_DEFAULT_TRUE": "no"}).default_true
+    parsed = parser.parse_env(env)
+    value = parsed
+    for attr in key:
+        value = getattr(value, attr)
+    assert value is expected
 
 
 def test_yes_no_action_move_to_subparser(parser, subparser):
@@ -308,13 +337,25 @@ def test_action_parser_required_argument(parser, subparser):
     ctx.match("'op2.op1' is required")
 
 
-def test_action_parser_init_failures(parser, subparser):
-    pytest.raises(TypeError, ActionParser)
-    pytest.raises(ValueError, lambda: ActionParser(parser=object))
-    pytest.raises(Exception, lambda: parser.add_argument("--missing-subparser", action=ActionParser))
-    pytest.raises(
-        ValueError, lambda: parser.add_argument("--unexpected-type", type=str, action=ActionParser(subparser))
-    )
+@pytest.mark.parametrize(
+    ("case", "expected_exception"),
+    [
+        ("missing_parser", TypeError),
+        ("invalid_parser", ValueError),
+        ("missing_subparser", Exception),
+        ("unexpected_type", ValueError),
+    ],
+)
+def test_action_parser_init_failures(parser, subparser, case, expected_exception):
+    with pytest.raises(expected_exception):
+        if case == "missing_parser":
+            ActionParser()
+        elif case == "invalid_parser":
+            ActionParser(parser=object)
+        elif case == "missing_subparser":
+            parser.add_argument("--missing-subparser", action=ActionParser)
+        else:
+            parser.add_argument("--unexpected-type", type=str, action=ActionParser(subparser))
 
 
 def test_action_parser_failure_add_parser_to_self(parser):

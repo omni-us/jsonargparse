@@ -121,6 +121,17 @@ the main package. For example, for v4.47.0 run:
     pip install jsonargparse_tests==4.47.0
     python -m jsonargparse_tests
 
+For maintainable tests:
+
+- Prefer ``pytest.mark.parametrize`` when the same test logic is exercised with
+  different inputs.
+- Use fixtures for repeated setup and shared test resources, especially when
+  multiple tests need the same files, parser configuration, or environment.
+- Avoid pushing trivial one-line setup into fixtures when it makes the test
+  harder to read.
+- Keep setup separate from assertions so each test clearly shows the behavior
+  being verified.
+
 
 Coverage
 --------
