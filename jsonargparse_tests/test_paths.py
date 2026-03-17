@@ -584,9 +584,15 @@ def path_list_inputs(tmp_cwd) -> Namespace:
     list_file3.touch()
     list_file4.write_text("file1\nfile2\nfile6\n")
 
+    # Expected files common to stdin and the root list file.
+    file12_expected = ["file1", "file2"]
+
     return Namespace(
         root_list_file=root_list_file,
-        stdin_expected=["file1", "file2"],
+        # Kept for backward compatibility: expected files when provided via stdin.
+        stdin_expected=file12_expected,
+        # Clearer name for expectations associated with the root list file.
+        root_list_expected=file12_expected,
         subdir=subdir,
         list_file1=list_file1,
         list_file2=list_file2,
