@@ -12,6 +12,16 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.47.1 (unreleased)
+--------------------
+
+Fixed
+^^^^^
+- ``auto_cli`` no longer fails when a single function, a class ``__init__``, or
+  a function/class in a list/dict of components has a parameter named
+  ``config`` (`#873 <https://github.com/omni-us/jsonargparse/pull/873>`__).
+
+
 v4.47.0 (2026-03-13)
 --------------------
 
