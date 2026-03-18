@@ -194,10 +194,10 @@ def test_yes_no_action_invalid_positional(parser):
 @pytest.mark.parametrize(
     ("env", "key", "expected"),
     [
-        ({"APP_G__DEFAULT_FALSE": "true"}, ("g", "default_false"), True),
-        ({"APP_G__DEFAULT_FALSE": "yes"}, ("g", "default_false"), True),
-        ({"APP_DEFAULT_TRUE": "false"}, ("default_true",), False),
-        ({"APP_DEFAULT_TRUE": "no"}, ("default_true",), False),
+        ({"APP_G__DEFAULT_FALSE": "true"}, "g.default_false", True),
+        ({"APP_G__DEFAULT_FALSE": "yes"}, "g.default_false", True),
+        ({"APP_DEFAULT_TRUE": "false"}, "default_true", False),
+        ({"APP_DEFAULT_TRUE": "no"}, "default_true", False),
     ],
 )
 def test_yes_no_action_parse_env(parser, env, key, expected):
@@ -206,10 +206,7 @@ def test_yes_no_action_parse_env(parser, env, key, expected):
     parser.add_argument("--g.default_false", default=False, action=ActionYesNo)
     parser.add_argument("--default_true", default=True, nargs="?", action=ActionYesNo)
     parsed = parser.parse_env(env)
-    value = parsed
-    for attr in key:
-        value = getattr(value, attr)
-    assert value is expected
+    assert parsed.get(key) is expected
 
 
 def test_yes_no_action_move_to_subparser(parser, subparser):
@@ -337,29 +334,13 @@ def test_action_parser_required_argument(parser, subparser):
     ctx.match("'op2.op1' is required")
 
 
-def instantiate_action_parser(**kwargs):
-    return ActionParser(**kwargs)
-
-
-@pytest.mark.parametrize(
-    ("case", "expected_exception"),
-    [
-        ("missing_parser", TypeError),
-        ("invalid_parser", ValueError),
-        ("missing_subparser", Exception),
-        ("unexpected_type", ValueError),
-    ],
-)
-def test_action_parser_init_failures(parser, subparser, case, expected_exception):
-    with pytest.raises(expected_exception):
-        if case == "missing_parser":
-            instantiate_action_parser()
-        elif case == "invalid_parser":
-            instantiate_action_parser(parser=object)
-        elif case == "missing_subparser":
-            parser.add_argument("--missing-subparser", action=ActionParser)
-        else:
-            parser.add_argument("--unexpected-type", type=str, action=ActionParser(subparser))
+def test_action_parser_init_failures(parser, subparser):
+    pytest.raises(TypeError, ActionParser)
+    pytest.raises(ValueError, lambda: ActionParser(parser=object))
+    pytest.raises(Exception, lambda: parser.add_argument("--missing-subparser", action=ActionParser))
+    pytest.raises(
+        ValueError, lambda: parser.add_argument("--unexpected-type", type=str, action=ActionParser(subparser))
+    )
 
 
 def test_action_parser_failure_add_parser_to_self(parser):

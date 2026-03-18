@@ -200,15 +200,12 @@ def test_single_class_return_instance():
     assert result.i1 == "3"
 
 
-@pytest.mark.parametrize(
-    ("args", "expected_error"),
-    [
-        (['--config={"method1": {"m1": 2}}'], "'i1' is required"),
-        (['--config={"i1": "0", "method1": {"m1": "A"}}'], 'key "m1"'),
-    ],
-)
-def test_single_class_invalid_config_errors(args, expected_error):
-    assert expected_error in get_cli_stderr(Class1, args=args)
+def test_single_class_missing_required_init():
+    assert "'i1' is required" in get_cli_stderr(Class1, args=['--config={"method1": {"m1": 2}}'])
+
+
+def test_single_class_invalid_method_parameter():
+    assert 'key "m1"' in get_cli_stderr(Class1, args=['--config={"i1": "0", "method1": {"m1": "A"}}'])
 
 
 def test_single_class_main_help():
@@ -244,15 +241,15 @@ def test_single_class_help_docstring_parse_error():
         assert "Description of method1" not in out
 
 
-@pytest.mark.parametrize(
-    ("components", "args", "expected"),
-    [
-        (Class1, ["0", "method1", "2", "--print_config"], {"m1": 2}),
-        (Class1, ["--print_config", "0", "method1", "2"], {"i1": "0", "method1": {"m1": 2}}),
-    ],
-)
-def test_print_config_outputs(components, args, expected):
-    assert expected == json_or_yaml_load(get_cli_stdout(components, args=args))
+def test_single_class_print_config_after_subcommand():
+    out = get_cli_stdout(Class1, args=["0", "method1", "2", "--print_config"])
+    assert {"m1": 2} == json_or_yaml_load(out)
+
+
+def test_single_class_print_config_before_subcommand():
+    out = get_cli_stdout(Class1, args=["--print_config", "0", "method1", "2"])
+    cfg = json_or_yaml_load(out)
+    assert cfg == {"i1": "0", "method1": {"m1": 2}}
 
 
 class MethodWithConfigParam:
@@ -354,16 +351,19 @@ def test_function_and_class_subsubcommand_help():
         assert "Description of method2" in out
 
 
-@pytest.mark.parametrize(
-    ("args", "expected"),
-    [
-        (["Cmd2", "method2", "--print_config"], {"m2": 0}),
-        (["Cmd2", "--print_config", "method2"], {"i1": "d", "method2": {"m2": 0}}),
-        (["--print_config", "Cmd2", "method2"], {"Cmd2": {"i1": "d", "method2": {"m2": 0}}}),
-    ],
-)
-def test_function_and_class_print_config_outputs(args, expected):
-    assert expected == json_or_yaml_load(get_cli_stdout([cmd1, Cmd2, cmd3], args=args))
+def test_function_and_class_print_config_after_subsubcommand():
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "method2", "--print_config"])
+    assert {"m2": 0} == json_or_yaml_load(out)
+
+
+def test_function_and_class_print_config_in_between_subcommands():
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "--print_config", "method2"])
+    assert {"i1": "d", "method2": {"m2": 0}} == json_or_yaml_load(out)
+
+
+def test_function_and_class_print_config_before_subcommands():
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["--print_config", "Cmd2", "method2"])
+    assert {"Cmd2": {"i1": "d", "method2": {"m2": 0}}} == json_or_yaml_load(out)
 
 
 @skip_if_docstring_parser_unavailable
@@ -374,9 +374,13 @@ def test_function_and_class_print_config_comments():
     assert "# Description of method2" in out
 
 
-@pytest.mark.parametrize("args", [["Cmd2", "method3", "--help"], ["cmd3", "--help"]])
-def test_function_and_class_without_parameters(args):
-    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=args)
+def test_function_and_class_method_without_parameters():
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["Cmd2", "method3", "--help"])
+    assert "--config" not in out
+
+
+def test_function_and_class_function_without_parameters():
+    out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["cmd3", "--help"])
     assert "--config" not in out
 
 
