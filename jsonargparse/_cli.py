@@ -94,7 +94,8 @@ def auto_cli(
         raise ValueError(f"Unexpected components, not class or function: {unexpected}")
 
     parser = parser_class(**kwargs)
-    parser.add_argument("--config", action=ActionConfigFile, help=config_help)
+    if isinstance(components, (list, dict)) or not has_parameter(components, "config"):
+        parser.add_argument("--config", action=ActionConfigFile, help=config_help)
 
     if not isinstance(components, (list, dict)):
         _add_component_to_parser(components, parser, as_positional, return_instance, fail_untyped, config_help)
@@ -162,7 +163,8 @@ def _add_subcommands(
             continue
         description = get_help_str(component, parser.logger)
         subparser = type(parser)(description=description)
-        subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
+        if isinstance(component, dict) or not has_parameter(component, "config"):
+            subparser.add_argument("--config", action=ActionConfigFile, help=config_help)
         subcommands.add_subcommand(name, subparser, help=description)
         if isinstance(component, dict):
             _add_subcommands(component, subparser, config_help, as_positional, return_instance, fail_untyped)

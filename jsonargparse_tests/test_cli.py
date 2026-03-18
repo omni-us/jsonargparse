@@ -89,6 +89,15 @@ def test_single_function_help():
         assert "function single_function" in out
 
 
+def function_with_config_param(p1: int = 1, config: dict = {}):
+    print(f"p1: {p1}, config: {config}")
+
+
+def test_single_function_with_config_parameter():
+    out = get_cli_stdout(function_with_config_param, args=["--p1=2"])
+    assert "p1: 2, config: {}" == out.strip()
+
+
 # callable class tests
 
 
@@ -139,6 +148,18 @@ def test_multiple_functions_main_help():
 def test_multiple_functions_subcommand_help():
     out = get_cli_stdout([cmd1, cmd2], args=["cmd2", "--help"])
     assert "--a2 A2" in out
+
+
+def function_with_config_param_in_list(p1: int = 1, config: dict = {}):
+    return f"p1: {p1}, config: {config}"
+
+
+def test_function_in_list_with_config_parameter():
+    result = auto_cli(
+        [function_with_config_param_in_list, cmd1],
+        args=["function_with_config_param_in_list", "--p1=4"],
+    )
+    assert result == "p1: 4, config: {}"
 
 
 def conditionalA(foo: int = 1):
@@ -259,6 +280,19 @@ class MethodWithConfigParam:
 def test_method_with_config_parameter():
     out = get_cli_stdout(MethodWithConfigParam, args=["cmd"])
     assert "p1: 1, config: {}" == out.strip()
+
+
+class ClassWithConfigInitParam:
+    def __init__(self, config: dict = {}):
+        self.config = config
+
+    def cmd(self, p1: int = 1):
+        print(f"p1: {p1}, config: {self.config}")
+
+
+def test_single_class_with_config_init_parameter():
+    out = get_cli_stdout(ClassWithConfigInitParam, args=["cmd", "--p1=3"])
+    assert "p1: 3, config: {}" == out.strip()
 
 
 class WithProperty:
