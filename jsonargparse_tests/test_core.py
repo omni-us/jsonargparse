@@ -281,16 +281,22 @@ def test_parse_env_positional_nargs_plus(parser):
     assert parser.parse_env({"APP_REQ": '[""","""]'}).req == ['[""","""]']
 
 
-def test_parse_env_store_true_false(parser):
+@pytest.mark.parametrize(
+    ("env", "key", "expected"),
+    [
+        ({"APP_FLAG_TRUE": "true"}, "flag_true", True),
+        ({"APP_FLAG_TRUE": "false"}, "flag_true", False),
+        ({"APP_FLAG_FALSE": "false"}, "flag_false", False),
+        ({"APP_FLAG_FALSE": "true"}, "flag_false", True),
+    ],
+)
+def test_parse_env_store_true_false(parser, env, key, expected):
     parser.env_prefix = "app"
     parser.add_argument("--flag_true", action="store_true")
     parser.add_argument("--flag_false", action="store_false")
     assert parser.parse_args([]) == Namespace(flag_true=False, flag_false=True)
     assert parser.get_defaults() == Namespace(flag_true=False, flag_false=True)
-    assert parser.parse_env({"APP_FLAG_TRUE": "true"}).flag_true is True
-    assert parser.parse_env({"APP_FLAG_TRUE": "false"}).flag_true is False
-    assert parser.parse_env({"APP_FLAG_FALSE": "false"}).flag_false is False
-    assert parser.parse_env({"APP_FLAG_FALSE": "true"}).flag_false is True
+    assert getattr(parser.parse_env(env), key) is expected
     with pytest.raises(ArgumentError, match="Invalid boolean value for environment variable APP_FLAG_TRUE: not_bool"):
         parser.parse_env({"APP_FLAG_TRUE": "not_bool"})
     with pytest.raises(ArgumentError, match="Invalid boolean value for environment variable APP_FLAG_FALSE: not_bool"):
@@ -311,20 +317,19 @@ def test_default_env_property():
     ctx.match("default_env expects a boolean")
 
 
-@patch.dict(os.environ, {"JSONARGPARSE_DEFAULT_ENV": "True"})
-def test_default_env_override_true():
-    parser = ArgumentParser(default_env=False)
-    assert True is parser.default_env
-    parser.default_env = False
-    assert True is parser.default_env
-
-
-@patch.dict(os.environ, {"JSONARGPARSE_DEFAULT_ENV": "False"})
-def test_default_env_override_false():
-    parser = ArgumentParser(default_env=True)
-    assert False is parser.default_env
-    parser.default_env = True
-    assert False is parser.default_env
+@pytest.mark.parametrize(
+    ("env_value", "constructor_default", "assigned_default", "expected_default"),
+    [
+        ("True", False, False, True),
+        ("False", True, True, False),
+    ],
+)
+def test_default_env_override(env_value, constructor_default, assigned_default, expected_default):
+    with patch.dict(os.environ, {"JSONARGPARSE_DEFAULT_ENV": env_value}):
+        parser = ArgumentParser(default_env=constructor_default)
+        assert parser.default_env is expected_default
+        parser.default_env = assigned_default
+        assert parser.default_env is expected_default
 
 
 def test_env_prefix_true():
@@ -361,11 +366,18 @@ def test_parse_string_simple(parser):
     assert parser.parse_string('{"op": 1}').op == 1
 
 
-def test_parse_string_simple_errors(parser):
-    pytest.raises(ArgumentError, lambda: parser.parse_string('{"op": 1.1}'))
-    pytest.raises(ArgumentError, lambda: parser.parse_string('{"undefined": true}'))
-    pytest.raises(ArgumentError, lambda: parser.parse_string('"""'))
-    pytest.raises(ArgumentError, lambda: parser.parse_string("not a dict"))
+@pytest.mark.parametrize(
+    "config",
+    [
+        '{"op": 1.1}',
+        '{"undefined": true}',
+        '"""',
+        "not a dict",
+    ],
+)
+def test_parse_string_simple_errors(parser, config):
+    with pytest.raises(ArgumentError):
+        parser.parse_string(config)
 
 
 def test_parse_string_nested(parser):
@@ -381,13 +393,19 @@ def test_parse_path_simple(parser, tmp_cwd):
     assert parser.parse_path(path) == Namespace(op=1)
 
 
-def test_parse_path_simple_errors(parser, tmp_cwd):
+@pytest.mark.parametrize(
+    "config",
+    [
+        '{"op": 1.1}',
+        '{"undefined": true}',
+    ],
+)
+def test_parse_path_simple_errors(parser, tmp_cwd, config):
     parser.add_argument("--op", type=int)
     path = Path("config.json")
-    path.write_text('{"op": 1.1}')
-    pytest.raises(ArgumentError, lambda: parser.parse_path(path))
-    path.write_text('{"undefined": true}')
-    pytest.raises(ArgumentError, lambda: parser.parse_path(path))
+    path.write_text(config)
+    with pytest.raises(ArgumentError):
+        parser.parse_path(path)
 
 
 def test_parse_path_defaults(parser, tmp_cwd):

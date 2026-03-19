@@ -29,6 +29,13 @@ def get_cli_stdout(*args, **kwargs) -> str:
     return out.getvalue()
 
 
+def get_cli_stderr(*args, **kwargs) -> str:
+    err = StringIO()
+    with redirect_stderr(err), pytest.raises(SystemExit):
+        auto_cli(*args, **kwargs)
+    return err.getvalue()
+
+
 def simple_main(a1: int = 0, a2: bool = False):
     pass
 
@@ -215,17 +222,11 @@ def test_single_class_return_instance():
 
 
 def test_single_class_missing_required_init():
-    err = StringIO()
-    with redirect_stderr(err), pytest.raises(SystemExit):
-        auto_cli(Class1, args=['--config={"method1": {"m1": 2}}'])
-    assert "'i1' is required" in err.getvalue()
+    assert "'i1' is required" in get_cli_stderr(Class1, args=['--config={"method1": {"m1": 2}}'])
 
 
 def test_single_class_invalid_method_parameter():
-    err = StringIO()
-    with redirect_stderr(err), pytest.raises(SystemExit):
-        auto_cli(Class1, args=['--config={"i1": "0", "method1": {"m1": "A"}}'])
-    assert 'key "m1"' in err.getvalue()
+    assert 'key "m1"' in get_cli_stderr(Class1, args=['--config={"i1": "0", "method1": {"m1": "A"}}'])
 
 
 def test_single_class_main_help():

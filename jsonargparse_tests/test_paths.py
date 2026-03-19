@@ -181,20 +181,33 @@ def test_path_create_mode(paths):
     pytest.raises(TypeError, lambda: Path(paths.dir_rwx / "ne" / "file_c", "fc"))
 
 
-def test_path_complement_modes(paths):
-    pytest.raises(TypeError, lambda: Path(paths.file_rw, "fW"))
-    pytest.raises(TypeError, lambda: Path(paths.file_rw, "fR"))
-    pytest.raises(TypeError, lambda: Path(paths.dir_rwx, "dX"))
-    pytest.raises(TypeError, lambda: Path(paths.file_rw, "F"))
-    pytest.raises(TypeError, lambda: Path(paths.dir_rwx, "D"))
+@pytest.mark.parametrize(
+    ("path_attr", "mode"),
+    [
+        ("file_rw", "fW"),
+        ("file_rw", "fR"),
+        ("dir_rwx", "dX"),
+        ("file_rw", "F"),
+        ("dir_rwx", "D"),
+    ],
+)
+def test_path_complement_modes(paths, path_attr, mode):
+    with pytest.raises(TypeError):
+        Path(getattr(paths, path_attr), mode)
 
 
-def test_path_invalid_modes(paths):
-    pytest.raises(ValueError, lambda: Path(paths.file_rw, True))
-    pytest.raises(ValueError, lambda: Path(paths.file_rw, "≠"))
-    pytest.raises(ValueError, lambda: Path(paths.file_rw, "fd"))
-    if url_support:
-        pytest.raises(ValueError, lambda: Path(paths.file_rw, "du"))
+@pytest.mark.parametrize(
+    "mode",
+    [
+        True,
+        "≠",
+        "fd",
+        pytest.param("du", marks=pytest.mark.skipif(not url_support, reason="requests package is required")),
+    ],
+)
+def test_path_invalid_modes(paths, mode):
+    with pytest.raises(ValueError):
+        Path(paths.file_rw, mode)
 
 
 def test_path_class_hidden_methods(paths):
@@ -214,7 +227,7 @@ def test_path_tilde_home(paths):
         assert path.absolute == os.path.join(paths.tmp_path, paths.file_rw)
 
 
-def test_std_input_path():
+def test_std_input_path_get_content():
     input_text_to_test = "a text here\n"
 
     with patch("sys.stdin", StringIO(input_text_to_test)):
@@ -222,8 +235,13 @@ def test_std_input_path():
         assert path == "-"
         assert input_text_to_test == path.get_content("r")
 
+
+def test_std_input_path_open():
+    input_text_to_test = "a text here\n"
+
     with patch("sys.stdin", StringIO(input_text_to_test)):
         path = Path("-", mode="fr")
+        assert path == "-"
         with path.open("r") as std_input:
             assert input_text_to_test == "".join([line for line in std_input])
 

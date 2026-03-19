@@ -11,3 +11,15 @@ sphinx/_build
 build
 dist
 htmlcov
+
+# JetBrains IDEs
+.idea/
+
+# some agnetic files
+.claude/logs/
+.claude/state/
+tasks/
+*.local.md
+
+# local dev environment files
+uv.lock
