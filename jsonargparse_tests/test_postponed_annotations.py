@@ -1,19 +1,29 @@
 from __future__ import annotations  # keep
 
 import dataclasses
+import importlib.util
 import os
 import sys
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Dict, ForwardRef, List, Optional, Tuple, Type, Union
+from unittest.mock import patch
 
 import pytest
 
 from jsonargparse import Namespace
+from jsonargparse import _postponed_annotations as postponed_annotations
 from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._postponed_annotations import (
+    _TRIGGER_MODULE_CACHE,
     TypeCheckingVisitor,
+    _cache_trigger_module_name,
+    _collect_string_fwd_ref_names,
+    _enrich_globals_for_string_forward_refs,
     evaluate_postponed_annotations,
+    get_global_vars,
     get_types,
+    type_requires_eval,
 )
 from jsonargparse.typing import Path_drw
 from jsonargparse_tests.conftest import capture_logs, source_unavailable
@@ -312,7 +322,7 @@ def test_get_types_dataclass_pep585(parser):
     types = get_types(Data585)
     assert types == {"a": list[int], "b": str}
     parser.add_class_arguments(Data585, "data")
-    cfg = parser.parse_args(["--data.a=[1, 2]"])
+    cfg = parser.parse_object({"data": {"a": [1, 2]}})
     assert cfg.data == Namespace(a=[1, 2], b="x")
 
 
@@ -324,7 +334,7 @@ class DataWithInit585(Data585):
 
 def test_add_dataclass_with_init_pep585(parser, tmp_cwd):
     parser.add_class_arguments(DataWithInit585, "data")
-    cfg = parser.parse_args(["--data.a=[1, 2]", "--data.b=."])
+    cfg = parser.parse_object({"data": {"a": [1, 2], "b": "."}})
     assert cfg.data == Namespace(a=[1, 2], b=Path_drw("."))
 
 
@@ -352,3 +362,214 @@ def test_get_params_dataclass_inherit_different_module():
     assert "BetweenThreeAndNine" in str(params[0].annotation)
     assert not isinstance(params[1].annotation.__args__[0], str)
     assert "PositiveInt" in str(params[1].annotation)
+
+
+def test_get_global_vars_ignores_type_checking_source_errors_without_logger(monkeypatch):
+    monkeypatch.setattr(
+        postponed_annotations.inspect, "getsource", lambda _: (_ for _ in ()).throw(RuntimeError("boom"))
+    )
+    global_vars = get_global_vars(function_type_checking_alias, None)
+    assert global_vars["function_type_checking_alias"] is function_type_checking_alias
+
+
+@pytest.fixture
+def fwdref_origin_mod(tmp_path):
+    """Module A: defines ForwardReferenced and NamedType = list['ForwardReferenced']."""
+    (tmp_path / "types_module_708.py").write_text(
+        "class ForwardReferenced:\n    pass\nNamedType = list['ForwardReferenced']\n"
+    )
+    spec = importlib.util.spec_from_file_location("types_module_708", tmp_path / "types_module_708.py")
+    mod = importlib.util.module_from_spec(spec)
+    with patch.dict(sys.modules, {"types_module_708": mod}):
+        spec.loader.exec_module(mod)
+        yield mod
+
+
+class TestForwardReference:
+    def setup_method(self):
+        _TRIGGER_MODULE_CACHE.clear()
+
+    @staticmethod
+    def _load_module(name, path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_direct_case_708(self, parser, tmp_path, fwdref_origin_mod):
+        """Direct: ForwardReferenced IS imported alongside NamedType — add_class_arguments must not raise."""
+        (tmp_path / "direct_708.py").write_text(
+            "from types_module_708 import NamedType, ForwardReferenced\n\n"
+            "class Direct:\n    def __init__(self, data_type: NamedType):\n        pass\n"
+        )
+        mod = self._load_module("direct_708", tmp_path / "direct_708.py")
+        with patch.dict(sys.modules, {"direct_708": mod}):
+            parser.add_class_arguments(mod.Direct)  # must not raise
+
+    def test_indirect_case_708(self, parser, tmp_path, fwdref_origin_mod):
+        """Indirect: ForwardReferenced NOT imported — resolved from alias origin module (#708)."""
+        (tmp_path / "indirect_708.py").write_text(
+            "from types_module_708 import NamedType\n\n"
+            "class Indirect:\n    def __init__(self, data_type: NamedType):\n        pass\n"
+        )
+        mod = self._load_module("indirect_708", tmp_path / "indirect_708.py")
+        with patch.dict(sys.modules, {"indirect_708": mod}):
+            parser.add_class_arguments(mod.Indirect)
+            types = get_types(mod.Indirect.__init__)
+            assert not type_requires_eval(types["data_type"])
+            assert "ForwardReferenced" in str(types["data_type"])
+
+    def test_aliased_import_708(self, parser, tmp_path, fwdref_origin_mod):
+        """Aliased: alias imported under a different local name — still resolved (#708)."""
+        (tmp_path / "aliased_708.py").write_text(
+            "from types_module_708 import NamedType as NT\n\n"
+            "class Aliased:\n    def __init__(self, data_type: NT):\n        pass\n"
+        )
+        mod = self._load_module("aliased_708", tmp_path / "aliased_708.py")
+        with patch.dict(sys.modules, {"aliased_708": mod}):
+            parser.add_class_arguments(mod.Aliased)
+            types = get_types(mod.Aliased.__init__)
+            assert not type_requires_eval(types["data_type"])
+            assert "ForwardReferenced" in str(types["data_type"])
+
+
+class TestEnrichGlobals:
+    def setup_method(self):
+        _TRIGGER_MODULE_CACHE.clear()
+
+    def test_cache_trigger_module_name_evicts_oldest_trigger(self, monkeypatch):
+        """Cache evicts the oldest trigger when inserting beyond the configured size."""
+        monkeypatch.setattr(postponed_annotations, "_TRIGGER_MODULE_CACHE_MAXSIZE", 2)
+
+        _cache_trigger_module_name(1, "module_a")
+        _cache_trigger_module_name(2, "module_b")
+        _cache_trigger_module_name(3, "module_c")
+
+        assert list(_TRIGGER_MODULE_CACHE) == [2, 3]
+        assert _TRIGGER_MODULE_CACHE[2] == ["module_b"]
+        assert _TRIGGER_MODULE_CACHE[3] == ["module_c"]
+
+    def test_cache_trigger_module_name_deduplicates_module_names(self):
+        """Repeated discoveries for the same trigger/module pair are stored once."""
+        _cache_trigger_module_name(1, "module_a")
+        _cache_trigger_module_name(1, "module_a")
+        _cache_trigger_module_name(1, "module_b")
+
+        assert _TRIGGER_MODULE_CACHE[1] == ["module_a", "module_b"]
+
+    def test_resolves_missing_fwd_ref(self, fwdref_origin_mod):
+        """Missing forward-ref name is injected from the alias origin module."""
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_no_overwrite_existing(self, fwdref_origin_mod):
+        """Already-present binding is not overwritten by enrichment."""
+        sentinel = object()
+        global_vars = {"NT": fwdref_origin_mod.NamedType, "ForwardReferenced": sentinel}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is sentinel
+
+    def test_handles_non_module_sys_entries(self, fwdref_origin_mod):
+        """None and non-module entries in sys.modules do not cause errors."""
+        with patch.dict(sys.modules, {"_null_entry_708": None, "_obj_entry_708": object()}):
+            global_vars = {"NT": fwdref_origin_mod.NamedType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+            assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_collect_string_fwd_ref_names_supports_forwardref_instances(self):
+        """Direct ForwardRef objects contribute their root name."""
+        names = set()
+        _collect_string_fwd_ref_names(ForwardRef("pkg.ForwardReferenced"), names)
+        assert names == {"pkg"}
+
+    def test_cached_module_names_are_deduplicated_across_triggers(self, monkeypatch, tmp_path):
+        """Duplicate cached module names from multiple trigger aliases are processed once."""
+        (tmp_path / "multi_alias_708.py").write_text(
+            "class ForwardReferencedA:\n"
+            "    pass\n"
+            "class ForwardReferencedB:\n"
+            "    pass\n"
+            "NamedType = list['ForwardReferencedA']\n"
+            "OtherType = dict[str, 'ForwardReferencedB']\n"
+        )
+        spec = importlib.util.spec_from_file_location("multi_alias_708", tmp_path / "multi_alias_708.py")
+        mod = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, {"multi_alias_708": mod}):
+            spec.loader.exec_module(mod)
+            _TRIGGER_MODULE_CACHE[id(mod.NamedType)] = ["multi_alias_708"]
+            _TRIGGER_MODULE_CACHE[id(mod.OtherType)] = ["multi_alias_708"]
+
+            calls = []
+            original = postponed_annotations._update_missing_from_module_vars
+
+            def wrapped(global_vars, missing, mod_vars):
+                calls.append(sorted(missing))
+                return original(global_vars, missing, mod_vars)
+
+            monkeypatch.setattr(postponed_annotations, "_update_missing_from_module_vars", wrapped)
+
+            global_vars = {"NT": mod.NamedType, "TO": mod.OtherType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+
+        assert global_vars["ForwardReferencedA"] is mod.ForwardReferencedA
+        assert global_vars["ForwardReferencedB"] is mod.ForwardReferencedB
+        assert calls == [["ForwardReferencedA", "ForwardReferencedB"]]
+
+    def test_cached_missing_module_name_falls_back_to_scan(self, fwdref_origin_mod):
+        """A stale cache entry does not block the later sys.modules scan."""
+        _TRIGGER_MODULE_CACHE[id(fwdref_origin_mod.NamedType)] = ["missing_module_708"]
+
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_reuses_cached_modules_before_scanning_sys_modules(self, monkeypatch, fwdref_origin_mod):
+        """A warm cache avoids a second full sys.modules scan for the same trigger alias."""
+        _enrich_globals_for_string_forward_refs({"NT": fwdref_origin_mod.NamedType})
+
+        class NoScanModules(dict):
+            def items(self):
+                raise AssertionError("sys.modules should not be scanned when the trigger cache is warm")
+
+        monkeypatch.setattr(
+            postponed_annotations,
+            "sys",
+            SimpleNamespace(modules=NoScanModules({"types_module_708": fwdref_origin_mod})),
+        )
+
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_ignores_non_module_cached_entries(self, fwdref_origin_mod):
+        """Cached entries that are not modules do not break fallback scanning."""
+        _TRIGGER_MODULE_CACHE[id(fwdref_origin_mod.NamedType)] = ["_obj_entry_708"]
+
+        with patch.dict(sys.modules, {"_obj_entry_708": object()}):
+            global_vars = {"NT": fwdref_origin_mod.NamedType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_scan_skips_non_modules_before_reaching_origin_module(self, monkeypatch, fwdref_origin_mod):
+        """The fallback scan ignores entries without a module dict and keeps searching."""
+        fake_sys = SimpleNamespace(modules={"_obj_entry_708": object(), "types_module_708": fwdref_origin_mod})
+        monkeypatch.setattr(postponed_annotations, "sys", fake_sys)
+
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_resolves_nested_generic_alias(self, tmp_path):
+        """Recursive collection resolves names nested two levels deep (list[list['X']])."""
+        (tmp_path / "nested_708.py").write_text("class Inner:\n    pass\nNestedType = list[list['Inner']]\n")
+        spec = importlib.util.spec_from_file_location("nested_708", tmp_path / "nested_708.py")
+        mod = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, {"nested_708": mod}):
+            spec.loader.exec_module(mod)
+            global_vars = {"NT": mod.NestedType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+            assert global_vars["Inner"] is mod.Inner
