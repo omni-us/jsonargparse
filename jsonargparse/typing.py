@@ -495,11 +495,10 @@ def register_type(
         fail_already_registered: Whether to fail if type has already been registered.
         uniqueness_key: Key to determine uniqueness of type.
     """
-    if is_alias_type(type_class):
-        if sys.version_info < (3, 12):
-            raise ValueError("Type alias support in register_type requires python >= 3.12.")
-    elif not inspect.isclass(type_class):
-        raise ValueError(f"Expected type_class to be a class, got {type_class!r}")
+    if sys.version_info[:2] < (3, 12) and not inspect.isclass(type_class):
+        raise ValueError(f"Expected type_class to be a class, got {type(type_class)}")
+    elif sys.version_info[:2] >= (3, 12) and not (inspect.isclass(type_class) or is_alias_type(type_class)):
+        raise ValueError(f"Expected type_class to be a class or a type alias, got {type(type_class)}")
     type_handler = RegisteredType(type_class, serializer, deserializer, deserializer_exceptions, type_check)
     fail_already_registered = globals().get("_fail_already_registered", fail_already_registered)
     if not uniqueness_key and fail_already_registered and get_registered_type(type_class):
