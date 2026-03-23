@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import pickle
 import random
+import sys
 import uuid
 from calendar import Calendar
 from datetime import datetime, timedelta
@@ -38,6 +39,9 @@ from jsonargparse.typing import (
     restricted_string_type,
 )
 from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_load
+
+if sys.version_info >= (3, 12):
+    from typing import TypeAliasType
 
 
 def test_public_api():
@@ -401,6 +405,31 @@ def test_register_type_on_first_use():
     registered = get_registered_type(RegisterOnFirstUse)
     assert registered.type_class is RegisterOnFirstUse
     assert f"{__name__}.RegisterOnFirstUse" not in registration_pending
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="TypeAliasType only available in python>=3.12")
+def test_register_type_alias_and_skip_subclass_help(parser):
+    class Base:
+        pass
+
+    class Impl(Base):
+        pass
+
+    base_alias = TypeAliasType("BaseAlias", type[Base])
+
+    register_type(
+        base_alias,
+        serializer=lambda value: value.__name__,
+        deserializer=lambda _: Impl,
+        type_check=lambda value, _: inspect.isclass(value) and issubclass(value, Base),
+    )
+
+    parser.add_argument("--item", type=base_alias)
+    assert "--item.help" not in get_parser_help(parser)
+
+    cfg = parser.parse_args(["--item=ignored"])
+    assert cfg.item is Impl
+    assert {"item": "Impl"} == json_or_yaml_load(parser.dump(cfg))
 
 
 def test_decimal(parser):

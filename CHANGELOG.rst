@@ -20,6 +20,9 @@ Added
 - AST resolver now supports nested attribute calls like
   ``module.submodule.function(**kwargs)`` (`#878
   <https://github.com/omni-us/jsonargparse/pull/878>`__).
+- ``register_type`` now supports ``TypeAliasType`` (python 3.12+) in addition
+  to classes, and registered aliases no longer add subclass help actions
+  (`#875 <https://github.com/omni-us/jsonargparse/pull/875>`__).
 
 Fixed
 ^^^^^

@@ -285,7 +285,7 @@ class ActionTypeHint(Action):
         typehint = kwargs.pop("type")
         if args[0].startswith("--") and ActionTypeHint.supports_append(typehint):
             args = tuple(list(args) + [args[0] + "+"])
-        if _ActionHelpClassPath.get_help_types(typehint):
+        if get_registered_type(typehint) is None and _ActionHelpClassPath.get_help_types(typehint):
             help_option = f"--{args[0]}.help" if args[0][0] != "-" else f"{args[0]}.help"
             help_action = container.add_argument(help_option, action=_ActionHelpClassPath(typehint=typehint))
             if sub_add_kwargs:
@@ -298,6 +298,8 @@ class ActionTypeHint(Action):
     @staticmethod
     def is_supported_typehint(typehint, full=False):
         """Whether the given type hint is supported."""
+        if get_registered_type(typehint) is not None:
+            return True
         typehint = get_unaliased_type(typehint)
 
         if is_subclass(typehint, Namespace):

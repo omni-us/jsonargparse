@@ -15,7 +15,7 @@ else:
 
 from ._common import ClassType, is_final_class, is_subclass, path_dump_preserve_relative
 from ._namespace import Namespace
-from ._optionals import final, pydantic_support
+from ._optionals import final, is_alias_type, pydantic_support
 from ._paths import Path, change_to_path_dir
 from ._util import ClassFromFunctionBase, get_import_path, get_private_kwargs, import_object
 
@@ -57,8 +57,15 @@ _operators1 = {
 }
 _operators2 = {v: k for k, v in _operators1.items()}
 
-registered_types: dict[tuple, type] = {}
-registered_type_handlers: dict[type, "RegisteredType"] = {}
+if sys.version_info >= (3, 12):
+    from typing import TypeAliasType as TypeAliasType
+
+    _TypeClass = Union[type, TypeAliasType]
+else:
+    _TypeClass = type
+
+registered_types: dict[tuple, _TypeClass] = {}
+registered_type_handlers: dict[_TypeClass, "RegisteredType"] = {}
 registration_pending: dict[str, Callable] = {}
 
 
@@ -434,7 +441,7 @@ def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlia
 class RegisteredType:
     def __init__(
         self,
-        type_class: Any,
+        type_class: _TypeClass,
         serializer: Callable,
         deserializer: Optional[Callable],
         deserializer_exceptions: Union[type[Exception], tuple[type[Exception], ...]],
@@ -463,7 +470,7 @@ class RegisteredType:
 
 
 def register_type(
-    type_class: type,
+    type_class: _TypeClass,
     serializer: Callable = str,
     deserializer: Optional[Callable] = None,
     deserializer_exceptions: Union[type[Exception], tuple[type[Exception], ...]] = (
@@ -478,7 +485,8 @@ def register_type(
     """Registers a new type for use in jsonargparse parsers.
 
     Args:
-        type_class: The class to be registered.
+        type_class: The class to be registered. Python 3.12+ also supports
+            ``TypeAliasType`` aliases.
         serializer: Function that converts an instance of the class to a basic type.
         deserializer: Function that converts a basic type to an instance of the
             class. Default instantiates ``type_class``.
@@ -487,7 +495,10 @@ def register_type(
         fail_already_registered: Whether to fail if type has already been registered.
         uniqueness_key: Key to determine uniqueness of type.
     """
-    if not inspect.isclass(type_class):
+    if is_alias_type(type_class):
+        if sys.version_info < (3, 12):
+            raise ValueError("Type alias support in register_type requires python >= 3.12.")
+    elif not inspect.isclass(type_class):
         raise ValueError(f"Expected type_class to be a class, got {type_class!r}")
     type_handler = RegisteredType(type_class, serializer, deserializer, deserializer_exceptions, type_check)
     fail_already_registered = globals().get("_fail_already_registered", fail_already_registered)
