@@ -122,9 +122,8 @@ def test_add_class_without_nesting(parser):
     assert ("3", 3, 3.0) == parser.parse_args(["--c3_a0=0", '--c3_a7=["3", 3, 3.0]']).c3_a7
     assert "a" == Class3(**cfg.as_dict())()
 
-    with pytest.raises(ArgumentError) as ctx:
+    with pytest.raises(ArgumentError, match="missing required options: c3_a0"):
         parser.parse_args([])
-    ctx.match("Option 'c3_a0' is required")
 
     if docstring_parser_support:
         assert "Class3 short description" == parser.groups["Class3"].title
@@ -709,5 +708,5 @@ def test_add_function_positional_and_keyword_only_parameters(parser):
     assert cfg == Namespace(a=1, b=2, c=3, d=4)
     with pytest.raises(ArgumentError, match="Unrecognized arguments: --b=2"):
         parser.parse_args(["1", "--b=2", "--c=3", "--d=4"])
-    with pytest.raises(ArgumentError, match="Option 'c' is required"):
+    with pytest.raises(ArgumentError, match="missing required options: c"):
         parser.parse_args(["1", "2", "--d=4"])
