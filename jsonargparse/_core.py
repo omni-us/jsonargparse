@@ -1150,18 +1150,22 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             cfg[branch] = branch_cfg
 
         def check_required(cfg, parser, prefix):
-            for reqkey in parser.required_args:
+            missing = []
+            reqkeys = [a.dest for a in parser._actions if a.dest in parser.required_args]
+            reqkeys.extend(sorted(k for k in parser.required_args if k not in reqkeys))
+            for reqkey in reqkeys:
                 try:
                     val = cfg[reqkey]
                     if val is None:
                         raise TypeError
-                except (KeyError, TypeError) as ex:
-                    raise TypeError(
-                        f"Option '{prefix}{reqkey}' is required but not provided or its value is None."
-                    ) from ex
+                except (KeyError, TypeError):
+                    missing.append(f"{prefix}{reqkey}")
             subcommand, subparser = get_subcommand(parser, cfg, fail_no_subcommand=False)
             if subcommand is not None and subparser is not None:
-                check_required(cfg.get(subcommand), subparser, prefix + subcommand + ".")
+                missing.extend(check_required(cfg.get(subcommand), subparser, prefix + subcommand + "."))
+            if prefix == "" and missing:
+                raise TypeError(f"missing required options: {', '.join(missing)}")
+            return missing
 
         def check_values(cfg):
             sorted_keys = {k: find_action(self, k) for k in cfg.get_sorted_keys()}

@@ -329,9 +329,8 @@ def test_action_parser_required_argument(parser, subparser):
     subparser.add_argument("--op1", required=True)
     parser.add_argument("--op2", action=ActionParser(parser=subparser))
     assert "1" == parser.parse_args(["--op2.op1=1"]).op2.op1
-    with pytest.raises(ArgumentError) as ctx:
+    with pytest.raises(ArgumentError, match=r"missing required options: op2\.op1"):
         parser.parse_args([])
-    ctx.match("'op2.op1' is required")
 
 
 def test_action_parser_init_failures(parser, subparser):

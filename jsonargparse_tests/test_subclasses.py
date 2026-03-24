@@ -364,7 +364,8 @@ def test_class_method_instantiator(parser):
 
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--cls={__name__}.ClassMethodInstantiator.from_p1"])
-    ctx.match("Option 'p1' is required")
+    ctx.match('Parser key "cls"')
+    ctx.match("missing required options: p1")
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--cls={__name__}.ClassMethodInstantiator.from_p1", "--cls.p1=2", "--cls.p3=-"])
     ctx.match("Option 'p3' is not accepted")
@@ -1787,7 +1788,8 @@ def test_subclass_required_parameters_missing(parser):
     assert defaults.op.init_args == Namespace(p1=None, p2=None)
     with pytest.raises(ArgumentError) as ctx:
         parser.parse_args([f"--op={__name__}.RequiredParamsMissing"])
-    ctx.match(" is required ")
+    ctx.match('Parser key "op"')
+    ctx.match("missing required options: p1, p2")
 
 
 def test_subclass_get_defaults_lazy_instance(parser):

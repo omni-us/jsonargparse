@@ -137,9 +137,8 @@ def test_parse_args_nargs_number(parser):
 def test_parse_args_positional_nargs_questionmark(parser):
     parser.add_argument("pos1")
     parser.add_argument("pos2", nargs="?")
-    with pytest.raises(ArgumentError) as ctx:
+    with pytest.raises(ArgumentError, match="missing required options: pos1"):
         parser.parse_args([])
-    ctx.match("'pos1' is required")
     assert parser.parse_args(["v1"]) == Namespace(pos1="v1", pos2=None)
     assert parser.parse_args(["v1", "v2"]) == Namespace(pos1="v1", pos2="v2")
 
@@ -147,10 +146,16 @@ def test_parse_args_positional_nargs_questionmark(parser):
 def test_parse_args_positional_nargs_plus(parser):
     parser.add_argument("pos1")
     parser.add_argument("pos2", nargs="+")
-    with pytest.raises(ArgumentError) as ctx:
+    with pytest.raises(ArgumentError, match="missing required options: pos2"):
         parser.parse_args(["v1"])
-    ctx.match("'pos2' is required")
     assert parser.parse_args(["v1", "v2", "v3"]) == Namespace(pos1="v1", pos2=["v2", "v3"])
+
+
+def test_parse_args_missing_required_lists_all(parser):
+    parser.add_argument("req_pos")
+    parser.add_argument("--req_opt", required=True)
+    with pytest.raises(TypeError, match="missing required options: req_pos, req_opt"):
+        parser.validate(Namespace())
 
 
 def test_parse_args_positional_config(parser):
