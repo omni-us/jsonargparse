@@ -329,12 +329,3 @@ def expand_dict(data: dict) -> Namespace:
 def dict_to_namespace(data: dict[str, Any]) -> Namespace:
     data = recreate_branches(data)
     return expand_dict(data)
-
-
-# Temporal to provide backward compatibility in pytorch-lightning
-from importlib.util import find_spec  # noqa: E402
-
-if find_spec("yaml"):
-    import yaml
-
-    yaml.SafeDumper.add_representer(Namespace, lambda d, x: d.represent_mapping("tag:yaml.org,2002:map", x.as_dict()))
