@@ -12,7 +12,6 @@ from typing import List, Optional, Union
 
 import pytest
 
-import jsonargparse
 from jsonargparse import ArgumentError, Namespace
 from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._util import get_import_path
@@ -440,10 +439,12 @@ def test_secret_str_parsing(parser):
 
 
 def test_top_level_compatibility_not_in_public_api():
-    assert jsonargparse.class_from_function is class_from_function
-    assert jsonargparse.lazy_instance is lazy_instance
-    assert "class_from_function" not in jsonargparse.__all__
-    assert "lazy_instance" not in jsonargparse.__all__
+    import jsonargparse as ja
+
+    assert ja.class_from_function is class_from_function
+    assert ja.lazy_instance is lazy_instance
+    assert "class_from_function" not in ja.__all__
+    assert "lazy_instance" not in ja.__all__
 
 
 def test_lazy_init_base_class_available_from_typing():
