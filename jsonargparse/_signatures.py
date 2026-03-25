@@ -21,7 +21,6 @@ from ._optionals import attrs_support, get_doc_short_description, is_attrs_class
 from ._parameter_resolvers import ParamData, get_parameter_origins, get_signature_parameters
 from ._typehints import (
     ActionTypeHint,
-    LazyInitBaseClass,
     callable_instances,
     get_subclass_names,
     is_list_pathlike,
@@ -30,7 +29,7 @@ from ._typehints import (
     sequence_origin_types,
 )
 from ._util import NoneType, get_import_path, get_private_kwargs, get_typehint_origin, iter_to_set_str
-from .typing import register_pydantic_type
+from .typing import _LazyInitBaseClass, register_pydantic_type
 
 __all__ = ["SignatureArguments"]
 
@@ -48,7 +47,7 @@ class SignatureArguments(LoggerProperty):
         nested_key: Optional[str] = None,
         as_group: bool = True,
         as_positional: bool = False,
-        default: Optional[Union[dict, Namespace, LazyInitBaseClass, type]] = None,
+        default: Optional[Union[dict, Namespace, type]] = None,
         skip: Optional[set[Union[str, int]]] = None,
         instantiate: bool = True,
         fail_untyped: bool = True,
@@ -82,7 +81,7 @@ class SignatureArguments(LoggerProperty):
             raise ValueError(f"Expected 'theclass' parameter to be a class type, got: {theclass}")
         if not (
             isinstance(default, (NoneType, dict, Namespace))
-            or (isinstance(default, LazyInitBaseClass) and isinstance(default, unaliased_class_type))
+            or (isinstance(default, _LazyInitBaseClass) and isinstance(default, unaliased_class_type))
             or (
                 not is_final_class(default.__class__)
                 and is_subclasses_disabled(default.__class__)
@@ -117,7 +116,7 @@ class SignatureArguments(LoggerProperty):
             skip = skip or set()
             prefix = nested_key + "." if nested_key else ""
             defaults = default
-            if isinstance(default, LazyInitBaseClass):
+            if isinstance(default, _LazyInitBaseClass):
                 defaults = default.lazy_get_init_args().as_dict()
             elif is_convertible_to_dict(default.__class__):
                 defaults = convert_to_dict(default)

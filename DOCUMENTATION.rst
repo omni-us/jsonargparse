@@ -1580,7 +1580,8 @@ would change to:
 
 .. testcode:: class_from_function
 
-    from jsonargparse import ArgumentParser, class_from_function
+    from jsonargparse import ArgumentParser
+    from jsonargparse.typing import class_from_function
 
     parser = ArgumentParser()
     dynamic_class = class_from_function(instantiate_myclass)
@@ -2250,7 +2251,7 @@ example above, this would be:
 
 .. testcode:: instance_default
 
-    from jsonargparse import lazy_instance
+    from jsonargparse.typing import lazy_instance
 
 
     class MyClass:
