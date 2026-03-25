@@ -6,7 +6,6 @@ import textwrap
 import warnings
 from argparse import ArgumentError
 from collections import namedtuple
-from functools import wraps
 from importlib import import_module
 from types import BuiltinFunctionType, FunctionType, ModuleType
 from typing import (
@@ -15,13 +14,10 @@ from typing import (
     Optional,
     Type,
     Union,
-    get_type_hints,
 )
 
 from ._common import (
-    ClassType,
     get_generic_origin,
-    is_subclass,
     parser_capture,
     parser_context,
 )
@@ -32,7 +28,6 @@ from ._type_checking import ArgumentParser
 
 __all__ = [
     "capture_parser",
-    "class_from_function",
     "register_unresolvable_import_paths",
 ]
 
@@ -289,64 +284,6 @@ def get_private_kwargs(data, **kwargs):
 
 class ClassFromFunctionBase:
     wrapped_function: Callable
-
-
-def class_from_function(
-    func: Callable[..., ClassType],
-    func_return: Optional[type[ClassType]] = None,
-    name: Optional[str] = None,
-) -> type[ClassType]:
-    """Creates a dynamic class which if instantiated is equivalent to calling func.
-
-    Args:
-        func: A function that returns an instance of a class.
-        func_return: The return type of the function. Required if func does not have a return type annotation.
-        name: The name of the class. Defaults to function name suffixed with ``_class``.
-    """
-    if func_return is None:
-        func_return = inspect.signature(func).return_annotation
-    if func_return is inspect.Signature.empty:
-        raise ValueError(f"{func} does not have a return type annotation")
-    if isinstance(func_return, str):
-        try:
-            func_return = get_type_hints(func)["return"]
-        except Exception as ex:
-            func_return = inspect.signature(func).return_annotation
-            raise ValueError(f"Unable to dereference {func_return}, the return type of {func}: {ex}") from ex
-
-    if not name:
-        name = func.__qualname__.replace(".", "__") + "_class"
-
-    caller_module = inspect.getmodule(inspect.stack()[1][0]) or inspect.getmodule(class_from_function)
-    assert caller_module
-    if hasattr(caller_module, name):
-        cls = getattr(caller_module, name)
-        mro = inspect.getmro(cls) if inspect.isclass(cls) else ()
-        if (
-            len(mro) > 1
-            and mro[1] is func_return
-            and is_subclass(cls, ClassFromFunctionBase)
-            and cls.wrapped_function is func
-            and cls.__name__ == name
-        ):
-            return cls
-        raise ValueError(f"{caller_module.__name__} already defines {name!r}, please use a different name")
-
-    @wraps(func)
-    def __new__(cls, *args, **kwargs):
-        return func(*args, **kwargs)
-
-    class ClassFromFunction(func_return, ClassFromFunctionBase):  # type: ignore[valid-type,misc]
-        pass
-
-    setattr(caller_module, name, ClassFromFunction)
-    ClassFromFunction.wrapped_function = func
-    ClassFromFunction.__new__ = __new__  # type: ignore[method-assign]
-    ClassFromFunction.__doc__ = func.__doc__
-    ClassFromFunction.__module__ = caller_module.__name__
-    ClassFromFunction.__name__ = name
-    ClassFromFunction.__qualname__ = name
-    return ClassFromFunction
 
 
 def get_argument_group_class(parser):

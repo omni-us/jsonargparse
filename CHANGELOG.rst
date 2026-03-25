@@ -25,6 +25,9 @@ Changed
 ^^^^^^^
 - Now all missing required options are listed in the error message (`#876
   <https://github.com/omni-us/jsonargparse/pull/876>`__).
+- ``class_from_function`` and ``lazy_instance`` are now located in
+  ``jsonargparse.typing`` while the previous import locations are kept for
+  compatibility (`#877 <https://github.com/omni-us/jsonargparse/pull/877>`__).
 
 
 v4.47.0 (2026-03-13)

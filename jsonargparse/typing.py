@@ -6,17 +6,18 @@ import os
 import pathlib
 import re
 import sys
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, get_type_hints
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias as _TypeAlias
 else:
     _TypeAlias = type
 
-from ._common import is_final_class, path_dump_preserve_relative
+from ._common import ClassType, is_final_class, is_subclass, path_dump_preserve_relative
+from ._namespace import Namespace
 from ._optionals import final, pydantic_support
 from ._paths import Path, change_to_path_dir
-from ._util import get_import_path, get_private_kwargs, import_object
+from ._util import ClassFromFunctionBase, get_import_path, get_private_kwargs, import_object
 
 __all__ = [
     "final",
@@ -26,6 +27,8 @@ __all__ = [
     "restricted_number_type",
     "restricted_string_type",
     "path_type",
+    "class_from_function",
+    "lazy_instance",
     "PositiveInt",
     "NonNegativeInt",
     "PositiveFloat",
@@ -57,6 +60,157 @@ _operators2 = {v: k for k, v in _operators1.items()}
 registered_types: dict[tuple, type] = {}
 registered_type_handlers: dict[type, "RegisteredType"] = {}
 registration_pending: dict[str, Callable] = {}
+
+
+def class_from_function(
+    func: Callable[..., ClassType],
+    func_return: Optional[type[ClassType]] = None,
+    name: Optional[str] = None,
+) -> type[ClassType]:
+    """Creates a dynamic class which if instantiated is equivalent to calling func.
+
+    Args:
+        func: A function that returns an instance of a class.
+        func_return: The return type of the function. Required if func does not have a return type annotation.
+        name: The name of the class. Defaults to function name suffixed with ``_class``.
+    """
+    from functools import wraps
+
+    if func_return is None:
+        func_return = inspect.signature(func).return_annotation
+    if func_return is inspect.Signature.empty:
+        raise ValueError(f"{func} does not have a return type annotation")
+    if isinstance(func_return, str):
+        try:
+            func_return = get_type_hints(func)["return"]
+        except Exception as ex:
+            func_return = inspect.signature(func).return_annotation
+            raise ValueError(f"Unable to dereference {func_return}, the return type of {func}: {ex}") from ex
+
+    if not name:
+        name = func.__qualname__.replace(".", "__") + "_class"
+
+    caller_module = inspect.getmodule(inspect.stack()[1][0]) or inspect.getmodule(class_from_function)
+    assert caller_module
+    if hasattr(caller_module, name):
+        cls = getattr(caller_module, name)
+        mro = inspect.getmro(cls) if inspect.isclass(cls) else ()
+        if (
+            len(mro) > 1
+            and mro[1] is func_return
+            and is_subclass(cls, ClassFromFunctionBase)
+            and cls.wrapped_function is func
+            and cls.__name__ == name
+        ):
+            return cls
+        raise ValueError(f"{caller_module.__name__} already defines {name!r}, please use a different name")
+
+    @wraps(func)
+    def __new__(cls, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    class ClassFromFunction(func_return, ClassFromFunctionBase):  # type: ignore[valid-type,misc]
+        pass
+
+    setattr(caller_module, name, ClassFromFunction)
+    ClassFromFunction.wrapped_function = func
+    ClassFromFunction.__new__ = __new__  # type: ignore[method-assign]
+    ClassFromFunction.__doc__ = func.__doc__
+    ClassFromFunction.__module__ = caller_module.__name__
+    ClassFromFunction.__name__ = name
+    ClassFromFunction.__qualname__ = name
+    return ClassFromFunction
+
+
+def _check_lazy_kwargs(class_type: type, lazy_kwargs: dict):
+    if lazy_kwargs:
+        from argparse import ArgumentError
+
+        from ._core import ArgumentParser
+
+        parser = ArgumentParser(exit_on_error=False)
+        parser.add_class_arguments(class_type)
+        try:
+            parser.parse_object(lazy_kwargs)
+        except ArgumentError as ex:
+            raise ValueError(str(ex)) from ex
+
+
+class _LazyInitBaseClass:
+    def __init__(self, class_type: type, lazy_kwargs: dict):
+        assert not issubclass(class_type, _LazyInitBaseClass)
+        _check_lazy_kwargs(class_type, lazy_kwargs)
+        self._lazy = type(self)
+        self._lazy_class_type = class_type
+        self._lazy_kwargs = lazy_kwargs
+        self._lazy_methods = {}
+        seen_methods: dict = {}
+        for name, member in inspect.getmembers(class_type, predicate=inspect.isfunction):
+            method = getattr(self, name)
+            if not inspect.ismethod(method) or name == "__init__":
+                continue
+            assert name not in self.__dict__
+            self._lazy_methods[name] = method
+            if id(member) in seen_methods:
+                self.__dict__[name] = seen_methods[id(member)]
+            else:
+                from functools import partial
+
+                lazy_method = partial(self._lazy_init_then_call_method, name)
+                if name == "__call__":
+                    lazy_method = staticmethod(lazy_method)  # type: ignore[assignment]
+                    self._lazy.__call__ = lazy_method  # type: ignore[method-assign]
+                self.__dict__[name] = lazy_method
+                seen_methods[id(member)] = lazy_method
+
+    def _lazy_init(self):
+        for name in self._lazy_methods:
+            if name == "__call__":
+                self._lazy.__call__ = self._lazy_methods[name]
+            del self.__dict__[name]
+        super().__init__(**self._lazy_kwargs)
+
+    def _lazy_init_then_call_method(self, method_name, *args, **kwargs):
+        self._lazy_init()
+        return self._lazy_methods[method_name](*args, **kwargs)
+
+    def lazy_get_init_args(self) -> Namespace:
+        return Namespace(self._lazy_kwargs)
+
+    def lazy_get_init_data(self):
+        init_args = self.lazy_get_init_args()
+        init = Namespace(class_path=get_import_path(self._lazy_class_type))
+        if len(self._lazy_kwargs) > 0:
+            init["init_args"] = init_args
+        return init
+
+
+def lazy_instance(class_type: type[ClassType], **kwargs) -> ClassType:
+    """Instantiates a lazy instance of the given type.
+
+    By lazy it is meant that the ``__init__`` is delayed until the first time that a
+    method of the instance is called. It also provides a `lazy_get_init_data` method
+    useful for serializing.
+
+    Args:
+        class_type: The class to instantiate.
+        **kwargs: Any keyword arguments to use for instantiation.
+    """
+    caller_module = inspect.getmodule(inspect.stack()[1][0])
+    class_name = f"LazyInstance_{class_type.__name__}"
+    if hasattr(caller_module, class_name):
+        lazy_init_class = getattr(caller_module, class_name)
+        assert is_subclass(lazy_init_class, _LazyInitBaseClass) and is_subclass(lazy_init_class, class_type)
+    else:
+        lazy_init_class = type(
+            class_name,
+            (_LazyInitBaseClass, class_type),
+            {"__doc__": f"Class for lazy instances of {class_type}"},
+        )
+        if caller_module is not None:
+            lazy_init_class.__module__ = getattr(caller_module, "__name__", __name__)
+            setattr(caller_module, lazy_init_class.__qualname__, lazy_init_class)
+    return lazy_init_class(class_type, kwargs)
 
 
 def extend_base_type(

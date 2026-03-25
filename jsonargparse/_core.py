@@ -26,6 +26,7 @@ from ._actions import (
     previous_config,
 )
 from ._common import (
+    ClassType,
     InstantiatorCallable,
     InstantiatorsDictType,
     LoggerProperty,
@@ -91,7 +92,6 @@ from ._subcommands import (
 )
 from ._typehints import ActionTypeHint, is_subclass_spec
 from ._util import (
-    ClassType,
     Path,
     argument_error,
     get_argument_group_class,

@@ -26,8 +26,8 @@ from ._optionals import *  # noqa: F403
 from ._paths import Path  # noqa: F401
 from ._signatures import *  # noqa: F403
 from ._subcommands import *  # noqa: F403
-from ._typehints import *  # noqa: F403
 from ._util import *  # noqa: F403
+from .typing import class_from_function, lazy_instance  # noqa: F401
 
 __all__ = [
     "ArgumentError",
@@ -55,16 +55,14 @@ from . import (
     _optionals,
     _signatures,
     _subcommands,
-    _typehints,
     _util,
 )
 
 __all__ += _cli.__all__
 __all__ += _core.__all__
 __all__ += _signatures.__all__
-__all__ += _subcommands.__all__
-__all__ += _typehints.__all__
 __all__ += _link_arguments.__all__
+__all__ += _subcommands.__all__
 __all__ += _jsonschema.__all__
 __all__ += _jsonnet.__all__
 __all__ += _actions.__all__
