@@ -843,6 +843,47 @@ def test_get_params_function_local_import():
     assert ["mode", "loader_fn", "exceptions", "json_superset"] == [p.name for p in params]
 
 
+def function_nested_module_attr(**kwargs):
+    import xml.dom.minidom
+
+    return xml.dom.minidom.parseString(**kwargs)
+
+
+def test_get_params_function_nested_module_attr():
+    params = get_params(function_nested_module_attr)
+    assert "string" in [p.name for p in params]
+    with source_unavailable():
+        assert [] == get_params(function_nested_module_attr)
+
+
+class ClassNestedModuleAttr:
+    def __init__(self, **kwargs):
+        import xml.dom.minidom
+
+        self.doc = xml.dom.minidom.parseString(**kwargs)
+
+
+def test_get_params_class_nested_module_attr():
+    params = get_params(ClassNestedModuleAttr)
+    assert "string" in [p.name for p in params]
+    with source_unavailable():
+        assert [] == get_params(ClassNestedModuleAttr)
+
+
+class ClassNestedLocalFromImport:
+    def __init__(self, **kwargs):
+        from xml.dom import minidom
+
+        self.result = minidom.parseString(**kwargs)
+
+
+def test_get_params_class_nested_local_from_import():
+    params = get_params(ClassNestedLocalFromImport)
+    assert "string" in [p.name for p in params]
+    with source_unavailable():
+        assert [] == get_params(ClassNestedLocalFromImport)
+
+
 def test_get_params_function_constant_boolean():
     assert_params(get_params(function_constant_boolean), ["k1", "pk1", "k2"])
     with patch.dict(function_constant_boolean.__globals__, {"constant_boolean_1": False}):

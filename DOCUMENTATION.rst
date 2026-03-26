@@ -1732,6 +1732,11 @@ unrelated to these variables.
         some_module.a_callable(**kwargs)
 
 
+    def calls_nested_module_attr(**kwargs):
+        import some_module
+        some_module.nested.a_callable(**kwargs)
+
+
     def pops_from_kwargs(**kwargs):
         val = kwargs.pop("name", "default")
 
