@@ -16,6 +16,8 @@ from ._util import get_typehint_origin
 var_map = namedtuple("var_map", "name value")
 none_map = var_map(name="NoneType", value=type(None))
 union_map = var_map(name="Union", value=Union)
+_TRIGGER_MODULE_CACHE_MAXSIZE = 1024
+_TRIGGER_MODULE_CACHE: dict[int, dict[str, Any]] = {}
 
 
 class BackportTypeHints(ast.NodeTransformer):
@@ -175,14 +177,14 @@ def get_arg_type(arg_ast, aliases):
 
 
 def resolve_forward_refs(arg_type, aliases, logger):
-
     def resolve_subtypes_forward_refs(typehint):
         if has_subtypes(typehint):
             try:
                 subtypes = []
                 for arg in typehint.__args__:
-                    if isinstance(arg, ForwardRef):
-                        forward_arg, *_ = arg.__forward_arg__.split(".", 1)
+                    if isinstance(arg, (ForwardRef, str)):
+                        forward_arg = arg.__forward_arg__ if isinstance(arg, ForwardRef) else arg
+                        forward_arg, *_ = forward_arg.split(".", 1)
                         if forward_arg in aliases:
                             arg = aliases[forward_arg]
                         else:
@@ -220,6 +222,83 @@ def type_requires_eval(typehint):
     return isinstance(typehint, (str, ForwardRef))
 
 
+def _collect_string_fwd_ref_names(typehint: Any, result: set[str]) -> None:
+    if isinstance(typehint, str):
+        result.add(typehint.split(".")[0])
+    elif isinstance(typehint, ForwardRef):
+        result.add(typehint.__forward_arg__.split(".")[0])
+    elif has_subtypes(typehint):
+        for arg in getattr(typehint, "__args__", ()):
+            _collect_string_fwd_ref_names(arg, result)
+
+
+def _update_missing_from_module_vars(global_vars: dict, missing: set[str], mod_vars: dict[str, Any]) -> None:
+    for name in list(missing):
+        if name in mod_vars:
+            global_vars[name] = mod_vars[name]
+            missing.discard(name)
+
+
+def _cache_trigger_bindings(trigger_id: int, mod_vars: dict[str, Any], names: set[str]) -> None:
+    cached_bindings = _TRIGGER_MODULE_CACHE.get(trigger_id)
+    if cached_bindings is None:
+        if _TRIGGER_MODULE_CACHE_MAXSIZE > 0 and len(_TRIGGER_MODULE_CACHE) >= _TRIGGER_MODULE_CACHE_MAXSIZE:
+            del _TRIGGER_MODULE_CACHE[next(iter(_TRIGGER_MODULE_CACHE))]
+        cached_bindings = {}
+        _TRIGGER_MODULE_CACHE[trigger_id] = cached_bindings
+    for name in names:
+        if name in mod_vars:
+            cached_bindings[name] = mod_vars[name]
+
+
+def _enrich_globals_for_string_forward_refs(global_vars: dict[str, Any]) -> None:
+    """Add to global_vars types referenced as string forward refs in generic aliases but missing from it.
+
+    Handles the case where a generic alias such as ``list["ForwardReferenced"]`` was defined in
+    module A and imported into module B, but ``ForwardReferenced`` was not imported into module B.
+    """
+    # Collect all string/ForwardRef names nested inside generic alias args
+    needed: set[str] = set()
+    trigger_value_ids: set[int] = set()
+    for value in global_vars.values():
+        # Only consider generic/type-hint-like values (with subtypes) or ForwardRef.
+        # Avoid treating arbitrary string globals (e.g., __name__, __doc__) as forward refs.
+        if not (hasattr(value, "__args__") or isinstance(value, ForwardRef)):
+            continue
+        before = len(needed)
+        _collect_string_fwd_ref_names(value, needed)
+        if len(needed) > before:
+            trigger_value_ids.add(id(value))
+
+    missing = needed - set(global_vars.keys())
+    if not missing:
+        return
+
+    # Reuse the previously discovered bindings before scanning sys.modules again.
+    for trigger_id in trigger_value_ids:
+        cached_bindings = _TRIGGER_MODULE_CACHE.get(trigger_id, {})
+        _update_missing_from_module_vars(global_vars, missing, cached_bindings)
+
+    if not missing:
+        return
+
+    # Find candidate modules: those that define the same trigger values (by identity).
+    # This lets us trace generic aliases back to their origin module.
+    for module_name, mod in list(sys.modules.items()):
+        if mod is None or not missing:
+            continue
+        try:
+            mod_vars = vars(mod)
+        except TypeError:
+            continue
+        matched_trigger_ids = {id(value) for value in mod_vars.values() if id(value) in trigger_value_ids}
+        if not matched_trigger_ids:
+            continue
+        for trigger_id in matched_trigger_ids:
+            _cache_trigger_bindings(trigger_id, mod_vars, needed)
+        _update_missing_from_module_vars(global_vars, missing, mod_vars)
+
+
 def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
     global_vars = getattr(obj, "__globals__", {}).copy()
     if is_dataclass(obj):
@@ -236,6 +315,7 @@ def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
     except Exception as ex:
         if logger:
             logger.debug(f"Failed to update aliases for TYPE_CHECKING blocks in {obj.__module__}", exc_info=ex)
+    _enrich_globals_for_string_forward_refs(global_vars)
     return global_vars
 
 
