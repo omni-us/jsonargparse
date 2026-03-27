@@ -467,7 +467,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 cfg, unk = self.parse_known_args(args=args, namespace=cfg)
                 cfg, unk = self._positional_optionals(cfg, unk)
             if unk:
-                self.error(f"Unrecognized arguments: {' '.join(unk)}")
+                self.error(f"unrecognized arguments: {' '.join(unk)}")
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -1164,7 +1164,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             if subcommand is not None and subparser is not None:
                 missing.extend(check_required(cfg.get(subcommand), subparser, prefix + subcommand + "."))
             if prefix == "" and missing:
-                raise TypeError(f"missing required options: {', '.join(missing)}")
+                raise TypeError(f"the following arguments are required: {', '.join(missing)}")
             return missing
 
         def check_values(cfg):
