@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from calendar import Calendar
 from importlib import import_module
-from random import Random
 from unittest.mock import patch
 
 import pytest
@@ -13,10 +11,9 @@ from jsonargparse import (
     ArgumentParser,
     Namespace,
     capture_parser,
-    class_from_function,
 )
 from jsonargparse._common import LoggerProperty, debug_mode_active, null_logger
-from jsonargparse._optionals import docstring_parser_support, reconplogger_support
+from jsonargparse._optionals import reconplogger_support
 from jsonargparse._util import (
     CaptureParserException,
     get_import_path,
@@ -25,7 +22,7 @@ from jsonargparse._util import (
     register_unresolvable_import_paths,
     unique,
 )
-from jsonargparse_tests.conftest import capture_logs, get_parser_help
+from jsonargparse_tests.conftest import capture_logs
 
 # logger property tests
 
@@ -210,104 +207,6 @@ def test_object_path_serializer_reimport_differs():
     FakeClass.__module__ = Class.__module__
     FakeClass.__qualname__ = Class.__qualname__
     pytest.raises(ValueError, lambda: object_path_serializer(FakeClass))
-
-
-# class_from_function tests
-
-
-def get_random() -> Random:
-    return Random()
-
-
-class Foo:
-    @classmethod
-    def get_foo(cls) -> "Foo":
-        return cls()
-
-
-def closure_get_foo():
-    def get_foo() -> Foo:
-        return Foo()
-
-    return get_foo
-
-
-@pytest.mark.parametrize(
-    ["function", "class_type"],
-    [
-        (get_random, Random),
-        (Foo.get_foo, Foo),
-        (closure_get_foo(), Foo),
-    ],
-)
-def test_class_from_function(function, class_type):
-    cls = class_from_function(function)
-    assert issubclass(cls, class_type)
-    assert isinstance(cls(), class_type)
-    module_path, name = get_import_path(cls).rsplit(".", 1)
-    assert module_path == __name__
-    assert cls is globals()[name]
-    assert cls is class_from_function(function)
-
-
-def test_class_from_function_name_clash():
-    with pytest.raises(ValueError) as ctx:
-        class_from_function(get_random, name="get_random")
-    ctx.match("already defines 'get_random', please use a different name")
-
-
-def get_unknown() -> "Unknown":  # type: ignore  # noqa: F821
-    return None
-
-
-def test_invalid_class_from_function():
-    with pytest.raises(ValueError) as ctx:
-        class_from_function(get_unknown)
-    ctx.match("Unable to dereference '?Unknown'?, the return type of")
-
-
-def get_random_untyped():
-    return Random()
-
-
-def test_class_from_function_given_return_type():
-    cls = class_from_function(get_random_untyped, Random)
-    assert issubclass(cls, Random)
-    assert isinstance(cls(), Random)
-
-
-def get_calendar(a1: str, a2: int = 2) -> Calendar:
-    """Returns instance of Calendar"""
-    cal = Calendar()
-    cal.a1 = a1  # type: ignore[attr-defined]
-    cal.a2 = a2  # type: ignore[attr-defined]
-    return cal
-
-
-def test_add_class_from_function_arguments(parser):
-    get_calendar_class = class_from_function(get_calendar)
-    parser.add_class_arguments(get_calendar_class, "a")
-
-    if docstring_parser_support:
-        help_str = get_parser_help(parser)
-        assert "Returns instance of Calendar" in help_str
-
-    cfg = parser.parse_args(["--a.a1=v", "--a.a2=3"])
-    assert cfg.a == Namespace(a1="v", a2=3)
-    init = parser.instantiate_classes(cfg)
-    assert isinstance(init.a, Calendar)
-    assert init.a.a1 == "v"
-    assert init.a.a2 == 3
-
-
-def without_return_type():
-    pass
-
-
-def test_class_from_function_missing_return():
-    with pytest.raises(ValueError) as ctx:
-        class_from_function(without_return_type)
-    ctx.match("does not have a return type annotation")
 
 
 # other tests

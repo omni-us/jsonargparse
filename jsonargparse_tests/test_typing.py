@@ -3,14 +3,19 @@ from __future__ import annotations
 import inspect
 import pickle
 import random
+import sys
 import uuid
+from calendar import Calendar
 from datetime import datetime, timedelta
 from decimal import Decimal
+from random import Random
 from typing import List, Optional, Union
 
 import pytest
 
-from jsonargparse import ArgumentError
+from jsonargparse import ArgumentError, Namespace
+from jsonargparse._optionals import docstring_parser_support
+from jsonargparse._util import get_import_path
 from jsonargparse.typing import (
     ClosedUnitInterval,
     Email,
@@ -21,8 +26,11 @@ from jsonargparse.typing import (
     PositiveFloat,
     PositiveInt,
     SecretStr,
+    _LazyInitBaseClass,
+    class_from_function,
     extend_base_type,
     get_registered_type,
+    lazy_instance,
     register_type,
     register_type_on_first_use,
     registered_types,
@@ -31,6 +39,9 @@ from jsonargparse.typing import (
     restricted_string_type,
 )
 from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_load
+
+if sys.version_info >= (3, 12):
+    from typing import TypeAliasType
 
 
 def test_public_api():
@@ -396,6 +407,31 @@ def test_register_type_on_first_use():
     assert f"{__name__}.RegisterOnFirstUse" not in registration_pending
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="TypeAliasType only available in python>=3.12")
+def test_register_type_alias_and_skip_subclass_help(parser):
+    class Base:
+        pass
+
+    class Impl(Base):
+        pass
+
+    base_alias = TypeAliasType("BaseAlias", type[Base])
+
+    register_type(
+        base_alias,
+        serializer=lambda value: value.__name__,
+        deserializer=lambda _: Impl,
+        type_check=lambda value, _: inspect.isclass(value) and issubclass(value, Base),
+    )
+
+    parser.add_argument("--item", type=base_alias)
+    assert "--item.help" not in get_parser_help(parser)
+
+    cfg = parser.parse_args(["--item=ignored"])
+    assert cfg.item is Impl
+    assert {"item": "Impl"} == json_or_yaml_load(parser.dump(cfg))
+
+
 def test_decimal(parser):
     parser.add_argument("--decimal", type=Decimal)
     cfg = parser.parse_args(["--decimal=0.1"])
@@ -429,3 +465,114 @@ def test_secret_str_parsing(parser):
     assert isinstance(cfg.password, SecretStr)
     assert cfg.password.get_secret_value() == "secret"
     assert "secret" not in parser.dump(cfg)
+
+
+def test_top_level_compatibility_not_in_public_api():
+    import jsonargparse as ja
+
+    assert ja.class_from_function is class_from_function
+    assert ja.lazy_instance is lazy_instance
+    assert "class_from_function" not in ja.__all__
+    assert "lazy_instance" not in ja.__all__
+
+
+def test_lazy_init_base_class_available_from_typing():
+    assert _LazyInitBaseClass.__module__ == "jsonargparse.typing"
+
+
+# class_from_function tests
+
+
+def get_random() -> Random:
+    return Random()
+
+
+class Foo:
+    @classmethod
+    def get_foo(cls) -> "Foo":
+        return cls()
+
+
+def closure_get_foo():
+    def get_foo() -> Foo:
+        return Foo()
+
+    return get_foo
+
+
+@pytest.mark.parametrize(
+    ["function", "class_type"],
+    [
+        (get_random, Random),
+        (Foo.get_foo, Foo),
+        (closure_get_foo(), Foo),
+    ],
+)
+def test_class_from_function(function, class_type):
+    cls = class_from_function(function)
+    assert issubclass(cls, class_type)
+    assert isinstance(cls(), class_type)
+    module_path, name = get_import_path(cls).rsplit(".", 1)
+    assert module_path == __name__
+    assert cls is globals()[name]
+    assert cls is class_from_function(function)
+
+
+def test_class_from_function_name_clash():
+    with pytest.raises(ValueError) as ctx:
+        class_from_function(get_random, name="get_random")
+    ctx.match("already defines 'get_random', please use a different name")
+
+
+def get_unknown() -> "Unknown":  # type: ignore  # noqa: F821
+    return None
+
+
+def test_invalid_class_from_function():
+    with pytest.raises(ValueError) as ctx:
+        class_from_function(get_unknown)
+    ctx.match("Unable to dereference '?Unknown'?, the return type of")
+
+
+def get_random_untyped():
+    return Random()
+
+
+def test_class_from_function_given_return_type():
+    cls = class_from_function(get_random_untyped, Random)
+    assert issubclass(cls, Random)
+    assert isinstance(cls(), Random)
+
+
+def get_calendar(a1: str, a2: int = 2) -> Calendar:
+    """Returns instance of Calendar"""
+    cal = Calendar()
+    cal.a1 = a1  # type: ignore[attr-defined]
+    cal.a2 = a2  # type: ignore[attr-defined]
+    return cal
+
+
+def test_add_class_from_function_arguments(parser):
+    get_calendar_class = class_from_function(get_calendar)
+    parser.add_class_arguments(get_calendar_class, "a")
+
+    if docstring_parser_support:
+        help_str = get_parser_help(parser)
+        assert "Returns instance of Calendar" in help_str
+
+    cfg = parser.parse_args(["--a.a1=v", "--a.a2=3"])
+    assert cfg.a == Namespace(a1="v", a2=3)
+    init = parser.instantiate_classes(cfg)
+    assert isinstance(init.a, Calendar)
+    assert init.a.a1 == "v"
+    assert init.a.a2 == 3
+
+
+def without_return_type():
+    pass
+
+
+def test_class_from_function_missing_return():
+    with pytest.raises(ValueError) as ctx:
+        class_from_function(without_return_type)
+    ctx.match("does not have a return type annotation")

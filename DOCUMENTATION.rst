@@ -1580,7 +1580,8 @@ would change to:
 
 .. testcode:: class_from_function
 
-    from jsonargparse import ArgumentParser, class_from_function
+    from jsonargparse import ArgumentParser
+    from jsonargparse.typing import class_from_function
 
     parser = ArgumentParser()
     dynamic_class = class_from_function(instantiate_myclass)
@@ -1729,6 +1730,11 @@ unrelated to these variables.
     def calls_local_import(**kwargs):
         import some_module
         some_module.a_callable(**kwargs)
+
+
+    def calls_nested_module_attr(**kwargs):
+        import some_module
+        some_module.nested.a_callable(**kwargs)
 
 
     def pops_from_kwargs(**kwargs):
@@ -2250,7 +2256,7 @@ example above, this would be:
 
 .. testcode:: instance_default
 
-    from jsonargparse import lazy_instance
+    from jsonargparse.typing import lazy_instance
 
 
     class MyClass:

@@ -12,8 +12,17 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.47.1 (unreleased)
+v4.48.0 (unreleased)
 --------------------
+
+Added
+^^^^^
+- AST resolver now supports nested attribute calls like
+  ``module.submodule.function(**kwargs)`` (`#878
+  <https://github.com/omni-us/jsonargparse/pull/878>`__).
+- ``register_type`` now supports ``TypeAliasType`` (python 3.12+) in addition
+  to classes, and registered aliases no longer add subclass help actions
+  (`#875 <https://github.com/omni-us/jsonargparse/pull/875>`__).
 
 Fixed
 ^^^^^
@@ -23,6 +32,14 @@ Fixed
 - ``auto_cli`` no longer fails when a single function, a class ``__init__``, or
   a function/class in a list/dict of components has a parameter named
   ``config`` (`#873 <https://github.com/omni-us/jsonargparse/pull/873>`__).
+
+Changed
+^^^^^^^
+- Now all missing required options are listed in the error message (`#876
+  <https://github.com/omni-us/jsonargparse/pull/876>`__).
+- ``class_from_function`` and ``lazy_instance`` are now located in
+  ``jsonargparse.typing`` while the previous import locations are kept for
+  compatibility (`#877 <https://github.com/omni-us/jsonargparse/pull/877>`__).
 
 
 v4.47.0 (2026-03-13)

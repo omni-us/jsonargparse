@@ -222,7 +222,9 @@ def test_single_class_return_instance():
 
 
 def test_single_class_missing_required_init():
-    assert "'i1' is required" in get_cli_stderr(Class1, args=['--config={"method1": {"m1": 2}}'])
+    assert "the following arguments are required: i1" in get_cli_stderr(
+        Class1, args=['--config={"method1": {"m1": 2}}']
+    )
 
 
 def test_single_class_invalid_method_parameter():

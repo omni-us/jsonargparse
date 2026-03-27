@@ -600,7 +600,11 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
 
     def visit_Import(self, node: Union[ast.Import, ast.ImportFrom]) -> None:
         for alias in node.names:
-            self.import_names[alias.asname or alias.name] = node
+            name = alias.asname or alias.name
+            self.import_names[name] = node
+            top_level = name.split(".")[0]
+            if top_level != name:
+                self.import_names[top_level] = node
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         self.visit_Import(node)
@@ -611,8 +615,9 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
             name = False
             if isinstance(node.func, ast.Name):
                 name = node.func.id
-            elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
-                name = node.func.value.id
+            elif isinstance(node.func, ast.Attribute):
+                names = ast_get_name_and_attrs(node.func)
+                name = names[0] if names else False
             if name and name in self.import_names:
                 source = self.import_names[name]
         self.values_found.append((key, node, source))
@@ -649,21 +654,24 @@ class ParametersVisitor(LoggerProperty, ast.NodeVisitor):
                 function_or_class = getattr(module, node.func.id)
             elif source:
                 function_or_class = self.get_component_from_source(node.func.id, source)
-        elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
-            if self.parent and ast.dump(node.func.value) == ast.dump(ast_variable_load(self.self_name)):
+        elif isinstance(node.func, ast.Attribute):
+            names = ast_get_name_and_attrs(node.func)
+            if len(names) == 2 and self.parent and names[0] == self.self_name:
                 function_or_class = self.parent
-                method_or_property = node.func.attr
-            else:
+                method_or_property = names[-1]
+            elif len(names) >= 2:
                 container = None
-                if hasattr(module, node.func.value.id):
-                    container = getattr(module, node.func.value.id)
-                elif source:
-                    container = self.get_component_from_source(node.func.value.id, source)
+                if source:
+                    container = self.get_component_from_source(names[0], source)
+                if container is None and hasattr(module, names[0]):
+                    container = getattr(module, names[0])
+                for attr_name in names[1:-1]:
+                    container = getattr(container, attr_name, None) if container is not None else None
                 if inspect.isclass(container):
                     function_or_class = container
-                    method_or_property = node.func.attr
-                elif hasattr(container, node.func.attr):
-                    function_or_class = getattr(container, node.func.attr)
+                    method_or_property = names[-1]
+                elif container is not None and hasattr(container, names[-1]):
+                    function_or_class = getattr(container, names[-1])
         if not function_or_class:
             self.log_debug(f"not supported: {ast_str(node)}")
             return None
