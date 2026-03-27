@@ -396,7 +396,6 @@ class TestForwardReference:
         spec.loader.exec_module(mod)
         return mod
 
-
     def test_indirect_case_708(self, parser, tmp_path, fwdref_origin_mod):
         """Indirect: ForwardReferenced NOT imported — resolved from alias origin module (#708)."""
         (tmp_path / "indirect_708.py").write_text(
