@@ -78,7 +78,7 @@ def test_subcommands_not_given_when_many_subcommands(parser, subparser):
 
 
 def test_subcommands_missing_required_subargument(subcommands_parser):
-    with pytest.raises(ArgumentError, match=r"missing required options: a\.ap1"):
+    with pytest.raises(ArgumentError, match=r"the following arguments are required: a\.ap1"):
         subcommands_parser.parse_args(["a"])
 
 

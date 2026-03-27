@@ -280,7 +280,7 @@ class DataRequiredAttr:
 def test_add_argument_dataclass_type_required_attr(parser):
     parser.add_argument("--b", type=DataRequiredAttr)
     assert Namespace(a1="v", a2=1.2) == parser.parse_args(["--b.a1=v"]).b
-    with pytest.raises(ArgumentError, match=r"missing required options: b\.a1"):
+    with pytest.raises(ArgumentError, match=r"the following arguments are required: b\.a1"):
         parser.parse_args([])
 
 

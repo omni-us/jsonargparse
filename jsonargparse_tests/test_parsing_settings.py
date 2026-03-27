@@ -111,7 +111,7 @@ def test_parse_optionals_as_positionals_simple(parser, logger, subtests):
     parser.logger = logger
     with subtests.test("unrecognized arguments"):
         with capture_logs(logger) as logs:
-            with pytest.raises(ArgumentError, match="Unrecognized arguments: --unk=x"):
+            with pytest.raises(ArgumentError, match="unrecognized arguments: --unk=x"):
                 parser.parse_args(["--unk=x"])
         assert "Positional argument p1 missing, aborting _positional_optionals" in logs.getvalue()
 
