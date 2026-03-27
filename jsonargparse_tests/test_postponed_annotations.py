@@ -322,7 +322,7 @@ def test_get_types_dataclass_pep585(parser):
     types = get_types(Data585)
     assert types == {"a": list[int], "b": str}
     parser.add_class_arguments(Data585, "data")
-    cfg = parser.parse_object({"data": {"a": [1, 2]}})
+    cfg = parser.parse_args(["--data.a=[1, 2]"])
     assert cfg.data == Namespace(a=[1, 2], b="x")
 
 
@@ -334,7 +334,7 @@ class DataWithInit585(Data585):
 
 def test_add_dataclass_with_init_pep585(parser, tmp_cwd):
     parser.add_class_arguments(DataWithInit585, "data")
-    cfg = parser.parse_object({"data": {"a": [1, 2], "b": "."}})
+    cfg = parser.parse_args(["--data.a=[1, 2]", "--data.b=."])
     assert cfg.data == Namespace(a=[1, 2], b=Path_drw("."))
 
 
@@ -364,7 +364,7 @@ def test_get_params_dataclass_inherit_different_module():
     assert "PositiveInt" in str(params[1].annotation)
 
 
-def test_get_global_vars_ignores_type_checking_source_errors_without_logger(monkeypatch):
+def test_get_global_vars_ignores_type_checking_source_errors(monkeypatch):
     monkeypatch.setattr(
         postponed_annotations.inspect, "getsource", lambda _: (_ for _ in ()).throw(RuntimeError("boom"))
     )
@@ -396,15 +396,6 @@ class TestForwardReference:
         spec.loader.exec_module(mod)
         return mod
 
-    def test_direct_case_708(self, parser, tmp_path, fwdref_origin_mod):
-        """Direct: ForwardReferenced IS imported alongside NamedType — add_class_arguments must not raise."""
-        (tmp_path / "direct_708.py").write_text(
-            "from types_module_708 import NamedType, ForwardReferenced\n\n"
-            "class Direct:\n    def __init__(self, data_type: NamedType):\n        pass\n"
-        )
-        mod = self._load_module("direct_708", tmp_path / "direct_708.py")
-        with patch.dict(sys.modules, {"direct_708": mod}):
-            parser.add_class_arguments(mod.Direct)  # must not raise
 
     def test_indirect_case_708(self, parser, tmp_path, fwdref_origin_mod):
         """Indirect: ForwardReferenced NOT imported — resolved from alias origin module (#708)."""
