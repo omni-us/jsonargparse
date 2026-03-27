@@ -3,12 +3,13 @@
 import inspect
 import os
 import re
+import sys
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import is_dataclass
 from importlib.metadata import version
 from importlib.util import find_spec
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 __all__ = [
     "_get_config_read_mode",
@@ -385,10 +386,16 @@ def get_annotated_base_type(typehint: type) -> type:
 
 
 type_alias_type = typing_extensions_import("TypeAliasType")
+if sys.version_info >= (3, 12):
+    from typing import TypeAliasType as typing_type_alias_type
+else:
+    typing_type_alias_type = None
 
 
-def is_alias_type(typehint: type) -> bool:
-    return type_alias_type and isinstance(typehint, type_alias_type)
+def is_alias_type(typehint: Any) -> bool:
+    return (type_alias_type and isinstance(typehint, type_alias_type)) or (
+        typing_type_alias_type and isinstance(typehint, typing_type_alias_type)  # type: ignore[truthy-function]
+    )
 
 
 def get_alias_target(typehint: type) -> bool:
