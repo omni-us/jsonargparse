@@ -18,7 +18,7 @@ from jsonargparse._parameter_resolvers import get_signature_parameters as get_pa
 from jsonargparse._postponed_annotations import (
     _TRIGGER_MODULE_CACHE,
     TypeCheckingVisitor,
-    _cache_trigger_module_name,
+    _cache_trigger_bindings,
     _collect_string_fwd_ref_names,
     _enrich_globals_for_string_forward_refs,
     evaluate_postponed_annotations,
@@ -451,25 +451,24 @@ class TestEnrichGlobals:
     def setup_method(self):
         _TRIGGER_MODULE_CACHE.clear()
 
-    def test_cache_trigger_module_name_evicts_oldest_trigger(self, monkeypatch):
+    def test_cache_trigger_bindings_evicts_oldest_trigger(self, monkeypatch):
         """Cache evicts the oldest trigger when inserting beyond the configured size."""
         monkeypatch.setattr(postponed_annotations, "_TRIGGER_MODULE_CACHE_MAXSIZE", 2)
 
-        _cache_trigger_module_name(1, "module_a")
-        _cache_trigger_module_name(2, "module_b")
-        _cache_trigger_module_name(3, "module_c")
+        _cache_trigger_bindings(1, {"A": 1}, {"A"})
+        _cache_trigger_bindings(2, {"B": 2}, {"B"})
+        _cache_trigger_bindings(3, {"C": 3}, {"C"})
 
         assert list(_TRIGGER_MODULE_CACHE) == [2, 3]
-        assert _TRIGGER_MODULE_CACHE[2] == ["module_b"]
-        assert _TRIGGER_MODULE_CACHE[3] == ["module_c"]
+        assert _TRIGGER_MODULE_CACHE[2] == {"B": 2}
+        assert _TRIGGER_MODULE_CACHE[3] == {"C": 3}
 
-    def test_cache_trigger_module_name_deduplicates_module_names(self):
-        """Repeated discoveries for the same trigger/module pair are stored once."""
-        _cache_trigger_module_name(1, "module_a")
-        _cache_trigger_module_name(1, "module_a")
-        _cache_trigger_module_name(1, "module_b")
+    def test_cache_trigger_bindings_merges_names(self):
+        """Repeated discoveries for the same trigger merge available names."""
+        _cache_trigger_bindings(1, {"A": 1}, {"A"})
+        _cache_trigger_bindings(1, {"A": 1, "B": 2}, {"A", "B"})
 
-        assert _TRIGGER_MODULE_CACHE[1] == ["module_a", "module_b"]
+        assert _TRIGGER_MODULE_CACHE[1] == {"A": 1, "B": 2}
 
     def test_resolves_missing_fwd_ref(self, fwdref_origin_mod):
         """Missing forward-ref name is injected from the alias origin module."""
@@ -497,8 +496,8 @@ class TestEnrichGlobals:
         _collect_string_fwd_ref_names(ForwardRef("pkg.ForwardReferenced"), names)
         assert names == {"pkg"}
 
-    def test_cached_module_names_are_deduplicated_across_triggers(self, monkeypatch, tmp_path):
-        """Duplicate cached module names from multiple trigger aliases are processed once."""
+    def test_cached_bindings_are_reused_across_triggers(self, monkeypatch, tmp_path):
+        """Multiple trigger aliases can resolve names from cached bindings without rescanning."""
         multi_alias_path = tmp_path / "fwdref_multi_alias_module.py"
         multi_alias_path.write_text(
             dedent(
@@ -516,35 +515,31 @@ class TestEnrichGlobals:
         mod = importlib.util.module_from_spec(spec)
         with patch.dict(sys.modules, {"fwdref_multi_alias_module": mod}):
             spec.loader.exec_module(mod)
-            _TRIGGER_MODULE_CACHE[id(mod.NamedType)] = ["fwdref_multi_alias_module"]
-            _TRIGGER_MODULE_CACHE[id(mod.OtherType)] = ["fwdref_multi_alias_module"]
+            _TRIGGER_MODULE_CACHE[id(mod.NamedType)] = {"ForwardReferencedA": mod.ForwardReferencedA}
+            _TRIGGER_MODULE_CACHE[id(mod.OtherType)] = {"ForwardReferencedB": mod.ForwardReferencedB}
 
-            calls = []
-            original = postponed_annotations._update_missing_from_module_vars
+            class NoScanModules(dict):
+                def items(self):
+                    raise AssertionError("sys.modules should not be scanned when trigger bindings are warm")
 
-            def wrapped(global_vars, missing, mod_vars):
-                calls.append(sorted(missing))
-                return original(global_vars, missing, mod_vars)
-
-            monkeypatch.setattr(postponed_annotations, "_update_missing_from_module_vars", wrapped)
+            monkeypatch.setattr(postponed_annotations, "sys", SimpleNamespace(modules=NoScanModules({})))
 
             global_vars = {"NT": mod.NamedType, "TO": mod.OtherType}
             _enrich_globals_for_string_forward_refs(global_vars)
 
         assert global_vars["ForwardReferencedA"] is mod.ForwardReferencedA
         assert global_vars["ForwardReferencedB"] is mod.ForwardReferencedB
-        assert calls == [["ForwardReferencedA", "ForwardReferencedB"]]
 
-    def test_cached_missing_module_name_falls_back_to_scan(self, fwdref_origin_mod):
+    def test_cached_missing_binding_falls_back_to_scan(self, fwdref_origin_mod):
         """A stale cache entry does not block the later sys.modules scan."""
-        _TRIGGER_MODULE_CACHE[id(fwdref_origin_mod.NamedType)] = ["missing_fwdref_module"]
+        _TRIGGER_MODULE_CACHE[id(fwdref_origin_mod.NamedType)] = {"Missing": object()}
 
         global_vars = {"NT": fwdref_origin_mod.NamedType}
         _enrich_globals_for_string_forward_refs(global_vars)
 
         assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
 
-    def test_reuses_cached_modules_before_scanning_sys_modules(self, monkeypatch, fwdref_origin_mod):
+    def test_reuses_cached_bindings_before_scanning_sys_modules(self, monkeypatch, fwdref_origin_mod):
         """A warm cache avoids a second full sys.modules scan for the same trigger alias."""
         _enrich_globals_for_string_forward_refs({"NT": fwdref_origin_mod.NamedType})
 
@@ -562,14 +557,11 @@ class TestEnrichGlobals:
         _enrich_globals_for_string_forward_refs(global_vars)
         assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
 
-    def test_ignores_non_module_cached_entries(self, fwdref_origin_mod):
-        """Cached entries that are not modules do not break fallback scanning."""
-        _TRIGGER_MODULE_CACHE[id(fwdref_origin_mod.NamedType)] = ["_obj_sys_entry"]
-
-        with patch.dict(sys.modules, {"_obj_sys_entry": object()}):
-            global_vars = {"NT": fwdref_origin_mod.NamedType}
-            _enrich_globals_for_string_forward_refs(global_vars)
-
+    def test_ignores_cached_unrelated_entries(self, fwdref_origin_mod):
+        """Cached entries unrelated to needed names do not block fallback scanning."""
+        _TRIGGER_MODULE_CACHE[id(fwdref_origin_mod.NamedType)] = {"Unrelated": object()}
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
         assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
 
     def test_scan_skips_non_modules_before_reaching_origin_module(self, monkeypatch, fwdref_origin_mod):

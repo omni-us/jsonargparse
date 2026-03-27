@@ -17,7 +17,7 @@ var_map = namedtuple("var_map", "name value")
 none_map = var_map(name="NoneType", value=type(None))
 union_map = var_map(name="Union", value=Union)
 _TRIGGER_MODULE_CACHE_MAXSIZE = 1024
-_TRIGGER_MODULE_CACHE: dict[int, list[str]] = {}
+_TRIGGER_MODULE_CACHE: dict[int, dict[str, Any]] = {}
 
 
 class BackportTypeHints(ast.NodeTransformer):
@@ -239,15 +239,16 @@ def _update_missing_from_module_vars(global_vars: dict, missing: set[str], mod_v
             missing.discard(name)
 
 
-def _cache_trigger_module_name(trigger_id: int, module_name: str) -> None:
-    cached_modules = _TRIGGER_MODULE_CACHE.get(trigger_id)
-    if cached_modules is None:
+def _cache_trigger_bindings(trigger_id: int, mod_vars: dict[str, Any], names: set[str]) -> None:
+    cached_bindings = _TRIGGER_MODULE_CACHE.get(trigger_id)
+    if cached_bindings is None:
         if _TRIGGER_MODULE_CACHE_MAXSIZE > 0 and len(_TRIGGER_MODULE_CACHE) >= _TRIGGER_MODULE_CACHE_MAXSIZE:
             del _TRIGGER_MODULE_CACHE[next(iter(_TRIGGER_MODULE_CACHE))]
-        cached_modules = []
-        _TRIGGER_MODULE_CACHE[trigger_id] = cached_modules
-    if module_name not in cached_modules:
-        cached_modules.append(module_name)
+        cached_bindings = {}
+        _TRIGGER_MODULE_CACHE[trigger_id] = cached_bindings
+    for name in names:
+        if name in mod_vars:
+            cached_bindings[name] = mod_vars[name]
 
 
 def _enrich_globals_for_string_forward_refs(global_vars: dict[str, Any]) -> None:
@@ -273,24 +274,10 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict[str, Any]) -> None
     if not missing:
         return
 
-    # Reuse the previously discovered candidate modules before scanning sys.modules again.
-    cached_module_names: list[str] = []
-    seen_module_names: set[str] = set()
+    # Reuse the previously discovered bindings before scanning sys.modules again.
     for trigger_id in trigger_value_ids:
-        for module_name in _TRIGGER_MODULE_CACHE.get(trigger_id, []):
-            if module_name not in seen_module_names:
-                seen_module_names.add(module_name)
-                cached_module_names.append(module_name)
-
-    for module_name in cached_module_names:
-        mod = sys.modules.get(module_name)
-        if mod is None or not missing:
-            continue
-        try:
-            mod_vars = vars(mod)
-        except TypeError:
-            continue
-        _update_missing_from_module_vars(global_vars, missing, mod_vars)
+        cached_bindings = _TRIGGER_MODULE_CACHE.get(trigger_id, {})
+        _update_missing_from_module_vars(global_vars, missing, cached_bindings)
 
     if not missing:
         return
@@ -308,7 +295,7 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict[str, Any]) -> None
         if not matched_trigger_ids:
             continue
         for trigger_id in matched_trigger_ids:
-            _cache_trigger_module_name(trigger_id, module_name)
+            _cache_trigger_bindings(trigger_id, mod_vars, needed)
         _update_missing_from_module_vars(global_vars, missing, mod_vars)
 
 
