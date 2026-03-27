@@ -377,15 +377,11 @@ def test_get_global_vars_ignores_type_checking_source_errors(monkeypatch):
 def fwdref_origin_mod(tmp_path):
     """Module A: defines ForwardReferenced and NamedType = list['ForwardReferenced']."""
     types_module_path = tmp_path / "fwdref_types_module.py"
-    types_module_path.write_text(
-        dedent(
-            """\
+    types_module_path.write_text(dedent("""\
             class ForwardReferenced:
                 pass
             NamedType = list['ForwardReferenced']
-            """
-        )
-    )
+            """))
     spec = importlib.util.spec_from_file_location("fwdref_types_module", types_module_path)
     mod = importlib.util.module_from_spec(spec)
     with patch.dict(sys.modules, {"fwdref_types_module": mod}):
@@ -407,17 +403,13 @@ class TestForwardReference:
     def test_forward_ref_resolved_from_alias_origin_module(self, parser, tmp_path, fwdref_origin_mod):
         """Indirect: ForwardReferenced NOT imported and resolved from alias origin module."""
         indirect_path = tmp_path / "fwdref_indirect_module.py"
-        indirect_path.write_text(
-            dedent(
-                """\
+        indirect_path.write_text(dedent("""\
                 from fwdref_types_module import NamedType
 
                 class Indirect:
                     def __init__(self, data_type: NamedType):
                         pass
-                """
-            )
-        )
+                """))
         mod = self._load_module("fwdref_indirect_module", indirect_path)
         with patch.dict(sys.modules, {"fwdref_indirect_module": mod}):
             parser.add_class_arguments(mod.Indirect)
@@ -428,17 +420,13 @@ class TestForwardReference:
     def test_forward_ref_resolved_for_aliased_import(self, parser, tmp_path, fwdref_origin_mod):
         """Aliased: alias imported under a different local name and still resolved."""
         aliased_path = tmp_path / "fwdref_aliased_module.py"
-        aliased_path.write_text(
-            dedent(
-                """\
+        aliased_path.write_text(dedent("""\
                 from fwdref_types_module import NamedType as NT
 
                 class Aliased:
                     def __init__(self, data_type: NT):
                         pass
-                """
-            )
-        )
+                """))
         mod = self._load_module("fwdref_aliased_module", aliased_path)
         with patch.dict(sys.modules, {"fwdref_aliased_module": mod}):
             parser.add_class_arguments(mod.Aliased)
@@ -499,18 +487,14 @@ class TestEnrichGlobals:
     def test_cached_bindings_are_reused_across_triggers(self, monkeypatch, tmp_path):
         """Multiple trigger aliases can resolve names from cached bindings without rescanning."""
         multi_alias_path = tmp_path / "fwdref_multi_alias_module.py"
-        multi_alias_path.write_text(
-            dedent(
-                """\
+        multi_alias_path.write_text(dedent("""\
                 class ForwardReferencedA:
                     pass
                 class ForwardReferencedB:
                     pass
                 NamedType = list['ForwardReferencedA']
                 OtherType = dict[str, 'ForwardReferencedB']
-                """
-            )
-        )
+                """))
         spec = importlib.util.spec_from_file_location("fwdref_multi_alias_module", multi_alias_path)
         mod = importlib.util.module_from_spec(spec)
         with patch.dict(sys.modules, {"fwdref_multi_alias_module": mod}):
@@ -577,15 +561,11 @@ class TestEnrichGlobals:
     def test_resolves_nested_generic_alias(self, tmp_path):
         """Recursive collection resolves names nested two levels deep (list[list['X']])."""
         nested_path = tmp_path / "fwdref_nested_module.py"
-        nested_path.write_text(
-            dedent(
-                """\
+        nested_path.write_text(dedent("""\
                 class Inner:
                     pass
                 NestedType = list[list['Inner']]
-                """
-            )
-        )
+                """))
         spec = importlib.util.spec_from_file_location("fwdref_nested_module", nested_path)
         mod = importlib.util.module_from_spec(spec)
         with patch.dict(sys.modules, {"fwdref_nested_module": mod}):
