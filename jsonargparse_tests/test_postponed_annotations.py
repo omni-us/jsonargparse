@@ -1,19 +1,30 @@
 from __future__ import annotations  # keep
 
 import dataclasses
+import importlib.util
 import os
 import sys
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
+from textwrap import dedent
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Dict, ForwardRef, List, Optional, Tuple, Type, Union
+from unittest.mock import patch
 
 import pytest
 
 from jsonargparse import Namespace
+from jsonargparse import _postponed_annotations as postponed_annotations
 from jsonargparse._optionals import docstring_parser_support
 from jsonargparse._parameter_resolvers import get_signature_parameters as get_params
 from jsonargparse._postponed_annotations import (
+    _TRIGGER_MODULE_CACHE,
     TypeCheckingVisitor,
+    _cache_trigger_bindings,
+    _collect_string_fwd_ref_names,
+    _enrich_globals_for_string_forward_refs,
     evaluate_postponed_annotations,
+    get_global_vars,
     get_types,
+    type_requires_eval,
 )
 from jsonargparse.typing import Path_drw
 from jsonargparse_tests.conftest import capture_logs, source_unavailable
@@ -352,3 +363,213 @@ def test_get_params_dataclass_inherit_different_module():
     assert "BetweenThreeAndNine" in str(params[0].annotation)
     assert not isinstance(params[1].annotation.__args__[0], str)
     assert "PositiveInt" in str(params[1].annotation)
+
+
+def test_get_global_vars_ignores_type_checking_source_errors(monkeypatch):
+    monkeypatch.setattr(
+        postponed_annotations.inspect, "getsource", lambda _: (_ for _ in ()).throw(RuntimeError("boom"))
+    )
+    global_vars = get_global_vars(function_type_checking_alias, None)
+    assert global_vars["function_type_checking_alias"] is function_type_checking_alias
+
+
+@pytest.fixture
+def fwdref_origin_mod(tmp_path):
+    """Module A: defines ForwardReferenced and NamedType = list['ForwardReferenced']."""
+    types_module_path = tmp_path / "fwdref_types_module.py"
+    types_module_path.write_text(dedent("""\
+            class ForwardReferenced:
+                pass
+            NamedType = list['ForwardReferenced']
+            """))
+    spec = importlib.util.spec_from_file_location("fwdref_types_module", types_module_path)
+    mod = importlib.util.module_from_spec(spec)
+    with patch.dict(sys.modules, {"fwdref_types_module": mod}):
+        spec.loader.exec_module(mod)
+        yield mod
+
+
+class TestForwardReference:
+    def setup_method(self):
+        _TRIGGER_MODULE_CACHE.clear()
+
+    @staticmethod
+    def _load_module(name, path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_forward_ref_resolved_from_alias_origin_module(self, parser, tmp_path, fwdref_origin_mod):
+        """Indirect: ForwardReferenced NOT imported and resolved from alias origin module."""
+        indirect_path = tmp_path / "fwdref_indirect_module.py"
+        indirect_path.write_text(dedent("""\
+                from fwdref_types_module import NamedType
+
+                class Indirect:
+                    def __init__(self, data_type: NamedType):
+                        pass
+                """))
+        mod = self._load_module("fwdref_indirect_module", indirect_path)
+        with patch.dict(sys.modules, {"fwdref_indirect_module": mod}):
+            parser.add_class_arguments(mod.Indirect)
+            types = get_types(mod.Indirect.__init__)
+            assert not type_requires_eval(types["data_type"])
+            assert "ForwardReferenced" in str(types["data_type"])
+
+    def test_forward_ref_resolved_for_aliased_import(self, parser, tmp_path, fwdref_origin_mod):
+        """Aliased: alias imported under a different local name and still resolved."""
+        aliased_path = tmp_path / "fwdref_aliased_module.py"
+        aliased_path.write_text(dedent("""\
+                from fwdref_types_module import NamedType as NT
+
+                class Aliased:
+                    def __init__(self, data_type: NT):
+                        pass
+                """))
+        mod = self._load_module("fwdref_aliased_module", aliased_path)
+        with patch.dict(sys.modules, {"fwdref_aliased_module": mod}):
+            parser.add_class_arguments(mod.Aliased)
+            types = get_types(mod.Aliased.__init__)
+            assert not type_requires_eval(types["data_type"])
+            assert "ForwardReferenced" in str(types["data_type"])
+
+
+class TestEnrichGlobals:
+    def setup_method(self):
+        _TRIGGER_MODULE_CACHE.clear()
+
+    def test_cache_trigger_bindings_evicts_oldest_trigger(self, monkeypatch):
+        """Cache evicts the oldest trigger when inserting beyond the configured size."""
+        monkeypatch.setattr(postponed_annotations, "_TRIGGER_MODULE_CACHE_MAXSIZE", 2)
+
+        _cache_trigger_bindings(1, {"A": 1}, {"A"})
+        _cache_trigger_bindings(2, {"B": 2}, {"B"})
+        _cache_trigger_bindings(3, {"C": 3}, {"C"})
+
+        assert list(_TRIGGER_MODULE_CACHE) == [2, 3]
+        assert _TRIGGER_MODULE_CACHE[2] == {"B": 2}
+        assert _TRIGGER_MODULE_CACHE[3] == {"C": 3}
+
+    def test_cache_trigger_bindings_merges_names(self):
+        """Repeated discoveries for the same trigger merge available names."""
+        _cache_trigger_bindings(1, {"A": 1}, {"A"})
+        _cache_trigger_bindings(1, {"A": 1, "B": 2}, {"A", "B"})
+
+        assert _TRIGGER_MODULE_CACHE[1] == {"A": 1, "B": 2}
+
+    def test_resolves_missing_fwd_ref(self, fwdref_origin_mod):
+        """Missing forward-ref name is injected from the alias origin module."""
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_no_overwrite_existing(self, fwdref_origin_mod):
+        """Already-present binding is not overwritten by enrichment."""
+        sentinel = object()
+        global_vars = {"NT": fwdref_origin_mod.NamedType, "ForwardReferenced": sentinel}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is sentinel
+
+    def test_handles_non_module_sys_entries(self, fwdref_origin_mod):
+        """None and non-module entries in sys.modules do not cause errors."""
+        with patch.dict(sys.modules, {"_null_sys_entry": None, "_obj_sys_entry": object()}):
+            global_vars = {"NT": fwdref_origin_mod.NamedType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+            assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_collect_string_fwd_ref_names_supports_forwardref_instances(self):
+        """Direct ForwardRef objects contribute their root name."""
+        names = set()
+        _collect_string_fwd_ref_names(ForwardRef("pkg.ForwardReferenced"), names)
+        assert names == {"pkg"}
+
+    def test_cached_bindings_are_reused_across_triggers(self, monkeypatch, tmp_path):
+        """Multiple trigger aliases can resolve names from cached bindings without rescanning."""
+        multi_alias_path = tmp_path / "fwdref_multi_alias_module.py"
+        multi_alias_path.write_text(dedent("""\
+                class ForwardReferencedA:
+                    pass
+                class ForwardReferencedB:
+                    pass
+                NamedType = list['ForwardReferencedA']
+                OtherType = dict[str, 'ForwardReferencedB']
+                """))
+        spec = importlib.util.spec_from_file_location("fwdref_multi_alias_module", multi_alias_path)
+        mod = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, {"fwdref_multi_alias_module": mod}):
+            spec.loader.exec_module(mod)
+            _TRIGGER_MODULE_CACHE[id(mod.NamedType)] = {"ForwardReferencedA": mod.ForwardReferencedA}
+            _TRIGGER_MODULE_CACHE[id(mod.OtherType)] = {"ForwardReferencedB": mod.ForwardReferencedB}
+
+            class NoScanModules(dict):
+                def items(self):
+                    raise AssertionError("sys.modules should not be scanned when trigger bindings are warm")
+
+            monkeypatch.setattr(postponed_annotations, "sys", SimpleNamespace(modules=NoScanModules({})))
+
+            global_vars = {"NT": mod.NamedType, "TO": mod.OtherType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+
+        assert global_vars["ForwardReferencedA"] is mod.ForwardReferencedA
+        assert global_vars["ForwardReferencedB"] is mod.ForwardReferencedB
+
+    def test_cached_missing_binding_falls_back_to_scan(self, fwdref_origin_mod):
+        """A stale cache entry does not block the later sys.modules scan."""
+        _TRIGGER_MODULE_CACHE[id(fwdref_origin_mod.NamedType)] = {"Missing": object()}
+
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_reuses_cached_bindings_before_scanning_sys_modules(self, monkeypatch, fwdref_origin_mod):
+        """A warm cache avoids a second full sys.modules scan for the same trigger alias."""
+        _enrich_globals_for_string_forward_refs({"NT": fwdref_origin_mod.NamedType})
+
+        class NoScanModules(dict):
+            def items(self):
+                raise AssertionError("sys.modules should not be scanned when the trigger cache is warm")
+
+        monkeypatch.setattr(
+            postponed_annotations,
+            "sys",
+            SimpleNamespace(modules=NoScanModules({"fwdref_types_module": fwdref_origin_mod})),
+        )
+
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_ignores_cached_unrelated_entries(self, fwdref_origin_mod):
+        """Cached entries unrelated to needed names do not block fallback scanning."""
+        _TRIGGER_MODULE_CACHE[id(fwdref_origin_mod.NamedType)] = {"Unrelated": object()}
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_scan_skips_non_modules_before_reaching_origin_module(self, monkeypatch, fwdref_origin_mod):
+        """The fallback scan ignores entries without a module dict and keeps searching."""
+        fake_sys = SimpleNamespace(modules={"_obj_sys_entry": object(), "fwdref_types_module": fwdref_origin_mod})
+        monkeypatch.setattr(postponed_annotations, "sys", fake_sys)
+
+        global_vars = {"NT": fwdref_origin_mod.NamedType}
+        _enrich_globals_for_string_forward_refs(global_vars)
+
+        assert global_vars["ForwardReferenced"] is fwdref_origin_mod.ForwardReferenced
+
+    def test_resolves_nested_generic_alias(self, tmp_path):
+        """Recursive collection resolves names nested two levels deep (list[list['X']])."""
+        nested_path = tmp_path / "fwdref_nested_module.py"
+        nested_path.write_text(dedent("""\
+                class Inner:
+                    pass
+                NestedType = list[list['Inner']]
+                """))
+        spec = importlib.util.spec_from_file_location("fwdref_nested_module", nested_path)
+        mod = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, {"fwdref_nested_module": mod}):
+            spec.loader.exec_module(mod)
+            global_vars = {"NT": mod.NestedType}
+            _enrich_globals_for_string_forward_refs(global_vars)
+            assert global_vars["Inner"] is mod.Inner
