@@ -24,21 +24,11 @@ repos:
   - id: trailing-whitespace
     exclude: .bumpversion.cfg
 
-- repo: https://github.com/psf/black
-  rev: 26.1.0
-  hooks:
-  - id: black
-
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.14.13
+  rev: v0.15.8
   hooks:
-  - id: ruff
-    args: ["--fix"]
-
-- repo: https://github.com/asottile/yesqa
-  rev: v1.5.0
-  hooks:
-  - id: yesqa
+  - id: ruff-check
+  - id: ruff-format
 
 - repo: https://github.com/crate-ci/typos
   rev: v1.42.1
