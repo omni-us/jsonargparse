@@ -193,15 +193,22 @@ Villegas = "Villegas"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{39,310,311,312,313,314}-{all,no}-extras,omegaconf,pydantic-v1,without-pyyaml,without-future-annotations
+envlist = py{39,310,311,312,313,314}-{all-extras,no-extras,argparse},omegaconf,pydantic-v1,without-pyyaml,without-future-annotations
 skip_missing_interpreters = true
 
 [testenv]
 extras =
     all-extras: test,coverage,all
     no-extras: coverage
+    argparse: coverage
 changedir = jsonargparse_tests
-commands = python -m pytest {posargs}
+allowlist_externals = rm
+commands =
+    all-extras: python -m pytest {posargs}
+    no-extras: python -m pytest {posargs}
+    argparse: rm -f tests_argparse_{env_name}.py
+    argparse: ./argparse_tests_generate.py --output_file tests_argparse_{env_name}.py --verbose false
+    argparse: python -m pytest -W ignore::pytest.PytestUnknownMarkWarning --tb=no -m "not (not_supported or implementation_specific or investigate)" tests_argparse_{env_name}.py {posargs}
 usedevelop = true
 
 [testenv:omegaconf]

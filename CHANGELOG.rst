@@ -40,6 +40,9 @@ Changed
 - ``class_from_function`` and ``lazy_instance`` are now located in
   ``jsonargparse.typing`` while the previous import locations are kept for
   compatibility (`#877 <https://github.com/omni-us/jsonargparse/pull/877>`__).
+- Most argparse tests from the Python standard library are run against
+  jsonargparse. Also the explicit deviations from argparse are documented (`#881
+  <https://github.com/omni-us/jsonargparse/pull/881>`__).
 
 
 v4.47.0 (2026-03-13)
