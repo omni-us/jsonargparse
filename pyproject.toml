@@ -200,7 +200,7 @@ skip_missing_interpreters = true
 extras =
     all-extras: test,coverage,all
     no-extras: coverage
-    argparse: test-no-urls
+    argparse: coverage
 changedir = jsonargparse_tests
 allowlist_externals = rm
 commands =

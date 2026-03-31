@@ -288,13 +288,10 @@ class ArgparseTestTransformer(ast.NodeTransformer):
 
     def visit_If(self, node: ast.If) -> Any:
         """Visit if statements and filter out if __name__ == '__main__' block."""
-        try:
-            if isinstance(node.test, ast.Compare):
-                left = node.test.left
-                if isinstance(left, ast.Name) and left.id == "__name__":
-                    return None
-        except (AttributeError, TypeError):
-            pass
+        if isinstance(node.test, ast.Compare):
+            left = node.test.left
+            if isinstance(left, ast.Name) and left.id == "__name__":
+                return None
         return node
 
     def generate_report(self) -> str:
