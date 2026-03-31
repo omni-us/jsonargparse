@@ -383,24 +383,6 @@ will work as expected. Additionally, the following cases are also valid:
     --o2=val2b`` would result in ``o2=val2a``.
 
 
-Functions as type
------------------
-
-Using a function as a type, like ``int_or_off`` below, is supported though
-discouraged. A basic requirement is that the function be idempotent, i.e.,
-applying the function two or more times should not modify the value. Instead of
-a function, it is recommended to implement a type, see :ref:`custom-types`.
-
-.. testcode::
-
-    # either int larger than zero or 'off' string
-    def int_or_off(x):
-        return x if x == "off" else int(x)
-
-
-    parser.add_argument("--int_or_off", type=int_or_off)
-
-
 Always fail arguments
 ---------------------
 
@@ -2649,17 +2631,19 @@ variables.
 Subcommands
 ===========
 
-One way to define parsers modularly is what in argparse is known as
-`subcommands <https://docs.python.org/3/library/argparse.html#subcommands>`__.
-However, to promote modularity, in jsonargparse subcommands work a bit
-different from argparse. To add subcommands to a parser, the
-:meth:`add_subcommands <.ArgumentParser.add_subcommands>` method is used. Then
-an existing parser is added as a subcommand using :meth:`add_subcommand
-<.ActionSubCommands.add_subcommand>`. In a parsed
-config object the subcommand will be stored in the ``subcommand`` entry (or
-whatever ``dest`` was set to), and the values of the subcommand will be in an
-entry with the same name as the respective subcommand. An example of defining a
-parser with subcommands is the following:
+Subcommands provide a modular approach to defining parsers, similar to the
+concept of `subcommands
+<https://docs.python.org/3/library/argparse.html#subcommands>`__ in argparse.
+However, in jsonargparse, subcommands behave somewhat differently; refer to
+:ref:`argparse-deviations` for further details.
+
+To incorporate subcommands into a parser, use the :meth:`add_subcommands
+<.ArgumentParser.add_subcommands>` method. You can then add an existing parser
+as a subcommand via :meth:`add_subcommand <.ActionSubCommands.add_subcommand>`.
+In the resulting parsed namespace, the selected subcommand is stored under the
+``subcommand`` key (or the key specified by ``dest``), and the arguments for the
+subcommand are nested under a key matching the subcommand's name. The following
+example demonstrates how to define a parser with subcommands:
 
 .. testcode::
 
@@ -3027,6 +3011,105 @@ it as follows:
     false  null   true
     $ example.py --bool f<TAB>
     $ example.py --bool false
+
+
+.. _argparse-deviations:
+
+Deviations from argparse
+========================
+
+To ensure a high level of compatibility with argparse, the argparse tests from
+the Python standard library are run against jsonargparse. Some of these tests
+are skipped for the following reasons: 1) they cover intentional deviations from
+argparse, 2) they are not relevant for jsonargparse, or 3) they are under
+investigation and may be enabled in the future. The tests to skip are configured
+in the ``argparse_tests_generate.py`` file.
+
+The following sections describe the main intentional deviations from argparse.
+In addition, deprecated features in argparse are not supported.
+
+Subcommands
+-----------
+
+In argparse, when a parser has subcommands, the resulting namespace merges the
+main parser and subparser options into a single flat namespace. Since
+jsonargparse supports nested namespaces, it was a deliberate design choice to
+place subcommand options in a dedicated subnamespace for greater clarity and
+user convenience.
+
+Additionally, in argparse, ``add_subparsers`` must be called with the ``dest``
+parameter to include the name of the selected subcommand in the resulting
+namespace. In jsonargparse, the chosen subcommand is available by default,
+without requiring any extra parameters.
+
+Furthermore, to promote modularity, subparsers in jsonargparse can be created
+independently, just like the main parser. The subparser object is then added as
+a subcommand. This enables defining functions that return subparsers, which can
+be used both as standalone parsers and as subcommands. In contrast, argparse
+subparsers are tightly coupled to the main parser and cannot be defined
+independently. To avoid confusion with respect to argparse, the method names for
+adding subcommands in jsonargparse are intentionally different.
+
+To migrate from argparse to jsonargparse, instead of:
+
+.. testcode::
+
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers()
+    subparser1 = subparsers.add_parser("foo")
+    subparser1.add_argument("--key")
+    ...
+
+The code would be changed to:
+
+.. testcode::
+
+    import jsonargparse
+
+    subparser1 = jsonargparse.ArgumentParser()
+    subparser1.add_argument("--key")
+
+    ...
+
+    parser = jsonargparse.ArgumentParser()
+    subcommands = parser.add_subcommands()
+    subcommands.add_subcommand("foo", subparser1)
+
+Parse known arguments
+---------------------
+
+Argparse provides the ``parse_known_args`` method, which allows for more lenient
+parsing by ignoring unrecognized arguments. However, jsonargparse is designed
+for complex parsing scenarios, such as: multiple subcommands, a large number of
+arguments derived from signatures, class instantiation, and configuration files.
+Allowing unrecognized arguments could make it harder for users to detect errors,
+such as typos in configuration files. For this reason, jsonargparse
+intentionally does not support ``parse_known_args``.
+
+User defined types
+------------------
+
+In argparse, when adding an argument, the ``type`` parameter can be set to a
+user-defined function or class. Providing a function is supported in
+jsonargparse, with the additional requirement that the function must be
+idempotent. That is, applying the function two or more times should not alter
+the value. For example:
+
+.. testcode::
+
+    # either int larger than zero or 'off' string
+    def int_or_off(x):
+        return x if x == "off" else int(x)
+
+
+    parser.add_argument("--int_or_off", type=int_or_off)
+
+Specifying a class as the type conflicts with the signature and type hint
+support that is central to jsonargparse. Therefore, providing a class as the
+type does not work the same way as in argparse. The recommended alternative is
+to implement a custom type; see :ref:`custom-types`.
 
 
 .. _logging:

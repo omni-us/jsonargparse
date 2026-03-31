@@ -11,6 +11,7 @@ sphinx/_build
 build
 dist
 htmlcov
+**/tests_argparse*
 
 # JetBrains IDEs
 .idea/

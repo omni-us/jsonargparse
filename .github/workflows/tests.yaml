@@ -54,6 +54,20 @@ jobs:
           name: junit_py${{ matrix.python }}
           path: ./junit_py*
 
+  argparse-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install tox
+      - run: tox -e py-argparse
+
   windows:
     runs-on: windows-2025
     strategy:
