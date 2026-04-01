@@ -23,6 +23,8 @@ Added
 - ``register_type`` now supports ``TypeAliasType`` (python 3.12+) in addition
   to classes, and registered aliases no longer add subclass help actions
   (`#875 <https://github.com/omni-us/jsonargparse/pull/875>`__).
+- ``add_class_arguments`` skip support for callable return class parameters
+  (`#882 <https://github.com/omni-us/jsonargparse/pull/882>`__).
 
 Fixed
 ^^^^^

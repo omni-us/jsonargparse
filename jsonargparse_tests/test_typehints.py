@@ -1250,6 +1250,50 @@ def test_callable_return_class_default_class_override_init_arg(parser):
     assert cfg.optimizer.init_args == Namespace(lr=0.05, momentum=0.5)
 
 
+class SkipCallableInitArg:
+    def __init__(self, optimizer: Callable[[List[float]], Optimizer] = SGD):
+        self.optimizer = optimizer
+
+
+def test_add_class_arguments_skip_callable_init_arg(parser):
+    parser.add_class_arguments(SkipCallableInitArg, skip={"optimizer.init_args.lr"})
+
+    help_str = get_parse_args_stdout(parser, ["--optimizer.help=Adam"])
+    assert "--optimizer.lr" not in help_str
+    assert "--optimizer.momentum" in help_str
+
+    cfg = parser.parse_args(["--optimizer=Adam", "--optimizer.momentum=0.5"])
+    assert cfg.optimizer.class_path == f"{__name__}.Adam"
+    assert cfg.optimizer.init_args == Namespace(momentum=0.5)
+
+    with pytest.raises(ArgumentError):
+        parser.parse_args(["--optimizer=Adam", "--optimizer.lr=0.05"])
+
+
+class SkipCallableMergedWithPartial:
+    def __init__(self, optimizer: Callable[[List[float], float], Optimizer] = SGD):
+        self.optimizer = optimizer
+
+
+def test_add_class_arguments_skip_callable_init_arg_and_partial_skip(parser):
+    parser.add_class_arguments(SkipCallableMergedWithPartial, skip={"optimizer.init_args.momentum"})
+
+    help_str = get_parse_args_stdout(parser, ["--optimizer.help=Adam"])
+    assert "--optimizer.params" not in help_str
+    assert "--optimizer.lr" not in help_str
+    assert "--optimizer.momentum" not in help_str
+
+    with pytest.raises(ArgumentError):
+        parser.parse_args(["--optimizer=Adam", "--optimizer.momentum=0.9"])
+
+    init = parser.instantiate_classes(parser.parse_args(["--optimizer=Adam"]))
+    optimizer = init.optimizer([1.2], 0.2)
+    assert isinstance(optimizer, Adam)
+    assert optimizer.params == [1.2]
+    assert optimizer.lr == 0.2
+    assert optimizer.momentum == 0.0
+
+
 class StepLR:
     def __init__(self, optimizer: Optimizer, last_epoch: int = -1):
         self.optimizer = optimizer
