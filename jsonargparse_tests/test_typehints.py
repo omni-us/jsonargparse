@@ -730,18 +730,15 @@ if Unpack:  # and Required and NotRequired
     MyTestUnpackDict = TypedDict("MyTestUnpackDict", {"a": Required[int], "b": NotRequired[int]}, total=True)
 
     class UnpackClass:
-
         def __init__(self, **kwargs: Unpack[MyTestUnpackDict]) -> None:
             self.a = kwargs["a"]
             self.b = kwargs.get("b")
 
     @dataclass
     class MyTestUnpackClass:
-
         test: UnpackClass
 
     class MyTestInheritedUnpackClass(UnpackClass):
-
         def __init__(self, **kwargs) -> None:
             super().__init__(**kwargs)
 
@@ -1347,7 +1344,7 @@ def test_callable_args_return_type_union_of_classes(parser, subtests):
 
 
 def optional_callable_args_return_type_class(
-    scheduler: Optional[Callable[[Optimizer], StepLR]] = lambda o: StepLR(o, last_epoch=1)
+    scheduler: Optional[Callable[[Optimizer], StepLR]] = lambda o: StepLR(o, last_epoch=1),
 ):
     return scheduler
 
