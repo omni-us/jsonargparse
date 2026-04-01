@@ -385,6 +385,7 @@ class SignatureArguments(LoggerProperty):
         elif not as_positional or is_non_positional:
             kwargs["required"] = True
         is_subclass_typehint = False
+        nested_skip: set[str] = set()
         subclasses_disabled = is_subclasses_disabled(annotation)
         dest = (nested_key + "." if nested_key else "") + name
         args = [dest if is_required and as_positional and not is_non_positional else "--" + dest]
@@ -406,18 +407,17 @@ class SignatureArguments(LoggerProperty):
         elif annotation != inspect_empty:
             try:
                 is_subclass_typehint = ActionTypeHint.is_subclass_typehint(annotation, all_subtypes=False)
+                is_return_subclass_typehint = ActionTypeHint.is_return_subclass_typehint(annotation)
                 kwargs["type"] = annotation
                 sub_add_kwargs: dict = {"fail_untyped": fail_untyped, "sub_configs": sub_configs}
-                if is_subclass_typehint:
+                if is_subclass_typehint or is_return_subclass_typehint:
                     prefix = f"{name}.init_args."
-                    subclass_skip = {s[len(prefix) :] for s in skip or [] if s.startswith(prefix)}
-                    sub_add_kwargs["skip"] = subclass_skip
+                    nested_skip = {s[len(prefix) :] for s in skip or [] if s.startswith(prefix)}
+                    sub_add_kwargs["skip"] = nested_skip
                 else:
                     register_pydantic_type(annotation)
                 enable_path = sub_configs and (
-                    is_subclass_typehint
-                    or ActionTypeHint.is_return_subclass_typehint(annotation)
-                    or is_list_pathlike(annotation)
+                    is_subclass_typehint or is_return_subclass_typehint or is_list_pathlike(annotation)
                 )
                 args = ActionTypeHint.prepare_add_argument(
                     args=args,
@@ -441,8 +441,8 @@ class SignatureArguments(LoggerProperty):
                 action = container.add_argument(*args, **kwargs)
             if action is not None:  # None when class without any parameters
                 action.sub_add_kwargs = sub_add_kwargs
-                if is_subclass_typehint and len(subclass_skip) > 0:
-                    action.sub_add_kwargs["skip"] = subclass_skip
+                if nested_skip:
+                    action.sub_add_kwargs["skip"] = nested_skip
             added_args.append(dest)
         elif is_required and fail_untyped:
             raise ValueError(
