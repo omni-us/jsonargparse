@@ -604,7 +604,7 @@ class ActionTypeHint(Action):
                 if self._is_valid_string(val):
                     value[num] = val
                 else:
-                    elem = "" if not islist else f" element {num+1}"
+                    elem = "" if not islist else f" element {num + 1}"
                     error = indent_text(str(ex))
                     raise TypeError(f'Parser key "{self.dest}"{elem}:\n{error}') from ex
         return value if islist else value[0]
@@ -1408,7 +1408,7 @@ def resolve_class_path_by_name(cls: Union[type, tuple[type]], name: str) -> str:
             if len(name_subclasses) > 1:
                 raise ValueError(
                     f"Multiple subclasses with name {name}. Give the full class path to "
-                    f'avoid ambiguity: {", ".join(name_subclasses)}.'
+                    f"avoid ambiguity: {', '.join(name_subclasses)}."
                 )
             class_path = name_subclasses[0]
     return class_path

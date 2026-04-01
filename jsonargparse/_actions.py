@@ -405,7 +405,7 @@ class ActionYesNo(Action):
             self._yes_prefix = kwargs.pop("_yes_prefix") if "_yes_prefix" in kwargs else ""
             self._no_prefix = kwargs.pop("_no_prefix") if "_no_prefix" in kwargs else "no_"
             if len(kwargs["option_strings"]) == 0:
-                raise ValueError(f'{type(self).__name__} not intended for positional arguments  ({kwargs["dest"]}).')
+                raise ValueError(f"{type(self).__name__} not intended for positional arguments  ({kwargs['dest']}).")
             opt_name = kwargs["option_strings"][0]
             if not opt_name.startswith("--" + self._yes_prefix):
                 raise ValueError(f'Expected option string to start with "--{self._yes_prefix}".')

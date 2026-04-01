@@ -345,7 +345,7 @@ class ActionPathList(Action):
                         try:
                             path_list[num] = self._type(val)
                         except TypeError as ex:
-                            raise TypeError(f"Path number {num+1} in list {path_list_file}, {ex}") from ex
+                            raise TypeError(f"Path number {num + 1} in list {path_list_file}, {ex}") from ex
                 finally:
                     os.chdir(cwd)
                 value += path_list

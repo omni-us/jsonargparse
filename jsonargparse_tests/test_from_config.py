@@ -239,7 +239,6 @@ def test_from_config_method_default():
     default_config = {"param1": "method_default_value"}
 
     class FromConfigMethodDefault(FromConfigMixin):
-
         @classmethod
         def from_config(cls: Type[T], config: Union[str, PathLike, dict, Literal["default"]] = "default") -> T:
             if config == "default":

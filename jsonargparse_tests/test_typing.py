@@ -150,11 +150,11 @@ def test_restricted_number_add_argument_optional(parser):
     larger_than = restricted_number_type(f"larger_than_{limit_val}", int, (">", limit_val))
     parser.add_argument("--val", type=larger_than, default=limit_val + 1, help="Help")
 
-    assert limit_val + 1 == parser.parse_args([f"--val={limit_val+1}"]).val
-    pytest.raises(ArgumentError, lambda: parser.parse_args([f"--val={limit_val-1}"]))
+    assert limit_val + 1 == parser.parse_args([f"--val={limit_val + 1}"]).val
+    pytest.raises(ArgumentError, lambda: parser.parse_args([f"--val={limit_val - 1}"]))
 
     help_str = get_parser_help(parser)
-    assert f"Help (type: larger_than_{limit_val}, default: {limit_val+1})" in help_str
+    assert f"Help (type: larger_than_{limit_val}, default: {limit_val + 1})" in help_str
 
 
 def test_restricted_number_add_argument_optional_nargs_plus(parser):

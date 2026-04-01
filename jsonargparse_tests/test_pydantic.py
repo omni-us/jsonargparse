@@ -89,7 +89,6 @@ if annotated and pydantic_support > 1:
 
 @pytest.mark.skipif(not (annotated and pydantic_support > 1), reason="Annotated is required")
 class TestPydantic2Annotated:
-
     def test_pydantic_nested_annotated_dataclass(self, parser: ArgumentParser):
         parser.add_class_arguments(NestedAnnotatedDataClass, "n")
         cfg = parser.parse_args(["--n", "{}"])

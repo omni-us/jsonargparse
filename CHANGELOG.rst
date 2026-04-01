@@ -45,6 +45,8 @@ Changed
 - Most argparse tests from the Python standard library are run against
   jsonargparse. Also the explicit deviations from argparse are documented (`#881
   <https://github.com/omni-us/jsonargparse/pull/881>`__).
+- Replace black and yesqa with ruff in pre-commit (`#883
+  <https://github.com/omni-us/jsonargparse/pull/883>`__).
 
 
 v4.47.0 (2026-03-13)

@@ -143,7 +143,8 @@ class ActionLink(Action):
                     )
         else:
             self.source = [
-                (s, find_parent_or_child_actions(parser, s, exclude=exclude)) for s in source  # type: ignore[misc]
+                (s, find_parent_or_child_actions(parser, s, exclude=exclude))  # type: ignore[misc]
+                for s in source
             ]
 
         # Set and check target action
