@@ -221,12 +221,12 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: true
           files: ./coverage_*.xml
           token: ${{ secrets.CODECOV_TOKEN }}
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: true
           report_type: test_results
