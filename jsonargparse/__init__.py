@@ -47,6 +47,7 @@ from . import (
     _core,
     _deprecated,
     _formatters,
+    _from_config,
     _jsonnet,
     _jsonschema,
     _link_arguments,
@@ -61,6 +62,7 @@ from . import (
 __all__ += _cli.__all__
 __all__ += _core.__all__
 __all__ += _signatures.__all__
+__all__ += _from_config.__all__
 __all__ += _link_arguments.__all__
 __all__ += _subcommands.__all__
 __all__ += _jsonschema.__all__

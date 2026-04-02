@@ -25,6 +25,8 @@ Added
   (`#875 <https://github.com/omni-us/jsonargparse/pull/875>`__).
 - ``add_class_arguments`` skip support for callable return class parameters
   (`#882 <https://github.com/omni-us/jsonargparse/pull/882>`__).
+- ``FromConfigMixin`` is now an official public API feature
+  (`#884 <https://github.com/omni-us/jsonargparse/pull/884>`__).
 
 Fixed
 ^^^^^

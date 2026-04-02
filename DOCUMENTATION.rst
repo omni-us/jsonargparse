@@ -1465,6 +1465,28 @@ methods are:
     is possible to use classes from third party libraries which is not possible
     for developers to modify.
 
+From config mixin
+-----------------
+
+For classes that should support direct instantiation from configuration values,
+:class:`.FromConfigMixin` adds a ``from_config`` class method. It can be useful
+for small utilities that need to load constructor values from a dictionary or a
+configuration file in one call.
+
+.. doctest::
+
+    >>> from jsonargparse import FromConfigMixin
+    >>> class Client(FromConfigMixin):
+    ...     def __init__(self, host: str = "localhost", port: int = 80):
+    ...         self.host = host
+    ...         self.port = port
+    >>> client = Client.from_config({"host": "api.local", "port": 8080})
+    >>> (client.host, client.port)
+    ('api.local', 8080)
+
+For details on all supported behavior, see :class:`.FromConfigMixin` in the API
+reference.
+
 Docstring parsing
 -----------------
 
