@@ -32,9 +32,9 @@ class FromConfigMixin:
            based on a config file or dict.
 
     Attributes:
-        ``__from_config_init_defaults__``: Optional path to a config file for
+        __from_config_init_defaults__: Optional path to a config file for
             overriding ``__init__`` defaults.
-        ``__from_config_parser_kwargs__``: Additional kwargs to pass to the
+        __from_config_parser_kwargs__: Additional kwargs to pass to the
             ArgumentParser used for parsing configs.
     """
 
