@@ -3153,9 +3153,4 @@ disabled. To enable, the ``logger`` argument should be set when creating an
 existing logger object which is used for the whole application. For convenience,
 to enable a default logger the ``logger`` argument can also be ``True`` or
 a string which sets the name of the logger or a dictionary that can include the
-name and the level, e.g. ``{"name": "myapp", "level": "ERROR"}``. If
-`reconplogger <https://pypi.org/project/reconplogger/>`__ is installed, setting
-``logger`` to ``True`` or a dictionary without specifying a name, then the
-reconplogger is used. If reconplogger is installed and the
-``JSONARGPARSE_DEBUG`` environment variable is set, then the logging level
-becomes ``DEBUG``.
+name and the level, e.g. ``{"name": "myapp", "level": "ERROR"}``.

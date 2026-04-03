@@ -22,12 +22,10 @@ from ._optionals import (
     capture_typing_extension_shadows,
     get_alias_target,
     get_annotated_base_type,
-    import_reconplogger,
     is_alias_type,
     is_annotated,
     is_attrs_class,
     is_pydantic_model,
-    reconplogger_support,
     typing_extensions_import,
 )
 from ._type_checking import ActionsContainer, ArgumentParser, docstring_parser
@@ -447,9 +445,6 @@ def parse_logger(logger: Union[bool, str, dict, logging.Logger], caller):
         level = logger["level"]
     if level not in logging_levels:
         raise ValueError(f"Got logger level {level!r} but must be one of {logging_levels}.")
-    if (logger is True or (isinstance(logger, dict) and "name" not in logger)) and reconplogger_support:
-        kwargs = {"level": "DEBUG", "reload": True} if debug_mode_active() else {}
-        logger = import_reconplogger("parse_logger").logger_setup(**kwargs)
     if not isinstance(logger, logging.Logger):
         logger = setup_default_logger(logger, level, caller)
     return logger

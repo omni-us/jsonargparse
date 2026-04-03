@@ -49,6 +49,8 @@ Changed
   <https://github.com/omni-us/jsonargparse/pull/881>`__).
 - Replace black and yesqa with ruff in pre-commit (`#883
   <https://github.com/omni-us/jsonargparse/pull/883>`__).
+- Removed ``reconplogger`` integration (`#886
+  <https://github.com/omni-us/jsonargparse/pull/886>`__).
 
 
 v4.47.0 (2026-03-13)
