@@ -28,7 +28,6 @@ docstring_parser_support = find_spec("docstring_parser") is not None
 fsspec_support = find_spec("fsspec") is not None
 ruamel_support = bool(find_spec("ruamel") and find_spec("ruamel.yaml"))
 omegaconf_support = find_spec("omegaconf") is not None
-reconplogger_support = find_spec("reconplogger") is not None
 attrs_support = find_spec("attrs") is not None
 
 _config_read_mode = "fr"
@@ -160,12 +159,6 @@ def import_ruamel(importer):
     with missing_package_raise("ruamel.yaml", importer):
         import ruamel.yaml
     return ruamel.yaml
-
-
-def import_reconplogger(importer):
-    with missing_package_raise("reconplogger", importer):
-        import reconplogger
-    return reconplogger
 
 
 def _set_config_read_mode(
