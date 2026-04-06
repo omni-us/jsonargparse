@@ -32,16 +32,6 @@ def handle_completions(parser):
     add_print_completion_argument(parser)
 
 
-def handle_argcomplete_autocomplete(parser):
-    if find_spec("argcomplete") and "_ARGCOMPLETE" in os.environ:
-        import argcomplete
-
-        from ._common import parser_context
-
-        with parser_context(load_value_mode=parser.parser_mode):
-            argcomplete.autocomplete(parser)
-
-
 def add_print_completion_argument(parser):
     if getattr(parser, "parent_parser", None) or not find_spec("shtab"):
         return
@@ -63,17 +53,40 @@ def add_print_completion_argument(parser):
 # argcomplete
 
 
+def handle_argcomplete_autocomplete(parser):
+    if find_spec("argcomplete") and "_ARGCOMPLETE" in os.environ:
+        import argcomplete
+
+        from ._common import parser_context
+
+        patch_argcomplete_support()
+        with parser_context(load_value_mode=parser.parser_mode):
+            argcomplete.autocomplete(parser)
+
+
+def patch_argcomplete_support():
+    import argcomplete.finders
+
+    parse_known_args = argcomplete.finders.IntrospectiveArgumentParser.parse_known_args
+    if getattr(parse_known_args, "__jsonargparse_patched__", False):
+        return
+
+    def parse_known_args(self, args=None, namespace=None):
+        return self._parse_known_args_internal(args=args, namespace=namespace, argcomplete=True)
+
+    parse_known_args.__jsonargparse_patched__ = True
+    argcomplete.finders.IntrospectiveArgumentParser.parse_known_args = parse_known_args
+
+
+def get_argcomplete_namespace(parser, namespace):
+    namespace.__class__ = __import__("jsonargparse").Namespace
+    return parser.merge_config(parser.get_defaults(skip_validation=True), namespace).as_flat()
+
+
 def get_files_completer():
     from argcomplete.completers import FilesCompleter
 
     return FilesCompleter()
-
-
-def argcomplete_namespace(caller, parser, namespace):
-    if caller == "argcomplete":
-        namespace.__class__ = __import__("jsonargparse").Namespace
-        namespace = parser.merge_config(parser.get_defaults(skip_validation=True), namespace).as_flat()
-    return namespace
 
 
 def argcomplete_warn_redraw_prompt(prefix, message):

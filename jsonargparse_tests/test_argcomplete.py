@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
+import textwrap
 from contextlib import ExitStack, contextmanager
 from enum import Enum
 from importlib.util import find_spec
@@ -14,6 +16,7 @@ import pytest
 
 from jsonargparse import ActionJsonSchema, ActionYesNo
 from jsonargparse._common import parser_context
+from jsonargparse._completions import patch_argcomplete_support
 from jsonargparse.typing import Email, Path_fr, PositiveFloat, PositiveInt
 from jsonargparse_tests.conftest import (
     skip_if_jsonschema_unavailable,
@@ -26,6 +29,7 @@ from jsonargparse_tests.conftest import (
 def skip_if_argcomplete_unavailable():
     if not find_spec("argcomplete"):
         pytest.skip("argcomplete package is required")
+    patch_argcomplete_support()
 
 
 @contextmanager
@@ -56,6 +60,24 @@ def complete_line(parser, value):
             argcomplete.autocomplete(parser, exit_method=sys.exit, output_stream=out)
     stack.close()
     return out.getvalue(), err.getvalue()
+
+
+def complete_script(script: Path, value: str, tmp_path: Path):
+    out_file = tmp_path / "argcomplete.out"
+    env = os.environ.copy()
+    env.update(
+        {
+            "_ARGCOMPLETE": "1",
+            "_ARGCOMPLETE_STDOUT_FILENAME": str(out_file),
+            "_ARGCOMPLETE_SUPPRESS_SPACE": "1",
+            "_ARGCOMPLETE_COMP_WORDBREAKS": " \t\n\"'><=;|&(:",
+            "COMP_TYPE": str(ord("?")),
+            "COMP_LINE": value,
+            "COMP_POINT": str(len(value)),
+        }
+    )
+    proc = subprocess.run([sys.executable, str(script)], env=env, capture_output=True, text=True, check=False)
+    return out_file.read_text(), proc.stderr, proc.returncode
 
 
 def test_handle_completions(parser):
@@ -248,3 +270,33 @@ def test_optional_path(parser, tmp_cwd):
         out, err = complete_line(parser, f"tool.py {value}")
         assert out == expected
         assert err == ""
+
+
+def write_completion_script(tmp_path: Path) -> Path:
+    script = tmp_path / "tool.py"
+    script.write_text(
+        textwrap.dedent(
+            """\
+            from jsonargparse import ArgumentParser
+            parser = ArgumentParser()
+            parser.add_argument("--op2", type=bool)
+            parser.parse_args()
+            """
+        )
+    )
+    return script
+
+
+@pytest.mark.parametrize(
+    ["value", "expected"],
+    [
+        ("tool.py --op2 ", "true\x0bfalse"),
+        ("tool.py --op2 f", "false"),
+    ],
+)
+def test_script_value_completion_after_space(tmp_path, value, expected):
+    script = write_completion_script(tmp_path)
+    out, err, returncode = complete_script(script, value, tmp_path)
+    assert returncode == 0
+    assert out == expected
+    assert err == ""
