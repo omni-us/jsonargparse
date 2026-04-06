@@ -20,7 +20,7 @@ from jsonargparse_tests.conftest import (
 )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def skip_if_jsonnet_unavailable():
     if not jsonnet_support:
         pytest.skip("jsonnet package is required")

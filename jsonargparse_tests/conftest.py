@@ -226,7 +226,7 @@ def source_unavailable(obj=None):
         yield
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="session")
 def no_color():
     with patch.dict(os.environ, {"NO_COLOR": "true"}):
         yield

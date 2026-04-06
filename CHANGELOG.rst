@@ -51,6 +51,9 @@ Changed
   <https://github.com/omni-us/jsonargparse/pull/883>`__).
 - Removed ``reconplogger`` integration (`#886
   <https://github.com/omni-us/jsonargparse/pull/886>`__).
+- Avoid expensive inspect.stack in parse_args path and other optimizations to
+  speed up test suite (`#887
+  <https://github.com/omni-us/jsonargparse/pull/887>`__).
 
 
 v4.47.0 (2026-03-13)

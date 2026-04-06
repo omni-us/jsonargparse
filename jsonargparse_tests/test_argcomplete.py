@@ -25,7 +25,7 @@ from jsonargparse_tests.conftest import (
 )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def skip_if_argcomplete_unavailable():
     if not find_spec("argcomplete"):
         pytest.skip("argcomplete package is required")

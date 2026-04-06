@@ -10,7 +10,7 @@ from jsonargparse import ActionJsonSchema, ArgumentError
 from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_dump
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def skip_if_jsonschema_unavailable():
     if not find_spec("jsonschema"):
         pytest.skip("jsonschema package is required")
