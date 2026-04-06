@@ -112,6 +112,7 @@ class TestCategories:
             "TestGroupConstructor",  # FIX! deprecated add_argument_group prefix_chars
         ],
         "functions": [
+            "test_unrecognized_intermixed_args",  # uses parse_known_args
             "test_empty_metavar_required_arg",  # FIX! required optional shown with [], remove []
             "test_required_args_n_with_metavar",  # FIX! metavar shown in missing required
             "test_required_args_one_or_more_with_metavar",  # FIX! metavar shown in missing required
