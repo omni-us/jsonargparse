@@ -1203,15 +1203,6 @@ def test_parse_known_args_not_implemented(parser):
     pytest.raises(NotImplementedError, lambda: parser.parse_known_args([]))
 
 
-def test_parse_known_args_not_implemented_without_caller_module(parser):
-    """
-    Corner case when calling parse_known_args in IPython. The caller module will not exist.
-    See https://github.com/omni-us/jsonargparse/pull/179
-    """
-    with patch("inspect.getmodule", return_value=None):
-        pytest.raises(NotImplementedError, lambda: parser.parse_known_args([]))
-
-
 @pytest.mark.skipif(sys.version_info[:3] == (3, 14, 3), reason="not pickleable in Python 3.14.3")
 def test_pickle_parser(example_parser):
     parser = pickle.loads(pickle.dumps(example_parser))

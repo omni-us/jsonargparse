@@ -39,10 +39,7 @@ from ._common import (
     supports_optionals_as_positionals,
     validate_default,
 )
-from ._completions import (
-    argcomplete_namespace,
-    handle_completions,
-)
+from ._completions import get_argcomplete_namespace, handle_completions
 from ._completions import (
     get_completion_script as get_completion_script_internal,
 )
@@ -292,15 +289,13 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     ## Parsing methods ##
 
-    def parse_known_args(self, args=None, namespace=None):
+    def parse_known_args(self, *args, **kwargs) -> NoReturn:
         """Raises ``NotImplementedError``, not supported since typos in configs would go unnoticed."""
-        caller_mod = inspect.getmodule(inspect.stack()[1][0])
-        caller = None if caller_mod is None else caller_mod.__package__
-        if caller not in {"jsonargparse", "argcomplete"}:
-            raise NotImplementedError("parse_known_args not supported because typos in configs would go unnoticed.")
+        raise NotImplementedError("parse_known_args not supported because typos in configs would go unnoticed.")
 
-        namespace = argcomplete_namespace(caller, self, namespace)
-
+    def _parse_known_args_internal(self, args=None, namespace=None, *, argcomplete: bool = False):
+        if argcomplete:
+            namespace = get_argcomplete_namespace(self, namespace)
         try:
             with (
                 patch_namespace(),
@@ -464,7 +459,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                     cfg = self.merge_config(namespace, cfg)
 
             with parse_kwargs_context({"env": env, "defaults": defaults}):
-                cfg, unk = self.parse_known_args(args=args, namespace=cfg)
+                cfg, unk = self._parse_known_args_internal(args=args, namespace=cfg)
                 cfg, unk = self._positional_optionals(cfg, unk)
             if unk:
                 self.error(f"unrecognized arguments: {' '.join(unk)}")
@@ -722,7 +717,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     ## Methods for adding to the parser ##
 
-    def add_subparsers(self, **kwargs) -> NoReturn:
+    def add_subparsers(self, *args, **kwargs) -> NoReturn:
         """Raises a ``NotImplementedError`` since jsonargparse uses ``add_subcommands``."""
         raise NotImplementedError("In jsonargparse subcommands are added using the add_subcommands method.")
 

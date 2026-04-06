@@ -18,13 +18,13 @@ from jsonargparse.typing import Path_drw, Path_fr
 from jsonargparse_tests.conftest import capture_logs, get_parse_args_stdout
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def skip_if_no_shtab():
     if not find_spec("shtab"):
         pytest.skip("shtab package is required")
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def skip_if_wsl_message():
     popen = subprocess.Popen(["bash", "-c", "echo"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, _ = popen.communicate()
@@ -32,7 +32,7 @@ def skip_if_wsl_message():
         pytest.skip(out.decode().replace("\x00", ""))
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def term_env_var():
     with patch.dict("os.environ", {"TERM": "xterm-256color", "COLUMNS": "200"}):
         yield

@@ -32,7 +32,7 @@ skip_if_pydantic_v1_on_v2 = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def missing_pydantic():
     if not pydantic_support:
         pytest.skip("pydantic package is required")

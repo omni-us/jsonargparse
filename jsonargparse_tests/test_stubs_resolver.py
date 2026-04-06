@@ -30,33 +30,35 @@ torch_available = bool(find_spec("torch"))
 torchvision_available = bool(find_spec("torchvision"))
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def skip_if_typeshed_client_unavailable():
     if not find_spec("typeshed_client"):
         pytest.skip("typeshed-client package is required")
 
 
-@pytest.fixture(autouse=True)
 def clear_stubs_resolver():
-    import jsonargparse._stubs_resolver
+    from jsonargparse import _stubs_resolver
 
-    jsonargparse._stubs_resolver.stubs_resolver = None
-    yield
+    _stubs_resolver.stubs_resolver = None
 
 
 @pytest.fixture
 def allow_py_files():
     with patch.dict("jsonargparse._common.parsing_settings"):
+        clear_stubs_resolver()
         set_parsing_settings(stubs_resolver_allow_py_files=True)
         yield
+        clear_stubs_resolver()
 
 
 @pytest.fixture(params=["allow-py-files-true", "allow-py-files-false"])
 def parametrize_allow_py_files(request):
     allow_py_files = request.param == "allow-py-files-true"
     with patch.dict("jsonargparse._common.parsing_settings"):
+        clear_stubs_resolver()
         set_parsing_settings(stubs_resolver_allow_py_files=allow_py_files)
         yield
+        clear_stubs_resolver()
 
 
 @contextmanager

@@ -63,7 +63,7 @@ from jsonargparse_tests.test_jsonnet import example_2_jsonnet
 from jsonargparse_tests.test_paths import paths  # noqa: F401
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def no_pyyaml_skip():
     if not pyyaml_available:
         pytest.skip("pyyaml package is required")

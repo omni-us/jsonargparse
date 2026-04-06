@@ -104,7 +104,7 @@ class ActionSubCommands(_SubParsersAction):
     parent_parser: ArgumentParser
     env_prefix: str
 
-    def add_parser(self, name: str, **kwargs) -> NoReturn:
+    def add_parser(self, *args, **kwargs) -> NoReturn:
         """Raises a ``NotImplementedError`` since jsonargparse uses ``add_subcommand``."""
         raise NotImplementedError("In jsonargparse subcommands are added using the add_subcommand method.")
 
