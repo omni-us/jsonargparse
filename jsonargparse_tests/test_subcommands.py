@@ -46,6 +46,8 @@ def test_add_subparsers_not_implemented(parser):
 def test_action_subcommands_public_api(parser):
     subcommands = parser.add_subcommands()
     assert isinstance(subcommands, ActionSubCommands)
+    assert subcommands.required is True
+    assert parser._extra_required_keys == set()
 
 
 def test_add_parser_not_implemented(parser):

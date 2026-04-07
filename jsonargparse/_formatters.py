@@ -30,7 +30,7 @@ from ._common import (
 )
 from ._deprecated import HelpFormatterDeprecations
 from ._link_arguments import ActionLink
-from ._namespace import Namespace, NSKeyError
+from ._namespace import Namespace
 from ._optionals import import_ruamel
 from ._subcommands import ActionSubCommands, find_action
 from ._type_checking import ArgumentParser, ruamelCommentedMap
@@ -182,15 +182,14 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
                 help_str += "."
             return help_str
         help_str = ""
-        is_required = hasattr(action, "_required") and action._required
-        if is_required:
+        if action.required:
             help_str = "required"
         if "%(type)" not in action_help and self._get_type_str(action) is not None:
             help_str += (", " if help_str else "") + "type: %(type)s"
         if (
             "%(default)" not in action_help
             and action.default != SUPPRESS
-            and (action.default is not None or not is_required)
+            and (action.default is not None or not action.required)
             and (action.option_strings or action.nargs in {OPTIONAL, ZERO_OR_MORE})
         ):
             help_str += (", " if help_str else "") + "default: %(default)s"
@@ -238,15 +237,6 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
 
                 note = "note: extra positionals are parsed as optionals in the order shown above."
                 usage = "\n".join(usage_lines) + f"\n\n{note}\n\n"
-
-        else:
-            for key in parser.required_args:
-                try:
-                    default = parser.get_default(key)
-                except NSKeyError:
-                    default = None
-                if default is None and f"[--{key} " in usage:
-                    usage = re.sub(f"\\[(--{key} [^\\]]+)]", r"\1", usage, count=1)
 
         return usage
 

@@ -76,6 +76,11 @@ from ._optionals import (
 )
 from ._parameter_resolvers import UnknownDefault
 from ._paths import change_to_path_dir
+from ._required import (
+    iter_required_keys,
+    set_required,
+    suppress_required_actions,
+)
 from ._signatures import SignatureArguments
 from ._subcommands import (
     ActionSubCommands,
@@ -159,10 +164,6 @@ class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
         ):
             raise ValueError("Positional arguments not allowed to have a default value.")
         validate_default(self, action)
-        if action.required:
-            parser.required_args.add(action.dest)  # type: ignore[union-attr]
-            action._required = True  # type: ignore[attr-defined]
-            action.required = False
         return action
 
     def add_argument_group(self, *args, name: Optional[str] = None, **kwargs) -> "ArgumentGroup":
@@ -274,7 +275,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         if self.groups is None:
             self.groups = {}
         self.exit_on_error = exit_on_error
-        self.required_args: set[str] = set()
+        self._extra_required_keys: set[str] = set()
         self.save_path_content: set[str] = set()
         self.default_config_files = default_config_files
         self.default_env = default_env
@@ -301,6 +302,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 patch_namespace(),
                 parser_context(parent_parser=self, lenient_check=True),
                 ActionTypeHint.subclass_arg_context(self),
+                suppress_required_actions(self),
             ):
                 kwargs = {}
                 if _parse_known_has_intermixed:
@@ -743,9 +745,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         subcommands: ActionSubCommands = super().add_subparsers(dest=dest, **kwargs)  # type: ignore[assignment]
         self.default_config_files = default_config_files
         if required:
-            self.required_args.add(dest)
-        subcommands._required = required  # type: ignore[attr-defined]
-        subcommands.required = False
+            set_required(self, subcommands)
         subcommands.parent_parser = self
         subcommands.env_prefix = get_env_var(self)
         self._subcommands_action = subcommands
@@ -1146,9 +1146,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         def check_required(cfg, parser, prefix):
             missing = []
-            reqkeys = [a.dest for a in parser._actions if a.dest in parser.required_args]
-            reqkeys.extend(sorted(k for k in parser.required_args if k not in reqkeys))
-            for reqkey in reqkeys:
+            for reqkey in iter_required_keys(parser):
                 try:
                     val = cfg[reqkey]
                     if val is None:
@@ -1182,9 +1180,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                     try:
                         self._check_value_key(action, val, key, ccfg)
                     except TypeError as ex:
-                        if not (
-                            val == {} and ActionTypeHint.is_subclass_typehint(action) and key not in self.required_args
-                        ):
+                        if not (val == {} and ActionTypeHint.is_subclass_typehint(action)):
                             raise ex
                 else:
                     if isinstance(parent_action, ActionSubCommands) and "." in key:

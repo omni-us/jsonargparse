@@ -100,8 +100,6 @@ class TestCategories:
             "TestArgumentTypeError",  # argparse prints '%(prog)s: error: %(message)s\n', jsonargparse skips prog
             "TestIntermixedArgs",  # uses parse_known_args
             "TestIntermixedMessageContentError",  # all required in error message, intermixed difference
-            "TestHelpRequiredOptional",  # FIX! required optional shown with [], remove []
-            "TestHelpArgumentDefaults",  # FIX! required optional shown with [], remove []
             "TestHelpMetavarTypeFormatter",  # FIX! ActionTypeHint metavar as positional obtained action.type.__name__
             "TestPositionalsActionExtend",  # _ExtendAction
             "TestOptionalsNargsOptional",  # Sig('-z', nargs='?', type=int, const='42', default='84', choices=[1, 2])
@@ -113,7 +111,6 @@ class TestCategories:
         ],
         "functions": [
             "test_unrecognized_intermixed_args",  # uses parse_known_args
-            "test_empty_metavar_required_arg",  # FIX! required optional shown with [], remove []
             "test_required_args_n_with_metavar",  # FIX! metavar shown in missing required
             "test_required_args_one_or_more_with_metavar",  # FIX! metavar shown in missing required
             "test_required_args_with_metavar",  # FIX! metavar shown in missing required

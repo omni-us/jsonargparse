@@ -296,3 +296,13 @@ def test_from_config_method_parser_kwargs():
     instance = FromConfigMethodParserKwargs.from_config({"param1": "there", "param2": "hi ${.param1}"})
     assert instance.param1 == "there"
     assert instance.param2 == "hi there"
+
+
+def test_from_config_method_partial_config_with_required_parameter():
+    class FromConfigMethodPartial(FromConfigMixin):
+        def __init__(self, required_param: str, optional_param: str = "default_value"):
+            self.required_param = required_param
+            self.optional_param = optional_param
+
+    with pytest.raises(TypeError, match="missing 1 required positional argument: 'required_param'"):
+        FromConfigMethodPartial.from_config({"optional_param": "from_config"})

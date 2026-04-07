@@ -505,8 +505,6 @@ class ActionParser:
         def add_prefix(key):
             return re.sub("^--", "--" + prefix + ".", key)
 
-        required_args = {prefix + "." + x for x in subparser.required_args}
-
         option_string_actions = {}
         for key, action in filter_non_parsing_actions(subparser._option_string_actions).items():
             option_string_actions[add_prefix(key)] = action
@@ -538,7 +536,6 @@ class ActionParser:
                 group.dest = dest + "." + group.dest
 
         parser.add_argument(args[0], action=_ActionConfigLoad)
-        parser.required_args.update(required_args)
         parser._option_string_actions.update(option_string_actions)
         parser._actions.extend(actions)
         parser._action_groups.extend([base_action_group] + extra_action_groups)
