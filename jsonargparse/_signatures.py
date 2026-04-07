@@ -19,6 +19,7 @@ from ._common import (
 from ._namespace import Namespace
 from ._optionals import attrs_support, get_doc_short_description, is_attrs_class, is_pydantic_model
 from ._parameter_resolvers import ParamData, get_parameter_origins, get_signature_parameters
+from ._required import set_required
 from ._typehints import (
     ActionTypeHint,
     callable_instances,
@@ -536,7 +537,7 @@ class SignatureArguments(LoggerProperty):
         if required:
             if nested_key is None:
                 raise ValueError("A nested_key is mandatory to make required.")
-            self.required_args.add(nested_key)
+            set_required(self, nested_key)
 
         group = self
         if as_group:

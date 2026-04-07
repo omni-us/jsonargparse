@@ -75,6 +75,7 @@ from ._optionals import (
     validate_annotated,
 )
 from ._paths import Path, PathError, change_to_path_dir
+from ._required import clear_required
 from ._subcommands import find_action, find_parent_action, parse_kwargs
 from ._util import (
     NestedArg,
@@ -650,10 +651,9 @@ class ActionTypeHint(Action):
             kwargs = {k: v for k, v in kwargs.items() if k != "instantiate"}
             parser.add_function_arguments(val_class, **kwargs)
 
-        if "linked_targets" in kwargs and parser.required_args:
+        if "linked_targets" in kwargs:
             for key in kwargs["linked_targets"]:
-                if key in parser.required_args:
-                    parser.required_args.remove(key)
+                clear_required(parser, key)
 
         for link_kwargs in nested_links.get():
             parser.link_arguments(**link_kwargs)

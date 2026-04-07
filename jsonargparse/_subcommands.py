@@ -131,6 +131,7 @@ class ActionSubCommands(_SubParsersAction):
         parser.parser_mode = self.parent_parser.parser_mode
         parser._error_handler = self.parent_parser._error_handler
         parser.exit_on_error = self.parent_parser.exit_on_error
+        parser.formatter_class = self.parent_parser.formatter_class
         parser.logger = self.parent_parser.logger
         parser.subcommand = name  # type: ignore[attr-defined]
 
@@ -211,9 +212,9 @@ def get_subcommands(
         subcommand_keys = [subcommand]
 
     if fail_no_subcommand:
-        if subcommand is None and not (fail_no_subcommand and action._required):  # type: ignore[attr-defined]
+        if subcommand is None and not (fail_no_subcommand and action.required):
             return None, None
-        if action._required and subcommand not in action._name_parser_map:  # type: ignore[attr-defined]
+        if action.required and subcommand not in action._name_parser_map:
             # If subcommand is required and no subcommand is provided,
             # present the user with a friendly error message to remind them of
             # the available subcommands and to select one.

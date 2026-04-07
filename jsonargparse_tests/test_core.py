@@ -158,6 +158,12 @@ def test_parse_args_missing_required_lists_all(parser):
         parser.validate(Namespace())
 
 
+def test_public_required_action_state(parser):
+    action = parser.add_argument("--req_opt", required=True)
+    assert action.required is True
+    assert parser._extra_required_keys == set()
+
+
 def test_parse_args_positional_config(parser):
     parser.add_argument("pos1")
     parser.add_argument("pos2", nargs="+")
