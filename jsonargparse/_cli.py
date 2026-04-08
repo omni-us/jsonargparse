@@ -10,10 +10,7 @@ from ._namespace import Namespace, dict_to_namespace
 from ._optionals import get_doc_short_description
 from ._util import capture_parser, default_config_option_help
 
-__all__ = [
-    "auto_cli",
-    "auto_parser",
-]
+__all__ = ["auto_cli", "auto_parser"]
 
 
 ComponentType = Union[Callable, type]
