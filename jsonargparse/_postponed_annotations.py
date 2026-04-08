@@ -233,7 +233,7 @@ def _collect_string_fwd_ref_names(typehint: Any, result: set[str]) -> None:
 
 
 def _update_missing_from_module_vars(global_vars: dict, missing: set[str], mod_vars: dict[str, Any]) -> None:
-    for name in list(missing):
+    for name in missing.copy():
         if name in mod_vars:
             global_vars[name] = mod_vars[name]
             missing.discard(name)
@@ -284,7 +284,7 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict[str, Any]) -> None
 
     # Find candidate modules: those that define the same trigger values (by identity).
     # This lets us trace generic aliases back to their origin module.
-    for module_name, mod in list(sys.modules.items()):
+    for mod in sys.modules.values():
         if mod is None or not missing:
             continue
         try:

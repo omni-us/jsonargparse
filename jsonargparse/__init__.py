@@ -22,7 +22,6 @@ from ._jsonschema import *  # noqa: F403
 from ._link_arguments import *  # noqa: F403
 from ._loaders_dumpers import *  # noqa: F403
 from ._namespace import *  # noqa: F403
-from ._optionals import *  # noqa: F403
 from ._paths import Path  # noqa: F401
 from ._signatures import *  # noqa: F403
 from ._subcommands import *  # noqa: F403
@@ -53,7 +52,6 @@ from . import (
     _link_arguments,
     _loaders_dumpers,
     _namespace,
-    _optionals,
     _signatures,
     _subcommands,
     _util,
@@ -70,7 +68,6 @@ __all__ += _jsonnet.__all__
 __all__ += _actions.__all__
 __all__ += _namespace.__all__
 __all__ += _formatters.__all__
-__all__ += _optionals.__all__
 __all__ += _common.__all__
 __all__ += _loaders_dumpers.__all__
 __all__ += _util.__all__

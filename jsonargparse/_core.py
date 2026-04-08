@@ -243,7 +243,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         *args,
         env_prefix: Union[bool, str] = True,
         formatter_class: type[argparse.HelpFormatter] = DefaultHelpFormatter,
-        exit_on_error: bool = True,
         logger: Union[logging.Logger, bool, str, dict] = False,
         version: Optional[str] = None,
         print_config: Optional[str] = "--print_config",
@@ -274,7 +273,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         self._group_class = get_argument_group_class(self)
         if self.groups is None:
             self.groups = {}
-        self.exit_on_error = exit_on_error
         self._extra_required_keys: set[str] = set()
         self.save_path_content: set[str] = set()
         self.default_config_files = default_config_files
@@ -431,7 +429,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails and ``exit_on_error=True``.
+            ArgumentError: If the parsing fails and ``exit_on_error=False``.
         """
         skip_validation, namespace_as_config = get_private_kwargs(
             kwargs, _skip_validation=False, _namespace_as_config=False
@@ -498,7 +496,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails and ``exit_on_error=True``.
+            ArgumentError: If the parsing fails and ``exit_on_error=False``.
         """
         skip_validation, skip_required = get_private_kwargs(kwargs, _skip_validation=False, _skip_required=False)
 
@@ -581,7 +579,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails and ``exit_on_error=True``.
+            ArgumentError: If the parsing fails and ``exit_on_error=False``.
         """
         skip_validation, skip_subcommands = get_private_kwargs(kwargs, _skip_validation=False, _skip_subcommands=False)
 
@@ -625,7 +623,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails and ``exit_on_error=True``.
+            ArgumentError: If the parsing fails and ``exit_on_error=False``.
         """
         fpath = Path(cfg_path, mode=_get_config_read_mode())
         with change_to_path_dir(fpath):
@@ -664,7 +662,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             A config object with all parsed values.
 
         Raises:
-            ArgumentError: If the parsing fails and ``exit_on_error=True``.
+            ArgumentError: If the parsing fails and ``exit_on_error=False``.
         """
         skip_validation, fail_no_subcommand = get_private_kwargs(
             kwargs, _skip_validation=False, _fail_no_subcommand=True

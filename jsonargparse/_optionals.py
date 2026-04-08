@@ -11,11 +11,6 @@ from importlib.metadata import version
 from importlib.util import find_spec
 from typing import Any, Optional, Union
 
-__all__ = [
-    "_get_config_read_mode",
-]
-
-
 pyyaml_available = bool(find_spec("yaml"))
 toml_load_available = bool(find_spec("toml") or find_spec("tomllib"))
 toml_dump_available = bool(find_spec("toml"))

@@ -345,16 +345,13 @@ class SignatureArguments(LoggerProperty):
         if kind == kinds.POSITIONAL_ONLY:
             is_required = True  # Always required
             is_non_positional = False  # Can be positional
-        elif kind == kinds.POSITIONAL_OR_KEYWORD:
-            is_required = default == inspect_empty  # Required if no default
-            is_non_positional = False  # Can be positional
         elif kind == kinds.KEYWORD_ONLY:
             is_required = default == inspect_empty  # Required if no default
             is_non_positional = True  # Must use --flag style
-        elif kind is None:
-            # programmatically created parameters without kind
+        elif kind in {kinds.POSITIONAL_OR_KEYWORD, None}:
+            # POSITIONAL_OR_KEYWORD or programmatically created parameters without kind
             is_required = default == inspect_empty  # Required if no default
-            is_non_positional = False  # Can be positional (preserve old behavior)
+            is_non_positional = False  # Can be positional
         else:
             raise RuntimeError(f"The code should never reach here: kind={kind}")  # pragma: no cover
         src = get_parameter_origins(param.component, param.parent)
