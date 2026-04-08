@@ -61,7 +61,7 @@ class YAMLCommentFormatter:
         """Adds help text as yaml comments."""
         ruyaml = import_ruamel("add_yaml_comments")
         yaml = ruyaml.YAML()
-        cfg = yaml.load(cfg)
+        cfg = yaml.safe_load(cfg)
 
         def get_subparsers(parser, prefix=""):
             subparsers = {}

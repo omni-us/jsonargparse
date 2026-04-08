@@ -830,7 +830,7 @@ def test_DefaultHelpFormatter_yaml_comments(parser):
     parent_parser.set(parser)
     ruyaml = import_ruamel("test_DefaultHelpFormatter_yaml_comments")
     yaml = ruyaml.YAML()
-    cfg = yaml.load("arg: 1")
+    cfg = yaml.safe_load("arg: 1")
 
     with catch_warnings(record=True) as w:
         formatter.add_yaml_comments("arg: 1")

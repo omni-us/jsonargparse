@@ -93,7 +93,7 @@ def get_yaml_default_loader():
 def yaml_load(stream):
     import yaml
 
-    value = yaml.load(stream, Loader=get_yaml_default_loader())
+    value = yaml.safe_load(stream, Loader=get_yaml_default_loader())
     if isinstance(value, dict) and value and all(v is None for v in value.values()):
         if len(value) == 1 and stream.strip() == next(iter(value)) + ":":
             value = stream
