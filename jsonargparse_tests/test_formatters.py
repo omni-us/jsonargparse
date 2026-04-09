@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from jsonargparse import ActionParser, ActionYesNo, ArgumentParser
-from jsonargparse_tests.conftest import get_parser_help, json_or_yaml_dump
+from jsonargparse_tests.conftest import get_parse_args_stdout, get_parser_help, json_or_yaml_dump
 
 
 @pytest.fixture
@@ -53,6 +53,12 @@ def test_help_required_and_default(parser):
     assert "ARG:   --v1 V1" in help_str
     assert "ENV:   APP_V1" in help_str
     assert "Option v1. (required, default: v1)" in help_str
+
+
+def test_help_required_preserved_in_parse_args(parser):
+    parser.add_argument("--v1", type=int, help="Option v1.", required=True)
+    help_str = get_parse_args_stdout(parser, ["--help"])
+    assert "Option v1. (required, type: int)" in help_str
 
 
 def test_help_type_and_null_default(parser):
