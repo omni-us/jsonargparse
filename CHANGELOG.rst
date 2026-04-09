@@ -56,7 +56,8 @@ Changed
   <https://github.com/omni-us/jsonargparse/pull/887>`__).
 - Rely on ``required`` attributes to improve compatibility with third-party
   argparse extensions (`#890
-  <https://github.com/omni-us/jsonargparse/pull/890>`__).
+  <https://github.com/omni-us/jsonargparse/pull/890>`__, `#893
+  <https://github.com/omni-us/jsonargparse/pull/893>`__).
 
 
 v4.47.0 (2026-03-13)

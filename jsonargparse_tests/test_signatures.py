@@ -537,6 +537,41 @@ def test_add_method_parent_classes(parser):
     assert added_args == ["m.p2", "m.a1", "m.a2", "m.a3"]
 
 
+class Model:
+    pass
+
+
+class TrainerLike:
+    def foo(self, model: Model, x: int, y: float = 1.0):
+        """Sample extra function.
+
+        Args:
+            model: A model
+            x: The x
+            y: The y
+        """
+
+
+@skip_if_docstring_parser_unavailable
+def test_add_method_required_argument_in_parse_args_help(parser):
+    parser.add_method_arguments(TrainerLike, "foo", skip={"model"})
+
+    help_str = get_parse_args_stdout(parser, ["--help"])
+    assert "The x (required, type: int)" in help_str
+    assert "The y (type: float, default: 1.0)" in help_str
+
+
+@skip_if_docstring_parser_unavailable
+def test_add_method_required_argument_in_subcommand_parse_args_help(parser, subparser):
+    subparser.description = "Sample extra function:"
+    subparser.add_method_arguments(TrainerLike, "foo", skip={"model"})
+    parser.add_subcommands().add_subcommand("foo", subparser)
+
+    help_str = get_parse_args_stdout(parser, ["foo", "--help"])
+    assert "The x (required, type: int)" in help_str
+    assert "The y (type: float, default: 1.0)" in help_str
+
+
 # add_function_arguments tests
 
 

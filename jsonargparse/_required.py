@@ -1,8 +1,11 @@
 from argparse import Action, _SubParsersAction
 from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Iterator, Optional, Union
 
 from ._type_checking import ArgumentParser
+
+_suppressed_required_actions: ContextVar[tuple[Action, ...]] = ContextVar("_suppressed_required_actions", default=())
 
 
 def _iter_required_action_keys(parser: ArgumentParser) -> Iterator[str]:
@@ -58,6 +61,7 @@ def _find_exact_action(parser: ArgumentParser, key: str) -> Optional[Action]:
 def suppress_required_actions(parser: ArgumentParser):
     """Temporarily disables required enforcement on real argparse actions."""
     suppressed = []
+    previously_suppressed = _suppressed_required_actions.get()
     visited = set()
 
     def visit(subparser):
@@ -73,8 +77,23 @@ def suppress_required_actions(parser: ArgumentParser):
                     visit(choice_parser)
 
     visit(parser)
+    token = _suppressed_required_actions.set(previously_suppressed + tuple(suppressed))
     try:
         yield
     finally:
+        _suppressed_required_actions.reset(token)
         for action in reversed(suppressed):
             action.required = True
+
+
+@contextmanager
+def restore_suppressed_required():
+    """Temporarily restores required=True for actions suppressed by suppress_required_actions."""
+    suppressed = _suppressed_required_actions.get()
+    for action in suppressed:
+        action.required = True
+    try:
+        yield
+    finally:
+        for action in suppressed:
+            action.required = False

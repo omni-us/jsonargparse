@@ -1792,6 +1792,13 @@ def test_subclass_required_parameters_missing(parser):
     ctx.match("the following arguments are required: p1, p2")
 
 
+def test_subclass_help_required_parameters(parser):
+    parser.add_argument("--op", type=RequiredParamsMissing)
+    help_str = get_parse_args_stdout(parser, [f"--op.help={__name__}.RequiredParamsMissing"])
+    assert "(required, type: int)" in help_str
+    assert "(required, type: str)" in help_str
+
+
 def test_subclass_get_defaults_lazy_instance(parser):
     parser.add_argument("--op", type=RequiredParamsMissing, default=lazy_instance(RequiredParamsMissing, p1=1, p2="x"))
     defaults = parser.get_defaults()

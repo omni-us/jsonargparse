@@ -78,6 +78,7 @@ from ._parameter_resolvers import UnknownDefault
 from ._paths import change_to_path_dir
 from ._required import (
     iter_required_keys,
+    restore_suppressed_required,
     set_required,
     suppress_required_actions,
 )
@@ -1369,7 +1370,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 note = f"tried getting defaults considering default_config_files but failed due to: {ex}"
             group = self._default_config_files_group
             group.description = f"{self._default_config_files}, Note: {note}"
-        with parser_context(parent_parser=self, defaults_cache=defaults):
+        with restore_suppressed_required(), parser_context(parent_parser=self, defaults_cache=defaults):
             help_str = super().format_help()
         return help_str
 
