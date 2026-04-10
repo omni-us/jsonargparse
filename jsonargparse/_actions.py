@@ -122,7 +122,7 @@ class ActionConfigFile(Action):
                         raise ex_path
                     cfg_path = None
                     cfg_file = parser.parse_string(value, **kwargs)
-                except (TypeError, ValueError) + get_loader_exceptions() as ex_str:  # type: ignore[misc]
+                except (TypeError, ValueError) + get_loader_exceptions() as ex_str:
                     raise TypeError(f'Parser key "{dest}": {ex_str}') from ex_str
             else:
                 cfg_file = parser.parse_path(value, **kwargs)

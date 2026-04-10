@@ -562,9 +562,9 @@ Email = restricted_string_type(
 
 Path_fr = path_type("fr", docstring="path to a file that exists and is readable")
 Path_fc = path_type("fc", docstring="path to a file that can be created if it does not exist")
-Path_dw = path_type("dw", docstring="path to a directory that exists and is writeable")
+Path_dw = path_type("dw", docstring="path to a directory that exists and is writable")
 Path_dc = path_type("dc", docstring="path to a directory that can be created if it does not exist")
-Path_drw = path_type("drw", docstring="path to a directory that exists and is readable and writeable")
+Path_drw = path_type("drw", docstring="path to a directory that exists and is readable and writable")
 
 register_type(os.PathLike, str, str)
 register_type(complex)
