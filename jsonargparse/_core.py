@@ -1259,7 +1259,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         cfg: Namespace,
         instantiate_groups: bool = True,
     ) -> Namespace:
-        """Recursively instantiates all subclasses defined by ``class_path``+``init_args`` and class groups.
+        """Recursively instantiates all subclasses defined by ``class_path`` + ``init_args`` and class groups.
 
         Args:
             cfg: The configuration object to use.

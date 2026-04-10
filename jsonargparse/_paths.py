@@ -94,12 +94,12 @@ class Path(PathDeprecations):
 
     When a Path instance is created, it is checked that: the path exists,
     whether it is a file or directory and whether it has the required access
-    permissions (f=file, d=directory, r=readable, w=writeable, x=executable,
+    permissions (f=file, d=directory, r=readable, w=writable, x=executable,
     c=creatable, u=url, s=fsspec or in uppercase meaning not, i.e., F=not-file,
-    D=not-directory, R=not-readable, W=not-writeable and X=not-executable).
+    D=not-directory, R=not-readable, W=not-writable and X=not-executable).
 
     The creatable flag "c" can be given one or two times. If given once, the
-    parent directory must exist and be writeable. If given twice, the parent
+    parent directory must exist and be writable. If given twice, the parent
     directory does not have to exist, but should be allowed to create.
 
     An instance of Path class can also refer to the standard input or output.
@@ -204,7 +204,7 @@ class Path(PathDeprecations):
                 if not os.path.isdir(pdir):
                     raise PathError(f"{ptype} is not creatable since parent directory does not exist: {abs_path!r}")
                 if not os.access(pdir, os.W_OK):
-                    raise PathError(f"{ptype} is not creatable since parent directory not writeable: {abs_path!r}")
+                    raise PathError(f"{ptype} is not creatable since parent directory not writable: {abs_path!r}")
                 if "d" in mode and os.access(abs_path, os.F_OK) and not os.path.isdir(abs_path):
                     raise PathError(f"{ptype} is not creatable since path already exists: {abs_path!r}")
                 if "f" in mode and os.access(abs_path, os.F_OK) and not os.path.isfile(abs_path):
@@ -220,7 +220,7 @@ class Path(PathDeprecations):
             if "r" in mode and not os.access(abs_path, os.R_OK):
                 raise PathError(f"{ptype} is not readable: {abs_path!r}")
             if "w" in mode and not os.access(abs_path, os.W_OK):
-                raise PathError(f"{ptype} is not writeable: {abs_path!r}")
+                raise PathError(f"{ptype} is not writable: {abs_path!r}")
             if "x" in mode and not os.access(abs_path, os.X_OK):
                 raise PathError(f"{ptype} is not executable: {abs_path!r}")
             if "D" in mode and os.path.isdir(abs_path):
@@ -230,7 +230,7 @@ class Path(PathDeprecations):
             if "R" in mode and os.access(abs_path, os.R_OK):
                 raise PathError(f"{ptype} is readable: {abs_path!r}")
             if "W" in mode and os.access(abs_path, os.W_OK):
-                raise PathError(f"{ptype} is writeable: {abs_path!r}")
+                raise PathError(f"{ptype} is writable: {abs_path!r}")
             if "X" in mode and os.access(abs_path, os.X_OK):
                 raise PathError(f"{ptype} is executable: {abs_path!r}")
 

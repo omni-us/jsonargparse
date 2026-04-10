@@ -574,7 +574,6 @@ class ActionTypeHint(Action):
                     with change_to_path_dir(config_path):
                         val = adapt_typehints(val, self._typehint, **kwargs)
                 except ValueError as ex:
-                    assert ex  # needed due to ruff bug that removes " as ex"
                     if orig_val == "-" and isinstance(getattr(ex, "parent", None), PathError):
                         raise ex
                     try:

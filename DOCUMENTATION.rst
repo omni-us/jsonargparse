@@ -632,12 +632,12 @@ included in the YAML file, or the corresponding absolute path:
     '/.../app/data/info.db'
 
 Likewise directories can be parsed using the :class:`.Path_dw` type, which would
-require a directory to exist and be writeable. New path types can be created
+require a directory to exist and be writable. New path types can be created
 using the :func:`.path_type` function. For example to create a type for files
-that must exist and be both readable and writeable, the command would be
+that must exist and be both readable and writable, the command would be
 ``Path_frw = path_type('frw')``. If the file ``app/config.yaml`` is not
-writeable, then using the type to cast ``Path_frw('app/config.yaml')`` would
-raise a *TypeError: File is not writeable* exception. For more information of
+writable, then using the type to cast ``Path_frw('app/config.yaml')`` would
+raise a *TypeError: File is not writable* exception. For more information of
 all the mode flags supported, refer to the documentation of the :class:`.Path`
 class.
 
