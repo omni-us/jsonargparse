@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.48.0 (unreleased)
+v4.48.0 (2026-04-10)
 --------------------
 
 Added
@@ -30,9 +30,10 @@ Added
 
 Fixed
 ^^^^^
-- Fix resolving forward references in generic aliases (e.g. ``list["ForwardReferenced"]``)
-  when the forward-referenced type is not imported in the using module
-  (`#871 <https://github.com/omni-us/jsonargparse/pull/871>`__).
+- Fix resolving forward references in generic aliases (e.g.
+  ``list["ForwardReferenced"]``) when the forward-referenced type is not
+  imported in the using module (`#871
+  <https://github.com/omni-us/jsonargparse/pull/871>`__).
 - ``auto_cli`` no longer fails when a single function, a class ``__init__``, or
   a function/class in a list/dict of components has a parameter named
   ``config`` (`#873 <https://github.com/omni-us/jsonargparse/pull/873>`__).
