@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, Union
 
 from ._actions import ActionConfigFile, _ActionPrintConfig, remove_actions
 from ._core import ArgumentParser
-from ._deprecated import deprecation_warning_cli_return_parser
+from ._deprecated import deprecation_warning_cli_return_parser, get_implicit_auto_cli_components
 from ._namespace import Namespace, dict_to_namespace
 from ._optionals import get_doc_short_description
 from ._util import capture_parser, default_config_option_help
@@ -40,9 +40,7 @@ def auto_cli(
 
     Creates an argument parser from one or more functions/classes, parses
     arguments and runs one of the functions or class methods depending on what
-    was parsed. If the ``components`` parameter is not given, then the components
-    will be all the locals in the context and defined in the same module as from
-    where ``auto_cli`` is called.
+    was parsed.
 
     Args:
         components: One or more functions/classes to include in the command line interface.
@@ -63,16 +61,7 @@ def auto_cli(
     stacklevel = kwargs.pop("_stacklevel", 2)
 
     if components is None:
-        caller = inspect.stack()[stacklevel - 1][0]
-        module = inspect.getmodule(caller)
-        components = [
-            v for v in vars(module).values() if ((inspect.isclass(v) or callable(v)) and inspect.getmodule(v) is module)
-        ]
-        if len(components) == 0:
-            raise ValueError(
-                "Either components parameter must be given or there must be at least one "
-                "function or class among the locals in the context where CLI is called."
-            )
+        components = get_implicit_auto_cli_components(stacklevel)
 
     if isinstance(components, list) and len(components) == 1:
         components = components[0]

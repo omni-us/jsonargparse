@@ -416,6 +416,27 @@ cli_return_parser_message = """
     v5.0.0. Instead of this use function capture_parser.
 """
 
+auto_cli_implicit_components_message = """
+    Implicit components discovery in auto_cli was deprecated in v4.48.0 and
+    will be removed in v5.0.0. Pass components explicitly, explicit is better
+    than implicit.
+"""
+
+
+def get_implicit_auto_cli_components(stacklevel):
+    deprecation_warning("auto_cli.components", auto_cli_implicit_components_message, stacklevel=stacklevel + 1)
+    caller = inspect.stack()[stacklevel][0]
+    module = inspect.getmodule(caller)
+    components = [
+        v for v in vars(module).values() if ((inspect.isclass(v) or callable(v)) and inspect.getmodule(v) is module)
+    ]
+    if len(components) == 0:
+        raise ValueError(
+            "Either components parameter must be given or there must be at least one "
+            "function or class among the locals in the context where CLI is called."
+        )
+    return components
+
 
 def deprecation_warning_cli_return_parser(stacklevel):
     deprecation_warning("CLI.__init__.return_parser", cli_return_parser_message, stacklevel=stacklevel)
