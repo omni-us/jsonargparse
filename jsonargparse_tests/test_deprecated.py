@@ -3,11 +3,15 @@ from __future__ import annotations
 import dataclasses
 import os
 import pathlib
+import sys
 from calendar import Calendar
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from enum import Enum
 from importlib import import_module
+from inspect import getmodule as inspect_getmodule
 from io import StringIO
+from types import ModuleType
+from unittest.mock import patch
 from warnings import catch_warnings
 
 import pytest
@@ -18,6 +22,7 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     Namespace,
+    auto_cli,
     compose_dataclasses,
     get_config_read_mode,
     set_config_read_mode,
@@ -302,6 +307,72 @@ def test_multiple_functions_cli():
         code="CLI([cmd1, cmd2], return_parser=True,",
     )
     assert isinstance(parser, ArgumentParser)
+
+
+@contextmanager
+def mock_getmodule_locals(parent_fn, locals_list=[]):
+    module_name = "_" + parent_fn.__name__
+
+    mock_module = ModuleType(module_name)
+    for obj in locals_list + [CLI, auto_cli]:
+        setattr(mock_module, obj.__name__, obj)
+    sys.modules[module_name] = mock_module
+
+    for obj in locals_list:
+        obj.__module__ = module_name
+
+    def patched_getmodule(obj, *args):
+        if obj in locals_list or (parent_fn.__name__ in str(obj)):
+            return mock_module
+        return inspect_getmodule(obj, *args)
+
+    with patch("inspect.getmodule", side_effect=patched_getmodule):
+        yield
+        del sys.modules[module_name]
+
+
+@pytest.mark.parametrize("cli_fn", [CLI, auto_cli])
+def test_automatic_components_empty_context(cli_fn):
+    def empty_context():
+        cli_fn()
+
+    with mock_getmodule_locals(empty_context):
+        with pytest.raises(ValueError, match="Either components parameter must be given or"):
+            with catch_warnings(record=True) as w:
+                empty_context()
+        assert "explicit is better than implicit" in str(w[-1].message)
+
+
+@pytest.mark.parametrize("cli_fn", [CLI, auto_cli])
+def test_automatic_components_context_function(cli_fn):
+    def function(a1: float):
+        return a1
+
+    def non_empty_context_function():
+        return cli_fn(args=["6.7"])
+
+    with mock_getmodule_locals(non_empty_context_function, [function]):
+        with catch_warnings(record=True) as w:
+            assert 6.7 == non_empty_context_function()
+        assert "explicit is better than implicit" in str(w[-1].message)
+
+
+@pytest.mark.parametrize("cli_fn", [CLI, auto_cli])
+def test_automatic_components_context_class(cli_fn):
+    class ClassX:
+        def __init__(self, i1: str):
+            self.i1 = i1
+
+        def method(self, m1: int):
+            return self.i1, m1
+
+    def non_empty_context_class():
+        return cli_fn(args=["a", "method", "2"])
+
+    with mock_getmodule_locals(non_empty_context_class, [ClassX]):
+        with catch_warnings(record=True) as w:
+            assert ("a", 2) == non_empty_context_class()
+        assert "explicit is better than implicit" in str(w[-1].message)
 
 
 class InheritsLoggerProperty(LoggerProperty):

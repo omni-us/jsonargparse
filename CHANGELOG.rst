@@ -12,6 +12,17 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.49.0 (unreleased)
+--------------------
+
+Deprecated
+^^^^^^^^^^
+- Implicit component discovery in ``auto_cli`` (calling without a ``components``
+  argument) was deprecated and will be removed in v5.0.0. Pass components
+  explicitly; explicit is better than implicit (`#895
+  <https://github.com/omni-us/jsonargparse/pull/895>`__).
+
+
 v4.48.0 (2026-04-10)
 --------------------
 

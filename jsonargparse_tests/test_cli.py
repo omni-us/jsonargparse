@@ -3,13 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import sys
-from contextlib import contextmanager, redirect_stderr, redirect_stdout, suppress
+from contextlib import redirect_stderr, redirect_stdout, suppress
 from dataclasses import asdict, dataclass
-from inspect import getmodule as inspect_getmodule
 from io import StringIO
 from pathlib import Path
-from types import ModuleType
 from typing import Callable, Literal, Optional
 from unittest.mock import patch
 
@@ -418,69 +415,6 @@ def test_function_and_class_method_without_parameters():
 def test_function_and_class_function_without_parameters():
     out = get_cli_stdout([cmd1, Cmd2, cmd3], args=["cmd3", "--help"])
     assert "--config" not in out
-
-
-# automatic components tests
-
-
-@contextmanager
-def mock_getmodule_locals(parent_fn, locals_list=[]):
-    module_name = "_" + parent_fn.__name__
-
-    mock_module = ModuleType(module_name)
-    for obj in locals_list + [CLI, auto_cli]:
-        setattr(mock_module, obj.__name__, obj)
-    sys.modules[module_name] = mock_module
-
-    for obj in locals_list:
-        obj.__module__ = module_name
-
-    def patched_getmodule(obj, *args):
-        if obj in locals_list or (parent_fn.__name__ in str(obj)):
-            return mock_module
-        return inspect_getmodule(obj, *args)
-
-    with patch("inspect.getmodule", side_effect=patched_getmodule):
-        yield
-        del sys.modules[module_name]
-
-
-@pytest.mark.parametrize("cli_fn", [CLI, auto_cli])
-def test_automatic_components_empty_context(cli_fn):
-    def empty_context():
-        cli_fn()
-
-    with mock_getmodule_locals(empty_context):
-        with pytest.raises(ValueError, match="Either components parameter must be given or"):
-            empty_context()
-
-
-@pytest.mark.parametrize("cli_fn", [CLI, auto_cli])
-def test_automatic_components_context_function(cli_fn):
-    def function(a1: float):
-        return a1
-
-    def non_empty_context_function():
-        return cli_fn(args=["6.7"])
-
-    with mock_getmodule_locals(non_empty_context_function, [function]):
-        assert 6.7 == non_empty_context_function()
-
-
-@pytest.mark.parametrize("cli_fn", [CLI, auto_cli])
-def test_automatic_components_context_class(cli_fn):
-    class ClassX:
-        def __init__(self, i1: str):
-            self.i1 = i1
-
-        def method(self, m1: int):
-            return self.i1, m1
-
-    def non_empty_context_class():
-        return cli_fn(args=["a", "method", "2"])
-
-    with mock_getmodule_locals(non_empty_context_class, [ClassX]):
-        assert ("a", 2) == non_empty_context_class()
 
 
 # class without methods tests
