@@ -337,7 +337,7 @@ def test_on_parse_add_subclass_arguments_with_instantiate_false(parser, subtests
         assert cfg.c == cfg.f.init_args.c
 
     with subtests.test("class instantiation"):
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.c, Namespace)
         assert isinstance(init.f, ClassF)
         assert isinstance(init.f.c, Calendar)
@@ -384,7 +384,7 @@ def test_on_parse_add_subclass_arguments_compute_fn_return_dict(parser):
     assert cfg.d.init_args.a1 == c_value
     assert cfg.d.init_args.a2 == c_value
 
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.d, ClassD)
     assert isinstance(init.c, Calendar)
 
@@ -413,7 +413,7 @@ def test_on_parse_within_subcommand(parser, subparser):
     cfg = parser.parse_args(["cmd", "--b=2"])
     assert cfg["cmd"]["foo"].as_dict() == {"a": 2}
 
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init["cmd"]["foo"], Foo)
 
 
@@ -526,7 +526,7 @@ def test_on_parse_list_of_instances_target(parser):
         Namespace(class_path=f"{__name__}.Field", init_args=Namespace(name="f2")),
     ]
 
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.data.fields, list)
     assert len(init.data.fields) == 2
     assert all(isinstance(f, Field) for f in init.data.fields)
@@ -583,7 +583,7 @@ def test_on_instantiate_link_instance_attribute():
     cfg = parser.parse_args([])
     assert "x1" not in cfg.x
     assert "y3" not in cfg.y
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert init.x.x1 == 6
     assert init.y.y3 == '"8"'
 
@@ -593,7 +593,7 @@ def test_on_instantiate_link_all_group_arguments():
     parser.link_arguments("y.y1", "x.x2", apply_on="instantiate")
     cfg = parser.parse_args([])
     assert "x" not in cfg
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert init["x"].x1 == 6
     assert init["x"].x2 == 7
     help_str = get_parser_help(parser)
@@ -622,7 +622,7 @@ def test_on_instantiate_failing_compute_fn(parser):
 
     with pytest.raises(ValueError) as ctx:
         cfg = parser.parse_args([])
-        parser.instantiate_classes(cfg)
+        parser.instantiate(cfg)
     ctx.match("Call to compute_fn of link 'to_str.*failed: value is empty")
 
 
@@ -634,7 +634,7 @@ def test_on_instantiate_link_from_subclass_with_compute_fn():
             f"--y={__name__}.ClassY",
         ]
     )
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert init.x.x1 == 6
 
 
@@ -652,7 +652,7 @@ def test_on_parse_and_instantiate_link_entire_instance(parser):
 
     cfg = parser.parse_args(["--firstweekday=2"])
     assert cfg == Namespace(c=Namespace(firstweekday=2), firstweekday=2)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.n, Namespace)
     assert isinstance(init.c, Calendar)
     assert init.c is init.n.calendar
@@ -674,7 +674,7 @@ def test_on_instantiate_link_multi_source(parser):
 
     cfg = parser.parse_args([])
     assert cfg.as_dict() == {"c": {"one": {"firstweekday": 0}, "two": {"firstweekday": 0}}}
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.c.one, Calendar)
     assert isinstance(init.c.two, TextCalendar)
     assert init.m.calendars == [init.c.one, init.c.two]
@@ -698,7 +698,7 @@ def test_on_instantiate_link_object_in_attribute(parser):
     cfg = parser.parse_args(["--p.firstweekday=2", "--q.q2=3"])
     assert cfg.p == Namespace(firstweekday=2)
     assert cfg.q == Namespace(q2=3)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert init.p.calendar is init.q.calendar
     assert init.q.calendar.firstweekday == 2
 
@@ -748,7 +748,7 @@ def test_on_instantiate_subclass_link_ignored_missing_param(parser, caplog):
     parser.link_arguments("v.init_args.v1", "w.init_args.w2", apply_on="instantiate")
 
     cfg = parser.parse_args([f"--v={__name__}.ClassV", f"--w={__name__}.ClassW"])
-    parser.instantiate_classes(cfg)
+    parser.instantiate(cfg)
     assert "'v.init_args.v2 --> w.init_args.w1' ignored since attribute" in caplog.text
     assert "'v.init_args.v1 --> w.init_args.w2' ignored since target" in caplog.text
 
@@ -778,7 +778,7 @@ def test_on_instantiate_add_argument_subclass_required_params(parser):
     parser.add_argument("--cls2", type=RequiredTarget)
     parser.link_arguments("cls1.a", "cls2.init_args.a", apply_on="instantiate")
     cfg = parser.parse_args(["--cls1=RequiredSource", "--cls1.a=1", "--cls2=RequiredTarget", "--cls2.b=SubRequired"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls1, RequiredSource)
     assert isinstance(init.cls2, RequiredTarget)
     assert isinstance(init.cls2.b, SubRequired)
@@ -839,7 +839,7 @@ def test_on_instantiate_within_deep_subclass(parser, caplog):
     )
 
     cfg = parser.parse_args([f"--cfg={json.dumps(within_deep_config)}"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.model, WithinDeepModel)
     assert isinstance(init.model.encoder, WithinDeepSource)
     assert isinstance(init.model.decoder, WithinDeepTarget)
@@ -873,7 +873,7 @@ def test_on_instantiate_within_deeper_subclass(parser, caplog):
     )
 
     cfg = parser.parse_args([f"--cfg={json.dumps(within_deeper_config)}"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.system, WithinDeeperSystem)
     assert isinstance(init.system.model, WithinDeepModel)
     assert isinstance(init.system.model.encoder, WithinDeepSource)
@@ -944,7 +944,7 @@ def test_on_instantiate_targets_share_parent(parser):
     )
     parser.link_arguments("source_b.attr_b", "root.child.init_args.param_child", apply_on="instantiate")
     cfg = parser.parse_args([f"--config={json.dumps(config)}"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.source_a, SourceA)
     assert isinstance(init.source_b, SourceB)
     assert isinstance(init.root, HierarchyRoot)
@@ -985,7 +985,7 @@ def test_on_instantiate_targets_passed_to_instantiator(parser):
     parser.add_instantiator(custom_instantiator, Model, subclasses=True)
 
     cfg = parser.parse_args(["--data=Dataloader", "--model=Model", "--model.label=ok"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
 
     assert isinstance(init.data, Dataloader)
     assert init.data.applied_instantiation_links == {}
@@ -1014,7 +1014,7 @@ def test_on_instantiate_target_entire_dataclass(parser, tmp_cwd):
     assert defaults == Namespace(data=Namespace(param=1), container=Namespace(ref=""))
     cfg = parser.parse_args(["--data.param=2", "--container.ref=x"])
     assert cfg == Namespace(data=Namespace(param=2), container=Namespace(ref="x"))
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert init.data is init.container.dep
     assert init.container.dep.param == 2
 
@@ -1218,7 +1218,7 @@ def test_on_instantiate_linking_deep_targets(parser, tmp_path):
     parser.link_arguments("c", "b.init_args.a.init_args.d", compute_fn=DeepC.fn, apply_on="instantiate")
 
     config = parser.parse_args([f"--config={config_path}"])
-    config_init = parser.instantiate_classes(config)
+    config_init = parser.instantiate(config)
     assert isinstance(config_init["b"].a.d, DeepD)
 
 
@@ -1255,10 +1255,10 @@ def test_on_instantiate_linking_deep_targets_mapping(parser, tmp_path):
     )
 
     config = parser.parse_args([f"--config={config_path}"])
-    config_init = parser.instantiate_classes(config)
+    config_init = parser.instantiate(config)
     assert isinstance(config_init["b"].a_map["name"].d, DeepD)
 
-    config_init = parser.instantiate_classes(config)
+    config_init = parser.instantiate(config)
     assert isinstance(config_init["b"].a_map["name"].d, DeepD)
 
 
@@ -1279,7 +1279,7 @@ def test_on_instantiate_linking_deep_targets_undefined_parent(parser, tmp_path):
     parser.link_arguments("c", "b.init_args.a.init_args.d", compute_fn=DeepC.fn, apply_on="instantiate")
 
     config = parser.parse_args([f"--config={config_path}"])
-    config_init = parser.instantiate_classes(config)
+    config_init = parser.instantiate(config)
     assert isinstance(config_init["b"], DeepBSuper)
 
 
@@ -1305,6 +1305,6 @@ def test_on_instantiate_linking_deep_targets_multiple(parser):
     parser.link_arguments("Source.a", "Node.init_args.sub_class.init_args.a", apply_on="instantiate")
     parser.link_arguments("Source.a", "Node.init_args.sub_class.init_args.b", apply_on="instantiate")
     cfg = parser.parse_args(["--Node=Node", "--Node.init_args.sub_class=DeepTarget"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert 1 == init.Node.sub_class.a
     assert 1 == init.Node.sub_class.b

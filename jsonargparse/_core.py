@@ -1211,7 +1211,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         subclasses: bool = True,
         prepend: bool = False,
     ) -> None:
-        """Adds a custom instantiator for a class type. Used by ``instantiate_classes``.
+        """Adds a custom instantiator for a class type. Used by ``instantiate``.
 
         Instantiator functions are expected to have as signature ``(class_type:
         Type[ClassType], *args, **kwargs) -> ClassType``.
@@ -1254,19 +1254,45 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             instantiators.update({k: v for k, v in context_instantiators.items() if k not in instantiators})
         return instantiators
 
-    def instantiate_classes(
+    def instantiate(
         self,
         cfg: Namespace,
         instantiate_groups: bool = True,
     ) -> Namespace:
-        """Recursively instantiates all subclasses defined by ``class_path`` + ``init_args`` and class groups.
+        """Instantiates all signature components in a configuration namespace.
+
+        Processes the configuration recursively, converting each signature
+        component registered with the parser into its corresponding Python
+        object:
+
+        - **Class/subclass type arguments** (``add_argument`` with a class type
+          or ``add_class_arguments``/``add_subclass_arguments``): An object with
+          ``class_path`` and optionally ``init_args`` is replaced by an instance
+          of the referenced class, created by calling
+          ``class_type(**init_args)``. For the case of classes with disabled
+          subclasses, the namespace can have directly the init args without the
+          ``class_path`` + ``init_args`` wrapper.
+
+        - **Callable type arguments**: A dot-import string pointing to a
+          function or method is resolved to the callable object. When
+          ``class_path``/``init_args`` is given instead and the class
+          instantiates into a callable (or is a subclass of the callable's
+          return type), the result is either a class instance or — when not all
+          call arguments are provided yet — a :func:`functools.partial` bound to
+          the given ``init_args``.
+
+        - **Instantiation order**: Components are processed in the order
+          determined by argument links applied on instantiation.
 
         Args:
-            cfg: The configuration object to use.
+            cfg: The configuration object to use. Must have been produced by
+                one of the ``parse_*`` methods and not modified in a way that
+                breaks the structure expected by the parser.
             instantiate_groups: Whether class groups should be instantiated.
 
         Returns:
-            A configuration object with all subclasses and class groups instantiated.
+            A new configuration object where every registered signature
+            component has been replaced by its corresponding Python object.
         """
         components: list[Union[ActionTypeHint, _ActionConfigLoad, ArgumentGroup]] = []
         for action in filter_non_parsing_actions(self._actions):
@@ -1313,7 +1339,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         subcommand, subparser = get_subcommand(self, cfg, fail_no_subcommand=False)
         if subcommand is not None and subparser is not None:
-            cfg[subcommand] = subparser.instantiate_classes(cfg[subcommand], instantiate_groups=instantiate_groups)
+            cfg[subcommand] = subparser.instantiate(cfg[subcommand], instantiate_groups=instantiate_groups)
 
         return cfg
 

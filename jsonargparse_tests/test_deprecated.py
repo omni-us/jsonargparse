@@ -275,6 +275,20 @@ def test_instantiate_subclasses():
     assert isinstance(cfg_init["cal"], Calendar)
 
 
+def test_instantiate_classes():
+    parser = ArgumentParser(exit_on_error=False)
+    parser.add_argument("--cal", type=Calendar)
+    cfg = parser.parse_object({"cal": {"class_path": "calendar.Calendar"}})
+    with catch_warnings(record=True) as w:
+        cfg_init = parser.instantiate_classes(cfg)
+    assert_deprecation_warn(
+        w,
+        message="``instantiate_classes`` was deprecated",
+        code="cfg_init = parser.instantiate_classes(cfg)",
+    )
+    assert isinstance(cfg_init["cal"], Calendar)
+
+
 def function(a1: float):
     return a1
 
@@ -480,7 +494,14 @@ def test_parse_as_dict(tmp_cwd):
     assert {} == parser.parse_string("{}")
     assert {} == parser.parse_object({})
     assert {} == parser.parse_path("config.json")
-    assert {} == parser.instantiate_classes({})
+    with catch_warnings(record=True) as w:
+        result = parser.instantiate_classes({})
+    assert {} == result
+    assert_deprecation_warn(
+        w,
+        message="``instantiate_classes`` was deprecated",
+        code="result = parser.instantiate_classes({})",
+    )
     assert "{}\n" == parser.dump({})
     parser.save({}, "config.yaml")
     with open("config.yaml") as f:
@@ -839,7 +860,7 @@ def test_add_dataclass_arguments(parser, subtests):
         assert dataclasses.asdict(DataClassA()) == dump["a"]
 
     with subtests.test("instantiate_classes"):
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init["a"], DataClassA)
 
     with subtests.test("docstrings in help"):

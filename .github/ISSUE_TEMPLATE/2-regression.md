@@ -69,8 +69,8 @@ config = json.dumps(
 # If the problem is when parsing arguments
 result = parser.parse_args([f"--config={config}", "--key2=val2", ...])
 
-# If the problem is in class instantiation
-parser.instantiate_classes(result)
+# If the problem is in instantiation
+parser.instantiate(result)
 ```
 
 2. Preferably, run git bisect and include in the report the git commit hash that

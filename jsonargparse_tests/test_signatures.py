@@ -146,7 +146,7 @@ def test_add_class_nested_as_group_false(parser):
         assert find_action(parser, f"g.{key}") is None, f"{key} should not be in parser but is"
 
     defaults = parser.get_defaults()
-    assert defaults == parser.instantiate_classes(defaults)
+    assert defaults == parser.instantiate(defaults)
 
 
 def test_add_class_default_group_title(parser):
@@ -189,7 +189,7 @@ def test_add_class_without_parameters(parser):
 
     cfg = parser.parse_args([])
     assert "no_params" not in cfg
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.no_params, NoParams)
 
     config = {"no_params": {"class_path": f"{__name__}.NoParams"}}
@@ -214,7 +214,7 @@ def test_add_class_nested_with_and_without_parameters(parser):
     cfg = parser.parse_args(["--group.first.p1=2"])
     assert cfg.group.first == Namespace(p1=2)
     assert "group.second" not in cfg
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.group.first, NestedWithParams)
     assert isinstance(init.group.second, NestedWithoutParams)
 
@@ -252,7 +252,7 @@ def test_add_class_group_name_dash_required_parameters(parser):
     parser.add_class_arguments(RequiredParams, "required-params")
     assert "required-params" in parser.groups
     cfg = parser.parse_args(["--required-params.n=6", "--required-params.m=0.9"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.required_params, RequiredParams)
     assert init.required_params.n == 6
     assert init.required_params.m == 0.9
@@ -287,13 +287,13 @@ def test_add_class_conditional_kwargs(parser):
 
     cfg = parser.parse_args(["--g.func=1", "--g.kmg2=x"])
     assert cfg.g == Namespace(func="1", kmg1=1, kmg2="x")
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     init.g._run()
     assert init.g.called == "method1"
 
     cfg = parser.parse_args(["--g.func=2", "--g.kmg4=5"])
     assert cfg.g == Namespace(func="2", kmg1=1, kmg4=5)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     init.g._run()
     assert init.g.called == "method2"
 
@@ -353,7 +353,7 @@ def test_add_class_in_subcommand(parser, subparser):
 
     cfg = parser.parse_args(["cmd"])
     assert cfg.subcommand == "cmd"
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init["cmd"]["class"], WithinSubcommand)
     assert init["cmd"]["class"].a == 1
 
@@ -405,7 +405,7 @@ def test_add_class_custom_instantiator(parser):
     parser.add_class_arguments(Class0, "a")
     parser.add_instantiator(instantiate, Class0)
     cfg = parser.parse_args([])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.a, Class0)
     assert init.a.call == "custom"
 
@@ -435,7 +435,7 @@ def test_add_class_unmatched_default_type(parser):
     parser.add_class_arguments(UnmatchedDefaultType, "cls")
     cfg = parser.parse_args(["--cls.p1=x"])
     assert cfg.cls == Namespace(p1="x", p2="deprecated")
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert init.cls.p2 == "deprecated"
     dump = parser.dump(cfg)
     assert json_or_yaml_load(dump) == {"cls": {"p1": "x", "p2": "deprecated"}}
@@ -463,7 +463,7 @@ def test_add_class_and_action_parser(parser, subparser):
         }
     }
     cfg = parser.parse_args([f"--config={json.dumps(config)}"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert list(cfg.keys()) == ["nested.deep.leaf.p1", "nested.deep.leaf.p2", "config"]
     assert list(init.keys()) == ["nested.deep.leaf", "config"]
     assert isinstance(init.nested.deep.leaf, LeafClass)

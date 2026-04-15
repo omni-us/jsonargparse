@@ -75,7 +75,7 @@ class TestAttrs:
         help_str = get_parser_help(parser)
         assert "--data.p1" not in help_str
         assert cfg == Namespace()
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert init.data.p1 == {}
 
     def test_nested_with_default(self, parser):

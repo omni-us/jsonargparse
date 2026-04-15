@@ -65,7 +65,7 @@ Powerful argparse-like low level parsers:
     parser.add_class_arguments(SomeClass, "class")  # add class parameters
     ...
     cfg = parser.parse_args()
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     ...
 
 

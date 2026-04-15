@@ -21,6 +21,9 @@ Deprecated
   argument) was deprecated and will be removed in v5.0.0. Pass components
   explicitly; explicit is better than implicit (`#895
   <https://github.com/omni-us/jsonargparse/pull/895>`__).
+- ``instantiate_classes`` is deprecated and will be removed in v5.0.0. Instead
+  use ``instantiate`` (`#896
+  <https://github.com/omni-us/jsonargparse/pull/896>`__).
 
 
 v4.48.0 (2026-04-10)

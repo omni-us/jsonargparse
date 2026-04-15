@@ -121,11 +121,11 @@ class TestPydantic2Annotated:
         parser.add_argument("--model", type=PingPongTask)
         cfg = parser.parse_args(["--model.type=pong"])
         assert cfg.model == Namespace(type="pong")
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.model, PongTask)
         cfg = parser.parse_args(["--model.type=ping", "--model.attr=abc"])
         assert cfg.model == Namespace(type="ping", attr="abc")
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.model, PingTask)
 
 
@@ -216,7 +216,7 @@ class TestPydanticBasics:
         parser.add_argument("--model", type=PydanticSubModel, default=PydanticSubModel(p1="a"))
         cfg = parser.parse_args(["--model.p3=0.2"])
         assert Namespace(p1="a", p2=3, p3=0.2) == cfg.model
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.model, PydanticSubModel)
 
     def test_field_default_factory(self, parser):
@@ -272,7 +272,7 @@ class TestPydanticBasics:
         cfg = parser.parse_args([])
         assert cfg == Namespace()
 
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert init.data.p1 == "-"
 
     @pytest.mark.skipif(not pydantic_supports_field_init, reason="Field.init is required")
@@ -281,7 +281,7 @@ class TestPydanticBasics:
         assert parser.get_defaults() == Namespace()
         cfg = parser.parse_args([])
         assert cfg == Namespace()
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.data, ParentPydanticDataFieldInitFalse)
         assert isinstance(init.data.y, PydanticDataFieldInitFalse)
         assert init.data.y.p1 == "-"
@@ -330,7 +330,7 @@ class TestPydanticBasics:
         }
         cfg = parser.parse_args(["--model", json.dumps(model)])
         assert cfg.model.nested["key"] == Namespace(inputs=["a", "b"], outputs=["x", "y"])
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.model, PydanticNestedDict)
         assert isinstance(init.model.nested["key"], NestedModel)
 
@@ -411,7 +411,7 @@ def test_model_argument_subclasses_enabled(parser, subtests, enable_subclasses):
 
     with subtests.test("sub-param"):
         cfg = parser.parse_args(["--person.pets.name=lucky"])
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.person, Person)
         assert isinstance(init.person.pets[0], SpecialCat)
         assert isinstance(init.person.pets[1], Dog)

@@ -159,18 +159,6 @@ def parse_as_dict_patch():
     patch_parse_method("parse_env")
     patch_parse_method("parse_string")
 
-    # Patch instantiate_classes
-    def patched_instantiate_classes(
-        self, cfg: Union[Namespace, Dict[str, Any]], **kwargs
-    ) -> Union[Namespace, Dict[str, Any]]:
-        if isinstance(cfg, dict):
-            cfg = self._apply_actions(cfg)
-        cfg = self._unpatched_instantiate_classes(cfg, **kwargs)
-        return cfg.as_dict() if self._parse_as_dict else cfg
-
-    ArgumentParser._unpatched_instantiate_classes = ArgumentParser.instantiate_classes
-    ArgumentParser.instantiate_classes = patched_instantiate_classes
-
     # Patch dump
     def patched_dump(self, cfg: Union[Namespace, Dict[str, Any]], *args, **kwargs) -> str:
         if isinstance(cfg, dict):
@@ -634,11 +622,21 @@ class ParserDeprecations:
             raise ValueError("default_meta expects a boolean.")
 
     @deprecated("""
+        ``instantiate_classes`` was deprecated in v4.49.0 and will be removed in v5.0.0.
+        Instead use ``instantiate``.
+    """)
+    def instantiate_classes(self, cfg: Union[Namespace, Dict[str, Any]], **kwargs) -> Union[Namespace, Dict[str, Any]]:
+        if isinstance(cfg, dict):
+            cfg = self._apply_actions(cfg)  # type: ignore[attr-defined]
+        cfg = self.instantiate(cfg, **kwargs)  # type: ignore[attr-defined]
+        return cfg.as_dict() if self._parse_as_dict else cfg  # type: ignore[attr-defined]
+
+    @deprecated("""
         instantiate_subclasses was deprecated in v4.0.0 and will be removed in v5.0.0.
-        Instead use instantiate_classes.
+        Instead use instantiate.
     """)
     def instantiate_subclasses(self, cfg: Namespace) -> Namespace:
-        return self.instantiate_classes(cfg, instantiate_groups=False)  # type: ignore[attr-defined]
+        return self.instantiate(cfg, instantiate_groups=False)  # type: ignore[attr-defined]
 
     @deprecated("""
         add_dataclass_arguments was deprecated in v4.35.0 and will be removed in
