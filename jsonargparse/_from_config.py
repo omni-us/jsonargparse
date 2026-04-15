@@ -87,7 +87,7 @@ def _parse_class_kwargs_from_config(cls: Type[T], config: Union[str, PathLike, d
     for required in iter_required_keys(parser):
         clear_required(parser, required)
     cfg = parser.parse_object(config, defaults=False)
-    return parser.instantiate_classes(cfg).as_dict(), cls
+    return parser.instantiate(cfg).as_dict(), cls
 
 
 def _override_init_defaults(cls: Type[T], parser_kwargs: dict) -> None:

@@ -351,7 +351,7 @@ def test_subcommand_default_config_add_subdefaults(parser, subparser, tmp_cwd):
     assert list(cfg.fit.model.init_args.__dict__) == ["submodel"]
     assert cfg.fit.model.init_args.submodel.class_path == f"{__name__}.SubModel"
     assert cfg.fit.model.init_args.submodel.init_args == Namespace(p1=1, p2="-")
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.fit.model, Model)
     assert isinstance(init.fit.model.submodel, SubModel)
 
@@ -430,14 +430,14 @@ def test_subcommands_custom_instantiator(parser, subparser, subtests):
     with subtests.test("main parser"):
         parser.add_instantiator(instantiator("main parser"), CustomInstantiationBase)
         cfg = parser.parse_args(["cmd", "--cls", "CustomInstantiationBase"])
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.cmd.cls, CustomInstantiationBase)
         assert init.cmd.cls.call == "main parser"
 
     with subtests.test("subparser"):
         subparser.add_instantiator(instantiator("subparser"), CustomInstantiationBase)
         cfg = parser.parse_args(["cmd", "--cls", "CustomInstantiationBase"])
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.cmd.cls, CustomInstantiationBase)
         assert init.cmd.cls.call == "subparser"
 

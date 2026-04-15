@@ -955,7 +955,7 @@ def test_callable_class_path_simple(parser):
     cfg = parser.parse_args([f"--callable={json.dumps(value)}"])
     assert value == cfg.callable.as_dict()
     assert value == json_or_yaml_load(parser.dump(cfg))["callable"]
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.callable, CallableClassPath)
     assert 2 == init.callable()
 
@@ -991,7 +991,7 @@ def test_callable_class_path_short_init_args(parser, callable_type):
     cfg = parser.parse_args([f"--call={__name__}.CallableGiveName", "--call.name=Bob"])
     assert cfg.call.class_path == f"{__name__}.CallableGiveName"
     assert cfg.call.init_args == Namespace(name="Bob")
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert init.call() == "Bob"
 
 
@@ -1052,7 +1052,7 @@ def test_callable_args_return_type_class(parser, subtests):
     with subtests.test("default"):
         cfg = parser.get_defaults()
         assert cfg.optimizer.class_path == f"{__name__}.SGD"
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         optimizer = init.optimizer([0.1, 2, 3])
         assert isinstance(optimizer, SGD)
         assert [0.1, 2, 3] == optimizer.params
@@ -1069,7 +1069,7 @@ def test_callable_args_return_type_class(parser, subtests):
         cfg = parser.parse_args([f"--optimizer={json.dumps(value)}"])
         assert f"{__name__}.Adam" == cfg.optimizer.class_path
         assert Namespace(lr=0.01, momentum=0.0) == cfg.optimizer.init_args
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         optimizer = init.optimizer([4.5, 6.7])
         assert isinstance(optimizer, Adam)
         assert [4.5, 6.7] == optimizer.params
@@ -1108,7 +1108,7 @@ def test_callable_protocol_instance_factory(parser, subtests):
     with subtests.test("default"):
         cfg = parser.get_defaults()
         assert cfg.optimizer.class_path == f"{__name__}.SGD"
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         optimizer = init.optimizer(params=[1, 2])
         assert isinstance(optimizer, SGD)
         assert optimizer.params == [1, 2]
@@ -1124,7 +1124,7 @@ def test_callable_protocol_instance_factory(parser, subtests):
             },
         }
         cfg = parser.parse_args([f"--optimizer={json.dumps(value)}"])
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         optimizer = init.optimizer(params=[3, 2, 1])
         assert isinstance(optimizer, Adam)
         assert optimizer.params == [3, 2, 1]
@@ -1140,7 +1140,7 @@ def test_callable_protocol_instance_factory(parser, subtests):
             },
         }
         cfg = parser.parse_args([f"--optimizer={json.dumps(value)}"])
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         optimizer = init.optimizer(params=[3, 2])
         assert isinstance(optimizer, DifferentParamsOrder)
         assert optimizer.params == [3, 2]
@@ -1173,7 +1173,7 @@ def test_callable_protocol_instance_factory_with_positional(parser):
         },
     }
     cfg = parser.parse_args([f"--optimizer={json.dumps(value)}"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     optimizer = init.optimizer(0.2, params=[0, 1])
     assert optimizer.lr == 0.2
     assert optimizer.params == [0, 1]
@@ -1206,7 +1206,7 @@ def test_callable_multiple_args_return_type_class(parser, subtests):
 
     with subtests.test("default"):
         cfg = parser.get_defaults()
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         optimizer = init.optimizer([0.1, 2, 3], 1e-3)
         assert isinstance(optimizer, SGD)
         assert [0.1, 2, 3] == optimizer.params
@@ -1221,7 +1221,7 @@ def test_callable_multiple_args_return_type_class(parser, subtests):
         cfg = parser.parse_args([f"--optimizer={json.dumps(value)}"])
         assert f"{__name__}.Adam" == cfg.optimizer.class_path
         assert Namespace(momentum=0.9) == cfg.optimizer.init_args
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         optimizer = init.optimizer([4.5, 6.7], 0.01)
         assert isinstance(optimizer, Adam)
         assert [4.5, 6.7] == optimizer.params
@@ -1283,7 +1283,7 @@ def test_add_class_arguments_skip_callable_init_arg_and_partial_skip(parser):
     with pytest.raises(ArgumentError):
         parser.parse_args(["--optimizer=Adam", "--optimizer.momentum=0.9"])
 
-    init = parser.instantiate_classes(parser.parse_args(["--optimizer=Adam"]))
+    init = parser.instantiate(parser.parse_args(["--optimizer=Adam"]))
     optimizer = init.optimizer([1.2], 0.2)
     assert isinstance(optimizer, Adam)
     assert optimizer.params == [1.2]
@@ -1314,7 +1314,7 @@ def test_callable_args_return_type_union_of_classes(parser, subtests):
 
     with subtests.test("default"):
         cfg = parser.get_defaults()
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         scheduler = init.scheduler(optimizer)
         assert isinstance(scheduler, StepLR)
         assert scheduler.optimizer is optimizer
@@ -1330,7 +1330,7 @@ def test_callable_args_return_type_union_of_classes(parser, subtests):
         cfg = parser.parse_args([f"--scheduler={json.dumps(value)}"])
         assert f"{__name__}.ReduceLROnPlateau" == cfg.scheduler.class_path
         assert Namespace(monitor="loss", factor=0.1) == cfg.scheduler.init_args
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         scheduler = init.scheduler(optimizer)
         assert isinstance(scheduler, ReduceLROnPlateau)
         assert scheduler.optimizer is optimizer
@@ -1355,7 +1355,7 @@ def test_optional_callable_args_return_type_class(parser, subtests):
 
     with subtests.test("default"):
         cfg = parser.get_defaults()
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         scheduler = init.scheduler(optimizer)
         assert isinstance(scheduler, StepLR)
         assert scheduler.last_epoch == 1
@@ -1369,7 +1369,7 @@ def test_optional_callable_args_return_type_class(parser, subtests):
             },
         }
         cfg = parser.parse_args([f"--scheduler={json.dumps(value)}"])
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         scheduler = init.scheduler(optimizer)
         assert isinstance(scheduler, StepLR)
         assert scheduler.last_epoch == 2
@@ -1399,7 +1399,7 @@ def test_callable_args_return_type_class_subconfig(parser, tmp_cwd):
     parser.add_class_arguments(CallableSubconfig, "m", sub_configs=True)
     cfg = parser.parse_args(["--m.o=optimizer.yaml"])
     assert cfg.m.o.class_path == f"{__name__}.Adam"
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     optimizer = init.m.o(1)
     assert isinstance(optimizer, Adam)
     assert optimizer.momentum == 0.8
@@ -1413,7 +1413,7 @@ def test_callable_args_pickleable(parser, tmp_cwd):
     Path("optimizer.yaml").write_text(json_or_yaml_dump(config))
     parser.add_class_arguments(CallableSubconfig, "m", sub_configs=True)
     cfg = parser.parse_args(["--m.o=optimizer.yaml"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
 
     filepath = str(tmp_cwd) + "/pickled.pkl"
     with open(filepath, "wb") as f:
@@ -1443,7 +1443,7 @@ def test_callable_zero_args_return_type_class(parser):
     assert cfg.model.activation == Namespace(
         class_path=f"{__name__}.LeakyReLU", init_args=Namespace(negative_slope=0.05)
     )
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.model, Model)
     assert not isinstance(init.model.activation, Module)
     activation = init.model.activation()

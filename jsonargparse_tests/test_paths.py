@@ -575,7 +575,7 @@ def test_enable_path_subclass(parser, tmp_cwd):
 
     parser.add_argument("--cal", type=Calendar, enable_path=True)
     cfg = parser.parse_args(["--cal=cal.yaml"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init["cal"], Calendar)
 
 

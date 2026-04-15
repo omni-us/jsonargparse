@@ -562,7 +562,7 @@ def test_add_class_from_function_arguments(parser):
 
     cfg = parser.parse_args(["--a.a1=v", "--a.a2=3"])
     assert cfg.a == Namespace(a1="v", a2=3)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.a, Calendar)
     assert init.a.a1 == "v"
     assert init.a.a2 == 3

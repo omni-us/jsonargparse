@@ -42,11 +42,11 @@ def test_subclass_basics(parser, type):
     }
     parser.add_argument("--op", type=type)
     cfg = parser.parse_args([f"--op={json.dumps(value)}"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init["op"], Calendar)
     assert 3 == init["op"].firstweekday
 
-    init = parser.instantiate_classes(parser.parse_args([]))
+    init = parser.instantiate(parser.parse_args([]))
     assert init["op"] is None
 
 
@@ -105,7 +105,7 @@ def test_subclass_within_class_instantiate(parser):
     assert cfg.c1.class_path == f"{__name__}.Instantiate1"
     assert cfg.c1.init_args == Namespace(a1=7, a2=2.3)
 
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.c1, Instantiate1)
     assert 7 == init.c1.a1
     assert 2.3 == init.c1.a2
@@ -139,14 +139,14 @@ def test_subclass_optional_list(parser, subtests):
         assert cfg.as_dict()["op"] == expected
         cfg = parser.parse_args(['--op=["calendar.Calendar"]'])
         assert cfg.as_dict()["op"] == expected
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.op[0], Calendar)
 
     with subtests.test("with init_args"):
         init_args = '"init_args": {"firstweekday": 3}'
         cfg = parser.parse_args(["--op=[{" + class_path + ", " + init_args + "}]"])
         assert cfg["op"][0]["init_args"].as_dict() == {"firstweekday": 3}
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init["op"][0], Calendar)
         assert 3 == init["op"][0].firstweekday
 
@@ -357,7 +357,7 @@ def test_class_method_instantiator(parser):
     cfg = parser.parse_args([f"--cls={__name__}.ClassMethodInstantiator.from_p1", "--cls.p1=2"])
     assert cfg.cls.class_path == f"{__name__}.ClassMethodInstantiator.from_p1"
     assert cfg.cls.init_args == Namespace(p1=2)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls, ClassMethodInstantiator)
     assert init.cls.p1 == 2
     assert init.cls.p2 is False
@@ -386,7 +386,7 @@ def test_function_instantiator(parser):
     cfg = parser.parse_args([f"--cls={__name__}.function_instantiator", "--cls.p2=y"])
     assert cfg.cls.class_path == f"{__name__}.function_instantiator"
     assert cfg.cls.init_args == Namespace(p2="y")
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls, FunctionInstantiator)
     assert init.cls.p1 == 1.0
     assert init.cls.p2 == "y"
@@ -452,7 +452,7 @@ def test_custom_instantiation_argument_type(parser):
     parser.add_argument("--cls", type=CustomInstantiationBase)
     parser.add_instantiator(instantiator("argument type"), CustomInstantiationBase)
     cfg = parser.parse_args(["--cls=CustomInstantiationBase"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationBase)
     assert init.cls.call == "argument type"
 
@@ -461,7 +461,7 @@ def test_custom_instantiation_unused_for_subclass(parser):
     parser.add_argument("--cls", type=CustomInstantiationBase)
     parser.add_instantiator(instantiator("base"), CustomInstantiationBase, subclasses=False)
     cfg = parser.parse_args(["--cls=CustomInstantiationSub"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationSub)
     assert not hasattr(init.cls, "call")
 
@@ -470,7 +470,7 @@ def test_custom_instantiation_used_for_subclass(parser):
     parser.add_argument("--cls", type=CustomInstantiationBase)
     parser.add_instantiator(instantiator("subclass"), CustomInstantiationBase, subclasses=True)
     cfg = parser.parse_args(["--cls=CustomInstantiationSub"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationSub)
     assert init.cls.call == "subclass"
 
@@ -481,7 +481,7 @@ def test_custom_instantiation_prepend(parser):
     parser.add_instantiator(instantiator("prepended"), CustomInstantiationBase, subclasses=True, prepend=True)
     assert len(parser._instantiators) == 2
     cfg = parser.parse_args(["--cls=CustomInstantiationSub"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationSub)
     assert init.cls.call == "prepended"
 
@@ -505,7 +505,7 @@ def test_custom_instantiation_nested(parser):
     parser.add_argument("--cls", type=CustomInstantiationNested)
     parser.add_instantiator(instantiator("nested"), CustomInstantiationBase, subclasses=True)
     cfg = parser.parse_args(["--cls=CustomInstantiationNested", "--cls.sub=CustomInstantiationSub"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationNested)
     assert isinstance(init.cls.sub, CustomInstantiationSub)
     assert init.cls.sub.call == "nested"
@@ -720,7 +720,7 @@ def test_subclass_mapping_parameter(parser, subtests):
         assert cfg.b.int_list == [1]
 
     with subtests.test("instantiate"):
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.b, MappingParamB)
         assert isinstance(init.b.class_map, dict)
         assert isinstance(init.b.class_map["one"], MappingParamA)
@@ -883,7 +883,7 @@ def test_type_any_subclasses(parser):
     }
 
     cfg = parser.parse_args([f"--any={json.dumps(value)}"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.any, AnySubclasses)
     assert isinstance(init.any.cal1, TextCalendar)
     assert isinstance(init.any.cal2, HTMLCalendar)
@@ -894,7 +894,7 @@ def test_type_any_subclasses(parser):
     cfg = parser.parse_args([f"--any={json.dumps(value)}"])
     assert isinstance(cfg.any.init_args.cal1, Namespace)
     assert isinstance(cfg.any.init_args.cal2, dict)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.any, AnySubclasses)
     assert isinstance(init.any.cal1, TextCalendar)
     assert isinstance(init.any.cal2, dict)
@@ -920,7 +920,7 @@ def test_type_any_list_of_subclasses(parser):
     ]
 
     cfg = parser.parse_args([f"--any={json.dumps(value)}"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.any, list)
     assert 2 == len(init.any)
     assert isinstance(init.any[0], TextCalendar)
@@ -943,7 +943,7 @@ def test_type_any_dict_of_subclasses(parser):
     }
 
     cfg = parser.parse_args([f"--any={json.dumps(value)}"])
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.any, dict)
     assert 2 == len(init.any)
     assert isinstance(init.any["k1"], TextCalendar)
@@ -1089,7 +1089,7 @@ def test_subclass_discard_init_args_with_default_config_files(parser, tmp_cwd, l
     parser.default_config_files = [config_path]
     parser.add_argument("--cal", type=Optional[Calendar])
 
-    init = parser.instantiate_classes(parser.get_defaults())
+    init = parser.instantiate(parser.get_defaults())
     assert isinstance(init.cal, OverrideDefaultConfig)
 
     parser.logger = logger
@@ -1098,7 +1098,7 @@ def test_subclass_discard_init_args_with_default_config_files(parser, tmp_cwd, l
     assert "discarding init_args: {'param': '1'}" in logs.getvalue()
     assert cfg.cal.init_args == Namespace(firstweekday=3)
     with capture_logs(logger) as logs:
-        assert type(parser.instantiate_classes(cfg).cal) is Calendar
+        assert type(parser.instantiate(cfg).cal) is Calendar
     assert logs.getvalue()
 
 
@@ -1185,7 +1185,7 @@ def test_discard_init_args_config_nested(parser, logger, tmp_cwd, method):
         cfg = parser.parse_args([f"--cfg={config_path}"])
     assert "discarding init_args: {'s1': 'x'}" in logs.getvalue()
     with capture_logs(logger) as logs:
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
     assert logs.getvalue()
     assert isinstance(init.main, ConfigDiscardMain)
     assert isinstance(init.main.sub, ConfigDiscardSub2)
@@ -1238,7 +1238,7 @@ def test_subclass_discard_init_args_dict_looks_like_subclass(parser, logger, tmp
         cfg = parser.parse_args([f"--cfg={config_paths[1]}", f"--cfg={config_paths[2]}"])
     assert "discarding init_args: {'s1': 1}" in logs.getvalue()
     with capture_logs(logger) as logs:
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
     assert logs.getvalue()
     assert isinstance(init.main, DictDiscardMain)
     assert isinstance(init.main.sub, dict)
@@ -1283,7 +1283,7 @@ def test_subclass_unresolved_parameters(parser, subtests):
     with subtests.test("config"):
         cfg = parser.parse_args([f"--cfg={json.dumps(config)}"])
         assert cfg.cls == expected
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         assert isinstance(init.cls, UnresolvedParams)
         assert init.cls.kwargs == expected.dict_kwargs
 
@@ -1362,12 +1362,12 @@ def test_add_subclass_tuple(parser):
 
     cfg = parser.parse_args(['--c={"class_path": "TupleBaseA", "init_args": {"a1": -1}}'])
     assert cfg.c.init_args.a1 == -1
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.c, TupleBaseA)
 
     cfg = parser.parse_args(['--c={"class_path": "TupleBaseB", "init_args": {"b1": -4.5}}'])
     assert cfg.c.init_args.b1 == -4.5
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.c, TupleBaseB)
 
     help_str = get_parse_args_stdout(parser, [f"--c.help={__name__}.TupleBaseB"])
@@ -1387,7 +1387,7 @@ def test_add_subclass_not_required_group(parser):
     parser.add_subclass_arguments(Calendar, "cal", required=False)
     cfg = parser.parse_args([])
     assert cfg == Namespace(cal=None)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert init == Namespace(cal=None)
 
 
@@ -1451,7 +1451,7 @@ def test_subclass_signature_instance_default(parser):
         parser.add_class_arguments(InstanceDefault)
     cfg = parser.parse_args([])
     assert isinstance(cfg["cal"], Calendar)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert init["cal"] is cfg["cal"]
     with warnings.catch_warnings(record=True) as w:
         dump = parser.dump(cfg)
@@ -1531,7 +1531,7 @@ def test_parse_implements_protocol(parser):
     cfg = parser.parse_args([f"--cls={__name__}.ImplementsInterface", "--cls.batch_size=5"])
     assert cfg.cls.class_path == f"{__name__}.ImplementsInterface"
     assert cfg.cls.init_args == Namespace(batch_size=5)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls, ImplementsInterface)
     assert init.cls.batch_size == 5
     assert init.cls.predict([1.0, 2.0]) == [1.0, 2.0]
@@ -1602,7 +1602,7 @@ def test_parse_implements_callable_protocol(parser):
     cfg = parser.parse_args([f"--cls={__name__}.ImplementsCallableInterface", "--cls.batch_size=7"])
     assert cfg.cls.class_path == f"{__name__}.ImplementsCallableInterface"
     assert cfg.cls.init_args == Namespace(batch_size=7)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     assert isinstance(init.cls, ImplementsCallableInterface)
     assert init.cls([1.0, 2.0]) == [1.0, 2.0]
 

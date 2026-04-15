@@ -91,7 +91,7 @@ def auto_cli(
             deprecation_warning_cli_return_parser(stacklevel)
             return parser
         cfg = parser.parse_args(args)
-        init = parser.instantiate_classes(cfg)
+        init = parser.instantiate(cfg)
         return _run_component(components, init)
 
     elif isinstance(components, list):
@@ -105,7 +105,7 @@ def auto_cli(
         deprecation_warning_cli_return_parser(stacklevel)
         return parser
     cfg = parser.parse_args(args)
-    init = parser.instantiate_classes(cfg)
+    init = parser.instantiate(cfg)
     components_ns = dict_to_namespace(components)
     subcommand = init.get("subcommand")
     while isinstance(init.get(subcommand), Namespace) and isinstance(init[subcommand].get("subcommand"), str):

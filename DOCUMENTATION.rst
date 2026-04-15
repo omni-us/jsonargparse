@@ -483,10 +483,9 @@ Some notes about this support are:
   null], default: null``.
 
 - Normal classes can be used as a type, which are specified with a dict
-  containing ``class_path`` and optionally ``init_args``.
-  :meth:`instantiate_classes <.ArgumentParser.instantiate_classes>` can be used
-  to instantiate all classes in a config object. For more details see
-  :ref:`sub-classes`.
+  containing ``class_path`` and optionally ``init_args``. :meth:`instantiate
+  <.ArgumentParser.instantiate>` can be used to instantiate all classes in a
+  config object. For more details see :ref:`sub-classes`.
 
 - ``Protocol`` types are also supported the same as subclasses. The protocols
   are not required to be ``runtime_checkable``. But the accepted classes must
@@ -513,10 +512,10 @@ Some notes about this support are:
   object or by giving a dict with a ``class_path`` and optionally ``init_args``
   entries. The specified class must either instantiate into a callable or be a
   subclass of the return type of the callable. For these cases running
-  :meth:`instantiate_classes <.ArgumentParser.instantiate_classes>` will
-  instantiate the class or provide a function that returns the instance of the
-  class. For more details see :ref:`callable-type`. Currently the callable's
-  argument and return types are not validated.
+  :meth:`instantiate <.ArgumentParser.instantiate>` will instantiate the class
+  or provide a function that returns the instance of the class. For more details
+  see :ref:`callable-type`. Currently the callable's argument and return types
+  are not validated.
 
 - ``TypeAliasType`` is supported with values parsed as the aliased type and the
   alias shown as the argument type in help.
@@ -1020,7 +1019,7 @@ A second option is a class that once instantiated becomes callable:
     >>> cfg = parser.parse_args(["--callable", str(value)])
     >>> cfg.callable
     Namespace(class_path='__main__.OffsetSum', init_args=Namespace(offset=3))
-    >>> init = parser.instantiate_classes(cfg)
+    >>> init = parser.instantiate(cfg)
     >>> init.callable(5)
     8
 
@@ -1420,11 +1419,10 @@ and ``flag`` as an optional boolean with default value false.
 
 Instantiation of several classes added with :meth:`add_class_arguments
 <.SignatureArguments.add_class_arguments>` can be done more simply for an entire
-config object using :meth:`instantiate_classes
-<.ArgumentParser.instantiate_classes>`. For the example above running ``cfg =
-parser.instantiate_classes(cfg)`` would result in ``cfg.myclass.init``
-containing an instance of ``MyClass`` initialized with whatever command line
-arguments were parsed.
+config object using :meth:`instantiate <.ArgumentParser.instantiate>`. For the
+example above running ``cfg = parser.instantiate(cfg)`` would result in
+``cfg.myclass.init`` containing an instance of ``MyClass`` initialized with
+whatever command line arguments were parsed.
 
 When parsing from a config file (see :ref:`configuration-files`) all the values
 can be given in a single config file. For convenience it is also possible that
@@ -1569,9 +1567,8 @@ Classes from functions
 ----------------------
 
 In some cases there are functions which return an instance of a class. To add
-this to a parser such that :meth:`instantiate_classes
-<.ArgumentParser.instantiate_classes>` calls this function, the example above
-would change to:
+this to a parser such that :meth:`instantiate <.ArgumentParser.instantiate>`
+calls this function, the example above would change to:
 
 .. testsetup:: class_from_function
 
@@ -1653,7 +1650,7 @@ Take for example the following parsing and instantiation:
     parser = ArgumentParser()
     parser.add_argument("--myclass", type=MyClass)
     cfg = parser.parse_args()
-    cfg_init = parser.instantiate_classes(cfg)
+    cfg_init = parser.instantiate(cfg)
 
 If ``MyClass.__init__`` has ``**kwargs`` with some unresolved parameters, the
 following could be a valid config file:
@@ -1850,9 +1847,8 @@ parameters behave differently and are shown in the help with the default like
 these parameters are not included in :meth:`get_defaults
 <.ArgumentParser.get_defaults>` or the output of ``--print_config``. This is
 necessary because the parser does not know which of the calls will be used at
-runtime, and adding them would cause :meth:`instantiate_classes
-<.ArgumentParser.instantiate_classes>` to fail due to unexpected keyword
-arguments.
+runtime, and adding them would cause :meth:`instantiate
+<.ArgumentParser.instantiate>` to fail due to unexpected keyword arguments.
 
 .. note::
 
@@ -1937,8 +1933,8 @@ instantiate it. When parsing, it will be checked that the class can be imported,
 that it is a subclass of the given type and that ``init_args`` values correspond
 to valid arguments to instantiate it. After parsing, the config object will
 include the ``class_path`` and ``init_args`` entries. To get a config object
-with all nested subclasses instantiated, the :meth:`instantiate_classes
-<.ArgumentParser.instantiate_classes>` method is used.
+with all nested subclasses instantiated, the :meth:`instantiate
+<.ArgumentParser.instantiate>` method is used.
 
 In addition to using a class as type hint in signatures, for low level
 construction of parsers, there are also the methods :meth:`add_class_arguments
@@ -1992,7 +1988,7 @@ Then in Python:
     >>> cfg.myclass.calendar.as_dict()
     {'class_path': 'calendar.Calendar', 'init_args': {'firstweekday': 1}}
 
-    >>> cfg = parser.instantiate_classes(cfg)
+    >>> cfg = parser.instantiate(cfg)
     >>> isinstance(cfg.myclass, MyClass)
     True
     >>> isinstance(cfg.myclass.calendar, Calendar)
@@ -2041,11 +2037,11 @@ As explained at the beginning of section :ref:`dependency-injection`, callables
 that return instances of classes, referred to as instance factories, represent
 an alternative approach to dependency injection. This is useful to support
 dependency injection of classes that require parameters that are only available
-after injection. For this case, when :meth:`instantiate_classes
-<.ArgumentParser.instantiate_classes>` is run, a partial function is provided,
-which might accept parameters and return the instance of the class. Two options
-are possible: using ``Callable`` or ``Protocol``. To illustrate the
-``Callable`` option, take for example the classes:
+after injection. For this case, when :meth:`instantiate
+<.ArgumentParser.instantiate>` is run, a partial function is provided, which
+might accept parameters and return the instance of the class. Two options are
+possible: using ``Callable`` or ``Protocol``. To illustrate the ``Callable``
+option, take for example the classes:
 
 .. testcode:: callable
 
@@ -2079,7 +2075,7 @@ A possible parser and callable behavior would be:
     >>> cfg = parser.parse_args(["--optimizer", str(value)])
     >>> cfg.optimizer
     Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.01))
-    >>> init = parser.instantiate_classes(cfg)
+    >>> init = parser.instantiate(cfg)
     >>> optimizer = init.optimizer([1, 2, 3])
     >>> isinstance(optimizer, SGD)
     True
@@ -2112,7 +2108,7 @@ Then a parser and behavior could be:
     >>> cfg = parser.get_defaults()
     >>> cfg.model.optimizer
     Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.05))
-    >>> init = parser.instantiate_classes(cfg)
+    >>> init = parser.instantiate(cfg)
     >>> optimizer = init.model.optimizer([1, 2, 3])
     >>> optimizer.params, optimizer.lr
     ([1, 2, 3], 0.05)
@@ -2159,7 +2155,7 @@ Then a parser and protocol behavior would be:
     >>> cfg = parser.parse_args(["--optimizer", str(value)])
     >>> cfg.optimizer
     Namespace(class_path='__main__.SGD', init_args=Namespace(lr=0.02))
-    >>> init = parser.instantiate_classes(cfg)
+    >>> init = parser.instantiate(cfg)
     >>> optimizer = init.optimizer(params=[6, 5])
     >>> optimizer.params, optimizer.lr
     ([6, 5], 0.02)
@@ -2249,9 +2245,9 @@ are supported with a particular behavior and recommendations. An example is:
 Adding this class to a parser will work without issues. The :ref:`ast-resolver`
 in limited cases determines how to instantiate the original default. The parsing
 methods would provide a dict with ``class_path`` and ``init_args`` instead of
-the class instance. Furthermore, if :meth:`instantiate_classes
-<.ArgumentParser.instantiate_classes>` is used, a new instance of the class is
-created, thereby avoiding issues related to the mutability of the default.
+the class instance. Furthermore, if :meth:`instantiate
+<.ArgumentParser.instantiate>` is used, a new instance of the class is created,
+thereby avoiding issues related to the mutability of the default.
 
 Since the :ref:`ast-resolver` only supports limited cases, or when the source
 code is not available, a second approach is to use the special function
@@ -2419,7 +2415,7 @@ behavior can be obtained by using the :meth:`link_arguments
 There are two types of links, defined with ``apply_on='parse'`` or
 ``apply_on='instantiate'``. As the names suggest, the former are set when
 calling one of the parse methods and the latter are set when calling
-:meth:`instantiate_classes <.ArgumentParser.instantiate_classes>`.
+:meth:`instantiate <.ArgumentParser.instantiate>`.
 
 Applied on parse
 ----------------
@@ -2482,10 +2478,9 @@ For instantiation links, sources can be class groups (added with
 subclass arguments (see :ref:`sub-classes`). The source key can be the entire
 instantiated object or an attribute of the object. The target key has to be a
 single argument and can be inside init_args of a subclass. The order of
-instantiation used by :meth:`instantiate_classes
-<.ArgumentParser.instantiate_classes>` is automatically determined based on the
-links. The set of all instantiation links must be a directed acyclic graph. An
-example would be the following:
+instantiation used by :meth:`instantiate <.ArgumentParser.instantiate>` is
+automatically determined based on the links. The set of all instantiation links
+must be a directed acyclic graph. An example would be the following:
 
 .. testcode::
 
@@ -2504,9 +2499,9 @@ example would be the following:
     parser.add_class_arguments(Data, "data")
     parser.link_arguments("data.num_classes", "model.num_classes", apply_on="instantiate")
 
-This link would imply that :meth:`instantiate_classes
-<.ArgumentParser.instantiate_classes>` instantiates ``Data`` first, then use the
-``num_classes`` attribute to instantiate ``Model``.
+This link would imply that :meth:`instantiate <.ArgumentParser.instantiate>`
+instantiates ``Data`` first, then use the ``num_classes`` attribute to
+instantiate ``Model``.
 
 
 OmegaConf variable interpolation

@@ -72,8 +72,8 @@ result = parser.parse_args([f"--config={config}", "--key2=val2", ...])
 # If the problem is in the parsed result, print it to stdout
 print(parser.dump(result))
 
-# If the problem is in class instantiation
-parser.instantiate_classes(result)
+# If the problem is in instantiation
+parser.instantiate(result)
 ```
 -->
 

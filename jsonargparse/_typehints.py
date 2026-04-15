@@ -1493,7 +1493,7 @@ def adapt_class_type(
     init_args = value.get("init_args", Namespace())
 
     if instantiate_classes:
-        init_args = parser.instantiate_classes(init_args)
+        init_args = parser.instantiate(init_args)
         if not sub_add_kwargs.get("instantiate", True):
             if init_args:
                 value["init_args"] = init_args

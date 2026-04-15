@@ -26,7 +26,7 @@ def test_add_class_final(parser):
     cfg = parser.parse_args(['--b.b2={"a2": 6.7}'])
     assert cfg.b.b2 == Namespace(a1=1, a2=6.7)
     assert cfg == parser.parse_string(parser.dump(cfg))
-    cfg = parser.instantiate_classes(cfg)
+    cfg = parser.instantiate(cfg)
     assert isinstance(cfg["b"], NotFinalClass)
     assert isinstance(cfg["b"].b2, FinalClass)
 
