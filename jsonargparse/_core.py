@@ -1633,8 +1633,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     @property
     def parser_mode(self) -> str:
-        """Mode for parsing configuration files: ``yaml``, ``json``, ``jsonnet`` or ones added via
-        :func:`.set_loader`.
+        """Mode for parsing config files, ``yaml``, ``json``, ``jsonnet`` or ones added via :func:`.set_loader`.
 
         :getter: Returns the current parser mode.
         :setter: Sets the parser mode.

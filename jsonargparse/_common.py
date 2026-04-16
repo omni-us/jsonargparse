@@ -487,10 +487,6 @@ def debug_mode_active() -> bool:
     return get_env_var_bool("JSONARGPARSE_DEBUG")
 
 
-if debug_mode_active():
-    os.environ["LOGGER_LEVEL"] = "DEBUG"  # pragma: no cover
-
-
 # base classes
 
 
