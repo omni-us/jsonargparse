@@ -141,6 +141,15 @@ def subsubparser() -> ArgumentParser:
 
 
 @pytest.fixture
+def clear_instantiators():
+    from jsonargparse._instantiation import _global_class_instantiators
+
+    _global_class_instantiators.clear()
+    yield
+    _global_class_instantiators.clear()
+
+
+@pytest.fixture
 def example_parser() -> ArgumentParser:
     parser = ArgumentParser(prog="app", exit_on_error=False)
     group_1 = parser.add_argument_group("Group 1", name="group1")

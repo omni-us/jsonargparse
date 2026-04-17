@@ -26,11 +26,7 @@ from ._actions import (
     previous_config,
 )
 from ._common import (
-    ClassType,
-    InstantiatorCallable,
-    InstantiatorsDictType,
     LoggerProperty,
-    class_instantiators,
     debug_mode_active,
     get_optionals_as_positionals_actions,
     is_subclasses_disabled,
@@ -45,6 +41,7 @@ from ._completions import (
 )
 from ._deprecated import ParserDeprecations, deprecated_skip_check, deprecated_yaml_comments
 from ._formatters import DefaultHelpFormatter, get_env_var
+from ._instantiation import get_class_instantiators
 from ._jsonnet import ActionJsonnet
 from ._jsonschema import ActionJsonSchema
 from ._link_arguments import ActionLink, ArgumentLinking
@@ -237,7 +234,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
     groups: Optional[dict[str, ArgumentGroup]] = None
     _group_class: type[ArgumentGroup]
     _subcommands_action: Optional[ActionSubCommands] = None
-    _instantiators: Optional[InstantiatorsDictType] = None
 
     def __init__(
         self,
@@ -1204,56 +1200,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         if not skip_required and not lenient_check.get():
             check_required(cfg, self, prefix)
 
-    def add_instantiator(
-        self,
-        instantiator: InstantiatorCallable,
-        class_type: type[ClassType],
-        subclasses: bool = True,
-        prepend: bool = False,
-    ) -> None:
-        """Adds a custom instantiator for a class type. Used by ``instantiate``.
-
-        Instantiator functions are expected to have as signature ``(class_type:
-        Type[ClassType], *args, **kwargs) -> ClassType``.
-
-        For reference, the default instantiator is ``return class_type(*args,
-        **kwargs)``.
-
-        In some use cases, the instantiator function might need access to values
-        applied by instantiation links. For this, the instantiator function can
-        have an additional keyword parameter ``applied_instantiation_links:
-        dict``. This parameter will be populated with a dictionary having as
-        keys the targets of the instantiation links and corresponding values
-        that were applied.
-
-        Args:
-            instantiator: Function that instantiates a class.
-            class_type: The class type to instantiate.
-            subclasses: Whether to instantiate subclasses of ``class_type``.
-            prepend: Whether to prepend the instantiator to the existing instantiators.
-        """
-        if self._instantiators is None:
-            self._instantiators = {}
-        key = (class_type, subclasses)
-        instantiators = {k: v for k, v in self._instantiators.items() if k != key}
-        if prepend:
-            self._instantiators = {key: instantiator, **instantiators}
-        else:
-            instantiators[key] = instantiator
-            self._instantiators = instantiators
-
-    def _get_instantiators(self):
-        instantiators = self._instantiators or {}
-        if hasattr(self, "parent_parser"):
-            parent_instantiators = self.parent_parser._get_instantiators()
-            instantiators = instantiators.copy()
-            instantiators.update({k: v for k, v in parent_instantiators.items() if k not in instantiators})
-        context_instantiators = class_instantiators.get()
-        if context_instantiators:
-            instantiators = instantiators.copy()
-            instantiators.update({k: v for k, v in context_instantiators.items() if k not in instantiators})
-        return instantiators
-
     def instantiate(
         self,
         cfg: Namespace,
@@ -1323,14 +1269,14 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                         with parser_context(
                             parent_parser=self,
                             nested_links=ActionLink.get_nested_links(self, component),
-                            class_instantiators=self._get_instantiators(),
+                            class_instantiators=get_class_instantiators(self),
                             applied_instantiation_links=cfg.get("__applied_instantiation_links__"),
                         ):
                             parent[key] = component.instantiate_classes(value)
             else:
                 with parser_context(
                     load_value_mode=self.parser_mode,
-                    class_instantiators=self._get_instantiators(),
+                    class_instantiators=get_class_instantiators(self),
                     applied_instantiation_links=cfg.get("__applied_instantiation_links__"),
                 ):
                     component.instantiate_class(component, cfg)

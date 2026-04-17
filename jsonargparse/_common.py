@@ -378,34 +378,6 @@ def subclass_type_behavior(
             )
 
 
-def default_class_instantiator(class_type: type[ClassType], *args, **kwargs) -> ClassType:
-    return class_type(*args, **kwargs)
-
-
-class ClassInstantiator:
-    def __init__(self, instantiators: InstantiatorsDictType) -> None:
-        self.instantiators = instantiators
-
-    def __call__(self, class_type: type[ClassType], *args, **kwargs) -> ClassType:
-        for (cls, subclasses), instantiator in self.instantiators.items():
-            if class_type is cls or (subclasses and is_subclass(class_type, cls)):
-                param_names = set(inspect.signature(instantiator).parameters)
-                if "applied_instantiation_links" in param_names:
-                    applied_links = applied_instantiation_links.get() or set()
-                    kwargs["applied_instantiation_links"] = {
-                        action.target[0]: action.applied_value for action in applied_links
-                    }
-                return instantiator(class_type, *args, **kwargs)
-        return default_class_instantiator(class_type, *args, **kwargs)
-
-
-def get_class_instantiator() -> InstantiatorCallable:
-    instantiators = class_instantiators.get()
-    if not instantiators:
-        return default_class_instantiator
-    return ClassInstantiator(instantiators)
-
-
 # logging
 
 logging_levels = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}

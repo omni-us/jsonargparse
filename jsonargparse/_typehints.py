@@ -46,7 +46,6 @@ from ._actions import (
     remove_actions,
 )
 from ._common import (
-    get_class_instantiator,
     get_unaliased_type,
     is_generic_class,
     is_instance,
@@ -58,6 +57,7 @@ from ._common import (
     parser_context,
     validating_defaults,
 )
+from ._instantiation import get_class_instantiator
 from ._loaders_dumpers import (
     basic_json_or_yaml_load,
     get_loader_exceptions,

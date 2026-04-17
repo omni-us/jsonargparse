@@ -66,6 +66,7 @@ from jsonargparse_tests.conftest import (
 from jsonargparse_tests.test_dataclasses import DataClassA
 from jsonargparse_tests.test_jsonnet import example_2_jsonnet
 from jsonargparse_tests.test_paths import paths  # noqa: F401
+from jsonargparse_tests.test_subclasses import CustomInstantiationBase, instantiator
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -287,6 +288,21 @@ def test_instantiate_classes():
         code="cfg_init = parser.instantiate_classes(cfg)",
     )
     assert isinstance(cfg_init["cal"], Calendar)
+
+
+def test_add_instantiator_method_deprecated(parser):
+    parser.add_argument("--cls", type=CustomInstantiationBase)
+    with catch_warnings(record=True) as w:
+        parser.add_instantiator(instantiator("custom"), CustomInstantiationBase)
+    assert_deprecation_warn(
+        w,
+        message="``ArgumentParser.add_instantiator`` was deprecated",
+        code='parser.add_instantiator(instantiator("custom"), CustomInstantiationBase)',
+    )
+    cfg = parser.parse_args(["--cls=CustomInstantiationBase"])
+    init = parser.instantiate(cfg)
+    assert isinstance(init.cls, CustomInstantiationBase)
+    assert init.cls.call == "custom"
 
 
 def function(a1: float):

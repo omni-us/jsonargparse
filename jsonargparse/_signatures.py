@@ -9,13 +9,13 @@ from typing import Any, Callable, Optional, Union
 from ._actions import _ActionConfigLoad
 from ._common import (
     LoggerProperty,
-    get_class_instantiator,
     get_generic_origin,
     get_unaliased_type,
     is_final_class,
     is_subclass,
     is_subclasses_disabled,
 )
+from ._instantiation import get_class_instantiator
 from ._namespace import Namespace
 from ._optionals import attrs_support, get_doc_short_description, is_attrs_class, is_pydantic_model
 from ._parameter_resolvers import ParamData, get_parameter_origins, get_signature_parameters
