@@ -17,6 +17,7 @@ from ._core import *  # noqa: F403
 from ._deprecated import *  # noqa: F403
 from ._formatters import *  # noqa: F403
 from ._from_config import *  # noqa: F403
+from ._instantiation import *  # noqa: F403
 from ._jsonnet import *  # noqa: F403
 from ._jsonschema import *  # noqa: F403
 from ._link_arguments import *  # noqa: F403
@@ -47,6 +48,7 @@ from . import (
     _deprecated,
     _formatters,
     _from_config,
+    _instantiation,
     _jsonnet,
     _jsonschema,
     _link_arguments,
@@ -69,6 +71,7 @@ __all__ += _actions.__all__
 __all__ += _namespace.__all__
 __all__ += _formatters.__all__
 __all__ += _common.__all__
+__all__ += _instantiation.__all__
 __all__ += _loaders_dumpers.__all__
 __all__ += _util.__all__
 __all__ += _deprecated.__all__

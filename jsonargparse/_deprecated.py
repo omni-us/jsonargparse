@@ -11,8 +11,9 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Dict, Optional, Set, Union, overload
 
-from ._common import Action, null_logger
+from ._common import Action, InstantiatorsDictType, null_logger
 from ._common import LoggerProperty as InternalLoggerProperty
+from ._instantiation import _register_instantiator
 from ._namespace import Namespace
 from ._type_checking import ArgumentParser, ruamelCommentedMap
 
@@ -566,6 +567,8 @@ default_meta_message = """
 class ParserDeprecations:
     """Helper class for ArgumentParser deprecations. Will be removed in v5.0.0."""
 
+    _instantiators: Optional[InstantiatorsDictType] = None
+
     def __init__(self, *args, error_handler=False, default_meta=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.error_handler = error_handler
@@ -653,6 +656,30 @@ class ParserDeprecations:
     """)
     def check_config(self, *args, **kwargs):
         return self.validate(*args, **kwargs)
+
+    @deprecated("""
+        ``ArgumentParser.add_instantiator`` was deprecated in v4.49.0 and will be
+        removed in v5.0.0. Use the global function ``jsonargparse.add_instantiator``
+        instead.
+    """)
+    def add_instantiator(
+        self,
+        instantiator,
+        class_type,
+        subclasses: bool = True,
+        prepend: bool = False,
+    ) -> None:
+        if self._instantiators is None:
+            self._instantiators = {}
+        _register_instantiator(self._instantiators, instantiator, class_type, subclasses=subclasses, prepend=prepend)
+
+    def _get_parser_instantiators(self) -> InstantiatorsDictType:
+        instantiators = self._instantiators or {}
+        if hasattr(self, "parent_parser"):
+            parent_instantiators = self.parent_parser._get_parser_instantiators()
+            instantiators = instantiators.copy()
+            instantiators.update({k: v for k, v in parent_instantiators.items() if k not in instantiators})
+        return instantiators
 
 
 def deprecated_skip_check(component, kwargs: dict, skip_validation: bool) -> bool:

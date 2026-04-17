@@ -12,6 +12,7 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     Namespace,
+    add_instantiator,
     lazy_instance,
 )
 from jsonargparse._optionals import docstring_parser_support
@@ -973,7 +974,7 @@ def custom_instantiator(class_type, *args, applied_instantiation_links: dict, **
     return init
 
 
-def test_on_instantiate_targets_passed_to_instantiator(parser):
+def test_on_instantiate_targets_passed_to_instantiator(parser, clear_instantiators):
     parser.add_argument("--data", type=Dataloader)
     parser.add_argument("--model", type=Model)
     parser.link_arguments(
@@ -981,8 +982,8 @@ def test_on_instantiate_targets_passed_to_instantiator(parser):
         "model.init_args.optimizer.init_args.num_classes",
         apply_on="instantiate",
     )
-    parser.add_instantiator(custom_instantiator, Dataloader, subclasses=True)
-    parser.add_instantiator(custom_instantiator, Model, subclasses=True)
+    add_instantiator(custom_instantiator, Dataloader, subclasses=True)
+    add_instantiator(custom_instantiator, Model, subclasses=True)
 
     cfg = parser.parse_args(["--data=Dataloader", "--model=Model", "--model.label=ok"])
     init = parser.instantiate(cfg)

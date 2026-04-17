@@ -24,6 +24,9 @@ Deprecated
 - ``instantiate_classes`` is deprecated and will be removed in v5.0.0. Instead
   use ``instantiate`` (`#896
   <https://github.com/omni-us/jsonargparse/pull/896>`__).
+- ``ArgumentParser.add_instantiator`` is deprecated and will be removed in
+  v5.0.0. Use the global function ``jsonargparse.add_instantiator`` instead
+  (`#899 <https://github.com/omni-us/jsonargparse/pull/899>`__).
 
 
 v4.48.0 (2026-04-10)

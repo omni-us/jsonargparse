@@ -19,8 +19,10 @@ from jsonargparse import (
     ArgumentError,
     ArgumentParser,
     Namespace,
+    add_instantiator,
     lazy_instance,
 )
+from jsonargparse._instantiation import _global_class_instantiators
 from jsonargparse._typehints import implements_protocol, is_instance_or_supports_protocol
 from jsonargparse.typing import final
 from jsonargparse_tests.conftest import (
@@ -448,52 +450,52 @@ def instantiator(value):
     return instantiate
 
 
-def test_custom_instantiation_argument_type(parser):
+def test_custom_instantiation_argument_type(parser, clear_instantiators):
     parser.add_argument("--cls", type=CustomInstantiationBase)
-    parser.add_instantiator(instantiator("argument type"), CustomInstantiationBase)
+    add_instantiator(instantiator("argument type"), CustomInstantiationBase)
     cfg = parser.parse_args(["--cls=CustomInstantiationBase"])
     init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationBase)
     assert init.cls.call == "argument type"
 
 
-def test_custom_instantiation_unused_for_subclass(parser):
+def test_custom_instantiation_unused_for_subclass(parser, clear_instantiators):
     parser.add_argument("--cls", type=CustomInstantiationBase)
-    parser.add_instantiator(instantiator("base"), CustomInstantiationBase, subclasses=False)
+    add_instantiator(instantiator("base"), CustomInstantiationBase, subclasses=False)
     cfg = parser.parse_args(["--cls=CustomInstantiationSub"])
     init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationSub)
     assert not hasattr(init.cls, "call")
 
 
-def test_custom_instantiation_used_for_subclass(parser):
+def test_custom_instantiation_used_for_subclass(parser, clear_instantiators):
     parser.add_argument("--cls", type=CustomInstantiationBase)
-    parser.add_instantiator(instantiator("subclass"), CustomInstantiationBase, subclasses=True)
+    add_instantiator(instantiator("subclass"), CustomInstantiationBase, subclasses=True)
     cfg = parser.parse_args(["--cls=CustomInstantiationSub"])
     init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationSub)
     assert init.cls.call == "subclass"
 
 
-def test_custom_instantiation_prepend(parser):
+def test_custom_instantiation_prepend(parser, clear_instantiators):
     parser.add_argument("--cls", type=CustomInstantiationBase)
-    parser.add_instantiator(instantiator("first"), CustomInstantiationSub)
-    parser.add_instantiator(instantiator("prepended"), CustomInstantiationBase, subclasses=True, prepend=True)
-    assert len(parser._instantiators) == 2
+    add_instantiator(instantiator("first"), CustomInstantiationSub)
+    add_instantiator(instantiator("prepended"), CustomInstantiationBase, subclasses=True, prepend=True)
+    assert len(_global_class_instantiators) == 2
     cfg = parser.parse_args(["--cls=CustomInstantiationSub"])
     init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationSub)
     assert init.cls.call == "prepended"
 
 
-def test_custom_instantiation_replace(parser):
+def test_custom_instantiation_replace(parser, clear_instantiators):
     first_instantiator = instantiator("first")
     second_instantiator = instantiator("second")
     parser.add_argument("--cls", type=CustomInstantiationBase)
-    parser.add_instantiator(first_instantiator, CustomInstantiationBase)
-    parser.add_instantiator(second_instantiator, CustomInstantiationBase)
-    assert len(parser._instantiators) == 1
-    assert list(parser._instantiators.values())[0] is second_instantiator
+    add_instantiator(first_instantiator, CustomInstantiationBase)
+    add_instantiator(second_instantiator, CustomInstantiationBase)
+    assert len(_global_class_instantiators) == 1
+    assert list(_global_class_instantiators.values())[0] is second_instantiator
 
 
 class CustomInstantiationNested:
@@ -501,9 +503,9 @@ class CustomInstantiationNested:
         self.sub = sub
 
 
-def test_custom_instantiation_nested(parser):
+def test_custom_instantiation_nested(parser, clear_instantiators):
     parser.add_argument("--cls", type=CustomInstantiationNested)
-    parser.add_instantiator(instantiator("nested"), CustomInstantiationBase, subclasses=True)
+    add_instantiator(instantiator("nested"), CustomInstantiationBase, subclasses=True)
     cfg = parser.parse_args(["--cls=CustomInstantiationNested", "--cls.sub=CustomInstantiationSub"])
     init = parser.instantiate(cfg)
     assert isinstance(init.cls, CustomInstantiationNested)

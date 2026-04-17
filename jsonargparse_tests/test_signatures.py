@@ -12,6 +12,7 @@ from jsonargparse import (
     ActionParser,
     ArgumentError,
     Namespace,
+    add_instantiator,
     lazy_instance,
 )
 from jsonargparse._optionals import docstring_parser_support
@@ -396,14 +397,14 @@ def test_add_class_docstring_parse_fail(parser, logger):
     assert "a1 description" not in help_str
 
 
-def test_add_class_custom_instantiator(parser):
+def test_add_class_custom_instantiator(parser, clear_instantiators):
     def instantiate(cls, **kwargs):
         instance = cls(**kwargs)
         instance.call = "custom"
         return instance
 
     parser.add_class_arguments(Class0, "a")
-    parser.add_instantiator(instantiate, Class0)
+    add_instantiator(instantiate, Class0)
     cfg = parser.parse_args([])
     init = parser.instantiate(cfg)
     assert isinstance(init.a, Class0)
