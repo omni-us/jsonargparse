@@ -406,7 +406,7 @@ cli_return_parser_message = """
 """
 
 auto_cli_implicit_components_message = """
-    Implicit components discovery in auto_cli was deprecated in v4.48.0 and
+    Implicit components discovery in auto_cli was deprecated in v4.49.0 and
     will be removed in v5.0.0. Pass components explicitly, explicit is better
     than implicit.
 """
@@ -828,6 +828,55 @@ def strip_meta(cfg):
     from ._namespace import remove_meta
 
     return remove_meta(cfg)
+
+
+def is_meta_key(key: str) -> bool:
+    from ._namespace import meta_keys, split_key_leaf
+
+    leaf_key = split_key_leaf(key)[-1]
+    return leaf_key in meta_keys
+
+
+class NamespaceDeprecations:
+    """Helper class for Namespace deprecations. Will be removed in v5.0.0."""
+
+    @deprecated("""
+        get_sorted_keys method was deprecated in v4.49.0 and will be removed in
+        v5.0.0. There is no replacement since this is for internal use and
+        developers can call .keys() and then sort.
+    """)
+    def get_sorted_keys(self, branches: bool = True, key_filter: Callable = is_meta_key) -> list[str]:
+        """Deprecated method"""
+        from ._namespace import split_key
+
+        keys = [k for k in self.keys() if not key_filter(k)]  # type: ignore[attr-defined]
+        if branches:
+            for key in [k for k in keys if "." in k]:
+                key_split = split_key(key)
+                for num in range(len(key_split) - 1):
+                    parent_key = ".".join(key_split[: num + 1])
+                    if parent_key not in keys:
+                        keys.append(parent_key)
+        keys.sort(key=lambda x: -len(split_key(x)))
+        return keys
+
+    @deprecated("""
+        get_value_and_parent method was deprecated in v4.49.0 and will be
+        removed in v5.0.0. There is no replacement since this is for internal
+        use and developers can get the parent and leaf separately.
+    """)
+    def get_value_and_parent(self, key: str) -> tuple[Any, Namespace, str]:
+        """Deprecated method"""
+        leaf_key, parent_ns, _ = self._parse_required_key(key)  # type: ignore[attr-defined]
+        return parent_ns[leaf_key], parent_ns, leaf_key
+
+
+def _patch_namespace_deprecations() -> None:
+    Namespace.get_sorted_keys = NamespaceDeprecations.get_sorted_keys  # type: ignore[attr-defined]
+    Namespace.get_value_and_parent = NamespaceDeprecations.get_value_and_parent  # type: ignore[attr-defined]
+
+
+_patch_namespace_deprecations()
 
 
 class HelpFormatterDeprecations:

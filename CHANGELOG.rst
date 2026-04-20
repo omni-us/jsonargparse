@@ -27,6 +27,10 @@ Deprecated
 - ``ArgumentParser.add_instantiator`` is deprecated and will be removed in
   v5.0.0. Use the global function ``jsonargparse.add_instantiator`` instead
   (`#899 <https://github.com/omni-us/jsonargparse/pull/899>`__).
+- ``Namespace.get_sorted_keys`` and ``Namespace.get_value_and_parent`` are
+  deprecated and will be removed in v5.0.0. Instead run ``.keys()`` and then
+  sort or get the parent and leaf separately. (`#900
+  <https://github.com/omni-us/jsonargparse/pull/900>`__).
 
 
 v4.48.0 (2026-04-10)

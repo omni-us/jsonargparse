@@ -4,12 +4,7 @@ import argparse
 from collections import OrderedDict
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import Any, Optional, Union
 
 __all__ = ["Namespace"]
 
@@ -232,24 +227,6 @@ class Namespace(argparse.Namespace):
         for _, val in self.items(branches):
             yield val
 
-    def get_sorted_keys(self, branches: bool = True, key_filter: Callable = is_meta_key) -> list[str]:
-        """Returns a list of keys sorted by descending depth.
-
-        Args:
-            branches: Whether to include branch keys instead of only leaves.
-            key_filter: Function that selects keys to exclude.
-        """
-        keys = [k for k in self.keys() if not key_filter(k)]
-        if branches:
-            for key in [k for k in keys if "." in k]:
-                key_split = split_key(key)
-                for num in range(len(key_split) - 1):
-                    parent_key = ".".join(key_split[: num + 1])
-                    if parent_key not in keys:
-                        keys.append(parent_key)
-        keys.sort(key=lambda x: -len(split_key(x)))
-        return keys
-
     def clone(self, with_meta: bool = True) -> "Namespace":
         """Creates an new copy of the nested namespace.
 
@@ -283,16 +260,14 @@ class Namespace(argparse.Namespace):
         return self
 
     def get(self, key: str, default: Any = None) -> Any:
+        """Returns the value for the given key if it exists, otherwise the default."""
         try:
             return self[key]
         except (KeyError, TypeError):
             return default
 
-    def get_value_and_parent(self, key: str) -> tuple[Any, "Namespace", str]:
-        leaf_key, parent_ns, _ = self._parse_required_key(key)
-        return parent_ns[leaf_key], parent_ns, leaf_key
-
     def pop(self, key: str, default: Any = None) -> Any:
+        """Removes the given key and returns its value if it exists, otherwise the default."""
         leaf_key, parent_ns, _ = self._parse_key(key)
         if not parent_ns:
             return default
@@ -329,6 +304,17 @@ def expand_dict(data: dict) -> Namespace:
 def dict_to_namespace(data: dict[str, Any]) -> Namespace:
     data = recreate_branches(data)
     return expand_dict(data)
+
+
+def get_non_meta_sorted_keys(namespace: Namespace) -> list[str]:
+    keys = [k for k in namespace.keys(branches=True) if not is_meta_key(k)]
+    keys.sort(key=lambda x: -len(split_key(x)))
+    return keys
+
+
+def get_value_and_parent(namespace: Namespace, key: str) -> tuple[Any, Namespace, str]:
+    leaf_key, parent_ns, _ = namespace._parse_required_key(key)
+    return parent_ns[leaf_key], parent_ns, leaf_key
 
 
 # Temporal to provide backward compatibility in pytorch-lightning
