@@ -929,6 +929,32 @@ def test_strip_meta():
     assert result == {"x": 1}
 
 
+def test_namespace_get_sorted_keys():
+    ns = Namespace(a=Namespace(b=1))
+    with catch_warnings(record=True) as w:
+        keys = ns.get_sorted_keys()
+    assert keys == ["a.b", "a"]
+    assert_deprecation_warn(
+        w,
+        message="get_sorted_keys method was deprecated",
+        code="keys = ns.get_sorted_keys()",
+    )
+
+
+def test_namespace_get_value_and_parent():
+    ns = Namespace(a=Namespace(b=1))
+    with catch_warnings(record=True) as w:
+        value, parent, key = ns.get_value_and_parent("a.b")
+    assert value == 1
+    assert parent == ns.a
+    assert key == "b"
+    assert_deprecation_warn(
+        w,
+        message="get_value_and_parent method was deprecated",
+        code='value, parent, key = ns.get_value_and_parent("a.b")',
+    )
+
+
 @pytest.mark.skipif(not ruamel_support, reason="ruamel.yaml package is required")
 def test_DefaultHelpFormatter_yaml_comments(parser):
     parser.add_argument("--arg", type=int, help="Description")

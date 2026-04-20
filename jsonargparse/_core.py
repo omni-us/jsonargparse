@@ -55,6 +55,8 @@ from ._loaders_dumpers import (
 from ._namespace import (
     Namespace,
     NSKeyError,
+    get_non_meta_sorted_keys,
+    get_value_and_parent,
     is_meta_key,
     patch_namespace,
     recreate_branches,
@@ -939,7 +941,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
                 return os.path.basename(val_path)
 
             def save_paths(cfg):
-                for key in cfg.get_sorted_keys():
+                for key in get_non_meta_sorted_keys(cfg):
                     val = cfg[key]
                     if isinstance(val, (Namespace, dict)) and "__path__" in val:
                         if is_path_action(key):
@@ -1156,7 +1158,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             return missing
 
         def check_values(cfg):
-            sorted_keys = {k: find_action(self, k) for k in cfg.get_sorted_keys()}
+            sorted_keys = {k: find_action(self, k) for k in get_non_meta_sorted_keys(cfg)}
             for key, action in sorted_keys.items():
                 parent_action = None
                 if action is None:
@@ -1261,7 +1263,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             ActionLink.apply_instantiation_links(self, cfg, target=component.dest)
             if isinstance(component, ActionTypeHint):
                 try:
-                    value, parent, key = cfg.get_value_and_parent(component.dest)
+                    value, parent, key = get_value_and_parent(cfg, component.dest)
                 except (KeyError, AttributeError):
                     pass
                 else:

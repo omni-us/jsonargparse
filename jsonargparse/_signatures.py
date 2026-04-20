@@ -16,7 +16,7 @@ from ._common import (
     is_subclasses_disabled,
 )
 from ._instantiation import get_class_instantiator
-from ._namespace import Namespace
+from ._namespace import Namespace, get_value_and_parent
 from ._optionals import attrs_support, get_doc_short_description, is_attrs_class, is_pydantic_model
 from ._parameter_resolvers import ParamData, get_parameter_origins, get_signature_parameters
 from ._required import set_required
@@ -563,7 +563,7 @@ def get_object_name(obj) -> str:
 
 def group_instantiate_class(group, cfg):
     try:
-        value, parent, key = cfg.get_value_and_parent(group.dest)
+        value, parent, key = get_value_and_parent(cfg, group.dest)
     except KeyError:
         value = {}
         parent = cfg
