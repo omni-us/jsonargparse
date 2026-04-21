@@ -699,10 +699,10 @@ which would be like ``--list+ file1 --list+ file2``. Not as simple as with
 The same ``list[<path_type>]`` behavior described here will work for arguments
 automatically created from type hints in signatures, that is with
 :func:`.auto_cli`, :meth:`add_function_arguments
-<.SignatureArguments.add_function_arguments>`, :meth:`add_class_arguments
-<.SignatureArguments.add_class_arguments>`, :meth:`add_method_arguments
-<.SignatureArguments.add_method_arguments>` and :meth:`add_subclass_arguments
-<.SignatureArguments.add_subclass_arguments>`.
+<.ArgumentParser.add_function_arguments>`, :meth:`add_method_arguments
+<.ArgumentParser.add_method_arguments>`, :meth:`add_class_arguments
+<.ArgumentParser.add_class_arguments>` and :meth:`add_subclass_arguments
+<.ArgumentParser.add_subclass_arguments>`.
 
 .. note::
 
@@ -1354,7 +1354,10 @@ these are described in the docstrings. To make this well written code
 configurable, it wouldn't make sense to duplicate information of types and
 parameter descriptions. To avoid this duplication, jsonargparse includes methods
 to automatically add annotated parameters as arguments, see
-:class:`.SignatureArguments`.
+:meth:`add_function_arguments <.ArgumentParser.add_function_arguments>`,
+:meth:`add_method_arguments <.ArgumentParser.add_method_arguments>`,
+:meth:`add_class_arguments <.ArgumentParser.add_class_arguments>` and
+:meth:`add_subclass_arguments <.ArgumentParser.add_subclass_arguments>`.
 
 Take for example a class with its init and a method with docstrings as follows:
 
@@ -1406,19 +1409,19 @@ initialized and the method executed as follows:
     myclass.mymethod(**cfg.myclass.method.as_dict())
 
 
-The :meth:`add_class_arguments <.SignatureArguments.add_class_arguments>` call
-adds to the ``myclass.init`` key the ``items`` argument with description as in
-the docstring, sets it as required since it lacks a default value. When parsed,
-it is validated according to the type hint, i.e., a dict with values ints or
-list of ints. Also since the init has the ``**kwargs`` argument, the keyword
+The :meth:`add_class_arguments <.ArgumentParser.add_class_arguments>` call adds
+to the ``myclass.init`` key the ``items`` argument with description as in the
+docstring, sets it as required since it lacks a default value. When parsed, it
+is validated according to the type hint, i.e., a dict with values ints or list
+of ints. Also since the init has the ``**kwargs`` argument, the keyword
 arguments from ``MyBaseClass`` are also added to the parser. Similarly, the
-:meth:`add_method_arguments <.SignatureArguments.add_method_arguments>` call
-adds to the ``myclass.method`` key, the arguments ``value`` as a required float
-and ``flag`` as an optional boolean with default value false.
+:meth:`add_method_arguments <.ArgumentParser.add_method_arguments>` call adds to
+the ``myclass.method`` key, the arguments ``value`` as a required float and
+``flag`` as an optional boolean with default value false.
 
 
 Instantiation of several classes added with :meth:`add_class_arguments
-<.SignatureArguments.add_class_arguments>` can be done more simply for an entire
+<.ArgumentParser.add_class_arguments>` can be done more simply for an entire
 config object using :meth:`instantiate <.ArgumentParser.instantiate>`. For the
 example above running ``cfg = parser.instantiate(cfg)`` would result in
 ``cfg.myclass.init`` containing an instance of ``MyClass`` initialized with
@@ -1889,7 +1892,7 @@ example from the standard library would be:
     Namespace(uniform=Namespace(a=0.7, b=3.4))
 
 Without the stubs resolver, the :meth:`add_function_arguments
-<.SignatureArguments.add_function_arguments>` call requires the
+<.ArgumentParser.add_function_arguments>` call requires the
 ``fail_untyped=False`` option. This has the disadvantage that type ``Any`` is
 given to the ``a`` and ``b`` arguments, instead of ``float``. And this means
 that the parser would not fail if given an invalid value, for instance a string.
@@ -1938,8 +1941,8 @@ with all nested subclasses instantiated, the :meth:`instantiate
 
 In addition to using a class as type hint in signatures, for low level
 construction of parsers, there are also the methods :meth:`add_class_arguments
-<.SignatureArguments.add_class_arguments>` and :meth:`add_subclass_arguments
-<.SignatureArguments.add_subclass_arguments>`. These methods accept a ``skip``
+<.ArgumentParser.add_class_arguments>` and :meth:`add_subclass_arguments
+<.ArgumentParser.add_subclass_arguments>`. These methods accept a ``skip``
 argument that can be used to exclude parameters within subclasses. This is done
 by giving its relative destination key, i.e. as ``param.init_args.subparam``. An
 individual argument can also be added using a class as type, i.e.
@@ -2001,10 +2004,9 @@ But a subclass of ``Calendar`` with an extended set of init parameters would
 also work.
 
 If the previous example were changed to use :meth:`add_subclass_arguments
-<.SignatureArguments.add_subclass_arguments>` instead of
-:meth:`add_class_arguments <.SignatureArguments.add_class_arguments>`, then
-subclasses ``MyClass`` would also be accepted. In this case the config would be
-like:
+<.ArgumentParser.add_subclass_arguments>` instead of :meth:`add_class_arguments
+<.ArgumentParser.add_class_arguments>`, then subclasses ``MyClass`` would also
+be accepted. In this case the config would be like:
 
 .. code-block:: yaml
 
@@ -2410,7 +2412,7 @@ Argument linking
 Some use cases could require adding arguments from multiple classes and some
 parameters get a value automatically computed from other arguments. This
 behavior can be obtained by using the :meth:`link_arguments
-<.ArgumentLinking.link_arguments>` parser method.
+<.ArgumentParser.link_arguments>` parser method.
 
 There are two types of links, defined with ``apply_on='parse'`` or
 ``apply_on='instantiate'``. As the names suggest, the former are set when
@@ -2474,8 +2476,8 @@ Applied on instantiate
 ----------------------
 
 For instantiation links, sources can be class groups (added with
-:meth:`add_class_arguments <.SignatureArguments.add_class_arguments>`) or
-subclass arguments (see :ref:`sub-classes`). The source key can be the entire
+:meth:`add_class_arguments <.ArgumentParser.add_class_arguments>`) or subclass
+arguments (see :ref:`sub-classes`). The source key can be the entire
 instantiated object or an attribute of the object. The target key has to be a
 single argument and can be inside init_args of a subclass. The order of
 instantiation used by :meth:`instantiate <.ArgumentParser.instantiate>` is

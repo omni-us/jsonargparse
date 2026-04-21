@@ -26,7 +26,6 @@ from ._actions import (
     previous_config,
 )
 from ._common import (
-    LoggerProperty,
     debug_mode_active,
     get_optionals_as_positionals_actions,
     is_subclasses_disabled,
@@ -41,7 +40,7 @@ from ._completions import (
 )
 from ._deprecated import ParserDeprecations, deprecated_skip_check, deprecated_yaml_comments
 from ._formatters import DefaultHelpFormatter, get_env_var
-from ._instantiation import get_class_instantiators
+from ._instantiation import InstantiateMethod
 from ._jsonnet import ActionJsonnet
 from ._jsonschema import ActionJsonSchema
 from ._link_arguments import ActionLink, ArgumentLinking
@@ -56,12 +55,10 @@ from ._namespace import (
     Namespace,
     NSKeyError,
     get_non_meta_sorted_keys,
-    get_value_and_parent,
     is_meta_key,
     patch_namespace,
     recreate_branches,
     remove_meta,
-    split_key,
     split_key_leaf,
     split_key_root,
 )
@@ -102,13 +99,13 @@ from ._util import (
     return_parser_if_captured,
 )
 
-__all__ = ["ArgumentParser", "ActionsContainer"]
+__all__ = ["ArgumentParser"]
 
 
 _parse_known_has_intermixed = "intermixed" in inspect.signature(argparse.ArgumentParser._parse_known_args).parameters
 
 
-class ActionsContainer(SignatureArguments, argparse._ActionsContainer):
+class ActionsContainer(ArgumentLinking, InstantiateMethod, SignatureArguments, argparse._ActionsContainer):
     """Extension of ``argparse._ActionsContainer`` to support additional functionalities."""
 
     _action_groups: Sequence["ArgumentGroup"]  # type: ignore[assignment]
@@ -229,7 +226,7 @@ class ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     parser: Optional[Union["ArgumentParser", ActionsContainer]] = None
 
 
-class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, LoggerProperty, argparse.ArgumentParser):
+class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentParser):
     """Parser for command line, configuration files and environment variables."""
 
     formatter_class: type[argparse.HelpFormatter]
@@ -286,10 +283,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
             )
 
     ## Parsing methods ##
-
-    def parse_known_args(self, *args, **kwargs) -> NoReturn:
-        """Raises ``NotImplementedError``, not supported since typos in configs would go unnoticed."""
-        raise NotImplementedError("parse_known_args not supported because typos in configs would go unnoticed.")
 
     def _parse_known_args_internal(self, args=None, namespace=None, *, argcomplete: bool = False):
         if argcomplete:
@@ -716,9 +709,13 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
     ## Methods for adding to the parser ##
 
-    def add_subparsers(self, *args, **kwargs) -> NoReturn:
-        """Raises a ``NotImplementedError`` since jsonargparse uses ``add_subcommands``."""
-        raise NotImplementedError("In jsonargparse subcommands are added using the add_subcommands method.")
+    add_argument = ActionsContainer.add_argument
+    add_argument_group = ActionsContainer.add_argument_group
+    add_function_arguments = SignatureArguments.add_function_arguments
+    add_method_arguments = SignatureArguments.add_method_arguments
+    add_class_arguments = SignatureArguments.add_class_arguments
+    add_subclass_arguments = SignatureArguments.add_subclass_arguments
+    link_arguments = ArgumentLinking.link_arguments
 
     def add_subcommands(self, required: bool = True, dest: str = "subcommand", **kwargs) -> ActionSubCommands:
         """Adds subcommand parsers to the ArgumentParser.
@@ -1064,6 +1061,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
 
         return cfg
 
+    set_defaults = ActionsContainer.set_defaults
+
     ## Completion script methods ##
 
     def _raise_invalidated_by_completion_script(self, *args, **kwargs) -> NoReturn:
@@ -1202,94 +1201,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         if not skip_required and not lenient_check.get():
             check_required(cfg, self, prefix)
 
-    def instantiate(
-        self,
-        cfg: Namespace,
-        instantiate_groups: bool = True,
-    ) -> Namespace:
-        """Instantiates all signature components in a configuration namespace.
-
-        Processes the configuration recursively, converting each signature
-        component registered with the parser into its corresponding Python
-        object:
-
-        - **Class/subclass type arguments** (``add_argument`` with a class type
-          or ``add_class_arguments``/``add_subclass_arguments``): An object with
-          ``class_path`` and optionally ``init_args`` is replaced by an instance
-          of the referenced class, created by calling
-          ``class_type(**init_args)``. For the case of classes with disabled
-          subclasses, the namespace can have directly the init args without the
-          ``class_path`` + ``init_args`` wrapper.
-
-        - **Callable type arguments**: A dot-import string pointing to a
-          function or method is resolved to the callable object. When
-          ``class_path``/``init_args`` is given instead and the class
-          instantiates into a callable (or is a subclass of the callable's
-          return type), the result is either a class instance or — when not all
-          call arguments are provided yet — a :func:`functools.partial` bound to
-          the given ``init_args``.
-
-        - **Instantiation order**: Components are processed in the order
-          determined by argument links applied on instantiation.
-
-        Args:
-            cfg: The configuration object to use. Must have been produced by
-                one of the ``parse_*`` methods and not modified in a way that
-                breaks the structure expected by the parser.
-            instantiate_groups: Whether class groups should be instantiated.
-
-        Returns:
-            A new configuration object where every registered signature
-            component has been replaced by its corresponding Python object.
-        """
-        components: list[Union[ActionTypeHint, _ActionConfigLoad, ArgumentGroup]] = []
-        for action in filter_non_parsing_actions(self._actions):
-            if isinstance(action, ActionTypeHint):
-                components.append(action)
-            elif isinstance(action, ActionLink) and isinstance(action.target[1], ActionTypeHint):
-                components.append(action.target[1])
-
-        if instantiate_groups:
-            skip = {c.dest for c in components}
-            groups = [g for g in self._action_groups if hasattr(g, "instantiate_class") and g.dest not in skip]
-            components.extend(groups)
-
-        components.sort(key=lambda x: -len(split_key(x.dest)))  # type: ignore[arg-type]
-        order = ActionLink.instantiation_order(self)
-        components = ActionLink.reorder(order, components)
-
-        cfg = cfg.clone(with_meta=False)
-        for component in components:
-            ActionLink.apply_instantiation_links(self, cfg, target=component.dest)
-            if isinstance(component, ActionTypeHint):
-                try:
-                    value, parent, key = get_value_and_parent(cfg, component.dest)
-                except (KeyError, AttributeError):
-                    pass
-                else:
-                    if value is not None:
-                        with parser_context(
-                            parent_parser=self,
-                            nested_links=ActionLink.get_nested_links(self, component),
-                            class_instantiators=get_class_instantiators(self),
-                            applied_instantiation_links=cfg.get("__applied_instantiation_links__"),
-                        ):
-                            parent[key] = component.instantiate_classes(value)
-            else:
-                with parser_context(
-                    load_value_mode=self.parser_mode,
-                    class_instantiators=get_class_instantiators(self),
-                    applied_instantiation_links=cfg.get("__applied_instantiation_links__"),
-                ):
-                    component.instantiate_class(component, cfg)
-
-        ActionLink.apply_instantiation_links(self, cfg, order=order)
-
-        subcommand, subparser = get_subcommand(self, cfg, fail_no_subcommand=False)
-        if subcommand is not None and subparser is not None:
-            cfg[subcommand] = subparser.instantiate(cfg[subcommand], instantiate_groups=instantiate_groups)
-
-        return cfg
+    instantiate = InstantiateMethod.instantiate
 
     def strip_unknown(self, cfg: Namespace) -> Namespace:
         """Removes all unknown keys from a configuration object.
@@ -1622,6 +1534,16 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, ArgumentLinking, Logg
         ):
             raise ValueError("Expected dump_header to be None or a list of strings.")
         self._dump_header = dump_header
+
+    # Not supported methods
+
+    def parse_known_args(self, *args, **kwargs) -> NoReturn:
+        """Raises ``NotImplementedError`` since typos in configs would go unnoticed."""
+        raise NotImplementedError("parse_known_args not supported because typos in configs would go unnoticed.")
+
+    def add_subparsers(self, *args, **kwargs) -> NoReturn:
+        """Raises ``NotImplementedError`` since jsonargparse uses ``add_subcommands``."""
+        raise NotImplementedError("In jsonargparse subcommands are added using the add_subcommands method.")
 
 
 from ._deprecated import parse_as_dict_patch  # noqa: E402

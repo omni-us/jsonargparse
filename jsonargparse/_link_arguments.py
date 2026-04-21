@@ -28,8 +28,6 @@ from ._subcommands import (
 )
 from ._type_checking import ArgumentGroup, ArgumentParser
 
-__all__ = ["ArgumentLinking"]
-
 
 def find_parent_or_child_actions(
     parser: ArgumentParser,

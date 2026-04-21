@@ -15,6 +15,12 @@ paths are considered internals and can change in minor and patch releases.
 v4.49.0 (unreleased)
 --------------------
 
+Changed
+^^^^^^^
+- Docs now reference methods via the public ``ArgumentParser`` class instead of
+  internal mixin classes (`#901
+  <https://github.com/omni-us/jsonargparse/pull/901>`__).
+
 Deprecated
 ^^^^^^^^^^
 - Implicit component discovery in ``auto_cli`` (calling without a ``components``
