@@ -56,7 +56,6 @@ from ._namespace import (
     NSKeyError,
     get_non_meta_sorted_keys,
     is_meta_key,
-    patch_namespace,
     recreate_branches,
     remove_meta,
     split_key_leaf,
@@ -289,7 +288,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             namespace = get_argcomplete_namespace(self, namespace)
         try:
             with (
-                patch_namespace(),
                 parser_context(parent_parser=self, lenient_check=True),
                 ActionTypeHint.subclass_arg_context(self),
                 suppress_required_actions(self),

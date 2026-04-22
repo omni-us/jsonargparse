@@ -3,7 +3,6 @@
 import argparse
 from collections import OrderedDict
 from collections.abc import Iterator
-from contextlib import contextmanager
 from typing import Any, Optional, Union
 
 __all__ = ["Namespace"]
@@ -50,16 +49,6 @@ def recreate_branches(data, skip_keys=None):
     elif isinstance(data, list):
         new_data = [recreate_branches(v, skip_keys) for v in data]
     return new_data
-
-
-@contextmanager
-def patch_namespace():
-    namespace_class = argparse.Namespace
-    argparse.Namespace = Namespace
-    try:
-        yield
-    finally:
-        argparse.Namespace = namespace_class
 
 
 class Namespace(argparse.Namespace):

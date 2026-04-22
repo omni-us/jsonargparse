@@ -525,10 +525,6 @@ class PathDeprecations:
         return self._absolute if absolute else self._relative
 
 
-class DebugException(Exception):
-    pass
-
-
 @deprecated("""
     usage_and_exit_error_handler was deprecated in v4.20.0 and will be removed
     in v5.0.0. With the removal of error_handler, there is no longer a need for
