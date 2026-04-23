@@ -20,6 +20,8 @@ Changed
 - Docs now reference methods via the public ``ArgumentParser`` class instead of
   internal mixin classes (`#901
   <https://github.com/omni-us/jsonargparse/pull/901>`__).
+- Cache class parsers to improve performance and reduce test suite runtime
+  (`#903 <https://github.com/omni-us/jsonargparse/pull/903>`__).
 
 Deprecated
 ^^^^^^^^^^

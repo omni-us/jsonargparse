@@ -168,10 +168,14 @@ def parsing_settings_patch():
 
 @pytest.fixture
 def subclass_behavior(monkeypatch) -> Iterator[None]:
+    from jsonargparse._typehints import _cached_class_parsers
+
     monkeypatch.setattr("jsonargparse._common.subclasses_enabled_types", set())
     monkeypatch.setattr("jsonargparse._common.subclasses_disabled_types", set())
+    _cached_class_parsers.clear()
     with patch.dict("jsonargparse._common.subclasses_disabled_selectors"):
         yield
+    _cached_class_parsers.clear()
 
 
 @pytest.fixture

@@ -77,6 +77,7 @@ from ._optionals import (
 from ._paths import Path, PathError, change_to_path_dir
 from ._required import clear_required
 from ._subcommands import find_action, find_parent_action, parse_kwargs
+from ._type_checking import ArgumentParser
 from ._util import (
     NestedArg,
     NoneType,
@@ -211,6 +212,61 @@ def get_parse_optional_num_return() -> int:
 
 
 parse_optional_num_return = get_parse_optional_num_return()
+
+
+def freeze(value):
+    if isinstance(value, dict):
+        return tuple(sorted(((k, freeze(v)) for k, v in value.items()), key=lambda item: repr(item[0])))
+    if isinstance(value, set):
+        return tuple(sorted((freeze(v) for v in value), key=repr))
+    if isinstance(value, (list, tuple)):
+        return tuple(freeze(v) for v in value)
+    return value
+
+
+_cached_class_parsers: dict[tuple, ArgumentParser] = {}
+
+
+def cached_get_class_parser(*, val_class, sub_add_kwargs, skip_args, parent_parser, nested_links):
+    if isinstance(val_class, str):
+        val_class = import_object(val_class)
+    parser_class = type(parent_parser)
+    cache_key = (
+        val_class,
+        parser_class,
+        parent_parser.parser_mode,
+        freeze(sub_add_kwargs),
+        freeze(skip_args),
+        freeze(nested_links),
+    )
+    if cache_key in _cached_class_parsers:
+        parser = _cached_class_parsers[cache_key]
+        parser.logger = parent_parser.logger
+        return parser
+
+    kwargs = dict(sub_add_kwargs) if sub_add_kwargs else {}
+    if skip_args:
+        kwargs.setdefault("skip", set()).update(skip_args)
+
+    parser = parser_class(exit_on_error=False, logger=parent_parser.logger, parser_mode=parent_parser.parser_mode)
+    remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
+    if inspect.isclass(val_class) or inspect.isclass(get_typehint_origin(val_class)):
+        parser.add_class_arguments(val_class, **kwargs)
+    else:
+        kwargs = {k: v for k, v in kwargs.items() if k != "instantiate"}
+        parser.add_function_arguments(val_class, **kwargs)
+
+    if "linked_targets" in kwargs:
+        for key in kwargs["linked_targets"]:
+            clear_required(parser, key)
+
+    for link_kwargs in nested_links:
+        parser.link_arguments(**link_kwargs)
+
+    parser._inner_parser = True
+
+    _cached_class_parsers[cache_key] = parser
+    return parser
 
 
 class ActionTypeHint(Action):
@@ -633,33 +689,13 @@ class ActionTypeHint(Action):
 
     @staticmethod
     def get_class_parser(val_class, sub_add_kwargs=None, skip_args=None):
-        if isinstance(val_class, str):
-            val_class = import_object(val_class)
-        kwargs = dict(sub_add_kwargs) if sub_add_kwargs else {}
-        if skip_args:
-            kwargs.setdefault("skip", set()).update(skip_args)
-        parser = parent_parser.get()
-        from ._core import ArgumentParser
-
-        assert isinstance(parser, ArgumentParser)
-        parser = type(parser)(exit_on_error=False, logger=parser.logger, parser_mode=parser.parser_mode)
-        remove_actions(parser, (ActionConfigFile, _ActionPrintConfig))
-        if inspect.isclass(val_class) or inspect.isclass(get_typehint_origin(val_class)):
-            parser.add_class_arguments(val_class, **kwargs)
-        else:
-            kwargs = {k: v for k, v in kwargs.items() if k != "instantiate"}
-            parser.add_function_arguments(val_class, **kwargs)
-
-        if "linked_targets" in kwargs:
-            for key in kwargs["linked_targets"]:
-                clear_required(parser, key)
-
-        for link_kwargs in nested_links.get():
-            parser.link_arguments(**link_kwargs)
-
-        parser._inner_parser = True
-
-        return parser
+        return cached_get_class_parser(
+            val_class=val_class,
+            sub_add_kwargs=sub_add_kwargs,
+            skip_args=skip_args,
+            parent_parser=parent_parser.get(),
+            nested_links=nested_links.get(),
+        )
 
     def extra_help(self):
         extra = ""

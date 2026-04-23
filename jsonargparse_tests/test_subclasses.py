@@ -23,7 +23,7 @@ from jsonargparse import (
     lazy_instance,
 )
 from jsonargparse._instantiation import _global_class_instantiators
-from jsonargparse._typehints import implements_protocol, is_instance_or_supports_protocol
+from jsonargparse._typehints import _cached_class_parsers, implements_protocol, is_instance_or_supports_protocol
 from jsonargparse.typing import final
 from jsonargparse_tests.conftest import (
     capture_logs,
@@ -1039,6 +1039,7 @@ class OverrideMixedMain:
 
 
 def test_subclass_discard_init_args_mixed_type(parser, logger):
+    _cached_class_parsers.clear()
     parser.logger = logger
     parser.add_class_arguments(OverrideMixedMain, "main")
     with capture_logs(logger) as logs:
@@ -1081,6 +1082,7 @@ class OverrideDefaultConfig(Calendar):
 
 
 def test_subclass_discard_init_args_with_default_config_files(parser, tmp_cwd, logger):
+    _cached_class_parsers.clear()
     config = {
         "class_path": f"{__name__}.OverrideDefaultConfig",
         "init_args": {"firstweekday": 2, "param": "1"},
