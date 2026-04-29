@@ -15,6 +15,11 @@ paths are considered internals and can change in minor and patch releases.
 v4.49.0 (unreleased)
 --------------------
 
+Added
+^^^^^
+- Support ``Deque`` and ``FrozenSet`` in type hints (`#905
+  <https://github.com/omni-us/jsonargparse/pull/905>`__).
+
 Changed
 ^^^^^^^
 - Docs now reference methods via the public ``ArgumentParser`` class instead of

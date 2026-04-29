@@ -5,7 +5,7 @@ import os
 import re
 import sys
 from argparse import ArgumentError
-from collections import OrderedDict, abc, defaultdict
+from collections import OrderedDict, abc, defaultdict, deque
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from copy import deepcopy
@@ -16,8 +16,10 @@ from types import FunctionType, MappingProxyType
 from typing import (
     Any,
     Callable,
+    Deque,
     Dict,
     ForwardRef,
+    FrozenSet,
     Iterable,
     List,
     Literal,
@@ -119,6 +121,9 @@ root_types = {
     Union,
     List,
     list,
+    FrozenSet,
+    Deque,
+    deque,
     Iterable,
     Sequence,
     MutableSequence,
@@ -128,6 +133,7 @@ root_types = {
     Tuple,
     tuple,
     Set,
+    FrozenSet,
     set,
     frozenset,
     MutableSet,
@@ -160,6 +166,8 @@ tuple_set_origin_types = {Tuple, tuple, Set, set, frozenset, MutableSet, abc.Set
 sequence_origin_types = {
     List,
     list,
+    Deque,
+    deque,
     Iterable,
     Sequence,
     MutableSequence,
@@ -899,7 +907,7 @@ def adapt_typehints(
 
     # Tuple or Set
     elif typehint_origin in tuple_set_origin_types:
-        if not isinstance(val, (list, tuple, set)):
+        if not isinstance(val, (list, tuple, set, frozenset)):
             raise_unexpected_value(f"Expected a {typehint_origin}", val)
         val = list(val)
         if subtypehints is not None:
@@ -911,7 +919,12 @@ def adapt_typehints(
                 subtypehint = subtypehints[0 if is_ellipsis or not is_tuple else n]
                 val[n] = adapt_typehints(v, subtypehint, **adapt_kwargs)
         if not serialize:
-            val = tuple(val) if typehint_origin in {Tuple, tuple} else set(val)
+            if typehint_origin in {Tuple, tuple}:
+                val = tuple(val)
+            elif typehint_origin is frozenset:
+                val = frozenset(val)
+            else:
+                val = set(val)
 
     # List, Iterable or Sequence
     elif typehint_origin in sequence_origin_types:
@@ -950,6 +963,8 @@ def adapt_typehints(
                     adapt_kwargs_n = deepcopy(adapt_kwargs)
                 with change_to_path_dir(list_path):
                     val[n] = adapt_typehints(v, subtypehints[0], **adapt_kwargs_n)
+        if typehint_origin is deque:
+            val = list(val) if serialize else deque(val)
 
     # Dict, Mapping
     elif typehint_origin in mapping_origin_types:
