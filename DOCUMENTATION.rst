@@ -455,11 +455,11 @@ Some notes about this support are:
 - Fully supported types are: ``str``, ``bool`` (more details in
   :ref:`boolean-arguments`), ``int``, ``float``, ``Decimal``, ``complex``,
   ``bytes``/``bytearray`` (Base64 encoding), ``range``, ``list`` (more details
-  in :ref:`list-append`), ``Iterable``, ``Sequence``, ``Any``, ``Union``,
-  ``Optional``, ``Type``, ``Enum``, ``PathLike``, ``UUID``, ``timedelta``,
-  restricted types as explained in sections :ref:`restricted-numbers` and
-  :ref:`restricted-strings` and path and URL types as explained in sections
-  :ref:`parsing-paths` and :ref:`parsing-urls`.
+  in :ref:`list-append`), ``Deque``, ``Iterable``, ``Sequence``, ``Any``,
+  ``Union``, ``Optional``, ``Type``, ``Enum``, ``PathLike``, ``UUID``,
+  ``timedelta``, restricted types as explained in sections
+  :ref:`restricted-numbers` and :ref:`restricted-strings` and path and URL types
+  as explained in sections :ref:`parsing-paths` and :ref:`parsing-urls`.
 
 - ``dict``, ``Mapping``, ``MutableMapping``, ``MappingProxyType``,
   ``OrderedDict``, and ``TypedDict`` are supported but only with ``str`` or
@@ -469,12 +469,12 @@ Some notes about this support are:
   typing as described in PEP `692 <https://peps.python.org/pep-0692/>`__.
   For more details see :ref:`dict-items`.
 
-- ``tuple``, ``set`` and ``MutableSet`` are supported even though they can't be
-  represented in JSON distinguishable from a list. Each ``tuple`` element
-  position can have its own type and will be validated as such. ``tuple`` with
-  ellipsis (``tuple[type, ...]``) is also supported. In command line arguments,
-  config files and environment variables, tuples and sets are represented as an
-  array.
+- ``tuple``, ``set``, ``frozenset`` and ``MutableSet`` are supported even though
+  they can't be represented in JSON distinguishable from a list. Each ``tuple``
+  element position can have its own type and will be validated as such.
+  ``tuple`` with ellipsis (``tuple[type, ...]``) is also supported. In command
+  line arguments, config files and environment variables, tuples and sets are
+  represented as an array.
 
 - To set a value to ``None`` it is required to use ``null`` since this is how
   JSON/YAML defines it. To avoid confusion in the help, ``NoneType`` is

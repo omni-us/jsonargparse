@@ -7,7 +7,7 @@ import sys
 import time
 import uuid
 from calendar import Calendar, TextCalendar
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -15,7 +15,9 @@ from types import MappingProxyType
 from typing import (
     Any,
     Callable,
+    Deque,
     Dict,
+    FrozenSet,
     Iterable,
     List,
     Literal,
@@ -312,6 +314,16 @@ def test_set(parser):
     ctx.match("Expected a <class 'int'>")
 
 
+def test_frozenset(parser):
+    parser.add_argument("--frozen", type=FrozenSet[int])
+    cfg = parser.parse_args(["--frozen=[1, 2]"])
+    assert frozenset([1, 2]) == cfg.frozen
+    assert parser.dump(cfg, format="json") == '{"frozen":[1,2]}'
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args(['--frozen=["a", "b"]'])
+    ctx.match("Expected a <class 'int'>")
+
+
 # tuple tests
 
 
@@ -371,6 +383,14 @@ def test_list_variants(parser, list_type):
     parser.add_argument("--list", type=list_type[int])
     cfg = parser.parse_args(["--list=[1, 2]"])
     assert [1, 2] == cfg.list
+
+
+def test_deque(parser):
+    parser.add_argument("--deque", type=Deque[int])
+    cfg = parser.parse_args(["--deque=[1, 2]"])
+    assert isinstance(cfg.deque, deque)
+    assert deque([1, 2]) == cfg.deque
+    assert parser.dump(cfg, format="json") == '{"deque":[1,2]}'
 
 
 def test_list_dump(parser):
