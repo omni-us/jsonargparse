@@ -651,8 +651,8 @@ actual path, thus for the previous example:
     '/.../app/data/info.db'
 
 The content of a file referenced by a :class:`.Path` instance can be read using
-the :py:meth:`.Path.get_content` method. For the previous example, this would be
-``info_db = cfg.databases.info.get_content()``.
+the :py:meth:`.Path.read_text` method. For the previous example, this would be
+``info_db = cfg.databases.info.read_text()``.
 
 An argument with a path type can be given ``nargs='+'`` to parse multiple paths.
 Thus, from command line you could do ``--files file1 file2``, separated by
@@ -721,7 +721,7 @@ Parsing URLs
 ------------
 
 The :func:`.path_type` function also supports URLs which after parsing, the
-:py:meth:`.Path.get_content` method can be used to perform a GET request to the
+:py:meth:`.Path.read_text` method can be used to perform a GET request to the
 corresponding URL and retrieve its content. For this to work the *requests*
 Python package is required. Alternatively, :func:`.path_type` can also be used
 for `fsspec <https://filesystem-spec.readthedocs.io>`__ supported file systems.
@@ -735,7 +735,7 @@ either a readable file or URL, the type would be created as ``Path_fur =
 path_type('fur')``. If the value appears to be a URL, a HEAD request would be
 triggered to check if it is accessible. To get the content of the parsed path,
 without needing to care if it is a local file or a URL, the
-:py:meth:`.Path.get_content` method can be used.
+:py:meth:`.Path.read_text` method can be used.
 
 If you import ``from jsonargparse import set_parsing_settings`` and then run
 ``set_parsing_settings(config_read_mode_urls_enabled=True)`` or

@@ -466,6 +466,12 @@ path_call_message = """
     ``absolute`` or ``relative`` properties instead.
 """
 
+path_get_content_message = """
+    ``Path.get_content`` was deprecated in v4.49.0 and will be removed in
+    v5.0.0. Instead use ``Path.read_text`` for text and ``Path.open`` for binary
+    data.
+"""
+
 
 class PathDeprecations:
     """Deprecated methods for Path."""
@@ -523,6 +529,31 @@ class PathDeprecations:
     @deprecated(path_call_message)
     def __call__(self, absolute: bool = True) -> str:
         return self._absolute if absolute else self._relative
+
+    def get_content(self, mode: str = "r"):
+        deprecation_warning("Path.get_content", path_get_content_message)
+        if self._std_io:  # type: ignore[attr-defined]
+            from ._paths import _read_cached_stdin
+
+            return _read_cached_stdin()
+        elif self._is_url:  # type: ignore[attr-defined]
+            from ._optionals import import_requests
+
+            assert mode == "r"
+            requests = import_requests("Path.get_content")
+            response = requests.get(self._absolute)
+            response.raise_for_status()
+            return response.text
+        elif self._is_fsspec:  # type: ignore[attr-defined]
+            from ._optionals import import_fsspec
+
+            fsspec = import_fsspec("Path.get_content")
+            with fsspec.open(self._absolute, mode) as handle:
+                with handle as input_file:
+                    return input_file.read()
+        else:
+            with open(self._absolute, mode) as input_file:
+                return input_file.read()
 
 
 @deprecated("""

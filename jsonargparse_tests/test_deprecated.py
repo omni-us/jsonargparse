@@ -59,9 +59,11 @@ from jsonargparse.typing import Path
 from jsonargparse_tests.conftest import (
     get_parser_help,
     is_posix,
+    responses_activate,
     skip_if_docstring_parser_unavailable,
     skip_if_fsspec_unavailable,
     skip_if_requests_unavailable,
+    skip_if_responses_unavailable,
 )
 from jsonargparse_tests.test_dataclasses import DataClassA
 from jsonargparse_tests.test_jsonnet import example_2_jsonnet
@@ -703,6 +705,67 @@ def test_path_call(paths):  # noqa: F811
     )
     assert path(True) == str(paths.tmp_path / paths.file_rw)
     assert path() == str(paths.tmp_path / paths.file_rw)
+
+
+def test_file_path_get_content(paths):  # noqa: F811
+    path = Path(paths.file_r, "fr")
+    with catch_warnings(record=True) as w:
+        content = path.get_content()
+    assert_deprecation_warn(
+        w,
+        message="``Path.get_content`` was deprecated",
+        code="content = path.get_content()",
+    )
+    assert "file contents" == content
+
+
+def test_std_input_path_get_content():
+    input_text_to_test = "a text here\n"
+    with patch("sys.stdin", StringIO(input_text_to_test)), catch_warnings(record=True) as w:
+        path = Path("-", mode="fr")
+        assert input_text_to_test == path.get_content()
+    assert_deprecation_warn(
+        w,
+        message="``Path.get_content`` was deprecated",
+        code="input_text_to_test == path.get_content()",
+    )
+
+
+@skip_if_responses_unavailable
+@responses_activate
+def test_path_url_200():
+    import responses
+
+    existing = "http://example.com/existing-url"
+    existing_body = "url contents"
+    responses.add(responses.GET, existing, status=200, body=existing_body)
+    responses.add(responses.HEAD, existing, status=200)
+    path = Path(existing, mode="ur")
+    with catch_warnings(record=True) as w:
+        assert existing_body == path.get_content()
+    assert_deprecation_warn(
+        w,
+        message="``Path.get_content`` was deprecated",
+        code="existing_body == path.get_content()",
+    )
+
+
+@skip_if_fsspec_unavailable
+def test_path_fsspec_memory():
+    import fsspec
+
+    file_content = "content in memory"
+    memfile = "memfile.txt"
+    path = Path(f"memory://{memfile}", mode="sw")
+    with fsspec.open(path, "w") as f:
+        f.write(file_content)
+    with catch_warnings(record=True) as w:
+        assert file_content == path.get_content()
+    assert_deprecation_warn(
+        w,
+        message="``Path.get_content`` was deprecated",
+        code="file_content == path.get_content()",
+    )
 
 
 def test_ActionPathList(tmp_cwd):

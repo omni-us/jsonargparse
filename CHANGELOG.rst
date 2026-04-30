@@ -44,6 +44,9 @@ Deprecated
   deprecated and will be removed in v5.0.0. Instead run ``.keys()`` and then
   sort or get the parent and leaf separately. (`#900
   <https://github.com/omni-us/jsonargparse/pull/900>`__).
+- ``Path.get_content`` is deprecated and will be removed in v5.0.0. Instead use
+  ``Path.read_text`` for text and ``Path.open`` for binary content (`#906
+  <https://github.com/omni-us/jsonargparse/pull/906>`__).
 
 
 v4.48.0 (2026-04-10)

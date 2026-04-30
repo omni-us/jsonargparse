@@ -878,7 +878,7 @@ def test_save_fsspec(example_parser):
     cfg = example_parser.parse_args(["--nums.val1=5"])
     example_parser.save(cfg, "memory://config.yaml", multifile=False)
     path = path_type("sr")("memory://config.yaml")
-    assert cfg == example_parser.parse_string(path.get_content())
+    assert cfg == example_parser.parse_string(path.read_text())
 
     with pytest.raises(NotImplementedError) as ctx:
         example_parser.save(cfg, "memory://config.yaml", multifile=True)

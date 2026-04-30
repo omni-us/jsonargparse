@@ -617,7 +617,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         """
         fpath = Path(cfg_path, mode=_get_config_read_mode())
         with change_to_path_dir(fpath):
-            cfg_str = fpath.get_content()
+            cfg_str = fpath.read_text()
             parsed_cfg = self.parse_string(
                 cfg_str=cfg_str,
                 cfg_path=os.path.basename(cfg_path),
@@ -950,7 +950,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                         val_path = Path(os.path.basename(val.absolute), mode="fc")
                         check_overwrite(val_path)
                         with open(val_path.absolute, "w") as f:
-                            f.write(val.get_content())
+                            f.write(val.read_text())
                         cfg[key] = type(val)(str(val_path))
 
             with change_to_path_dir(path_fc), parser_context(parent_parser=self):
@@ -1024,7 +1024,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
         default_config_files = self._get_default_config_files()
         for default_config_file in default_config_files:
-            default_config_file_content = default_config_file.get_content()
+            default_config_file_content = default_config_file.read_text()
             if not default_config_file_content.strip():
                 continue
             with change_to_path_dir(default_config_file), parser_context(parent_parser=self, parsing_defaults=True):

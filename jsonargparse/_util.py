@@ -116,7 +116,7 @@ def parse_value_or_config(
             pass
         else:
             with cfg_path.relative_path_context():
-                value = load_value(cfg_path.get_content(), simple_types=simple_types)
+                value = load_value(cfg_path.read_text(), simple_types=simple_types)
     if type(value) is str and value.strip() != "":
         parsed_val = load_value(value, simple_types=simple_types)
         if type(parsed_val) is not str:

@@ -948,7 +948,7 @@ def adapt_typehints(
                 from ._optionals import _get_config_read_mode
 
                 list_path = Path(val, mode=_get_config_read_mode())
-                val = list_path.get_content().splitlines()
+                val = list_path.read_text().splitlines()
         if isinstance(val, NestedArg) and subtypehints is not None:
             val = (prev_val[:-1] if isinstance(prev_val, list) else []) + [val]
         elif isinstance(val, Iterable) and not isinstance(val, (list, str)) and type(val) not in mapping_origin_types:
