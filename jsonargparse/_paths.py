@@ -285,23 +285,22 @@ class Path(PathDeprecations):
             return str(self) == other
         return False
 
-    def get_content(self, mode: str = "r") -> str:
-        """Returns the contents of the file or the remote path."""
+    def read_text(self) -> str:
+        """Returns the text contents of the file or the remote path."""
         if self._std_io:
             return _read_cached_stdin()
         elif self._is_url:
-            assert mode == "r"
-            requests = import_requests("Path.get_content")
+            requests = import_requests("Path.read_text")
             response = requests.get(self._absolute)
             response.raise_for_status()
             return response.text
         elif self._is_fsspec:
-            fsspec = import_fsspec("Path.get_content")
-            with fsspec.open(self._absolute, mode) as handle:
+            fsspec = import_fsspec("Path.read_text")
+            with fsspec.open(self._absolute, "r") as handle:
                 with handle as input_file:
                     return input_file.read()
         else:
-            with open(self._absolute, mode) as input_file:
+            with open(self._absolute) as input_file:
                 return input_file.read()
 
     @contextmanager
@@ -313,7 +312,7 @@ class Path(PathDeprecations):
             elif "w" in mode:
                 yield sys.stdout
         elif self._is_url:
-            yield StringIO(self.get_content())
+            yield StringIO(self.read_text())
         elif self._is_fsspec:
             fsspec = import_fsspec("Path.open")
             with fsspec.open(self._absolute, mode) as handle:

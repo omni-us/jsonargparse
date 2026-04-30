@@ -163,7 +163,7 @@ class ActionJsonnet(Action):
             pass
         else:
             fname = jsonnet(absolute=False) if isinstance(jsonnet, Path) else jsonnet
-            snippet = fpath.get_content()
+            snippet = fpath.read_text()
         try:
             with parser_context(load_value_mode="yaml" if pyyaml_available else "json"):
                 values = load_value(_jsonnet.evaluate_snippet(fname, snippet, ext_vars=ext_vars, ext_codes=ext_codes))

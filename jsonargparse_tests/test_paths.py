@@ -159,10 +159,10 @@ def test_path_dir_access_mode(paths):
     pytest.raises(TypeError, lambda: Path(paths.file_r, "dr"))
 
 
-def test_path_get_content(paths):
-    assert "file contents" == Path(paths.file_r, "fr").get_content()
-    assert "file contents" == Path(f"file://{paths.tmp_path}/{paths.file_r}", "fr").get_content()
-    assert "file contents" == Path(f"file://{paths.tmp_path}/{paths.file_r}", "ur").get_content()
+def test_path_read_text(paths):
+    assert "file contents" == Path(paths.file_r, "fr").read_text()
+    assert "file contents" == Path(f"file://{paths.tmp_path}/{paths.file_r}", "fr").read_text()
+    assert "file contents" == Path(f"file://{paths.tmp_path}/{paths.file_r}", "ur").read_text()
 
 
 @skip_if_running_as_root
@@ -227,13 +227,13 @@ def test_path_tilde_home(paths):
         assert path.absolute == os.path.join(paths.tmp_path, paths.file_rw)
 
 
-def test_std_input_path_get_content():
+def test_std_input_path_read_text():
     input_text_to_test = "a text here\n"
 
     with patch("sys.stdin", StringIO(input_text_to_test)):
         path = Path("-", mode="fr")
         assert path == "-"
-        assert input_text_to_test == path.get_content("r")
+        assert input_text_to_test == path.read_text()
 
 
 def test_std_input_path_open():
@@ -302,7 +302,7 @@ def test_path_url_200():
     responses.add(responses.GET, existing, status=200, body=existing_body)
     responses.add(responses.HEAD, existing, status=200)
     path = Path(existing, mode="ur")
-    assert existing_body == path.get_content()
+    assert existing_body == path.read_text()
 
 
 @skip_if_responses_unavailable
@@ -337,7 +337,7 @@ def test_path_fsspec_zipfile(tmp_cwd):
     zip2_path.chmod(0)
 
     path = Path(f"zip://{existing}::file://{zip1_path}", mode="sr")
-    assert existing_body == path.get_content()
+    assert existing_body == path.read_text()
 
     with pytest.raises(TypeError) as ctx:
         Path(f"zip://{nonexisting}::file://{zip1_path}", mode="sr")
@@ -356,7 +356,7 @@ def test_path_fsspec_memory():
     path = Path(f"memory://{memfile}", mode="sw")
     with fsspec.open(path, "w") as f:
         f.write(file_content)
-    assert file_content == path.get_content()
+    assert file_content == path.read_text()
 
 
 def test_path_fsspec_invalid_mode():
@@ -431,11 +431,11 @@ def test_relative_path_context_fsspec(tmp_cwd, subtests):
 
         with subtests.test("absolute local path"):
             path0 = Path(local_path, mode="fr")
-            assert "zero" == path0.get_content()
+            assert "zero" == path0.read_text()
 
         with subtests.test("relative fsspec path"):
             path1 = Path("../file1.txt", mode="fsr")
-            assert "one" == path1.get_content()
+            assert "one" == path1.read_text()
             assert str(path1) == "../file1.txt"
             assert path1.absolute == "memory://one/two/file1.txt"
             assert path1._url_data is not None

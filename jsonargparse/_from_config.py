@@ -65,7 +65,7 @@ def _parse_class_kwargs_from_config(cls: Type[T], config: Union[str, PathLike, d
         from .typing import Path
 
         cfg_path = Path(config, mode=_get_config_read_mode())
-        cfg_str = cfg_path.get_content()
+        cfg_str = cfg_path.read_text()
         with parser_context(load_value_mode=parser.parser_mode):
             try:
                 config = load_value(cfg_str, path=str(config))
