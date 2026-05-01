@@ -116,7 +116,7 @@ class ActionsContainer(ArgumentLinking, InstantiateMethod, SignatureArguments, a
         self.register("action", "parsers", ActionSubCommands)
         self.register("action", "config", ActionConfigFile)
 
-    def add_argument(self, *args, enable_path: bool = False, **kwargs):
+    def add_argument(self, *args, sub_configs: bool = False, **kwargs):
         """Adds an argument to the parser or argument group.
 
         All the arguments from `argparse.ArgumentParser.add_argument
@@ -124,8 +124,13 @@ class ActionsContainer(ArgumentLinking, InstantiateMethod, SignatureArguments, a
         are supported. Additionally it accepts:
 
         Args:
-            enable_path: Whether to try parsing path/subconfig when argument is a complex type.
+            sub_configs: Whether to try parsing a sub-config when argument is a complex type.
         """
+        from ._deprecated import add_argument_enable_path_deprecation
+
+        deprecated_val = add_argument_enable_path_deprecation(kwargs)
+        if deprecated_val is not None:
+            sub_configs = deprecated_val
         parser = self.parser if hasattr(self, "parser") else self
         if kwargs.get("action") is not None:
             if ActionParser._is_valid_action_parser(parser, kwargs["action"]):
@@ -134,13 +139,13 @@ class ActionsContainer(ArgumentLinking, InstantiateMethod, SignatureArguments, a
         if "type" in kwargs:
             if is_subclasses_disabled(kwargs["type"]):
                 nested_key = args[0].lstrip("-")
-                self.add_class_arguments(kwargs.pop("type"), nested_key, **kwargs)
+                self.add_class_arguments(kwargs.pop("type"), nested_key, sub_configs=sub_configs, **kwargs)
                 return find_action(parser, nested_key)
             if ActionTypeHint.is_supported_typehint(kwargs["type"]):
                 args = ActionTypeHint.prepare_add_argument(
                     args=args,
                     kwargs=kwargs,
-                    enable_path=enable_path,
+                    enable_path=sub_configs,
                     container=super(),
                     logger=self._logger,
                 )

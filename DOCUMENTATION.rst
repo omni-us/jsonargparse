@@ -658,7 +658,7 @@ An argument with a path type can be given ``nargs='+'`` to parse multiple paths.
 Thus, from command line you could do ``--files file1 file2``, separated by
 space. It might also be desired to parse a list of paths found in a plain text
 file or from stdin. For this add the argument with type ``list[<path_type>]``
-and ``enable_path=True``. To read from stdin give the special string ``'-'``.
+and ``sub_configs=True``. To read from stdin give the special string ``'-'``.
 Example:
 
 .. testsetup:: path_list
@@ -685,7 +685,7 @@ Example:
 
     from jsonargparse.typing import Path_fr
 
-    parser.add_argument("--list", type=list[Path_fr], enable_path=True)
+    parser.add_argument("--list", type=list[Path_fr], sub_configs=True)
     cfg = parser.parse_args(["--list", "paths.lst"])  # File with list of paths
     cfg = parser.parse_args(["--list", "-"])  # List of paths from stdin
 
@@ -706,7 +706,7 @@ automatically created from type hints in signatures, that is with
 
 .. note::
 
-    If ``nargs='+'`` and ``enable_path=True`` are set for an argument of type
+    If ``nargs='+'`` and ``sub_configs=True`` are set for an argument of type
     ``list[<path_type>]``, each argument will produce a list of paths. This
     behavior may not be what you expect.
 

@@ -19,6 +19,7 @@ import pytest
 from jsonargparse import (
     CLI,
     ActionJsonnet,
+    ActionJsonSchema,
     ArgumentError,
     ArgumentParser,
     Namespace,
@@ -62,6 +63,7 @@ from jsonargparse_tests.conftest import (
     responses_activate,
     skip_if_docstring_parser_unavailable,
     skip_if_fsspec_unavailable,
+    skip_if_jsonschema_unavailable,
     skip_if_requests_unavailable,
     skip_if_responses_unavailable,
 )
@@ -1086,3 +1088,38 @@ def test_compose_dataclasses():
     )
     assert 2 == len(dataclasses.fields(ComposeAB))
     assert {"a": 3, "b": "2"} == dataclasses.asdict(ComposeAB(a=2, b="2"))  # pylint: disable=unexpected-keyword-arg
+
+
+def test_add_argument_enable_path_deprecated(parser, tmp_cwd):
+    import json
+
+    data = {"a": 1}
+    pathlib.Path("data.yaml").write_text(json.dumps(data))
+
+    with catch_warnings(record=True) as w:
+        parser.add_argument("--data", type=dict, enable_path=True)
+    assert_deprecation_warn(
+        w,
+        message="``enable_path`` parameter of ``add_argument`` was deprecated",
+        code='parser.add_argument("--data", type=dict, enable_path=True)',
+    )
+    cfg = parser.parse_args(["--data=data.yaml"])
+    assert "data.yaml" == str(cfg["data"].pop("__path__"))
+    assert data == cfg["data"]
+
+
+@skip_if_jsonschema_unavailable
+def test_action_json_schema_enable_path_deprecated(parser):
+
+    schema = {"type": "object", "properties": {"x": {"type": "integer"}}}
+
+    with catch_warnings(record=True) as w:
+        action = ActionJsonSchema(schema=schema, enable_path=False)
+    assert_deprecation_warn(
+        w,
+        message="``enable_path`` parameter of ``ActionJsonSchema`` was deprecated",
+        code="ActionJsonSchema(schema=schema, enable_path=False)",
+    )
+    parser.add_argument("--obj", action=action)
+    cfg = parser.parse_args(['--obj={"x": 1}'])
+    assert cfg.obj == {"x": 1}

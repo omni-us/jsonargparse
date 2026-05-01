@@ -47,6 +47,13 @@ Deprecated
 - ``Path.get_content`` is deprecated and will be removed in v5.0.0. Instead use
   ``Path.read_text`` for text and ``Path.open`` for binary content (`#906
   <https://github.com/omni-us/jsonargparse/pull/906>`__).
+- ``enable_path`` parameter of :meth:`add_argument
+  <.ArgumentParser.add_argument>` was deprecated and will be removed in
+  v5.0.0. Use ``sub_configs`` instead, which is consistent with the
+  ``sub_configs`` parameter of the signature methods
+  (:meth:`add_class_arguments <.ArgumentParser.add_class_arguments>` etc.).
+- ``enable_path`` parameter of :class:`.ActionJsonSchema` was deprecated and
+  will be removed in v5.0.0. Use ``sub_config`` instead.
 
 
 v4.48.0 (2026-04-10)

@@ -40,6 +40,16 @@ __all__ = [
     "usage_and_exit_error_handler",
 ]
 
+_message_add_argument_enable_path = """
+    ``enable_path`` parameter of ``add_argument`` was deprecated in v4.49.0 and will be removed in v5.0.0.
+    Use ``sub_configs`` instead.
+"""
+
+_message_action_json_schema_enable_path = """
+    ``enable_path`` parameter of ``ActionJsonSchema`` was deprecated in v4.49.0 and will be removed in v5.0.0.
+    Use ``sub_config`` instead.
+"""
+
 
 shown_deprecation_warnings: Set[Any] = set()
 
@@ -95,6 +105,38 @@ def deprecated(message):
         return decorated
 
     return deprecated_decorator
+
+
+def add_argument_enable_path_deprecation(kwargs: dict, stacklevel: int = 1) -> Optional[bool]:
+    """Handle deprecated ``enable_path`` parameter in ``add_argument``.
+
+    If ``enable_path`` is present in kwargs, emit a deprecation warning and
+    return its value (popping it from kwargs). Returns ``None`` if not present.
+    """
+    if "enable_path" in kwargs:
+        deprecation_warning(
+            add_argument_enable_path_deprecation,
+            _message_add_argument_enable_path,
+            stacklevel=stacklevel + 1,
+        )
+        return kwargs.pop("enable_path")
+    return None
+
+
+def action_json_schema_enable_path_deprecation(kwargs: dict, stacklevel: int = 1) -> Optional[bool]:
+    """Handle deprecated ``enable_path`` parameter in ``ActionJsonSchema``.
+
+    If ``enable_path`` is present in kwargs, emit a deprecation warning and
+    return its value (popping it from kwargs). Returns ``None`` if not present.
+    """
+    if "enable_path" in kwargs:
+        deprecation_warning(
+            action_json_schema_enable_path_deprecation,
+            _message_action_json_schema_enable_path,
+            stacklevel=stacklevel + 1,
+        )
+        return kwargs.pop("enable_path")
+    return None
 
 
 def parse_as_dict_patch():
@@ -263,7 +305,7 @@ class ActionPath:
 
 @deprecated("""
     ActionPathList was deprecated in v4.20.0 and will be removed in v5.0.0. Instead
-    use as type ``List[<path_type>]`` with ``enable_path=True``.
+    use as type ``List[<path_type>]`` with ``sub_configs=True``.
 """)
 class ActionPathList(Action):
     """Action to check and store a list of file paths read from a plain text file or stream."""
