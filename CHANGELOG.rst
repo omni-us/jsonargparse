@@ -50,10 +50,12 @@ Deprecated
 - ``enable_path`` parameter of :meth:`add_argument
   <.ArgumentParser.add_argument>` was deprecated and will be removed in
   v5.0.0. Use ``sub_configs`` instead, which is consistent with the
-  ``sub_configs`` parameter of the signature methods
-  (:meth:`add_class_arguments <.ArgumentParser.add_class_arguments>` etc.).
+  ``sub_configs`` parameter of the signature methods,
+  :meth:`add_class_arguments <.ArgumentParser.add_class_arguments>` etc.
+  (`#907 <https://github.com/omni-us/jsonargparse/pull/907>`__).
 - ``enable_path`` parameter of :class:`.ActionJsonSchema` was deprecated and
-  will be removed in v5.0.0. Use ``sub_config`` instead.
+  will be removed in v5.0.0. Use ``sub_config`` instead (`#907
+  <https://github.com/omni-us/jsonargparse/pull/907>`__).
 
 
 v4.48.0 (2026-04-10)

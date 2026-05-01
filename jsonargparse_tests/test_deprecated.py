@@ -1104,7 +1104,8 @@ def test_add_argument_enable_path_deprecated(parser, tmp_cwd):
         code='parser.add_argument("--data", type=dict, enable_path=True)',
     )
     cfg = parser.parse_args(["--data=data.yaml"])
-    assert "data.yaml" == str(cfg["data"].pop("__path__"))
+    path_value = cfg["data"].pop("__path__")
+    assert "data.yaml" == str(path_value)
     assert data == cfg["data"]
 
 
