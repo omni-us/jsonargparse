@@ -815,7 +815,7 @@ def test_save_multifile_list(parser, tmp_cwd):
         nargs="+",
         type=ListItem,
         required=True,
-        enable_path=True,
+        sub_configs=True,
     )
 
     cfg = parser.parse_args([f"--config={main_file_in}"])

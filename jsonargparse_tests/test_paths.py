@@ -553,14 +553,14 @@ def test_path_fr_default_stdin(parser):
     assert defaults.path == Path_fr("-")
 
 
-# enable_path tests
+# sub_configs tests
 
 
-def test_enable_path_dict(parser, tmp_cwd):
+def test_sub_configs_dict(parser, tmp_cwd):
     data = {"a": 1, "b": 2, "c": [3, 4]}
     pathlib.Path("data.yaml").write_text(json.dumps(data))
 
-    parser.add_argument("--data", type=Dict[str, Any], enable_path=True)
+    parser.add_argument("--data", type=Dict[str, Any], sub_configs=True)
     cfg = parser.parse_args(["--data=data.yaml"])
     assert "data.yaml" == str(cfg["data"].pop("__path__"))
     assert data == cfg["data"]
@@ -569,17 +569,17 @@ def test_enable_path_dict(parser, tmp_cwd):
     ctx.match("Expected a path but does-not-exist.yaml either not accessible or invalid")
 
 
-def test_enable_path_subclass(parser, tmp_cwd):
+def test_sub_configs_subclass(parser, tmp_cwd):
     cal = {"class_path": "calendar.Calendar"}
     pathlib.Path("cal.yaml").write_text(json.dumps(cal))
 
-    parser.add_argument("--cal", type=Calendar, enable_path=True)
+    parser.add_argument("--cal", type=Calendar, sub_configs=True)
     cfg = parser.parse_args(["--cal=cal.yaml"])
     init = parser.instantiate(cfg)
     assert isinstance(init["cal"], Calendar)
 
 
-def test_enable_path_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
+def test_sub_configs_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
     tmpdir = tmp_cwd / "subdir"
     tmpdir.mkdir()
     (tmpdir / "file1").touch()
@@ -599,13 +599,13 @@ def test_enable_path_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
     parser.add_argument(
         "--list",
         type=List[Path_fr],
-        enable_path=True,
+        sub_configs=True,
     )
     parser.add_argument(
         "--lists",
         nargs="+",
         type=List[Path_fr],
-        enable_path=True,
+        sub_configs=True,
     )
 
     with subtests.test("paths list from file"):
@@ -653,7 +653,7 @@ def test_enable_path_list_path_fr(parser, tmp_cwd, mock_stdin, subtests):
 
 @pytest.mark.parametrize("validate_defaults", [False, True])
 @patch_parsing_settings
-def test_enable_path_list_path_fr_default_stdin(parser, tmp_cwd, validate_defaults, mock_stdin, subtests):
+def test_sub_configs_list_path_fr_default_stdin(parser, tmp_cwd, validate_defaults, mock_stdin, subtests):
     set_parsing_settings(validate_defaults=validate_defaults)
     (tmp_cwd / "file1").touch()
     (tmp_cwd / "file2").touch()
@@ -661,7 +661,7 @@ def test_enable_path_list_path_fr_default_stdin(parser, tmp_cwd, validate_defaul
     parser.add_argument(
         "--list",
         type=List[Path_fr],
-        enable_path=True,
+        sub_configs=True,
         default="-",
     )
 
@@ -712,11 +712,11 @@ class DataOptionalPath:
         pass
 
 
-def test_enable_path_optional_pathlike_subclass_parameter(parser, tmp_cwd):
+def test_sub_configs_optional_pathlike_subclass_parameter(parser, tmp_cwd):
     data_path = pathlib.Path("data.json")
     data_path.write_text('{"a": 1}')
 
-    parser.add_argument("--data", type=DataOptionalPath, enable_path=True)
+    parser.add_argument("--data", type=DataOptionalPath, sub_configs=True)
 
     cfg = parser.parse_args([f"--data={__name__}.DataOptionalPath", f"--data.path={data_path}"])
     assert cfg.data.class_path == f"{__name__}.DataOptionalPath"

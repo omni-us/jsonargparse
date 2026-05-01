@@ -21,19 +21,24 @@ class ActionJsonSchema(Action):
     """Action to parse option as JSON validated by a JSON Schema."""
 
     def __init__(
-        self, schema: Optional[Union[str, dict]] = None, enable_path: bool = True, with_meta: bool = True, **kwargs
+        self, schema: Optional[Union[str, dict]] = None, sub_config: bool = True, with_meta: bool = True, **kwargs
     ):
         """Initializer for ActionJsonSchema instance.
 
         Args:
             schema: Schema to validate values against.
-            enable_path: Whether to try to load JSON from path.
+            sub_config: Whether to try to load JSON from path.
             with_meta: Whether to include metadata.
 
         Raises:
             ValueError: If a parameter is invalid.
             jsonschema.exceptions.SchemaError: If the schema is invalid.
         """
+        from ._deprecated import action_json_schema_enable_path_deprecation
+
+        deprecated_val = action_json_schema_enable_path_deprecation(kwargs)
+        if deprecated_val is not None:
+            sub_config = deprecated_val
         if schema is not None:
             if isinstance(schema, str):
                 mode = "yaml" if pyyaml_available else "json"
@@ -45,13 +50,13 @@ class ActionJsonSchema(Action):
             jsonvalidator = import_jsonschema("ActionJsonSchema")[1]
             jsonvalidator.check_schema(schema)
             self._validator = self._extend_jsonvalidator_with_default(jsonvalidator)(schema)
-            self._enable_path = enable_path
+            self._sub_config = sub_config
             self._with_meta = with_meta
         elif "_validator" not in kwargs:
             raise ValueError("Expected schema keyword argument.")
         else:
             self._validator = kwargs.pop("_validator")
-            self._enable_path = kwargs.pop("_enable_path")
+            self._sub_config = kwargs.pop("_sub_config")
             self._with_meta = kwargs.pop("_with_meta")
             super().__init__(**kwargs)
 
@@ -63,7 +68,7 @@ class ActionJsonSchema(Action):
         """
         if len(args) == 0:
             kwargs["_validator"] = self._validator
-            kwargs["_enable_path"] = self._enable_path
+            kwargs["_sub_config"] = self._sub_config
             kwargs["_with_meta"] = self._with_meta
             if "help" in kwargs and isinstance(kwargs["help"], str) and "%s" in kwargs["help"]:
                 import json
@@ -83,7 +88,7 @@ class ActionJsonSchema(Action):
             value = [value]
         for num, val in enumerate(value):
             try:
-                val, fpath = parse_value_or_config(val, enable_path=self._enable_path)
+                val, fpath = parse_value_or_config(val, enable_path=self._sub_config)
                 path_meta = val.pop("__path__") if isinstance(val, dict) and "__path__" in val else None
                 self._validator.validate(val)
                 if path_meta is not None:
