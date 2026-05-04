@@ -45,11 +45,11 @@ jobs:
           pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml
           mv coverage.xml coverage_py${{ matrix.python }}_types.xml
           mv junit.xml junit_py${{ matrix.python }}_types.xml
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage_py${{ matrix.python }}
           path: ./coverage_py*
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: junit_py${{ matrix.python }}
           path: ./junit_py*
@@ -132,11 +132,11 @@ jobs:
           pytest --cov --cov-report=term --cov-report=xml --junit-xml=junit.xml jsonargparse_tests/test_pydantic.py
           mv coverage.xml coverage_pydantic2.xml
           mv junit.xml junit_pydantic2.xml
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage_pydantic
           path: ./coverage_py*
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: junit_pydantic
           path: ./junit_py*
@@ -155,7 +155,7 @@ jobs:
           cd jsonargparse_tests
           python -m build --wheel
           mv dist/*.whl ../dist/
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: package
           path: ./dist/*
@@ -214,8 +214,9 @@ jobs:
 
   codecov:
     runs-on: ubuntu-latest
-    environment: codecov
     needs: [linux, pydantic-v1]
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
@@ -225,13 +226,13 @@ jobs:
         with:
           fail_ci_if_error: true
           files: ./coverage_*.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
       - uses: codecov/codecov-action@v6
         with:
           fail_ci_if_error: true
           report_type: test_results
           files: ./junit_*.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
 
   sonarcloud:
     runs-on: ubuntu-latest
@@ -256,7 +257,7 @@ jobs:
             VERSION="$(git describe --tags --abbrev=0 | sed 's/^v//')+$(git rev-parse --short HEAD)"
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-      - uses: SonarSource/sonarqube-scan-action@v7
+      - uses: SonarSource/sonarqube-scan-action@v8
         with:
           args: >
             -Dsonar.organization=omni-us
