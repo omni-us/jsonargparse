@@ -902,8 +902,8 @@ def test_print_config_normal(print_parser):
     assert json_or_yaml_load(out) == {"g1": {"v2": "2"}, "g2": {"v3": None}, "v1": 1}
 
 
-def test_print_config_skip_null(print_parser):
-    out = get_parse_args_stdout(print_parser, ["--print_config=skip_null"])
+def test_print_config_skip_unset(print_parser):
+    out = get_parse_args_stdout(print_parser, ["--print_config=skip_unset"])
     assert json_or_yaml_load(out) == {"g1": {"v2": "2"}, "g2": {}, "v1": 1}
 
 
@@ -1139,13 +1139,13 @@ def test_add_multiple_config_arguments_error(parser, action):
     ctx.match("only allowed to have a single")
 
 
-def test_validate_skip_none(parser):
+def test_validate_skip_unset(parser):
     parser.add_argument("--op1", type=int)
     parser.add_argument("--op2", type=float)
     cfg = parser.parse_args(["--op2=2.2"])
-    parser.validate(cfg, skip_none=True)
+    parser.validate(cfg, skip_unset=True)
     with pytest.raises(TypeError) as ctx:
-        parser.validate(cfg, skip_none=False)
+        parser.validate(cfg, skip_unset=False)
     ctx.match("Expected a <class 'int'>")
 
 
