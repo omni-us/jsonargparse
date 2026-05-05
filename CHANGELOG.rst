@@ -40,6 +40,10 @@ Added
 ^^^^^
 - Support ``Deque`` and ``FrozenSet`` in type hints (`#905
   <https://github.com/omni-us/jsonargparse/pull/905>`__).
+- Add :obj:`.Unset` sentinel and ``unset_sentinel`` setting in
+  ``.set_parsing_settings`` to distinguish between arguments not provided and
+  those explicitly set to ``null`` (`#909
+  <https://github.com/omni-us/jsonargparse/pull/909>`__).
 
 Fixed
 ^^^^^
@@ -82,6 +86,13 @@ Deprecated
 - ``enable_path`` parameter of ``ActionJsonSchema`` was deprecated and will be
   removed in v5.0.0. Use ``sub_config`` instead (`#907
   <https://github.com/omni-us/jsonargparse/pull/907>`__).
+- ``skip_none`` parameter of :meth:`dump <.ArgumentParser.dump>`, :meth:`save
+  <.ArgumentParser.save>`, and :meth:`validate <.ArgumentParser.validate>` was
+  deprecated and will be removed in v5.0.0. Use ``skip_unset`` instead (`#909
+  <https://github.com/omni-us/jsonargparse/pull/909>`__).
+- ``skip_null`` flag for ``--print_config`` was deprecated and will be removed
+  in v5.0.0. Use ``skip_unset`` instead (`#909
+  <https://github.com/omni-us/jsonargparse/pull/909>`__).
 
 
 v4.48.0 (2026-04-10)

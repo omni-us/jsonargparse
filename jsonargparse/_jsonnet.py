@@ -3,7 +3,7 @@
 from typing import Any, Dict
 
 from ._actions import _is_action_value_list
-from ._common import Action, parser_context
+from ._common import Action, get_parsing_setting, parser_context
 from ._jsonschema import ActionJsonSchema
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._optionals import (
@@ -109,7 +109,7 @@ class ActionJsonnet(Action):
                 raise ValueError(
                     f"Type for ext_vars='{action._ext_vars}' argument must be dict, given: {ext_vars_type}"
                 )
-            if ext_vars_action.default is None:
+            if ext_vars_action.default is get_parsing_setting("unset_sentinel"):
                 ext_vars_action.default = {}
             if not isinstance(ext_vars_action.default, dict):
                 raise ValueError(

@@ -21,6 +21,8 @@ jsonargparse
 ------------
 .. automodule:: jsonargparse
 
+.. autodata:: jsonargparse.Unset
+
 jsonargparse.typing
 -------------------
 .. automodule:: jsonargparse.typing

@@ -29,6 +29,7 @@ from ._optionals import (
 from ._type_checking import ActionsContainer, ArgumentParser, docstring_parser
 
 __all__ = [
+    "Unset",
     "set_parsing_settings",
 ]
 
@@ -40,6 +41,26 @@ unpack_meta_types = set()
 if _UnpackGenericAlias:
     unpack_meta_types.add(_UnpackGenericAlias)
 capture_typing_extension_shadows(_UnpackGenericAlias, "_UnpackGenericAlias", unpack_meta_types)
+
+
+class _UnsetType:
+    """Sentinel class for unset argument values."""
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self):
+        return "Unset"
+
+    def __bool__(self):
+        return False
+
+
+Unset = _UnsetType()
 
 
 class InstantiatorCallable(Protocol):
@@ -94,12 +115,13 @@ def parser_context(**kwargs):
             context_var.reset(token)
 
 
-parsing_settings = {
+parsing_settings: dict = {
     "validate_defaults": False,
     "parse_optionals_as_positionals": False,
     "add_print_completion_argument": False,
     "stubs_resolver_allow_py_files": False,
     "omegaconf_absolute_to_relative_paths": False,
+    "unset_sentinel": None,
 }
 
 
@@ -122,6 +144,7 @@ def set_parsing_settings(
     add_print_completion_argument: bool | None = None,
     stubs_resolver_allow_py_files: bool | None = None,
     omegaconf_absolute_to_relative_paths: bool | None = None,
+    unset_sentinel: bool | None = None,
     subclasses_disabled: list[type | Callable[[type], bool]] | None = None,
     subclasses_enabled: list[type | str] | None = None,
 ) -> None:
@@ -155,6 +178,12 @@ def set_parsing_settings(
             with ``omegaconf+`` parser mode, absolute interpolation paths are
             converted to relative. This is only intended for backward
             compatibility with ``omegaconf`` parser mode.
+        unset_sentinel: If ``True``, parsers will use the :obj:`.Unset` sentinel
+            for arguments that have not been given a value (instead of
+            ``None``). This allows distinguishing between ``None`` as an
+            explicitly given value and an argument that was not provided at
+            all. If ``False``, uses ``None`` (the default, argparse-compatible
+            behavior) unless overridden by ``argument_default``.
         subclasses_disabled: List of types or functions, so that when parsing
             only the exact type hints (not their subclasses) are accepted.
             Descendants of the configured types are also disabled. Functions
@@ -203,6 +232,11 @@ def set_parsing_settings(
         raise ValueError(
             f"omegaconf_absolute_to_relative_paths must be a boolean, but got {omegaconf_absolute_to_relative_paths}."
         )
+    # unset_sentinel
+    if isinstance(unset_sentinel, bool):
+        parsing_settings["unset_sentinel"] = Unset if unset_sentinel else None
+    elif unset_sentinel is not None:
+        raise ValueError(f"unset_sentinel must be a boolean, but got {unset_sentinel}.")
     # subclass behavior
     if subclasses_disabled or subclasses_enabled:
         subclass_type_behavior(
@@ -222,7 +256,13 @@ def get_parsing_setting(name: str):
 
 
 def validate_default(container: ActionsContainer, action: argparse.Action):
-    if action.default is None or not get_parsing_setting("validate_defaults") or not hasattr(action, "_check_type"):
+    unset_sentinel = get_parsing_setting("unset_sentinel")
+    if (
+        action.default is None
+        or (unset_sentinel is not None and action.default is unset_sentinel)
+        or not get_parsing_setting("validate_defaults")
+        or not hasattr(action, "_check_type")
+    ):
         return
     try:
         from ._core import ArgumentGroup

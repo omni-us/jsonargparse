@@ -753,8 +753,6 @@ class ParserDeprecations:
 
 def deprecated_skip_check(component, kwargs: dict, skip_validation: bool) -> bool:
     skip_check = kwargs.pop("skip_check", None)
-    if kwargs:
-        raise ValueError(f"Unexpected keyword parameters: {set(kwargs)}")
     if skip_check is not None:
         skip_validation = skip_check
         deprecation_warning(
@@ -766,6 +764,34 @@ def deprecated_skip_check(component, kwargs: dict, skip_validation: bool) -> boo
             stacklevel=3,
         )
     return skip_validation
+
+
+deprecated_valid_flags = {"skip_null": "skip_null"}
+
+
+def deprecated_skip_none(component, kwargs: dict, skip_unset: bool, stacklevel: int = 3) -> bool:
+    skip_none = kwargs.pop("skip_none", None)
+    if skip_none is not None:
+        skip_unset = skip_none
+        deprecation_warning(
+            component,
+            ("skip_none parameter was deprecated in v4.49.0 and will be removed in v5.0.0. Instead use skip_unset."),
+            stacklevel=stacklevel,
+        )
+    return skip_unset
+
+
+def deprecated_skip_null(flag: str) -> bool:
+    if flag == "skip_null":
+        deprecation_warning(
+            "skip_null",
+            (
+                "skip_null flag for --print_config was deprecated in v4.49.0 and will be removed in "
+                "v5.0.0. Instead use skip_unset."
+            ),
+        )
+        return True
+    return False
 
 
 def deprecated_yaml_comments(kwargs: dict, with_comments: bool) -> bool:

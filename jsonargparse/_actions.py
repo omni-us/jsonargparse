@@ -171,14 +171,16 @@ class _ActionPrintConfig(NonParsingAction):
             help=(
                 "Print the configuration after applying all other arguments and exit. The optional "
                 "flags customizes the output and are one or more keywords separated by comma. The "
-                "supported flags are:%s skip_default, skip_null."
+                "supported flags are:%s skip_default, skip_unset."
             )
             % (" comments," if ruamel_support else ""),
         )
 
     def __call__(self, parser, namespace, value, option_string=None):
-        kwargs = {"subparser": parser, "key": None, "skip_none": False, "skip_validation": False}
-        valid_flags = {"": None, "skip_default": "skip_default", "skip_null": "skip_none"}
+        from ._deprecated import deprecated_skip_null, deprecated_valid_flags
+
+        kwargs = {"subparser": parser, "key": None, "skip_unset": False, "skip_validation": False}
+        valid_flags = {"": None, "skip_default": "skip_default", "skip_unset": "skip_unset"} | deprecated_valid_flags
         if ruamel_support:
             valid_flags["comments"] = "with_comments"
         if value is not None:
@@ -187,7 +189,11 @@ class _ActionPrintConfig(NonParsingAction):
             if len(invalid_flags) > 0:
                 raise argument_error(f'Invalid option "{invalid_flags[0]}" for {option_string}')
             for flag in [f for f in flags if f != ""]:
-                kwargs[valid_flags[flag]] = True
+                mapped = valid_flags[flag]
+                if deprecated_skip_null(flag):
+                    kwargs["skip_unset"] = True
+                else:
+                    kwargs[mapped] = True
         while hasattr(parser, "parent_parser"):
             kwargs["key"] = parser.subcommand if kwargs["key"] is None else parser.subcommand + "." + kwargs["key"]
             parser = parser.parent_parser
