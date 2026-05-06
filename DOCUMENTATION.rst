@@ -475,14 +475,8 @@ controls whether :obj:`.Unset` entries are excluded. The
 Argparse's ``argument_default=SUPPRESS`` (and per-argument ``default=SUPPRESS``)
 is a complementary mechanism: it causes an unprovided argument to be
 **completely absent** from the parsed namespace, i.e. it has no key at all.
-
 These two features play well together and represent different levels of
-"absence":
-
-- ``argument_default=SUPPRESS`` – the argument key is **not present** in the
-  namespace at all (argparse-native behavior).
-- :obj:`.Unset` sentinel – the argument key **is present** but is
-  distinguishable as not having been set.
+"absence".
 
 
 .. _type-hints:

@@ -49,6 +49,7 @@ class _UnsetType:
     """Sentinel class for unset argument values."""
 
     _instance = None
+    _SERIALIZED = "==UNSET=="
 
     def __new__(cls):
         if cls._instance is None:
@@ -258,10 +259,8 @@ def get_parsing_setting(name: str):
 
 
 def validate_default(container: ActionsContainer, action: argparse.Action):
-    unset_sentinel = get_parsing_setting("unset_sentinel")
     if (
-        action.default is None
-        or (unset_sentinel is not None and action.default is unset_sentinel)
+        action.default is get_parsing_setting("unset_sentinel")
         or not get_parsing_setting("validate_defaults")
         or not hasattr(action, "_check_type")
     ):
