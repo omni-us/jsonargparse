@@ -235,19 +235,14 @@ dump_json_kwargs = {
 }
 
 
-UNSET_SERIALIZED = "==UNSET=="
-
-
 def replace_unset(data):
     """Recursively replaces Unset sentinel values with the serialized string ``"==UNSET=="``."""
     if get_parsing_setting("unset_sentinel") is None:
         return data
     if data is Unset:
-        return UNSET_SERIALIZED
+        return Unset._SERIALIZED
     if isinstance(data, dict):
         return {k: replace_unset(v) for k, v in data.items()}
-    if isinstance(data, list):
-        return [replace_unset(v) for v in data]
     return data
 
 

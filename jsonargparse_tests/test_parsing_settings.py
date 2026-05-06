@@ -269,8 +269,7 @@ def test_unset_sentinel_optional_int(parser):
     assert cfg.num == 5
 
 
-def test_unset_sentinel_explicit_none_default(parser):
-    """Explicit default=None in add_argument must stay None, not become Unset."""
+def test_unset_sentinel_explicit_none_default_stays_none(parser):
     set_parsing_settings(unset_sentinel=True)
 
     parser.add_argument("--num", type=Optional[int], default=None)
@@ -325,7 +324,7 @@ def test_unset_sentinel_required_arg(parser):
 
     parser.add_argument("--num", type=int, required=True)
 
-    with pytest.raises(ArgumentError):
+    with pytest.raises(ArgumentError, match="the following arguments are required: num"):
         parser.parse_args([])
 
 
@@ -341,7 +340,7 @@ def test_unset_is_singleton():
     assert _UnsetType() is Unset
 
 
-# Interaction between Unset and argument_default=SUPPRESS
+# Interaction between Unset and default SUPPRESS
 
 
 def test_unset_and_suppress_default_per_argument(parser):
