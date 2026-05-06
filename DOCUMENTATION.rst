@@ -414,6 +414,71 @@ form like ``--module.child=...``, the parsing will fail and display the
 configured error message.
 
 
+.. _unset-values:
+
+Unset values
+------------
+
+By default, jsonargparse follows argparse behavior: an argument that is not
+provided on the command line is given the value ``None`` in the parsed
+namespace. This makes it impossible to distinguish between an argument that was
+explicitly set to ``None`` (e.g. ``--opt=null``) and one that was simply
+omitted.
+
+The :obj:`.Unset` sentinel (enabled via
+``set_parsing_settings(unset_sentinel=True)``) addresses this by using a
+dedicated sentinel object as the default for arguments that have no explicitly
+provided ``default`` value. The three possible states for an argument then
+become:
+
+- :obj:`.Unset` – the argument was not provided and no ``default`` was given in
+  ``add_argument``.
+- ``None`` – the argument was either explicitly set to ``null``, or its
+  ``add_argument`` call included ``default=None``.
+- Any other value – the argument was provided with that value (or defaults to
+  it).
+
+Example:
+
+.. testcode:: unset-values
+
+    from jsonargparse import ArgumentParser, Unset, set_parsing_settings
+    from typing import Optional
+
+    set_parsing_settings(unset_sentinel=True)
+
+    parser = ArgumentParser()
+    parser.add_argument("--num", type=Optional[int])           # no default given
+    parser.add_argument("--flag", type=Optional[int], default=None)  # explicit None
+
+    cfg = parser.parse_args([])
+    assert cfg.num is Unset   # no default → Unset
+    assert cfg.flag is None   # explicit default=None → None
+
+    cfg = parser.parse_args(["--num=null"])
+    assert cfg.num is None    # explicitly set to null
+
+    cfg = parser.parse_args(["--num=5"])
+    assert cfg.num == 5       # provided value
+
+.. testcleanup:: docstrings
+
+    set_parsing_settings(unset_sentinel=False)
+
+The ``skip_unset`` parameter of :meth:`dump <.ArgumentParser.dump>`, :meth:`save
+<.ArgumentParser.save>`, and :meth:`validate <.ArgumentParser.validate>`
+controls whether :obj:`.Unset` entries are excluded. The
+``--print_config=skip_unset`` flag does the same for command-line use.
+
+**Relation to** ``argument_default=SUPPRESS``
+
+Argparse's ``argument_default=SUPPRESS`` (and per-argument ``default=SUPPRESS``)
+is a complementary mechanism: it causes an unprovided argument to be
+**completely absent** from the parsed namespace, i.e. it has no key at all.
+These two features play well together and represent different levels of
+"absence".
+
+
 .. _type-hints:
 
 Type hints
@@ -1283,7 +1348,8 @@ with a large set of options to create an initial config file including all
 default values. If the `ruamel.yaml <https://pypi.org/project/ruamel.yaml>`__
 package is installed, the config can be printed having the help descriptions
 content as YAML comments by using ``--print_config=comments``. Another option is
-``--print_config=skip_null`` which skips entries whose value is ``null``.
+``--print_config=skip_unset`` which skips entries whose value is the configured
+unset value (see :ref:`unset-values`).
 
 From within Python it is also possible to serialize a config object by using
 either the :meth:`dump <.ArgumentParser.dump>` or :meth:`save
