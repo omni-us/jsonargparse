@@ -783,7 +783,10 @@ def resolve_forward_ref(ref):
     if not isinstance(ref, ForwardRef) or not ref.__forward_module__:
         return ref
 
-    aliases = __builtins__.copy()
+    # __builtins__ is a dict in regular modules but a module in __main__ and
+    # other embedding contexts; handle both forms.
+    builtins_obj = __builtins__
+    aliases = builtins_obj.copy() if isinstance(builtins_obj, dict) else vars(builtins_obj).copy()
     aliases.update(vars(import_module(ref.__forward_module__)))
     return aliases.get(ref.__forward_arg__, ref)
 
@@ -1646,7 +1649,11 @@ def sort_subtypes_for_union(subtypes, val, prev_val, append):
 
 
 def is_ellipsis_tuple(typehint):
-    return typehint.__origin__ in {Tuple, tuple} and len(typehint.__args__) > 1 and typehint.__args__[1] == Ellipsis
+    origin = getattr(typehint, "__origin__", None)
+    if origin not in {Tuple, tuple}:
+        return False
+    args = getattr(typehint, "__args__", ())
+    return len(args) > 1 and args[1] == Ellipsis
 
 
 def is_optional(annotation, ref_type=None):

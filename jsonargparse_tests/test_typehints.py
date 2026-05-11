@@ -1642,6 +1642,21 @@ def test_is_optional(typehint, ref_type, expected):
     assert expected == is_optional(typehint, ref_type)
 
 
+@pytest.mark.parametrize("bare_type", [tuple, set, list, frozenset])
+def test_is_ellipsis_tuple_accepts_bare_types(bare_type):
+    from jsonargparse._typehints import is_ellipsis_tuple
+
+    assert is_ellipsis_tuple(bare_type) is False
+
+
+def test_is_ellipsis_tuple_with_subscripted_tuple():
+    from jsonargparse._typehints import is_ellipsis_tuple
+
+    assert is_ellipsis_tuple(Tuple[int, ...]) is True
+    assert is_ellipsis_tuple(Tuple[int, str]) is False
+    assert is_ellipsis_tuple(tuple[int, ...]) is True
+
+
 class SkipDefault(Calendar):
     def __init__(self, *args, param: str = "0", **kwargs):
         super().__init__(*args, **kwargs)
