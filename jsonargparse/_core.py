@@ -95,6 +95,7 @@ from ._util import (
     get_argument_group_class,
     get_private_kwargs,
     identity,
+    load_config_path_context,
     return_parser_if_captured,
 )
 
@@ -621,7 +622,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             ArgumentError: If the parsing fails and ``exit_on_error=False``.
         """
         fpath = Path(cfg_path, mode=_get_config_read_mode())
-        with change_to_path_dir(fpath):
+        with load_config_path_context(fpath), change_to_path_dir(fpath):
             cfg_str = fpath.read_text()
             parsed_cfg = self.parse_string(
                 cfg_str=cfg_str,
@@ -1029,10 +1030,14 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
         default_config_files = self._get_default_config_files()
         for default_config_file in default_config_files:
-            default_config_file_content = default_config_file.read_text()
-            if not default_config_file_content.strip():
-                continue
-            with change_to_path_dir(default_config_file), parser_context(parent_parser=self, parsing_defaults=True):
+            with (
+                load_config_path_context(default_config_file),
+                change_to_path_dir(default_config_file),
+                parser_context(parent_parser=self, parsing_defaults=True),
+            ):
+                default_config_file_content = default_config_file.read_text()
+                if not default_config_file_content.strip():
+                    continue
                 cfg_file = self._load_config_parser_mode(default_config_file_content, prev_cfg=cfg)
                 cfg = self.merge_config(cfg_file, cfg)
                 try:

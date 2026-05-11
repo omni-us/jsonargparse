@@ -22,6 +22,7 @@ from ._util import (
     import_object,
     indent_text,
     iter_to_set_str,
+    load_config_path_context,
     parse_value_or_config,
 )
 
@@ -251,7 +252,7 @@ class _ActionConfigLoad(Action):
             cfg, cfg_path = parse_value_or_config(value)
             if not isinstance(cfg, dict):
                 raise TypeError(f'Parser key "{self.dest}": Unable to load config "{value}"')
-            with change_to_path_dir(cfg_path):
+            with load_config_path_context(cfg_path), change_to_path_dir(cfg_path):
                 cfg = parser._apply_actions(cfg, parent_key=self.dest)
             return cfg
         except (TypeError,) + get_loader_exceptions() as ex:

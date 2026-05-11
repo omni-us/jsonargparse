@@ -88,6 +88,7 @@ from ._util import (
     import_object,
     indent_text,
     iter_to_set_str,
+    load_config_path_context,
     object_path_serializer,
     parse_value_or_config,
     warning,
@@ -635,14 +636,14 @@ class ActionTypeHint(Action):
                     "logger": self.logger,
                 }
                 try:
-                    with change_to_path_dir(config_path):
+                    with load_config_path_context(config_path), change_to_path_dir(config_path):
                         val = adapt_typehints(val, self._typehint, **kwargs)
                 except ValueError as ex:
                     if orig_val == "-" and isinstance(getattr(ex, "parent", None), PathError):
                         raise ex
                     try:
                         if isinstance(orig_val, str):
-                            with change_to_path_dir(config_path):
+                            with load_config_path_context(config_path), change_to_path_dir(config_path):
                                 val = adapt_typehints(orig_val, self._typehint, default=self.default, **kwargs)
                             ex = None
                     except ValueError:

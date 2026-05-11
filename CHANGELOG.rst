@@ -20,6 +20,12 @@ Added
 - Support ``Deque`` and ``FrozenSet`` in type hints (`#905
   <https://github.com/omni-us/jsonargparse/pull/905>`__).
 
+Fixed
+^^^^^
+- Detect loops in config files that recursively load subconfig files and raise
+  an error showing the config chain instead of recursing indefinitely (`#910
+  <https://github.com/omni-us/jsonargparse/pull/910>`__).
+
 Changed
 ^^^^^^^
 - Docs now reference methods via the public ``ArgumentParser`` class instead of

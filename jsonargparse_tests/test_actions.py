@@ -271,6 +271,26 @@ def test_action_parser_parse_path(composed_parsers):
     assert expected == cfg2.as_dict()
 
 
+def test_action_parser_config_loop(composed_parsers):
+    parser, yaml_main, yaml_inner2 = composed_parsers[:3]
+    yaml_main.write_text(json_or_yaml_dump({"inner2": "main.yaml"}))
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_path(yaml_main)
+    ctx.match(r"Config file loop detected: .+main\.yaml -> main\.yaml")
+
+    yaml_main.write_text(json_or_yaml_dump({"inner2": "inner2.yaml"}))
+    yaml_inner2.write_text(json_or_yaml_dump({"inner3": "main.yaml"}))
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_path(yaml_main)
+    ctx.match(r"Config file loop detected: .+main\.yaml -> inner2\.yaml -> main\.yaml")
+
+    yaml_main.write_text(json_or_yaml_dump({"inner2": "main.yaml"}))
+    parser.default_config_files = [str(yaml_main)]
+    with pytest.raises(ArgumentError) as ctx:
+        parser.parse_args([])
+    ctx.match(r"Config file loop detected: .+main\.yaml -> main\.yaml")
+
+
 def test_action_parser_parse_env_inner(composed_parsers):
     parser, _, yaml_inner2, yaml_inner3 = composed_parsers
     assert "opt2_env" == parser.parse_env({"LV1_INNER2__OPT2": "opt2_env"}).inner2.opt2
