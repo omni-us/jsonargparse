@@ -1657,6 +1657,18 @@ def test_is_ellipsis_tuple_with_subscripted_tuple():
     assert is_ellipsis_tuple(tuple[int, ...]) is True
 
 
+def test_argument_parser_accepts_bare_tuple_typehint(parser):
+    parser.add_argument("--data", type=tuple)
+    cfg = parser.parse_args(["--data=[1, 2]"])
+    assert tuple(cfg.data) == (1, 2)
+
+
+def test_argument_parser_accepts_bare_set_typehint(parser):
+    parser.add_argument("--data", type=set)
+    cfg = parser.parse_args(["--data=[1, 2, 1]"])
+    assert set(cfg.data) == {1, 2}
+
+
 class SkipDefault(Calendar):
     def __init__(self, *args, param: str = "0", **kwargs):
         super().__init__(*args, **kwargs)
