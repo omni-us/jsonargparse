@@ -6,11 +6,14 @@ import textwrap
 import warnings
 from argparse import ArgumentError
 from collections import namedtuple
+from contextlib import contextmanager
+from contextvars import ContextVar
 from importlib import import_module
 from types import BuiltinFunctionType, FunctionType, ModuleType
 from typing import (
     Any,
     Callable,
+    Iterator,
     Optional,
     Type,
     Union,
@@ -36,6 +39,7 @@ NoneType = type(None)
 
 
 default_config_option_help = "Path to a configuration file."
+config_load_stack: ContextVar[tuple[tuple[str, str], ...]] = ContextVar("config_load_stack", default=())
 
 
 def argument_error(message: str, default_config_file: Optional[str] = None) -> ArgumentError:
@@ -43,6 +47,39 @@ def argument_error(message: str, default_config_file: Optional[str] = None) -> A
     if default_config_file:
         ex.default_config_file = default_config_file  # type: ignore[attr-defined]
     return ex
+
+
+def _config_path_id(cfg_path: Path) -> tuple[str, str]:
+    path_id = cfg_path.absolute
+    if not (cfg_path.is_url or cfg_path.is_fsspec):
+        path_id = os.path.realpath(path_id)
+    return path_id, str(cfg_path)
+
+
+def _format_config_load_chain(stack: tuple[tuple[str, str], ...], path_id: tuple[str, str]) -> str:
+    chain = list(stack) + [path_id]
+    for num, (stack_path, _) in enumerate(chain):
+        if stack_path == path_id[0]:
+            chain = chain[num:]
+            break
+    return " -> ".join(display for _, display in chain)
+
+
+@contextmanager
+def load_config_path_context(cfg_path: Optional[Path]) -> Iterator[None]:
+    if cfg_path is None:
+        yield
+        return
+    path_id = _config_path_id(cfg_path)
+    stack = config_load_stack.get()
+    if path_id[0] in {path for path, _ in stack}:
+        chain = _format_config_load_chain(stack, path_id)
+        raise TypeError(f"Config file loop detected: {chain}")
+    token = config_load_stack.set(stack + (path_id,))
+    try:
+        yield
+    finally:
+        config_load_stack.reset(token)
 
 
 class JsonargparseWarning(UserWarning):
@@ -115,7 +152,7 @@ def parse_value_or_config(
         except TypeError:
             pass
         else:
-            with cfg_path.relative_path_context():
+            with load_config_path_context(cfg_path), cfg_path.relative_path_context():
                 value = load_value(cfg_path.read_text(), simple_types=simple_types)
     if type(value) is str and value.strip() != "":
         parsed_val = load_value(value, simple_types=simple_types)
