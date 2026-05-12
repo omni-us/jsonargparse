@@ -783,8 +783,6 @@ def resolve_forward_ref(ref):
     if not isinstance(ref, ForwardRef) or not ref.__forward_module__:
         return ref
 
-    # __builtins__ is a dict in regular modules but a module in __main__ and
-    # other embedding contexts; handle both forms.
     builtins_obj = __builtins__
     aliases = builtins_obj.copy() if isinstance(builtins_obj, dict) else vars(builtins_obj).copy()
     aliases.update(vars(import_module(ref.__forward_module__)))
