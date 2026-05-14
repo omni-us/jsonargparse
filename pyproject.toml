@@ -152,7 +152,7 @@ testpaths = ["jsonargparse_tests"]
 
 [tool.coverage.run]
 relative_files = true
-source = ["jsonargparse", "jsonargparse_tests"]
+source = ["jsonargparse"]
 
 
 [tool.mypy]
