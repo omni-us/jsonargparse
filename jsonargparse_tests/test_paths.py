@@ -688,7 +688,7 @@ def test_sub_configs_list_path_fr_default_stdin(parser, tmp_cwd, validate_defaul
 
 class ClassListPath:
     def __init__(self, files: list[Path_fr]):
-        self.files = files
+        self.files = files  # pragma: no cover
 
 
 def test_add_class_list_path(parser, tmp_cwd):
@@ -709,7 +709,7 @@ def test_add_class_list_path(parser, tmp_cwd):
 
 class DataOptionalPath:
     def __init__(self, path: Optional[os.PathLike] = None):
-        pass
+        pass  # pragma: no cover
 
 
 def test_sub_configs_optional_pathlike_subclass_parameter(parser, tmp_cwd):
@@ -729,7 +729,7 @@ class Base:
 
 class DataUnionPath:
     def __init__(self, path: Union[Base, os.PathLike, str] = ""):
-        pass
+        pass  # pragma: no cover
 
 
 def test_sub_configs_union_subclass_and_pathlike(parser, tmp_cwd):

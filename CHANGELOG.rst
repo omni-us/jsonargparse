@@ -33,6 +33,8 @@ Changed
   <https://github.com/omni-us/jsonargparse/pull/901>`__).
 - Cache class parsers to improve performance and reduce test suite runtime
   (`#903 <https://github.com/omni-us/jsonargparse/pull/903>`__).
+- Include test files in coverage reports and some tests cleanup (`#911
+  <https://github.com/omni-us/jsonargparse/pull/911>`__).
 
 Deprecated
 ^^^^^^^^^^

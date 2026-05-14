@@ -40,7 +40,7 @@ def test_yaml_implicit_mapping_values_disabled(parser):
 
 class Bar:
     def __init__(self, x: str):
-        pass
+        pass  # pragma: no cover
 
 
 def test_yaml_implicit_null_disabled(parser):
@@ -104,7 +104,7 @@ class CustomData:
 
 class CustomContainer:
     def __init__(self, data: CustomData):
-        self.data = data
+        self.data = data  # pragma: no cover
 
 
 def custom_loader(data):

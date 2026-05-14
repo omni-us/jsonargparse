@@ -42,7 +42,7 @@ class ClassB(ClassA):
             kb1: help for kb1
             kb2: help for kb2
         """
-        super().__init__(ka2=True, **kwargs)
+        super().__init__(ka2=True, **kwargs)  # pragma: no cover
 
     @classmethod
     def make(cls, pkcm1: str, kcm1: bool = False, **kws):
@@ -51,7 +51,7 @@ class ClassB(ClassA):
             pkcm1: help for pkcm1
             kcm1: help for kcm1
         """
-        return ClassB(pkcm1, **kws)
+        return ClassB(pkcm1, **kws)  # pragma: no cover
 
 
 class ClassC(ClassB):
@@ -60,11 +60,11 @@ class ClassC(ClassB):
         Args:
             kc1: help for kc1
         """
-        super().__init__(**kargs)
+        super().__init__(**kargs)  # pragma: no cover
 
 
 class ClassN:
-    def __init__(self, kn1: int = 1, **kargs):
+    def __init__(self, kn1: int = 1, **kargs):  # pragma: no cover
         """
         Args:
             kn1: help for kn1
@@ -82,7 +82,7 @@ class ClassD(Param, ClassA):
         Args:
             kd1: help for kd1
         """
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # pragma: no cover
 
     def method_d(self, pmd1: int, *args, kmd1: int = 2, **kws):
         """
@@ -90,7 +90,7 @@ class ClassD(Param, ClassA):
             pmd1: help for pmd1
             kmd1: help for kmd1
         """
-        return super().method_a(*args, **kws)
+        return super().method_a(*args, **kws)  # pragma: no cover
 
     @staticmethod
     def staticmethod_d(ksmd1: str = "z", **kw):
@@ -98,7 +98,7 @@ class ClassD(Param, ClassA):
         Args:
             ksmd1: help for ksmd1
         """
-        return function_return_class_c(ksmd1, k2=2, **kw)
+        return function_return_class_c(ksmd1, k2=2, **kw)  # pragma: no cover
 
 
 class ClassE1:
@@ -108,26 +108,26 @@ class ClassE1:
     """
 
     def __init__(self, ke1: int = 1, **kwargs):
-        self._kwd = dict(k2=3, **kwargs)
+        self._kwd = dict(k2=3, **kwargs)  # pragma: no cover
 
     def start(self):
-        return function_no_args_no_kwargs(**self._kwd)
+        return function_no_args_no_kwargs(**self._kwd)  # pragma: no cover
 
 
 class ClassE2:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # pragma: no cover
         self._kwd = dict(**kwargs)
         self.fn = lambda **kw: None
 
     def start(self):
-        return self.fn(**self._kwd)
+        return self.fn(**self._kwd)  # pragma: no cover
 
 
 class AttributeLocalImport1:
     def __init__(self, **kwargs):
-        self._kwd = dict(**kwargs)
+        self._kwd = dict(**kwargs)  # pragma: no cover
 
-    def run(self):
+    def run(self):  # pragma: no cover
         from jsonargparse import set_loader
 
         return set_loader(**self._kwd)
@@ -135,9 +135,9 @@ class AttributeLocalImport1:
 
 class AttributeLocalImport2:
     def __init__(self, **kwargs):
-        self._kwd = dict(**kwargs)
+        self._kwd = dict(**kwargs)  # pragma: no cover
 
-    def run(self):
+    def run(self):  # pragma: no cover
         import jsonargparse as ja
 
         return ja.set_loader(**self._kwd)
@@ -145,9 +145,9 @@ class AttributeLocalImport2:
 
 class AttributeLocalImport3:
     def __init__(self, **kwargs):
-        self._kwd = dict(**kwargs)
+        self._kwd = dict(**kwargs)  # pragma: no cover
 
-    def run(self):
+    def run(self):  # pragma: no cover
         from jsonargparse import set_loader
 
         return set_loader(**self._kwd)
@@ -155,9 +155,9 @@ class AttributeLocalImport3:
 
 class AttributeLocalImport4:
     def __init__(self, **kwargs):
-        self._kwd = dict(**kwargs)
+        self._kwd = dict(**kwargs)  # pragma: no cover
 
-    def run(self):
+    def run(self):  # pragma: no cover
         from jsonargparse import set_loader as sl
 
         return sl(**self._kwd)
@@ -165,21 +165,21 @@ class AttributeLocalImport4:
 
 class AttributeLocalImportFailure:
     def __init__(self, **kwargs):
-        self._kwd = dict(**kwargs)
+        self._kwd = dict(**kwargs)  # pragma: no cover
 
-    def run(self):
+    def run(self):  # pragma: no cover
         from jsonargparse import does_not_exist
 
         return does_not_exist(**self._kwd)
 
 
 class ClassF1:
-    def __init__(self, **kw):
+    def __init__(self, **kw):  # pragma: no cover
         self._ini = dict(k2=4)
         self._ini.update(**kw)
 
     def _run(self):
-        self.staticmethod_f(**self._ini)
+        self.staticmethod_f(**self._ini)  # pragma: no cover
 
     @staticmethod
     def staticmethod_f(ksmf1: str = "w", **kw):
@@ -187,16 +187,16 @@ class ClassF1:
         Args:
             ksmf1: help for ksmf1
         """
-        return function_no_args_no_kwargs(**kw)
+        return function_no_args_no_kwargs(**kw)  # pragma: no cover
 
 
 class ClassF2:
-    def __init__(self, **kw):
+    def __init__(self, **kw):  # pragma: no cover
         self._ini: Dict[str, Any] = {"k2": 4}
         self._ini.update(**kw)
 
     def _run(self):
-        self.staticmethod_f(**self._ini)
+        self.staticmethod_f(**self._ini)  # pragma: no cover
 
     @staticmethod
     def staticmethod_f(ksmf1: str = "w", **kw):
@@ -204,7 +204,7 @@ class ClassF2:
         Args:
             ksmf1: help for ksmf1
         """
-        return function_no_args_no_kwargs(**kw)
+        return function_no_args_no_kwargs(**kw)  # pragma: no cover
 
 
 class ClassG:
@@ -255,7 +255,7 @@ class ClassM2(ClassM1):
         Args:
             km2: help for km2
         """
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # pragma: no cover
 
 
 class ClassM3(ClassM1):
@@ -264,12 +264,12 @@ class ClassM3(ClassM1):
         Args:
             km3: help for km3
         """
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # pragma: no cover
 
 
 class ClassM4(ClassM2, ClassM3):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # pragma: no cover
 
 
 class ClassM5(ClassM2):
@@ -278,7 +278,7 @@ class ClassM5(ClassM2):
         Args:
             km5: help for km5
         """
-        super(ClassM2, self).__init__(**kwargs)
+        super(ClassM2, self).__init__(**kwargs)  # pragma: no cover
 
 
 class ClassP:
@@ -287,11 +287,11 @@ class ClassP:
         Args:
             kp1: help for kp1
         """
-        self._kw = kw
+        self._kw = kw  # pragma: no cover
 
     @property
     def data(self):
-        return function_no_args_no_kwargs(**self._kw)
+        return function_no_args_no_kwargs(**self._kw)  # pragma: no cover
 
 
 class ClassS1:
@@ -300,63 +300,63 @@ class ClassS1:
         Args:
             ks1: help for ks1
         """
-        self.ks1 = ks1
+        self.ks1 = ks1  # pragma: no cover
 
     @classmethod
     def classmethod_s(cls, **kwargs):
-        return cls(**kwargs)
+        return cls(**kwargs)  # pragma: no cover
 
 
 class ClassS2:
     def __init__(self, **kwargs):
-        self.kwargs = kwargs
+        self.kwargs = kwargs  # pragma: no cover
 
     def run_classmethod_s(self):
-        return ClassS1.classmethod_s(**self.kwargs)
+        return ClassS1.classmethod_s(**self.kwargs)  # pragma: no cover
 
 
 class ClassU1:
-    def __init__(self, k1: int = 1, **ka):
+    def __init__(self, k1: int = 1, **ka):  # pragma: no cover
         data = Namespace()
         data.ka = ka
 
 
 class ClassU2:
     def __init__(self, k1: int = 1, **ka):
-        self.method_u2(ka=ka)
+        self.method_u2(ka=ka)  # pragma: no cover
 
     def method_u2(self, ka: dict):
-        pass
+        pass  # pragma: no cover
 
 
 class ClassU3(ClassU1, ClassU2):
-    def __init__(self, **ka):
+    def __init__(self, **ka):  # pragma: no cover
         super(ClassA, self).__init__(**ka)  # pylint: disable=bad-super-call
 
 
 class ClassU4:
     def __init__(self, k1: int = 1, **ka):
-        self._ka = ka
+        self._ka = ka  # pragma: no cover
 
 
 class ClassU5:
     def __init__(self, **kws):
-        self.kws = kws
+        self.kws = kws  # pragma: no cover
 
     def _run(self):
-        self.method1(kws=self.kws)
+        self.method1(kws=self.kws)  # pragma: no cover
 
     def method1(self, kws: dict):
-        pass
+        pass  # pragma: no cover
 
 
 class Optimizer:
     def __init__(self, params: List[int]):
-        self.params = params
+        self.params = params  # pragma: no cover
 
 
 class SGD(Optimizer):
-    def __init__(self, params: List[int], lr: float, **kwargs):
+    def __init__(self, params: List[int], lr: float, **kwargs):  # pragma: no cover
         super().__init__(params, **kwargs)
         self.lr = lr
 
@@ -396,7 +396,7 @@ GLOBAL_CONSTANT = False
 
 class ConditionalGlobalConstant(BaseClass):
     @wrap_fn
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # pragma: no cover
         super().__init__()
         kwargs.get("p1", "x")
         if GLOBAL_CONSTANT:
@@ -418,7 +418,7 @@ def function_with_kwargs(k1: bool = True, **kwds):
     Args:
         k1: help for k1
     """
-    return function_no_args_no_kwargs(**kwds)
+    return function_no_args_no_kwargs(**kwds)  # pragma: no cover
 
 
 def function_return_class_c(pk1: str, k2: int = 1, **ka):
@@ -427,7 +427,7 @@ def function_return_class_c(pk1: str, k2: int = 1, **ka):
         pk1: help for pk1
         k2: help for k2
     """
-    return ClassC(pk1, kb1=k2, **ka)
+    return ClassC(pk1, kb1=k2, **ka)  # pragma: no cover
 
 
 def function_make_class_b(*args, k1: str = "-", **kwargs):
@@ -435,10 +435,10 @@ def function_make_class_b(*args, k1: str = "-", **kwargs):
     Args:
         k1: help for k1
     """
-    return ClassB.make(*args, **kwargs)
+    return ClassB.make(*args, **kwargs)  # pragma: no cover
 
 
-def function_pop_get_from_kwargs(kn1: int = 0, **kw):
+def function_pop_get_from_kwargs(kn1: int = 0, **kw):  # pragma: no cover
     """
     Args:
         k2: help for k2
@@ -456,7 +456,7 @@ def function_pop_get_from_kwargs(kn1: int = 0, **kw):
     kw.pop("pk1", "")
 
 
-def function_pop_get_conditional(p1: str, **kw):
+def function_pop_get_conditional(p1: str, **kw):  # pragma: no cover
     """
     Args:
         p1: help for p1
@@ -471,21 +471,21 @@ def function_pop_get_conditional(p1: str, **kw):
         kw.get("p3", "y")
 
 
-def function_with_bug(**kws):
+def function_with_bug(**kws):  # pragma: no cover
     return does_not_exist(**kws)  # noqa: F821
 
 
-def function_unsupported_component(**kwds):
+def function_unsupported_component(**kwds):  # pragma: no cover
     select = ["Text", "HTML", ""]
     shuffle(select)
     getattr(calendar, f"{select[0]}Calendar")(**kwds)
 
 
-def function_module_class(**kwds):
+def function_module_class(**kwds):  # pragma: no cover
     return calendar.Calendar(**kwds)
 
 
-def function_local_import(**kwds):
+def function_local_import(**kwds):  # pragma: no cover
     from jsonargparse import set_loader
 
     return set_loader(**kwds)
@@ -495,7 +495,7 @@ constant_boolean_1 = True
 constant_boolean_2 = False
 
 
-def function_constant_boolean(**kwargs):
+def function_constant_boolean(**kwargs):  # pragma: no cover
     if constant_boolean_1:
         return function_with_kwargs(**kwargs)
     elif not constant_boolean_2:
@@ -532,7 +532,7 @@ def cond_3(kc: int = 1, kn3: int = 2, kn4: float = 0.1):
     """
 
 
-def conditional_calls(**kwargs):
+def conditional_calls(**kwargs):  # pragma: no cover
     if "kn1" in kwargs:
         cond_1(kn0="y", **kwargs)
     elif "kn2" in kwargs:
@@ -546,7 +546,7 @@ def function_optional_callable(p1: Optional[Callable] = None, **kw):
     Args:
         p1: help for p1
     """
-    function_no_args_no_kwargs(**kw)
+    function_no_args_no_kwargs(**kw)  # pragma: no cover
 
 
 def assert_params(params, expected, origins={}, help=True):
@@ -672,15 +672,15 @@ def test_get_params_class_from_function():
 
 class ClassMethod:
     def __init__(self, pi: int):
-        self.pi = pi
+        self.pi = pi  # pragma: no cover
 
     @classmethod
     def from_str(cls, ps: str):
-        return cls(1)
+        return cls(1)  # pragma: no cover
 
     @classmethod
     def from_untyped(cls, pu):
-        return cls(2)
+        return cls(2)  # pragma: no cover
 
 
 ClassMethodFromStr = class_from_function(ClassMethod.from_str, ClassMethod, name="ClassMethodFromStr")
@@ -843,7 +843,7 @@ def test_get_params_function_local_import():
     assert ["mode", "loader_fn", "exceptions", "json_superset"] == [p.name for p in params]
 
 
-def function_nested_module_attr(**kwargs):
+def function_nested_module_attr(**kwargs):  # pragma: no cover
     import xml.dom.minidom
 
     return xml.dom.minidom.parseString(**kwargs)
@@ -857,7 +857,7 @@ def test_get_params_function_nested_module_attr():
 
 
 class ClassNestedModuleAttr:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # pragma: no cover
         import xml.dom.minidom
 
         self.doc = xml.dom.minidom.parseString(**kwargs)
@@ -871,7 +871,7 @@ def test_get_params_class_nested_module_attr():
 
 
 class ClassNestedLocalFromImport:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # pragma: no cover
         from xml.dom import minidom
 
         self.result = minidom.parseString(**kwargs)
@@ -919,10 +919,10 @@ def test_get_params_optional_callable():
 
 
 def func_several_params(p1: int = 1, p2: int = 2, p3: int = 3, p4: int = 4):
-    pass
+    pass  # pragma: no cover
 
 
-def func_given_kwargs(p: int, **kwargs):
+def func_given_kwargs(p: int, **kwargs):  # pragma: no cover
     func_several_params(p2=0, **kwargs)
     func_several_params(p4=0, **kwargs)
 

@@ -525,7 +525,7 @@ def test_class_from_function_name_clash():
 
 
 def get_unknown() -> "Unknown":  # type: ignore  # noqa: F821
-    return None
+    return None  # pragma: no cover
 
 
 def test_invalid_class_from_function():
@@ -569,7 +569,7 @@ def test_add_class_from_function_arguments(parser):
 
 
 def without_return_type():
-    pass
+    pass  # pragma: no cover
 
 
 def test_class_from_function_missing_return():

@@ -34,7 +34,7 @@ def get_cli_stderr(*args, **kwargs) -> str:
 
 
 def simple_main(a1: int = 0, a2: bool = False):
-    pass
+    pass  # pragma: no cover
 
 
 def test_auto_parser():
@@ -54,7 +54,7 @@ def test_unexpected_components(cli_fn, components):
 
 class ConflictingSubcommandKey:
     def subcommand(self, x: int = 0):
-        return x
+        return x  # pragma: no cover
 
 
 def test_conflicting_subcommand_key():
@@ -167,14 +167,14 @@ def test_function_in_list_with_config_parameter():
 
 
 def conditionalA(foo: int = 1):
-    return foo
+    return foo  # pragma: no cover
 
 
 def conditionalB(bar: int = 2):
-    return bar
+    return bar  # pragma: no cover
 
 
-def conditional_function(fn: "Literal['A', 'B']", *args, **kwargs):
+def conditional_function(fn: "Literal['A', 'B']", *args, **kwargs):  # pragma: no cover
     if fn == "A":
         return conditionalA(*args, **kwargs)
     elif fn == "B":

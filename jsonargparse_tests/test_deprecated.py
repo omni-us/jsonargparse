@@ -98,7 +98,7 @@ source = pathlib.Path(__file__).read_text().splitlines()
 def assert_deprecation_warn(warns, message, code):
     assert message in str(warns[-1].message)
     if code is None:
-        return
+        return  # pragma: no cover
     assert pathlib.Path(warns[-1].filename).name == pathlib.Path(__file__).name
     assert code in source[warns[-1].lineno - 1]
 
@@ -119,7 +119,7 @@ class MyEnum(Enum):
 
 
 def func(a1: MyEnum = MyEnum["A"]):
-    return a1
+    return a1  # pragma: no cover
 
 
 def test_ActionEnum():
@@ -310,7 +310,7 @@ def test_add_instantiator_method_deprecated(parser):
 
 
 def function(a1: float):
-    return a1
+    return a1  # pragma: no cover
 
 
 def test_single_function_cli():
@@ -325,11 +325,11 @@ def test_single_function_cli():
 
 
 def cmd1(a1: int):
-    return a1
+    return a1  # pragma: no cover
 
 
 def cmd2(a2: str = "X"):
-    return a2
+    return a2  # pragma: no cover
 
 
 def test_multiple_functions_cli():
@@ -447,7 +447,7 @@ def test_error_handler_parameter():
     with catch_warnings(record=True) as w:
         parser = ArgumentParser(error_handler=usage_and_exit_error_handler)
     code = "ArgumentParser(error_handler=usage_"
-    if not is_posix:
+    if not is_posix:  # pragma: no cover
         code = None  # for some reason the stack trace differs in windows
     assert_deprecation_warn(
         w,

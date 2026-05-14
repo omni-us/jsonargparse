@@ -151,7 +151,7 @@ testpaths = ["jsonargparse_tests"]
 
 [tool.coverage.run]
 relative_files = true
-source = ["jsonargparse"]
+source = ["jsonargparse", "jsonargparse_tests"]
 
 
 [tool.mypy]
@@ -209,8 +209,11 @@ usedevelop = true
 
 [testenv:omegaconf]
 extras = test,coverage,all
+changedir = jsonargparse_tests
 setenv =
     JSONARGPARSE_OMEGACONF_FULL_TEST = true
+commands =
+    python -m pytest {posargs}
 
 [testenv:pydantic-v1]
 extras = coverage

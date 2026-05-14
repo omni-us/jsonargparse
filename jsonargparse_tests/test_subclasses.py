@@ -54,12 +54,12 @@ def test_subclass_basics(parser, type):
 
 class BaseClassDefault:
     def __init__(self, param: str = "base_default"):
-        self.param = param
+        self.param = param  # pragma: no cover
 
 
 class SubClassDefault(BaseClassDefault):
     def __init__(self, param: str = "sub_default"):
-        super().__init__(param=param)
+        super().__init__(param=param)  # pragma: no cover
 
 
 def test_subclass_defaults(parser):
@@ -97,7 +97,7 @@ class Instantiate1:
 
 class Instantiate2:
     def __init__(self, c1: Optional[Instantiate1]):
-        self.c1 = c1
+        self.c1 = c1  # pragma: no cover
 
 
 def test_subclass_within_class_instantiate(parser):
@@ -115,7 +115,7 @@ def test_subclass_within_class_instantiate(parser):
 
 class SetDefaults:
     def __init__(self, p1: int = 1, p2: str = "x", p3: bool = False):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_set_defaults(parser):
@@ -182,7 +182,7 @@ def test_subclass_union_help(parser):
 
 class DefaultsDisabled:
     def __init__(self, p1: int = 1, p2: str = "2"):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_parse_defaults_disabled(parser):
@@ -215,11 +215,11 @@ def test_subclass_known_subclasses_multiple_bases(parser):
 
 class UntypedParams:
     def __init__(self, a1, a2=None):
-        self.a1 = a1
+        self.a1 = a1  # pragma: no cover
 
 
 def func_subclass_untyped(c1: Union[int, UntypedParams]):
-    return c1
+    return c1  # pragma: no cover
 
 
 def test_subclass_allow_untyped_parameters_help(parser):
@@ -231,7 +231,7 @@ def test_subclass_allow_untyped_parameters_help(parser):
 
 class MergeInitArgs(Calendar):
     def __init__(self, param_a: int = 1, param_b: str = "x", **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # pragma: no cover
 
 
 def test_subclass_merge_init_args_global_config(parser):
@@ -281,7 +281,7 @@ def test_subclass_init_args_without_class_path_dict(parser):
 
 class DefaultConfig:
     def __init__(self, cal: Optional[Calendar] = None, val: int = 2):
-        self.cal = cal
+        self.cal = cal  # pragma: no cover
 
 
 def test_subclass_with_default_config_files(parser, tmp_cwd, logger, subtests):
@@ -319,7 +319,7 @@ def test_subclass_with_default_config_files(parser, tmp_cwd, logger, subtests):
 
 class DefaultConfigSubcommands:
     def __init__(self, foo: int):
-        self.foo = foo
+        self.foo = foo  # pragma: no cover
 
 
 def test_subclass_in_subcommand_with_global_default_config_file(parser, subparser, tmp_cwd):
@@ -399,7 +399,7 @@ def test_function_instantiator(parser):
 
 
 def function_undefined_return(p1: int) -> "Undefined":  # type: ignore[name-defined]  # noqa: F821
-    return FunctionInstantiator(p1, "x")
+    return FunctionInstantiator(p1, "x")  # pragma: no cover
 
 
 def test_instantiator_undefined_return(parser, logger):
@@ -542,7 +542,7 @@ def test_subclass_env_config(parser):
 
 class Nested:
     def __init__(self, cal: Calendar, p1: int = 0):
-        self.cal = cal
+        self.cal = cal  # pragma: no cover
 
 
 @pytest.mark.parametrize("prefix", ["", ".init_args"], ids=lambda v: f"prefix={v}")
@@ -578,12 +578,12 @@ def test_subclass_nested_help(parser):
 
 class RequiredParamSubModule:
     def __init__(self, p1: int, p2: int = 2, p3: int = 3):
-        pass
+        pass  # pragma: no cover
 
 
 class RequiredParamModel:
     def __init__(self, sub_module: RequiredParamSubModule):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_required_parameter_with_default_config_files(parser, tmp_cwd):
@@ -674,7 +674,7 @@ def test_subclass_class_name_then_invalid_init_args(parser):
 
 class DictParam:
     def __init__(self, param: Dict[str, int]):
-        pass
+        pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("prefix", ["", ".init_args"])
@@ -740,12 +740,12 @@ class Module:
 
 class Network(Module):
     def __init__(self, sub_network: Module, some_dict: Dict[str, Any] = {}):
-        pass
+        pass  # pragma: no cover
 
 
 class Model:
     def __init__(self, encoder: Module):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_dict_parameter_deep(parser):
@@ -781,7 +781,7 @@ def test_subclass_dict_parameter_deep(parser):
 
 class ListAppend:
     def __init__(self, p1: int = 0, p2: int = 0):
-        pass
+        pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("list_type", [List, Iterable])
@@ -797,7 +797,7 @@ def test_subclass_list_append_single(parser, list_type):
 @final
 class IterableAppendCalendars:
     def __init__(self, cal: Union[Calendar, Iterable[Calendar], bool] = True):
-        self.cal = cal
+        self.cal = cal  # pragma: no cover
 
 
 def test_subclass_list_append_nonclass_default(parser):
@@ -815,7 +815,7 @@ def test_subclass_list_append_nonclass_default(parser):
 
 class ListAppendCalendars:
     def __init__(self, cals: Optional[Union[Calendar, List[Calendar]]] = None):
-        self.cals = cals
+        self.cals = cals  # pragma: no cover
 
 
 def test_subclass_list_append_multiple(parser):
@@ -959,12 +959,12 @@ def test_type_any_dict_of_subclasses(parser):
 
 class OverrideA(Calendar):
     def __init__(self, pa: str = "a", pc: str = "", **kwds):
-        super().__init__(**kwds)
+        super().__init__(**kwds)  # pragma: no cover
 
 
 class OverrideB(Calendar):
     def __init__(self, pb: str = "b", pc: int = 4, **kwds):
-        super().__init__(**kwds)
+        super().__init__(**kwds)  # pragma: no cover
 
 
 def test_subclass_discard_init_args(parser, logger):
@@ -994,17 +994,17 @@ class OverrideChildBase:
 
 class OverrideChildA(OverrideChildBase):
     def __init__(self, a: int = 0):
-        pass
+        pass  # pragma: no cover
 
 
 class OverrideChildB(OverrideChildBase):
     def __init__(self, b: int = 0):
-        pass
+        pass  # pragma: no cover
 
 
 class OverrideParent:
     def __init__(self, c: OverrideChildBase):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_discard_init_args_nested(parser, logger):
@@ -1030,12 +1030,12 @@ def test_subclass_discard_init_args_nested(parser, logger):
 
 class OverrideMixed(Calendar):
     def __init__(self, *args, param: int = 0, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)  # pragma: no cover
 
 
 class OverrideMixedMain:
     def __init__(self, cal: Union[Calendar, bool] = lazy_instance(OverrideMixed, param=1)):
-        self.cal = cal
+        self.cal = cal  # pragma: no cover
 
 
 def test_subclass_discard_init_args_mixed_type(parser, logger):
@@ -1049,17 +1049,17 @@ def test_subclass_discard_init_args_mixed_type(parser, logger):
 
 class OverrideBase:
     def __init__(self, b: int = 1):
-        pass
+        pass  # pragma: no cover
 
 
 class OverrideSub1(OverrideBase):
     def __init__(self, s1: str = "-"):
-        pass
+        pass  # pragma: no cover
 
 
 class OverrideSub2(OverrideBase):
     def __init__(self, s2: str = "-"):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_discard_init_args_config_with_default(parser, logger):
@@ -1108,17 +1108,17 @@ def test_subclass_discard_init_args_with_default_config_files(parser, tmp_cwd, l
 
 class Arch:
     def __init__(self, a: int = 1):
-        pass
+        pass  # pragma: no cover
 
 
 class ArchB(Arch):
     def __init__(self, a: int = 2, b: int = 3):
-        pass
+        pass  # pragma: no cover
 
 
 class ArchC(Arch):
     def __init__(self, a: int = 4, c: int = 5):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_subcommand_set_defaults_discard_init_args(parser, subparser, logger):
@@ -1145,7 +1145,7 @@ class ConfigDiscardBase:
 
 class ConfigDiscardSub1(ConfigDiscardBase):
     def __init__(self, s1: str = "x", **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # pragma: no cover
 
 
 class ConfigDiscardSub2(ConfigDiscardBase):
@@ -1197,17 +1197,17 @@ def test_discard_init_args_config_nested(parser, logger, tmp_cwd, method):
 
 class DictDiscardBase:
     def __init__(self, b: float = 0.5):
-        pass
+        pass  # pragma: no cover
 
 
 class DictDiscardSub1(DictDiscardBase):
     def __init__(self, s1: int = 3, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # pragma: no cover
 
 
 class DictDiscardSub2(DictDiscardBase):
     def __init__(self, s2: int = 4, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # pragma: no cover
 
 
 class DictDiscardMain:
@@ -1303,7 +1303,7 @@ def test_subclass_unresolved_parameters(parser, subtests):
 
 class UnresolvedNameClash:
     def __init__(self, dict_kwargs: int = 1, **kwargs):
-        self.kwargs = kwargs
+        self.kwargs = kwargs  # pragma: no cover
 
 
 def test_subclass_unresolved_parameters_name_clash(parser):
@@ -1396,12 +1396,12 @@ def test_add_subclass_not_required_group(parser):
 
 
 class ListUnionA:
-    def __init__(self, pa1: int):
+    def __init__(self, pa1: int):  # pragma: no cover
         self.pa1 = pa1
 
 
 class ListUnionB:
-    def __init__(self, pb1: str, pb2: float):
+    def __init__(self, pb1: str, pb2: float):  # pragma: no cover
         self.pb1 = pb1
         self.pb2 = pb2
 
@@ -1447,7 +1447,7 @@ def test_add_argument_subclass_instance_default(parser):
 
 class InstanceDefault:
     def __init__(self, cal: Calendar = Calendar(firstweekday=2)):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_signature_instance_default(parser):
@@ -1480,25 +1480,25 @@ class ImplementsInterface:
 
 class SubclassImplementsInterface(Interface):
     def __init__(self, max_items: int):
-        self.max_items = max_items
+        self.max_items = max_items  # pragma: no cover
 
     def predict(self, items: List[float]) -> List[float]:
-        return items
+        return items  # pragma: no cover
 
 
 class NotImplementsInterface1:
     def predict(self, items: str) -> List[float]:
-        return []
+        return []  # pragma: no cover
 
 
 class NotImplementsInterface2:
     def predict(self, items: List[float], extra: int) -> List[float]:
-        return items
+        return items  # pragma: no cover
 
 
 class NotImplementsInterface3:
     def predict(self, items: List[float]) -> None:
-        return
+        return  # pragma: no cover
 
 
 @pytest.mark.parametrize(
@@ -1573,17 +1573,17 @@ class ImplementsCallableInterface:
 
 class NotImplementsCallableInterface1:
     def __call__(self, items: str) -> List[float]:
-        return []
+        return []  # pragma: no cover
 
 
 class NotImplementsCallableInterface2:
     def __call__(self, items: List[float], extra: int) -> List[float]:
-        return items
+        return items  # pragma: no cover
 
 
 class NotImplementsCallableInterface3:
     def __call__(self, items: List[float]) -> None:
-        return
+        return  # pragma: no cover
 
 
 @pytest.mark.parametrize(
@@ -1626,13 +1626,13 @@ def test_parse_implements_callable_protocol(parser):
 
 
 class ParamSkipBase:
-    def __init__(self, a1: int = 1, a2: float = 2.3):
+    def __init__(self, a1: int = 1, a2: float = 2.3):  # pragma: no cover
         self.a1 = a1
         self.a2 = a2
 
 
 class ParamSkipSub(ParamSkipBase):
-    def __init__(self, b1: float = 4.5, b2: int = 6, **kwargs):
+    def __init__(self, b1: float = 4.5, b2: int = 6, **kwargs):  # pragma: no cover
         super().__init__(**kwargs)
         self.b1 = b1
         self.b2 = b2
@@ -1647,14 +1647,14 @@ def test_add_subclass_parameter_skip(parser):
 
 
 class ParamSkip1:
-    def __init__(self, a1: int = 1, a2: float = 2.3, a3: str = "4"):
+    def __init__(self, a1: int = 1, a2: float = 2.3, a3: str = "4"):  # pragma: no cover
         self.a1 = a1
         self.a2 = a2
         self.a3 = a3
 
 
 class ParamSkip2:
-    def __init__(self, c1: ParamSkip1, c2: int = 5, c3: float = 6.7):
+    def __init__(self, c1: ParamSkip1, c2: int = 5, c3: float = 6.7):  # pragma: no cover
         pass
 
 
@@ -1687,17 +1687,17 @@ def test_subclass_print_config(parser):
 
 class PrintConfigRequired:
     def __init__(self, arg1: float):
-        pass
+        pass  # pragma: no cover
 
 
 class PrintConfigRequiredBase:
     def __init__(self):
-        pass
+        pass  # pragma: no cover
 
 
 class PrintConfigRequiredSub(PrintConfigRequiredBase):
     def __init__(self, arg1: int, arg2: int = 1):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_print_config_required_parameters_as_null(parser):
@@ -1782,7 +1782,7 @@ def test_subclass_invalid_init_args_in_yaml(parser):
 
 class RequiredParamsMissing:
     def __init__(self, p1: int, p2: str):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_required_parameters_missing(parser):
@@ -1825,7 +1825,7 @@ def test_subclass_help_not_subclass(parser):
 
 class Implicit:
     def __init__(self, a: int = 1, b: str = ""):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_implicit_class_path(parser):
@@ -1845,7 +1845,7 @@ def test_subclass_implicit_class_path(parser):
 
 class ErrorIndentation1:
     def __init__(self, val: Optional[Union[int, dict]] = None):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_error_indentation_invalid_init_arg(parser):
@@ -1868,7 +1868,7 @@ def test_subclass_error_indentation_invalid_init_arg(parser):
 
 class ErrorIndentation2:
     def __init__(self, val: int):
-        pass
+        pass  # pragma: no cover
 
 
 def test_subclass_error_indentation_in_union_invalid_value(parser):

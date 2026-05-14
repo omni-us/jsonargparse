@@ -183,7 +183,7 @@ if pydantic_support:
 
     class OptionalPydantic:
         def __init__(self, a: Optional[PydanticModel] = None):
-            self.a = a
+            self.a = a  # pragma: no cover
 
     class NestedModel(pydantic.BaseModel):
         inputs: List[str]
@@ -252,8 +252,6 @@ class TestPydanticBasics:
         pydantic_type = eval(f"pydantic.{type_str}")
         self.num_models += 1
         Model = pydantic.create_model(f"Model{self.num_models}", param=(pydantic_type, ...))
-        if pydantic_support == 1:
-            monkeypatch.setitem(Model.__init__.__globals__, "pydantic_type", pydantic_type)
 
         parser = ArgumentParser(exit_on_error=False)
         parser.add_argument("--model", type=Model)

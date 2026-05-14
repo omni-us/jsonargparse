@@ -38,15 +38,16 @@ def test_on_parse_shallow_print_config(parser):
     assert json_or_yaml_load(out) == {"a": 0}
 
 
-def test_on_parse_subcommand_failing_compute_fn(parser, subparser, subtests):
-    def to_str(value):
-        if not value:
-            raise ValueError("value is empty")
-        return str(value)
+def _to_str_empty_error(value):
+    if not value:
+        raise ValueError("value is empty")
+    return str(value)  # pragma: no cover
 
+
+def test_on_parse_subcommand_failing_compute_fn(parser, subparser, subtests):
     subparser.add_argument("--a", type=int, default=0)
     subparser.add_argument("--b", type=str)
-    subparser.link_arguments("a", "b", to_str)
+    subparser.link_arguments("a", "b", _to_str_empty_error)
     subparser.add_argument("--config", action="config")
     subcommands = parser.add_subcommands()
     subcommands.add_subcommand("sub", subparser)
@@ -54,7 +55,7 @@ def test_on_parse_subcommand_failing_compute_fn(parser, subparser, subtests):
     with subtests.test("parse_args"):
         with pytest.raises(ArgumentError) as ctx:
             parser.parse_args(["sub"])
-        ctx.match("Call to compute_fn of link 'to_str.*failed: value is empty")
+        ctx.match("Call to compute_fn of link '_to_str_empty_error.*failed: value is empty")
 
     with subtests.test("print_config"):
         out = get_parse_args_stdout(parser, ["sub", "--print_config"])
@@ -120,15 +121,15 @@ def test_on_parse_compute_fn_subclass_spec(parser, subtests):
 
 class ClassA:
     def __init__(self, v1: int = 2, v2: int = 3):
-        pass
+        pass  # pragma: no cover
 
 
 class ClassB:
     def __init__(self, v1: int = -1, v2: int = 4, v3: int = 2):
-        pass
+        pass  # pragma: no cover
 
 
-def parser_classes_links_on_parse():
+def _parser_classes_links_on_parse():
     def add(*args):
         return sum(args)
 
@@ -141,7 +142,7 @@ def parser_classes_links_on_parse():
 
 
 def test_on_parse_add_class_arguments(subtests):
-    parser = parser_classes_links_on_parse()
+    parser = _parser_classes_links_on_parse()
 
     with subtests.test("without defaults"):
         with pytest.raises(ArgumentError) as ctx:
@@ -175,12 +176,12 @@ class ClassS1:
         v1: Union[int, str] = 1,
         v2: Union[int, str] = 2,
     ):
-        pass
+        pass  # pragma: no cover
 
 
 class ClassS2:
     def __init__(self, v3: int):
-        self.v3 = v3
+        self.v3 = v3  # pragma: no cover
 
 
 def test_on_parse_add_subclass_arguments(parser, subtests):
@@ -218,7 +219,7 @@ def test_on_parse_add_subclass_arguments(parser, subtests):
 
 class Logger:
     def __init__(self, save_dir: Optional[str] = None):
-        pass
+        pass  # pragma: no cover
 
 
 class TrainerLoggerUnion:
@@ -227,7 +228,7 @@ class TrainerLoggerUnion:
         save_dir: Optional[str] = None,
         logger: Union[bool, Logger] = False,
     ):
-        pass
+        pass  # pragma: no cover
 
 
 def test_on_parse_subclass_target_in_union(parser):
@@ -246,7 +247,7 @@ class TrainerLoggerList:
         save_dir: Optional[str] = None,
         logger: List[Logger] = [],
     ):
-        pass
+        pass  # pragma: no cover
 
 
 def test_on_parse_subclass_target_in_list(parser):
@@ -269,7 +270,7 @@ class TrainerLoggerUnionList:
         save_dir: Optional[str] = None,
         logger: Union[bool, Logger, List[Logger]] = False,
     ):
-        pass
+        pass  # pragma: no cover
 
 
 def test_on_parse_subclass_target_in_union_list(parser):
@@ -291,7 +292,7 @@ class TrainerLoggerOptionalList:
         save_dir: Optional[str] = None,
         logger: Optional[List[Logger]] = None,
     ):
-        pass
+        pass  # pragma: no cover
 
 
 def test_on_parse_subclass_target_in_optional_list(parser):
@@ -420,7 +421,7 @@ def test_on_parse_within_subcommand(parser, subparser):
 
 class RequiredTargetA:
     def __init__(self, a: int):
-        pass
+        pass  # pragma: no cover
 
 
 @dataclass
@@ -430,7 +431,7 @@ class RequiredTargetB:
 
 class RequiredTargetC:
     def __init__(self, b: RequiredTargetB):
-        pass
+        pass  # pragma: no cover
 
 
 def test_on_parse_save_required_target_subclass_param(parser, tmp_cwd):
@@ -459,7 +460,7 @@ def test_on_parse_save_required_target_entire_dataclass(parser, tmp_cwd):
 
 
 class Optimizer:
-    def __init__(self, params: List[int], lr: float):
+    def __init__(self, params: List[int], lr: float):  # pragma: no cover
         self.params = params
         self.lr = lr
 
@@ -608,23 +609,18 @@ class FailingComputeFn1:
 
 class FailingComputeFn2:
     def __init__(self, b: str):
-        self.b = b
+        self.b = b  # pragma: no cover
 
 
 def test_on_instantiate_failing_compute_fn(parser):
-    def to_str(value):
-        if not value:
-            raise ValueError("value is empty")
-        return str(value)
-
     parser.add_class_arguments(FailingComputeFn1, "c1")
     parser.add_class_arguments(FailingComputeFn2, "c2")
-    parser.link_arguments("c1.a", "c2.b", compute_fn=to_str, apply_on="instantiate")
+    parser.link_arguments("c1.a", "c2.b", compute_fn=_to_str_empty_error, apply_on="instantiate")
 
     with pytest.raises(ValueError) as ctx:
         cfg = parser.parse_args([])
         parser.instantiate(cfg)
-    ctx.match("Call to compute_fn of link 'to_str.*failed: value is empty")
+    ctx.match("Call to compute_fn of link '_to_str_empty_error.*failed: value is empty")
 
 
 def test_on_instantiate_link_from_subclass_with_compute_fn():
@@ -641,7 +637,7 @@ def test_on_instantiate_link_from_subclass_with_compute_fn():
 
 class ClassN:
     def __init__(self, calendar: Calendar):
-        self.calendar = calendar
+        self.calendar = calendar  # pragma: no cover
 
 
 def test_on_parse_and_instantiate_link_entire_instance(parser):
@@ -963,11 +959,6 @@ class Dataloader:
         self.num_classes = 7
 
 
-class CustomOptimizer(Optimizer):
-    def __init__(self, params: List[int], num_classes: int, **kwargs):
-        super().__init__(params, **kwargs)
-
-
 def custom_instantiator(class_type, *args, applied_instantiation_links: dict, **kwargs):
     init = class_type(*args, **kwargs)
     init.applied_instantiation_links = applied_instantiation_links
@@ -1056,28 +1047,28 @@ def test_on_parse_link_failure_previous_source_as_target(parser):
 
 
 def test_on_parse_link_failure_already_linked():
-    parser = parser_classes_links_on_parse()
+    parser = _parser_classes_links_on_parse()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("a.v2", "b.v1")
     ctx.match('Target "b.v1" is already a target of another link')
 
 
 def test_on_parse_link_failure_non_existing_source():
-    parser = parser_classes_links_on_parse()
+    parser = _parser_classes_links_on_parse()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("x", "b.v3")
     ctx.match('No action for key "x"')
 
 
 def test_on_parse_link_failure_non_existing_target():
-    parser = parser_classes_links_on_parse()
+    parser = _parser_classes_links_on_parse()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments("a.v1", "x")
     ctx.match('No action for key "x"')
 
 
 def test_on_parse_link_failure_multi_source_missing_compute_fn():
-    parser = parser_classes_links_on_parse()
+    parser = _parser_classes_links_on_parse()
     with pytest.raises(ValueError) as ctx:
         parser.link_arguments(("a.v1", "a.v2"), "b.v3")
     ctx.match("Multiple source keys requires a compute function")

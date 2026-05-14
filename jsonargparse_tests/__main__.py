@@ -1,4 +1,5 @@
 """Run all unit tests in package."""
+# pragma: no cover
 
 import os
 import sys

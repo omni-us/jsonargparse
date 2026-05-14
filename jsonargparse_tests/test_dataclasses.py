@@ -191,7 +191,7 @@ class SubBaseClass:
 
 
 class RootClass:
-    def __init__(self, c1: SubBaseClass):
+    def __init__(self, c1: SubBaseClass):  # pragma: no cover
         """RootClass description"""
         self.c1 = c1
 
@@ -486,7 +486,7 @@ class DataWithOptionalA:
 
 
 def data_with_optional(a: DataWithOptionalA):
-    pass
+    pass  # pragma: no cover
 
 
 def test_dataclass_with_optional_default(parser):
