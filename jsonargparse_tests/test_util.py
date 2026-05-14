@@ -142,7 +142,7 @@ def test_get_import_path():
 class _StaticMethods:
     @staticmethod
     def static_method():
-        pass
+        pass  # pragma: no cover
 
 
 static_method = _StaticMethods.static_method
@@ -157,7 +157,7 @@ class ParentClassmethod:
 
     @classmethod
     def class_method(cls):
-        pass
+        pass  # pragma: no cover
 
 
 class ChildClassmethod(ParentClassmethod):
@@ -170,7 +170,7 @@ def test_get_import_path_classpath_inheritance():
 
 
 def unresolvable_import():
-    pass
+    pass  # pragma: no cover
 
 
 @patch.dict("jsonargparse._util.unresolvable_import_paths")
@@ -184,10 +184,10 @@ def test_register_unresolvable_import_paths():
 class Class:
     @staticmethod
     def method1():
-        pass
+        pass  # pragma: no cover
 
     def method2(self):
-        pass
+        pass  # pragma: no cover
 
 
 def test_object_path_serializer_class_method():

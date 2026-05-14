@@ -245,7 +245,7 @@ def test_omegaconf_absolute_to_relative_paths():
     assert omegaconf_absolute_to_relative_paths(data) == expected
 
 
-def parse_in_spawned_process(queue, parser, args):
+def parse_in_spawned_process(queue, parser, args):  # pragma: no cover
     try:
         cfg = parser.parse_args(args)
         queue.put(cfg)

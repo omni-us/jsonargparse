@@ -536,7 +536,7 @@ class NestedList:
         self,
         nested: List[Dict[str, str]] = [{"a": "random_crop"}, {"b": "random_blur"}],
     ) -> None:
-        self.nested = nested
+        self.nested = nested  # pragma: no cover
 
 
 def test_list_append_dicts_nested_with_default(parser):
@@ -750,7 +750,7 @@ if Unpack:  # and Required and NotRequired
     MyTestUnpackDict = TypedDict("MyTestUnpackDict", {"a": Required[int], "b": NotRequired[int]}, total=True)
 
     class UnpackClass:
-        def __init__(self, **kwargs: Unpack[MyTestUnpackDict]) -> None:
+        def __init__(self, **kwargs: Unpack[MyTestUnpackDict]) -> None:  # pragma: no cover
             self.a = kwargs["a"]
             self.b = kwargs.get("b")
 
@@ -760,7 +760,7 @@ if Unpack:  # and Required and NotRequired
 
     class MyTestInheritedUnpackClass(UnpackClass):
         def __init__(self, **kwargs) -> None:
-            super().__init__(**kwargs)
+            super().__init__(**kwargs)  # pragma: no cover
 
 
 @pytest.mark.skipif(not Unpack, reason="Unpack introduced in python 3.11 or backported in typing_extensions")
@@ -1016,11 +1016,11 @@ def test_callable_class_path_short_init_args(parser, callable_type):
 
 
 def int_to_str(p: int) -> str:
-    return str(p)
+    return str(p)  # pragma: no cover
 
 
 def str_to_int(p: str) -> int:
-    return int(p)
+    return int(p)  # pragma: no cover
 
 
 def test_callable_args_function_path(parser):
@@ -1269,7 +1269,7 @@ def test_callable_return_class_default_class_override_init_arg(parser):
 
 class SkipCallableInitArg:
     def __init__(self, optimizer: Callable[[List[float]], Optimizer] = SGD):
-        self.optimizer = optimizer
+        self.optimizer = optimizer  # pragma: no cover
 
 
 def test_add_class_arguments_skip_callable_init_arg(parser):
@@ -1289,7 +1289,7 @@ def test_add_class_arguments_skip_callable_init_arg(parser):
 
 class SkipCallableMergedWithPartial:
     def __init__(self, optimizer: Callable[[List[float], float], Optimizer] = SGD):
-        self.optimizer = optimizer
+        self.optimizer = optimizer  # pragma: no cover
 
 
 def test_add_class_arguments_skip_callable_init_arg_and_partial_skip(parser):
@@ -1366,7 +1366,7 @@ def test_callable_args_return_type_union_of_classes(parser, subtests):
 def optional_callable_args_return_type_class(
     scheduler: Optional[Callable[[Optimizer], StepLR]] = lambda o: StepLR(o, last_epoch=1),
 ):
-    return scheduler
+    return scheduler  # pragma: no cover
 
 
 def test_optional_callable_args_return_type_class(parser, subtests):
@@ -1476,7 +1476,7 @@ class ModelRequiredCallableArg:
         self,
         scheduler: Callable[[Optimizer], ReduceLROnPlateau] = lambda o: ReduceLROnPlateau(o, monitor="acc"),
     ):
-        self.scheduler = scheduler
+        self.scheduler = scheduler  # pragma: no cover
 
 
 def test_callable_return_class_required_arg_from_default(parser):
@@ -1510,7 +1510,7 @@ class ModelListCallableReturnClass:
         self,
         schedulers: List[Callable[[Optimizer], Union[StepLR, ReduceLROnPlateau]]] = [],
     ):
-        self.schedulers = schedulers
+        self.schedulers = schedulers  # pragma: no cover
 
 
 def test_list_callable_return_class(parser):
@@ -1562,7 +1562,7 @@ def test_lazy_instance_init_postponed():
 
 class IntParam:
     def __init__(self, param: int = 1):
-        pass
+        pass  # pragma: no cover
 
 
 def test_lazy_instance_invalid_init_value():
@@ -1644,7 +1644,7 @@ def test_is_optional(typehint, ref_type, expected):
 
 class SkipDefault(Calendar):
     def __init__(self, *args, param: str = "0", **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)  # pragma: no cover
 
 
 def test_dump_skip_default(parser):
@@ -1680,7 +1680,7 @@ def test_get_all_subclass_paths_import_error():
     def mocked_get_import_path(cls):
         if cls is ImportClass:
             raise ImportError("Failed to import ImportClass")
-        return get_import_path(cls)
+        return get_import_path(cls)  # pragma: no cover
 
     with mock.patch("jsonargparse._typehints.get_import_path", mocked_get_import_path):
         with catch_warnings(record=True) as w:

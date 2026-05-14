@@ -32,7 +32,7 @@ from jsonargparse_tests.test_dataclasses import DifferentModuleBaseData
 
 
 def function_pep604(p1: str | None, p2: int | float | bool = 1):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_pep604():
@@ -42,15 +42,15 @@ def test_get_types_pep604():
 
 class NeedsBackport:
     def __init__(self, p1: list | set):
-        self.p1 = p1
+        self.p1 = p1  # pragma: no cover
 
     @staticmethod
     def static_method(p1: str | int):
-        return p1
+        return p1  # pragma: no cover
 
     @classmethod
     def class_method(cls, p1: float | None):
-        return p1
+        return p1  # pragma: no cover
 
 
 @pytest.mark.parametrize(
@@ -67,7 +67,7 @@ def test_get_types_methods(method, expected):
 
 
 def function_forward_ref(cls: "NeedsBackport", p1: "int"):
-    return cls
+    return cls  # pragma: no cover
 
 
 def test_get_types_forward_ref():
@@ -76,7 +76,7 @@ def test_get_types_forward_ref():
 
 
 def function_undefined_type(p1: not_defined | None, p2: int):  # type: ignore  # noqa: F821
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_undefined_type():
@@ -90,7 +90,7 @@ def test_get_types_undefined_type():
 
 
 def function_all_types_fail(p1: not_defined | None, p2: not_defined):  # type: ignore  # noqa: F821
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_all_types_fail():
@@ -107,7 +107,7 @@ def test_evaluate_postponed_annotations_all_types_fail(logger):
 
 
 def function_missing_type(p1, p2: str | int):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_missing_type():
@@ -156,7 +156,7 @@ def test_type_checking_visitor_failure(logger):
     assert "Failed to execute 'TYPE_CHECKING' block" in logs.getvalue()
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import xml.dom
 
     class TypeCheckingClass1:
@@ -169,7 +169,7 @@ if TYPE_CHECKING:
 
 
 def function_type_checking_nested_attr(p1: str, p2: Optional["xml.dom.Node"]):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_type_checking_nested_attr():
@@ -180,7 +180,7 @@ def test_get_types_type_checking_nested_attr():
 
 
 def function_type_checking_union(p1: Union[bool, TypeCheckingClass1, int], p2: Union[float, "TypeCheckingClass2"]):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_type_checking_union():
@@ -195,7 +195,7 @@ def test_get_types_type_checking_union():
 
 
 def function_type_checking_alias(p1: type_checking_alias, p2: "type_checking_alias"):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_type_checking_alias():
@@ -210,7 +210,7 @@ def test_get_types_type_checking_alias():
 
 
 def function_type_checking_optional_alias(p1: type_checking_alias | None, p2: Optional["type_checking_alias"]):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_type_checking_optional_alias():
@@ -225,7 +225,7 @@ def test_get_types_type_checking_optional_alias():
 
 
 def function_type_checking_list(p1: List[Union["TypeCheckingClass1", TypeCheckingClass2]]):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_type_checking_list():
@@ -239,7 +239,7 @@ def test_get_types_type_checking_list():
 
 
 def function_type_checking_tuple(p1: Tuple[TypeCheckingClass1, "TypeCheckingClass2"]):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_type_checking_tuple():
@@ -250,7 +250,7 @@ def test_get_types_type_checking_tuple():
 
 
 def function_type_checking_type(p1: Type["TypeCheckingClass2"]):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_type_checking_type():
@@ -261,7 +261,7 @@ def test_get_types_type_checking_type():
 
 
 def function_type_checking_dict(p1: Dict[str, Union[TypeCheckingClass1, "TypeCheckingClass2"]]):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_type_checking_dict():
@@ -278,7 +278,7 @@ def test_get_types_type_checking_dict():
 
 
 def function_type_checking_undefined_forward_ref(p1: List["Undefined"], p2: bool):  # type: ignore  # noqa: F821
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_type_checking_undefined_forward_ref(logger):
@@ -303,7 +303,7 @@ def test_get_types_type_checking_dataclass_init_forward_ref():
 
 
 def function_source_unavailable(p1: List["TypeCheckingClass1"]):
-    return p1
+    return p1  # pragma: no cover
 
 
 def test_get_types_source_unavailable(logger):
@@ -330,7 +330,7 @@ def test_get_types_dataclass_pep585(parser):
 @dataclasses.dataclass
 class DataWithInit585(Data585):
     def __init__(self, b: Path_drw, **kwargs):
-        super().__init__(b=os.fspath(b), **kwargs)
+        super().__init__(b=os.fspath(b), **kwargs)  # pragma: no cover
 
 
 def test_add_dataclass_with_init_pep585(parser, tmp_cwd):
@@ -511,7 +511,7 @@ class TestEnrichGlobals:
             _TRIGGER_MODULE_CACHE[id(mod.OtherType)] = {"ForwardReferencedB": mod.ForwardReferencedB}
 
             class NoScanModules(dict):
-                def items(self):
+                def items(self):  # pragma: no cover
                     raise AssertionError("sys.modules should not be scanned when trigger bindings are warm")
 
             monkeypatch.setattr(postponed_annotations, "sys", SimpleNamespace(modules=NoScanModules({})))
@@ -536,7 +536,7 @@ class TestEnrichGlobals:
         _enrich_globals_for_string_forward_refs({"NT": fwdref_origin_mod.NamedType})
 
         class NoScanModules(dict):
-            def items(self):
+            def items(self):  # pragma: no cover
                 raise AssertionError("sys.modules should not be scanned when the trigger cache is warm")
 
         monkeypatch.setattr(

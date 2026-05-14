@@ -115,7 +115,7 @@ def test_parser_mode_jsonnet_import_libsonnet(parser, tmp_cwd):
 def test_parser_mode_jsonnet_subconfigs(parser, tmp_cwd):
     class Class:
         def __init__(self, name: str = "Lucky", prize: int = 100):
-            pass
+            pass  # pragma: no cover
 
     parser.parser_mode = "jsonnet"
     parser.add_class_arguments(Class, "group", sub_configs=True)

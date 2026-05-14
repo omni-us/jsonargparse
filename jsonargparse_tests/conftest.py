@@ -271,12 +271,12 @@ def get_parse_args_stderr(parser: ArgumentParser, args: List[str]) -> str:
 
 class BaseClass:
     def __init__(self):
-        pass
+        pass  # pragma: no cover
 
 
 def wrap_fn(fn):
     @wraps(fn)
     def wrapped_fn(*args, **kwargs):
-        return fn(*args, **kwargs)
+        return fn(*args, **kwargs)  # pragma: no cover
 
     return wrapped_fn

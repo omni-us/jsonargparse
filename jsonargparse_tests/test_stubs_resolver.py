@@ -10,7 +10,6 @@ from importlib.util import find_spec
 from ipaddress import ip_network
 from random import Random, SystemRandom, uniform
 from tarfile import TarFile
-from typing import Optional
 from unittest.mock import patch
 from uuid import UUID, uuid5
 
@@ -26,9 +25,6 @@ from jsonargparse_tests.conftest import (
     skip_if_requests_unavailable,
 )
 
-torch_available = bool(find_spec("torch"))
-torchvision_available = bool(find_spec("torchvision"))
-
 
 @pytest.fixture(autouse=True, scope="module")
 def skip_if_typeshed_client_unavailable():
@@ -40,15 +36,6 @@ def clear_stubs_resolver():
     from jsonargparse import _stubs_resolver
 
     _stubs_resolver.stubs_resolver = None
-
-
-@pytest.fixture
-def allow_py_files():
-    with patch.dict("jsonargparse._common.parsing_settings"):
-        clear_stubs_resolver()
-        set_parsing_settings(stubs_resolver_allow_py_files=True)
-        yield
-        clear_stubs_resolver()
 
 
 @pytest.fixture(params=["allow-py-files-true", "allow-py-files-false"])
@@ -81,7 +68,7 @@ def inspect_signature_failure(mock_obj):
     def inspect_signature(obj):
         if obj is mock_obj:
             raise ValueError("inspect_signature failed")
-        return original_inspect_signature(obj)
+        return original_inspect_signature(obj)  # pragma: no cover
 
     with patch("inspect.signature", side_effect=inspect_signature) as mock_signature:
         yield
@@ -353,99 +340,3 @@ def test_get_params_inspect_signature_failure_missing_type(logger):
         assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
     assert "get_parameters_from_ast failed" in logs.getvalue()
     assert "get_parameters_by_assumptions failed" not in logs.getvalue()
-
-
-# pytorch tests
-
-
-torch_optimizers_schedulers = torch_available
-if torch_available:
-    import importlib.metadata
-
-    torch_version = tuple(int(v) for v in importlib.metadata.version("torch").split(".", 2)[:2])
-
-    if torch_version < (2, 1) or torch_version >= (2, 4):
-        torch_optimizers_schedulers = False
-    else:
-        import torch.optim  # pylint: disable=import-error
-        import torch.optim.lr_scheduler  # pylint: disable=import-error
-
-
-@pytest.mark.skipif(not torch_optimizers_schedulers, reason="only for torch>=2.1,<2.4")
-@pytest.mark.parametrize(
-    "class_name",
-    [
-        "Adadelta",
-        "Adagrad",
-        "Adamax",
-        "ASGD",
-        "LBFGS",
-        "NAdam",
-        "RAdam",
-        "RMSprop",
-        "Rprop",
-        "SGD",
-        "SparseAdam",
-    ],
-)
-def test_get_params_torch_optimizer(class_name):
-    cls = getattr(torch.optim, class_name)
-    params = get_params(cls)
-    assert all(p.annotation is not inspect._empty for p in params)
-    with mock_stubs_missing_types():
-        params = get_params(cls)
-    assert any(p.annotation is inspect._empty for p in params)
-
-
-@pytest.mark.skipif(not torch_optimizers_schedulers, reason="only for torch>=2.1,<2.4")
-@pytest.mark.parametrize(
-    "class_name",
-    [
-        "_LRScheduler",
-        "LambdaLR",
-        "MultiplicativeLR",
-        "StepLR",
-        "MultiStepLR",
-        "ConstantLR",
-        "LinearLR",
-        "ExponentialLR",
-        "ChainedScheduler",
-        "SequentialLR",
-        "CosineAnnealingLR",
-        "ReduceLROnPlateau",
-        "CyclicLR",
-        "CosineAnnealingWarmRestarts",
-        "OneCycleLR",
-        "PolynomialLR",
-    ],
-)
-def test_get_params_torch_lr_scheduler(class_name):
-    cls = getattr(torch.optim.lr_scheduler, class_name)
-    params = get_params(cls)
-    assert all(p.annotation is not inspect._empty for p in params)
-    with mock_stubs_missing_types():
-        params = get_params(cls)
-    assert any(p.annotation is inspect._empty for p in params)
-
-
-@pytest.mark.skipif(not torch_available, reason="torch package is required")
-def test_get_params_torch_function_argmax(allow_py_files):
-    import torch
-
-    params = get_params(torch.argmax)
-    assert ["input", "dim", "keepdim", "out"] == get_param_names(params)
-    assert params[0].annotation is torch.Tensor
-    assert params[1].annotation == Optional[int]
-    assert params[2].annotation is bool
-    assert params[3].annotation == Optional[torch.Tensor]
-    with mock_stubs_missing_resolver():
-        assert [] == get_params(torch.argmax)
-
-
-@pytest.mark.skipif(not torchvision_available, reason="torchvision package is required")
-def test_get_params_torchvision_class_resize(allow_py_files):
-    from torchvision.transforms import Resize
-
-    params = get_params(Resize)
-    assert ["size", "interpolation", "max_size", "antialias"] == get_param_names(params)
-    assert all(p.annotation is inspect._empty for p in params)

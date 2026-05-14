@@ -157,7 +157,7 @@ def test_add_class_default_group_title(parser):
 
 class WithDefault:
     def __init__(self, p1: int = 1, p2: str = "-"):
-        pass
+        pass  # pragma: no cover
 
 
 def test_add_class_with_default(parser):
@@ -222,7 +222,7 @@ def test_add_class_nested_with_and_without_parameters(parser):
 
 class SkippedUnderscoreParam:
     def __init__(self, _a0=None):
-        pass
+        pass  # pragma: no cover
 
 
 def test_add_class_skipped_underscore_parameter(parser):
@@ -230,7 +230,7 @@ def test_add_class_skipped_underscore_parameter(parser):
 
 
 class WithNew:
-    def __new__(cls, a1: int = 1, a2: float = 2.3):
+    def __new__(cls, a1: int = 1, a2: float = 2.3):  # pragma: no cover
         obj = object.__new__(cls)
         obj.a1 = a1  # type: ignore[attr-defined]
         obj.a2 = a2  # type: ignore[attr-defined]
@@ -325,12 +325,12 @@ def test_add_class_conditional_kwargs(parser):
 
 class Debug1:
     def __init__(self, c1_a1: float, c1_a2: int = 1):
-        pass
+        pass  # pragma: no cover
 
 
 class Debug2(Debug1):
     def __init__(self, *args, c2_a1: int = 2, c2_a2: float = 0.2, **kwargs):
-        pass
+        pass  # pragma: no cover
 
 
 def test_add_class_skip_parameter_debug_logging(parser, logger):
@@ -416,7 +416,7 @@ Y = TypeVar("Y")
 
 
 class WithGenerics(Generic[X, Y]):
-    def __init__(self, a: X, b: Y):
+    def __init__(self, a: X, b: Y):  # pragma: no cover
         self.a = a
         self.b = b
 
@@ -527,7 +527,7 @@ def test_add_method_normal_and_static(parser):
 
 
 class SubWithMethod(WithMethods):
-    def normal_method(self, *args, p2: int = 2, **kwargs):
+    def normal_method(self, *args, p2: int = 2, **kwargs):  # pragma: no cover
         p1 = super().normal_method(**kwargs)
         return p1, p2
 
@@ -612,7 +612,7 @@ def test_add_function_arguments(parser):
 
 
 def func_skip_params(a1="1", a2: float = 2.0, a3: bool = False, a4: int = 4):
-    return a1
+    return a1  # pragma: no cover
 
 
 def test_add_function_skip_names(parser):
@@ -632,7 +632,7 @@ def test_add_function_skip_positionals_invalid(parser):
 
 
 def func_invalid_type(a1: None):
-    return a1
+    return a1  # pragma: no cover
 
 
 def test_add_function_invalid_type(parser):
@@ -642,7 +642,7 @@ def test_add_function_invalid_type(parser):
 
 
 def func_implicit_optional(a1: int = None):  # type: ignore[assignment]
-    return a1
+    return a1  # pragma: no cover
 
 
 def test_add_function_implicit_optional(parser):
@@ -651,7 +651,7 @@ def test_add_function_implicit_optional(parser):
 
 
 def func_type_as_string(a2: "int"):
-    return a2
+    return a2  # pragma: no cover
 
 
 def test_add_function_fail_untyped_true_str_type(parser):
@@ -660,7 +660,7 @@ def test_add_function_fail_untyped_true_str_type(parser):
 
 
 def func_untyped_params(a1, a2=None):
-    return a1
+    return a1  # pragma: no cover
 
 
 def test_add_function_fail_untyped_true_untyped_params(parser):
@@ -676,17 +676,13 @@ def test_add_function_fail_untyped_false(parser):
 
 
 def func_untyped_optional(a1: str, a2=None):
-    return a1
+    return a1  # pragma: no cover
 
 
 def test_add_function_fail_untyped_true_untyped_optional(parser):
     added_args = parser.add_function_arguments(func_untyped_optional, fail_untyped=True)
     assert ["a1", "a2"] == added_args
     assert Namespace(a1="x", a2=None) == parser.parse_args(["--a1=x"])
-
-
-def func_config(a1="1", a2: float = 2.0, a3: bool = False):
-    return a1
 
 
 def test_add_function_group_config(parser, tmp_cwd):
@@ -722,7 +718,7 @@ def test_add_function_group_config_within_config(parser, tmp_cwd):
 
 
 def func_param_conflict(p1: int, cfg: dict):
-    pass
+    pass  # pragma: no cover
 
 
 def test_add_function_param_conflict(parser):
@@ -733,7 +729,7 @@ def test_add_function_param_conflict(parser):
 
 
 def func_positional_and_keyword_only(a: int, /, b: int, *, c: int, d: int = 1):
-    pass
+    pass  # pragma: no cover
 
 
 def test_add_function_positional_and_keyword_only_parameters(parser):

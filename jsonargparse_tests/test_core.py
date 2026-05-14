@@ -787,7 +787,7 @@ def test_save_multifile(parser_schema_jsonnet, subtests, tmp_cwd):
 
 
 class ListItem:
-    def __init__(self, a: int, b: str):
+    def __init__(self, a: int, b: str):  # pragma: no cover
         self.a = a
         self.b = b
 

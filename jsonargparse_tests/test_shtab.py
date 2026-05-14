@@ -29,7 +29,7 @@ def skip_if_wsl_message():
     popen = subprocess.Popen(["bash", "-c", "echo"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, _ = popen.communicate()
     if "Windows Subsystem for Linux has no installed distributions" in out.decode().replace("\x00", ""):
-        pytest.skip(out.decode().replace("\x00", ""))
+        pytest.skip(out.decode().replace("\x00", ""))  # pragma: no cover
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -291,7 +291,7 @@ def test_bash_optional_file(parser, path_type):
 
 class Base:
     def __init__(self, p1: int):
-        pass
+        pass  # pragma: no cover
 
 
 def test_bash_class_config(parser):
@@ -302,12 +302,12 @@ def test_bash_class_config(parser):
 
 class SubA(Base):
     def __init__(self, p1: int, p2: AXEnum):
-        pass
+        pass  # pragma: no cover
 
 
 class SubB(Base):
     def __init__(self, p1: int, p3: float):
-        pass
+        pass  # pragma: no cover
 
 
 def test_bash_subclasses_fail_get_perams(parser, logger):
@@ -352,7 +352,7 @@ def test_bash_subclasses(parser, subtests):
 
 class Other:
     def __init__(self, o1: bool):
-        pass
+        pass  # pragma: no cover
 
 
 def test_bash_union_subclasses(parser, subtests):
@@ -372,12 +372,12 @@ def test_bash_union_subclasses(parser, subtests):
 
 class SupBase:
     def __init__(self, s1: Base):
-        pass
+        pass  # pragma: no cover
 
 
 class SupA(SupBase):
     def __init__(self, s1: Optional[Base]):
-        pass
+        pass  # pragma: no cover
 
 
 def test_bash_nested_subclasses(parser, subtests):
