@@ -375,6 +375,11 @@ class SupBase:
         pass  # pragma: no cover
 
 
+class SupA(SupBase):
+    def __init__(self, s1: Optional[Base]):
+        pass  # pragma: no cover
+
+
 def test_bash_nested_subclasses(parser, subtests):
     parser.add_argument("--cls", type=SupBase)
     shtab_script = get_shtab_script(parser, "bash")
