@@ -12,7 +12,7 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
-v4.49.0 (unreleased)
+v4.49.0 (2026-05-15)
 --------------------
 
 Added
@@ -53,14 +53,13 @@ Deprecated
 - ``Path.get_content`` is deprecated and will be removed in v5.0.0. Instead use
   ``Path.read_text`` for text and ``Path.open`` for binary content (`#906
   <https://github.com/omni-us/jsonargparse/pull/906>`__).
-- ``enable_path`` parameter of :meth:`add_argument
-  <.ArgumentParser.add_argument>` was deprecated and will be removed in
-  v5.0.0. Use ``sub_configs`` instead, which is consistent with the
-  ``sub_configs`` parameter of the signature methods,
-  :meth:`add_class_arguments <.ArgumentParser.add_class_arguments>` etc.
-  (`#907 <https://github.com/omni-us/jsonargparse/pull/907>`__).
-- ``enable_path`` parameter of :class:`.ActionJsonSchema` was deprecated and
-  will be removed in v5.0.0. Use ``sub_config`` instead (`#907
+- ``enable_path`` parameter of ``ArgumentParser.add_argument`` was deprecated
+  and will be removed in v5.0.0. Use ``sub_configs`` instead, which is
+  consistent with the ``sub_configs`` parameter of the signature methods,
+  ``ArgumentParser.add_class_arguments`` etc. (`#907
+  <https://github.com/omni-us/jsonargparse/pull/907>`__).
+- ``enable_path`` parameter of ``ActionJsonSchema`` was deprecated and will be
+  removed in v5.0.0. Use ``sub_config`` instead (`#907
   <https://github.com/omni-us/jsonargparse/pull/907>`__).
 
 
