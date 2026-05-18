@@ -101,7 +101,7 @@ class InstantiateMethod:
                             applied_instantiation_links=cfg.get("__applied_instantiation_links__"),
                         ):
                             parent[key] = component.instantiate_classes(value)
-            else:
+            elif hasattr(component, "instantiate_class"):
                 with parser_context(
                     load_value_mode=self.parser_mode,  # type: ignore[attr-defined]
                     class_instantiators=get_class_instantiators(self),

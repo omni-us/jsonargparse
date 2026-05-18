@@ -230,7 +230,7 @@ def validate_default(container: ActionsContainer, action: argparse.Action):
         from ._core import ArgumentGroup
 
         if isinstance(container, ArgumentGroup):
-            container = container.parser  # type: ignore[assignment]
+            container = container.parser
         with parser_context(parent_parser=container, validating_defaults=True):
             default = action.default
             action.default = None

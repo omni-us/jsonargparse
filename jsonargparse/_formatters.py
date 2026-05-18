@@ -59,28 +59,31 @@ class YAMLCommentFormatter:
 
     def add_yaml_comments(self, cfg: str) -> str:
         """Adds help text as yaml comments."""
+        from ._core import ArgumentParser
+
         ruyaml = import_ruamel("add_yaml_comments")
         yaml = ruyaml.YAML()
         cfg = yaml.load(cfg)
 
-        def get_subparsers(parser, prefix=""):
-            subparsers = {}
+        def get_parsers(parser: ArgumentParser, prefix="") -> dict[Optional[str], ArgumentParser]:
+            parsers = {}
             if parser._subparsers is not None:
-                for key, subparser in parser._subparsers._group_actions[0].choices.items():
+                for key, subparser in parser._subparsers._group_actions[0].choices.items():  # type: ignore[union-attr]
                     full_key = (prefix + "." if prefix else "") + key
-                    subparsers[full_key] = subparser
-                    subparsers.update(get_subparsers(subparser, prefix=full_key))
-            return subparsers
+                    parsers[full_key] = subparser
+                    parsers.update(get_parsers(subparser, prefix=full_key))
+            parsers[None] = parser
+            return parsers
 
         parser = parent_parser.get()
-        parsers = get_subparsers(parser)
-        parsers[None] = parser
+        assert isinstance(parser, ArgumentParser)
+        parsers = get_parsers(parser)
 
         group_titles = {}
-        for parser_key, parser in parsers.items():
-            group_titles[parser_key] = parser.description
-            prefix = "" if parser_key is None else parser_key + "."
-            for group in parser._action_groups:
+        for parser_n_key, parser_n in parsers.items():
+            group_titles[parser_n_key] = parser_n.description
+            prefix = "" if parser_n_key is None else parser_n_key + "."
+            for group in parser_n._action_groups:
                 actions = filter_non_parsing_actions(group._group_actions)
                 actions = [
                     a for a in actions if not isinstance(a, (_ActionConfigLoad, ActionConfigFile, ActionSubCommands))

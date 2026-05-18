@@ -304,7 +304,7 @@ class ActionTypeHint(Action):
                     discard = {typehint.__args__[n] for n, s in enumerate(subtype_supported) if not s}
                     kwargs["logger"].debug(f"Discarding unsupported subtypes {discard} from {typehint}")
                     subtypes = tuple(t for t, s in zip(typehint.__args__, subtype_supported) if s)
-                    typehint = Union[subtypes]  # type: ignore[assignment]
+                    typehint = Union[subtypes]
             self._typehint = typehint
             self._enable_path = False if is_pathlike(typehint) else enable_path
         elif "_typehint" not in kwargs:
@@ -1432,7 +1432,7 @@ def get_all_subclass_paths(cls: type) -> list[str]:
         cls = cls.__args__[-1]  # type: ignore[attr-defined]
 
     if get_typehint_origin(cls) in {Union, Type, type}:
-        for arg in cls.__args__:  # type: ignore[attr-defined]
+        for arg in cls.__args__:  # type: ignore[union-attr]
             if ActionTypeHint.is_subclass_typehint(arg, also_lists=True) and arg not in {object, type}:
                 add_subclasses(arg)
     else:

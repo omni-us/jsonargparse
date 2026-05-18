@@ -324,7 +324,7 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
     try:
         types = get_type_hints(obj, global_vars)
     except Exception as ex1:
-        types = ex1  # type: ignore[assignment]
+        types = ex1
     if isinstance(types, dict) and all(not type_requires_eval(t) for t in types.values()):
         return types
 

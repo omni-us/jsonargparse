@@ -488,7 +488,7 @@ def get_component_and_parent(
         function_or_class = function_or_class.wrapped_function  # type: ignore[union-attr]
         if isinstance(function_or_class, MethodType):
             method_or_property = function_or_class.__name__
-            function_or_class = function_or_class.__self__  # type: ignore[assignment]
+            function_or_class = function_or_class.__self__
         else:
             method_or_property = None
     elif inspect.isclass(get_generic_origin(function_or_class)) and method_or_property is None:
@@ -1052,7 +1052,7 @@ def get_parameters_from_stubs(
         return None
     except Exception:
         pass  # only from stubs if getting signature fails
-    params = None
+    params: Optional[ParamList] = None
     resolver = get_stubs_resolver()
     stub_import = resolver.get_component_imported_info(component, parent)
     if stub_import:
