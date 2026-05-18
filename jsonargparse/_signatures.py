@@ -124,7 +124,7 @@ class SignatureArguments(LoggerProperty):
                 if skip_not_added:
                     skip.update(skip_not_added)  # skip init=False
             if defaults:
-                defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}
+                defaults = {prefix + k: v for k, v in defaults.items() if k not in skip}  # type: ignore[union-attr]
                 self.set_defaults(**defaults)  # type: ignore[attr-defined]
 
         return added_args
@@ -483,7 +483,7 @@ class SignatureArguments(LoggerProperty):
             ValueError: When given an invalid base class.
         """
         if type(baseclass) is not tuple:
-            baseclass = (baseclass,)  # type: ignore[assignment]
+            baseclass = (baseclass,)
         assert isinstance(baseclass, tuple)
         if not baseclass or not all(ActionTypeHint.is_subclass_typehint(c, also_lists=True) for c in baseclass):
             raise ValueError(f"Expected 'baseclass' to be a subclass type or a tuple of subclass types: {baseclass}")

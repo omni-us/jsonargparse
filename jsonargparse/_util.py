@@ -182,7 +182,7 @@ def import_object(name: str):
     return getattr(parent, name_object)
 
 
-unresolvable_import_paths = {}
+unresolvable_import_paths: dict[Any, str] = {}
 
 
 def register_unresolvable_import_paths(*modules: ModuleType):
