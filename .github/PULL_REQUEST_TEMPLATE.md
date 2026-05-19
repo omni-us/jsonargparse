@@ -30,8 +30,10 @@ task is not relevant or leave empty when in doubt.
 -->
 
 - [ ] Did you read the [contributing guideline](https://github.com/omni-us/jsonargparse/blob/main/CONTRIBUTING.rst)?
+- [ ] If you used a **coding agent**, did you fully understand and validate all generated code and ensure it follows the contributing guidelines?
 - [ ] Did you update **the documentation**? (readme and public docstrings)
 - [ ] Did you write **unit tests** such that there is 100% coverage on related code? (required for bug fixes and new features)
 - [ ] Did you verify that new and existing **tests pass locally**?
+- [ ] If this is a **bug fix**, did you verify that the **tests fail without the code fix**?
 - [ ] Did you make sure that all changes preserve **backward compatibility**?
 - [ ] Did you update **the CHANGELOG** including a pull request link? (not for typos, docs, test updates, or minor internal changes/refactors)

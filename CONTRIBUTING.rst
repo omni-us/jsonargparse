@@ -95,14 +95,31 @@ To build the documentation run:
 To view the built documentation, open the file ``sphinx/_build/index.html`` in a
 browser.
 
+Code conventions
+----------------
+
+**Public vs. private naming**
+
+Most module filenames start with ``_``, meaning they are private implementation
+details. For objects within modules, the ``_`` prefix indicates the object is
+only used within that same module. An object without a ``_`` prefix may be
+imported by other modules but that does not make it public — it is simply
+internal to the package. The only truly public objects are those listed in
+``jsonargparse.__all__`` and ``jsonargparse.typing.__all__``.
+
+**Type annotations and docstrings**
+
+New source code should be fully type annotated. Docstrings should follow `Google
+style
+<https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings>`__.
+
 Tests
 -----
 
 Running the unit tests can be done either using `pytest
 <https://docs.pytest.org/>`__ or `tox
-<https://tox.readthedocs.io/en/stable/>`__. The tests are also installed with
-the package and can be run in a non-development environment. Also pre-commit
-runs some additional tests.
+<https://tox.readthedocs.io/en/stable/>`__. Also pre-commit runs some additional
+tests.
 
 .. code-block:: bash
 
@@ -121,6 +138,14 @@ the main package. For example, for v4.47.0 run:
     pip install jsonargparse_tests==4.47.0
     python -m jsonargparse_tests
 
+All contributed features and bug fixes must include tests. For bug fixes, ensure
+the test fails without the code fix. Almost always tests should exercise only
+the public API. Testing internal functions directly is rarely justified and
+should be avoided. For tests involving signatures, define the classes and
+functions used at the global module scope. Jsonargparse is not intended to
+support dynamically defined classes and functions, so there is no value in
+testing such cases.
+
 For maintainable tests:
 
 - Prefer ``pytest.mark.parametrize`` when the same test logic is exercised with
@@ -131,6 +156,9 @@ For maintainable tests:
   harder to read.
 - Keep setup separate from assertions so each test clearly shows the behavior
   being verified.
+- The pytest output must be clean. If a test causes log output, the logs must
+  be captured and asserted using the ``logger`` fixture and ``capture_logs``
+  context manager from ``conftest.py``.
 
 
 Coverage
@@ -188,3 +216,9 @@ should go. If you are unsure, ask in the pull request.
 
 Please don't open pull requests with breaking changes unless this has been
 discussed and agreed upon in an issue.
+
+Contributions using coding agents are welcome. However, any agent-generated
+code must be fully understood by the submitter and must make sense and follow
+these contributing guidelines. Always ask the agent to read and follow these
+guidelines. Also ask to read ``.github/PULL_REQUEST_TEMPLATE.md`` so that the
+tasks before submitting are covered.
