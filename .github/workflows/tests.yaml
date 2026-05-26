@@ -69,7 +69,7 @@ jobs:
       - run: tox -e py-argparse
 
   windows:
-    runs-on: windows-2025
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
@@ -84,7 +84,7 @@ jobs:
       - run: tox -e py-all-extras
 
   macos:
-    runs-on: macOS-15
+    runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
