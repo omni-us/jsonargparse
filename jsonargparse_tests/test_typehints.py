@@ -860,7 +860,7 @@ def test_mapping_default_mapping_proxy_type(parser):
 
 
 def test_ordered_dict(parser):
-    parser.add_argument("--odict", type=eval("OrderedDict[str, int]"))
+    parser.add_argument("--odict", type=OrderedDict[str, int])
     cfg = parser.parse_args(['--odict={"a":1, "b":2}'])
     assert isinstance(cfg.odict, OrderedDict)
     assert OrderedDict([("a", 1), ("b", 2)]) == cfg.odict
@@ -912,17 +912,15 @@ def test_union_unsupported_subtype(parser, logger):
     assert "Discarding unsupported subtypes" in logs.getvalue()
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="new union syntax introduced in python 3.10")
 def test_union_new_syntax_simple_types(parser):
-    parser.add_argument("--val", type=eval("int | None"))
+    parser.add_argument("--val", type=int | None)
     assert 123 == parser.parse_args(["--val=123"]).val
     assert None is parser.parse_args(["--val=null"]).val
     pytest.raises(ArgumentError, lambda: parser.parse_args(["--val=abc"]))
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="new union syntax introduced in python 3.10")
 def test_union_new_syntax_subclass_type(parser):
-    parser.add_argument("--op", type=eval("Calendar | bool"))
+    parser.add_argument("--op", type=Calendar | bool)
     help_str = get_parse_args_stdout(parser, ["--op.help=calendar.TextCalendar"])
     assert "--op.firstweekday" in help_str
 

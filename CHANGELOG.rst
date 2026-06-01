@@ -12,6 +12,15 @@ The semantic versioning only considers the public API as described in
 paths are considered internals and can change in minor and patch releases.
 
 
+v4.50.0 (unreleased)
+--------------------
+
+Changed
+^^^^^^^
+- Drop support for Python 3.9. The minimum supported Python version is now
+  3.10 (`#916 <https://github.com/omni-us/jsonargparse/pull/916>`__).
+
+
 v4.49.0 (2026-05-15)
 --------------------
 

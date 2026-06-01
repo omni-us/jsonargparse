@@ -6,12 +6,7 @@ import os
 import pathlib
 import re
 import sys
-from typing import Any, Callable, Optional, Union, get_type_hints
-
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias as _TypeAlias
-else:
-    _TypeAlias = type
+from typing import Any, Callable, Optional, TypeAlias, Union, get_type_hints
 
 from ._common import ClassType, is_final_class, is_subclass, path_dump_preserve_relative
 from ._namespace import Namespace
@@ -227,7 +222,7 @@ def extend_base_type(
     docstring: Optional[str] = None,
     extra_attrs: Optional[dict] = None,
     register_key: Optional[tuple] = None,
-) -> _TypeAlias:
+) -> TypeAlias:
     """Creates and registers an extension of base type.
 
     Args:
@@ -272,7 +267,7 @@ def restricted_number_type(
     restrictions: Union[tuple, list[tuple]],
     join: str = "and",
     docstring: Optional[str] = None,
-) -> _TypeAlias:
+) -> TypeAlias:
     """Creates or returns an already registered restricted number type class.
 
     Args:
@@ -343,7 +338,7 @@ def restricted_string_type(
     name: str,
     regex: Union[str, re.Pattern],
     docstring: Optional[str] = None,
-) -> _TypeAlias:
+) -> TypeAlias:
     """Creates or returns an already registered restricted string type class.
 
     Args:
@@ -393,7 +388,7 @@ def _serialize_path(path: Path):
     return str(path)
 
 
-def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlias:
+def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> TypeAlias:
     """Creates or returns an already registered path type class.
 
     Args:

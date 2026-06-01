@@ -2,7 +2,6 @@ import ast
 import dataclasses
 import inspect
 import logging
-import sys
 import textwrap
 from collections import defaultdict
 from contextlib import contextmanager, suppress
@@ -309,8 +308,6 @@ def replace_generic_type_vars(params: ParamList, parent) -> None:
                 return type_vars[annotation]
             if getattr(annotation, "__args__", None):
                 origin = annotation.__origin__
-                if sys.version_info < (3, 10) and getattr(origin, "__module__", "") != "typing":
-                    origin = getattr(__import__("typing"), origin.__name__.capitalize(), origin)
                 return origin[tuple(replace_type_vars(a) for a in annotation.__args__)]
             return annotation
 

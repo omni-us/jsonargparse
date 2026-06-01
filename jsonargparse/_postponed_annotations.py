@@ -3,66 +3,15 @@ import inspect
 import logging
 import sys
 import textwrap
-from collections import namedtuple
-from copy import deepcopy
 from dataclasses import is_dataclass
 from importlib import import_module
-from typing import Any, ForwardRef, Optional, Union, get_type_hints
+from typing import Any, ForwardRef, Optional, TypeAlias, Union, get_type_hints
 
-from ._optionals import typing_extensions_import
 from ._typehints import mapping_origin_types, sequence_origin_types, tuple_set_origin_types
 from ._util import get_typehint_origin
 
-var_map = namedtuple("var_map", "name value")
-none_map = var_map(name="NoneType", value=type(None))
-union_map = var_map(name="Union", value=Union)
 _TRIGGER_MODULE_CACHE_MAXSIZE = 1024
 _TRIGGER_MODULE_CACHE: dict[int, dict[str, Any]] = {}
-
-
-class BackportTypeHints(ast.NodeTransformer):
-    def visit_Constant(self, node: ast.Constant) -> Union[ast.Constant, ast.Name]:
-        if node.value is None:
-            return self.new_name_load(none_map)
-        return node
-
-    def visit_BinOp(self, node: ast.BinOp) -> Union[ast.BinOp, ast.Subscript]:
-        out_node: Union[ast.BinOp, ast.Subscript] = node
-        if isinstance(node.op, ast.BitOr):
-            elts: list = []
-            self.append_union_elts(node.left, elts)
-            self.append_union_elts(node.right, elts)
-            out_node = ast.Subscript(
-                value=self.new_name_load(union_map),
-                slice=ast.Index(  # type: ignore[arg-type,call-arg]
-                    value=ast.Tuple(elts=elts, ctx=ast.Load()),
-                    ctx=ast.Load(),
-                ),
-                ctx=ast.Load(),
-            )
-        return out_node
-
-    def append_union_elts(self, node: ast.AST, elts: list) -> None:
-        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
-            self.append_union_elts(node.left, elts)
-            self.append_union_elts(node.right, elts)
-        else:
-            elts.append(self.visit(node))
-
-    def new_name_load(self, var: var_map) -> ast.Name:
-        name = f"_{self.__class__.__name__}_{var.name}"
-        self.exec_vars[name] = var.value
-        return ast.Name(id=name, ctx=ast.Load())
-
-    def backport(self, input_ast: ast.AST, exec_vars: dict) -> ast.AST:
-        typing = __import__("typing")
-        for key, value in exec_vars.items():
-            if getattr(value, "__module__", "") == "collections.abc":
-                if hasattr(typing, key):
-                    exec_vars[key] = getattr(typing, key)
-        self.exec_vars = exec_vars
-        backport_ast = self.visit(deepcopy(input_ast))
-        return ast.fix_missing_locations(backport_ast)
 
 
 class NamesVisitor(ast.NodeVisitor):
@@ -158,12 +107,7 @@ def get_arg_type(arg_ast, aliases):
                 exec_vars[name] = value
         type_ast.body = body + type_ast.body
         if "TypeAlias" not in exec_vars:
-            type_alias = typing_extensions_import("TypeAlias")
-            if type_alias:
-                exec_vars["TypeAlias"] = type_alias
-    if sys.version_info < (3, 10):
-        backporter = BackportTypeHints()
-        type_ast = backporter.backport(type_ast, exec_vars)
+            exec_vars["TypeAlias"] = TypeAlias
     try:
         exec(compile(type_ast, filename="<ast>", mode="exec"), exec_vars, exec_vars)
     except NameError as ex:
@@ -325,7 +269,7 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
         types = get_type_hints(obj, global_vars)
     except Exception as ex1:
         types = ex1
-    if isinstance(types, dict) and all(not type_requires_eval(t) for t in types.values()):
+    if not isinstance(types, Exception) and all(not type_requires_eval(t) for t in types.values()):
         return types
 
     try:
@@ -335,11 +279,9 @@ def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
         node = tree.body[0]
         assert isinstance(node, (ast.FunctionDef, ast.ClassDef))
     except Exception as ex2:
-        if isinstance(types, Exception):
-            if logger:
-                logger.debug(f"Failed to parse the source code for {obj}", exc_info=ex2)
-            raise type(types)(f"{repr(types)} + {repr(ex2)}") from ex2
-        return types
+        if logger:
+            logger.debug(f"Failed to parse the source code for {obj}", exc_info=ex2)
+        raise type(types)(f"{repr(types)} + {repr(ex2)}") from ex2  # type: ignore[misc,arg-type]
 
     aliases = __builtins__.copy()  # type: ignore[attr-defined]
     aliases.update(global_vars)

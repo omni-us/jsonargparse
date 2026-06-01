@@ -35,12 +35,12 @@ def function_pep604(p1: str | None, p2: int | float | bool = 1):
     return p1  # pragma: no cover
 
 
-def test_get_types_pep604():
+def test_get_types_function_pep604():
     types = get_types(function_pep604)
-    assert types == {"p1": Union[str, None], "p2": Union[int, float, bool]}
+    assert types == {"p1": str | None, "p2": int | float | bool}
 
 
-class NeedsBackport:
+class ClassPep604:
     def __init__(self, p1: list | set):
         self.p1 = p1  # pragma: no cover
 
@@ -56,23 +56,14 @@ class NeedsBackport:
 @pytest.mark.parametrize(
     ["method", "expected"],
     [
-        (NeedsBackport.__init__, {"p1": Union[list, set]}),
-        (NeedsBackport.static_method, {"p1": Union[str, int]}),
-        (NeedsBackport.class_method, {"p1": Union[float, None]}),
+        (ClassPep604.__init__, {"p1": list | set}),
+        (ClassPep604.static_method, {"p1": str | int}),
+        (ClassPep604.class_method, {"p1": float | None}),
     ],
 )
-def test_get_types_methods(method, expected):
+def test_get_types_methods_pep604(method, expected):
     types = get_types(method)
     assert types == expected
-
-
-def function_forward_ref(cls: "NeedsBackport", p1: "int"):
-    return cls  # pragma: no cover
-
-
-def test_get_types_forward_ref():
-    types = get_types(function_forward_ref)
-    assert types == {"cls": NeedsBackport, "p1": int}
 
 
 def function_undefined_type(p1: not_defined | None, p2: int):  # type: ignore  # noqa: F821
@@ -275,6 +266,31 @@ def test_get_types_type_checking_dict():
         )
     else:
         assert str(types["p1"]) == f"{dct}[str, {__name__}.TypeCheckingClass1 | {__name__}.TypeCheckingClass2]"
+
+
+class DefinedClass:
+    pass
+
+
+def function_forward_ref(cls: "DefinedClass", p1: "int"):
+    return cls  # pragma: no cover
+
+
+def test_get_types_forward_ref():
+    types = get_types(function_forward_ref)
+    assert types == {"cls": DefinedClass, "p1": int}
+
+
+def function_nested_partial_forward_ref(
+    p1: List[List["DefinedClass"]],
+    p2: "Undefined",  # type: ignore[name-defined]  # noqa: F821
+):
+    pass
+
+
+def test_nested_partial_forward_ref(parser):
+    types = get_types(function_nested_partial_forward_ref)
+    assert types == {"p1": list[list[DefinedClass]], "p2": "Undefined"}
 
 
 def function_type_checking_undefined_forward_ref(p1: List["Undefined"], p2: bool):  # type: ignore  # noqa: F821

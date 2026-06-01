@@ -443,9 +443,11 @@ Some notes about this support are:
   limit in nesting depth.
 
 - Postponed evaluation of types PEP `563 <https://peps.python.org/pep-0563/>`__
-  (i.e. ``from __future__ import annotations``) is supported. Also supported on
-  ``python==3.9`` is PEP `604 <https://peps.python.org/pep-0604/>`__ (i.e.
-  ``<type> | <type>`` instead of ``Union[<type>, <type>]``).
+  (i.e. ``from __future__ import annotations``) is supported. Also supported are
+  PEP `585 <https://peps.python.org/pep-0585/>`__ (i.e. ``list[<type>],
+  dict[<type>], ...`` instead of ``List[<type>], Dict[<type>], ...``) and `604
+  <https://peps.python.org/pep-0604/>`__ (i.e. ``<type> | <type>`` instead of
+  ``Union[<type>, <type>]``).
 
 - Types that use components imported inside ``TYPE_CHECKING`` blocks are
   supported.
@@ -1875,9 +1877,7 @@ jsonargparse with the ``signatures`` extra as explained in section
 
 Many of the types defined in stub files use the latest syntax for type hints,
 that is, bitwise or operator ``|`` for unions, see PEP `604
-<https://peps.python.org/pep-0604>`__. On ``python>=3.10`` these are fully
-supported. On ``python<=3.9`` backporting these types is attempted and in some
-cases it can fail. On failure the type annotation is set to ``Any``.
+<https://peps.python.org/pep-0604>`__. This syntax is fully supported.
 
 Most of the types in the Python standard library have their types in stubs. An
 example from the standard library would be:
