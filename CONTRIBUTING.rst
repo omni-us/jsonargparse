@@ -125,7 +125,6 @@ tests.
 
     tox                                      # Run tests using tox on available python versions
     pytest                                   # Run tests using pytest on the python of the environment
-    pytest --cov                             # Run tests and generate coverage report
     pre-commit run -a --hook-stage pre-push  # Run pre-push git hooks (tests, doctests, mypy, coverage)
 
 Tests can be run in any environment without the source code. Before v4.47.0, the

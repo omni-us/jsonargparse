@@ -82,7 +82,7 @@ import tempfile
 from calendar import Calendar
 from dataclasses import dataclass
 from io import StringIO
-from typing import Callable, Iterable, List, Protocol
+from typing import Callable, Iterable, Protocol
 import jsonargparse_tests
 from jsonargparse import *
 from jsonargparse import _common

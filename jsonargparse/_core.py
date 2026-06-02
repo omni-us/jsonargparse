@@ -11,7 +11,6 @@ from contextlib import suppress
 from typing import (
     Any,
     NoReturn,
-    Union,
 )
 
 from ._actions import (
@@ -226,7 +225,7 @@ class ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     """Extension of argparse._ArgumentGroup to support additional functionalities."""
 
     dest: str | None = None
-    parser: Union["ArgumentParser", ActionsContainer] | None = None
+    parser: "ArgumentParser | ActionsContainer | None" = None
 
 
 class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentParser):

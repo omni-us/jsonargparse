@@ -1,3 +1,5 @@
+# Only ignore files produced by working as described in CONTRIBUTING.rst.
+# For other untracked files, consider `git config status.showUntrackedFiles no`.
 __pycache__
 *.egg-info
 .coverage
@@ -12,15 +14,3 @@ build
 dist
 htmlcov
 **/tests_argparse*
-
-# JetBrains IDEs
-.idea/
-
-# some agnetic files
-.claude/logs/
-.claude/state/
-tasks/
-*.local.md
-
-# local dev environment files
-uv.lock

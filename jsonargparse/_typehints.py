@@ -28,7 +28,6 @@ from typing import (
     MutableSequence,
     MutableSet,
     NoReturn,
-    Optional,
     Sequence,
     Set,
     Tuple,
@@ -281,7 +280,7 @@ def cached_get_class_parser(*, val_class, sub_add_kwargs, skip_args, parent_pars
 class ActionTypeHint(Action):
     """Action to parse a type hint."""
 
-    def __init__(self, typehint: Optional[type] = None, enable_path: bool = False, **kwargs):
+    def __init__(self, typehint: type | None = None, enable_path: bool = False, **kwargs):
         """Initializer for ActionTypeHint instance.
 
         Args:
@@ -763,7 +762,7 @@ def is_list_pathlike(typehint) -> bool:
     return False
 
 
-def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: Optional[Exception] = None) -> NoReturn:
+def raise_unexpected_value(message: str, val: Any = inspect._empty, exception: Exception | None = None) -> NoReturn:
     if val is not inspect._empty:
         message += f". Got value: {val}"
     raise ValueError(message) from exception
@@ -1441,7 +1440,7 @@ def get_all_subclass_paths(cls: type) -> list[str]:
     return subclass_list
 
 
-def resolve_class_path_by_name(cls: Union[type, tuple[type]], name: str) -> str:
+def resolve_class_path_by_name(cls: type | tuple[type], name: str) -> str:
     class_path = name
     if "." not in class_path:
         if isinstance(cls, tuple):
