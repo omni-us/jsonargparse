@@ -3,12 +3,12 @@ import os
 import platform
 import re
 import sys
+from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
 from functools import wraps
 from importlib.util import find_spec
 from io import StringIO
 from pathlib import Path
-from typing import Iterator, List
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -254,14 +254,14 @@ def get_parser_help(parser: ArgumentParser, strip=False, columns=columns) -> str
     return out.getvalue()
 
 
-def get_parse_args_stdout(parser: ArgumentParser, args: List[str]) -> str:
+def get_parse_args_stdout(parser: ArgumentParser, args: list[str]) -> str:
     out = StringIO()
     with patch.dict(os.environ, {"COLUMNS": columns}), redirect_stdout(out), pytest.raises(SystemExit):
         parser.parse_args(args)
     return out.getvalue()
 
 
-def get_parse_args_stderr(parser: ArgumentParser, args: List[str]) -> str:
+def get_parse_args_stderr(parser: ArgumentParser, args: list[str]) -> str:
     err = StringIO()
     with patch.object(parser, "exit_on_error", return_value=True):
         with patch.dict(os.environ, {"COLUMNS": columns}), redirect_stderr(err), pytest.raises(SystemExit):

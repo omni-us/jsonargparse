@@ -6,13 +6,11 @@ import inspect
 import logging
 import os
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from contextlib import suppress
 from typing import (
     Any,
-    Callable,
     NoReturn,
-    Optional,
     Union,
 )
 
@@ -168,7 +166,7 @@ class ActionsContainer(ArgumentLinking, InstantiateMethod, SignatureArguments, a
         validate_default(self, action)
         return action
 
-    def add_argument_group(self, *args, name: Optional[str] = None, **kwargs) -> "ArgumentGroup":
+    def add_argument_group(self, *args, name: str | None = None, **kwargs) -> "ArgumentGroup":
         """Adds a group to the parser.
 
         All the arguments from `argparse.ArgumentParser.add_argument_group
@@ -227,29 +225,29 @@ class ActionsContainer(ArgumentLinking, InstantiateMethod, SignatureArguments, a
 class ArgumentGroup(ActionsContainer, argparse._ArgumentGroup):
     """Extension of argparse._ArgumentGroup to support additional functionalities."""
 
-    dest: Optional[str] = None
-    parser: Optional[Union["ArgumentParser", ActionsContainer]] = None
+    dest: str | None = None
+    parser: Union["ArgumentParser", ActionsContainer] | None = None
 
 
 class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentParser):
     """Parser for command line, configuration files and environment variables."""
 
     formatter_class: type[argparse.HelpFormatter]
-    groups: Optional[dict[str, ArgumentGroup]] = None
+    groups: dict[str, ArgumentGroup] | None = None
     _group_class: type[ArgumentGroup]
-    _subcommands_action: Optional[ActionSubCommands] = None
+    _subcommands_action: ActionSubCommands | None = None
 
     def __init__(
         self,
         *args,
-        env_prefix: Union[bool, str] = True,
+        env_prefix: bool | str = True,
         formatter_class: type[argparse.HelpFormatter] = DefaultHelpFormatter,
-        logger: Union[logging.Logger, bool, str, dict] = False,
-        version: Optional[str] = None,
-        print_config: Optional[str] = "--print_config",
+        logger: logging.Logger | bool | str | dict = False,
+        version: str | None = None,
+        print_config: str | None = "--print_config",
         parser_mode: str = "yaml" if pyyaml_available else "json",
-        dump_header: Optional[list[str]] = None,
-        default_config_files: Optional[list[Union[str, os.PathLike]]] = None,
+        dump_header: list[str] | None = None,
+        default_config_files: list[str | os.PathLike] | None = None,
         default_env: bool = False,
         **kwargs,
     ) -> None:
@@ -335,7 +333,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
     def _parse_common(
         self,
         cfg: Namespace,
-        env: Optional[bool],
+        env: bool | None,
         defaults: bool,
         skip_validation: bool,
         skip_required: bool = False,
@@ -385,8 +383,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
     def _parse_defaults_and_environ(
         self,
         defaults: bool = True,
-        env: Optional[bool] = None,
-        environ: Optional[Union[dict[str, str], os._Environ]] = None,
+        env: bool | None = None,
+        environ: dict[str, str] | os._Environ | None = None,
     ):
         cfg = Namespace()
         if defaults:
@@ -404,9 +402,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
     def parse_args(  # type: ignore[override]
         self,
-        args: Optional[Sequence[str]] = None,
-        namespace: Optional[Namespace] = None,
-        env: Optional[bool] = None,
+        args: Sequence[str] | None = None,
+        namespace: Namespace | None = None,
+        env: bool | None = None,
         defaults: bool = True,
         **kwargs,
     ) -> Namespace:
@@ -475,9 +473,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
     def parse_object(
         self,
-        cfg_obj: Union[Namespace, dict[str, Any]],
-        cfg_base: Optional[Namespace] = None,
-        env: Optional[bool] = None,
+        cfg_obj: Namespace | dict[str, Any],
+        cfg_base: Namespace | None = None,
+        env: bool | None = None,
         defaults: bool = True,
         **kwargs,
     ) -> Namespace:
@@ -519,7 +517,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         self._logger.debug("Parsed object: %s", cfg_obj)
         return parsed_cfg
 
-    def _load_env_vars(self, env: Union[dict[str, str], os._Environ], defaults: bool) -> Namespace:
+    def _load_env_vars(self, env: dict[str, str] | os._Environ, defaults: bool) -> Namespace:
         cfg = Namespace()
         actions = filter_non_parsing_actions(self._actions)
         for action in actions:
@@ -561,7 +559,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
     def parse_env(
         self,
-        env: Optional[dict[str, str]] = None,
+        env: dict[str, str] | None = None,
         defaults: bool = True,
         **kwargs,
     ) -> Namespace:
@@ -601,9 +599,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
     def parse_path(
         self,
-        cfg_path: Union[str, os.PathLike],
-        ext_vars: Optional[dict] = None,
-        env: Optional[bool] = None,
+        cfg_path: str | os.PathLike,
+        ext_vars: dict | None = None,
+        env: bool | None = None,
         defaults: bool = True,
         **kwargs,
     ) -> Namespace:
@@ -639,9 +637,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
     def parse_string(
         self,
         cfg_str: str,
-        cfg_path: Union[str, os.PathLike] = "",
-        ext_vars: Optional[dict] = None,
-        env: Optional[bool] = None,
+        cfg_path: str | os.PathLike = "",
+        ext_vars: dict | None = None,
+        env: bool | None = None,
         defaults: bool = True,
         **kwargs,
     ) -> Namespace:
@@ -689,9 +687,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
     def _load_config_parser_mode(
         self,
         cfg_str: str,
-        cfg_path: Union[str, os.PathLike] = "",
-        ext_vars: Optional[dict] = None,
-        prev_cfg: Optional[Namespace] = None,
+        cfg_path: str | os.PathLike = "",
+        ext_vars: dict | None = None,
+        prev_cfg: Namespace | None = None,
     ) -> Namespace:
         """Loads a configuration string into a namespace.
 
@@ -859,13 +857,13 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
     def save(
         self,
         cfg: Namespace,
-        path: Union[str, os.PathLike],
+        path: str | os.PathLike,
         format: str = "parser_mode",
         skip_none: bool = True,
         skip_validation: bool = False,
         overwrite: bool = False,
         multifile: bool = True,
-        branch: Optional[str] = None,
+        branch: str | None = None,
         **kwargs,
     ) -> None:
         """Writes to file(s) the given configuration object using the chosen format.
@@ -1097,7 +1095,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
     ## Other methods ##
 
-    def error(self, message: str, ex: Optional[Exception] = None) -> NoReturn:
+    def error(self, message: str, ex: Exception | None = None) -> NoReturn:
         """Logs error message if a logger is set and exits or raises an :class:`ArgumentError`."""
         self._logger.error(message)
         if callable(self._error_handler):
@@ -1126,7 +1124,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         cfg: Namespace,
         skip_none: bool = True,
         skip_required: bool = False,
-        branch: Optional[str] = None,
+        branch: str | None = None,
         **kwargs,
     ) -> None:
         """Checks that the content of a given configuration object conforms with the parser.
@@ -1274,10 +1272,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
     def _apply_actions(
         self,
-        cfg: Union[Namespace, dict[str, Any]],
+        cfg: Namespace | dict[str, Any],
         parent_key: str = "",
-        prev_cfg: Optional[Namespace] = None,
-        skip_fn: Optional[Callable[[Any], bool]] = None,
+        prev_cfg: Namespace | None = None,
+        skip_fn: Callable[[Any], bool] | None = None,
     ) -> Namespace:
         """Runs _check_value_key on actions present in config."""
         if isinstance(cfg, dict):
@@ -1363,7 +1361,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         return cfg_to
 
     def _check_value_key(
-        self, action: argparse.Action, value: Any, key: str, cfg: Optional[Namespace], append: bool = False
+        self, action: argparse.Action, value: Any, key: str, cfg: Namespace | None, append: bool = False
     ) -> Any:
         """Checks the value for a given action.
 
@@ -1422,7 +1420,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         return self._default_config_files
 
     @default_config_files.setter
-    def default_config_files(self, default_config_files: Optional[Sequence[Union[str, os.PathLike]]]):
+    def default_config_files(self, default_config_files: Sequence[str | os.PathLike] | None):
         if default_config_files is None:
             self._default_config_files = []
         elif isinstance(default_config_files, list) and all(
@@ -1472,7 +1470,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                 subparser.default_env = self._default_env
 
     @property
-    def env_prefix(self) -> Union[bool, str]:
+    def env_prefix(self) -> bool | str:
         """The environment variables prefix property.
 
         :getter: Returns the current environment variables prefix.
@@ -1484,7 +1482,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         return self._env_prefix
 
     @env_prefix.setter
-    def env_prefix(self, env_prefix: Union[bool, str]):
+    def env_prefix(self, env_prefix: bool | str):
         if env_prefix is None:
             from ._deprecated import (
                 deprecation_warning,
@@ -1524,7 +1522,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                 subparser.parser_mode = parser_mode
 
     @property
-    def dump_header(self) -> Optional[list[str]]:
+    def dump_header(self) -> list[str] | None:
         """Header to include as comment when dumping a config object.
 
         :getter: Returns the current dump header.
@@ -1536,7 +1534,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         return self._dump_header
 
     @dump_header.setter
-    def dump_header(self, dump_header: Optional[list[str]]):
+    def dump_header(self, dump_header: list[str] | None):
         if not (
             dump_header is None or (isinstance(dump_header, list) and all(isinstance(x, str) for x in dump_header))
         ):

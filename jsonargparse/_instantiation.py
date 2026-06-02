@@ -1,5 +1,4 @@
 import inspect
-from typing import Union
 
 from ._common import (
     ClassType,
@@ -64,7 +63,7 @@ class InstantiateMethod:
         from ._subcommands import get_subcommand
         from ._typehints import ActionTypeHint
 
-        components: list[Union[ActionTypeHint, _ActionConfigLoad, ArgumentGroup]] = []
+        components: list[ActionTypeHint | _ActionConfigLoad | ArgumentGroup] = []
         for action in filter_non_parsing_actions(self._actions):  # type: ignore[attr-defined]
             if isinstance(action, ActionTypeHint):
                 components.append(action)

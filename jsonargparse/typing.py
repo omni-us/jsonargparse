@@ -6,12 +6,8 @@ import os
 import pathlib
 import re
 import sys
-from typing import Any, Callable, Optional, Union, get_type_hints
-
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias as _TypeAlias
-else:
-    _TypeAlias = type
+from collections.abc import Callable
+from typing import Any, TypeAlias, Union, get_type_hints
 
 from ._common import ClassType, is_final_class, is_subclass, path_dump_preserve_relative
 from ._namespace import Namespace
@@ -71,8 +67,8 @@ registration_pending: dict[str, Callable] = {}
 
 def class_from_function(
     func: Callable[..., ClassType],
-    func_return: Optional[type[ClassType]] = None,
-    name: Optional[str] = None,
+    func_return: type[ClassType] | None = None,
+    name: str | None = None,
 ) -> type[ClassType]:
     """Creates a dynamic class which if instantiated is equivalent to calling func.
 
@@ -224,10 +220,10 @@ def extend_base_type(
     name: str,
     base_type: type,
     validation_fn: Callable,
-    docstring: Optional[str] = None,
-    extra_attrs: Optional[dict] = None,
-    register_key: Optional[tuple] = None,
-) -> _TypeAlias:
+    docstring: str | None = None,
+    extra_attrs: dict | None = None,
+    register_key: tuple | None = None,
+) -> TypeAlias:
     """Creates and registers an extension of base type.
 
     Args:
@@ -267,12 +263,12 @@ def extend_base_type(
 
 
 def restricted_number_type(
-    name: Optional[str],
+    name: str | None,
     base_type: type,
-    restrictions: Union[tuple, list[tuple]],
+    restrictions: tuple | list[tuple],
     join: str = "and",
-    docstring: Optional[str] = None,
-) -> _TypeAlias:
+    docstring: str | None = None,
+) -> TypeAlias:
     """Creates or returns an already registered restricted number type class.
 
     Args:
@@ -341,9 +337,9 @@ def restricted_number_type(
 
 def restricted_string_type(
     name: str,
-    regex: Union[str, re.Pattern],
-    docstring: Optional[str] = None,
-) -> _TypeAlias:
+    regex: str | re.Pattern,
+    docstring: str | None = None,
+) -> TypeAlias:
     """Creates or returns an already registered restricted string type class.
 
     Args:
@@ -393,7 +389,7 @@ def _serialize_path(path: Path):
     return str(path)
 
 
-def path_type(mode: str, docstring: Optional[str] = None, **kwargs) -> _TypeAlias:
+def path_type(mode: str, docstring: str | None = None, **kwargs) -> TypeAlias:
     """Creates or returns an already registered path type class.
 
     Args:
@@ -443,8 +439,8 @@ class RegisteredType:
         self,
         type_class: _TypeClass,
         serializer: Callable,
-        deserializer: Optional[Callable],
-        deserializer_exceptions: Union[type[Exception], tuple[type[Exception], ...]],
+        deserializer: Callable | None,
+        deserializer_exceptions: type[Exception] | tuple[type[Exception], ...],
         type_check: Callable,
     ):
         self.type_class = type_class
@@ -472,15 +468,15 @@ class RegisteredType:
 def register_type(
     type_class: _TypeClass,
     serializer: Callable = str,
-    deserializer: Optional[Callable] = None,
-    deserializer_exceptions: Union[type[Exception], tuple[type[Exception], ...]] = (
+    deserializer: Callable | None = None,
+    deserializer_exceptions: type[Exception] | tuple[type[Exception], ...] = (
         ValueError,
         TypeError,
         AttributeError,
     ),
     type_check: Callable = lambda v, t: v.__class__ == t,
     fail_already_registered: bool = True,
-    uniqueness_key: Optional[tuple] = None,
+    uniqueness_key: tuple | None = None,
 ) -> None:
     """Registers a new type for use in jsonargparse parsers.
 
@@ -518,7 +514,7 @@ def register_type_on_first_use(import_path: str, *args, **kwargs):
     )
 
 
-def get_registered_type(type_class) -> Optional[RegisteredType]:
+def get_registered_type(type_class) -> RegisteredType | None:
     if type_class not in registered_type_handlers:
         from contextlib import suppress
 
@@ -529,7 +525,7 @@ def get_registered_type(type_class) -> Optional[RegisteredType]:
     return registered_type_handlers.get(type_class)
 
 
-def add_type(type_class: type, uniqueness_key: Optional[tuple], type_check: Optional[Callable] = None):
+def add_type(type_class: type, uniqueness_key: tuple | None, type_check: Callable | None = None):
     assert uniqueness_key not in registered_types
     if type_class.__name__ in globals():
         raise ValueError(f'Type name "{type_class.__name__}" clashes with name already defined in jsonargparse.typing.')
@@ -596,7 +592,7 @@ def timedelta_deserializer(value):
 register_type_on_first_use("datetime.timedelta", deserializer=timedelta_deserializer)
 
 
-def bytes_serializer(value: Union[bytes, bytearray]) -> str:
+def bytes_serializer(value: bytes | bytearray) -> str:
     from base64 import b64encode
 
     return b64encode(value).decode()

@@ -51,7 +51,7 @@ def test_public_api():
         n
         for n, v in vars(jsonargparse.typing).items()
         if n[0] != "_"
-        and getattr(v, "__module__", "").split(".")[0] not in {"jsonargparse", "typing", "re"}
+        and getattr(v, "__module__", "").split(".")[0] not in {"jsonargparse", "typing", "collections", "re"}
         and (inspect.isclass(v) or inspect.isfunction(v))
     }
     assert set() == names - set(jsonargparse.typing.__all__)

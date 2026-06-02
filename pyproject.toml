@@ -13,14 +13,13 @@ authors = [
 readme = "README.rst"
 license = "MIT"
 license-files = ["LICENSE.rst"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -84,7 +83,7 @@ omegaconf = [
     "omegaconf>=2.1.1",
 ]
 typing-extensions = [
-    "typing-extensions>=3.10.0.0; python_version < '3.10'",
+    "typing-extensions>=4.12.0; python_version < '3.11'",
 ]
 test = [
     "jsonargparse[test-no-urls]",
@@ -190,7 +189,7 @@ Villegas = "Villegas"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{39,310,311,312,313,314}-{all-extras,no-extras,argparse},omegaconf,pydantic-v1,without-pyyaml,without-future-annotations
+envlist = py{310,311,312,313,314}-{all-extras,no-extras,argparse},omegaconf,pydantic-v1,without-pyyaml,without-future-annotations
 skip_missing_interpreters = true
 
 [testenv]

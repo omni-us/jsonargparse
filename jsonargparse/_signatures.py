@@ -4,7 +4,8 @@ import dataclasses
 import inspect
 import re
 from argparse import SUPPRESS, ArgumentParser
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import Any, Optional, Union
 
 from ._actions import _ActionConfigLoad
 from ._common import (
@@ -42,11 +43,11 @@ class SignatureArguments(LoggerProperty):
     def add_class_arguments(
         self,
         theclass: type,
-        nested_key: Optional[str] = None,
+        nested_key: str | None = None,
         as_group: bool = True,
         as_positional: bool = False,
-        default: Optional[Union[dict, Namespace, type]] = None,
-        skip: Optional[set[Union[str, int]]] = None,
+        default: dict | Namespace | type | None = None,
+        skip: set[str | int] | None = None,
         instantiate: bool = True,
         fail_untyped: bool = True,
         sub_configs: bool = False,
@@ -133,10 +134,10 @@ class SignatureArguments(LoggerProperty):
         self,
         theclass: type,
         themethod: str,
-        nested_key: Optional[str] = None,
+        nested_key: str | None = None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[set[Union[str, int]]] = None,
+        skip: set[str | int] | None = None,
         fail_untyped: bool = True,
         sub_configs: bool = False,
     ) -> list[str]:
@@ -181,10 +182,10 @@ class SignatureArguments(LoggerProperty):
     def add_function_arguments(
         self,
         function: Callable,
-        nested_key: Optional[str] = None,
+        nested_key: str | None = None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[set[Union[str, int]]] = None,
+        skip: set[str | int] | None = None,
         fail_untyped: bool = True,
         sub_configs: bool = False,
     ) -> list[str]:
@@ -231,15 +232,15 @@ class SignatureArguments(LoggerProperty):
         self,
         function_or_class,
         method_name,
-        nested_key: Optional[str],
+        nested_key: str | None,
         as_group: bool = True,
         as_positional: bool = False,
-        skip: Optional[set[Union[str, int]]] = None,
+        skip: set[str | int] | None = None,
         fail_untyped: bool = True,
         sub_configs: bool = False,
         instantiate: bool = True,
-        linked_targets: Optional[set[str]] = None,
-        help: Optional[str] = None,
+        linked_targets: set[str] | None = None,
+        help: str | None = None,
     ) -> list[str]:
         """Adds arguments from parameters of objects based on signatures and docstrings.
 
@@ -317,15 +318,15 @@ class SignatureArguments(LoggerProperty):
     def _add_signature_parameter(
         self,
         container,
-        nested_key: Optional[str],
+        nested_key: str | None,
         param,
         added_args: list[str],
-        skip: Optional[set[str]] = None,
+        skip: set[str] | None = None,
         fail_untyped: bool = True,
         as_positional: bool = False,
         sub_configs: bool = False,
         instantiate: bool = True,
-        linked_targets: Optional[set[str]] = None,
+        linked_targets: set[str] | None = None,
         default: Any = inspect_empty,
         **kwargs,
     ):
@@ -448,10 +449,10 @@ class SignatureArguments(LoggerProperty):
 
     def add_subclass_arguments(
         self,
-        baseclass: Union[type, tuple[type, ...]],
+        baseclass: type | tuple[type, ...],
         nested_key: str,
         as_group: bool = True,
-        skip: Optional[set[str]] = None,
+        skip: set[str] | None = None,
         instantiate: bool = True,
         required: bool = False,
         metavar: str = "CONFIG | CLASS_PATH_OR_NAME | .INIT_ARG_NAME VALUE",
@@ -541,7 +542,7 @@ class SignatureArguments(LoggerProperty):
                     doc_group = str(obj[0])
                 else:
                     doc_group = str(obj)
-            name = get_object_name(obj) if nested_key is None else nested_key
+            name = obj.__name__ if nested_key is None else nested_key
             group = self.add_argument_group(strip_title(doc_group), name=name)
             if config_load and nested_key is not None:
                 group.add_argument("--" + nested_key, action=_ActionConfigLoad(basetype=config_load_type))
@@ -550,12 +551,6 @@ class SignatureArguments(LoggerProperty):
                 group.group_class = obj
                 group.instantiate_class = group_instantiate_class
         return group
-
-
-def get_object_name(obj) -> str:
-    if hasattr(obj, "__name__"):
-        return obj.__name__
-    return str(obj).split(".")[-1].replace("[", "_").replace("]", "")
 
 
 def group_instantiate_class(group, cfg):

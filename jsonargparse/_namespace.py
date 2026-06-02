@@ -224,9 +224,7 @@ class Namespace(argparse.Namespace):
         """
         return recreate_branches(self, skip_keys=None if with_meta else meta_keys)
 
-    def update(
-        self, value: Union["Namespace", Any], key: Optional[str] = None, only_unset: bool = False
-    ) -> "Namespace":
+    def update(self, value: Union["Namespace", Any], key: str | None = None, only_unset: bool = False) -> "Namespace":
         """Sets or replaces all items from the given nested namespace.
 
         Args:

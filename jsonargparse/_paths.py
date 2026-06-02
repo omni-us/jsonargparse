@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from io import StringIO
-from typing import IO, Any, Optional, Union
+from typing import IO, Any, Union
 
 from ._deprecated import PathDeprecations
 from ._optionals import (
@@ -18,7 +18,7 @@ from ._optionals import (
     url_support,
 )
 
-_current_path_dir: ContextVar[Optional[str]] = ContextVar("_current_path_dir", default=None)
+_current_path_dir: ContextVar[str | None] = ContextVar("_current_path_dir", default=None)
 
 
 class _CachedStdin(StringIO):
@@ -44,7 +44,7 @@ class _UrlData:
     url_path: str
 
 
-def _parse_url(url: str) -> Optional[_UrlData]:
+def _parse_url(url: str) -> _UrlData | None:
     index = url.rfind("://")
     if index <= 0:
         return None
@@ -108,14 +108,14 @@ class Path(PathDeprecations):
     standard input or output.
     """
 
-    _url_data: Optional[_UrlData]
+    _url_data: _UrlData | None
     _file_scheme = re.compile("^file:///?")
 
     def __init__(
         self,
         path: Union[str, os.PathLike, "Path"],
         mode: str = "fr",
-        cwd: Optional[Union[str, os.PathLike]] = None,
+        cwd: str | os.PathLike | None = None,
         **kwargs,
     ):
         """Initializer for Path instance.
@@ -346,10 +346,10 @@ class Path(PathDeprecations):
 
 
 @contextmanager
-def change_to_path_dir(path: Optional[Union[Path, str]]) -> Iterator[Optional[str]]:
+def change_to_path_dir(path: Path | str | None) -> Iterator[str | None]:
     """A context manager for running code in the directory of a path."""
     path_dir = _current_path_dir.get()
-    chdir: Union[bool, str] = False
+    chdir: bool | str = False
     if path is not None:
         if isinstance(path, str):
             path = Path(path, mode="d")

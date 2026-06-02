@@ -146,10 +146,7 @@ def test_get_params_object_instance_method():
 def test_get_params_conditional_python_version():
     params = get_params(Random, "seed")
     assert ["a", "version"] == get_param_names(params)
-    if sys.version_info >= (3, 10):
-        assert "int | float | str | bytes | bytearray | None" == str(params[0].annotation)
-    else:
-        assert "typing.Union[int, float, str, bytes, bytearray, NoneType]" == str(params[0].annotation)
+    assert "int | float | str | bytes | bytearray | None" == str(params[0].annotation)
     assert int is params[1].annotation
     with mock_stubs_missing_types():
         params = get_params(Random, "seed")
@@ -185,12 +182,11 @@ def test_get_params_classmethod(parametrize_allow_py_files):
     elif sys.version_info >= (3, 12):
         expected = expected[:4] + ["compresslevel"] + expected[4:]
     assert expected == get_param_names(params)[: len(expected)]
-    if sys.version_info >= (3, 10):
-        assert all(
-            p.annotation is not inspect._empty
-            for p in params
-            if p.name not in {"fileobj", "compresslevel", "stream", "preset"}
-        )
+    assert all(
+        p.annotation is not inspect._empty
+        for p in params
+        if p.name not in {"fileobj", "compresslevel", "stream", "preset"}
+    )
     with mock_stubs_missing_types():
         params = get_params(TarFile, "open")
     assert expected == get_param_names(params)[: len(expected)]
@@ -208,8 +204,7 @@ def test_get_params_staticmethod():
 def test_get_params_function(parametrize_allow_py_files):
     params = get_params(ip_network)
     assert ["address", "strict"] == get_param_names(params)
-    if sys.version_info >= (3, 10):
-        assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
+    assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
     assert bool is params[1].annotation
     with mock_stubs_missing_types():
         params = get_params(ip_network)
@@ -273,8 +268,7 @@ def test_get_params_complex_function_requests_get(parser):
         "json",
     ]
     assert expected == get_param_names(params)
-    if sys.version_info >= (3, 10):
-        assert all(p.annotation is not inspect._empty for p in params)
+    assert all(p.annotation is not inspect._empty for p in params)
 
     parser.add_function_arguments(get, fail_untyped=False)
     assert ["url", "params"] == list(parser.get_defaults().keys())
@@ -291,8 +285,7 @@ def test_get_params_inspect_signature_failure_function(logger):
         params = get_params(ip_network, logger=logger)
     assert ["address", "strict"] == get_param_names(params)
     assert params[1].annotation == bool
-    if sys.version_info >= (3, 10):
-        assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
+    assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
     assert "get_parameters_from_ast failed" in logs.getvalue()
     assert "get_parameters_by_assumptions failed" not in logs.getvalue()
 
@@ -336,7 +329,6 @@ def test_get_params_inspect_signature_failure_missing_type(logger):
         params = get_params(ip_network, logger=logger)
     assert ["address", "strict"] == get_param_names(params)
     assert params[1].annotation == inspect._empty
-    if sys.version_info >= (3, 10):
-        assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
+    assert "int | str | bytes | ipaddress.IPv4Address | " in str(params[0].annotation)
     assert "get_parameters_from_ast failed" in logs.getvalue()
     assert "get_parameters_by_assumptions failed" not in logs.getvalue()
