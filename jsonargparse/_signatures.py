@@ -4,7 +4,8 @@ import dataclasses
 import inspect
 import re
 from argparse import SUPPRESS, ArgumentParser
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import Any, Optional, Union
 
 from ._actions import _ActionConfigLoad
 from ._common import (

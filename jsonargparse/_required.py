@@ -1,7 +1,7 @@
 from argparse import Action, _SubParsersAction
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator, Optional, Union
 
 from ._type_checking import ArgumentParser
 
@@ -31,7 +31,7 @@ def iter_required_keys(parser: ArgumentParser) -> Iterator[str]:
             yield key
 
 
-def set_required(parser: ArgumentParser, key_or_action: Union[str, Action], value: bool = True) -> None:
+def set_required(parser: ArgumentParser, key_or_action: str | Action, value: bool = True) -> None:
     """Sets required state for either an action-backed or virtual key."""
     action = key_or_action if isinstance(key_or_action, Action) else None
     key: str = action.dest if action is not None else key_or_action  # type: ignore[assignment]
@@ -45,12 +45,12 @@ def set_required(parser: ArgumentParser, key_or_action: Union[str, Action], valu
         parser._extra_required_keys.discard(key)
 
 
-def clear_required(parser: ArgumentParser, key_or_action: Union[str, Action]) -> None:
+def clear_required(parser: ArgumentParser, key_or_action: str | Action) -> None:
     """Clears required state for either an action-backed or virtual key."""
     set_required(parser, key_or_action, value=False)
 
 
-def _find_exact_action(parser: ArgumentParser, key: str) -> Optional[Action]:
+def _find_exact_action(parser: ArgumentParser, key: str) -> Action | None:
     for action in parser._actions:
         if getattr(action, "dest", None) == key:
             return action

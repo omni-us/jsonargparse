@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Tuple
 from unittest.mock import patch
 
 import pytest
@@ -103,7 +102,7 @@ def test_help_action_yes_no(parser):
 
 
 @pytest.fixture
-def default_config_files(tmp_cwd) -> Tuple[ArgumentParser, str, Path]:
+def default_config_files(tmp_cwd) -> tuple[ArgumentParser, str, Path]:
     not_exist = "does_not_exist.yaml"
     exists = Path("config.yaml")
     exists.write_text(json_or_yaml_dump({"v1": "from yaml v1", "n1.v2": "from yaml v2"}))

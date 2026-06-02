@@ -3,15 +3,14 @@ import dataclasses
 import inspect
 import logging
 import os
+from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (  # type: ignore[attr-defined]
-    Callable,
     Generic,
     Optional,
     Protocol,
     TypeVar,
-    Union,
     _GenericAlias,
 )
 
@@ -52,17 +51,17 @@ class InstantiatorCallable(Protocol):
 InstantiatorsDictType = dict[tuple[type, bool], InstantiatorCallable]
 
 
-parent_parser: ContextVar[Optional[ArgumentParser]] = ContextVar("parent_parser", default=None)
+parent_parser: ContextVar[ArgumentParser | None] = ContextVar("parent_parser", default=None)
 parser_capture: ContextVar[bool] = ContextVar("parser_capture", default=False)
-defaults_cache: ContextVar[Optional[Namespace]] = ContextVar("defaults_cache", default=None)
-lenient_check: ContextVar[Union[bool, str]] = ContextVar("lenient_check", default=False)
+defaults_cache: ContextVar[Namespace | None] = ContextVar("defaults_cache", default=None)
+lenient_check: ContextVar[bool | str] = ContextVar("lenient_check", default=False)
 parsing_defaults: ContextVar[bool] = ContextVar("parsing_defaults", default=False)
 single_subcommand: ContextVar[bool] = ContextVar("single_subcommand", default=True)
 validating_defaults: ContextVar[bool] = ContextVar("validating_defaults", default=False)
-load_value_mode: ContextVar[Optional[str]] = ContextVar("load_value_mode", default=None)
-class_instantiators: ContextVar[Optional[InstantiatorsDictType]] = ContextVar("class_instantiators", default=None)
+load_value_mode: ContextVar[str | None] = ContextVar("load_value_mode", default=None)
+class_instantiators: ContextVar[InstantiatorsDictType | None] = ContextVar("class_instantiators", default=None)
 nested_links: ContextVar[list[dict]] = ContextVar("nested_links", default=[])
-applied_instantiation_links: ContextVar[Optional[set]] = ContextVar("applied_instantiation_links", default=None)
+applied_instantiation_links: ContextVar[set | None] = ContextVar("applied_instantiation_links", default=None)
 path_dump_preserve_relative: ContextVar[bool] = ContextVar("path_dump_preserve_relative", default=False)
 
 
@@ -115,17 +114,17 @@ def get_env_var_bool(name: str) -> bool:
 
 def set_parsing_settings(
     *,
-    validate_defaults: Optional[bool] = None,
-    config_read_mode_urls_enabled: Optional[bool] = None,
-    config_read_mode_fsspec_enabled: Optional[bool] = None,
+    validate_defaults: bool | None = None,
+    config_read_mode_urls_enabled: bool | None = None,
+    config_read_mode_fsspec_enabled: bool | None = None,
     docstring_parse_style: Optional["docstring_parser.DocstringStyle"] = None,
-    docstring_parse_attribute_docstrings: Optional[bool] = None,
-    parse_optionals_as_positionals: Optional[bool] = None,
-    add_print_completion_argument: Optional[bool] = None,
-    stubs_resolver_allow_py_files: Optional[bool] = None,
-    omegaconf_absolute_to_relative_paths: Optional[bool] = None,
-    subclasses_disabled: Optional[list[Union[type, Callable[[type], bool]]]] = None,
-    subclasses_enabled: Optional[list[Union[type, str]]] = None,
+    docstring_parse_attribute_docstrings: bool | None = None,
+    parse_optionals_as_positionals: bool | None = None,
+    add_print_completion_argument: bool | None = None,
+    stubs_resolver_allow_py_files: bool | None = None,
+    omegaconf_absolute_to_relative_paths: bool | None = None,
+    subclasses_disabled: list[type | Callable[[type], bool]] | None = None,
+    subclasses_enabled: list[type | str] | None = None,
 ) -> None:
     """
     Modify global parser settings that affect parser creation and parsing behavior.
@@ -329,7 +328,7 @@ def is_pure_dataclass(cls) -> bool:
 
 subclasses_enabled_types: set[type] = set()
 subclasses_disabled_types: set[type] = set()
-subclasses_disabled_selectors: dict[str, Callable[[type], Union[bool, int]]] = {
+subclasses_disabled_selectors: dict[str, Callable[[type], bool | int]] = {
     "is_pure_dataclass": is_pure_dataclass,
     "is_pydantic_model": is_pydantic_model,
     "is_attrs_class": is_attrs_class,
@@ -351,8 +350,8 @@ def is_subclasses_disabled(cls) -> bool:
 
 
 def subclass_type_behavior(
-    subclasses_disabled: Optional[list[Union[type, Callable[[type], bool]]]] = None,
-    subclasses_enabled: Optional[list[Union[type, str]]] = None,
+    subclasses_disabled: list[type | Callable[[type], bool]] | None = None,
+    subclasses_enabled: list[type | str] | None = None,
 ) -> None:
     """Configures whether class types accept or not subclasses."""
     for enable_item in subclasses_enabled or []:
@@ -404,7 +403,7 @@ def setup_default_logger(data, level, caller):
     return logger
 
 
-def parse_logger(logger: Union[bool, str, dict, logging.Logger], caller):
+def parse_logger(logger: bool | str | dict | logging.Logger, caller):
     if not isinstance(logger, (bool, str, dict, logging.Logger)):
         raise ValueError(f"Expected logger to be an instance of (bool, str, dict, logging.Logger), but got {logger}.")
     if isinstance(logger, dict) and len(set(logger) - {"name", "level"}) > 0:
@@ -425,7 +424,7 @@ def parse_logger(logger: Union[bool, str, dict, logging.Logger], caller):
 class LoggerProperty:
     """Class designed to be inherited by other classes to add a logger property."""
 
-    def __init__(self, *args, logger: Union[bool, str, dict, logging.Logger] = False, **kwargs):
+    def __init__(self, *args, logger: bool | str | dict | logging.Logger = False, **kwargs):
         self.logger = logger
         super().__init__(*args, **kwargs)
 
@@ -444,7 +443,7 @@ class LoggerProperty:
         return self._logger
 
     @logger.setter
-    def logger(self, logger: Union[bool, str, dict, logging.Logger]):
+    def logger(self, logger: bool | str | dict | logging.Logger):
         if logger is None:
             from ._deprecated import deprecation_warning, logger_property_none_message
 

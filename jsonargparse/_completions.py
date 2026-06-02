@@ -10,7 +10,7 @@ from copy import copy
 from enum import Enum
 from importlib.util import find_spec
 from subprocess import PIPE, Popen
-from typing import Literal, Optional, Union
+from typing import Literal, Union
 
 from ._actions import ActionConfigFile, ActionFail, _ActionConfigLoad, _ActionHelpClassPath, remove_actions
 from ._common import NonParsingAction, get_optionals_as_positionals_actions, get_parsing_setting
@@ -141,7 +141,7 @@ def get_completion_script(parser, completion_type: str, **kwargs) -> str:
     return get_shtab_script(parser, completion_type[len("shtab-") :], **kwargs)
 
 
-def get_shtab_script(parser, shell: str, preambles: Optional[list[str]] = None) -> str:
+def get_shtab_script(parser, shell: str, preambles: list[str] | None = None) -> str:
     import shtab
 
     if shell not in shtab.SUPPORTED_SHELLS:

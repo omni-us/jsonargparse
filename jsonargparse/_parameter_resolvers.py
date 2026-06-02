@@ -4,13 +4,14 @@ import inspect
 import logging
 import textwrap
 from collections import defaultdict
+from collections.abc import Callable
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from copy import deepcopy
 from functools import partial
 from importlib import import_module
 from types import MethodType
-from typing import Any, Callable, Union
+from typing import Any, Union
 
 from ._common import (
     LoggerProperty,

@@ -4,7 +4,7 @@ import sys
 from contextlib import suppress
 from copy import deepcopy
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from ._common import get_parsing_setting
 from ._optionals import import_typeshed_client, typeshed_client_support
@@ -40,9 +40,9 @@ class ImportsVisitor(ast.NodeVisitor):
         for alias in node.names:
             self.imports_found[alias.asname or alias.name] = (node.module, alias.name)
 
-    def find(self, node: ast.AST, module_path: str) -> dict[str, tuple[Optional[str], str]]:
+    def find(self, node: ast.AST, module_path: str) -> dict[str, tuple[str | None, str]]:
         self.module_path = module_path.split(".")
-        self.imports_found: dict[str, tuple[Optional[str], str]] = {}
+        self.imports_found: dict[str, tuple[str | None, str]] = {}
         self.visit(node)
         return self.imports_found
 
@@ -73,7 +73,7 @@ class AssignsVisitor(ast.NodeVisitor):
 
 
 class MethodsVisitor(ast.NodeVisitor):
-    method_found: Optional[ast.FunctionDef]
+    method_found: ast.FunctionDef | None
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         if not self.method_found and node.name == self.method_name:
@@ -91,7 +91,7 @@ class MethodsVisitor(ast.NodeVisitor):
                 node.body = []
             self.generic_visit(node)
 
-    def find(self, node: ast.AST, method_name: str) -> Optional[ast.FunctionDef]:
+    def find(self, node: ast.AST, method_name: str) -> ast.FunctionDef | None:
         self.method_name = method_name
         self.method_found = None
         self.visit(node)
@@ -135,11 +135,11 @@ def get_source_module(path: str, component) -> tc.ModulePath:
 class StubsResolver(tc.Resolver):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._module_ast_cache: dict[str, Optional[ast.AST]] = {}
+        self._module_ast_cache: dict[str, ast.AST | None] = {}
         self._module_assigns_cache: dict[str, dict[str, ast.Assign]] = {}
-        self._module_imports_cache: dict[str, dict[str, tuple[Optional[str], str]]] = {}
+        self._module_imports_cache: dict[str, dict[str, tuple[str | None, str]]] = {}
 
-    def get_imported_info(self, path: str, component=None) -> Optional[tc.ImportedInfo]:
+    def get_imported_info(self, path: str, component=None) -> tc.ImportedInfo | None:
         resolved = self.get_fully_qualified_name(path)
         imported_info = None
         if isinstance(resolved, tc.ImportedInfo):
@@ -149,7 +149,7 @@ class StubsResolver(tc.Resolver):
             imported_info = tc.ImportedInfo(source_module=source_module, info=resolved)
         return imported_info
 
-    def get_component_imported_info(self, component, parent) -> Optional[tc.ImportedInfo]:
+    def get_component_imported_info(self, component, parent) -> tc.ImportedInfo | None:
         if not parent and inspect.ismethod(component):
             parent = type(component.__self__)
             component = getattr(parent, component.__name__)
@@ -189,7 +189,7 @@ class StubsResolver(tc.Resolver):
     def add_import_aliases(self, aliases, stub_import: tc.ImportedInfo):
         module_path = ".".join(stub_import.source_module)
         module = import_module_or_none(module_path)
-        stub_ast: Optional[ast.AST] = None
+        stub_ast: ast.AST | None = None
         if isinstance(stub_import.info.ast, (ast.Assign, ast.AnnAssign)):
             stub_ast = stub_import.info.ast.value
         elif isinstance(stub_import.info.ast, ast.AST):
@@ -244,7 +244,7 @@ def alias_is_unique(aliases, name, source, value):
     return True
 
 
-def get_stub_types(params, component, parent, logger) -> Optional[dict[str, Any]]:
+def get_stub_types(params, component, parent, logger) -> dict[str, Any] | None:
     if not typeshed_client_support:
         return None
     missing_types = {

@@ -4,9 +4,10 @@ import re
 from argparse import SUPPRESS
 from argparse import Action as ArgparseAction
 from collections import defaultdict
+from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 from ._actions import (
     Action,
@@ -32,8 +33,8 @@ from ._type_checking import ArgumentGroup, ArgumentParser
 def find_parent_or_child_actions(
     parser: ArgumentParser,
     key: str,
-    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
-) -> Optional[list[ArgparseAction]]:
+    exclude: type[ArgparseAction] | tuple[type[ArgparseAction], ...] | None = None,
+) -> list[ArgparseAction] | None:
     found: list[ArgparseAction] = []
     action = find_parent_action(parser, key, exclude=exclude)
     if action is not None:
@@ -50,8 +51,8 @@ def find_parent_or_child_actions(
 def find_subclass_action_or_class_group(
     parser: ArgumentParser,
     key: str,
-    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
-) -> Optional[Union[ArgparseAction, ArgumentGroup]]:
+    exclude: type[ArgparseAction] | tuple[type[ArgparseAction], ...] | None = None,
+) -> ArgparseAction | ArgumentGroup | None:
     from ._typehints import ActionTypeHint
 
     action = find_parent_action(parser, key, exclude=exclude)
@@ -117,9 +118,9 @@ class ActionLink(Action):
     def __init__(
         self,
         parser,
-        source: Union[str, tuple[str, ...]],
+        source: str | tuple[str, ...],
         target: str,
-        compute_fn: Optional[Callable] = None,
+        compute_fn: Callable | None = None,
         apply_on: str = "parse",
     ):
         if not hasattr(parser, "_links_group"):
@@ -218,7 +219,7 @@ class ActionLink(Action):
             link_str = getattr(compute_fn, "__name__", str(compute_fn)) + "(" + ", ".join(source) + ")"
         link_str += " --> " + target
 
-        help_str: Optional[str]
+        help_str: str | None
         if is_target_subclass and not valid_target_leaf:
             type_attr = None
             help_str = f"Use --{self.target[1].dest}.help for details."
@@ -496,8 +497,8 @@ class ActionLink(Action):
 def find_parent_action_or_group(
     parser: ArgumentParser,
     key: str,
-    exclude: Optional[Union[type[ArgparseAction], tuple[type[ArgparseAction], ...]]] = None,
-) -> Optional[Union[ArgparseAction, ArgumentGroup]]:
+    exclude: type[ArgparseAction] | tuple[type[ArgparseAction], ...] | None = None,
+) -> ArgparseAction | ArgumentGroup | None:
     action_or_group = find_parent_action_and_subcommand(parser, key, exclude=exclude)[0]
     if not action_or_group and parser.groups and key in parser.groups:
         return parser.groups[key]
@@ -528,9 +529,9 @@ class ArgumentLinking:
 
     def link_arguments(
         self,
-        source: Union[str, tuple[str, ...]],
+        source: str | tuple[str, ...],
         target: str,
-        compute_fn: Optional[Callable] = None,
+        compute_fn: Callable | None = None,
         apply_on: str = "parse",
     ):
         """Makes an argument value be derived from the values of other arguments.

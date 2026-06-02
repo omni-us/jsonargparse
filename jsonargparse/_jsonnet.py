@@ -1,6 +1,6 @@
 """Actions to support jsonnet."""
 
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict
 
 from ._actions import _is_action_value_list
 from ._common import Action, parser_context
@@ -25,8 +25,8 @@ class ActionJsonnet(Action):
 
     def __init__(
         self,
-        ext_vars: Optional[str] = None,
-        schema: Optional[Union[str, dict]] = None,
+        ext_vars: str | None = None,
+        schema: str | dict | None = None,
         **kwargs,
     ):
         """Initializer for ActionJsonnet instance.
@@ -119,7 +119,7 @@ class ActionJsonnet(Action):
             ext_vars_action.jsonnet_ext_vars = True
 
     @staticmethod
-    def split_ext_vars(ext_vars: Optional[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
+    def split_ext_vars(ext_vars: dict[str, Any] | None) -> tuple[dict[str, Any], dict[str, Any]]:
         """Splits an ``ext_vars`` dict into the ``ext_codes`` and ``ext_vars`` required by Jsonnet.
 
         Args:
@@ -135,8 +135,8 @@ class ActionJsonnet(Action):
 
     def parse(
         self,
-        jsonnet: Union[str, Path],
-        ext_vars: Optional[dict[str, Any]] = None,
+        jsonnet: str | Path,
+        ext_vars: dict[str, Any] | None = None,
         with_meta: bool = False,
     ) -> dict:
         """Method that can be used to parse Jsonnet independent from an :class:`.ArgumentParser`.

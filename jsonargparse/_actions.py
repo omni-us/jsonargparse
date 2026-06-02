@@ -6,7 +6,7 @@ from argparse import SUPPRESS, _HelpAction, _VersionAction
 from argparse import Action as ArgparseAction
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any
 
 from ._common import Action, NonParsingAction, is_subclass, is_subclasses_disabled, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
@@ -116,7 +116,7 @@ class ActionConfigFile(Action):
         with parser_context(single_subcommand=False), previous_config_context(cfg), skip_apply_links():
             kwargs = {"env": False, "defaults": False, "_skip_validation": True, "_fail_no_subcommand": False}
             try:
-                cfg_path: Optional[Path] = Path(value, mode=_get_config_read_mode())
+                cfg_path: Path | None = Path(value, mode=_get_config_read_mode())
             except TypeError as ex_path:
                 try:
                     if isinstance(load_value(value), str):
@@ -224,7 +224,7 @@ class _ActionPrintConfig(NonParsingAction):
 
 
 class _ActionConfigLoad(Action):
-    def __init__(self, basetype: Optional[type] = None, **kwargs):
+    def __init__(self, basetype: type | None = None, **kwargs):
         if len(kwargs) == 0:
             self._basetype = basetype
         else:
@@ -267,7 +267,7 @@ class _ActionHelpClassPath(NonParsingAction):
     sub_add_kwargs: dict[str, Any] = {}
 
     @classmethod
-    def get_help_types(cls, typehint) -> Optional[tuple]:
+    def get_help_types(cls, typehint) -> tuple | None:
         from ._typehints import get_subclass_or_closed_types
 
         return get_subclass_or_closed_types(typehint=typehint, also_lists=True, callable_return=True)

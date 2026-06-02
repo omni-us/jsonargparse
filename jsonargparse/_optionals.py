@@ -9,7 +9,7 @@ from copy import deepcopy
 from dataclasses import is_dataclass
 from importlib.metadata import version
 from importlib.util import find_spec
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 pyyaml_available = bool(find_spec("yaml"))
 toml_load_available = bool(find_spec("toml") or find_spec("tomllib"))
@@ -189,7 +189,7 @@ def _get_config_read_mode() -> str:
     return _config_read_mode
 
 
-def _set_docstring_parse_options(style=None, attribute_docstrings: Optional[bool] = None):
+def _set_docstring_parse_options(style=None, attribute_docstrings: bool | None = None):
     """Sets options for docstring parsing.
 
     Args:
@@ -336,7 +336,7 @@ def omegaconf_absolute_to_relative_paths(data: dict) -> dict:
 
     regex_absolute_path = re.compile(r"\$\{([a-zA-Z][a-zA-Z0-9[\]_.]*)\}")
 
-    def _walk(node, current_path: list[Union[str, int]]):
+    def _walk(node, current_path: list[str | int]):
         if isinstance(node, dict):
             return {k: _walk(v, current_path + [k]) for k, v in node.items()}
         if isinstance(node, list):

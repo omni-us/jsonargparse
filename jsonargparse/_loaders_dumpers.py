@@ -3,8 +3,9 @@
 import inspect
 import re
 from argparse import HelpFormatter
+from collections.abc import Callable
 from contextlib import suppress
-from typing import Any, Callable, Optional
+from typing import Any
 
 from ._common import load_value_mode, parent_parser
 from ._optionals import (
@@ -153,7 +154,7 @@ def get_load_value_mode() -> str:
     return mode
 
 
-def get_loader_exceptions(mode: Optional[str] = None) -> tuple[type[Exception], ...]:
+def get_loader_exceptions(mode: str | None = None) -> tuple[type[Exception], ...]:
     if mode is None:
         mode = get_load_value_mode()
     if mode not in loader_exceptions:

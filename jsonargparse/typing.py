@@ -6,7 +6,8 @@ import os
 import pathlib
 import re
 import sys
-from typing import Any, Callable, TypeAlias, Union, get_type_hints
+from collections.abc import Callable
+from typing import Any, TypeAlias, Union, get_type_hints
 
 from ._common import ClassType, is_final_class, is_subclass, path_dump_preserve_relative
 from ._namespace import Namespace

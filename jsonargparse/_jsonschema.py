@@ -1,7 +1,6 @@
 """Action to support jsonschemas."""
 
 import os
-from typing import Optional, Union
 
 from ._actions import _is_action_value_list
 from ._common import Action, parser_context
@@ -20,9 +19,7 @@ __all__ = ["ActionJsonSchema"]
 class ActionJsonSchema(Action):
     """Action to parse option as JSON validated by a JSON Schema."""
 
-    def __init__(
-        self, schema: Optional[Union[str, dict]] = None, sub_config: bool = True, with_meta: bool = True, **kwargs
-    ):
+    def __init__(self, schema: str | dict | None = None, sub_config: bool = True, with_meta: bool = True, **kwargs):
         """Initializer for ActionJsonSchema instance.
 
         Args:

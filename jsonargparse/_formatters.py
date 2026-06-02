@@ -13,7 +13,6 @@ from argparse import (
 from collections.abc import Iterable
 from io import StringIO
 from string import Template
-from typing import Optional, Union
 
 from ._actions import (
     ActionConfigFile,
@@ -65,7 +64,7 @@ class YAMLCommentFormatter:
         yaml = ruyaml.YAML()
         cfg = yaml.load(cfg)
 
-        def get_parsers(parser: ArgumentParser, prefix="") -> dict[Optional[str], ArgumentParser]:
+        def get_parsers(parser: ArgumentParser, prefix="") -> dict[str | None, ArgumentParser]:
             parsers = {}
             if parser._subparsers is not None:
                 for key, subparser in parser._subparsers._group_actions[0].choices.items():  # type: ignore[union-attr]
@@ -287,7 +286,7 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
         action.default = orig_default
         return help_str
 
-    def _get_type_str(self, action: Action) -> Optional[str]:
+    def _get_type_str(self, action: Action) -> str | None:
         type_str = None
         if isinstance(action, ActionYesNo):
             type_str = "bool"
@@ -297,14 +296,14 @@ class DefaultHelpFormatter(HelpFormatterDeprecations, HelpFormatter):
             type_str = type_to_str(action._typehint)
         return type_str
 
-    def add_usage(self, usage: Optional[str], actions: Iterable[Action], *args, **kwargs) -> None:
+    def add_usage(self, usage: str | None, actions: Iterable[Action], *args, **kwargs) -> None:
         actions = [a for a in actions if not isinstance(a, ActionLink)]
         super().add_usage(usage, actions, *args, **kwargs)
 
 
 def get_env_var(
-    parser_or_formatter: Union[ArgumentParser, DefaultHelpFormatter],
-    action: Optional[Action] = None,
+    parser_or_formatter: ArgumentParser | DefaultHelpFormatter,
+    action: Action | None = None,
 ) -> str:
     """Returns the environment variable name for a given parser or formatter and action."""
     if isinstance(parser_or_formatter, DefaultHelpFormatter):

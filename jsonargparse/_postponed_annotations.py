@@ -5,7 +5,7 @@ import sys
 import textwrap
 from dataclasses import is_dataclass
 from importlib import import_module
-from typing import Any, ForwardRef, Optional, TypeAlias, Union, get_type_hints
+from typing import Any, ForwardRef, TypeAlias, Union, get_type_hints
 
 from ._typehints import mapping_origin_types, sequence_origin_types, tuple_set_origin_types
 from ._util import get_typehint_origin
@@ -73,7 +73,7 @@ class TypeCheckingVisitor(ast.NodeVisitor):
             super().generic_visit(node)
 
     def update_aliases(
-        self, module_source: str, module: str, aliases: dict, logger: Optional[logging.Logger] = None
+        self, module_source: str, module: str, aliases: dict, logger: logging.Logger | None = None
     ) -> None:
         self.module = module
         self.aliases = aliases
@@ -243,7 +243,7 @@ def _enrich_globals_for_string_forward_refs(global_vars: dict[str, Any]) -> None
         _update_missing_from_module_vars(global_vars, missing, mod_vars)
 
 
-def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
+def get_global_vars(obj: Any, logger: logging.Logger | None) -> dict:
     global_vars = getattr(obj, "__globals__", {}).copy()
     if is_dataclass(obj):
         next_mro = inspect.getmro(obj)[1]  # type: ignore[arg-type]
@@ -263,7 +263,7 @@ def get_global_vars(obj: Any, logger: Optional[logging.Logger]) -> dict:
     return global_vars
 
 
-def get_types(obj: Any, logger: Optional[logging.Logger] = None) -> dict:
+def get_types(obj: Any, logger: logging.Logger | None = None) -> dict:
     global_vars = get_global_vars(obj, logger)
     try:
         types = get_type_hints(obj, global_vars)
