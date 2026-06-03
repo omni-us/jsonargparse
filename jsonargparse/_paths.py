@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from io import StringIO
-from typing import IO, Any, Union
+from typing import IO, Any
 
 from ._deprecated import PathDeprecations
 from ._optionals import (
@@ -113,7 +113,7 @@ class Path(PathDeprecations):
 
     def __init__(
         self,
-        path: Union[str, os.PathLike, "Path"],
+        path: "str | os.PathLike | Path",
         mode: str = "fr",
         cwd: str | os.PathLike | None = None,
         **kwargs,

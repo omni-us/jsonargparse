@@ -426,10 +426,9 @@ syntax. For example, an argument that can be ``None`` or a float in the range
 
 .. testcode::
 
-    from typing import Optional, Union
     from jsonargparse.typing import PositiveInt, OpenUnitInterval
 
-    parser.add_argument("--op", type=Optional[Union[PositiveInt, OpenUnitInterval]])
+    parser.add_argument("--op", type=PositiveInt | OpenUnitInterval | None)
 
 The types in :py:mod:`jsonargparse.typing` are included for convenience since
 they are useful in argument parsing use cases and not available in standard
@@ -1373,11 +1372,8 @@ Take for example a class with its init and a method with docstrings as follows:
 
 .. testcode:: class_method
 
-    from typing import Union
-
-
     class MyClass(MyBaseClass):
-        def __init__(self, foo: dict[str, Union[int, list[int]]], **kwargs):
+        def __init__(self, foo: dict[str, int | list[int]], **kwargs):
             """Initializer for MyClass.
 
             Args:
@@ -2453,14 +2449,14 @@ An example of a target being in a subclass is:
 .. testcode::
 
     class Logger:
-        def __init__(self, save_dir: Optional[str] = None):
+        def __init__(self, save_dir: str | None = None):
             self.save_dir = save_dir
 
     class Trainer:
         def __init__(
             self,
-            save_dir: Optional[str] = None,
-            logger: Union[bool, Logger, list[Logger]] = False,
+            save_dir: str | None = None,
+            logger: bool | Logger | list[Logger] = False,
         ):
             self.logger = logger
 
@@ -2967,11 +2963,10 @@ instructions to the user for guidance. Take for example the parser:
 
     #!/usr/bin/env python3
 
-    from typing import Optional
     from jsonargparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument("--bool", type=Optional[bool])
+    parser.add_argument("--bool", type=bool | None)
 
     parser.parse_args()
 
@@ -2982,7 +2977,7 @@ matches, then the value is completed without printing guidance. For example:
 .. code-block:: bash
 
     $ example.py --bool <TAB><TAB>
-    Expected type: Optional[bool]; 3/3 matched choices
+    Expected type: bool | None; 3/3 matched choices
     true  false  null
     $ example.py --bool f<TAB>
     $ example.py --bool false

@@ -60,7 +60,7 @@ Powerful argparse-like low level parsers:
 
     parser = ArgumentParser()
     parser.add_argument("--config", action="config")  # support config files
-    parser.add_argument("--opt", type=Union[int, Literal["off"]])  # complex arguments via type hints
+    parser.add_argument("--opt", type=int | Literal["off"])  # complex arguments via type hints
     parser.add_function_arguments(main_function, "function")  # add function parameters
     parser.add_class_arguments(SomeClass, "class")  # add class parameters
     ...

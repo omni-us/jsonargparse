@@ -8,7 +8,6 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (  # type: ignore[attr-defined]
     Generic,
-    Optional,
     Protocol,
     TypeVar,
     _GenericAlias,
@@ -117,7 +116,7 @@ def set_parsing_settings(
     validate_defaults: bool | None = None,
     config_read_mode_urls_enabled: bool | None = None,
     config_read_mode_fsspec_enabled: bool | None = None,
-    docstring_parse_style: Optional["docstring_parser.DocstringStyle"] = None,
+    docstring_parse_style: "docstring_parser.DocstringStyle | None" = None,
     docstring_parse_attribute_docstrings: bool | None = None,
     parse_optionals_as_positionals: bool | None = None,
     add_print_completion_argument: bool | None = None,

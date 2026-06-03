@@ -2,7 +2,7 @@
 
 import inspect
 from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any
 
 from ._actions import ActionConfigFile, _ActionPrintConfig, remove_actions
 from ._core import ArgumentParser
@@ -14,9 +14,9 @@ from ._util import capture_parser, default_config_option_help
 __all__ = ["auto_cli", "auto_parser"]
 
 
-ComponentType = Union[Callable, type]
-DictComponentsType = dict[str, Union[ComponentType, "DictComponentsType"]]
-ComponentsType = Optional[Union[ComponentType, list[ComponentType], DictComponentsType]]
+ComponentType = Callable | type
+DictComponentsType = dict[str, "ComponentType | DictComponentsType"]
+ComponentsType = ComponentType | list[ComponentType] | DictComponentsType | None
 
 
 def CLI(*args, **kwargs):

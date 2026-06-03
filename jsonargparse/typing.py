@@ -7,7 +7,7 @@ import pathlib
 import re
 import sys
 from collections.abc import Callable
-from typing import Any, TypeAlias, Union, get_type_hints
+from typing import Any, TypeAlias, get_type_hints
 
 from ._common import ClassType, is_final_class, is_subclass, path_dump_preserve_relative
 from ._namespace import Namespace
@@ -56,7 +56,7 @@ _operators2 = {v: k for k, v in _operators1.items()}
 if sys.version_info >= (3, 12):
     from typing import TypeAliasType as TypeAliasType
 
-    _TypeClass = Union[type, TypeAliasType]
+    _TypeClass = type | TypeAliasType
 else:
     _TypeClass = type
 
