@@ -2,9 +2,21 @@ import inspect
 
 import pytest
 
-from jsonargparse import FromConfigMixin
+from jsonargparse import FromConfigMixin, set_parsing_settings
+from jsonargparse._optionals import fsspec_support
 from jsonargparse._paths import PathError
-from jsonargparse_tests.conftest import json_or_yaml_dump, skip_if_no_pyyaml, skip_if_omegaconf_unavailable
+from jsonargparse.typing import path_type
+from jsonargparse_tests.conftest import (
+    json_or_yaml_dump,
+    skip_if_fsspec_unavailable,
+    skip_if_no_pyyaml,
+    skip_if_omegaconf_unavailable,
+)
+
+if fsspec_support:
+    import fsspec
+
+Path_fsr = path_type("fsr")
 
 # __init__ defaults override tests
 
@@ -196,6 +208,29 @@ def test_from_config_method_path(tmp_cwd):
 
     instance = FromConfigMethodParent.from_config(config_path)
     assert instance.parent_param == "value_from_file"
+
+
+@skip_if_fsspec_unavailable
+def test_from_config_method_path_fsspec_relative_paths():
+    class FromConfigMethodFsspecRelativePath(FromConfigMixin):
+        def __init__(self, file: Path_fsr):
+            self.file = file
+
+    config_path = "memory://from_config/config.yaml"
+    file_path = "memory://from_config/file.txt"
+    with fsspec.open(config_path, "w") as f:
+        f.write(json_or_yaml_dump({"file": "file.txt"}))
+    with fsspec.open(file_path, "w") as f:
+        f.write("value_from_fsspec")
+
+    set_parsing_settings(config_read_mode_fsspec_enabled=True)
+    try:
+        instance = FromConfigMethodFsspecRelativePath.from_config(config_path)
+    finally:
+        set_parsing_settings(config_read_mode_fsspec_enabled=False)
+
+    assert instance.file.absolute == file_path
+    assert instance.file.read_text() == "value_from_fsspec"
 
 
 def test_from_config_method_path_does_not_exist(tmp_cwd):

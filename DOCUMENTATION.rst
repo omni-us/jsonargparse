@@ -744,10 +744,11 @@ If you import ``from jsonargparse import set_parsing_settings`` and then run
 functions and classes will also support loading from URLs: :meth:`parse_path
 <.ArgumentParser.parse_path>`, :meth:`get_defaults
 <.ArgumentParser.get_defaults>` (``default_config_files`` argument),
-``action="config"``, :class:`.ActionJsonSchema`, :class:`.ActionJsonnet` and
-:class:`.ActionParser`. This means that a tool that can receive a config file
-via ``action="config"`` is able to get the content from a URL, thus something
-like the following would work:
+``action="config"``, :py:meth:`.FromConfigMixin.from_config`,
+:class:`.ActionJsonSchema`, :class:`.ActionJsonnet` and :class:`.ActionParser`.
+This means that a tool that can receive a config file via ``action="config"`` is
+able to get the content from a URL, thus something like the following would
+work:
 
 .. code-block:: bash
 
