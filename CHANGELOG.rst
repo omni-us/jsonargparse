@@ -15,6 +15,12 @@ paths are considered internals and can change in minor and patch releases.
 v4.50.0 (unreleased)
 --------------------
 
+Added
+^^^^^
+- ``FromConfigMixin.from_config`` with ``config_read_mode_fsspec_enabled=True``
+  now supports fsspec config loading including the resolving of relative paths
+  (`#918 <https://github.com/omni-us/jsonargparse/pull/918>`__).
+
 Changed
 ^^^^^^^
 - Drop support for Python 3.9. The minimum supported Python version is now

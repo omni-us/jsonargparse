@@ -8,9 +8,10 @@ from ._common import parser_context
 from ._core import ArgumentParser
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._optionals import _get_config_read_mode
+from ._paths import change_to_path_dir
 from ._required import clear_required, iter_required_keys
 from ._typehints import is_subclass_spec, resolve_class_path_by_name
-from ._util import import_object
+from ._util import import_object, load_config_path_context
 
 __all__ = ["FromConfigMixin"]
 
@@ -30,7 +31,9 @@ class FromConfigMixin:
            defaults.
 
         2. Adds a ``from_config`` ``@classmethod``, that instantiates the class
-           based on a config file or dict.
+           based on a config file or dict. If
+           ``config_read_mode_fsspec_enabled=True`` is set, then config paths
+           can be URLs.
 
     Attributes:
         __from_config_init_defaults__: Optional path to a config file for
@@ -61,12 +64,17 @@ class FromConfigMixin:
 def _parse_class_kwargs_from_config(cls: type[T], config: str | PathLike | dict, **kwargs) -> tuple[dict, type[T]]:
     """Parse the init kwargs for ``cls`` from a config file or dict."""
     parser = ArgumentParser(exit_on_error=False, **kwargs)
+    cfg_path = None
     if not isinstance(config, dict):
         from .typing import Path
 
         cfg_path = Path(config, mode=_get_config_read_mode())
-        cfg_str = cfg_path.read_text()
-        with parser_context(load_value_mode=parser.parser_mode):
+        with (
+            load_config_path_context(cfg_path),
+            change_to_path_dir(cfg_path),
+            parser_context(load_value_mode=parser.parser_mode),
+        ):
+            cfg_str = cfg_path.read_text()
             try:
                 config = load_value(cfg_str, path=str(config))
             except get_loader_exceptions() as ex:
@@ -86,7 +94,8 @@ def _parse_class_kwargs_from_config(cls: type[T], config: str | PathLike | dict,
     parser.add_class_arguments(cls)
     for required in iter_required_keys(parser):
         clear_required(parser, required)
-    cfg = parser.parse_object(config, defaults=False)
+    with load_config_path_context(cfg_path), change_to_path_dir(cfg_path):
+        cfg = parser.parse_object(config, defaults=False)
     return parser.instantiate(cfg).as_dict(), cls
 
 
