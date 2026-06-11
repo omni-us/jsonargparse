@@ -12,6 +12,9 @@ on:
         - macos-latest
         - ubuntu-latest
 
+permissions:
+  contents: read
+
 jobs:
   tox-coverage:
     runs-on: ${{ inputs.OS }}
