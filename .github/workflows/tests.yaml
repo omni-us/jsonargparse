@@ -68,7 +68,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install tox
+      - run: pip install --require-hashes -r .github/workflows/tox.lock
       - run: tox -e py-argparse
 
   windows:
@@ -83,7 +83,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install tox
+      - run: pip install --require-hashes -r .github/workflows/tox.lock
       - run: tox -e py-all-extras
 
   macos:
@@ -98,7 +98,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install tox
+      - run: pip install --require-hashes -r .github/workflows/tox.lock
       - run: tox -e py-all-extras
 
   omegaconf:
@@ -109,7 +109,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install tox
+      - run: pip install --require-hashes -r .github/workflows/tox.lock
       - run: tox -e omegaconf
 
   pydantic-v1:
@@ -153,7 +153,7 @@ jobs:
           python-version: "3.12"
       - name: Build package
         run: |
-          pip install -U build
+          pip install --require-hashes -r .github/workflows/build.lock
           python -m build
           cd jsonargparse_tests
           python -m build --wheel
@@ -212,7 +212,7 @@ jobs:
         with:
           key: pre-commit-cache-${{ hashFiles('.pre-commit-config.yaml') }}
           path: ~/.cache/pre-commit
-      - run: pip install pre-commit
+      - run: pip install --require-hashes -r .github/workflows/pre-commit.lock
       - run: pre-commit run -a --hook-stage pre-push mypy
 
   codecov:
