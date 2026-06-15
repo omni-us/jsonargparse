@@ -492,7 +492,7 @@ def data_with_optional(a: DataWithOptionalA):
 def test_dataclass_with_optional_default(parser):
     parser.add_function_arguments(data_with_optional, "data")
     cfg = parser.parse_args([])
-    assert cfg.data == Namespace(a=Namespace(b={"c": 3}))
+    assert cfg.data == Namespace(a=Namespace(b=Namespace(c=3)))
     init = parser.instantiate(cfg)
     assert init.data.a == DataWithOptionalA()
 

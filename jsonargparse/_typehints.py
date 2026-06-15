@@ -65,7 +65,7 @@ from ._loaders_dumpers import (
     json_or_yaml_loader_exceptions,
     load_value,
 )
-from ._namespace import Namespace
+from ._namespace import Namespace, subclasses_disabled_meta_key
 from ._optionals import (
     capture_typing_extension_shadows,
     get_alias_target,
@@ -530,7 +530,7 @@ class ActionTypeHint(Action):
     def add_sub_defaults(parser, cfg):
         def skip_sub_defaults_apply(v):
             return not (
-                isinstance(v, (str, Namespace))
+                isinstance(v, (str, Namespace, dict))
                 or is_subclass_spec(v)
                 or (isinstance(v, list) and any(is_subclass_spec(e) for e in v))
                 or (isinstance(v, dict) and any(is_subclass_spec(e) for e in v.values()))
@@ -1116,14 +1116,13 @@ def adapt_typehints(
             prev_val = Namespace(class_path=None, init_args=Namespace(prev_val))
 
         val_input = val
-        if isinstance(prev_val, (dict, Namespace)) and prev_val["class_path"] is None:
+        if (isinstance(prev_val, (dict, Namespace)) and prev_val["class_path"] is None) or (
+            isinstance(val, NestedArg) and is_subclasses_disabled(typehint)
+        ):
             type_class_path = Namespace(class_path=get_import_path(typehint))
             val = subclass_spec_as_namespace(val, type_class_path)
         else:
             val = subclass_spec_as_namespace(val, prev_val)
-        if val and not is_subclass_spec(val) and "init_args" not in val:
-            # implicit val class_path
-            val = Namespace(class_path=get_import_path(typehint), init_args=val)
 
         if not is_subclass_spec(val):
             msg = "Does not implement protocol" if is_protocol(typehint) else "Not a valid subclass of"
@@ -1255,11 +1254,14 @@ def is_instance_factory_protocol(class_type, logger=None):
     return ActionTypeHint.is_subclass_typehint(return_type)
 
 
+_subclass_spec_keys = {"class_path", "init_args", "dict_kwargs", "__path__", subclasses_disabled_meta_key}
+
+
 def is_subclass_spec(val):
     is_class = isinstance(val, (dict, Namespace)) and "class_path" in val
     if is_class:
         keys = getattr(val, "__dict__", val).keys()
-        is_class = len(set(keys) - {"class_path", "init_args", "dict_kwargs", "__path__"}) == 0
+        is_class = len(set(keys) - _subclass_spec_keys) == 0
     return is_class
 
 
@@ -1568,7 +1570,7 @@ def adapt_class_type(
             namespace=prev_init_args,
             defaults=sub_defaults.get(),
         )
-        return _subclasses_disabled_remove_class_path(value, typehint)
+        return _subclasses_disabled_mark(value, typehint)
 
     if serialize:
         if init_args:
@@ -1594,12 +1596,30 @@ def adapt_class_type(
                     val = load_value(val, simple_types=True)
             value["dict_kwargs"][key] = val
 
-    return _subclasses_disabled_remove_class_path(value, typehint)
+    return _subclasses_disabled_mark(value, typehint)
 
 
-def _subclasses_disabled_remove_class_path(value, typehint):
+def _subclasses_disabled_mark(value, typehint):
     if is_subclasses_disabled(typehint) and value.class_path == get_import_path(typehint):
-        value = Namespace({**value.get("init_args", {}), **value.get("dict_kwargs", {})})
+        value[subclasses_disabled_meta_key] = True
+    return value
+
+
+def subclasses_disabled_remove_class_path(value):
+    if not isinstance(value, (Namespace, dict)):
+        return value
+
+    items = vars(value).items() if isinstance(value, Namespace) else value.items()
+    for key, val in items:
+        if isinstance(val, (Namespace, dict)):
+            value[key] = subclasses_disabled_remove_class_path(val)
+        elif isinstance(val, list):
+            value[key] = [subclasses_disabled_remove_class_path(item) for item in val]
+        elif isinstance(val, tuple):
+            value[key] = tuple(subclasses_disabled_remove_class_path(item) for item in val)
+
+    if value.pop(subclasses_disabled_meta_key, False):
+        return Namespace({**value.get("init_args", {}), **value.get("dict_kwargs", {})})
     return value
 
 

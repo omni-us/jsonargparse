@@ -21,6 +21,12 @@ Added
   now supports fsspec config loading including the resolving of relative paths
   (`#918 <https://github.com/omni-us/jsonargparse/pull/918>`__).
 
+Fixed
+^^^^^
+- While parsing, internally preserve ``class_path`` for subclass disabled types
+  to correctly support defaults from union of dataclasses (`#921
+  <https://github.com/omni-us/jsonargparse/pull/921>`__).
+
 Changed
 ^^^^^^^
 - Drop support for Python 3.9. The minimum supported Python version is now
