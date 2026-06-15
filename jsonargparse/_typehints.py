@@ -1123,9 +1123,6 @@ def adapt_typehints(
             val = subclass_spec_as_namespace(val, type_class_path)
         else:
             val = subclass_spec_as_namespace(val, prev_val)
-        if val and not is_subclass_spec(val) and "init_args" not in val:
-            # implicit val class_path
-            val = Namespace(class_path=get_import_path(typehint), init_args=val)
 
         if not is_subclass_spec(val):
             msg = "Does not implement protocol" if is_protocol(typehint) else "Not a valid subclass of"
@@ -1613,7 +1610,7 @@ def subclasses_disabled_remove_class_path(value):
         return value
 
     items = vars(value).items() if isinstance(value, Namespace) else value.items()
-    for key, val in list(items):
+    for key, val in items:
         if isinstance(val, (Namespace, dict)):
             value[key] = subclasses_disabled_remove_class_path(val)
         elif isinstance(val, list):
