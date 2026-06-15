@@ -8,7 +8,8 @@ from typing import Any
 __all__ = ["Namespace"]
 
 
-meta_keys = {"__default_config__", "__path__", "__orig__"}
+subclasses_disabled_meta_key = "__subclasses_disabled__"
+meta_keys = {"__default_config__", "__path__", "__orig__", subclasses_disabled_meta_key}
 
 
 class NSKeyError(KeyError):

@@ -85,7 +85,7 @@ from ._subcommands import (
     is_branch_key,
     parse_kwargs_context,
 )
-from ._typehints import ActionTypeHint, is_subclass_spec
+from ._typehints import ActionTypeHint, is_subclass_spec, subclasses_disabled_remove_class_path
 from ._util import (
     Path,
     argument_error,
@@ -376,6 +376,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
             if not skip_validation:
                 self.validate(cfg, skip_required=skip_required)
+
+        if not lenient_check.get():
+            cfg = subclasses_disabled_remove_class_path(cfg)
 
         return cfg
 
@@ -793,6 +796,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
             dump_kwargs = {"skip_validation": skip_validation, "skip_none": skip_none}
             self._dump_cleanup_actions(cfg, self._actions, dump_kwargs)
+            cfg = subclasses_disabled_remove_class_path(cfg)
 
             cfg_dict = cfg.as_dict()
 
