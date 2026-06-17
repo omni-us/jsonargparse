@@ -772,7 +772,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             cfg: The configuration object to dump.
             format: The output format: ``yaml``, ``json``, ``json_indented``, ``toml``, ``parser_mode`` or ones added
                 via :func:`.set_dumper`.
-            skip_unset: Whether to exclude entries whose value is the configured unset value.
+            skip_unset: Whether to exclude entries whose value is the configured None/Unset value.
             skip_default: Whether to exclude entries whose value is the same as the default.
             skip_validation: Whether to skip parser checking.
             with_comments: Whether to add help content as comments. Currently only supported for ``format="yaml"``.
@@ -884,7 +884,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             path: Path to the location where to save config.
             format: The output format: ``yaml``, ``json``, ``json_indented``, ``parser_mode`` or ones added via
                 :func:`.set_dumper`.
-            skip_unset: Whether to exclude entries whose value is the configured unset value.
+            skip_unset: Whether to exclude entries whose value is the configured None/Unset value.
             skip_validation: Whether to skip parser checking.
             overwrite: Whether to overwrite existing files.
             multifile: Whether to save multiple config files by using the ``__path__`` metas.
@@ -1146,7 +1146,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
         Args:
             cfg: The configuration object to check.
-            skip_unset: Whether to skip checking of values that are the configured unset value.
+            skip_unset: Whether to skip checking of values that are the configured None/Unset value.
             skip_required: Whether to skip checking required arguments.
             branch: Base key in case cfg corresponds only to a branch.
 
@@ -1258,8 +1258,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         cfg_files = []
         if "__default_config__" in cfg:
             cfg_files.append(cfg["__default_config__"])
+        unset_sentinel = get_parsing_setting("unset_sentinel")
         for action in filter_non_parsing_actions(self._actions):
-            if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not None:
+            if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not unset_sentinel:
                 cfg_files.extend(p for p in cfg[action.dest] if p is not None)
         return cfg_files
 
@@ -1389,7 +1390,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         Raises:
             TypeError: If the value is not valid.
         """
-        if value is None and lenient_check.get():
+        unset_sentinel = get_parsing_setting("unset_sentinel")
+        if value is unset_sentinel and lenient_check.get():
             return value
         is_subcommand = isinstance(action, ActionSubCommands)
         if is_subcommand and action.choices:

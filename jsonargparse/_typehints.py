@@ -47,6 +47,7 @@ from ._actions import (
     remove_actions,
 )
 from ._common import (
+    get_parsing_setting,
     get_unaliased_type,
     is_generic_class,
     is_instance,
@@ -246,6 +247,7 @@ def cached_get_class_parser(*, val_class, sub_add_kwargs, skip_args, parent_pars
         freeze(sub_add_kwargs),
         freeze(skip_args),
         freeze(nested_links),
+        get_parsing_setting("unset_sentinel"),
     )
     if cache_key in _cached_class_parsers:
         parser = _cached_class_parsers[cache_key]
@@ -622,8 +624,9 @@ class ActionTypeHint(Action):
                     config_path = None
                 path_meta = val.pop("__path__", None) if isinstance(val, dict) else None
 
-                prev_val = cfg.get(self.dest) if cfg else None
-                if prev_val is None and not sub_defaults.get() and is_subclass_spec(self.default):
+                unset_sentinel = get_parsing_setting("unset_sentinel")
+                prev_val = cfg.get(self.dest) if cfg else unset_sentinel
+                if prev_val is unset_sentinel and not sub_defaults.get() and is_subclass_spec(self.default):
                     prev_val = Namespace(class_path=self.default["class_path"])
 
                 kwargs = {
@@ -815,6 +818,7 @@ def adapt_typehints(
     }
     subtypehints = getattr(typehint, "__args__", None)
     typehint_origin = get_typehint_origin(typehint) or typehint
+    unset_sentinel = get_parsing_setting("unset_sentinel")
 
     # Any
     if typehint == Any:
@@ -930,7 +934,7 @@ def adapt_typehints(
     elif typehint_origin in sequence_origin_types:
         if append:
             adapt_kwargs.pop("prev_val")
-            if prev_val is None:
+            if prev_val is unset_sentinel:
                 prev_val = []
             elif not isinstance(prev_val, list):
                 try:
@@ -1064,7 +1068,7 @@ def adapt_typehints(
                     else:
                         raise ImportError(f"Unexpected import object {val_obj}")
                 if isinstance(val, (dict, Namespace, NestedArg)):
-                    if prev_val is None:
+                    if prev_val is unset_sentinel:
                         return_type = get_callable_return_type(typehint)
                         if return_type and not inspect.isabstract(return_type):
                             with suppress(ValueError):
@@ -1104,7 +1108,7 @@ def adapt_typehints(
             return val
 
         prev_implicit_defaults = False
-        if prev_val is None and not inspect.isabstract(typehint) and not is_protocol(typehint):
+        if prev_val is unset_sentinel and not inspect.isabstract(typehint) and not is_protocol(typehint):
             with suppress(ValueError):
                 # implicit prev_val class_path
                 prev_val = Namespace(class_path=get_import_path(typehint))
@@ -1123,6 +1127,9 @@ def adapt_typehints(
             val = subclass_spec_as_namespace(val, type_class_path)
         else:
             val = subclass_spec_as_namespace(val, prev_val)
+        if val and not is_subclass_spec(val) and "init_args" not in val:
+            # implicit val class_path
+            val = Namespace(class_path=get_import_path(typehint), init_args=val)
 
         if not is_subclass_spec(val):
             msg = "Does not implement protocol" if is_protocol(typehint) else "Not a valid subclass of"

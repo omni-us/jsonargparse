@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any
 
-from ._common import Action, NonParsingAction, is_subclass, is_subclasses_disabled, parser_context
+from ._common import Action, NonParsingAction, get_parsing_setting, is_subclass, is_subclasses_disabled, parser_context
 from ._loaders_dumpers import get_loader_exceptions, load_value
 from ._namespace import Namespace
 from ._optionals import _get_config_read_mode, ruamel_support
@@ -129,7 +129,7 @@ class ActionConfigFile(Action):
                 cfg_file = parser.parse_path(value, **kwargs)
             cfg_merged = parser.merge_config(cfg_file, cfg)
             cfg.__dict__.update(cfg_merged.__dict__)
-            if cfg.get(dest) is None:
+            if cfg.get(dest) is get_parsing_setting("unset_sentinel"):
                 cfg[dest] = []
             cfg[dest].append(cfg_path)
 
