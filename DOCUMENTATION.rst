@@ -443,13 +443,12 @@ Example:
 .. testcode:: unset-values
 
     from jsonargparse import ArgumentParser, Unset, set_parsing_settings
-    from typing import Optional
 
     set_parsing_settings(unset_sentinel=True)
 
     parser = ArgumentParser()
-    parser.add_argument("--num", type=Optional[int])           # no default given
-    parser.add_argument("--flag", type=Optional[int], default=None)  # explicit None
+    parser.add_argument("--num", type=int | None)                 # no default given
+    parser.add_argument("--flag", type=int | None, default=None)  # explicit None
 
     cfg = parser.parse_args([])
     assert cfg.num is Unset   # no default → Unset
