@@ -25,6 +25,7 @@ from ._actions import (
 from ._common import (
     debug_mode_active,
     get_optionals_as_positionals_actions,
+    get_parsing_setting,
     is_subclasses_disabled,
     lenient_check,
     parser_context,
@@ -35,7 +36,7 @@ from ._completions import get_argcomplete_namespace, handle_completions
 from ._completions import (
     get_completion_script as get_completion_script_internal,
 )
-from ._deprecated import ParserDeprecations, deprecated_skip_check, deprecated_yaml_comments
+from ._deprecated import ParserDeprecations, deprecated_skip_check, deprecated_skip_none, deprecated_yaml_comments
 from ._formatters import DefaultHelpFormatter, get_env_var
 from ._instantiation import InstantiateMethod
 from ._jsonnet import ActionJsonnet
@@ -162,6 +163,9 @@ class ActionsContainer(ArgumentLinking, InstantiateMethod, SignatureArguments, a
             and action.nargs not in ("*", "?")
         ):
             raise ValueError("Positional arguments not allowed to have a default value.")
+        unset_sentinel = get_parsing_setting("unset_sentinel")
+        if unset_sentinel is not None and "default" not in kwargs and action.default is None:
+            action.default = unset_sentinel
         validate_default(self, action)
         return action
 
@@ -755,7 +759,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         self,
         cfg: Namespace,
         format: str = "parser_mode",
-        skip_none: bool = True,
+        skip_unset: bool = True,
         skip_default: bool = False,
         skip_validation: bool = False,
         with_comments: bool = False,
@@ -768,7 +772,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             cfg: The configuration object to dump.
             format: The output format: ``yaml``, ``json``, ``json_indented``, ``toml``, ``parser_mode`` or ones added
                 via :func:`.set_dumper`.
-            skip_none: Whether to exclude entries whose value is ``None``.
+            skip_unset: Whether to exclude entries whose value is the configured None/Unset value.
             skip_default: Whether to exclude entries whose value is the same as the default.
             skip_validation: Whether to skip parser checking.
             with_comments: Whether to add help content as comments. Currently only supported for ``format="yaml"``.
@@ -782,6 +786,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         """
         with_comments = deprecated_yaml_comments(kwargs, with_comments)
         skip_validation = deprecated_skip_check(ArgumentParser.dump, kwargs, skip_validation)
+        skip_unset = deprecated_skip_none(ArgumentParser.dump, kwargs, skip_unset)
+        if kwargs:
+            raise ValueError(f"Unexpected keyword parameters: {set(kwargs)}")
 
         check_valid_dump_format(format)
 
@@ -794,7 +801,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             if skip_link_targets:
                 ActionLink.strip_link_target_keys(self, cfg)
 
-            dump_kwargs = {"skip_validation": skip_validation, "skip_none": skip_none}
+            dump_kwargs = {"skip_validation": skip_validation, "skip_unset": skip_unset}
             self._dump_cleanup_actions(cfg, self._actions, dump_kwargs)
             cfg = subclasses_disabled_remove_class_path(cfg)
 
@@ -803,20 +810,21 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             if skip_default:
                 defaults = self.get_defaults(skip_validation=True)
                 ActionLink.strip_link_target_keys(self, defaults)
-                self._dump_cleanup_actions(defaults, self._actions, {"skip_validation": True, "skip_none": skip_none})
+                self._dump_cleanup_actions(defaults, self._actions, {"skip_validation": True, "skip_unset": skip_unset})
                 self._dump_delete_default_entries(cfg_dict, defaults.as_dict())
 
         with parser_context(parent_parser=self):
             return dump_using_format(self, cfg_dict, dump_format=format, with_comments=with_comments)
 
     def _dump_cleanup_actions(self, cfg, actions, dump_kwargs, prefix=""):
-        skip_none = dump_kwargs["skip_none"]
+        skip_unset = dump_kwargs["skip_unset"]
+        unset_sentinel = get_parsing_setting("unset_sentinel")
         for action in filter_non_parsing_actions(actions):
             action_dest = prefix + action.dest
             if (
                 (action.help == argparse.SUPPRESS and not isinstance(action, _ActionConfigLoad))
                 or isinstance(action, ActionConfigFile)
-                or (skip_none and action_dest in cfg and cfg[action_dest] is None)
+                or (skip_unset and action_dest in cfg and cfg[action_dest] is unset_sentinel)
             ):
                 cfg.pop(action_dest, None)
             elif isinstance(action, ActionSubCommands):
@@ -827,7 +835,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                 action = action.target[1]
             if isinstance(action, ActionTypeHint):
                 value = cfg.get(action_dest)
-                if value is not None:
+                if action_dest in cfg and value is not unset_sentinel:
                     with parser_context(parent_parser=self, lenient_check=True):
                         if dump_kwargs.get("skip_validation"):
                             with suppress(ValueError):
@@ -862,7 +870,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         cfg: Namespace,
         path: str | os.PathLike,
         format: str = "parser_mode",
-        skip_none: bool = True,
+        skip_unset: bool = True,
         skip_validation: bool = False,
         overwrite: bool = False,
         multifile: bool = True,
@@ -876,7 +884,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             path: Path to the location where to save config.
             format: The output format: ``yaml``, ``json``, ``json_indented``, ``parser_mode`` or ones added via
                 :func:`.set_dumper`.
-            skip_none: Whether to exclude entries whose value is ``None``.
+            skip_unset: Whether to exclude entries whose value is the configured None/Unset value.
             skip_validation: Whether to skip parser checking.
             overwrite: Whether to overwrite existing files.
             multifile: Whether to save multiple config files by using the ``__path__`` metas.
@@ -885,13 +893,16 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             TypeError: If any of the values of cfg is invalid according to the parser.
         """
         skip_validation = deprecated_skip_check(ArgumentParser.save, kwargs, skip_validation)
+        skip_unset = deprecated_skip_none(ArgumentParser.save, kwargs, skip_unset)
+        if kwargs:
+            raise ValueError(f"Unexpected keyword parameters: {set(kwargs)}")
         check_valid_dump_format(format)
 
         def check_overwrite(path):
             if not overwrite and os.path.isfile(path.absolute):
                 raise ValueError(f"Refusing to overwrite existing file: {path.absolute}")
 
-        dump_kwargs = {"format": format, "skip_none": skip_none, "skip_validation": skip_validation}
+        dump_kwargs = {"format": format, "skip_unset": skip_unset, "skip_validation": skip_validation}
 
         if fsspec_support:
             try:
@@ -1025,7 +1036,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                 and action.dest != argparse.SUPPRESS
                 and not isinstance(action.default, UnknownDefault)
             ):
-                cfg[action.dest] = recreate_branches(action.default)
+                default = recreate_branches(action.default)
+                cfg[action.dest] = default
 
         self._logger.debug("Loaded parser defaults: %s", cfg)
 
@@ -1125,7 +1137,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
     def validate(
         self,
         cfg: Namespace,
-        skip_none: bool = True,
+        skip_unset: bool = True,
         skip_required: bool = False,
         branch: str | None = None,
         **kwargs,
@@ -1134,7 +1146,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
         Args:
             cfg: The configuration object to check.
-            skip_none: Whether to skip checking of values that are ``None``.
+            skip_unset: Whether to skip checking of values that are the configured None/Unset value.
             skip_required: Whether to skip checking required arguments.
             branch: Base key in case cfg corresponds only to a branch.
 
@@ -1142,6 +1154,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             TypeError: If any of the values are not valid.
             KeyError: If a key in cfg is not defined in the parser.
         """
+        skip_unset = deprecated_skip_none(ArgumentParser.validate, kwargs, skip_unset, stacklevel=2)
         prefix = get_private_kwargs(kwargs, _prefix="")
         cfg = ccfg = cfg.clone()
         if isinstance(branch, str):
@@ -1154,7 +1167,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             for reqkey in iter_required_keys(parser):
                 try:
                     val = cfg[reqkey]
-                    if val is None:
+                    if val is get_parsing_setting("unset_sentinel"):
                         raise TypeError
                 except (KeyError, TypeError):
                     missing.append(f"{prefix}{reqkey}")
@@ -1180,7 +1193,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                             continue
                 val = cfg[key]
                 if action is not None:
-                    if (val is None and skip_none) or lenient_check.get():
+                    if (val is get_parsing_setting("unset_sentinel") and skip_unset) or lenient_check.get():
                         continue
                     try:
                         self._check_value_key(action, val, key, ccfg)
@@ -1245,8 +1258,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         cfg_files = []
         if "__default_config__" in cfg:
             cfg_files.append(cfg["__default_config__"])
+        unset_sentinel = get_parsing_setting("unset_sentinel")
         for action in filter_non_parsing_actions(self._actions):
-            if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not None:
+            if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not unset_sentinel:
                 cfg_files.extend(p for p in cfg[action.dest] if p is not None)
         return cfg_files
 
@@ -1376,7 +1390,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         Raises:
             TypeError: If the value is not valid.
         """
-        if value is None and lenient_check.get():
+        unset_sentinel = get_parsing_setting("unset_sentinel")
+        if value is unset_sentinel and lenient_check.get():
             return value
         is_subcommand = isinstance(action, ActionSubCommands)
         if is_subcommand and action.choices:

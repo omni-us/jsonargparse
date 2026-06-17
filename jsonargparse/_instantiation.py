@@ -6,6 +6,7 @@ from ._common import (
     InstantiatorsDictType,
     applied_instantiation_links,
     class_instantiators,
+    get_parsing_setting,
     is_subclass,
     parser_context,
 )
@@ -84,6 +85,7 @@ class InstantiateMethod:
         components = ActionLink.reorder(order, components)
 
         cfg = cfg.clone(with_meta=False)
+        unset_sentinel = get_parsing_setting("unset_sentinel")
         for component in components:
             ActionLink.apply_instantiation_links(self, cfg, target=component.dest)
             if isinstance(component, ActionTypeHint):
@@ -92,7 +94,7 @@ class InstantiateMethod:
                 except (KeyError, AttributeError):
                     pass
                 else:
-                    if value is not None:
+                    if value is not unset_sentinel:
                         with parser_context(
                             parent_parser=self,
                             nested_links=ActionLink.get_nested_links(self, component),

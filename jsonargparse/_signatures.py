@@ -11,6 +11,7 @@ from ._actions import _ActionConfigLoad
 from ._common import (
     LoggerProperty,
     get_generic_origin,
+    get_parsing_setting,
     get_unaliased_type,
     is_final_class,
     is_subclass,
@@ -337,7 +338,8 @@ class SignatureArguments(LoggerProperty):
             default = param.default
             if default == inspect_empty:
                 if is_optional(annotation):
-                    default = None
+                    unset_sentinel = get_parsing_setting("unset_sentinel")
+                    default = unset_sentinel if unset_sentinel is not None else None
                 elif get_typehint_origin(annotation) in not_required_types:
                     default = SUPPRESS
         # Determine argument characteristics based on parameter kind and default value

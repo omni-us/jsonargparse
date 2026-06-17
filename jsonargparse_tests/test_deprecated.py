@@ -1124,3 +1124,73 @@ def test_action_json_schema_enable_path_deprecated(parser):
     parser.add_argument("--obj", action=action)
     cfg = parser.parse_args(['--obj={"x": 1}'])
     assert cfg.obj == {"x": 1}
+
+
+# skip_none deprecation tests
+
+
+def test_deprecated_dump_skip_none_parameter(parser):
+    parser.add_argument("--val", type=int)
+    cfg = parser.parse_args(["--val=1"])
+    with catch_warnings(record=True) as w:
+        dump = parser.dump(cfg, skip_none=True)
+    assert "val: 1" in dump
+    assert_deprecation_warn(
+        w,
+        message="skip_none parameter was deprecated",
+        code="parser.dump(cfg, skip_none=True)",
+    )
+
+
+def test_deprecated_save_skip_none_parameter(parser, tmp_cwd):
+    parser.add_argument("--val", type=int)
+    cfg = parser.parse_args(["--val=1"])
+    with catch_warnings(record=True) as w:
+        parser.save(cfg, "out.yaml", skip_none=True)
+    assert_deprecation_warn(
+        w,
+        message="skip_none parameter was deprecated",
+        code='parser.save(cfg, "out.yaml", skip_none=True)',
+    )
+    with open("out.yaml") as f:
+        assert "val: 1" in f.read()
+
+
+def test_deprecated_validate_skip_none_parameter(parser):
+    parser.add_argument("--val", type=int)
+    cfg = parser.parse_args(["--val=1"])
+    with catch_warnings(record=True) as w:
+        parser.validate(cfg, skip_none=True)
+    assert_deprecation_warn(
+        w,
+        message="skip_none parameter was deprecated",
+        code="parser.validate(cfg, skip_none=True)",
+    )
+
+
+def test_save_unexpected_kwarg(parser, tmp_cwd):
+    parser.add_argument("--val", type=int)
+    cfg = parser.parse_args(["--val=1"])
+    with pytest.raises(ValueError, match="Unexpected keyword parameters"):
+        parser.save(cfg, "out.yaml", unknown_kwarg=True)
+
+
+def test_dump_unexpected_kwarg(parser):
+    parser.add_argument("--val", type=int)
+    cfg = parser.parse_args(["--val=1"])
+    with pytest.raises(ValueError, match="Unexpected keyword parameters"):
+        parser.dump(cfg, unknown_kwarg=True)
+
+
+def test_deprecated_print_config_skip_null(parser):
+    from jsonargparse_tests.conftest import get_parse_args_stdout
+
+    parser.add_argument("--cfg", action="config")
+    parser.add_argument("--op", type=int)
+    with catch_warnings(record=True) as w:
+        get_parse_args_stdout(parser, ["--print_config=skip_null"])
+    assert_deprecation_warn(
+        w,
+        message="skip_null flag for --print_config was deprecated",
+        code=None,
+    )
