@@ -314,12 +314,19 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
         for action in get_optionals_as_positionals_actions(self, include_positionals=True):
             if action.option_strings == []:
-                if cfg.get(action.dest) is None:
+                if cfg.get(action.dest) is get_parsing_setting("unset_sentinel"):
                     self._logger.debug(f"Positional argument {action.dest} missing, aborting _positional_optionals")
                     break
                 continue
 
-            cfg[action.dest] = self._check_value_key(action, unk.pop(0), action.dest, cfg)
+            value = unk.pop(0)
+            try:
+                cfg[action.dest] = self._check_value_key(action, value, action.dest, cfg)
+            except (TypeError, ValueError) as ex:
+                if isinstance(value, str) and value.startswith("--"):
+                    raise argument_error(f"unrecognized arguments: {' '.join([value] + unk)}") from ex
+                raise
+
             if len(unk) == 0:
                 break
 

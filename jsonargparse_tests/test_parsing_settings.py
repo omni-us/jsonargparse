@@ -115,6 +115,12 @@ def test_parse_optionals_as_positionals_simple(parser, logger, subtests):
                 parser.parse_args(["--unk=x"])
         assert "Positional argument p1 missing, aborting _positional_optionals" in logs.getvalue()
 
+    with subtests.test("mixed unrecognized"):
+        with capture_logs(logger) as logs:
+            with pytest.raises(ArgumentError, match="unrecognized arguments: --unexpected arg xyz"):
+                parser.parse_args(["p1", "3", "--unexpected", "arg", "xyz"])
+        assert "unrecognized arguments: --unexpected arg xyz" in logs.getvalue()
+
 
 def test_parse_optionals_as_positionals_subcommands(parser, subparser, subtests):
     set_parsing_settings(parse_optionals_as_positionals=True)
@@ -152,6 +158,10 @@ def test_parse_optionals_as_positionals_subcommands(parser, subparser, subtests)
         with pytest.raises(ArgumentError) as ex:
             parser.parse_args(["subcmd", "p1", "o2", "5"])
         assert re.match('Parser key "o1".*Given value: o2', ex.value.message, re.DOTALL)
+
+    with subtests.test("mixed unrecognized"):
+        with pytest.raises(ArgumentError, match="unrecognized arguments: --unexpected=arg"):
+            parser.parse_args(["subcmd", "p1", "3", "--unexpected=arg"])
 
 
 def test_optionals_as_positionals_usage_wrap(parser):
