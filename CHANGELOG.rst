@@ -30,6 +30,9 @@ Fixed
 - While parsing, internally preserve ``class_path`` for subclass disabled types
   to correctly support defaults from union of dataclasses (`#921
   <https://github.com/omni-us/jsonargparse/pull/921>`__).
+- Misleading error message for ``parse_optionals_as_positionals=True`` and
+  unrecognized non-positional arguments (`#922
+  <https://github.com/omni-us/jsonargparse/pull/922>`__).
 
 Changed
 ^^^^^^^
