@@ -48,6 +48,9 @@ Deprecated
 - ``skip_null`` flag for ``--print_config`` was deprecated and will be removed
   in v5.0.0. Use ``skip_unset`` instead (`#909
   <https://github.com/omni-us/jsonargparse/pull/909>`__).
+- Implicit selection of subcommand when multiple subcommand settings available
+  is deprecated and will be removed in v5.0.0. Provide an explicit subcommand
+  instead (`#923 <https://github.com/omni-us/jsonargparse/pull/923>`__).
 
 
 v4.49.0 (2026-05-15)

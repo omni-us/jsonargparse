@@ -1041,3 +1041,15 @@ def compose_dataclasses(*args):
                     arg.__post_init__(self)
 
     return ComposedDataclass
+
+
+def deprecated_implicit_subcommand(component, subcommand_keys: list[str], subcommand: str, dest: str):
+    deprecation_warning(
+        component,
+        (
+            f"Multiple subcommand settings provided ({', '.join(subcommand_keys)}) without an "
+            f"explicit '{dest}' key. Subcommand '{subcommand}' will be used. From v5.0.0 "
+            "providing an explicit subcommand will be required."
+        ),
+        stacklevel=6,
+    )

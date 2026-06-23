@@ -1,6 +1,5 @@
 """Subcommands action and helper functions."""
 
-import warnings
 from argparse import Action as ArgparseAction
 from argparse import _SubParsersAction
 from contextlib import contextmanager
@@ -9,6 +8,7 @@ from typing import NoReturn
 
 from ._actions import filter_non_parsing_actions
 from ._common import parsing_defaults, single_subcommand
+from ._deprecated import deprecated_implicit_subcommand
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._type_checking import ActionsContainer, ArgumentParser
 
@@ -198,10 +198,8 @@ def get_subcommands(
     elif len(subcommand_keys) > 0 and (fail_no_subcommand or require_single):
         cfg[dest] = subcommand = subcommand_keys[0]
         if len(subcommand_keys) > 1:
-            warnings.warn(
-                f"Multiple subcommand settings provided ({', '.join(subcommand_keys)}) without an "
-                f"explicit '{dest}' key. Subcommand '{subcommand}' will be used."
-            )
+            deprecated_implicit_subcommand(get_subcommands, subcommand_keys, subcommand, dest)
+            # v5.0.0 replace deprecated_implicit_subcommand with raise ValueError
 
     # Remove extra subcommand settings
     if subcommand and len(subcommand_keys) > 1:

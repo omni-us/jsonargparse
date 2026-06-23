@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import warnings
 from pathlib import Path
 from unittest.mock import patch
 
@@ -164,15 +163,6 @@ def test_subcommands_parse_string_implicit_subcommand(subcommands_parser):
     with pytest.raises(ArgumentError) as ctx:
         subcommands_parser.parse_string('{"a": {"ap1": "ap1_cfg", "unk": "unk_cfg"}}')
     ctx.match("Subcommand 'a' does not accept option 'unk'")
-
-
-def test_subcommands_parse_string_first_implicit_subcommand(subcommands_parser):
-    with warnings.catch_warnings(record=True) as w:
-        cfg = subcommands_parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
-    assert len(w) == 1
-    assert "Subcommand 'a' will be used" in str(w[0].message)
-    assert cfg.subcommand == "a"
-    assert "b" not in cfg
 
 
 def test_subcommands_parse_string_explicit_subcommand(subcommands_parser):
@@ -528,14 +518,6 @@ def test_subcommands_in_default_config_files(parser, subtests, tmp_cwd):
         assert cfg.sub == "sub2"
         assert cfg.sub2 == Namespace(sub2val=3)
         assert "sub1" not in cfg
-
-    with subtests.test("implicit subcommand defaults"):
-        with warnings.catch_warnings(record=True) as w:
-            cfg = parser.parse_args([])
-        assert "Subcommand 'sub1' will be used" in str(w[0].message)
-        assert cfg.sub == "sub1"
-        assert cfg.sub1 == Namespace(sub1val=2)
-        assert "sub2" not in cfg
 
     with subtests.test("no subcommand in defaults"):
         defaults["sub"] = "sub2"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 import os
 import pathlib
 import sys
@@ -71,6 +72,7 @@ from jsonargparse_tests.test_dataclasses import DataClassA
 from jsonargparse_tests.test_jsonnet import example_2_jsonnet
 from jsonargparse_tests.test_paths import paths  # noqa: F401
 from jsonargparse_tests.test_subclasses import CustomInstantiationBase, instantiator
+from jsonargparse_tests.test_subcommands import subcommands_parser  # noqa: F401
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -1194,3 +1196,45 @@ def test_deprecated_print_config_skip_null(parser):
         message="skip_null flag for --print_config was deprecated",
         code=None,
     )
+
+
+def test_subcommands_parse_string_first_implicit_subcommand(subcommands_parser):  # noqa: F811
+    with catch_warnings(record=True) as w:
+        cfg = subcommands_parser.parse_string('{"a": {"ap1": "ap1_cfg"}, "b": {"nums": {"val1": 2}}}')
+    assert_deprecation_warn(
+        w,
+        message="Multiple subcommand settings provided",
+        code="cfg = subcommands_parser.parse_string(",
+    )
+    assert "Subcommand 'a' will be" in str(w[1].message)
+    assert cfg.subcommand == "a"
+    assert "b" not in cfg
+
+
+def test_subcommands_implicit_in_default_config_files(parser, tmp_cwd):
+    parser.default_config_files = ["defaults.json"]
+    subs = parser.add_subcommands(required=True, dest="sub")
+    sub1 = ArgumentParser()
+    sub1.add_argument("--sub1val")
+    subs.add_subcommand("sub1", sub1)
+    sub2 = ArgumentParser()
+    sub2.add_argument("--sub2val")
+    subs.add_subcommand("sub2", sub2)
+
+    defaults: dict = {
+        "sub1": {"sub1val": 2},
+        "sub2": {"sub2val": 3},
+    }
+    pathlib.Path("defaults.json").write_text(json.dumps(defaults))
+
+    with catch_warnings(record=True) as w:
+        cfg = parser.parse_args([])
+    assert_deprecation_warn(
+        w,
+        message="Multiple subcommand settings provided",
+        code="cfg = parser.parse_args([])",
+    )
+    assert "Subcommand 'sub1' will be" in str(w[1].message)
+    assert cfg.sub == "sub1"
+    assert cfg.sub1 == Namespace(sub1val=2)
+    assert "sub2" not in cfg
